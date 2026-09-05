@@ -1,23 +1,15 @@
-import 'dart:io';
-
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_config_resolver.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-void main() {
-  final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
+import 'support/private_data_dir.dart';
 
+void main() {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  binding.defaultBinaryMessenger.setMockMethodCallHandler(
-    const MethodChannel('plugins.flutter.io/path_provider'),
-    (MethodCall methodCall) async {
-      return Directory.systemTemp.path;
-    },
-  );
+  usePrivateDataDir('joycai_config_resolver_test');
 
   group('LLMConfigResolver (Integration-lite)', () {
     test('should resolve config from database', () async {

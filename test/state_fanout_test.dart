@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
@@ -9,6 +6,8 @@ import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
 import 'package:joycai_image_ai_toolkits/state/log_state.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'support/private_data_dir.dart';
 
 /// Guards the wiring between [AppState] and the notifiers it owns.
 ///
@@ -19,15 +18,10 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 /// failure mode in both directions is silent — nothing throws when a panel
 /// stops updating, and nothing throws when the whole app rebuilds too often.
 void main() {
-  final binding = TestWidgetsFlutterBinding.ensureInitialized();
-
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  binding.defaultBinaryMessenger.setMockMethodCallHandler(
-    const MethodChannel('plugins.flutter.io/path_provider'),
-    (MethodCall methodCall) async => Directory.systemTemp.path,
-  );
+  usePrivateDataDir('joycai_state_fanout_test');
 
   AppImage img(String name) => AppImage(path: '/tmp/$name.png', name: '$name.png');
 

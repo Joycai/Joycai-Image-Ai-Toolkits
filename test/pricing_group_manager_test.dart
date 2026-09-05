@@ -1,13 +1,12 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/pricing_group_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'support/private_data_dir.dart';
 
 /// Renders the fee-group grid.
 ///
@@ -17,29 +16,13 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 /// with no cache rate of its own shows the input rate it inherits rather than a
 /// free one.
 void main() {
-  final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
-  late Directory dbDir;
+  // A data directory of this file's own — see the helper for why sharing one
+  // is a race rather than a nuisance.
+  usePrivateDataDir('joycai_fee_group_test');
 
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    // A database directory of this file's own. Point path_provider at the
-    // shared systemTemp and every test file opens the same database file —
-    // `flutter test` runs files concurrently, so the wipe below would delete
-    // rows out from under a neighbouring file mid-assertion.
-    dbDir = Directory.systemTemp.createTempSync('joycai_fee_group_test');
-    binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (MethodCall methodCall) async => dbDir.path,
-    );
-  });
-
-  tearDownAll(() {
-    try {
-      dbDir.deleteSync(recursive: true);
-    } on FileSystemException {
-      // The database handle may still be open; the OS reaps temp dirs anyway.
-    }
   });
 
   /// Seeds via [WidgetTester.runAsync]: sqflite does real I/O, which never

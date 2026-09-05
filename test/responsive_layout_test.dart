@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/main.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'support/private_data_dir.dart';
+
 void main() {
+  // A data directory of this file's own. The mock used to answer '.', which
+  // is both the repository root and the same answer every other file gives —
+  // `flutter test` runs files concurrently, so they raced for one database's
+  // lock.
+  usePrivateDataDir('joycai_responsive_test');
+
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
@@ -15,12 +22,6 @@ void main() {
   Future<void> testScreenAtSize(WidgetTester tester, Size size, String description) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
-
-    // Mock Path Provider
-    const MethodChannel channel = MethodChannel('plugins.flutter.io/path_provider');
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-      return '.';
-    });
 
     final appState = AppState();
 

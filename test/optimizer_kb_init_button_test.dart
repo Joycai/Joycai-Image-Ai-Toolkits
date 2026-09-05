@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/optimizer_config_panel.dart';
@@ -13,30 +10,20 @@ import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'support/private_data_dir.dart';
+
 /// The initialize button is a one-shot, destructive-adjacent action: it writes
 /// files into a folder the user picked. Its guard is what stops it running over
 /// an existing knowledge base, so these pin that the guard is visible in the UI
 /// and that the button cannot be fired when the base already has an entry file.
 void main() {
-  final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
-  late Directory dbDir;
+  // A data directory of this file's own — see the helper for why sharing one
+  // is a race rather than a nuisance.
+  usePrivateDataDir('joycai_kb_init_btn_test');
 
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    dbDir = Directory.systemTemp.createTempSync('joycai_kb_init_btn_test');
-    binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (MethodCall methodCall) async => dbDir.path,
-    );
-  });
-
-  tearDownAll(() {
-    try {
-      dbDir.deleteSync(recursive: true);
-    } on FileSystemException {
-      // The database handle may still be open; the OS reaps temp dirs anyway.
-    }
   });
 
   Future<void> pumpPanel(

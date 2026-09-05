@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/token_usage_screen.dart';
@@ -10,35 +7,21 @@ import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'support/private_data_dir.dart';
+
 /// Covers the usage / fee-groups view tabs.
 ///
 /// They navigate between two pages, and the usage page carries a range filter
 /// that only filters itself, so what these pin is that the tabs stay distinct
 /// from that filter and actually swap the body.
 void main() {
-  final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
-  late Directory dbDir;
+  // A data directory of this file's own — see the helper for why sharing one
+  // is a race rather than a nuisance.
+  usePrivateDataDir('joycai_usage_tabs_test');
 
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    // A database directory of this file's own. Point path_provider at the
-    // shared systemTemp and every test file opens the same database file —
-    // `flutter test` runs files concurrently, so they race for its lock and
-    // whichever one does the most I/O loses with "database is locked".
-    dbDir = Directory.systemTemp.createTempSync('joycai_usage_tabs_test');
-    binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (MethodCall methodCall) async => dbDir.path,
-    );
-  });
-
-  tearDownAll(() {
-    try {
-      dbDir.deleteSync(recursive: true);
-    } on FileSystemException {
-      // The database handle may still be open; the OS reaps temp dirs anyway.
-    }
   });
 
   /// Mounts the screen inside [WidgetTester.runAsync].

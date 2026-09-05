@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/file_utils.dart';
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
@@ -10,20 +9,17 @@ import 'package:joycai_image_ai_toolkits/state/file_staging_state.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'support/private_data_dir.dart';
+
 /// What a folder rename or move has to do to everything that named the old
 /// path. The failure this guards against is quiet: nothing crashes, the
 /// staging area just reports files "missing" that are right there, and the
 /// browser's roots point at a folder that no longer exists.
 void main() {
-  final binding = TestWidgetsFlutterBinding.ensureInitialized();
-
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  binding.defaultBinaryMessenger.setMockMethodCallHandler(
-    const MethodChannel('plugins.flutter.io/path_provider'),
-    (MethodCall methodCall) async => Directory.systemTemp.path,
-  );
+  usePrivateDataDir('joycai_folder_rewrite_test');
 
   group('FileUtils.rebasePath', () {
     test('rewrites the prefix itself and paths inside it, segment-aware', () {

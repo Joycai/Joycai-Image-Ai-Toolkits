@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/knowledge_base_starter.dart';
@@ -9,6 +8,8 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'support/private_data_dir.dart';
 
 /// Appends the call/result pair the agent writes for one `read_knowledge_file`,
 /// so liveness derives from the same shape production builds.
@@ -40,29 +41,16 @@ void recordRead(PromptOptimizerSession session, String path, int page,
 }
 
 void main() {
-  final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
+  // A data directory of this file's own — see the helper for why sharing one
+  // is a race rather than a nuisance.
+  usePrivateDataDir('joycai_kb_write_test');
+
   late Directory root;
-  late Directory dbDir;
   final kb = KnowledgeBaseService();
 
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    // A database directory of this file's own — `flutter test` runs files
-    // concurrently and they would otherwise share one database file.
-    dbDir = Directory.systemTemp.createTempSync('joycai_kb_write_test');
-    binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (MethodCall methodCall) async => dbDir.path,
-    );
-  });
-
-  tearDownAll(() {
-    try {
-      dbDir.deleteSync(recursive: true);
-    } on FileSystemException {
-      // The database handle may still be open; the OS reaps temp dirs anyway.
-    }
   });
 
   setUp(() {
