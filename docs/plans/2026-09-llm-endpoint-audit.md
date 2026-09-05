@@ -135,7 +135,9 @@
 
 **验收**：L1 三条（默认不发、显式发大写 K、2.5-flash-image 表无该参数）；L2 一张 2.5-flash-image 不带 size 200，一张 3.1-flash-image `9:16`+`1K` 出 768×1376（按字节量尺寸）。
 
-#### 片 7 · Chat 路由生图：请求恒 part 数组，回包五形状去重（#12 #13）
+#### 片 7 · Chat 路由生图：请求恒 part 数组，回包五形状去重（#12 #13）— ✅ 2026-09-05 L1 已落，L2 待 key
+
+> 落地：`wholeContentImage`（整段裸 base64 须 ≥64 字符、纯字母表、**且魔数嗅得出图片**；整段裸链接只对 `isImageGenerator` 的模型算图，聊天模型引用 URL 不下载）、`ImageDeduper`（SHA-256 按字节去重，同步与流式两条路都过它）、`extractStructuredImages` 补 `image_b64_json` 与 `images[]` 里的裸字符串项（裸 base64 同样要过魔数，否则 `'nope'` 也能解出 3 个字节）。请求侧只有 `isImageGenerator` 的 user 轮改成一元 part 数组，聊天模型保持字符串。
 
 **改什么**
 1. `_prepareChatPayload`：`target.model.capabilities.isImageGenerator` 时，无附件也发一元 `[{type:"text",text}]`。只对生图模型，普通聊天保持字符串（最小公倍数）。

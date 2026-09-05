@@ -74,6 +74,87 @@ void main() {
     });
   });
 
+  group('the same picture in several fields', () {
+    final png = base64Encode([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, ...List.filled(60, 7)]);
+
+    test('image_b64_json and bare string entries are read', () {
+      // A relay's gpt-image-2-via-chat put the picture here, in
+      // images[0].b64_json and in content at once.
+      final r = extractStructuredImages({
+        'image_b64_json': png,
+        'images': [png, 'https://cdn.example.com/x.png', 'data:image/png;base64,$png'],
+      });
+      expect(r.bytes, hasLength(3));
+      expect(r.urls, ['https://cdn.example.com/x.png']);
+    });
+
+    test('ImageDeduper admits each distinct picture once, whatever field it came from', () {
+      final a = base64Decode(png);
+      final b = Uint8List.fromList([...a, 1]);
+      final dedupe = ImageDeduper();
+      expect(dedupe.admit(a), isTrue);
+      expect(dedupe.admit(Uint8List.fromList(a)), isFalse, reason: 'same bytes, new object');
+      expect(dedupe.admit(b), isTrue);
+      expect(dedupe.filter([a, b, a]), isEmpty);
+    });
+  });
+
+  group('wholeContentImage', () {
+    final jpegBytes = Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xE0, ...List.filled(80, 3)]);
+    final jpeg = base64Encode(jpegBytes);
+
+    test('bare base64 whose bytes are an image is the image', () {
+      final r = wholeContentImage(jpeg, imageReply: false)!;
+      expect(r.bytes, jpegBytes);
+      expect(r.url, isNull);
+    });
+
+    test('newline-wrapped base64 still decodes', () {
+      final wrapped = '${jpeg.substring(0, 40)}\n${jpeg.substring(40)}\n';
+      expect(wholeContentImage(wrapped, imageReply: false)!.bytes, jpegBytes);
+    });
+
+    test('a bare link is the image only for an image model', () {
+      // A chat model that answers with a URL is citing, not delivering.
+      expect(wholeContentImage('https://s3.example/a.png?X-Amz-Expires=86400', imageReply: true)!.url,
+          'https://s3.example/a.png?X-Amz-Expires=86400');
+      expect(wholeContentImage('https://s3.example/a.png', imageReply: false), isNull);
+      expect(wholeContentImage('see https://s3.example/a.png', imageReply: true), isNull);
+    });
+
+    test('prose is prose, even when it happens to be in the base64 alphabet', () {
+      expect(wholeContentImage('Sure', imageReply: true), isNull);
+      // 64+ alphabet characters that decode to non-image bytes.
+      expect(wholeContentImage('A' * 96, imageReply: true), isNull);
+      expect(wholeContentImage('Here is the image you asked for, rendered at 9:16.', imageReply: true),
+          isNull);
+    });
+  });
+
+  group('image-model requests on the chat route', () {
+    test('a text-only user turn still goes out as a part array', () {
+      // A relay translating chat into an images request 400s the string form
+      // while accepting a one-element array with the same text.
+      final payload = OpenAIChatProtocol().buildChatPayloadForTest(
+        target('gemini-2.5-flash-image'),
+        [LLMMessage(role: LLMRole.user, content: 'a red apple')],
+        isStreaming: false,
+      );
+      expect((payload['messages'] as List).single['content'], [
+        {'type': 'text', 'text': 'a red apple'}
+      ]);
+    });
+
+    test('a chat model keeps the string — the shape every host accepts', () {
+      final payload = OpenAIChatProtocol().buildChatPayloadForTest(
+        target('gpt-5-chat'),
+        [LLMMessage(role: LLMRole.user, content: 'hi')],
+        isStreaming: false,
+      );
+      expect((payload['messages'] as List).single['content'], 'hi');
+    });
+  });
+
   group('imageUrlsInText', () {
     test('a markdown image link is fetched whatever the host', () {
       // New API's own adapter writes `![image](data:…)`; relays that store

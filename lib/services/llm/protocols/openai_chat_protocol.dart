@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../core/image_magic.dart';
 import '../../../core/safety_settings.dart';
 import '../../../state/app_state.dart';
 import '../image_compression.dart';
@@ -460,32 +462,125 @@ StructuredImages extractStructuredImages(Map<String, dynamic> source) {
     }
   }
 
-  final imageData = source['image_data'];
-  if (imageData is String && imageData.isNotEmpty) {
+  void addBase64(Object? raw) {
+    if (raw is! String || raw.isEmpty) return;
     try {
-      bytes.add(base64Decode(imageData));
-    } catch (_) {/* ignore */}
+      bytes.add(base64Decode(raw));
+    } catch (_) {/* not decodable — nothing to add */}
   }
 
-  // `images: [{ image_url: { url: "data:…"|"http…" } }]`
+  /// A bare string entry: a link, a data URI, or the base64 itself. Bare
+  /// base64 is admitted only when its bytes are an image — an unlabelled
+  /// string in this list has no other proof of what it is, and any short
+  /// word decodes "successfully" as base64.
+  void addLoose(String value) {
+    if (value.startsWith('data:') || value.startsWith('http')) {
+      addUrl(value);
+      return;
+    }
+    try {
+      final decoded = base64Decode(value);
+      if (imageMimeFromBytes(decoded) != null) bytes.add(decoded);
+    } catch (_) {/* not base64 — nothing to add */}
+  }
+
+  addBase64(source['image_data']);
+  // `message.image_b64_json` — seen on a relay's gpt-image-2-via-chat, which
+  // put the same picture here, in `images[0].b64_json` and in `content` at
+  // once (the caller de-duplicates; see [ImageDeduper]).
+  addBase64(source['image_b64_json']);
+
+  // `images: [{ image_url: { url: "data:…"|"http…" } } | { b64_json } | { url } | "…"]`
   final imageList = source['images'];
   if (imageList is List) {
     for (final entry in imageList) {
+      if (entry is String) {
+        addLoose(entry);
+        continue;
+      }
       if (entry is! Map) continue;
       final urlField = entry['image_url'] is Map
           ? entry['image_url']['url']
           : (entry['image_url'] ?? entry['url']);
       if (urlField is String && urlField.isNotEmpty) addUrl(urlField);
-      final b64 = entry['b64_json'];
-      if (b64 is String && b64.isNotEmpty) {
-        try {
-          bytes.add(base64Decode(b64));
-        } catch (_) {/* ignore */}
-      }
+      addBase64(entry['b64_json']);
     }
   }
 
   return StructuredImages(bytes, urls);
+}
+
+/// A reply whose *entire* text is one image: a bare link, or the bare base64
+/// of the picture with no `data:` prefix and no markdown around it.
+///
+/// Both shapes came from the same relay serving gpt-image-2 through
+/// `/chat/completions`, an hour apart — the reply shape follows whichever
+/// upstream channel the relay picked. The old parser saw text with no image
+/// in it, reported "the model only answered in words" and quoted the first
+/// 200 characters of base64 as the model's words.
+class WholeContentImage {
+  /// An `http(s)` link the caller still has to fetch.
+  final String? url;
+
+  /// Decoded picture bytes.
+  final Uint8List? bytes;
+
+  const WholeContentImage._({this.url, this.bytes});
+}
+
+/// The one image [text] *is*, or null when it is prose (or a caption with an
+/// embedded image, which the markdown/data-URI scans handle).
+///
+/// Two gates keep short prose out:
+///  * a link only counts when it is the whole reply, and only when
+///    [imageReply] says the model is an image generator — a chat model that
+///    answers with a URL is citing, not delivering, and must not make the app
+///    download it;
+///  * a base64 candidate has to be at least 64 characters of the base64
+///    alphabet **and decode to bytes whose magic names an image format**. The
+///    alphabet alone is not enough: a one-word English answer is in it too.
+WholeContentImage? wholeContentImage(String text, {required bool imageReply}) {
+  final s = text.trim();
+  if (s.isEmpty) return null;
+
+  if (imageReply && RegExp(r'^https?://\S+$').hasMatch(s)) {
+    return WholeContentImage._(url: s);
+  }
+
+  // Relays wrap long base64 in newlines; the alphabet test runs on the
+  // joined string.
+  final compact = s.replaceAll(RegExp(r'\s+'), '');
+  if (compact.length < 64 || !RegExp(r'^[A-Za-z0-9+/]+=*$').hasMatch(compact)) {
+    return null;
+  }
+  Uint8List decoded;
+  try {
+    decoded = base64Decode(compact);
+  } catch (_) {
+    return null;
+  }
+  if (imageMimeFromBytes(decoded) == null) return null;
+  return WholeContentImage._(bytes: decoded);
+}
+
+/// Keeps one copy of each distinct picture across every place a reply can
+/// carry it.
+///
+/// A relay has been seen returning the same image three times in one reply —
+/// as bare base64 in `content`, in `images[0].b64_json` and in
+/// `image_b64_json` — and each copy became a file. Identity is the SHA-256 of
+/// the bytes, so two copies match whatever field they came from and whatever
+/// encoding they arrived in.
+class ImageDeduper {
+  final Set<String> _seen = {};
+
+  /// True when [image] is new; false when an identical picture was already
+  /// admitted.
+  bool admit(Uint8List image) => _seen.add(sha256.convert(image).toString());
+
+  /// [images] without the ones already admitted (or repeated within).
+  List<Uint8List> filter(Iterable<Uint8List> images) =>
+      [for (final img in images) if (admit(img)) img];
 }
 
 /// Image URLs a reply's *text* points at, in declaration order, deduplicated.
@@ -623,16 +718,20 @@ class OpenAIChatProtocol implements ChatProtocol {
           }
         }
 
-        // Some OpenAI-compat relays expose images via a structured field.
+        // Some OpenAI-compat relays expose images via a structured field —
+        // sometimes the same picture in several of them at once, hence the
+        // de-duplication across every source below.
+        final dedupe = ImageDeduper();
         final structured = extractStructuredImages(message);
-        images.addAll(structured.bytes);
-        images.addAll(await _fetchImageUrls(structured.urls, config, logger));
+        images.addAll(dedupe.filter(structured.bytes));
+        images.addAll(dedupe.filter(await _fetchImageUrls(structured.urls, config, logger)));
 
         if (text.isNotEmpty) {
           logger?.call('Extracting images from text response...', level: 'DEBUG');
-          final result = await _processTextAndExtractImages(text, config);
+          final result = await _processTextAndExtractImages(text, config,
+              imageReply: target.model.capabilities.isImageGenerator);
           text = result.text;
-          images.addAll(result.images);
+          images.addAll(dedupe.filter(result.images));
         }
       }
 
@@ -744,6 +843,8 @@ class OpenAIChatProtocol implements ChatProtocol {
     // Fragments only become calls at stream end — ① has no per-call
     // terminator — so this holds them until the loop is over.
     final streamedToolCalls = StreamingToolCallAccumulator();
+    // One copy of each picture, whichever field(s) it arrives in.
+    final dedupe = ImageDeduper();
 
     try {
       await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
@@ -803,10 +904,11 @@ class OpenAIChatProtocol implements ChatProtocol {
           }
 
           final structured = extractStructuredImages(delta);
-          for (final img in structured.bytes) {
+          for (final img in dedupe.filter(structured.bytes)) {
             yield LLMResponseChunk(imagePart: img);
           }
-          for (final img in await _fetchImageUrls(structured.urls, config, logger)) {
+          for (final img in dedupe.filter(
+              await _fetchImageUrls(structured.urls, config, logger))) {
             yield LLMResponseChunk(imagePart: img);
           }
         }
@@ -870,7 +972,8 @@ class OpenAIChatProtocol implements ChatProtocol {
       }
 
       if (accumulatedText.isNotEmpty) {
-        final result = await _processTextAndExtractImages(accumulatedText, config);
+        final result = await _processTextAndExtractImages(accumulatedText, config,
+            imageReply: target.model.capabilities.isImageGenerator);
         // If the text was mostly images, don't yield the messy leftover text
         if (result.text.length < accumulatedText.length * 0.1 || _isBase64Heuristic(result.text)) {
           // Skip yielding textPart
@@ -879,7 +982,7 @@ class OpenAIChatProtocol implements ChatProtocol {
           yield LLMResponseChunk(textPart: result.text);
         }
 
-        for (var img in result.images) {
+        for (var img in dedupe.filter(result.images)) {
           yield LLMResponseChunk(imagePart: img);
         }
       }
@@ -955,12 +1058,35 @@ class OpenAIChatProtocol implements ChatProtocol {
     return text.length > 200 && !text.contains(' ') && RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(text.substring(0, 100));
   }
 
-  Future<_TextProcessResult> _processTextAndExtractImages(String text, LLMModelConfig config) async {
+  Future<_TextProcessResult> _processTextAndExtractImages(
+    String text,
+    LLMModelConfig config, {
+    required bool imageReply,
+  }) async {
     final List<Uint8List> images = [];
     String cleanText = text;
     final client = config.createClient();
 
     try {
+      // 0. The whole reply *is* the image: bare base64, or (for an image
+      //    model) a bare link. Both are relay shapes with no markdown and no
+      //    `data:` prefix, which the two scans below cannot see.
+      final whole = wholeContentImage(text, imageReply: imageReply);
+      if (whole != null) {
+        if (whole.bytes != null) {
+          images.add(whole.bytes!);
+        } else if (whole.url != null) {
+          try {
+            final response = await client.get(Uri.parse(whole.url!));
+            if (response.statusCode == 200 &&
+                imageMimeFromBytes(response.bodyBytes) != null) {
+              images.add(response.bodyBytes);
+            }
+          } catch (e) { /* ignore */ }
+        }
+        if (images.isNotEmpty) return _TextProcessResult('', images);
+      }
+
       // 1. Extract and remove Inline Base64
       final base64Regex = RegExp(r'data:image/[^;]+;base64,([a-zA-Z0-9+/=]+)');
       final b64Matches = base64Regex.allMatches(text);
@@ -1030,7 +1156,18 @@ class OpenAIChatProtocol implements ChatProtocol {
       dynamic content;
 
       if (msg.attachments.isEmpty) {
-        content = msg.content;
+        // An image model on the chat route always gets a part array, even
+        // for text alone. A relay translating this chat call into an images
+        // request has 400ed the string form (`images[0] must be an http/https
+        // URL or image data URI`) while accepting a one-element array with
+        // the same text — and there is no other way around it. Chat models
+        // keep the string: it is the shape every host accepts.
+        content = (msg.role == LLMRole.user &&
+                target.model.capabilities.isImageGenerator)
+            ? [
+                {"type": "text", "text": msg.content}
+              ]
+            : msg.content;
       } else {
         final parts = <Map<String, dynamic>>[];
         if (msg.content.isNotEmpty) {
