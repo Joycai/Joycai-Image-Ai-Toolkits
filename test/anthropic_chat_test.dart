@@ -942,6 +942,20 @@ void main() {
           isFalse);
     });
 
+    test('keep-alives alone are not a message', () {
+      // An HTML page behind a 200, or a stream of nothing but pings, used to
+      // end as a successful empty reply while the synchronous path threw
+      // "returned no content" for the same body.
+      final pings = AnthropicStreamAssembler();
+      pings.accept({'type': 'ping'}).toList();
+      expect(pings.sawMessage, isFalse);
+      expect(pings.finish(), isNull);
+
+      final started = AnthropicStreamAssembler();
+      started.accept({'type': 'message_start', 'message': {'usage': {'input_tokens': 1}}}).toList();
+      expect(started.sawMessage, isTrue);
+    });
+
     test('a stream without a server tool carries no content array', () {
       final assembler = AnthropicStreamAssembler();
       for (final e in <Map<String, dynamic>>[

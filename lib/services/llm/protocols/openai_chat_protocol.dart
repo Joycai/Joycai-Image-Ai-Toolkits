@@ -846,6 +846,11 @@ class OpenAIChatProtocol implements ChatProtocol {
     final streamedToolCalls = StreamingToolCallAccumulator();
     // One copy of each picture, whichever field(s) it arrives in.
     final dedupe = ImageDeduper();
+    // Whether a single protocol-shaped chunk arrived. A 200 whose body is an
+    // HTML page, or a stream of nothing but keep-alives and `[DONE]`, decodes
+    // to no chunk at all and used to end as a successful empty reply — the
+    // synchronous path throws "returned no choices" for the same body.
+    var sawChunk = false;
 
     try {
       await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
@@ -863,6 +868,7 @@ class OpenAIChatProtocol implements ChatProtocol {
           continue; // Non-JSON SSE noise.
         }
         if (chunkData == null) continue;
+        sawChunk = true;
 
         // Deliberately outside the shape-tolerant try below: an in-body error
         // event must terminate the stream as a failure, not be swallowed as
@@ -992,6 +998,14 @@ class OpenAIChatProtocol implements ChatProtocol {
       // In the finally so a stream that failed mid-flight still records how
       // long it ran before it did.
       await LLMDebugLogger.finish(debugFile);
+    }
+
+    if (!sawChunk) {
+      throw LLMApiException(
+          'OpenAI API stream ended without a single chunk — the base URL may '
+          'point at something that is not this API, or the relay answered '
+          'with an empty stream.',
+          isNonJsonBody: true);
     }
 
     // After the loop, never inside it: a call is whole only once the last

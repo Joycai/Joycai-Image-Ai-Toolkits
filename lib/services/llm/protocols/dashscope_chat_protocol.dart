@@ -229,6 +229,9 @@ class DashScopeChatProtocol implements ChatProtocol {
     final streamedToolCalls = StreamingToolCallAccumulator();
     Map<String, dynamic>? usageMetadata;
     String? finishReason;
+    // Same rule as ①: a stream that decodes to no frame at all (an HTML page
+    // behind a 200, keep-alives only) is a failed request, not an empty one.
+    var sawFrame = false;
 
     try {
       await for (final line in response.stream
@@ -253,6 +256,7 @@ class DashScopeChatProtocol implements ChatProtocol {
           continue; // Non-JSON SSE noise.
         }
         if (frame == null) continue;
+        sawFrame = true;
 
         // Outside the tolerant parsing below: an error frame must end the
         // stream as a failure, not be swallowed as a malformed one.
@@ -301,6 +305,14 @@ class DashScopeChatProtocol implements ChatProtocol {
     } finally {
       client.close();
       await LLMDebugLogger.finish(debugFile);
+    }
+
+    if (!sawFrame) {
+      throw LLMApiException(
+          'DashScope Chat API stream ended without a single frame — the base '
+          'URL may point at something that is not this API, or the relay '
+          'answered with an empty stream.',
+          isNonJsonBody: true);
     }
 
     // Outside the `finally`: a stream that died mid-arguments must fail

@@ -825,6 +825,13 @@ class AnthropicStreamAssembler {
   bool _hasServerTool = false;
   String? _lastVisibleType;
 
+  /// Whether any event of substance arrived — a `message_start`, a block, a
+  /// `message_delta`. `ping` alone does not count. A stream that ends with
+  /// this false delivered nothing and is reported as a failure, the way the
+  /// synchronous path reports a body with no `content`.
+  bool get sawMessage => _sawMessage;
+  bool _sawMessage = false;
+
   static int _indexOf(Map<String, dynamic> event) {
     final raw = event['index'];
     return raw is num ? raw.toInt() : -1;
@@ -836,6 +843,7 @@ class AnthropicStreamAssembler {
   /// version bump, and an unrecognized one must not cost the blocks around
   /// it.
   Iterable<LLMResponseChunk> accept(Map<String, dynamic> event) sync* {
+    if (event['type'] != 'ping') _sawMessage = true;
     switch (event['type']) {
       case 'message_start':
         final message = event['message'];
@@ -1407,6 +1415,14 @@ class AnthropicChatProtocol implements ChatProtocol {
       // In the finally so a stream that failed mid-flight still records how
       // long it ran before it did.
       await LLMDebugLogger.finish(debugFile);
+    }
+
+    if (!assembler.sawMessage) {
+      throw LLMApiException(
+          'Anthropic API stream ended without a message — the base URL may '
+          'point at something that is not this API, or the relay answered '
+          'with an empty stream.',
+          isNonJsonBody: true);
     }
 
     final closing = assembler.finish();

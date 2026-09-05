@@ -4,6 +4,7 @@
 **依据**：另一项目（simple-ai-writer）2026-09-05 导出的《LLM 端点对接与测试全书》——九台真实端点（New API / MiniMax / DashScope / OrcaRouter）的实测记录——逐条对到本仓 `lib/services/llm/`。
 **方法**：只读代码、只读文档，**没有打过任何真实 API**。凡标「需实测」的条目，结论要等一次真实请求；其余条目是两份文档一致、代码与之相悖的确定项。
 **排序依据**：借用那份文档的第一条经验——先问「失败会不会响」。会 400 的可以晚修；不报错、只多收钱或只少功能的必须先修。
+**进度（2026-09-05）**：十二片的 L1 全部落地，分支 `fix/llm-endpoint-audit`，一片一个 commit。仍开着的只有需要真实 key 的两条代码问题（#2 wan2.7 body 形状、#9 wan2.7 `prompt_extend`）与第 3 节的 L2 实机清单。
 
 ---
 
@@ -173,10 +174,10 @@
 #### 片 11 · 探测把 402 单独报失败（#16）— ✅ 2026-09-05
 `probe` 与 `_completionProbe` 对 `statusCode == 402` 都返回 `unreachable` 并原样转出 `error.message`；没有新增枚举值——`ChannelProbeStatus` 在编辑器与向导里各有一个穷尽 switch 加四语文案，为一个状态加两处 UI 不值。判定放在「协议形状的拒绝＝连通」之前，402 恰好满足那条规则。L1 两条（`/models` 与补全探测两条路）。
 
-#### 片 12 · 三条小修（#17 #18 #19 的剩余部分）
-- `parseGoogleChunks`：`part['thought'] == true` 的 text 走 `reasoningPart`，不进 `textPart`。
-- ① 与 ④ 的流式路径：整条流没有产出任何 chunk（无文本、无图、无工具调用、无 usage）时抛 `LLMApiException`，与同步路径「no choices」对齐；DashScope C2 同理。
-- `#19` 若片 5 已含则跳过。
+#### 片 12 · 三条小修（#17 #18 #19 的剩余部分）— ✅ 2026-09-05
+- ✅ `parseGoogleChunks`：`part['thought'] == true` 的 text 走 `reasoningPart`，不进 `textPart`（随片 10 一起落，同步路径也收集 `reasoningContent`）。
+- ✅ ① / ④ / C2 的流式路径：整条流**没有解码出任何一个协议形状的帧**（HTML-200、只有 keep-alive 与 `[DONE]`、④ 只有 `ping`）时抛 `LLMApiException(isNonJsonBody: true)`，与同步路径「no choices / no content」对齐。判据是「有没有帧」而不是「有没有内容」：一条只回 usage 的合法流仍然是成功。④ 由 `AnthropicStreamAssembler.sawMessage` 判（`ping` 不算），L1 一条；①/C2 的判定在传输循环里，无 HTTP mock，未单测。
+- ✅ #19 已在片 5 落地。
 
 ---
 
