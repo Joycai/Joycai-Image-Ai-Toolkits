@@ -8,6 +8,7 @@ import '../../models/app_image.dart';
 import '../../services/file_permission_service.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/placeholders/permission_placeholder.dart';
+import '../../core/design_tokens.dart';
 import 'widgets/image_card.dart';
 import 'widgets/preview/media_preview_dialog.dart';
 
@@ -102,7 +103,7 @@ class _GalleryState extends State<Gallery> {
           _buildImageGrid(context, galleryState, grid),
           if (_isDragging)
             Container(
-              color: Theme.of(context).colorScheme.primary.withAlpha(40),       
+              color: Theme.of(context).colorScheme.accentTint,       
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -112,7 +113,7 @@ class _GalleryState extends State<Gallery> {
                     Text(
                       l10n.dropFilesHere,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.primary
+                        color: Theme.of(context).colorScheme.onAccentTint
                       ),
                     ),
                   ],

@@ -717,15 +717,14 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.06),
+                    color: colorScheme.accentTint,
                     borderRadius: BorderRadius.circular(AppRadius.control),
-                    border: Border.all(
-                        color: colorScheme.primary.withValues(alpha: 0.28)),
+                    border: Border.all(color: colorScheme.accentRing),
                   ),
                   child: Text(
                     l10n.protocolAsyncQueueNote,
                     style: textTheme.labelMedium
-                        ?.copyWith(color: colorScheme.primary),
+                        ?.copyWith(color: colorScheme.onAccentTint),
                   ),
                 ),
         ),
@@ -874,13 +873,13 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: AppAlpha.tint),
+                  color: colorScheme.accentTint,
                   borderRadius: BorderRadius.circular(AppRadius.xs),
                 ),
                 child: Text(
                   l10n.cardPreview,
                   style: textTheme.labelSmall?.mono
-                      .copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
+                      .copyWith(color: colorScheme.onAccentTint, fontWeight: FontWeight.w600),
                 ),
               ),
             ],

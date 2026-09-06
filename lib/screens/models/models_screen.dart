@@ -459,11 +459,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
     final row = Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Material(
-        color: isSelected ? colorScheme.primary.withValues(alpha: AppAlpha.tint) : Colors.transparent,
+        color: isSelected ? colorScheme.accentTint : Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
           side: isSelected
-              ? BorderSide(color: colorScheme.primary.withValues(alpha: AppAlpha.ring))
+              ? BorderSide(color: colorScheme.accentRing)
               : BorderSide.none,
         ),
         clipBehavior: Clip.antiAlias,
@@ -1059,8 +1059,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
                         if (model.enableWebSearch)
                           _specChip(
                             l10n.webSearchChip,
-                            bg: colorScheme.primary.withValues(alpha: 0.10),
-                            fg: colorScheme.primary,
+                            bg: colorScheme.accentTint,
+                            fg: colorScheme.onAccentTint,
                           ),
                         if (model.forceViewAllImages)
                           _specChip(l10n.viewAllImagesChip),
@@ -1131,8 +1131,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
     }
     return _specChip(
       storedProtocolLabel(l10n, pin),
-      bg: colorScheme.primary.withValues(alpha: 0.10),
-      fg: colorScheme.primary,
+      bg: colorScheme.accentTint,
+      fg: colorScheme.onAccentTint,
     );
   }
 

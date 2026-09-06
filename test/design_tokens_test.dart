@@ -428,6 +428,11 @@ void main() {
       // and this is the greppable rule that keeps it so. `app_theme.dart` is
       // exempt because it is where the scheme is built.
       final RegExp role = RegExp(r'\b(onPrimaryContainer|primaryContainer|inversePrimary)\b');
+      // The ladder spelled out by hand, which is the same bug one step
+      // quieter: `primary.withValues(alpha: AppAlpha.tint)` is accentTint
+      // with a second name, and a hand-picked 0.14 is a fourth wash.
+      final RegExp handRolledWash = RegExp(
+          r'primary\.(withValues\(alpha: (AppAlpha\.(tint|ring)|0\.1[0-9]|0\.28|0\.3[0-9])\)|withAlpha\((2[0-9]|3[0-9]|4[0-9]|8[0-9])\))');
       // A line comment starts at `//` after whitespace or at the line start;
       // a bare `split('//')` would also cut at the `//` in a URL literal and
       // hide whatever followed it.
@@ -436,17 +441,20 @@ void main() {
       for (final FileSystemEntity entity in Directory('lib').listSync(recursive: true)) {
         if (entity is! File || !entity.path.endsWith('.dart')) continue;
         final String path = entity.path.replaceAll(r'\', '/');
-        if (path.endsWith('lib/core/app_theme.dart')) continue;
+        // Exempt: where the scheme is built, and where the ladder is defined.
+        if (path.endsWith('lib/core/app_theme.dart') || path.endsWith('lib/core/design_tokens.dart')) continue;
         // Generated localisations: a fifth of lib/ by line, and no colour in it.
         if (path.contains('/lib/l10n/') || path.startsWith('lib/l10n/')) continue;
         final List<String> lines = entity.readAsLinesSync();
         for (int i = 0; i < lines.length; i++) {
           final String code = lines[i].replaceFirst(lineComment, '');
-          if (role.hasMatch(code)) offenders.add('${entity.path}:${i + 1}');
+          if (role.hasMatch(code) || handRolledWash.hasMatch(code)) {
+            offenders.add('${entity.path}:${i + 1}');
+          }
         }
       }
       expect(offenders, isEmpty,
-          reason: 'a container role reached the UI; use the AppAccent ladder');
+          reason: 'a container role or a hand-rolled wash reached the UI; use the AppAccent ladder');
     });
   });
 

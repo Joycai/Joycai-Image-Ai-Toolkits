@@ -404,7 +404,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     // begins; below it, only the highlighted row is drawn. Nesting already says
     // a child is a child — an outline on each one would say it twice.
     final colorScheme = theme.colorScheme;
-    final Color? boxColor = highlight ? colorScheme.primary.withValues(alpha: 0.14) : null;
+    final Color? boxColor = highlight ? colorScheme.accentTint : null;
     final Color borderColor = highlight
         ? colorScheme.primary.withValues(alpha: 0.6)
         : (widget.isRoot ? colorScheme.outlineVariant.withAlpha(120) : Colors.transparent);

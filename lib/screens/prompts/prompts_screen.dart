@@ -407,7 +407,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.14),
+              color: colorScheme.accentTint,
               borderRadius: BorderRadius.circular(9),
             ),
             child: Icon(Icons.auto_awesome, size: 18, color: colorScheme.primary),

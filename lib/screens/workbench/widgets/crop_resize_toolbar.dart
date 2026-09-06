@@ -839,7 +839,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: uiState.maintainAspectRatio
-                    ? colorScheme.primary.withValues(alpha: 0.14)
+                    ? colorScheme.accentTint
                     : Colors.transparent,
               ),
               child: Icon(

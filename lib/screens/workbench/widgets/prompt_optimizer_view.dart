@@ -1333,7 +1333,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
           color: enabled ? colorScheme.accentTint : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(AppRadius.control),
           border: enabled
-              ? Border.all(color: colorScheme.primary.withValues(alpha: AppAlpha.ring))
+              ? Border.all(color: colorScheme.accentRing)
               : Border.all(color: colorScheme.outlineVariant),
         ),
         child: Row(
@@ -1398,7 +1398,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             bottomRight: _tailRadius,
           ),
           border: Border.all(
-            color: colorScheme.primary.withValues(alpha: AppAlpha.ring),
+            color: colorScheme.accentRing,
           ),
         ),
         child: Column(
@@ -1549,7 +1549,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
       decoration: BoxDecoration(
         color: accent
-            ? colorScheme.primary.withValues(alpha: AppAlpha.tint)
+            ? colorScheme.accentTint
             : colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(5),
       ),

@@ -387,7 +387,7 @@ class _DownloaderLogPanel extends StatelessWidget {
                   width: 26,
                   height: 26,
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.14),
+                    color: colorScheme.accentTint,
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: Icon(Icons.terminal, size: 15, color: colorScheme.primary),

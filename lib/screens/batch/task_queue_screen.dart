@@ -569,7 +569,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: colorScheme.primary.withValues(alpha: 0.14),
+            color: colorScheme.accentTint,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(Icons.checklist_rounded, size: 22, color: colorScheme.primary),
@@ -1012,7 +1012,7 @@ class _CountChip extends StatelessWidget {
     final bool empty = count == 0;
 
     final (Color fill, Color ink) = selected
-        ? (colorScheme.primary.withValues(alpha: AppAlpha.ring), colorScheme.onAccentTint)
+        ? (colorScheme.accentRing, colorScheme.onAccentTint)
         : empty
             ? (colorScheme.surfaceContainerHigh, colorScheme.outline)
             : (colorScheme.surfaceContainerHighest, colorScheme.onSurface);
