@@ -4066,17 +4066,23 @@ abstract class AppLocalizations {
   /// **'Font download failed. Check your connection and try again.'**
   String get fontDownloadFailed;
 
-  /// No description provided for @preferHighPerformanceGpu.
+  /// No description provided for @renderingGpu.
   ///
   /// In en, this message translates to:
-  /// **'Prefer high-performance GPU'**
-  String get preferHighPerformanceGpu;
+  /// **'Rendering GPU'**
+  String get renderingGpu;
 
-  /// No description provided for @preferHighPerformanceGpuDesc.
+  /// No description provided for @renderingGpuUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Renders on the dedicated graphics card instead of the integrated GPU. Takes effect the next time the app starts.'**
-  String get preferHighPerformanceGpuDesc;
+  /// **'Could not be determined'**
+  String get renderingGpuUnavailable;
+
+  /// No description provided for @openGraphicsSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Windows graphics settings'**
+  String get openGraphicsSettings;
 
   /// No description provided for @reduceVisualEffects.
   ///
