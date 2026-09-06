@@ -46,14 +46,16 @@ class ThemeAccent {
   /// rest of the dark palette is grown from.
   final Color dark;
 
-  /// Where [fromSeed] puts the light accent's tone (HCT, so L\*).
+  /// The tone every light half sits at (HCT, so L\*).
   ///
   /// Chosen against white and the light canvas, not by taste: at 44 white
   /// text on the accent is ≥ 5.5:1 and the accent as text on the canvas
   /// (`#ECEFF8`) is ≥ 4.8:1. At 47 the canvas figure drops under AA; at 40
   /// — Material's own choice — both hold with more room, but every colour is
   /// four tones further from the one the user picked. 44 keeps the margin
-  /// and gives the tones back.
+  /// and gives the tones back. A *target*, not a ceiling: a seed already
+  /// darker than this (Material's indigo is tone 38) is lifted to it, so
+  /// the eight presets sit at one weight and read as a set.
   static const double derivedLightTone = 44;
 
   /// Where [fromSeed] puts the dark accent's tone (HCT, so L\*).
@@ -68,21 +70,30 @@ class ThemeAccent {
   static const double derivedDarkTone = 62;
 
   /// A pair from one seed: both halves keep the seed's hue and chroma; the
-  /// light one lowers its tone to at most [derivedLightTone], the dark one
-  /// lifts it to at least [derivedDarkTone].
+  /// light one is set to [derivedLightTone], the dark one is lifted to at
+  /// least [derivedDarkTone].
   ///
-  /// "At most" and "at least": a seed already on the legible side of a
-  /// threshold is kept where it is rather than pushed through it. Material's
-  /// orange is tone 72 and stays there in dark — the lift is for legibility
-  /// on a dark ground, which a lighter seed already has — and indigo is tone
-  /// 38 and stays there in light, for the same reason under white.
+  /// The two thresholds are different kinds of thing. Light is a target,
+  /// because the light half is bounded from both sides (white on it, it on
+  /// the canvas) and the presets all sit there. Dark is a floor: the lift is
+  /// for legibility on a dark ground, which a seed that is already lighter
+  /// (Material's orange, tone 72) has — pulling it *down* would only make it
+  /// duller. This is exactly the rule the presets in `AppConstants` follow,
+  /// so for a Material seed the light half here is the preset's.
   factory ThemeAccent.fromSeed(Color seed) {
     final Hct hct = Hct.fromInt(seed.toARGB32());
     return ThemeAccent(
-      light: hct.tone <= derivedLightTone ? seed : _atTone(hct, derivedLightTone),
+      light: _atTone(hct, derivedLightTone),
       dark: hct.tone >= derivedDarkTone ? seed : _atTone(hct, derivedDarkTone),
     );
   }
+
+  /// [light]'s hue and chroma at another [tone] — for roles that have to be
+  /// "the light accent, lighter/darker" rather than the palette's take on it.
+  Color lightTone(double tone) => _atTone(Hct.fromInt(light.toARGB32()), tone);
+
+  /// [dark]'s hue and chroma at another [tone]. See [lightTone].
+  Color darkTone(double tone) => _atTone(Hct.fromInt(dark.toARGB32()), tone);
 
   /// The half this brightness draws.
   Color forBrightness(Brightness brightness) =>
@@ -102,7 +113,7 @@ class ThemeAccent {
   /// mid-tone trap, where neither white nor black reads well and dark wins
   /// only narrowly. Material's own dark scheme makes the same call (tone 20
   /// on tone 80); this is that idiom moved down the ladder with the accent.
-  Color get onDark => _atTone(Hct.fromInt(dark.toARGB32()), 10);
+  Color get onDark => darkTone(10);
 
   /// Text drawn on a 12% wash of [dark] — a selected tab's label, a running
   /// badge, a section caption. See `AppAccent.onAccentTint`.
@@ -113,7 +124,7 @@ class ThemeAccent {
   /// the calmer accent the user picked and the wash it sits on. Same hue,
   /// same chroma, eighteen tones lighter: the label reads as the accent
   /// speaking, not as a different colour.
-  Color get darkOnTint => _atTone(Hct.fromInt(dark.toARGB32()), 80);
+  Color get darkOnTint => darkTone(80);
 
   /// Text drawn on a 12% wash of [light] — the light-mode counterpart of
   /// [darkOnTint]. See `AppAccent.onAccentTint`.
@@ -123,7 +134,7 @@ class ThemeAccent {
   /// next to a light half that is not (blue-grey is chroma 20) it is a
   /// different colour, not a darker one. Fourteen tones below the accent,
   /// like the spec's 主色深 (`#3355C4` ≈ 40 under `#4A72E8` ≈ 51).
-  Color get lightOnTint => _atTone(Hct.fromInt(light.toARGB32()), 30);
+  Color get lightOnTint => lightTone(30);
 
   static Color _atTone(Hct hct, double tone) =>
       Color(Hct.from(hct.hue, hct.chroma, tone).toInt());

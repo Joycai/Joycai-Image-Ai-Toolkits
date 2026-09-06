@@ -1,6 +1,6 @@
 # 设计令牌与多主题色适配规则
 
-《Joycai 设计规范》(`Joycai 设计规范.dc.html`) 用 blue `#4A72E8` **一种**主色画完了全部示例。本应用支持 **8 套主题色**（`AppConstants.presetThemes`：Blue / BlueGrey / Indigo / Teal / Green / Orange / DeepPurple / Rose），每套是一对 `ThemeAccent(light:, dark:)`——两个都是对着各自的底手调的成品，原样画（§1「主题色是一对」）。默认值是 `#3560D5` / `#5B8DFF`：稿子的 `#4A72E8` 压到白字压得住的 tone，和稿子暗色帧自己的主色。
+《Joycai 设计规范》(`Joycai 设计规范.dc.html`) 用 blue `#4A72E8` **一种**主色画完了全部示例。本应用支持 **8 套主题色**（`AppConstants.presetThemes`：Blue / BlueGrey / Indigo / Teal / Green / Orange / DeepPurple / Rose），每套是一对 `ThemeAccent(light:, dark:)`——两个都是对着各自的底手调的成品，原样画（§1「主题色是一对」）。默认值 Blue 是稿子的 `#4A72E8` 压到白字压得住的 tone，配稿子暗色帧自己的主色 `#5B8DFF`。
 
 所以设计稿里的每一个**主色**十六进制值都**不能照抄**。这份文档记录的是把它们翻译成「主题角色 + 透明度」的规则——换种子色时结构不变、色相自动跟随。灰阶是例外，见 §0。
 
@@ -99,24 +99,26 @@
 
 **主 CTA 两边都穿 `primary`。** 配对之前主按钮在暗色下也从一支单独的亮色方案取填充（`buttonFillScheme`，已删），因为 Material 的暗色 `primary` 是 tone 80 粉彩，当填充是一块淡紫色板。暗色半现在本身就是为填充调的（tone ~62 压 tone 10 墨），设计稿 `D1a` 也明说「里面的按钮……都用该模式实际会画出的那个色号」。配对合入后有一段时间 CTA 仍取亮色半，结果是暗色下唯一一个还穿亮色的控件，而且设置页预览卡的暗色半画的按钮是 app 从没画过的。`theme_accent_picker_test`「the preview matches the theme」逐预设把卡片上画的按钮色钉到真实 `filledButtonTheme` 上。危险按钮的 `errorFillScheme` 不动：错误色没有配对，暗色下仍是亮色红实底。
 
-各预设两个值都是从 `ThemeAccent.fromSeed`（同色相同彩度、亮色 tone 压到 44、暗色提到 62）起步再手调的，起点是预设名字对应的那支 Material 种子（`AppConstants.legacySeedPresets` 里的值）。调法与门槛：
+各预设都从 `ThemeAccent.fromSeed` 起步：同色相同彩度，亮色**落到** tone 44（目标，不是上限——靛蓝 tone 38 也提上来，八个预设一个分量），暗色**提到**至少 62（下限，橙 tone 72 留在原处）。亮色半就是 `fromSeed` 的结果（`design_tokens_test` 逐预设钉着相等），暗色半再手调。起点是预设名字对应的那支 Material 种子（测试里的 `seedOf`）。调法与门槛：
 
-| 预设 | 种子（旧值） | light（成品） | dark（成品） | 说明 |
-|---|---|---|---|---|
-| Blue | `#4A72E8` | `#3560D5` | `#5B8DFF` | 亮色是稿子 `#4A72E8` 的色相彩度落到 tone 44，白字能压住的最近一格；暗色是稿子 `10b` 的原值，tone 60 |
-| BlueGrey | `Colors.blueGrey` | `#4F6C7A` | `#6F9DB5` | 种子彩度只有 20，vibrant 曾把亮色拉到 `#006783`；亮色留着板岩，暗色略高（彩度 ~28）在暗底上才立得住又不变成蓝 |
-| Indigo | `Colors.indigo` | `#4E5FC4` | `#7A8DFF` | vibrant 的 tone 40 是 `#1242FF`；亮色是靛蓝自己的彩度 55 |
-| Teal | `Colors.teal` | `#00756A` | `#1FA89A` | |
-| Green | `Colors.green` | `#047921` | `#4FB252` | 暗色提到 65 不是 62：绿的彩度峰值更靠上，62 发泥 |
-| Orange | `Colors.orange` | `#985900` | `#F59A1A` | 亮色没有既是橙又压得住白字的 tone——AA 以内全是琥珀棕，`#985900` 是天花板；这个预设真正是橙色的是暗色半。种子本来就是 tone 72，暗色留在原处只暖了一点 |
-| DeepPurple | `Colors.deepPurple` | `#7A4ECB` | `#A97DFF` | vibrant 的 tone 40 是 `#7801FF`，一支荧光紫 |
-| Rose | `Colors.pink` | `#CF0053` | `#FF5B83` | |
+色值只在 `AppConstants.presetThemes` 一处（这里不重抄，抄了没人校验）。每个预设离起点走了多远、为什么：
+
+| 预设 | 种子（旧值，`legacySeedPresets`） | 说明 |
+|---|---|---|
+| Blue | `#4A72E8` | 亮色是稿子这支蓝的色相彩度落到 tone 44，白字能压住的最近一格；暗色是稿子 `10b` 的原值，tone 60 |
+| BlueGrey | `Colors.blueGrey` | 种子彩度只有 20，vibrant 曾把亮色拉到饱和的 `#006783`；亮色留着板岩，暗色略高（彩度 ~28）在暗底上才立得住又不变成蓝 |
+| Indigo | `Colors.indigo` | vibrant 的 tone 40 是 `#1242FF`（电光蓝）；亮色是靛蓝自己的彩度 55 |
+| Teal | `Colors.teal` | |
+| Green | `Colors.green` | 暗色提到 65 不是 62：绿的彩度峰值更靠上，62 发泥 |
+| Orange | `Colors.orange` | 亮色没有既是橙又压得住白字的 tone——AA 以内全是琥珀棕，取了天花板；这个预设真正是橙色的是暗色半。种子本来就是 tone 72，暗色留在原处只暖了一点 |
+| DeepPurple | `Colors.deepPurple` | vibrant 的 tone 40 是 `#7801FF`，一支荧光紫 |
+| Rose | `Colors.pink` | |
 
 **门槛（`design_tokens_test` 逐预设量）**。暗色：主色作为文字压在 `surface` 到 `surfaceContainerHigh` 的每一档上 ≥ 4.5:1（下界是卡片面 `#212B3F`，tone 62 时 4.7）；`onPrimary` 压在它上面 ≥ 4.5:1；比 `fromSeed` 的 tone 80 暗。tone 58 两条都贴地板，70 又回到粉彩——62 是这张暗色表上的落点。亮色：白字压在主色上 ≥ 4.5:1；主色作为文字压在 `surfaceContainerLowest`（白）到 `surfaceDim` 的每一档上 ≥ 4.5:1（画布 `#ECEFF8` 是下界，tone 44 时 4.8，47 就掉到 4.4）；色相与旧种子差 < 4°、彩度不高于旧种子（防调色板的最大彩度 tone 40 悄悄回来）。两边：色相差 < 30°（防打错十六进制）。
 
-**存的是键不是色值**：`AppState.themeAccent` 持久化到 `theme_accent`，值是预设名。这样以后重调某个预设，选过它的用户会跟着变。旧的 `theme_seed_color`（一个 ARGB int）加载时仍会读，经 `AppConstants.legacySeedPresets` 映射到预设——那张表存的是配对之前的 Material 种子，亮色半已经不等于它们了；对不上的（手改过库）回到默认 Blue，不猜配对。
+**存的是键不是色值**：`AppState.themeAccent` 持久化到 `theme_accent`，值是预设名。这样以后重调某个预设，选过它的用户会跟着变。旧的 `theme_seed_color`（一个 ARGB int，配对之前的 Material 种子）由 v40 数据库迁移一次性改写成预设键，然后删行；已有 `theme_accent` 的以它为准；对不上的（手改过库）直接删、落到默认 Blue，不猜配对。那张种子→预设的表只活在 `database_migrations.dart` 里，app 代码不读它。
 
-**调色板推导出的其余强调角色，核对过，结论是不上界面。** `primaryContainer` / `onPrimaryContainer` 是 vibrant 调色板 tone 90 / 30 的**最大彩度**：Teal 亮色的 `primaryContainer` 是 `#00FDE7`，Green 是 `#70FF77`，暗色下 `onPrimaryContainer` 是同样的荧光色当文字——放在自己彩度的 `primary` 旁边不是同一个颜色。它们曾被语言卡 / 字体卡的选中态、两处手机提示、标题栏 logo 渐变和几处选中行拿来当「淡一点的主色底」，现在一律换成 §1 的阶梯（`accentTint` / `onAccentTint` / `accentRing`），logo 渐变从 `primary` 扫到 `onAccentTint`。`design_tokens_test`「the container roles stay out of the UI」扫 `lib/` 源码钉住这一条。同一轮把手机底栏 `NavigationBar` 也接到了阶梯上（`navigationBarTheme`：指示器 `accentTint`、选中图标和标签 `onAccentTint`）——Material 默认的指示器是 `secondaryContainer`，色相偏转过的低彩度 tone 90，一块带点色的灰，是全应用唯一不在阶梯上的选中态；桌面导航栏 `_RailItem` 本来就是这一对。`secondary` / `tertiary`（彩度 24 / 32、色相偏 15° / 35°）只剩三处图标和一行路径文字在用，是低彩度的陪衬色，看过 16 张画廊图没有问题，留着；`inversePrimary` 没有调用点。
+**调色板推导出的其余强调角色，两层处理。** `primaryContainer` / `onPrimaryContainer` / `primaryFixedDim` 在 vibrant 调色板里是最大彩度：Teal 亮色的 `primaryContainer` 是 `#00FDE7`，Green 是 `#70FF77`，BlueGrey 的亮色 `primaryFixedDim`（toast 动作标签，`accentOnOverlay`）是青色 `#67D3FF`——放在自己彩度的 `primary` 旁边不是同一个颜色。第一层在方案里：`buildAppColorScheme` 把这几个角色改写成 accent **自己彩度**的对应 tone（亮 90/30/80，暗 30/90/80），Material 自己读它们的地方（FAB、日期选择器）就不会再拿到荧光色。第二层在代码里：app 自己的代码不读容器角色——语言卡 / 字体卡的选中态、两处手机提示、标题栏 logo 渐变和几处选中行原来拿它当「淡一点的主色底」，一律换成 §1 的阶梯（`accentTint` / `onAccentTint` / `accentRing`）；`design_tokens_test`「the container roles stay out of the UI」扫 `lib/` 源码钉住。logo 渐变从 `primary` 扫到 `onAccentTint`，图标用 `onPrimary`（暗色下渐变往亮走，白字压不住）。FAB 显式走 `primary` / `onPrimary`——它是 CTA。导航的选中态三处（桌面 `_RailItem`、抽屉、手机 `NavigationBar`）都读 `AppAccent.navBackground` / `navForeground` 这一对；Material 默认的底栏指示器是 `secondaryContainer`，色相偏转过的低彩度 tone 90，一块带点色的灰。`secondary` / `tertiary`（彩度 24 / 32、色相偏 15° / 35°）只剩三处图标和一行路径文字在用，是低彩度的陪衬色，看过 16 张画廊图没有问题，留着；`inversePrimary` 没有调用点。
 
 设置页的选择器是 `ThemeAccentPicker`（`widgets/theme_accent_picker.dart`，设计稿 `D1a 20a–20e`），按宽度取两种形态：桌面 / 平板用**预览卡** `ThemeAccentPreviewCard`（148×96 一分为二，左半亮色面板右半暗色面板，各画一颗实心钮、一个开关、一行选中态，用的是该模式**实际**的 `primary` / `onPrimary` / `accentTint` / `onAccentTint`——不随当前模式变，只有外壳跟主题走）；手机用**双色圆点** `DualToneSwatch`（对角线分两半，左上亮右下暗，四态画在 36px 圆点之外，长按 tooltip 给两个色号）。两者画的都是**渲染出来的** `primary`，从方案里读而不是从配对的存值读——今天两者相同（两半都原样画），但走方案这条路，色块永远不会承诺一个按钮不会穿的颜色（亮色半曾是方案取 tone 40 的种子）。圆点的选中环用描边而不是稿子的实心叠层：桌面上它坐在卡片上、手机上直接坐在画布上，涂死的「面板色」缝隙在其中一处必然是错的。
 
@@ -164,7 +166,7 @@ Color get onAccentTint =>
 
 > ⚠️ **`tint` 不要超过 0.14。** 暗色下这层底上放的是 `onAccentTint`：0.12 约 4.9:1，0.14 约 4.6:1，到 0.18 就跌破 4.5:1 不合规。**亮色下余量极大（约 8:1）不会报警**——事故只在暗色发生，而「让选中态更明显一点」正是最容易踩的一脚。
 
-固定的 alpha 在明暗两边都成立，正是因为底色取 `primary`，而它的 tone 随明暗在 40↔80 翻转。**永远用 `primary` 打底，不要用某个固定角色。**
+固定的 alpha 在明暗两边都成立，正是因为底色取 `primary`，而它是配对里为该明暗调好的那一半（亮 tone ~44、暗 tone ~62）。**永远用 `primary` 打底，不要用某个固定角色。**
 
 ## 3 · 不跟随种子色的颜色
 
@@ -186,7 +188,7 @@ Color get onAccentTint =>
 | 分段控件选中态 | 浮起白片 | 主色 12% 底 + 描边（`tinted`） | `AppSegmentStyle` 区分了「选设置」用 `tinted`、「选视图」用 `raised`，比「一律浮起」更细。`raised` 仍可选 |
 | 工作台「添加文件夹」 | `10c` tonal（主色 9% 底 + 主色 28% 描边）；`16a` 中性描边 + **主色标签** | `AppButton.secondary` + `accentLabel: true` | 两稿说的是同一件事的两种画法，`16a` 较新（它的开场白就写着「`10c` 之后源码已经走远了，这一稿按仓库现状重画」）。**底和描边保持中性**——`7a` 第 6 条要的是降权，让整屏只剩一个实心主题色按钮，tonal 会把主色花在用户不该点的那个动作上，这正是 `secondary` 当初从 tonal 改成描边的原因。但**标签是主色**：`secondary` 把前景硬绑在 `onSurface` 上，于是这颗按钮成了工作台上唯一一个换主题时不动的控件。`accentLabel` 只在这一处开——app 里另外二十来颗描边按钮都挨着一颗实心主按钮，那里给标签上主色是描边按钮在抢它没有的权重 |
 | 图库卡尺寸角标 | 半透明 + 毛玻璃 | 纯色深底，无模糊 | 每张读完元数据的卡都有一个，一屏缩略图就是几十次 `saveLayer`+blur，光栅线程跑不完一帧。这个尺寸上只靠不透明度分离得一样干净 |
-| 主 CTA | 主色渐变 | 纯色实底 + 同色投影 | `ButtonStyle` 表达不了渐变；套 `Ink(gradient:)` 会丢 Material 状态层与波纹。现有 `elevation:2 + shadowColor: fill.primary` 已复现设计稿彩色投影的意图 |
+| 主 CTA | 主色渐变 | 纯色实底 + 同色投影 | `ButtonStyle` 表达不了渐变；套 `Ink(gradient:)` 会丢 Material 状态层与波纹。现有 `elevation:2 + shadowColor: colorScheme.primary` 已复现设计稿彩色投影的意图 |
 | 面板表面 | 半透明白 `rgba(255,255,255,.55)` 浮在画布上 | 不透明的 `#F5F7FD`（即该半透明层压在画布上的合成值） | 半透明表面在滚动内容上要每帧重新合成，而这些面板下面就是图库网格。像素一致，代价不一致 |
 | 开关尺寸 | 36×20 | ~~Material 默认 52×32~~ —— 已对齐，`AppSwitch` | `SwitchThemeData` 确实够不到轨道/滑块几何（那些是 `RenderToggleable` 里的常量），所以「另一件事」就是 `widgets/app_switch.dart`：把 Material 的开关整体缩放到设计稿的宽度，颜色仍走主题、状态仍是 Material 自己的。按宽对齐得 36×22 而不是 36×20——Material 的长宽比是 52:32，稿子的是 36:20，等比缩放只能对上一边。app 里三处裸 `Switch` 全部改用它；`SwitchListTile` 里那颗嵌死的开关够不到，等 `D1` / `D3` 重排那两屏时一并处理 |
 | 计数徽标 | 实底红 | 主题色实底 | 本应用里红色已经表示「任务失败」，而这个数字统计的是**进行中**的工作。染红会让健康的忙碌队列看起来像坏了 |
@@ -206,7 +208,7 @@ Color get onAccentTint =>
 | 提示词助手 · 上下文占用配色 | 深蓝 `#3355c4` / 钢蓝 `#3f8fbf` / 琥珀 `#d9963a` / 浅灰 `#dde2f0` | 同稿（`core/context_usage_palette.dart`） | ~~加到第四段时再拆~~ —— 已拆。第四段出现了，而且改版把默认种子色换成蓝之后，`primary` 和 `semantic.info` 变成了同一种蓝，柱子最前面两段（也是最常被并排比较的两段）撞色。稿子的解法值得照抄：工具那段用**钢**蓝，和强调色离得够远 |
 | 通知底色 | `12i` 四种状态共用深墨底 `#171c3b`，状态只由图标携带 | 同稿（`AppOverlay.ink`） | 原来是四块语义**容器**色：淡绿一块、淡琥珀一块、淡红一块。四块颜色不同的板子浮在页面上读起来像四个互不相干的组件，一个底四种图标才读得出「同一个东西的四种状态」。也正好把 toast 和 tooltip 说成同一类东西——都是**盖在**应用上的标签而不是应用里的一层表面，于是两者共用一个墨色 |
 | 通知的图标色 | 明暗都用同一组亮色 | `AppSemanticColors.dark` 的三种，外加 `AppOverlay.danger` | 底不随明暗翻，字和图标当然也不能翻。绿/蓝/琥珀三色稿子画的**正好**就是 dark 那组的值；红是语义表里唯一没有的一格——别处的红一律来自 `ColorScheme.error`，而它在亮色下是 tone 40，放这个底上几乎看不见 |
-| 通知的动作标签 | `#9db4ff` | `primaryFixedDim`（`accentOnOverlay`） | 稿子那个是定死的蓝，但这颗标签应该是**用户自己的**强调色。`Fixed` 系列按定义不随明暗移动，而这一个是 tone 80——正好是固定深底需要的，也是唯一一个「底不动它也不动」的强调色角色 |
+| 通知的动作标签 | `#9db4ff` | `primaryFixedDim`（`accentOnOverlay`） | 稿子那个是定死的蓝，但这颗标签应该是**用户自己的**强调色。tone 80 正好是固定深底需要的；`buildAppColorScheme` 在明暗两边都把它改写成 accent 自己彩度的 tone 80（亮取亮色半的、暗取暗色半的），所以底不动、它只随配对轻微移动 |
 | 对话框页脚 | `12i` 底色 `#fafbff` + 上边框 | 同稿（`surfaceContainerLow`，仅在有分隔线时） | 没有分隔线时不上色:一个没有边的颜色变化读起来像渲染接缝，不像页脚 |
 | 弹窗图标底板（续） | `12i` 又给了第三个值:36px 圆角 11 | 仍是 44 / 12 | §4 上面那条已经记过 `10a` 与 `10j/10k` 不一致;`E1` 是同一张表的第三个值。同一个 `AppDialog` 外壳不能因为出现在哪一章就换尺寸 |
 | 媒体预览底部 | `12h` 画的是缩放胶囊（缩小 / 100% / 放大 / 适应 / 下载） | 仍是缩略图条 | 未做,而且不确定该做。稿子没画缩略图条,但也没说要去掉它——一条能直接跳到第 27 张的胶片,和一个 photo_view 本来就支持捏合缩放的百分比读数,哪个更值,得先问 |

@@ -254,6 +254,58 @@ void main() {
     expect(again.createdAt, DateTime(2026, 9, 1, 10));
   });
 
+  group('v40 rewrites the pre-pair theme seed to a preset key', () {
+    Future<Database> settingsDb() async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      addTearDown(db.close);
+      await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)');
+      return db;
+    }
+
+    Future<Map<String, String>> settingsOf(Database db) async => {
+          for (final row in await db.query('settings')) row['key'] as String: row['value'] as String,
+        };
+
+    test('a recognised seed becomes its preset, and the old row goes', () async {
+      final db = await settingsDb();
+      // Colors.blueGrey, as the pre-pair picker stored it: an ARGB int.
+      await db.insert('settings', {'key': 'theme_seed_color', 'value': '${0xFF607D8B}'});
+
+      await DatabaseMigration.migrate(db, 39, 40);
+
+      expect(await settingsOf(db), {'theme_accent': 'BlueGrey'});
+    });
+
+    test('an accent the user already re-picked wins over the seed', () async {
+      final db = await settingsDb();
+      await db.insert('settings', {'key': 'theme_seed_color', 'value': '${0xFF607D8B}'});
+      await db.insert('settings', {'key': 'theme_accent', 'value': 'Rose'});
+
+      await DatabaseMigration.migrate(db, 39, 40);
+
+      expect(await settingsOf(db), {'theme_accent': 'Rose'});
+    });
+
+    test('an unrecognised seed is dropped, not guessed at', () async {
+      final db = await settingsDb();
+      await db.insert('settings', {'key': 'theme_seed_color', 'value': '${0xFF123456}'});
+
+      await DatabaseMigration.migrate(db, 39, 40);
+
+      expect(await settingsOf(db), isEmpty);
+    });
+
+    test('nothing to migrate is not an error, and the step is idempotent', () async {
+      final db = await settingsDb();
+      await DatabaseMigration.migrate(db, 39, 40);
+      await db.insert('settings', {'key': 'theme_seed_color', 'value': '${0xFF4A72E8}'});
+      await DatabaseMigration.migrate(db, 39, 40);
+      await DatabaseMigration.migrate(db, 39, 40);
+
+      expect(await settingsOf(db), {'theme_accent': 'Blue'});
+    });
+  });
+
   test('a fresh database is created with tasks.created_at', () async {
     final db = await factory.openDatabase(inMemoryDatabasePath);
     addTearDown(db.close);

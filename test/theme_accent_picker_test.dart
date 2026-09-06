@@ -141,8 +141,11 @@ void _previewMatchesTheThemeTests() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
+      final Map<Brightness, ThemeData> themes = {
+        for (final b in Brightness.values) b: buildAppTheme(accent: preset.value, brightness: b),
+      };
       await tester.pumpWidget(MaterialApp(
-        theme: buildAppTheme(accent: preset.value, brightness: Brightness.dark),
+        theme: themes[Brightness.dark],
         home: Scaffold(
           body: Center(
             child: ThemeAccentPreviewCard(
@@ -173,8 +176,7 @@ void _previewMatchesTheThemeTests() {
       }
 
       for (final brightness in Brightness.values) {
-        final ButtonStyle cta =
-            buildAppTheme(accent: preset.value, brightness: brightness).filledButtonTheme.style!;
+        final ButtonStyle cta = themes[brightness]!.filledButtonTheme.style!;
         final Color fill = cta.backgroundColor!.resolve({})!;
         final Color label = cta.foregroundColor!.resolve({})!;
         final Set<Color> painted = brightness == Brightness.light ? leftPainted : rightPainted;

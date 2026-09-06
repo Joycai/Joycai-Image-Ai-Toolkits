@@ -82,8 +82,10 @@ class AppConstants {
   /// Both halves of every entry are finished colours, drawn verbatim as
   /// `primary` in their brightness (see `ThemeAccent`). Each started from
   /// `ThemeAccent.fromSeed` on the Material seed the preset is named after —
-  /// same hue and chroma, tone lowered to 44 for light and lifted to 62 for
-  /// dark — and was then adjusted by eye on its own ramp. Every light value
+  /// same hue and chroma, tone set to 44 for light and lifted to at least 62
+  /// for dark. The light halves *are* that result (`design_tokens_test` pins
+  /// each to `fromSeed(seed).light`); the dark halves were then adjusted by
+  /// eye on the dark ramp. Every light value
   /// carries white at ≥ 5.5:1 and reads as text on the light canvas at
   /// ≥ 4.8:1; every dark value holds ≥ 4.5:1 as text on the dark card and
   /// carries its tone-10 ink at ≥ 5.4:1. `design_tokens_test` re-measures
@@ -121,21 +123,6 @@ class AppConstants {
     // deep purple's own chroma 63.
     'DeepPurple': ThemeAccent(light: Color(0xFF7A4ECB), dark: Color(0xFFA97DFF)),
     'Rose': ThemeAccent(light: Color(0xFFCF0053), dark: Color(0xFFFF5B83)),
-  };
-
-  /// The seeds the presets were before they became pairs, by the key each
-  /// now has. The pre-pair preference (`theme_seed_color`) stored one of
-  /// these as an ARGB int, and is still read on load; the light halves no
-  /// longer equal them, so the match has to go through this table.
-  static const Map<int, String> legacySeedPresets = {
-    0xFF4A72E8: 'Blue',
-    0xFF607D8B: 'BlueGrey', // Colors.blueGrey
-    0xFF3F51B5: 'Indigo', // Colors.indigo
-    0xFF009688: 'Teal', // Colors.teal
-    0xFF4CAF50: 'Green', // Colors.green
-    0xFFFF9800: 'Orange', // Colors.orange
-    0xFF673AB7: 'DeepPurple', // Colors.deepPurple
-    0xFFE91E63: 'Rose', // Colors.pink
   };
 
   // Font selection. [systemFontKey] is a sentinel meaning "use the platform

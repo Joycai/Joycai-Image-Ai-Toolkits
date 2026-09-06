@@ -64,6 +64,7 @@ class DatabaseMigration {
     if (oldVersion < 37) await _createV37Columns(db);
     if (oldVersion < 38) await _createV38Columns(db);
     if (oldVersion < 39) await _createV39Columns(db);
+    if (oldVersion < 40) await _migrateV40ThemeSeed(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -181,6 +182,42 @@ class DatabaseMigration {
       "strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime')) "
       "WHERE created_at IS NULL",
     );
+  }
+
+  /// The Material seeds the theme presets were named after, as the pre-pair
+  /// app stored them in `theme_seed_color` (one ARGB int). Once the theme
+  /// colour became a light/dark pair the presets stopped equalling these,
+  /// so the one row is rewritten here, once, to the preset key the app now
+  /// stores under `theme_accent`. This table exists only to do that: it is
+  /// not the presets (see `AppConstants.presetThemes`), and app code never
+  /// reads it.
+  static const Map<int, String> _legacyThemeSeeds = {
+    0xFF4A72E8: 'Blue',
+    0xFF607D8B: 'BlueGrey',
+    0xFF3F51B5: 'Indigo',
+    0xFF009688: 'Teal',
+    0xFF4CAF50: 'Green',
+    0xFFFF9800: 'Orange',
+    0xFF673AB7: 'DeepPurple',
+    0xFFE91E63: 'Rose',
+  };
+
+  /// Rewrites `theme_seed_color` to `theme_accent` and drops the old row.
+  /// An existing `theme_accent` wins (the user re-picked after upgrading);
+  /// an unrecognised seed (a hand-edited row) is dropped rather than guessed
+  /// at, which lands the user on the default — what the load path already
+  /// did for it.
+  static Future<void> _migrateV40ThemeSeed(Database db) async {
+    if (!await _tableExists(db, 'settings')) return;
+    final old = await db.query('settings', where: 'key = ?', whereArgs: ['theme_seed_color']);
+    if (old.isEmpty) return;
+    final current = await db.query('settings', where: 'key = ?', whereArgs: ['theme_accent']);
+    final int? seed = int.tryParse(old.first['value'] as String? ?? '');
+    final String? key = seed == null ? null : _legacyThemeSeeds[seed];
+    if (current.isEmpty && key != null) {
+      await db.insert('settings', {'key': 'theme_accent', 'value': key});
+    }
+    await db.delete('settings', where: 'key = ?', whereArgs: ['theme_seed_color']);
   }
 
   static Future<bool> _tableExists(Database db, String tableName) async {

@@ -52,13 +52,28 @@ void main() {
     // The light half is a finished colour too, drawn verbatim — at a tone
     // white text is legible on, which the raw seed need not be (4.3:1 at the
     // spec's own `#4A72E8`). The CTA is the one place the accent carries
-    // white at body size, so this is where that has to hold.
-    final accent = ThemeAccent.fromSeed(seed);
-    final primary = Hct.fromInt(light().colorScheme.primary.toARGB32());
+    // white at body size, so this is where that has to hold. Teal, not the
+    // file's indigo: teal is tone ~56, so the half really is moved, and a
+    // scheme that quietly drew the seed instead would fail here.
+    final accent = ThemeAccent.fromSeed(Colors.teal);
+    final theme = buildAppTheme(accent: accent, brightness: Brightness.light);
 
-    expect(resolve(light(), {})!, accent.light);
-    expect(styleOf(light()).foregroundColor?.resolve({}), Colors.white);
-    expect(primary.tone, lessThanOrEqualTo(ThemeAccent.derivedLightTone + 0.5));
+    expect(resolve(theme, {})!, accent.light);
+    expect(resolve(theme, {})!, isNot(Colors.teal));
+    expect(styleOf(theme).foregroundColor?.resolve({}), accent.onLight);
+    expect(Hct.fromInt(theme.colorScheme.primary.toARGB32()).tone,
+        closeTo(ThemeAccent.derivedLightTone, 0.5));
+  });
+
+  test('the FAB fills like the CTA it is', () {
+    // Material's default FAB is primaryContainer / onPrimaryContainer — a
+    // tone-90 pastel under tone-30 ink in light. The scheme makes those
+    // roles safe, but the one button that opens the work on a phone should
+    // carry the CTA's weight, not a lighter one.
+    for (final theme in [dark(), light()]) {
+      expect(theme.floatingActionButtonTheme.backgroundColor, theme.colorScheme.primary);
+      expect(theme.floatingActionButtonTheme.foregroundColor, theme.colorScheme.onPrimary);
+    }
   });
 
   test('the label keeps a readable contrast against the fill', () {
@@ -80,13 +95,20 @@ void main() {
     // Material's own indicator is secondaryContainer — a hue-rotated,
     // low-chroma tone 90 that reads as grey-with-a-tint — which made the
     // bottom bar the one selected thing in the app not on the tint ladder.
+    // Pinned to the shared AppAccent pair the rail and drawer read, not to
+    // the roles behind it, so the three cannot drift apart.
     for (final theme in [dark(), light()]) {
       final bar = theme.navigationBarTheme;
+      final scheme = theme.colorScheme;
       const selected = {WidgetState.selected};
-      expect(bar.indicatorColor, theme.colorScheme.accentTint);
-      expect(bar.iconTheme!.resolve(selected)!.color, theme.colorScheme.onAccentTint);
-      expect(bar.labelTextStyle!.resolve(selected)!.color, theme.colorScheme.onAccentTint);
-      expect(bar.iconTheme!.resolve({})!.color, theme.colorScheme.onSurfaceVariant);
+      expect(bar.indicatorColor, scheme.navBackground(selected: true));
+      expect(bar.iconTheme!.resolve(selected)!.color, scheme.navForeground(selected: true));
+      expect(bar.labelTextStyle!.resolve(selected)!.color, scheme.navForeground(selected: true));
+      expect(bar.iconTheme!.resolve({})!.color, scheme.navForeground(selected: false));
+      // Naming a colour replaces Material's whole state machine; the
+      // disabled tone has to survive that.
+      expect(bar.iconTheme!.resolve({WidgetState.disabled})!.color,
+          scheme.onSurface.withValues(alpha: AppAlpha.disabled));
     }
   });
 

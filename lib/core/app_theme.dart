@@ -166,9 +166,20 @@ ColorScheme buildAppColorScheme({
   required ThemeAccent accent,
   required Brightness brightness,
 }) {
+  // Memoised: the theme-colour picker builds both schemes of all eight
+  // presets on every rebuild (and again per swatch on hover), and each
+  // `fromSeed` is ~50 HCT solves. `ThemeAccent` is equal by value, so the
+  // key is the pair itself. Bounded so a stream of custom colours in tests
+  // cannot grow it without limit.
+  final cached = _schemeCache[(accent, brightness)];
+  if (cached != null) return cached;
+
   final bool isDark = brightness == Brightness.dark;
+  // The half is both the seed the palette roles grow from and, below,
+  // `primary` itself — one colour, drawn verbatim.
+  final Color half = accent.forBrightness(brightness);
   final seeded = ColorScheme.fromSeed(
-    seedColor: accent.forBrightness(brightness),
+    seedColor: half,
     brightness: brightness,
     // `vibrant`, not the default `tonalSpot`. `tonalSpot` caps the primary
     // palette's chroma, and at the spec's own seed — `#4A72E8`, a vivid blue —
@@ -191,20 +202,31 @@ ColorScheme buildAppColorScheme({
   );
   final neutral = isDark ? _Neutrals.dark : _Neutrals.light;
 
-  return seeded.copyWith(
+  final scheme = seeded.copyWith(
     // The pair's half for this brightness, verbatim, with what goes *on* it
     // and on a wash of it moving with it. `fromSeed` would put a tone-80
     // pastel here in dark and the vibrant palette's maximum-chroma tone 40
-    // in light — a neon of the picked colour either way. The wash-label
-    // roles are overwritten for the same reason: they are what
-    // [AppAccent.onAccentTint] reads (`onPrimaryFixedVariant` in light,
-    // `primaryFixedDim` in dark — the latter also [AppAccent.accentOnOverlay]),
-    // and the palette's own are at maximum chroma, a different colour beside
-    // an accent that is not. See [ThemeAccent] for each value's tone.
-    primary: isDark ? accent.dark : accent.light,
+    // in light — a neon of the picked colour either way.
+    //
+    // Every other accent role the app reads is rewritten to the *same hue
+    // and chroma* at its own tone, because the vibrant palette grows them
+    // at maximum chroma — at teal and green that is `#00FDE7`-class neon
+    // beside an accent that is not. Which role carries what:
+    //   · onPrimaryFixedVariant (light) / primaryFixedDim (dark): the wash
+    //     label, [AppAccent.onAccentTint];
+    //   · primaryFixedDim (both): the toast action, [AppAccent.accentOnOverlay]
+    //     — in light this was left at the palette's tone 80 once, and a
+    //     slate theme got a cyan "undo";
+    //   · primaryContainer / onPrimaryContainer: not read by app code (a
+    //     source scan in design_tokens_test keeps it so) but read by
+    //     Material's own defaults — the FAB, date pickers — so they are made
+    //     safe here rather than trusted never to appear.
+    primary: half,
     onPrimary: isDark ? accent.onDark : accent.onLight,
     onPrimaryFixedVariant: isDark ? null : accent.lightOnTint,
-    primaryFixedDim: isDark ? accent.darkOnTint : null,
+    primaryFixedDim: isDark ? accent.darkOnTint : accent.lightTone(80),
+    primaryContainer: isDark ? accent.darkTone(30) : accent.lightTone(90),
+    onPrimaryContainer: isDark ? accent.darkTone(90) : accent.lightOnTint,
     surface: neutral.surface,
     surfaceDim: neutral.surfaceDim,
     surfaceBright: neutral.surfaceBright,
@@ -223,7 +245,12 @@ ColorScheme buildAppColorScheme({
     // put the hue back into the very greys this function just took it out of.
     surfaceTint: neutral.surfaceTint,
   );
+  if (_schemeCache.length >= _schemeCacheCap) _schemeCache.clear();
+  return _schemeCache[(accent, brightness)] = scheme;
 }
+
+final Map<(ThemeAccent, Brightness), ColorScheme> _schemeCache = {};
+const int _schemeCacheCap = 64;
 
 /// The app's theme, built from the theme colour the user picked in settings.
 ///
@@ -405,28 +432,6 @@ ThemeData buildAppTheme({
     // `10e` 「筛选 chip」. Distinct from a status badge, which is read-only and
     // is a pill: a chip is a target, so it takes an edge and the radius the
     // buttons beside it take.
-    // The phone's bottom bar, matched to the desktop rail (`_RailItem`):
-    // selected = the accent wash with `onAccentTint` on it. Left to Material
-    // the indicator is `secondaryContainer` — tone 90 of a hue-rotated,
-    // low-chroma palette, which comes out grey-with-a-tint — and the one
-    // selected thing in the app not on the tint ladder.
-    navigationBarTheme: NavigationBarThemeData(
-      indicatorColor: colorScheme.accentTint,
-      iconTheme: WidgetStateProperty.resolveWith(
-        (states) => IconThemeData(
-          color: states.contains(WidgetState.selected)
-              ? colorScheme.onAccentTint
-              : colorScheme.onSurfaceVariant,
-        ),
-      ),
-      labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => textTheme.labelMedium!.copyWith(
-          color: states.contains(WidgetState.selected)
-              ? colorScheme.onAccentTint
-              : colorScheme.onSurfaceVariant,
-        ),
-      ),
-    ),
     chipTheme: ChipThemeData(
       backgroundColor: colorScheme.surfaceContainerLowest,
       selectedColor: colorScheme.accentTint,
@@ -469,6 +474,31 @@ ThemeData buildAppTheme({
       // one shifts every label beside it.
       showCheckmark: false,
     ),
+    // The phone's bottom bar, on the same selected-state pair as the desktop
+    // rail and the drawer ([AppAccent.navBackground] / [AppAccent.navForeground]).
+    // Left to Material the indicator is `secondaryContainer` — tone 90 of a
+    // hue-rotated, low-chroma palette, which comes out grey-with-a-tint —
+    // and the one selected thing in the app not on the tint ladder. Naming a
+    // colour here replaces Material's whole state machine, so the disabled
+    // tone has to be spelled out too.
+    navigationBarTheme: NavigationBarThemeData(
+      indicatorColor: colorScheme.navBackground(selected: true),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(color: _navInk(colorScheme, states)),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => textTheme.labelMedium!.copyWith(color: _navInk(colorScheme, states)),
+      ),
+    ),
+    // The FAB is a CTA and fills like one. Material's default is
+    // `primaryContainer` / `onPrimaryContainer`, which the scheme above makes
+    // safe but which is still a tone-90 pastel under tone-30 ink in light —
+    // a lighter, quieter thing than the one button on a phone screen that
+    // opens the work.
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
+    ),
     filledButtonTheme: FilledButtonThemeData(
       // `.copyWith` on top of `styleFrom`, because `styleFrom` has no
       // `disabledElevation`: it lifts the button in *every* state, disabled
@@ -476,15 +506,9 @@ ThemeData buildAppTheme({
       // button was casting a full-strength glow in the user's own theme
       // colour — on a dark canvas it read as a ring around the button, making
       // the one control that does nothing the loudest thing in the row.
-      // `primary` / `onPrimary` in both brightnesses. Until the theme colour
-      // became a pair this took a separate *light* scheme in dark too, because
-      // Material's dark `primary` is a tone-80 pastel meant to be read as a
-      // foreground, and a button filled with it was a lavender slab under dark
-      // text. Dark `primary` is now the pair's hand-tuned dark half with its
-      // own tone-10 ink — a fill by construction, and the one the design's
-      // dark frames draw the CTA in. Taking it from the light half instead
-      // left the CTA the only control in dark still wearing the light accent,
-      // and the settings preview card promising a button the app never drew.
+      // `primary` / `onPrimary` in both brightnesses: both halves of the
+      // theme pair are tuned to be fills. (This once took a separate light
+      // scheme in dark — design-tokens.md §1 has the history.)
       style: FilledButton.styleFrom(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
@@ -728,6 +752,13 @@ TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
   // this scale. Doing it explicitly means every slot always carries it.
   return fontFamily == null ? merged : merged.apply(fontFamily: fontFamily);
 }
+
+/// The ink of a phone bottom-bar item in [states]: Material's disabled tone,
+/// else the shared navigation pair.
+Color _navInk(ColorScheme colorScheme, Set<WidgetState> states) =>
+    states.contains(WidgetState.disabled)
+        ? colorScheme.onSurface.withValues(alpha: AppAlpha.disabled)
+        : colorScheme.navForeground(selected: states.contains(WidgetState.selected));
 
 /// The skin a slider wears when it is not editing a value.
 ///

@@ -155,8 +155,8 @@ class AppState extends ChangeNotifier {
   //
   // Persisted by preset *key* (`theme_accent`), not by colour, so a preset's
   // tuned dark half can move in a later version and follow the user. The
-  // pre-pair setting (`theme_seed_color`, one ARGB int) is still read on
-  // load as a fallback and mapped through `AppConstants.legacySeedPresets`.
+  // pre-pair setting (`theme_seed_color`, one ARGB int) was rewritten to a
+  // key by the v40 database migration.
   ThemeAccent themeAccent = AppConstants.presetThemes[AppConstants.defaultThemeAccentKey]!;
   // Font family key. Defaults to the bundled NotoSansSC to preserve the
   // existing look. The sentinel [AppConstants.systemFontKey] means "use the
@@ -423,22 +423,11 @@ class AppState extends ChangeNotifier {
       themeMode = ThemeMode.values.firstWhere((e) => e.name == savedTheme, orElse: () => ThemeMode.system);
     }
 
+    // Stored by preset key. The pre-pair `theme_seed_color` row is rewritten
+    // to this key by the v40 migration, so there is no fallback to read.
     final savedAccentKey = await _db.getSetting('theme_accent');
     final savedAccent = savedAccentKey == null ? null : AppConstants.presetThemes[savedAccentKey];
-    if (savedAccent != null) {
-      themeAccent = savedAccent;
-    } else {
-      // The pre-pair setting: one ARGB int, the Material seed a preset was
-      // named after. Look it up in the legacy table; an unrecognised value
-      // (a hand-edited row) keeps the default rather than guessing a pair
-      // for it.
-      final savedSeed = await _db.getSetting('theme_seed_color');
-      final int? seedArgb = savedSeed == null ? null : int.tryParse(savedSeed);
-      final String? legacyKey = seedArgb == null ? null : AppConstants.legacySeedPresets[seedArgb];
-      if (legacyKey != null) {
-        themeAccent = AppConstants.presetThemes[legacyKey]!;
-      }
-    }
+    if (savedAccent != null) themeAccent = savedAccent;
 
     fontFamily = await _db.getSetting('font_family') ?? 'NotoSansSC';
     // Register an on-demand font up front if it was previously downloaded, so
