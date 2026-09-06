@@ -1364,6 +1364,20 @@
   "themeLight": "浅色模式",
   "themeDark": "深色模式",
   "themeColor": "主题色",
+  "themeColorHintCards": "每张卡左半是亮色模式、右半是暗色模式，里面的按钮、开关、选中行都用该模式实际会画出的那个色号。两个色号各自校准过：亮色偏深保白字可读，暗色偏亮偏饱和，压在主色上的字改用同色相深墨。",
+  "themeColorHintDots": "每套主题色含亮色 / 暗色两个经过校准的色号：亮色模式用较深的那一个，暗色模式换成较亮、较饱和的那一个。长按色块可看色号。",
+  "themeColorPair": "亮 {light} · 暗 {dark}",
+  "themeColorCustom": "自定义…",
+  "@themeColorPair": {
+    "placeholders": {
+      "light": {
+        "type": "String"
+      },
+      "dark": {
+        "type": "String"
+      }
+    }
+  },
   "font": "字体",
   "fontSystem": "系统默认",
   "fontDownloadTitle": "下载字体",

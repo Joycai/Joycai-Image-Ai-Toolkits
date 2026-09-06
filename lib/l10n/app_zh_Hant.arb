@@ -1230,6 +1230,20 @@
   "themeLight": "淺色",
   "themeDark": "深色",
   "themeColor": "主題色",
+  "themeColorHintCards": "每張卡左半是淺色模式、右半是深色模式，裡面的按鈕、開關、選取列都用該模式實際會畫出的那個色號。兩個色號各自校準過：淺色偏深保白字可讀，深色偏亮偏飽和，壓在主色上的字改用同色相深墨。",
+  "themeColorHintDots": "每套主題色含淺色 / 深色兩個經過校準的色號：淺色模式用較深的那一個，深色模式換成較亮、較飽和的那一個。長按色塊可看色號。",
+  "themeColorPair": "淺 {light} · 深 {dark}",
+  "themeColorCustom": "自訂…",
+  "@themeColorPair": {
+    "placeholders": {
+      "light": {
+        "type": "String"
+      },
+      "dark": {
+        "type": "String"
+      }
+    }
+  },
   "font": "字型",
   "fontSystem": "系統預設",
   "fontDownloadTitle": "下載字型",
