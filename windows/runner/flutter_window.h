@@ -34,6 +34,10 @@ class FlutterWindow : public Win32Window {
   // Carries the app's theme colours down to the OS title bar.
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
       window_chrome_channel_;
+
+  // Answers the settings pane's question about the active graphics adapter.
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
+      gpu_channel_;
 };
 
 #endif  // RUNNER_FLUTTER_WINDOW_H_

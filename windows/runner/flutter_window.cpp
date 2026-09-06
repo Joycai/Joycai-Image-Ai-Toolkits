@@ -6,12 +6,18 @@
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "gpu_info.h"
 
 namespace {
 
 // Channel the Dart side uses to keep the OS title bar in step with the theme
 // the user picked inside the app. See WindowChromeService on the Dart side.
 constexpr const char kWindowChromeChannel[] = "joycai/window_chrome";
+
+// Channel the settings pane uses to ask which graphics adapter the engine
+// ended up on. Read-only: the choice itself belongs to Windows. See
+// GpuInfoService on the Dart side.
+constexpr const char kGpuChannel[] = "joycai/gpu";
 
 // Flutter hands colours over as ARGB ints; DwmSetWindowAttribute wants a
 // COLORREF, which orders the same bytes backwards and has no alpha.
@@ -149,6 +155,25 @@ bool FlutterWindow::OnCreate() {
             {flutter::EncodableValue("text"),
              flutter::EncodableValue(static_cast<int32_t>(applied.text))},
         }));
+      });
+
+  gpu_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), kGpuChannel,
+          &flutter::StandardMethodCodec::GetInstance());
+  gpu_channel_->SetMethodCallHandler(
+      [](const flutter::MethodCall<flutter::EncodableValue>& call,
+         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+             result) {
+        if (call.method_name() != "activeGpu") {
+          result->NotImplemented();
+          return;
+        }
+        // Null rather than an error when the query failed: "we could not tell"
+        // is a state the row displays, not a fault to report.
+        const auto name = ActiveGpuName();
+        result->Success(name ? flutter::EncodableValue(*name)
+                             : flutter::EncodableValue());
       });
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {

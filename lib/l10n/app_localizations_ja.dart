@@ -2217,11 +2217,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fontDownloadFailed => 'フォントのダウンロードに失敗しました。接続を確認して再試行してください。';
 
   @override
-  String get preferHighPerformanceGpu => '高性能GPUを優先';
+  String get renderingGpu => '描画に使用中のGPU';
 
   @override
-  String get preferHighPerformanceGpuDesc =>
-      '内蔵GPUではなくディスクリート（専用）GPUで描画します。次回起動時に反映されます。';
+  String get renderingGpuUnavailable => '取得できませんでした';
+
+  @override
+  String get openGraphicsSettings => 'Windowsのグラフィック設定';
 
   @override
   String get reduceVisualEffects => '視覚効果を減らす';

@@ -10,7 +10,7 @@ import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_model.dart';
 import '../../../services/database_service.dart';
-import '../../../services/gpu_preference_service.dart';
+import '../../../services/gpu_info_service.dart';
 import '../../../services/knowledge_base_service.dart';
 import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/prompt_optimizer_agent.dart';
@@ -52,10 +52,11 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   int? _kbSubAgentModelId;
   List<LLMModel> _kbSubAgentModels = const [];
 
-  // The registry is the source of truth (shared with the Windows Settings
-  // page), so this is section-local state rather than an AppState field.
-  final GpuPreferenceService _gpuPreference = GpuPreferenceService();
-  bool _gpuHighPerformance = false;
+  // Reported, not chosen: which adapter Windows put this process on. Fixed
+  // for the life of the process, so it is read once here rather than kept in
+  // AppState.
+  final GpuInfoService _gpuInfo = GpuInfoService();
+  String? _gpuName;
 
   @override
   void initState() {
@@ -87,17 +88,8 @@ class _ApplicationSectionState extends State<ApplicationSection> {
       for (final m in await _db.getModels())
         if (m.tag != 'image' && m.tag != 'video') m,
     ];
-    _gpuHighPerformance = await _gpuPreference.isHighPerformanceSet();
+    _gpuName = await _gpuInfo.activeGpuName();
     if (mounted) setState(() {});
-  }
-
-  Future<void> _setGpuHighPerformance(bool value) async {
-    setState(() => _gpuHighPerformance = value);
-    final ok = await _gpuPreference.setHighPerformance(value);
-    if (!ok && mounted) {
-      // The registry write failed — reflect reality rather than the wish.
-      setState(() => _gpuHighPerformance = !value);
-    }
   }
 
   @override
@@ -119,15 +111,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
             onChanged: (v) => appState.setNotificationsEnabled(v),
           ),
         ),
-        if (_gpuPreference.isSupported)
-          AppSettingRow(
-            title: l10n.preferHighPerformanceGpu,
-            description: l10n.preferHighPerformanceGpuDesc,
-            trailing: AppSwitch(
-              value: _gpuHighPerformance,
-              onChanged: (v) => _setGpuHighPerformance(v),
-            ),
-          ),
+        if (_gpuInfo.isSupported) _buildGpuTile(l10n),
         AppSettingRow(
           title: l10n.enableApiDebug,
           description: l10n.apiDebugDesc,
@@ -219,6 +203,32 @@ class _ApplicationSectionState extends State<ApplicationSection> {
         ),
         if (_kbSubAgentEnabled) _buildKbSubAgentModelTile(l10n),
       ],
+    );
+  }
+
+  /// Which adapter the app is drawing on. No control: the choice is Windows'
+  /// own, so the row states the outcome in the mono face — the same way the
+  /// output-directory row states a path — and the footer opens the page where
+  /// it can be changed.
+  Widget _buildGpuTile(AppLocalizations l10n) {
+    final name = _gpuName;
+    return AppSettingRow(
+      title: l10n.renderingGpu,
+      description: name ?? l10n.renderingGpuUnavailable,
+      monoDescription: name != null,
+      footer: AppButton(
+        label: l10n.openGraphicsSettings,
+        icon: Icons.open_in_new,
+        variant: AppButtonVariant.text,
+        size: AppButtonSize.compact,
+        // The per-app list on this page is what steers the adapter; a change
+        // made there applies on the next launch. Handed to explorer.exe like
+        // every other shell target in the app rather than to url_launcher,
+        // whose canLaunchUrl gate turns an unrecognised scheme into a button
+        // that does nothing at all.
+        onPressed: () =>
+            Process.run('explorer.exe', ['ms-settings:display-graphics']),
+      ),
     );
   }
 

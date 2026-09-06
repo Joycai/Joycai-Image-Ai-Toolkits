@@ -2265,11 +2265,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Font download failed. Check your connection and try again.';
 
   @override
-  String get preferHighPerformanceGpu => 'Prefer high-performance GPU';
+  String get renderingGpu => 'Rendering GPU';
 
   @override
-  String get preferHighPerformanceGpuDesc =>
-      'Renders on the dedicated graphics card instead of the integrated GPU. Takes effect the next time the app starts.';
+  String get renderingGpuUnavailable => 'Could not be determined';
+
+  @override
+  String get openGraphicsSettings => 'Windows graphics settings';
 
   @override
   String get reduceVisualEffects => 'Reduce visual effects';
