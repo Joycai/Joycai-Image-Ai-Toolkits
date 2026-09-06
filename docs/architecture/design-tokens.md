@@ -116,6 +116,8 @@
 
 **存的是键不是色值**：`AppState.themeAccent` 持久化到 `theme_accent`，值是预设名。这样以后重调某个预设，选过它的用户会跟着变。旧的 `theme_seed_color`（一个 ARGB int）加载时仍会读，经 `AppConstants.legacySeedPresets` 映射到预设——那张表存的是配对之前的 Material 种子，亮色半已经不等于它们了；对不上的（手改过库）回到默认 Blue，不猜配对。
 
+**调色板推导出的其余强调角色，核对过，结论是不上界面。** `primaryContainer` / `onPrimaryContainer` 是 vibrant 调色板 tone 90 / 30 的**最大彩度**：Teal 亮色的 `primaryContainer` 是 `#00FDE7`，Green 是 `#70FF77`，暗色下 `onPrimaryContainer` 是同样的荧光色当文字——放在自己彩度的 `primary` 旁边不是同一个颜色。它们曾被语言卡 / 字体卡的选中态、两处手机提示、标题栏 logo 渐变和几处选中行拿来当「淡一点的主色底」，现在一律换成 §1 的阶梯（`accentTint` / `onAccentTint` / `accentRing`），logo 渐变从 `primary` 扫到 `onAccentTint`。`design_tokens_test`「the container roles stay out of the UI」扫 `lib/` 源码钉住这一条。同一轮把手机底栏 `NavigationBar` 也接到了阶梯上（`navigationBarTheme`：指示器 `accentTint`、选中图标和标签 `onAccentTint`）——Material 默认的指示器是 `secondaryContainer`，色相偏转过的低彩度 tone 90，一块带点色的灰，是全应用唯一不在阶梯上的选中态；桌面导航栏 `_RailItem` 本来就是这一对。`secondary` / `tertiary`（彩度 24 / 32、色相偏 15° / 35°）只剩三处图标和一行路径文字在用，是低彩度的陪衬色，看过 16 张画廊图没有问题，留着；`inversePrimary` 没有调用点。
+
 设置页的选择器是 `ThemeAccentPicker`（`widgets/theme_accent_picker.dart`，设计稿 `D1a 20a–20e`），按宽度取两种形态：桌面 / 平板用**预览卡** `ThemeAccentPreviewCard`（148×96 一分为二，左半亮色面板右半暗色面板，各画一颗实心钮、一个开关、一行选中态，用的是该模式**实际**的 `primary` / `onPrimary` / `accentTint` / `onAccentTint`——不随当前模式变，只有外壳跟主题走）；手机用**双色圆点** `DualToneSwatch`（对角线分两半，左上亮右下暗，四态画在 36px 圆点之外，长按 tooltip 给两个色号）。两者画的都是**渲染出来的** `primary`，从方案里读而不是从配对的存值读——今天两者相同（两半都原样画），但走方案这条路，色块永远不会承诺一个按钮不会穿的颜色（亮色半曾是方案取 tone 40 的种子）。圆点的选中环用描边而不是稿子的实心叠层：桌面上它坐在卡片上、手机上直接坐在画布上，涂死的「面板色」缝隙在其中一处必然是错的。
 
 ### 配色变体是 `vibrant`，不是默认的 `tonalSpot`

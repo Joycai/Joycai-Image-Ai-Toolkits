@@ -236,12 +236,13 @@ ThemeData buildAppTheme({
   String? fontFamily,
 }) {
   final colorScheme = buildAppColorScheme(accent: accent, brightness: brightness);
+  final textTheme = _buildTextTheme(colorScheme, fontFamily);
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
     fontFamily: fontFamily,
-    textTheme: _buildTextTheme(colorScheme, fontFamily),
+    textTheme: textTheme,
     extensions: [
       brightness == Brightness.dark ? AppSemanticColors.dark : AppSemanticColors.light,
     ],
@@ -404,6 +405,28 @@ ThemeData buildAppTheme({
     // `10e` 「筛选 chip」. Distinct from a status badge, which is read-only and
     // is a pill: a chip is a target, so it takes an edge and the radius the
     // buttons beside it take.
+    // The phone's bottom bar, matched to the desktop rail (`_RailItem`):
+    // selected = the accent wash with `onAccentTint` on it. Left to Material
+    // the indicator is `secondaryContainer` — tone 90 of a hue-rotated,
+    // low-chroma palette, which comes out grey-with-a-tint — and the one
+    // selected thing in the app not on the tint ladder.
+    navigationBarTheme: NavigationBarThemeData(
+      indicatorColor: colorScheme.accentTint,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          color: states.contains(WidgetState.selected)
+              ? colorScheme.onAccentTint
+              : colorScheme.onSurfaceVariant,
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => textTheme.labelMedium!.copyWith(
+          color: states.contains(WidgetState.selected)
+              ? colorScheme.onAccentTint
+              : colorScheme.onSurfaceVariant,
+        ),
+      ),
+    ),
     chipTheme: ChipThemeData(
       backgroundColor: colorScheme.surfaceContainerLowest,
       selectedColor: colorScheme.accentTint,

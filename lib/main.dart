@@ -469,14 +469,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    // Both stops from the seed. The second used to be a fixed
-                    // lavender, which read as intentional only for the one
-                    // seed near it and fought the other six — an indigo app
-                    // with a purple-tipped logo looks like a rendering bug.
-                    // `primaryContainer` is the seed's own lighter tone, so
-                    // the sweep stays a sweep at every theme.
+                    // Both stops from the theme. The second used to be a
+                    // fixed lavender, which read as intentional only for the
+                    // one seed near it and fought the other six — an indigo
+                    // app with a purple-tipped logo looks like a rendering
+                    // bug. Then it was `primaryContainer`, which is the
+                    // palette's tone 90 at maximum chroma: near-white under a
+                    // white icon in light, and a neon at teal and green. The
+                    // sweep now runs from the accent to the tone the app
+                    // already pairs with it — 主色深, darker in light and
+                    // lighter in dark — so it is the same two colours every
+                    // selected row wears.
                     gradient: LinearGradient(
-                      colors: [colorScheme.primary, colorScheme.primaryContainer],
+                      colors: [colorScheme.primary, colorScheme.onAccentTint],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),

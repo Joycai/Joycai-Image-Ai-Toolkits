@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -291,6 +292,31 @@ void main() {
         expect(delta > 180 ? 360 - delta : delta, lessThan(4),
             reason: '${row.value}: legacy seed maps to a preset of a different hue');
       }
+    });
+  });
+
+  group('the container roles stay out of the UI', () {
+    test('no widget reads primaryContainer, onPrimaryContainer or inversePrimary', () {
+      // Those roles are the vibrant palette's tones 90 / 30 / 40 at maximum
+      // chroma — at the teal and green presets, `#00FDE7` and `#70FF77`. Set
+      // beside a `primary` at the accent's own chroma they are a different
+      // colour, not a paler one. Every tinted surface in the app is the
+      // AppAccent ladder instead (accentTint / onAccentTint / accentRing),
+      // and this is the greppable rule that keeps it so. `app_theme.dart` is
+      // exempt because it is where the scheme is built.
+      final RegExp role = RegExp(r'\b(onPrimaryContainer|primaryContainer|inversePrimary)\b');
+      final List<String> offenders = <String>[];
+      for (final FileSystemEntity entity in Directory('lib').listSync(recursive: true)) {
+        if (entity is! File || !entity.path.endsWith('.dart')) continue;
+        if (entity.path.replaceAll(r'\', '/').endsWith('lib/core/app_theme.dart')) continue;
+        final List<String> lines = entity.readAsLinesSync();
+        for (int i = 0; i < lines.length; i++) {
+          final String code = lines[i].split('//').first;
+          if (role.hasMatch(code)) offenders.add('${entity.path}:${i + 1}');
+        }
+      }
+      expect(offenders, isEmpty,
+          reason: 'a container role reached the UI; use the AppAccent ladder');
     });
   });
 

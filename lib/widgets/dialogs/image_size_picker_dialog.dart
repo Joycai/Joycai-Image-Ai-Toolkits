@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../app_button.dart';
@@ -379,7 +380,7 @@ class _AutoCard extends StatelessWidget {
             color: selected ? colorScheme.primary : colorScheme.outlineVariant,
             width: selected ? 1.5 : 1,
           ),
-          color: selected ? colorScheme.primaryContainer.withValues(alpha: 0.3) : null,
+          color: selected ? colorScheme.accentTint : null,
         ),
         child: Row(
           children: [

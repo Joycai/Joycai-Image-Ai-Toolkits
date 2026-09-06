@@ -685,9 +685,9 @@ class _FrameDropTarget extends StatelessWidget {
                 aspectRatio: isMobile ? 16 / 9 : 1, // Wider on mobile to save vertical space
                 child: Container(
                   decoration: BoxDecoration(
-                    color: candidateData.isNotEmpty
-                        ? colorScheme.primaryContainer.withValues(alpha: 0.5)
-                        : bgColor,
+                    // The accent wash while a drop hovers — `primaryContainer`
+                    // is a neon at some presets.
+                    color: candidateData.isNotEmpty ? colorScheme.accentTint : bgColor,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: candidateData.isNotEmpty ? colorScheme.primary : colorScheme.outlineVariant,
@@ -774,8 +774,8 @@ class _ReferenceImagesTarget extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: candidateData.isNotEmpty
-                  ? colorScheme.primaryContainer.withValues(alpha: 0.5)
-                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3), 
+                  ? colorScheme.accentTint
+                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: candidateData.isNotEmpty ? colorScheme.primary : colorScheme.outlineVariant,

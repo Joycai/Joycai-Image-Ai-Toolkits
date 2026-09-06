@@ -65,7 +65,9 @@ class FolderList extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withAlpha(100),
+                  // The accent wash, not `primaryContainer` — see the same
+                  // note on the downloader's iOS banner.
+                  color: colorScheme.accentTint,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -79,7 +81,7 @@ class FolderList extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       Platform.isIOS ? l10n.iosSandboxDesc : l10n.mobileSandboxDesc,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onPrimaryContainer),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onAccentTint),
                       textAlign: TextAlign.center,
                     ),
                   ],

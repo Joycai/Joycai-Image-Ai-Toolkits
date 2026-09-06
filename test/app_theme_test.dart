@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
+import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
@@ -72,6 +73,20 @@ void main() {
       // onPrimary pair taken from one scheme; taking them from two would not.
       expect(ratio, greaterThanOrEqualTo(4.5),
           reason: 'Fill $fill vs label $label in ${theme.brightness}');
+    }
+  });
+
+  test('the phone bar marks selection the way the desktop rail does', () {
+    // Material's own indicator is secondaryContainer — a hue-rotated,
+    // low-chroma tone 90 that reads as grey-with-a-tint — which made the
+    // bottom bar the one selected thing in the app not on the tint ladder.
+    for (final theme in [dark(), light()]) {
+      final bar = theme.navigationBarTheme;
+      const selected = {WidgetState.selected};
+      expect(bar.indicatorColor, theme.colorScheme.accentTint);
+      expect(bar.iconTheme!.resolve(selected)!.color, theme.colorScheme.onAccentTint);
+      expect(bar.labelTextStyle!.resolve(selected)!.color, theme.colorScheme.onAccentTint);
+      expect(bar.iconTheme!.resolve({})!.color, theme.colorScheme.onSurfaceVariant);
     }
   });
 
