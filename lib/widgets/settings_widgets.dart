@@ -65,7 +65,7 @@ class ThemeColorSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Theme Color",
+        Text(l10n.themeColor,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
         const SizedBox(height: 12),
         Wrap(

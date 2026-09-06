@@ -1398,6 +1398,7 @@
   "themeAuto": "Auto",
   "themeLight": "Light",
   "themeDark": "Dark",
+  "themeColor": "Theme Color",
   "font": "Font",
   "fontSystem": "System Default",
   "fontDownloadTitle": "Download Font",

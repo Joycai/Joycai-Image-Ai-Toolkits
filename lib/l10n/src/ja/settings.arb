@@ -12,6 +12,7 @@
   "themeAuto": "自動",
   "themeLight": "ライト",
   "themeDark": "ダーク",
+  "themeColor": "テーマカラー",
   "font": "フォント",
   "fontSystem": "システムデフォルト",
   "fontDownloadTitle": "フォントをダウンロード",
