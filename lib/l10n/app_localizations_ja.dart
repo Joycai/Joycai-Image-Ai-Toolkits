@@ -2198,6 +2198,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get themeColor => 'テーマカラー';
 
   @override
+  String get themeColorHintCards =>
+      '各カードの左半分がライトモード、右半分がダークモードで、ボタン・スイッチ・選択行はそのモードで実際に描かれる色で表示されます。2 つの色は別々に調整済みです。ライトはやや深めで白い文字が読め、ダークはやや明るく鮮やかで、その上の文字は同系色の濃いインクになります。';
+
+  @override
+  String get themeColorHintDots =>
+      '各テーマカラーには調整済みの 2 色があります。ライトモードでは深い方、ダークモードでは明るく鮮やかな方が使われます。長押しで色の値を確認できます。';
+
+  @override
+  String themeColorPair(String light, String dark) {
+    return 'ライト $light · ダーク $dark';
+  }
+
+  @override
+  String get themeColorCustom => 'カスタム…';
+
+  @override
   String get font => 'フォント';
 
   @override

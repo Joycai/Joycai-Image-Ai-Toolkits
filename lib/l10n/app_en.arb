@@ -1399,6 +1399,20 @@
   "themeLight": "Light",
   "themeDark": "Dark",
   "themeColor": "Theme Color",
+  "themeColorHintCards": "Each card shows light mode on the left and dark mode on the right, drawn in the shade that mode really uses. The two shades are calibrated separately: the light one is deeper so white labels stay legible; the dark one is lighter and more saturated, with a dark ink for anything written on it.",
+  "themeColorHintDots": "Each theme colour comes as two calibrated shades: light mode uses the deeper one, dark mode the lighter, more saturated one. Long-press a swatch to see the values.",
+  "themeColorPair": "Light {light} · Dark {dark}",
+  "themeColorCustom": "Custom…",
+  "@themeColorPair": {
+    "placeholders": {
+      "light": {
+        "type": "String"
+      },
+      "dark": {
+        "type": "String"
+      }
+    }
+  },
   "font": "Font",
   "fontSystem": "System Default",
   "fontDownloadTitle": "Download Font",

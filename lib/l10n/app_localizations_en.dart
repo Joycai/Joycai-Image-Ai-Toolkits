@@ -2245,6 +2245,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeColor => 'Theme Color';
 
   @override
+  String get themeColorHintCards =>
+      'Each card shows light mode on the left and dark mode on the right, drawn in the shade that mode really uses. The two shades are calibrated separately: the light one is deeper so white labels stay legible; the dark one is lighter and more saturated, with a dark ink for anything written on it.';
+
+  @override
+  String get themeColorHintDots =>
+      'Each theme colour comes as two calibrated shades: light mode uses the deeper one, dark mode the lighter, more saturated one. Long-press a swatch to see the values.';
+
+  @override
+  String themeColorPair(String light, String dark) {
+    return 'Light $light · Dark $dark';
+  }
+
+  @override
+  String get themeColorCustom => 'Custom…';
+
+  @override
   String get font => 'Font';
 
   @override

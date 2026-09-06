@@ -2178,6 +2178,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeColor => '主题色';
 
   @override
+  String get themeColorHintCards =>
+      '每张卡左半是亮色模式、右半是暗色模式，里面的按钮、开关、选中行都用该模式实际会画出的那个色号。两个色号各自校准过：亮色偏深保白字可读，暗色偏亮偏饱和，压在主色上的字改用同色相深墨。';
+
+  @override
+  String get themeColorHintDots =>
+      '每套主题色含亮色 / 暗色两个经过校准的色号：亮色模式用较深的那一个，暗色模式换成较亮、较饱和的那一个。长按色块可看色号。';
+
+  @override
+  String themeColorPair(String light, String dark) {
+    return '亮 $light · 暗 $dark';
+  }
+
+  @override
+  String get themeColorCustom => '自定义…';
+
+  @override
   String get font => '字体';
 
   @override
@@ -6108,6 +6124,22 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get themeColor => '主題色';
+
+  @override
+  String get themeColorHintCards =>
+      '每張卡左半是淺色模式、右半是深色模式，裡面的按鈕、開關、選取列都用該模式實際會畫出的那個色號。兩個色號各自校準過：淺色偏深保白字可讀，深色偏亮偏飽和，壓在主色上的字改用同色相深墨。';
+
+  @override
+  String get themeColorHintDots =>
+      '每套主題色含淺色 / 深色兩個經過校準的色號：淺色模式用較深的那一個，深色模式換成較亮、較飽和的那一個。長按色塊可看色號。';
+
+  @override
+  String themeColorPair(String light, String dark) {
+    return '淺 $light · 深 $dark';
+  }
+
+  @override
+  String get themeColorCustom => '自訂…';
 
   @override
   String get font => '字型';

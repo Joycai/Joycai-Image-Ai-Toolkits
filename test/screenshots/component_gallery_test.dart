@@ -47,6 +47,8 @@ import 'package:joycai_image_ai_toolkits/widgets/app_section_label.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_status_badge.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_text_field.dart';
+import 'package:joycai_image_ai_toolkits/widgets/dual_tone_swatch.dart';
+import 'package:joycai_image_ai_toolkits/widgets/theme_accent_picker.dart';
 
 void main() {
   for (final MapEntry<String, ThemeAccent> seed in AppConstants.presetThemes.entries) {
@@ -228,6 +230,41 @@ class _Gallery extends StatelessWidget {
                 Checkbox(value: true, onChanged: (_) {}),
                 const SizedBox(width: 8),
                 Checkbox(value: false, onChanged: (_) {}),
+              ]),
+              const _Label('主题色 · 预览卡（桌面）与双色圆点（手机）'),
+              // Both forms of the chooser, selected and not. The preview
+              // card's halves are pictures of the *light* and *dark* schemes
+              // of the preset shown, whatever this gallery's own brightness —
+              // so across the sixteen shots the Rose card must look the same
+              // inside, and only its shell may change.
+              Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                ThemeAccentPreviewCard(
+                  accent: AppConstants.presetThemes['Blue']!,
+                  name: 'Blue',
+                  selected: true,
+                  onTap: () {},
+                ),
+                ThemeAccentPreviewCard(
+                  accent: AppConstants.presetThemes['Rose']!,
+                  name: 'Rose',
+                  selected: false,
+                  onTap: () {},
+                ),
+                const SizedBox(width: 12),
+                DualToneSwatch(
+                  accent: AppConstants.presetThemes['Blue']!,
+                  name: 'Blue',
+                  pairLabel: '#0050E1 · #5B8DFF',
+                  selected: true,
+                  onTap: () {},
+                ),
+                DualToneSwatch(
+                  accent: AppConstants.presetThemes['Rose']!,
+                  name: 'Rose',
+                  pairLabel: '#BC004B · #FF5B83',
+                  selected: false,
+                  onTap: () {},
+                ),
               ]),
               const _Label('状态徽标'),
               Wrap(spacing: 10, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: const [

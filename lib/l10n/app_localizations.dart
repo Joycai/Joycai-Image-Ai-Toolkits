@@ -4030,6 +4030,30 @@ abstract class AppLocalizations {
   /// **'Theme Color'**
   String get themeColor;
 
+  /// No description provided for @themeColorHintCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Each card shows light mode on the left and dark mode on the right, drawn in the shade that mode really uses. The two shades are calibrated separately: the light one is deeper so white labels stay legible; the dark one is lighter and more saturated, with a dark ink for anything written on it.'**
+  String get themeColorHintCards;
+
+  /// No description provided for @themeColorHintDots.
+  ///
+  /// In en, this message translates to:
+  /// **'Each theme colour comes as two calibrated shades: light mode uses the deeper one, dark mode the lighter, more saturated one. Long-press a swatch to see the values.'**
+  String get themeColorHintDots;
+
+  /// No description provided for @themeColorPair.
+  ///
+  /// In en, this message translates to:
+  /// **'Light {light} · Dark {dark}'**
+  String themeColorPair(String light, String dark);
+
+  /// No description provided for @themeColorCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom…'**
+  String get themeColorCustom;
+
   /// No description provided for @font.
   ///
   /// In en, this message translates to:

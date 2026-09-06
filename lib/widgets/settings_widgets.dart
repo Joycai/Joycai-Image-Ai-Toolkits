@@ -9,7 +9,7 @@ import 'app_button.dart';
 import 'app_dialog.dart';
 import 'app_segmented_control.dart';
 import 'app_snackbar.dart';
-import 'dual_tone_swatch.dart';
+import 'theme_accent_picker.dart';
 
 class ThemeSelector extends StatelessWidget {
   final AppState appState;
@@ -68,19 +68,9 @@ class ThemeColorSelector extends StatelessWidget {
         Text(l10n.themeColor,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: AppConstants.presetThemes.entries.map((entry) {
-            return Tooltip(
-              message: entry.key,
-              child: DualToneSwatch(
-                accent: entry.value,
-                selected: appState.themeAccent == entry.value,
-                onTap: () => appState.setThemeAccent(entry.key),
-              ),
-            );
-          }).toList(),
+        ThemeAccentPicker(
+          selected: appState.themeAccent,
+          onSelect: appState.setThemeAccent,
         ),
       ],
     );

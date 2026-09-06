@@ -216,6 +216,26 @@ void main() {
     }
   }
 
+  // The phone-width settings shot only ever photographs the category list;
+  // the appearance card — where the theme-colour chooser takes its compact
+  // dot form (`D1a 20e`) — is a page deeper and was invisible to the suite.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('settings · appearance @ mobile ${brightness.name}', (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.settings,
+        size: kShotSizes.first,
+        brightness: brightness,
+        suffix: 'appearance',
+        after: (WidgetTester tester) async {
+          await tester.tap(find.text('外观').first);
+          await settle(tester);
+        },
+      );
+    });
+  }
+
   testWidgets('fileBrowser · folderMenu @ desktop light', (WidgetTester tester) async {
     await shoot(
       tester,
