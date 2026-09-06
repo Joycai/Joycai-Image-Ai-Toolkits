@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
@@ -55,7 +57,14 @@ class ThemeAccent {
   /// four tones further from the one the user picked. 44 keeps the margin
   /// and gives the tones back. A *target*, not a ceiling: a seed already
   /// darker than this (Material's indigo is tone 38) is lifted to it, so
-  /// the eight presets sit at one weight and read as a set.
+  /// the presets sit at one weight and read as a set.
+  ///
+  /// One preset leaves it: at 44 orange is a brown, and no tone that is
+  /// orange carries white. Orange sits at tone 55 under its own dark ink
+  /// ([onLight]), and wherever the accent is *text* rather than a fill the
+  /// scheme falls back to the wash label (`AppAccent.accentText`). That is
+  /// the pair of mechanisms that lets a hue leave this tone; a custom
+  /// colour gets both for free.
   static const double derivedLightTone = 44;
 
   /// Where [fromSeed] puts the dark accent's tone (HCT, so L\*).
@@ -101,10 +110,13 @@ class ThemeAccent {
 
   /// Ink drawn *on* [light] — the CTA's label, a badge's digits.
   ///
-  /// White, which is the design's rule for light mode and the reason the
-  /// light half sits at tone 44 rather than at the seed: the tone is what
-  /// makes white legible on it, so white is the ink.
-  Color get onLight => const Color(0xFFFFFFFF);
+  /// White where white reads (≥ 4.5:1), which at tone 44 is every preset
+  /// but one; otherwise the accent's own tone-10 ink, the same call
+  /// [onDark] makes. The exception is Orange: an orange that is orange sits
+  /// near tone 55, where white is 3.8:1 and the ink 4.6:1 — a black-on-orange
+  /// button, which is how orange buttons are usually drawn anyway.
+  Color get onLight =>
+      _contrast(const Color(0xFFFFFFFF), light) >= 4.5 ? const Color(0xFFFFFFFF) : lightTone(10);
 
   /// Ink drawn *on* [dark] — a badge's digits, a selected chip's label.
   ///
@@ -138,6 +150,12 @@ class ThemeAccent {
 
   static Color _atTone(Hct hct, double tone) =>
       Color(Hct.from(hct.hue, hct.chroma, tone).toInt());
+
+  static double _contrast(Color a, Color b) {
+    final double la = a.computeLuminance();
+    final double lb = b.computeLuminance();
+    return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+  }
 
   @override
   bool operator ==(Object other) =>

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/safety_settings.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
+import '../../../core/design_tokens.dart';
 
 /// Per-category Gemini safety-threshold sliders (strict → permissive), shared
 /// by the image and video workbench queue-settings dialogs. Reads and writes
@@ -74,7 +75,7 @@ class SafetySettingsSection extends StatelessWidget {
                     l10n, thresholds[category] ?? SafetySettings.defaultThreshold),
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: colorScheme.primary,
+                  color: colorScheme.accentText,
                 ),
               ),
             ],

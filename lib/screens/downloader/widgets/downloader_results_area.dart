@@ -37,7 +37,7 @@ class DownloaderResultsArea extends StatelessWidget {
                 Text(
                   '(${l10n.imagesSelected(selectedCount)})',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: colorScheme.primary,
+                    color: colorScheme.accentText,
                   ),
                 ),
                 const Spacer(),

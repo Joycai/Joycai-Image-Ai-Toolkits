@@ -264,12 +264,41 @@ class AppType {
 /// must not come from here — those keep their meaning across themes and live
 /// in `AppSemanticColors`. Destructive is [ColorScheme.error], whose palette
 /// [ColorScheme.fromSeed] already derives independently of the seed.
+/// WCAG AA for body text: [ink] on [ground] at ≥ 4.5:1.
+bool _reads(Color ink, Color ground) {
+  final double a = ink.computeLuminance();
+  final double b = ground.computeLuminance();
+  final double hi = a > b ? a : b;
+  final double lo = a > b ? b : a;
+  return (hi + 0.05) / (lo + 0.05) >= 4.5;
+}
+
 extension AppAccent on ColorScheme {
   /// The wash behind a selected or active element.
   Color get accentTint => primary.withValues(alpha: AppAlpha.tint);
 
   /// The edge around that element, and the glow ring on a focused input.
   Color get accentRing => primary.withValues(alpha: AppAlpha.ring);
+
+  /// The accent *as text on a surface* — a text button's label, a link, a
+  /// heading set in the theme colour, a live-status line.
+  ///
+  /// `primary` is tuned to be a **fill**: a ground under its own ink. For
+  /// seven of the eight presets it also happens to read as text on every
+  /// light ground (tone 44 is ≥ 4.8:1 on the canvas), and there this *is*
+  /// `primary`. It exists for the hue that cannot do both jobs: an orange
+  /// that is orange sits near tone 55, which carries dark ink at AA but is
+  /// 3.3:1 as text on the canvas. Rather than hold every accent at the
+  /// tone the worst hue needs (which made Orange a brown), text falls back
+  /// to the wash label — the accent's own tone 30 in light, tone 80 in
+  /// dark — the moment `primary` itself would not pass. Icons and outlines
+  /// stay on `primary`: the non-text floor is 3:1, which every preset holds.
+  ///
+  /// Decided from the scheme, not the preset, so a custom colour gets the
+  /// same treatment; measured against the canvas, the darkest light ground
+  /// text is set on, and the panel.
+  Color get accentText =>
+      _reads(primary, surfaceContainer) && _reads(primary, surface) ? primary : onAccentTint;
 
   /// What a navigation item draws under itself when [selected] — the wash —
   /// and nothing otherwise. The desktop rail, the drawer and the phone's

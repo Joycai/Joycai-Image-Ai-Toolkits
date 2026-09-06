@@ -323,7 +323,7 @@ class AppButton extends StatelessWidget {
           // alike, and an unfilled outline over a card's own tone reads as a
           // hole punched in it rather than as a button.
           backgroundColor: colorScheme.surface,
-          foregroundColor: accentLabel ? colorScheme.primary : colorScheme.onSurface,
+          foregroundColor: accentLabel ? colorScheme.accentText : colorScheme.onSurface,
           side: BorderSide(color: colorScheme.outlineVariant),
           disabledForegroundColor: colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
         );
@@ -376,7 +376,7 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.tonal:
         return colorScheme.onAccentTint;
       case AppButtonVariant.text:
-        return colorScheme.primary;
+        return colorScheme.accentText;
       case AppButtonVariant.destructive:
         return errorFillScheme().onPrimary;
       case AppButtonVariant.destructiveOutline:

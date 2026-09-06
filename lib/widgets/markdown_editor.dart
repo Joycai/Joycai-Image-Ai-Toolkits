@@ -61,7 +61,7 @@ class MarkdownTextEditingController extends TextEditingController {
 
       if (match.group(1) != null) { // header
         matchStyle = TextStyle(
-          color: colorScheme.primary,
+          color: colorScheme.accentText,
           fontWeight: FontWeight.bold,
           fontSize: (style?.fontSize ?? 13) + 2,
         );

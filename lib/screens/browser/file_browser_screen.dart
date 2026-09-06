@@ -186,7 +186,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                 style: Theme.of(context)
                     .textTheme
                     .labelLarge
-                    ?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w500),
+                    ?.copyWith(color: colorScheme.accentText, fontWeight: FontWeight.w500),
               ),
             ],
           ),

@@ -238,7 +238,7 @@ class _LogLine extends StatelessWidget {
             if (log.taskId != null)
               TextSpan(
                 text: '[${log.taskId!.length > 8 ? log.taskId!.substring(0, 8) : log.taskId}] ',
-                style: TextStyle(color: colorScheme.primary),
+                style: TextStyle(color: colorScheme.accentText),
               ),
             TextSpan(
               text: '[${log.level}] ',

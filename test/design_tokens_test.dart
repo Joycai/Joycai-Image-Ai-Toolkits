@@ -250,37 +250,60 @@ void main() {
             reason: '${preset.key}: light primary is the palette\'s tone 40 again');
       });
 
-      test('white reads on the light accent, and the accent reads on every light ground — ${preset.key}', () {
-        // The CTA carries white at body size; `primary` is also text — a
-        // TextButton label, a link — on every light ground from white down
-        // to the canvas. Both bound the tone from above. The margins are the
-        // ones ThemeAccent.derivedLightTone is justified by, asserted so the
-        // doc cannot outrun the code: tone 44 measures 5.5 under white and
-        // 4.8 on the canvas; 47 is where the canvas drops under AA.
+      test('the light accent carries its ink, and the accent reads on every light ground — ${preset.key}', () {
+        // Three different jobs, three different floors:
+        //  · the CTA's ink on the CTA — AA, whichever ink onLight chose;
+        //  · the accent *as text* (accentText) on every light ground, from
+        //    white down to `surfaceDim` — AA;
+        //  · the accent as an outline or icon (`primary`) on the grounds an
+        //    outline sits on — the 3:1 non-text floor.
+        // Where the ink is white (every preset but Orange) the margins
+        // ThemeAccent.derivedLightTone is justified by are asserted too, so
+        // the doc cannot outrun the code: tone 44 measures 5.5 under white
+        // and 4.8 on the canvas; 47 is where the canvas drops under AA.
         const double whiteMargin = 5.5;
         const double canvasMargin = 4.8;
-        expect(contrast(light.onPrimary, light.primary), greaterThanOrEqualTo(whiteMargin),
-            reason: '${preset.key}: the light half is too light for white text');
-        // Every light ground, down to `surfaceDim` — which is not a ground
-        // text is set on, but bounds the darkest one that is.
+        final List<(String, Color)> textGrounds = [
+          ('surfaceContainerLowest', light.surfaceContainerLowest),
+          ('surface', light.surface),
+          ('surfaceContainerLow', light.surfaceContainerLow),
+          ('surfaceContainer', light.surfaceContainer),
+          ('surfaceDim', light.surfaceDim),
+        ];
+        expect(contrast(light.onPrimary, light.primary), greaterThanOrEqualTo(4.5),
+            reason: '${preset.key}: the CTA ink does not read on the light half');
+        if (light.onPrimary.toARGB32() == Colors.white.toARGB32()) {
+          expect(contrast(light.onPrimary, light.primary), greaterThanOrEqualTo(whiteMargin),
+              reason: '${preset.key}: the light half is too light for white text');
+          expectReadsOn(
+            light.primary,
+            [('surfaceContainer (the canvas)', light.surfaceContainer)],
+            preset: preset.key,
+            hint: 'the light half lost the canvas margin derivedLightTone promises',
+            floor: canvasMargin,
+          );
+        }
+        expectReadsOn(light.accentText, textGrounds,
+            preset: preset.key, hint: 'the accent as text fails AA');
         expectReadsOn(
           light.primary,
-          [
-            ('surfaceContainerLowest', light.surfaceContainerLowest),
-            ('surface', light.surface),
-            ('surfaceContainerLow', light.surfaceContainerLow),
-            ('surfaceDim', light.surfaceDim),
-          ],
+          textGrounds.where((g) => g.$1 != 'surfaceDim'),
           preset: preset.key,
-          hint: 'the light half was tuned too light',
+          hint: 'the accent as an outline or icon is under the 3:1 non-text floor',
+          floor: 3.0,
         );
-        expectReadsOn(
-          light.primary,
-          [('surfaceContainer (the canvas)', light.surfaceContainer)],
-          preset: preset.key,
-          hint: 'the light half lost the canvas margin derivedLightTone promises',
-          floor: canvasMargin,
-        );
+      });
+
+      test('accentText is primary where primary reads, else the wash label — ${preset.key}', () {
+        // The role that lets a hue leave tone 44. Decided from the scheme,
+        // so it is one rule for presets and custom colours alike.
+        final bool primaryReads = contrast(light.primary, light.surfaceContainer) >= 4.5 &&
+            contrast(light.primary, light.surface) >= 4.5;
+        expect(light.accentText, primaryReads ? light.primary : light.onAccentTint,
+            reason: '${preset.key}: accentText picked the wrong side of 4.5:1');
+        // Dark primary is tuned to read as text (the test above pins ≥ 4.5
+        // on every dark ground), so dark accentText is always primary.
+        expect(dark.accentText, dark.primary, reason: '${preset.key}: dark accentText left primary');
       });
 
       test('the light overlay and container roles are the accent\'s own chroma too — ${preset.key}', () {
@@ -337,9 +360,36 @@ void main() {
       // The rule the presets follow and the rule fromSeed encodes are meant
       // to be one rule; this is what keeps them from drifting apart. (Dark
       // halves are hand-adjusted from fromSeed's floor and are not pinned.)
+      // Orange is the one documented exception — see the test below.
       for (final MapEntry<String, Color> entry in seedOf.entries) {
+        if (entry.key == 'Orange') continue;
         expect(AppConstants.presetThemes[entry.key]!.light, ThemeAccent.fromSeed(entry.value).light,
             reason: '${entry.key}: the preset\'s light half is not fromSeed(seed).light');
+      }
+    });
+
+    test('Orange is the hue that leaves tone 44, and the pair of rules that lets it', () {
+      // At 44 orange is a brown; no tone that is orange carries white. The
+      // preset sits at 55 under its own ink (onLight), and text in the
+      // accent falls back to the wash label (accentText). Both are decided
+      // from the colour, not from the preset name, so this pins the
+      // outcome, not a special case.
+      final ThemeAccent orange = AppConstants.presetThemes['Orange']!;
+      final light = buildAppColorScheme(accent: orange, brightness: Brightness.light);
+      expect(hct(orange.light).tone, closeTo(55, 0.5));
+      expect(hueDistance(orange.light, seedOf['Orange']!), lessThan(4));
+      expect(hct(orange.light).chroma, greaterThan(hct(const Color(0xFF985900)).chroma),
+          reason: 'the point of leaving tone 44 is to get the chroma back');
+      expect(light.onPrimary, orange.lightTone(10), reason: 'white on it is 3.8:1; the ink is its own tone 10');
+      expect(light.onPrimary.toARGB32(), isNot(Colors.white.toARGB32()));
+      expect(light.accentText, light.onAccentTint, reason: 'as text, tone 55 is 3.3:1 on the canvas');
+      expect(light.accentText, isNot(light.primary));
+      // Every other preset keeps white ink and primary-as-text.
+      for (final MapEntry<String, ThemeAccent> other in AppConstants.presetThemes.entries) {
+        if (other.key == 'Orange') continue;
+        final scheme = buildAppColorScheme(accent: other.value, brightness: Brightness.light);
+        expect(scheme.onPrimary.toARGB32(), Colors.white.toARGB32(), reason: other.key);
+        expect(scheme.accentText, scheme.primary, reason: other.key);
       }
     });
 
@@ -497,6 +547,17 @@ void main() {
       test('it carries the same weight as the primary CTA — ${seed.key}', () {
         final primaryFill =
             buildAppColorScheme(accent: seed.value, brightness: Brightness.light);
+        if (primaryFill.onPrimary.toARGB32() != Colors.white.toARGB32()) {
+          // A fill under its own dark ink (Orange, tone 55) is a different
+          // construction from a white-labelled one and sits above the band
+          // by design; what has to hold is that it is still a committed fill
+          // carrying its ink at AA, not a wash.
+          expect(contrast(primaryFill.primary, primaryFill.onPrimary), greaterThanOrEqualTo(4.5),
+              reason: '${seed.key}: a dark-ink CTA that does not carry its ink');
+          expect(luminance(primaryFill.primary), lessThan(0.25),
+              reason: '${seed.key}: the CTA has become a pale slab');
+          return;
+        }
         expect(
           (hct(errorFill.primary).tone - hct(primaryFill.primary).tone).abs(),
           lessThanOrEqualTo(toneWidth),

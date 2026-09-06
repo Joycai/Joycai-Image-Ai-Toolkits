@@ -972,7 +972,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
               context,
               icon: Icons.check_circle_outline,
               label: l10n.save,
-              color: colorScheme.primary,
+              color: colorScheme.accentText,
               onTap: () => _showMobileSaveSheet(context, l10n),
             ),
           ],

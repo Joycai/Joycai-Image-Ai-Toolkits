@@ -454,7 +454,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           const SizedBox(width: 4),
           Text(
             l10n.nSelected(_selectedIds.length),
-            style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
+            style: TextStyle(color: colorScheme.accentText, fontWeight: FontWeight.w600),
           ),
           const Spacer(),
           AppButton(

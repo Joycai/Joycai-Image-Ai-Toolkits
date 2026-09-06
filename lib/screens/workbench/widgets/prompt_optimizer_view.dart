@@ -2180,7 +2180,7 @@ class _AskUserCardState extends State<_AskUserCard> {
                     l10n.optAskUserTitle,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: colorScheme.primary,
+                      color: colorScheme.accentText,
                     ),
                   ),
                 ),
