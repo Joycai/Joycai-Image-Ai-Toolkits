@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
 import '../core/safety_settings.dart';
+import '../core/theme_accent.dart';
 import '../core/thumbnail_fit.dart';
 import '../l10n/app_localizations.dart';
 import '../services/llm/llm_dispatcher.dart';
@@ -148,10 +149,15 @@ class AppState extends ChangeNotifier {
 
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
-  // The design spec's own accent. Only a default: the seed is the user's to
-  // change in settings, and every accent in the app is derived from whatever
-  // is here rather than from this literal.
-  Color themeSeedColor = const Color(0xFF4A72E8);
+  // The design spec's own accent, as a light/dark pair. Only a default: the
+  // accent is the user's to change in settings, and every accent in the app
+  // is derived from whatever is here rather than from this literal.
+  //
+  // Persisted by preset *key* (`theme_accent`), not by colour, so a preset's
+  // tuned dark half can move in a later version and follow the user. The
+  // pre-pair setting (`theme_seed_color`, one ARGB int) is still read on
+  // load as a fallback and mapped to the preset whose light half it was.
+  ThemeAccent themeAccent = AppConstants.presetThemes[AppConstants.defaultThemeAccentKey]!;
   // Font family key. Defaults to the bundled NotoSansSC to preserve the
   // existing look. The sentinel [AppConstants.systemFontKey] means "use the
   // platform default", which maps to a null [ThemeData.fontFamily].
@@ -417,11 +423,24 @@ class AppState extends ChangeNotifier {
       themeMode = ThemeMode.values.firstWhere((e) => e.name == savedTheme, orElse: () => ThemeMode.system);
     }
 
-    final savedSeed = await _db.getSetting('theme_seed_color');
-    if (savedSeed != null) {
-      try {
-        themeSeedColor = Color(int.parse(savedSeed));
-      } catch (_) {}
+    final savedAccentKey = await _db.getSetting('theme_accent');
+    final savedAccent = savedAccentKey == null ? null : AppConstants.presetThemes[savedAccentKey];
+    if (savedAccent != null) {
+      themeAccent = savedAccent;
+    } else {
+      // The pre-pair setting: one ARGB int, the light half of a preset. Find
+      // the preset by that half; an unrecognised value (a hand-edited row)
+      // keeps the default rather than guessing a dark half for it.
+      final savedSeed = await _db.getSetting('theme_seed_color');
+      final int? seedArgb = savedSeed == null ? null : int.tryParse(savedSeed);
+      if (seedArgb != null) {
+        for (final preset in AppConstants.presetThemes.values) {
+          if (preset.light.toARGB32() == seedArgb) {
+            themeAccent = preset;
+            break;
+          }
+        }
+      }
     }
 
     fontFamily = await _db.getSetting('font_family') ?? 'NotoSansSC';
@@ -518,9 +537,15 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setThemeSeedColor(Color color) async {
-    themeSeedColor = color;
-    await _db.saveSetting('theme_seed_color', color.toARGB32().toString());
+  /// Picks a theme colour by its [AppConstants.presetThemes] key.
+  ///
+  /// Keyed rather than valued on purpose: the stored preference has to
+  /// survive a preset being retuned, which a stored hex would not.
+  Future<void> setThemeAccent(String presetKey) async {
+    final ThemeAccent? accent = AppConstants.presetThemes[presetKey];
+    if (accent == null) return;
+    themeAccent = accent;
+    await _db.saveSetting('theme_accent', presetKey);
     notifyListeners();
   }
 

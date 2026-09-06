@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/main.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:provider/provider.dart';
 
 import 'fixture_env.dart';
@@ -60,21 +61,21 @@ Future<void> shoot(
   required AppScreen screen,
   required ShotSize size,
   Brightness brightness = Brightness.light,
-  /// The theme seed to render under. Defaults to [AppState]'s own, which is
+  /// The theme colour to render under. Defaults to [AppState]'s own, which is
   /// what the app opens with; pass one of [AppConstants.presetThemes] to check
-  /// a screen against a different accent. Appears in the filename so two seeds
-  /// never overwrite each other's PNG.
-  Color? seedColor,
+  /// a screen against a different accent. Appears in the filename so two
+  /// accents never overwrite each other's PNG.
+  ThemeAccent? accent,
   Locale locale = const Locale('zh'),
   String? suffix,
   Future<void> Function(WidgetTester tester)? before,
   Future<void> Function(WidgetTester tester)? after,
 }) async {
-  final String seedTag = seedColor == null
+  final String seedTag = accent == null
       ? ''
       : '_${AppConstants.presetThemes.entries.firstWhere(
-            (e) => e.value.toARGB32() == seedColor.toARGB32(),
-            orElse: () => MapEntry('seed${seedColor.toARGB32()}', seedColor),
+            (e) => e.value == accent,
+            orElse: () => MapEntry('seed${accent.light.toARGB32()}', accent),
           ).key.toLowerCase()}';
   final String name = '${screen.name}_${size.label}_${brightness.name}'
       '$seedTag${suffix == null ? '' : '_$suffix'}';
@@ -85,7 +86,7 @@ Future<void> shoot(
     screen: screen,
     size: size.size,
     brightness: brightness,
-    seedColor: seedColor,
+    accent: accent,
     locale: locale,
     label: name,
     before: before,
@@ -107,7 +108,7 @@ Future<void> mountApp(
   required AppScreen screen,
   required Size size,
   Brightness brightness = Brightness.light,
-  Color? seedColor,
+  ThemeAccent? accent,
   Locale locale = const Locale('zh'),
   String label = 'mount',
   Future<void> Function(WidgetTester tester)? before,
@@ -122,7 +123,7 @@ Future<void> mountApp(
   final AppState appState = AppState();
   appState.themeMode =
       brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light;
-  if (seedColor != null) appState.themeSeedColor = seedColor;
+  if (accent != null) appState.themeAccent = accent;
   appState.locale = locale;
   // Logs accumulate across shots and would make the console strip differ run
   // to run for reasons that have nothing to do with layout.

@@ -6,6 +6,7 @@ import 'package:joycai_image_ai_toolkits/core/app_semantic_colors.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Pins the rule that lets one design spec, drawn in a single teal, render
 /// correctly under all seven of the app's seed colours.
@@ -31,12 +32,12 @@ void main() {
   }
 
   group('accent tokens hold at every seed', () {
-    for (final MapEntry<String, Color> seed in AppConstants.presetThemes.entries) {
+    for (final MapEntry<String, ThemeAccent> seed in AppConstants.presetThemes.entries) {
       for (final Brightness brightness in Brightness.values) {
         final String where = '${seed.key}/${brightness.name}';
 
         test('onAccentTint reads on its own tint — $where', () {
-          final scheme = buildAppColorScheme(seedColor: seed.value, brightness: brightness);
+          final scheme = buildAppColorScheme(accent: seed.value, brightness: brightness);
 
           // The tint is translucent, so what the label actually sits on is the
           // tint composited over the surface beneath it — which is what the
@@ -57,7 +58,7 @@ void main() {
           // label in both brightnesses — but stated rather than inferred,
           // because it is the pairing that made the label switch off `primary`
           // and nothing else would fail if it regressed.
-          final scheme = buildAppColorScheme(seedColor: seed.value, brightness: brightness);
+          final scheme = buildAppColorScheme(accent: seed.value, brightness: brightness);
           final double ratio = contrast(scheme.onAccentTint, scheme.surface);
 
           expect(ratio, greaterThanOrEqualTo(4.5),
@@ -70,7 +71,7 @@ void main() {
           // as the accent, far enough to be legible on a wash of it. Collapsing
           // the two is the failure this guards — a label in `primary` on a
           // `primary` tint, which is one tone reading against itself.
-          final scheme = buildAppColorScheme(seedColor: seed.value, brightness: brightness);
+          final scheme = buildAppColorScheme(accent: seed.value, brightness: brightness);
           expect(scheme.onAccentTint, isNot(scheme.primary), reason: where);
         });
       }
@@ -79,24 +80,137 @@ void main() {
     test('the branch picks the role that is right in each brightness', () {
       // Pinned because each half looks like it could be simplified away, and
       // each simplification breaks the other half:
-      //   · onPrimaryContainer everywhere → tone 10 in light, a black label
-      //   · primaryFixedDim everywhere    → tone 80 in dark, which is exactly
-      //     primary's own tone, so the label vanishes into its tint
-      final light = buildAppColorScheme(seedColor: Colors.teal, brightness: Brightness.light);
+      //   · onPrimaryFixedVariant everywhere → tone 30 in dark, a label that
+      //     all but vanishes on the dark canvas
+      //   · primaryFixedDim everywhere       → tone 80 in light, a pastel
+      //     label on a white panel
+      final accent = ThemeAccent.fromSeed(Colors.teal);
+      final light = buildAppColorScheme(accent: accent, brightness: Brightness.light);
       expect(light.onAccentTint, light.onPrimaryFixedVariant);
 
-      final dark = buildAppColorScheme(seedColor: Colors.teal, brightness: Brightness.dark);
-      expect(dark.onAccentTint, dark.onPrimaryContainer);
+      final dark = buildAppColorScheme(accent: accent, brightness: Brightness.dark);
+      expect(dark.onAccentTint, dark.primaryFixedDim);
 
-      // The two facts the branch rests on, asserted so an SDK bump that moves
-      // either one fails here rather than silently in the UI.
-      expect(dark.primaryFixedDim, dark.primary,
-          reason: 'primaryFixedDim has moved off primary in dark — it is now '
-              'viable there and the branch could be revisited');
+      // The facts the branch rests on, asserted so an SDK bump or a change to
+      // buildAppColorScheme that moves any of them fails here rather than
+      // silently in the UI.
+      expect(dark.primaryFixedDim, isNot(dark.primary),
+          reason: 'primaryFixedDim is primary again in dark. Before the accent '
+              'became a pair that was always so (both tone 80), which is why '
+              'the dark branch used to read onPrimaryContainer; the label '
+              'would be one tone reading against its own tint');
+      expect(dark.primaryFixedDim, accent.darkOnTint,
+          reason: 'buildAppColorScheme rewrites primaryFixedDim in dark to '
+              'tone 80 at the accent\'s own chroma — the vibrant palette\'s '
+              'tone 80 is at maximum chroma, a neon beside a calmer accent');
       expect(light.onPrimaryContainer, light.onPrimaryFixedVariant,
           reason: 'Material has moved onPrimaryContainer off tone 30 in light. '
               'The Fixed role this getter uses is the pinned one, so nothing '
               'is broken — but the doc comment now understates why it matters');
+    });
+  });
+
+  group('the accent is a pair, and dark draws its own half', () {
+    // The rule ThemeAccent exists for. fromSeed puts dark `primary` at tone
+    // 80 — a pastel of whatever was picked, on every checkbox, switch, ring
+    // and selected row — and the spec's own dark frame draws its accent at
+    // tone 60. Each preset carries a dark half tuned on the dark ramp, and
+    // it is drawn verbatim. These pin what "tuned" has to mean, so a retune
+    // that drifts fails here rather than in a badge nobody can read.
+    for (final MapEntry<String, ThemeAccent> preset in AppConstants.presetThemes.entries) {
+      final ThemeAccent accent = preset.value;
+      final dark = buildAppColorScheme(accent: accent, brightness: Brightness.dark);
+
+      test('dark primary is the tuned dark half, verbatim — ${preset.key}', () {
+        expect(dark.primary, accent.dark);
+      });
+
+      test('the dark accent is a mid tone, not the pastel fromSeed gives — ${preset.key}', () {
+        final Color material = ColorScheme.fromSeed(
+          seedColor: accent.dark,
+          brightness: Brightness.dark,
+          dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+        ).primary;
+        expect(luminance(dark.primary), lessThan(luminance(material)),
+            reason: '${preset.key}\'s dark half is as pale as tone 80 — '
+                'the pair has stopped doing anything');
+      });
+
+      test('the dark accent reads as text on every dark surface — ${preset.key}', () {
+        // `primary` is a text colour too: TextButton labels, AppButton.text,
+        // the accentLabel on the workbench's add-folder button, links. The
+        // card surface is the darkest ground text is set on in practice, and
+        // the one that bounds the tone from below.
+        for (final (name, ground) in [
+          ('surface', dark.surface),
+          ('surfaceContainerLow', dark.surfaceContainerLow),
+          ('surfaceContainer', dark.surfaceContainer),
+          ('surfaceContainerHigh', dark.surfaceContainerHigh),
+        ]) {
+          final double ratio = contrast(dark.primary, ground);
+          expect(ratio, greaterThanOrEqualTo(4.5),
+              reason: '${preset.key} on $name: ${ratio.toStringAsFixed(2)}:1 — '
+                  'the dark half was tuned too dark');
+        }
+      });
+
+      test('ink on the dark accent reads, and is not white — ${preset.key}', () {
+        // A count badge, a selected chip's tick, the browser's selection
+        // check: all `onPrimary` on `primary`. At tone ~62 white is ~3:1,
+        // the mid-tone trap; the accent's own tone-10 ink is what reads.
+        final double ratio = contrast(dark.onPrimary, dark.primary);
+        expect(ratio, greaterThanOrEqualTo(4.5),
+            reason: '${preset.key}: ${ratio.toStringAsFixed(2)}:1 — the dark '
+                'half was tuned too dark for its ink, or onPrimary regressed');
+        expect(dark.onPrimary.toARGB32(), isNot(Colors.white.toARGB32()));
+      });
+
+      test('the two halves are one colour — ${preset.key}', () {
+        // A typo'd hex in a preset would pass every contrast check above and
+        // still be wrong. Compared against the *rendered* light primary, not
+        // the seed: BlueGrey's seed is a slate the vibrant scheme pulls a
+        // long way, and it is the rendered pair the user sees together.
+        final light = buildAppColorScheme(accent: accent, brightness: Brightness.light);
+        final double a = HSVColor.fromColor(light.primary).hue;
+        final double b = HSVColor.fromColor(dark.primary).hue;
+        final double delta = (a - b).abs();
+        final double wrapped = delta > 180 ? 360 - delta : delta;
+        expect(wrapped, lessThan(30),
+            reason: '${preset.key}: light hue $a vs dark hue $b');
+      });
+
+      test('light is untouched by the pair — ${preset.key}', () {
+        // The light half is still a seed, and light primary is still the
+        // tone-40 CTA fill. Restated per preset because the dark override in
+        // buildAppColorScheme is guarded by a brightness check that would be
+        // easy to widen by accident.
+        final light = buildAppColorScheme(accent: accent, brightness: Brightness.light);
+        expect(light.primary, buttonFillScheme(accent.light).primary);
+        expect(light.onPrimary, buttonFillScheme(accent.light).onPrimary);
+      });
+    }
+
+    test('fromSeed lifts a mid seed and leaves a light one where it is', () {
+      // Teal is tone ~56: lifted to 62, hue kept. Orange is tone 72 already
+      // and is not pulled *down* — the lift is for legibility on a dark
+      // ground, which a lighter seed already has.
+      final teal = ThemeAccent.fromSeed(Colors.teal);
+      expect(teal.light, Colors.teal);
+      expect(luminance(teal.dark), greaterThan(luminance(Colors.teal)));
+
+      final orange = ThemeAccent.fromSeed(Colors.orange);
+      expect((luminance(orange.dark) - luminance(Colors.orange)).abs(), lessThan(0.02));
+    });
+
+    test('a pair is equal by value, so a preset round-trips through state', () {
+      // The settings swatch marks the selected preset by comparing the
+      // AppState's accent to each entry; the harness names a screenshot the
+      // same way. Both need value equality, not identity.
+      const a = ThemeAccent(light: Color(0xFF4A72E8), dark: Color(0xFF5B8DFF));
+      const b = ThemeAccent(light: Color(0xFF4A72E8), dark: Color(0xFF5B8DFF));
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+      expect(AppConstants.presetThemes[AppConstants.defaultThemeAccentKey], a);
     });
   });
 
@@ -106,9 +220,9 @@ void main() {
       // If these ever became seed-derived, a "succeeded" badge would turn the
       // same colour as everything else and stop meaning anything.
       for (final Brightness brightness in Brightness.values) {
-        final a = buildAppTheme(seedColor: Colors.teal, brightness: brightness)
+        final a = buildAppTheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: brightness)
             .extension<AppSemanticColors>()!;
-        final b = buildAppTheme(seedColor: Colors.pink, brightness: brightness)
+        final b = buildAppTheme(accent: ThemeAccent.fromSeed(Colors.pink), brightness: brightness)
             .extension<AppSemanticColors>()!;
 
         expect(a.success, b.success, reason: brightness.name);
@@ -118,9 +232,9 @@ void main() {
     });
 
     test('light and dark are different sets, not one inverted', () {
-      final light = buildAppTheme(seedColor: Colors.teal, brightness: Brightness.light)
+      final light = buildAppTheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: Brightness.light)
           .extension<AppSemanticColors>()!;
-      final dark = buildAppTheme(seedColor: Colors.teal, brightness: Brightness.dark)
+      final dark = buildAppTheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: Brightness.dark)
           .extension<AppSemanticColors>()!;
 
       expect(light.success, isNot(dark.success));
@@ -170,7 +284,7 @@ void main() {
       // they are near enough that the failure was invisible for eight minor
       // versions; in dark the role is a tone-80 pink, and a filled button
       // wearing it is the palest thing in the dialog.
-      final dark = buildAppColorScheme(seedColor: Colors.blue, brightness: Brightness.dark);
+      final dark = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.blue), brightness: Brightness.dark);
       expect(errorFill.primary, isNot(dark.error));
       expect(luminance(dark.error), greaterThan(0.4),
           reason: 'if the role ever stops being a light tone in dark, revisit '
@@ -186,9 +300,9 @@ void main() {
     // Not "darker than primary" — that would be a coincidence of the ramp
     // rather than a rule, and it would fail the day a seed lands a point
     // lighter. Band membership is the thing that actually has to hold.
-    for (final MapEntry<String, Color> seed in AppConstants.presetThemes.entries) {
+    for (final MapEntry<String, ThemeAccent> seed in AppConstants.presetThemes.entries) {
       test('it carries the same weight as the primary CTA — ${seed.key}', () {
-        final primaryFill = buttonFillScheme(seed.value);
+        final primaryFill = buttonFillScheme(seed.value.light);
         expect(
           (luminance(errorFill.primary) - luminance(primaryFill.primary)).abs(),
           lessThan(0.03),

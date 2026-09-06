@@ -1363,6 +1363,7 @@
   "themeAuto": "跟随系统",
   "themeLight": "浅色模式",
   "themeDark": "深色模式",
+  "themeColor": "主题色",
   "font": "字体",
   "fontSystem": "系统默认",
   "fontDownloadTitle": "下载字体",

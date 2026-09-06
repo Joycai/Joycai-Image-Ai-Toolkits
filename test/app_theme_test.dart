@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers the app-wide button theme.
 ///
@@ -16,8 +17,8 @@ void main() {
   Color? resolve(ThemeData theme, Set<WidgetState> states) =>
       styleOf(theme).backgroundColor?.resolve(states);
 
-  ThemeData dark() => buildAppTheme(seedColor: seed, brightness: Brightness.dark);
-  ThemeData light() => buildAppTheme(seedColor: seed, brightness: Brightness.light);
+  ThemeData dark() => buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.dark);
+  ThemeData light() => buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
 
   test('filled buttons take the fill scheme, whatever the brightness', () {
     final scheme = buttonFillScheme(seed);
@@ -196,7 +197,7 @@ void _noop() {}
 /// the unselected colour.
 void _metricsOnlyTests() {
   const seed = Colors.indigo;
-  ThemeData light() => buildAppTheme(seedColor: seed, brightness: Brightness.light);
+  ThemeData light() => buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
 
   test('a scale slot really does carry a colour', () {
     // The premise. If Material ever stops stamping one, metricsOnly is dead

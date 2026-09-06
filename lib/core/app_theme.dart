@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_semantic_colors.dart';
 import 'design_tokens.dart';
+import 'theme_accent.dart';
 
 /// Corner radius shared by buttons and the boxed controls beside them, so a
 /// header of mixed shapes still reads as one row.
@@ -154,12 +155,20 @@ class _Neutrals {
 /// seeded scheme still supplies primary/secondary/tertiary/error and their
 /// containers, so the accent survives exactly where it should: on things the
 /// user acts on.
+///
+/// The accent is a [ThemeAccent] — a light/dark *pair* — and the two halves
+/// are not treated alike. Light grows a scheme from its half as a seed and
+/// takes Material's tone-40 `primary`. Dark grows a scheme from its half for
+/// the palette roles, then draws `primary` **as the half itself**: that hex
+/// was tuned on the dark canvas, and the tone-80 pastel `fromSeed` would put
+/// there is the thing [ThemeAccent] exists to replace. See it for the rest.
 ColorScheme buildAppColorScheme({
-  required Color seedColor,
+  required ThemeAccent accent,
   required Brightness brightness,
 }) {
+  final bool isDark = brightness == Brightness.dark;
   final seeded = ColorScheme.fromSeed(
-    seedColor: seedColor,
+    seedColor: accent.forBrightness(brightness),
     brightness: brightness,
     // `vibrant`, not the default `tonalSpot`. `tonalSpot` caps the primary
     // palette's chroma, and at the spec's own seed — `#4A72E8`, a vivid blue —
@@ -182,9 +191,23 @@ ColorScheme buildAppColorScheme({
     // which is wrong for a fill whatever the variant.
     dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
   );
-  final neutral = brightness == Brightness.dark ? _Neutrals.dark : _Neutrals.light;
+  final neutral = isDark ? _Neutrals.dark : _Neutrals.light;
 
   return seeded.copyWith(
+    // Dark only. `fromSeed` puts dark `primary` at tone 80 — legible as a
+    // foreground, and a pastel of whatever the user picked on every control
+    // that wears it. The pair's dark half is the accent a designer tuned on
+    // this ramp, so it is drawn verbatim; what goes *on* it and on a wash of
+    // it move with it (see [ThemeAccent.onDark] / [ThemeAccent.darkOnTint]).
+    // `primaryFixedDim` is overwritten because it is the role
+    // [AppAccent.onAccentTint] and [AppAccent.accentOnOverlay] read in dark,
+    // and the vibrant palette's own tone 80 is at maximum chroma — a neon
+    // beside an accent that is not. Light is untouched: its `primary` is the
+    // tone 40 `buttonFillScheme` also lands on, and `app_theme_test` pins
+    // the two being one colour.
+    primary: isDark ? accent.dark : null,
+    onPrimary: isDark ? accent.onDark : null,
+    primaryFixedDim: isDark ? accent.darkOnTint : null,
     surface: neutral.surface,
     surfaceDim: neutral.surfaceDim,
     surfaceBright: neutral.surfaceBright,
@@ -205,18 +228,19 @@ ColorScheme buildAppColorScheme({
   );
 }
 
-/// The app's theme, built from the seed colour the user picked in settings.
+/// The app's theme, built from the theme colour the user picked in settings.
 ///
-/// Accents are derived from that seed rather than hard-coded, so a button
+/// Accents are derived from that pair rather than hard-coded, so a button
 /// stays the user's colour and not a designer's. Greys deliberately are not —
 /// see [buildAppColorScheme].
 ThemeData buildAppTheme({
-  required Color seedColor,
+  required ThemeAccent accent,
   required Brightness brightness,
   String? fontFamily,
 }) {
-  final colorScheme = buildAppColorScheme(seedColor: seedColor, brightness: brightness);
-  final fill = buttonFillScheme(seedColor);
+  final colorScheme = buildAppColorScheme(accent: accent, brightness: brightness);
+  // The light half in both brightnesses — see [buttonFillScheme].
+  final fill = buttonFillScheme(accent.light);
 
   return ThemeData(
     useMaterial3: true,
@@ -589,7 +613,11 @@ CheckboxThemeData _buildCheckboxTheme(ColorScheme colorScheme) {
       // draws an unchecked box, and a fill would paint over it.
       return states.contains(WidgetState.selected) ? colorScheme.primary : Colors.transparent;
     }),
-    checkColor: WidgetStatePropertyAll(Colors.white),
+    // `onPrimary`, not white. In light it *is* white (tone 100 on tone 40).
+    // In dark the fill is the accent at tone ~62, and a white tick on that is
+    // ~3:1 — the non-text floor exactly, at the smallest glyph in the app.
+    // The accent's own tone-10 ink is what reads there, at 5.4:1 or better.
+    checkColor: WidgetStatePropertyAll(colorScheme.onPrimary),
     // Material reserves a 48px tap target around a 40px checkbox by default,
     // which in a dense settings list leaves the box marooned in whitespace.
     visualDensity: VisualDensity.compact,

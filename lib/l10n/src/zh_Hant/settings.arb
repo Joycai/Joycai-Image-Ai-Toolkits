@@ -12,6 +12,7 @@
   "themeAuto": "自動",
   "themeLight": "淺色",
   "themeDark": "深色",
+  "themeColor": "主題色",
   "font": "字型",
   "fontSystem": "系統預設",
   "fontDownloadTitle": "下載字型",

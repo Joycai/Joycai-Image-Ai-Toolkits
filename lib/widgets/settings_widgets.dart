@@ -9,6 +9,7 @@ import 'app_button.dart';
 import 'app_dialog.dart';
 import 'app_segmented_control.dart';
 import 'app_snackbar.dart';
+import 'dual_tone_swatch.dart';
 
 class ThemeSelector extends StatelessWidget {
   final AppState appState;
@@ -64,44 +65,19 @@ class ThemeColorSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Theme Color",
+        Text(l10n.themeColor,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
         const SizedBox(height: 12),
         Wrap(
           spacing: 12,
           runSpacing: 12,
           children: AppConstants.presetThemes.entries.map((entry) {
-            final isSelected = appState.themeSeedColor.toARGB32() == entry.value.toARGB32();
             return Tooltip(
               message: entry.key,
-              child: InkWell(
-                onTap: () => appState.setThemeSeedColor(entry.value),
-                borderRadius: BorderRadius.circular(20),
-                child: AnimatedContainer(
-                  duration: AppMotion.durationOf(context, AppMotion.state),
-                  curve: AppMotion.enter,
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: entry.value,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected ? Theme.of(context).colorScheme.onSurface : Colors.transparent,
-                      width: 3,
-                    ),
-                    boxShadow: [
-                      if (isSelected)
-                        BoxShadow(
-                          color: entry.value.withAlpha(100),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        )
-                    ],
-                  ),
-                  child: isSelected 
-                    ? Icon(Icons.check, size: 20, color: ThemeData.estimateBrightnessForColor(entry.value) == Brightness.dark ? Colors.white : Colors.black) 
-                    : null,
-                ),
+              child: DualToneSwatch(
+                accent: entry.value,
+                selected: appState.themeAccent == entry.value,
+                onTap: () => appState.setThemeAccent(entry.key),
               ),
             );
           }).toList(),

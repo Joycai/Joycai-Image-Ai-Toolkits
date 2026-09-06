@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers the type scale added to [buildAppTheme] so widgets can read
 /// `textTheme.bodyMedium` etc. instead of a literal `TextStyle(fontSize: N)`.
@@ -18,7 +19,7 @@ void main() {
     // applies it manually. If this regresses, a font switch would silently
     // miss anything styled from e.g. bodyMedium.
     final withFont = buildAppTheme(
-      seedColor: seed,
+      accent: ThemeAccent.fromSeed(seed),
       brightness: Brightness.light,
       fontFamily: 'NotoSansSC',
     ).textTheme;
@@ -42,7 +43,7 @@ void main() {
     // choice — .apply() must be skipped entirely then, not called with a
     // null family (which would stamp every slot's family to null instead of
     // leaving Material's own default, e.g. Roboto, in place).
-    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+    final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final defaultFamily = ThemeData(useMaterial3: true).textTheme.bodyMedium?.fontFamily;
 
     expect(theme.textTheme.bodyMedium?.fontFamily, defaultFamily);
@@ -51,7 +52,7 @@ void main() {
   test('the scale sizes match what the app actually renders at', () {
     // Pins the sizes call sites are expected to migrate onto, so a slot
     // can't silently drift away from the value every screen already uses.
-    final textTheme = buildAppTheme(seedColor: seed, brightness: Brightness.light).textTheme;
+    final textTheme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light).textTheme;
 
     // 16 since the restyle — the spec's 页面标题 row. See _buildTextTheme.
     expect(textTheme.titleLarge?.fontSize, 16);
@@ -68,8 +69,8 @@ void main() {
     // The scale merges its overrides on top of Material's own colour-derived
     // default so text keeps tracking colorScheme — it must not have stamped a
     // flat colour of its own on top.
-    final colorScheme = buildAppColorScheme(seedColor: seed, brightness: Brightness.light);
-    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+    final colorScheme = buildAppColorScheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
+    final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final defaultTheme = ThemeData(useMaterial3: true, colorScheme: colorScheme);
 
     expect(theme.textTheme.bodyMedium?.color, defaultTheme.textTheme.bodyMedium?.color);
@@ -79,8 +80,8 @@ void main() {
   test('the scale is identical across light and dark, only colour differs', () {
     // Switching theme mode must not also reflow text — only the palette
     // should move.
-    final light = buildAppTheme(seedColor: seed, brightness: Brightness.light).textTheme;
-    final dark = buildAppTheme(seedColor: seed, brightness: Brightness.dark).textTheme;
+    final light = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light).textTheme;
+    final dark = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.dark).textTheme;
 
     expect(dark.bodyMedium?.fontSize, light.bodyMedium?.fontSize);
     expect(dark.bodyMedium?.fontWeight, light.bodyMedium?.fontWeight);
@@ -94,7 +95,7 @@ void main() {
     // was left to Material — whose values are attached per slot and tuned to
     // Material's sizes, all of which this app moved.
     TextTheme scale() =>
-        buildAppTheme(seedColor: seed, brightness: Brightness.light).textTheme;
+        buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light).textTheme;
 
     test('two slots at the same size are spaced the same', () {
       final t = scale();

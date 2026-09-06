@@ -7,6 +7,7 @@ import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/model_selection_section.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dropdown.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers the two ways the workbench's model card can disagree with itself.
 ///
@@ -50,7 +51,7 @@ void main() {
     List<LLMChannel>? channels,
   }) {
     return MaterialApp(
-      theme: buildAppTheme(seedColor: seed, brightness: Brightness.light),
+      theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

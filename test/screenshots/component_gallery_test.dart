@@ -32,6 +32,7 @@ import 'package:joycai_image_ai_toolkits/core/app_semantic_colors.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_card.dart';
@@ -48,7 +49,7 @@ import 'package:joycai_image_ai_toolkits/widgets/app_status_badge.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_text_field.dart';
 
 void main() {
-  for (final MapEntry<String, Color> seed in AppConstants.presetThemes.entries) {
+  for (final MapEntry<String, ThemeAccent> seed in AppConstants.presetThemes.entries) {
     for (final Brightness brightness in Brightness.values) {
       testWidgets('gallery · ${seed.key} · ${brightness.name}', (tester) async {
         // Tall enough for the whole column. The golden captures the rendered
@@ -70,7 +71,7 @@ void main() {
           // back to Roboto, which has no CJK — every label in this gallery
           // photographs as a row of tofu boxes.
           theme: buildAppTheme(
-            seedColor: seed.value,
+            accent: seed.value,
             brightness: brightness,
             fontFamily: 'NotoSansSC',
           ),

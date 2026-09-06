@@ -287,34 +287,44 @@ extension AppAccent on ColorScheme {
   /// | light | `#006A60` | `#005048` | `#005048` | `#82D5C8` |
   /// | dark  | `#82D5C8` | `#9EF2E4` | `#005048`   | `#82D5C8` |
   ///
-  /// Two things fall out, both true at every seed:
+  /// That table is what `fromSeed` returns; it is no longer what this app's
+  /// dark scheme holds. Since the accent became a light/dark **pair**
+  /// (`ThemeAccent`), dark `primary` is the pair's tuned dark half at tone
+  /// ~62 — not tone 80 — and `primaryFixedDim` is rewritten by
+  /// `buildAppColorScheme` to tone 80 *at that accent's chroma*. Which
+  /// changes which role is right in each brightness:
   ///
-  /// - In **dark**, `primaryFixedDim` is *exactly* [primary]. Using it would
-  ///   make the label one tone reading against its own tint — the precise
-  ///   failure this getter exists to prevent. `onPrimaryContainer` is a step
-  ///   lighter than the accent, which is what dark mode needs.
-  /// - In **light**, the two candidates are *identical*. The `Fixed` role is
-  ///   taken anyway because its tone is pinned by definition, where
+  /// - In **light**, the two candidates are *identical* (tone 30). The
+  ///   `Fixed` role is taken because its tone is pinned by definition, where
   ///   `onPrimaryContainer`'s is a brightness-dependent assignment that
   ///   Material has already moved once (it was near-black at tone 10 for a
-  ///   spell, which on a 12% wash reads as plain dark text, not as the accent).
-  ///   Same pixels today, insured against that revision returning.
+  ///   spell, which on a 12% wash reads as plain dark text, not as the
+  ///   accent). Same pixels today, insured against that revision returning.
+  /// - In **dark**, `primaryFixedDim` is now eighteen tones *above* the
+  ///   accent, at the accent's own chroma — exactly the "主色深" relation the
+  ///   spec draws (`#4ECDC0` ≈ 76 on `#3FC1B0` ≈ 71). It used to be unusable
+  ///   here because it *was* the accent; that is the one thing the pair
+  ///   changed. `onPrimaryContainer` (tone 90 of the vibrant palette) would
+  ///   still read, but at maximum chroma it is a neon that no longer looks
+  ///   like the calmer accent under it — `#00FDE8` over a `#1FA89A` wash.
   ///
   /// No per-seed tuning is needed because in HCT tone *is* L\*, so relative
   /// luminance is fixed regardless of hue — a contrast figure measured on teal
   /// is the same figure on orange. `design_tokens_test` asserts it for every
-  /// seed in both brightnesses rather than trusting that.
+  /// preset in both brightnesses rather than trusting that.
   Color get onAccentTint =>
-      brightness == Brightness.light ? onPrimaryFixedVariant : onPrimaryContainer;
+      brightness == Brightness.light ? onPrimaryFixedVariant : primaryFixedDim;
 
-  /// The seed's own colour, at a tone that reads on [AppOverlay.ink] — a
-  /// toast's action label.
+  /// The accent at a tone that reads on [AppOverlay.ink] — a toast's action
+  /// label.
   ///
   /// `primaryFixedDim` for the reason the table above already establishes: the
   /// `Fixed` roles are pinned by definition and do not move with the
   /// brightness, and this one is tone 80. That is exactly what a fixed dark
   /// ground needs, and it is the *only* accent role that stays put while the
-  /// ground it sits on does.
+  /// ground it sits on does. (In dark it carries the accent's own chroma
+  /// rather than the palette's — see [onAccentTint] — which on this ground
+  /// is the difference between the user's colour and a neon of it.)
   Color get accentOnOverlay => primaryFixedDim;
 }
 

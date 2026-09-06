@@ -4,6 +4,7 @@ import 'package:joycai_image_ai_toolkits/core/app_semantic_colors.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_snackbar.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers [AppSnackBar]'s four outcomes — the shared replacement for every
 /// hand-rolled `ScaffoldMessenger.showSnackBar` call around the app.
@@ -21,7 +22,7 @@ void main() {
     Brightness brightness = Brightness.light,
   }) =>
       MaterialApp(
-        theme: buildAppTheme(seedColor: seedColor, brightness: brightness),
+        theme: buildAppTheme(accent: ThemeAccent.fromSeed(seedColor), brightness: brightness),
         home: Builder(
           builder: (context) => Scaffold(
             body: ElevatedButton(onPressed: () => onPressed(context), child: const Text('Trigger')),
@@ -100,7 +101,7 @@ void main() {
           )),
     );
 
-    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+    final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final action = tester.widget<SnackBarAction>(find.byType(SnackBarAction));
     expect(action.textColor, theme.colorScheme.accentOnOverlay);
     // Not the plain accent: in light mode that is tone 40 and would all but

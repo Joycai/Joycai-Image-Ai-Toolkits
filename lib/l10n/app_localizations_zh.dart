@@ -2174,6 +2174,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeDark => '深色模式';
 
   @override
+  String get themeColor => '主题色';
+
+  @override
   String get font => '字体';
 
   @override
@@ -6100,6 +6103,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get themeDark => '深色';
+
+  @override
+  String get themeColor => '主題色';
 
   @override
   String get font => '字型';
