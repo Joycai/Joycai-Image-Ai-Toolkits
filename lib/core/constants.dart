@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'theme_accent.dart';
+
 // Image-generation aspect-ratio / resolution options are now described
 // declaratively per model family in `services/llm/model_capabilities.dart`,
 // since different models (nanoBanana, Imagen, OpenAI image) support different
@@ -71,17 +73,42 @@ class AppConstants {
   static const double minThumbnailSize = 80.0;
   static const double maxThumbnailSize = 400.0;
 
-  static const Map<String, Color> presetThemes = {
-    // The design spec's own accent, and the app's default seed. Kept first
-    // so the swatch row opens on the colour the mockups were drawn in.
-    'Blue': Color(0xFF4A72E8),
-    'BlueGrey': Colors.blueGrey,
-    'Indigo': Colors.indigo,
-    'Teal': Colors.teal,
-    'Green': Colors.green,
-    'Orange': Colors.orange,
-    'DeepPurple': Colors.deepPurple,
-    'Rose': Colors.pink,
+  /// The key of [presetThemes] the app opens with, and falls back to when a
+  /// stored preference no longer names a preset.
+  static const String defaultThemeAccentKey = 'Blue';
+
+  /// The theme colours a user can pick, each as a light/dark pair.
+  ///
+  /// The light half of every entry is the seed it has always been — the app
+  /// grows its light scheme from it. The dark half is drawn as-is as dark
+  /// `primary` (see [ThemeAccent]), and each was tuned by hand against the
+  /// dark ramp: start from `ThemeAccent.fromSeed` (same hue and chroma as
+  /// the seed, tone lifted to 62), then adjust. Every value here holds
+  /// ≥ 4.5:1 as text on the dark card surface and carries its tone-10 ink at
+  /// ≥ 5.4:1; `design_tokens_test` re-measures both on every preset, so a
+  /// retune that drifts fails there rather than in a badge nobody can read.
+  ///
+  /// Stored by **key**, not by hex — so a preset's dark half can be retuned
+  /// in a later version and every user who picked it gets the retune.
+  static const Map<String, ThemeAccent> presetThemes = {
+    // The design spec's own accent, and the app's default. Kept first so the
+    // swatch row opens on the colour the mockups were drawn in. The dark half
+    // is the spec's own too — frame `10b` draws its accent at `#5B8DFF`.
+    'Blue': ThemeAccent(light: Color(0xFF4A72E8), dark: Color(0xFF5B8DFF)),
+    // The seed is a low-chroma slate; the light scheme's vibrant variant
+    // pulls it to a saturated `#006783`. The dark half sits between the two
+    // (chroma ~28) so the pair still reads as one colour.
+    'BlueGrey': ThemeAccent(light: Colors.blueGrey, dark: Color(0xFF6F9DB5)),
+    'Indigo': ThemeAccent(light: Colors.indigo, dark: Color(0xFF7A8DFF)),
+    'Teal': ThemeAccent(light: Colors.teal, dark: Color(0xFF1FA89A)),
+    // Lifted to 65, not 62: green's chroma peaks higher up the tone scale,
+    // and at 62 it went muddy.
+    'Green': ThemeAccent(light: Colors.green, dark: Color(0xFF4FB252)),
+    // Already tone 72 as a seed. Kept there, just a point warmer, so the
+    // dark accent is recognisably the orange the swatch shows.
+    'Orange': ThemeAccent(light: Colors.orange, dark: Color(0xFFF59A1A)),
+    'DeepPurple': ThemeAccent(light: Colors.deepPurple, dark: Color(0xFFA97DFF)),
+    'Rose': ThemeAccent(light: Colors.pink, dark: Color(0xFFFF5B83)),
   };
 
   // Font selection. [systemFontKey] is a sentinel meaning "use the platform

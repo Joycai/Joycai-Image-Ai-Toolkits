@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_tool_button.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers [AppToolButton], the quiet toolbar action.
 ///
@@ -11,7 +12,7 @@ import 'package:joycai_image_ai_toolkits/widgets/app_tool_button.dart';
 /// if they carry a fill of their own the row reads as six peers.
 void main() {
   const seed = Colors.indigo;
-  final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+  final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
 
   Widget host(Widget child) => MaterialApp(
         theme: theme,

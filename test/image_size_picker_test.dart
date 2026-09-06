@@ -5,6 +5,7 @@ import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dialogs/image_size_picker_dialog.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers the gpt-image-2 size picker's ratio calculator: "16:9 at 3840"
 /// has to come back as a size that passes all four of OpenAI's rules, with
@@ -108,7 +109,7 @@ void main() {
         locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        theme: buildAppTheme(seedColor: Colors.indigo, brightness: Brightness.light),
+        theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
         home: Builder(
           builder: (context) => Center(
             child: ElevatedButton(

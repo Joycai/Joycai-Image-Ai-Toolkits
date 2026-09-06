@@ -46,6 +46,9 @@ dependencies:
   # already here transitively.
   win32: ^6.4.0
   ffi: ^2.1.4
+  # Flutter's own HCT library, already here transitively; named so
+  # core/theme_accent.dart can import it. Pinned to the version the SDK pins.
+  material_color_utilities: ^0.13.0
 
 dev_dependencies:
   flutter_test:

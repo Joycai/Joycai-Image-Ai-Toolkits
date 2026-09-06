@@ -4,13 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers [AppButton]'s four variants and its loading state.
 void main() {
   const seed = Colors.indigo;
 
   Widget host(Widget child, {Brightness brightness = Brightness.light}) => MaterialApp(
-        theme: buildAppTheme(seedColor: seed, brightness: brightness),
+        theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: brightness),
         home: Scaffold(body: Center(child: child)),
       );
 
@@ -62,7 +63,7 @@ void main() {
 
       // The seed must not reach it either — that was never the bug, and it
       // must not become one.
-      final theme = buildAppTheme(seedColor: seed, brightness: brightness);
+      final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: brightness);
       expect(style.backgroundColor?.resolve(const {}), isNot(theme.colorScheme.primary));
     }
   });
@@ -74,7 +75,7 @@ void main() {
     // separation from `primary` is now weight, not hue.
     await tester.pumpWidget(host(AppButton(label: 'Maybe', onPressed: () {}, variant: AppButtonVariant.secondary)));
 
-    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+    final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     expect(find.byType(OutlinedButton), findsOneWidget);
     expect(find.byType(FilledButton), findsNothing);
 
@@ -139,7 +140,7 @@ void main() {
 
     testWidgets('fullWidth spans what it is offered', (tester) async {
       await tester.pumpWidget(MaterialApp(
-        theme: buildAppTheme(seedColor: seed, brightness: Brightness.light),
+        theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
         home: Scaffold(
           body: SizedBox(
             width: 400,
@@ -191,7 +192,7 @@ void main() {
     testWidgets('the label comes from the type scale, not a literal', (tester) async {
       // So that a change to the scale still reaches buttons — the whole
       // reason the scale exists.
-      final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+      final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
 
       await tester.pumpWidget(host(AppButton(label: 'X', onPressed: () {}, size: AppButtonSize.compact)));
       final style = tester.widget<FilledButton>(find.byType(FilledButton)).style!;
@@ -234,7 +235,7 @@ void main() {
       variant: AppButtonVariant.destructiveText,
     )));
 
-    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+    final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final style = tester.widget<TextButton>(find.byType(TextButton)).style!;
 
     expect(style.foregroundColor?.resolve(const {}), theme.colorScheme.error);
@@ -255,7 +256,7 @@ void main() {
       variant: AppButtonVariant.tonal,
     )));
 
-    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+    final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final colorScheme = theme.colorScheme;
     final style = tester.widget<OutlinedButton>(find.byType(OutlinedButton)).style!;
 
@@ -273,7 +274,7 @@ void main() {
     // The whole reason the variant exists. If it ever resolves to either
     // neighbour's colours the three-tier ranking the spec asks for is gone,
     // and nothing else in the suite would notice.
-    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+    final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final colorScheme = theme.colorScheme;
 
     await tester.pumpWidget(host(AppButton(

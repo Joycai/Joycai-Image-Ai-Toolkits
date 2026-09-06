@@ -11,6 +11,7 @@ import 'package:window_manager/window_manager.dart';
 import 'core/app_theme.dart';
 import 'core/design_tokens.dart';
 import 'core/responsive.dart';
+import 'core/theme_accent.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/batch/task_queue_screen.dart';
 import 'screens/browser/file_browser_screen.dart';
@@ -110,7 +111,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeMode = context.select<AppState, ThemeMode>((s) => s.themeMode);
     final locale = context.select<AppState, Locale?>((s) => s.locale);
-    final themeSeedColor = context.select<AppState, Color>((s) => s.themeSeedColor);
+    final themeAccent = context.select<AppState, ThemeAccent>((s) => s.themeAccent);
     final fontFamily = context.select<AppState, String?>((s) => s.themeFontFamily);
 
     final app = MaterialApp(
@@ -119,12 +120,12 @@ class MyApp extends StatelessWidget {
       locale: locale,
       scrollBehavior: const _AppScrollBehavior(),
       theme: buildAppTheme(
-        seedColor: themeSeedColor,
+        accent: themeAccent,
         brightness: Brightness.light,
         fontFamily: fontFamily,
       ),
       darkTheme: buildAppTheme(
-        seedColor: themeSeedColor,
+        accent: themeAccent,
         brightness: Brightness.dark,
         fontFamily: fontFamily,
       ),

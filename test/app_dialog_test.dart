@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers [AppDialog]'s shared chrome — the shell every hand-built dialog in
 /// `lib/widgets/dialogs/` and `lib/widgets/models/` should eventually sit on.
@@ -9,7 +10,7 @@ void main() {
   const seed = Colors.indigo;
 
   Widget host(WidgetBuilder builder) => MaterialApp(
-        theme: buildAppTheme(seedColor: seed, brightness: Brightness.light),
+        theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
         home: Builder(builder: builder),
       );
 
@@ -49,7 +50,7 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
 
-    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+    final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final titleWidget = tester.widget<Text>(find.text('Title'));
     expect(titleWidget.style?.fontSize, theme.textTheme.titleLarge?.fontSize);
   });
@@ -97,7 +98,7 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
 
-    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+    final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final dialog = tester.widget<Dialog>(find.byType(Dialog));
     final shape = dialog.shape! as RoundedRectangleBorder;
 
@@ -112,7 +113,7 @@ void main() {
     testWidgets('scales up on the way in and is settled by the end',
         (tester) async {
       await tester.pumpWidget(MaterialApp(
-        theme: buildAppTheme(seedColor: Colors.indigo, brightness: Brightness.light),
+        theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () => AppDialog.show(
@@ -148,7 +149,7 @@ void main() {
       // The fade stays — it is opacity, not travel, and it is what tells the
       // user something appeared at all.
       await tester.pumpWidget(MaterialApp(
-        theme: buildAppTheme(seedColor: Colors.indigo, brightness: Brightness.light),
+        theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
         builder: (context, navigator) => MediaQuery(
           data: MediaQuery.of(context).copyWith(disableAnimations: true),
           child: navigator!,

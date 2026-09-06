@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers [buildAppColorScheme]'s split: accents from the seed, greys from
 /// nobody.
@@ -33,7 +34,7 @@ void main() {
       // Seeded here with orange, the hue furthest from the ramp's own: every
       // neutral must still come out blue. One drifting toward the seed is the
       // same regression the zero-chroma assertion used to catch.
-      final scheme = buildAppColorScheme(seedColor: Colors.orange, brightness: brightness);
+      final scheme = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.orange), brightness: brightness);
 
       final neutrals = {
         'surface': scheme.surface,
@@ -65,8 +66,8 @@ void main() {
     test('the greys do not move when the seed changes in $brightness', () {
       // The practical payoff: a panel tuned against one seed must not need
       // re-tuning at the next.
-      final teal = buildAppColorScheme(seedColor: Colors.teal, brightness: brightness);
-      final crimson = buildAppColorScheme(seedColor: Colors.red, brightness: brightness);
+      final teal = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: brightness);
+      final crimson = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.red), brightness: brightness);
 
       expect(crimson.surface, teal.surface);
       expect(crimson.surfaceContainerHighest, teal.surfaceContainerHighest);
@@ -77,8 +78,8 @@ void main() {
     test('accent roles still follow the seed in $brightness', () {
       // The other half of the split — neutralising must not have flattened
       // the roles that carry the user's colour.
-      final teal = buildAppColorScheme(seedColor: Colors.teal, brightness: brightness);
-      final crimson = buildAppColorScheme(seedColor: Colors.red, brightness: brightness);
+      final teal = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: brightness);
+      final crimson = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.red), brightness: brightness);
 
       expect(crimson.primary, isNot(teal.primary));
       expect(chromaOf(teal.primary), greaterThan(0.05));
@@ -90,7 +91,7 @@ void main() {
       // onSurface and surface now come from a different scheme than the one
       // that paired them. Material's own guarantee only covers a matched
       // pair, so the pairing this function assembles has to be checked.
-      final scheme = buildAppColorScheme(seedColor: Colors.teal, brightness: brightness);
+      final scheme = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: brightness);
       final surface = scheme.surface.computeLuminance();
       final onSurface = scheme.onSurface.computeLuminance();
       final ratio = surface > onSurface
@@ -108,11 +109,11 @@ void main() {
     // being the design's and starts being the seed's.
     for (final brightness in Brightness.values) {
       final reference = buildAppColorScheme(
-        seedColor: AppConstants.presetThemes.values.first,
+        accent: AppConstants.presetThemes.values.first,
         brightness: brightness,
       );
       for (final seed in AppConstants.presetThemes.entries) {
-        final scheme = buildAppColorScheme(seedColor: seed.value, brightness: brightness);
+        final scheme = buildAppColorScheme(accent: seed.value, brightness: brightness);
         expect(
           [
             scheme.surface,
@@ -161,7 +162,7 @@ void main() {
     // lighter of the two in *both* brightnesses. Material's dark scheme has
     // these the other way round, so nothing but this test holds it.
     for (final brightness in Brightness.values) {
-      final scheme = buildAppColorScheme(seedColor: Colors.teal, brightness: brightness);
+      final scheme = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: brightness);
       expect(
         scheme.surface.computeLuminance(),
         greaterThan(scheme.surfaceContainer.computeLuminance()),
@@ -174,8 +175,8 @@ void main() {
     // buildAppTheme could easily go on passing ColorScheme.fromSeed straight
     // through; then every widget reading Theme.of(context).colorScheme would
     // still get tinted greys and none of the above would matter.
-    final theme = buildAppTheme(seedColor: Colors.teal, brightness: Brightness.light);
-    final expected = buildAppColorScheme(seedColor: Colors.teal, brightness: Brightness.light);
+    final theme = buildAppTheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: Brightness.light);
+    final expected = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: Brightness.light);
 
     expect(theme.colorScheme.surfaceContainerHighest, expected.surfaceContainerHighest);
     expect(hueOf(theme.colorScheme.surface), inInclusiveRange(210, 245));

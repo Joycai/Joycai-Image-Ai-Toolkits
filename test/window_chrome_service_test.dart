@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/services/window_chrome_service.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers the channel that recolours the Windows title bar.
 ///
@@ -47,7 +48,7 @@ void main() {
   });
 
   ThemeData theme(Brightness brightness) =>
-      buildAppTheme(seedColor: Colors.teal, brightness: brightness);
+      buildAppTheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: brightness);
 
   test('an opaque caption colour does not fit in an int32', () {
     // The whole defect in one assertion. Alpha is 0xFF on any colour this

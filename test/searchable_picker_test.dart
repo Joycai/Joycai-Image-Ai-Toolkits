@@ -5,6 +5,7 @@ import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/model_tag_chip.dart';
 import 'package:joycai_image_ai_toolkits/widgets/searchable_picker.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers [SearchablePickerField]'s load-bearing behaviours, each of which
 /// went wrong in a way that only shows up under a state a single mount does not
@@ -41,7 +42,7 @@ void main() {
     double width = 400,
   }) {
     return MaterialApp(
-      theme: buildAppTheme(seedColor: seed, brightness: Brightness.light),
+      theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -224,7 +225,7 @@ void main() {
         PickerOption<int?>(value: 7, label: 'Claude Sonnet'),
       ];
       return MaterialApp(
-        theme: buildAppTheme(seedColor: seed, brightness: Brightness.light),
+        theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
         localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
