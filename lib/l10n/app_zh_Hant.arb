@@ -66,7 +66,7 @@
   "stagingEmptyTitle": "暫存區是空的",
   "stagingEmptyDesc": "選取檔案後點「加入暫存區」，把要搬運的檔案先記在這裡 —— 只做標記，不移動任何檔案。切換目錄、篩選或重新啟動應用都不會丟。",
   "stagingTarget": "目標目錄",
-  "stagingNoTarget": "未選擇目標目錄",
+  "stagingNoTarget": "未指定",
   "stagingTargetHint": "在左欄資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。",
   "stagingRestored": "已從上次工作階段恢復 {count} 項",
   "@stagingRestored": {
@@ -148,7 +148,7 @@
   "pasteNoDestination": "請先指定目標目錄",
   "pasteDestinationGone": "目標目錄已不存在",
   "pasteNothingToDo": "沒有可搬運的檔案",
-  "conflictsTitle": "處理同名衝突",
+  "conflictsTitle": "同名衝突",
   "conflictSkip": "跳過",
   "conflictOverwrite": "覆蓋",
   "conflictRename": "自動改名",
@@ -410,7 +410,7 @@
       }
     }
   },
-  "pasteRollbackNote": "跨磁碟移動按「複製 + 刪除」執行；取消時已複製的檔案將被回滾刪除，來源檔案保持不動。",
+  "pasteRollbackNote": "跨磁碟移動按「複製 + 刪除」執行；取消時正在複製中的那份副本會被刪除，其來源檔案保持不動。",
   "pasteRunInBackground": "背景執行",
   "pasteMoveDone": "移動完成",
   "pasteCopyDone": "複製完成",

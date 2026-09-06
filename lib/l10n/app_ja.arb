@@ -66,7 +66,7 @@
   "stagingEmptyTitle": "ステージングは空です",
   "stagingEmptyDesc": "ファイルを選んで「ステージングに追加」を押すと、動かしたいファイルをここに控えます。印を付けるだけで、ファイルは移動しません。フォルダーの切り替え、絞り込み、アプリの再起動でも消えません。",
   "stagingTarget": "対象フォルダー",
-  "stagingNoTarget": "対象フォルダー未選択",
+  "stagingNoTarget": "未指定",
   "stagingTargetHint": "左カラムのフォルダーを右クリックして「ここへ移動 / コピー」を選ぶか、ファイルをフォルダーへドラッグします。",
   "stagingRestored": "前回のセッションから {count} 件を復元",
   "@stagingRestored": {
@@ -148,7 +148,7 @@
   "pasteNoDestination": "先に対象フォルダーを指定してください",
   "pasteDestinationGone": "対象フォルダーが存在しません",
   "pasteNothingToDo": "転送するファイルがありません",
-  "conflictsTitle": "名前の衝突を解決",
+  "conflictsTitle": "名前の衝突",
   "conflictSkip": "スキップ",
   "conflictOverwrite": "上書き",
   "conflictRename": "両方保持",

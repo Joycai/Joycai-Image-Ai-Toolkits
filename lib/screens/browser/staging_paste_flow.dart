@@ -717,14 +717,18 @@ Future<void> _showSummary(
             },
           ),
         ],
-        const SizedBox(height: 12),
-        Text(
-          l10n.pasteKeptInStaging(
-            outcome.skipped.length + outcome.failed.length,
-            outcome.succeeded.length,
+        // A copy leaves every mark where it was (see `_runAndReport`), so the
+        // sentence about the successes being taken out is only said of a move.
+        if (isMove) ...[
+          const SizedBox(height: 12),
+          Text(
+            l10n.pasteKeptInStaging(
+              outcome.skipped.length + outcome.failed.length,
+              outcome.succeeded.length,
+            ),
+            style: textTheme.labelSmall?.copyWith(color: colorScheme.outline, height: 1.5),
           ),
-          style: textTheme.labelSmall?.copyWith(color: colorScheme.outline, height: 1.5),
-        ),
+        ],
       ],
     ),
     actionsOverride: Row(

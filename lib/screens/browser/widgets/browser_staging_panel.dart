@@ -97,20 +97,21 @@ class _Header extends StatelessWidget {
             _CountBadge(count: staging.count),
           ],
           const Spacer(),
-          if (staging.isNotEmpty)
-            // A text button in the error colour, not an outlined destructive
-            // one: `12a` keeps it at the weight of a link because emptying the
-            // list costs nothing on disk — the marks are only marks.
-            TextButton(
-              onPressed: staging.clear,
-              style: TextButton.styleFrom(
-                foregroundColor: colorScheme.error,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: const Size(0, 30),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(l10n.clearStaging, style: textTheme.bodySmall),
+          // A text button in the error colour, not an outlined destructive
+          // one: `12a` keeps it at the weight of a link because emptying the
+          // list costs nothing on disk — the marks are only marks. `12c`
+          // keeps it in place on an empty panel, disabled: the header does
+          // not change shape with the list.
+          TextButton(
+            onPressed: staging.isEmpty ? null : staging.clear,
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.error,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(0, 30),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
+            child: Text(l10n.clearStaging, style: textTheme.bodySmall),
+          ),
         ],
       ),
     );

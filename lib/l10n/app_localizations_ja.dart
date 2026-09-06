@@ -178,7 +178,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get stagingTarget => '対象フォルダー';
 
   @override
-  String get stagingNoTarget => '対象フォルダー未選択';
+  String get stagingNoTarget => '未指定';
 
   @override
   String get stagingTargetHint =>
@@ -254,7 +254,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pasteNothingToDo => '転送するファイルがありません';
 
   @override
-  String get conflictsTitle => '名前の衝突を解決';
+  String get conflictsTitle => '名前の衝突';
 
   @override
   String get conflictSkip => 'スキップ';
