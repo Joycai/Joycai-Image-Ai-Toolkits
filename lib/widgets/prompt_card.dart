@@ -41,12 +41,12 @@ class PromptCard extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isExpanded ? colorScheme.primary.withAlpha(80) : colorScheme.outlineVariant,
+          color: isExpanded ? colorScheme.accentRing : colorScheme.outlineVariant,
           width: isExpanded ? 2 : 1,
         ),
         boxShadow: isExpanded ? [
           BoxShadow(
-            color: colorScheme.primary.withAlpha(30),
+            color: colorScheme.accentTint,
             blurRadius: 12,
             offset: const Offset(0, 4),
           )

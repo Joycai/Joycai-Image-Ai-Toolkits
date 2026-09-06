@@ -276,7 +276,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withAlpha(18),
+        color: colorScheme.accentTint,
         // A pill, per `16a` — and per §1, where every badge that states a
         // count or a state is one. At radius 8 this was the only rounded
         // rectangle in a status bar of round things.
@@ -288,7 +288,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
           if (runningCount > 0) ...[
             Text(
               l10n.runningCount(runningCount),
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.primary),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onAccentTint),
             ),
             const SizedBox(width: 7),
             // A bar rather than the 11px ring this replaced: at that size a
@@ -305,7 +305,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
                   builder: (context, v) => LinearProgressIndicator(
                     value: v,
                     minHeight: 4,
-                    backgroundColor: colorScheme.primary.withValues(alpha: 0.18),
+                    backgroundColor: colorScheme.accentTint,
                     color: colorScheme.primary,
                   ),
                 ),
@@ -315,7 +315,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
               const SizedBox(width: 7),
               Text(
                 '$pct%',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.primary),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onAccentTint),
               ),
             ],
           ],

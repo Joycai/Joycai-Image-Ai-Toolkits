@@ -75,7 +75,8 @@
 | 设计稿 | 形态 | 用 |
 |---|---|---|
 | 主色实底 | 主 CTA 填充 | `colorScheme.primary` / `onPrimary`（亮色 = 配对的亮色半压白字；暗色 = 暗色半压 tone 10 墨，见 §1「主题色是一对」） |
-| 主色描边 / 开关开 / 复选框选中 / 聚焦边 | 纯色 | `colorScheme.primary` |
+| 主色描边 / 开关开 / 复选框选中 / 聚焦边 / 图标 | 纯色 | `colorScheme.primary` |
+| **主色当文字**——文本按钮标签、链接、主色标题、运行中的状态行 | 文字色 | `colorScheme.accentText`：`primary` 压在面板和画布上 ≥ 4.5:1 就是 `primary`（八个预设里七个如此），压不住就退到「主色深」。Orange 亮色是那个例外，见 §1「主题色是一对」 |
 | 主色 12% 底 | 选中态背景 | `colorScheme.accentTint` |
 | 「主色深」——12% 底**上的文字/图标** | 文字色 | `colorScheme.onAccentTint` |
 
@@ -86,6 +87,8 @@
 **两半都是成品，都原样画。** 各自的调色板角色（容器、secondary、tertiary）仍从那一半长出来，但 `primary` 就是那个色号：它是对着自己那张底调出来的，调完再让调色板换一个就没意义了。
 
 亮色半曾经是种子：方案从它长出来，`primary` 取 Material 的 tone 40——是 **vibrant 调色板**的 tone 40，彩度拉到色域上限。Indigo 画出来是 `#1242FF`（电光蓝），DeepPurple 是 `#7801FF`（荧光紫），BlueGrey 是 `#006783`（饱和的青蓝）：用户选了一个颜色，app 画的是它的霓虹版。现在亮色半是种子自己的色相和彩度落在 tone 44——在白字压得住（≥ 5.5:1）的前提下离所选颜色最近的那一格；种子本身不行，`#4A72E8` 压白字是 4.3:1。
+
+**Orange 是唯一离开 tone 44 的预设。** 44 上的橙是棕（`#985900`），而没有任何一个还是橙色的 tone 压得住白字。它落在 tone 55（`#BF7100`），靠两条对所有颜色一视同仁的机制成立：`ThemeAccent.onLight` 白字 ≥ 4.5:1 才用白，否则用同色相 tone 10 的墨（Orange 上是 4.6:1，黑字橙钮，橙色按钮本来就多这么画）；`AppAccent.accentText` 让「主色当文字」的地方在 `primary` 压不住画布时退到主色深（tone 55 当文字只有 3.3:1）。图标和描边仍用 `primary`：非文字门槛是 3:1，Orange 在画布上 3.3。自定义颜色将来也自动走这两条。
 
 `buildAppColorScheme` 两个分支各改写三个角色：
 
@@ -110,11 +113,11 @@
 | Indigo | `Colors.indigo` | vibrant 的 tone 40 是 `#1242FF`（电光蓝）；亮色是靛蓝自己的彩度 55 |
 | Teal | `Colors.teal` | |
 | Green | `Colors.green` | 暗色提到 65 不是 62：绿的彩度峰值更靠上，62 发泥 |
-| Orange | `Colors.orange` | 亮色没有既是橙又压得住白字的 tone——AA 以内全是琥珀棕，取了天花板；这个预设真正是橙色的是暗色半。种子本来就是 tone 72，暗色留在原处只暖了一点 |
+| Orange | `Colors.orange` | 亮色离开 tone 44 落到 55：44 上是棕，55 才是橙；白字压不住，用自己的 tone 10 墨，主色文字退到主色深（见上）。种子本来就是 tone 72，暗色留在原处只暖了一点 |
 | DeepPurple | `Colors.deepPurple` | vibrant 的 tone 40 是 `#7801FF`，一支荧光紫 |
 | Rose | `Colors.pink` | |
 
-**门槛（`design_tokens_test` 逐预设量）**。暗色：主色作为文字压在 `surface` 到 `surfaceContainerHigh` 的每一档上 ≥ 4.5:1（下界是卡片面 `#212B3F`，tone 62 时 4.7）；`onPrimary` 压在它上面 ≥ 4.5:1；比 `fromSeed` 的 tone 80 暗。tone 58 两条都贴地板，70 又回到粉彩——62 是这张暗色表上的落点。亮色：白字压在主色上 ≥ 4.5:1；主色作为文字压在 `surfaceContainerLowest`（白）到 `surfaceDim` 的每一档上 ≥ 4.5:1（画布 `#ECEFF8` 是下界，tone 44 时 4.8，47 就掉到 4.4）；色相与旧种子差 < 4°、彩度不高于旧种子（防调色板的最大彩度 tone 40 悄悄回来）。两边：色相差 < 30°（防打错十六进制）。
+**门槛（`design_tokens_test` 逐预设量）**。暗色：主色作为文字压在 `surface` 到 `surfaceContainerHigh` 的每一档上 ≥ 4.5:1（下界是卡片面 `#212B3F`，tone 62 时 4.7）；`onPrimary` 压在它上面 ≥ 4.5:1；比 `fromSeed` 的 tone 80 暗。tone 58 两条都贴地板，70 又回到粉彩——62 是这张暗色表上的落点。亮色：`onPrimary` 压在主色上 ≥ 4.5:1，白字的预设另加 tone 44 的实测余量（白 ≥ 5.5、画布 ≥ 4.8；47 就掉到 4.4）；`accentText` 压在 `surfaceContainerLowest`（白）到 `surfaceDim` 的每一档上 ≥ 4.5:1；`primary` 当描边 / 图标压在画布以上的每一档 ≥ 3:1；色相与旧种子差 < 4°、彩度不高于旧种子（防调色板的最大彩度 tone 40 悄悄回来）。两边：色相差 < 30°（防打错十六进制）。
 
 **存的是键不是色值**：`AppState.themeAccent` 持久化到 `theme_accent`，值是预设名。这样以后重调某个预设，选过它的用户会跟着变。旧的 `theme_seed_color`（一个 ARGB int，配对之前的 Material 种子）由 v40 数据库迁移一次性改写成预设键，然后删行；已有 `theme_accent` 的以它为准；对不上的（手改过库）直接删、落到默认 Blue，不猜配对。那张种子→预设的表只活在 `database_migrations.dart` 里，app 代码不读它。
 

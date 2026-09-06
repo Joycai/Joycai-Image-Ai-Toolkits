@@ -113,12 +113,14 @@ class AppConstants {
     // Dark lifted to 65, not 62: green's chroma peaks higher up the tone
     // scale, and at 62 it went muddy.
     'Green': ThemeAccent(light: Color(0xFF047921), dark: Color(0xFF4FB252)),
-    // Orange has no light half that is both orange and legible under white:
-    // any tone that carries white at AA is amber-brown. `#985900` is the
-    // ceiling — the lightest, warmest value that still does. The dark half is
-    // where this preset is actually orange; the seed is tone 72 already and
-    // is kept there, just a point warmer.
-    'Orange': ThemeAccent(light: Color(0xFF985900), dark: Color(0xFFF59A1A)),
+    // The one light half off tone 44: at 44 orange is a brown (`#985900`),
+    // and no tone that is orange carries white text. Tone 55 is the lightest
+    // that holds its own tone-10 ink at AA (4.6:1) and still stands as an
+    // outline or icon on the canvas (3.3:1); text in the accent falls back
+    // to the wash label there (AppAccent.accentText), so nothing reads
+    // amber-on-grey at 3:1. The dark half is the seed's tone 72, a point
+    // warmer.
+    'Orange': ThemeAccent(light: Color(0xFFBF7100), dark: Color(0xFFF59A1A)),
     // The palette's tone 40 was `#7801FF`, a violet neon; the light half is
     // deep purple's own chroma 63.
     'DeepPurple': ThemeAccent(light: Color(0xFF7A4ECB), dark: Color(0xFFA97DFF)),

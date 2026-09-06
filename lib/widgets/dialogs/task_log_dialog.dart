@@ -141,7 +141,7 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
           const SizedBox(width: 8),
           Text(
             l10n.taskLogLive,
-            style: textTheme.bodySmall?.copyWith(color: colorScheme.primary),
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.accentText),
           ),
         ],
       ],

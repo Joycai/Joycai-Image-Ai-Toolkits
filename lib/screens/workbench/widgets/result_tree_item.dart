@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 import '../directory_tree_item.dart';
+import '../../../core/design_tokens.dart';
 
 /// Read-only folder tree for the RESULTS section. Unlike [DirectoryTreeItem],
 /// there is no selection/aggregate concept — tapping a row browses just that
@@ -93,8 +94,7 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
     // says where one root's subtree ends. It read as a different kind of row
     // entirely while this was a bare tile beside the boxed sources.
     final colorScheme = theme.colorScheme;
-    final Color? boxColor =
-        isViewing ? colorScheme.primary.withValues(alpha: 0.14) : null;
+    final Color? boxColor = isViewing ? colorScheme.accentTint : null;
     final Color borderColor = isViewing
         ? colorScheme.primary.withValues(alpha: 0.6)
         : (widget.isRoot ? colorScheme.outlineVariant.withAlpha(120) : Colors.transparent);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/design_tokens.dart';
 
 /// A run of settings rows, optionally under a heading.
 ///
@@ -41,7 +42,7 @@ class AppSection extends StatelessWidget {
               child: Text(
                 title!,
                 style: theme.textTheme.titleLarge?.copyWith(
-                  color: theme.colorScheme.primary,
+                  color: theme.colorScheme.accentText,
                 ),
               ),
             ),

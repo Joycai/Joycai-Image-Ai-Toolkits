@@ -839,7 +839,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: uiState.maintainAspectRatio
-                    ? colorScheme.primary.withValues(alpha: 0.14)
+                    ? colorScheme.accentTint
                     : Colors.transparent,
               ),
               child: Icon(
@@ -972,7 +972,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
               context,
               icon: Icons.check_circle_outline,
               label: l10n.save,
-              color: colorScheme.primary,
+              color: colorScheme.accentText,
               onTap: () => _showMobileSaveSheet(context, l10n),
             ),
           ],

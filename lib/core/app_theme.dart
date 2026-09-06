@@ -551,6 +551,10 @@ ThemeData buildAppTheme({
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
+        // The accent as *text*, which is `primary` wherever primary reads
+        // on the panel and canvas, and the wash label where it does not
+        // (Orange in light). Material's default is bare `primary`.
+        foregroundColor: colorScheme.accentText,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appButtonRadius)),
         minimumSize: const Size(0, appButtonMinHeight),
         visualDensity: VisualDensity.standard,

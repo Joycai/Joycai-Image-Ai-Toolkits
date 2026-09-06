@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
+import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
@@ -63,6 +64,24 @@ void main() {
     expect(styleOf(theme).foregroundColor?.resolve({}), accent.onLight);
     expect(Hct.fromInt(theme.colorScheme.primary.toARGB32()).tone,
         closeTo(ThemeAccent.derivedLightTone, 0.5));
+  });
+
+  test('text buttons take the accent as text, not bare primary', () {
+    // Material's default TextButton foreground is `primary`, which is a
+    // fill tone. AppAccent.accentText is primary wherever primary reads on
+    // the panel and canvas — seven presets — and the wash label where it
+    // does not: Orange in light, where the label would otherwise be an
+    // amber at 3.3:1.
+    for (final preset in AppConstants.presetThemes.entries) {
+      for (final brightness in Brightness.values) {
+        final theme = buildAppTheme(accent: preset.value, brightness: brightness);
+        expect(theme.textButtonTheme.style!.foregroundColor!.resolve({}), theme.colorScheme.accentText,
+            reason: '${preset.key} ${brightness.name}');
+      }
+    }
+    final orange = buildAppTheme(
+        accent: AppConstants.presetThemes['Orange']!, brightness: Brightness.light);
+    expect(orange.textButtonTheme.style!.foregroundColor!.resolve({}), isNot(orange.colorScheme.primary));
   });
 
   test('the FAB fills like the CTA it is', () {

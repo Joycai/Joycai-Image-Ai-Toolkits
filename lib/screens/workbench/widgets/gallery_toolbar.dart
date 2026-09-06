@@ -454,7 +454,7 @@ class GalleryToolbar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: active
-            ? colorScheme.primary.withValues(alpha: 0.12)
+            ? colorScheme.accentTint
             : colorScheme.surfaceContainerHighest.withAlpha(140),
         borderRadius: BorderRadius.circular(8),
       ),

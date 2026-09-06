@@ -76,7 +76,7 @@ class FolderList extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       Platform.isIOS ? l10n.iosSandboxActive : l10n.mobileSandboxActive,
-                      style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.primary),
+                      style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onAccentTint),
                     ),
                     const SizedBox(height: 8),
                     Text(

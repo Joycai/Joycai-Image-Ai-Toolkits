@@ -4,6 +4,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/tag.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_segmented_control.dart';
+import '../../../core/design_tokens.dart';
 
 class PromptsSidebar extends StatelessWidget {
   final List<PromptTag> tags;
@@ -157,7 +158,7 @@ class _SidebarTile extends StatelessWidget {
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
-            color: selected ? colorScheme.primary.withAlpha(28) : null,
+            color: selected ? colorScheme.accentTint : null,
             borderRadius: BorderRadius.circular(8),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),

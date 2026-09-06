@@ -7,6 +7,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
+import '../../../core/design_tokens.dart';
 import 'usage_stats.dart';
 
 /// Table of token-usage records, grouped by day. Meant to be hosted in a card
@@ -408,14 +409,14 @@ class _UsageRowState extends State<_UsageRow> {
               constraints: const BoxConstraints(maxWidth: 88),
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
               decoration: BoxDecoration(
-                color: colorScheme.primary.withAlpha(28),
+                color: colorScheme.accentTint,
                 borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
                 match.group(1)!,
                 style: textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: colorScheme.primary,
+                  color: colorScheme.onAccentTint,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

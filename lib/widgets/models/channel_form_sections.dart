@@ -26,7 +26,7 @@ class ChannelSectionLabel extends StatelessWidget {
         text.toUpperCase(),
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
+              color: Theme.of(context).colorScheme.accentText,
               letterSpacing: AppType.trackedLabelSpacing,
             ),
       ),
