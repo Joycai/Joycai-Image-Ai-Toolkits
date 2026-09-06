@@ -469,20 +469,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    // Both stops from the seed. The second used to be a fixed
-                    // lavender, which read as intentional only for the one
-                    // seed near it and fought the other six — an indigo app
-                    // with a purple-tipped logo looks like a rendering bug.
-                    // `primaryContainer` is the seed's own lighter tone, so
-                    // the sweep stays a sweep at every theme.
+                    // Both stops from the theme. The second used to be a
+                    // fixed lavender, which read as intentional only for the
+                    // one seed near it and fought the other six — an indigo
+                    // app with a purple-tipped logo looks like a rendering
+                    // bug. Then it was `primaryContainer`, which is the
+                    // palette's tone 90 at maximum chroma: near-white under a
+                    // white icon in light, and a neon at teal and green. The
+                    // sweep now runs from the accent to the tone the app
+                    // already pairs with it — 主色深, darker in light and
+                    // lighter in dark — so it is the same two colours every
+                    // selected row wears.
                     gradient: LinearGradient(
-                      colors: [colorScheme.primary, colorScheme.primaryContainer],
+                      colors: [colorScheme.primary, colorScheme.onAccentTint],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: const Icon(Icons.auto_awesome, size: 20, color: Colors.white),
+                  // The glyph is the fill's own ink, not white: in dark the
+                  // sweep runs *lighter* (tone 62 → 80) and white on it is
+                  // ~2:1, while the tone-10 ink every dark CTA carries reads
+                  // on both ends.
+                  child: Icon(Icons.auto_awesome, size: 20, color: colorScheme.onPrimary),
                 ),
                 const SizedBox(width: 12),
                 Column(
@@ -702,17 +711,17 @@ class _RailItemState extends State<_RailItem> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    // Selected takes `onAccentTint`, not `primary`: the label sits on a wash
-    // of primary, and primary on its own tint is one tone reading against
-    // itself — fine in light by accident, washed out in dark where primary is
-    // already the pale tone 80.
+    // The selected pair is shared with the drawer and the phone bar
+    // (`AppAccent.navForeground` / `navBackground`): the wash label on the
+    // wash, not `primary` on its own tint, which is one tone reading against
+    // itself. Hover is this rail's own.
     final color = widget.isSelected
-        ? colorScheme.onAccentTint
+        ? colorScheme.navForeground(selected: true)
         : _hovering
             ? colorScheme.onSurfaceVariant
             : colorScheme.onSurfaceVariant.withAlpha(140);
     final bgColor = widget.isSelected
-        ? colorScheme.accentTint
+        ? colorScheme.navBackground(selected: true)
         : _hovering
             ? colorScheme.onSurfaceVariant.withAlpha(16)
             : Colors.transparent;
@@ -804,9 +813,9 @@ class _DrawerItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    // Same pairing as _RailItem above — this is the drawer's copy of it.
-    final color = isSelected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant;
-    final bg = isSelected ? colorScheme.accentTint : Colors.transparent;
+    // Same pair as _RailItem and the phone bar, read from one place.
+    final color = colorScheme.navForeground(selected: isSelected);
+    final bg = colorScheme.navBackground(selected: isSelected);
 
     return GestureDetector(
       onTap: onTap,

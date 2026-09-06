@@ -342,13 +342,19 @@ class _LanguageCard extends StatelessWidget {
         duration: AppMotion.durationOf(context, AppMotion.state),
         curve: AppMotion.enter,
         padding: const EdgeInsets.symmetric(horizontal: 16),
+        // The tint ladder, not `primaryContainer` / `onPrimaryContainer`.
+        // Those are the palette's tones 90 and 30 at maximum chroma, which at
+        // the teal and green presets is a neon slab in light and neon text
+        // in dark — a different colour from the accent beside it. The wash
+        // and its label are the pairing every other selected thing in the
+        // app uses, and the theme-colour cards right above these.
         decoration: BoxDecoration(
           color: isSelected
-              ? colorScheme.primaryContainer
+              ? colorScheme.accentTint
               : colorScheme.surfaceContainerHighest.withAlpha(100),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? colorScheme.primary : Colors.transparent,
+            color: isSelected ? colorScheme.accentRing : Colors.transparent,
             width: 2,
           ),
         ),
@@ -358,7 +364,7 @@ class _LanguageCard extends StatelessWidget {
               icon,
               size: 20,
               color: isSelected
-                  ? colorScheme.onPrimaryContainer
+                  ? colorScheme.onAccentTint
                   : colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 12),
@@ -369,7 +375,7 @@ class _LanguageCard extends StatelessWidget {
                       fontFamily: fontFamily,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                       color: isSelected
-                          ? colorScheme.onPrimaryContainer
+                          ? colorScheme.onAccentTint
                           : colorScheme.onSurface,
                     ),
                 maxLines: 1,

@@ -254,14 +254,14 @@ class _Gallery extends StatelessWidget {
                 DualToneSwatch(
                   accent: AppConstants.presetThemes['Blue']!,
                   name: 'Blue',
-                  pairLabel: '#0050E1 · #5B8DFF',
+                  pairLabel: _pairLabel(AppConstants.presetThemes['Blue']!),
                   selected: true,
                   onTap: () {},
                 ),
                 DualToneSwatch(
                   accent: AppConstants.presetThemes['Rose']!,
                   name: 'Rose',
-                  pairLabel: '#BC004B · #FF5B83',
+                  pairLabel: _pairLabel(AppConstants.presetThemes['Rose']!),
                   selected: false,
                   onTap: () {},
                 ),
@@ -589,4 +589,14 @@ class _SemanticRow extends StatelessWidget {
       chip('危险', colorScheme.error.withValues(alpha: AppAlpha.tint), colorScheme.error),
     ]);
   }
+}
+
+/// The tooltip line the real picker derives — both *rendered* primaries, so
+/// this fixture cannot fall behind a retune.
+String _pairLabel(ThemeAccent accent) {
+  String hex(Color c) =>
+      '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+  final Color light = buildAppColorScheme(accent: accent, brightness: Brightness.light).primary;
+  final Color dark = buildAppColorScheme(accent: accent, brightness: Brightness.dark).primary;
+  return '${hex(light)} · ${hex(dark)}';
 }

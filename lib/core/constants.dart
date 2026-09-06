@@ -79,36 +79,50 @@ class AppConstants {
 
   /// The theme colours a user can pick, each as a light/dark pair.
   ///
-  /// The light half of every entry is the seed it has always been — the app
-  /// grows its light scheme from it. The dark half is drawn as-is as dark
-  /// `primary` (see [ThemeAccent]), and each was tuned by hand against the
-  /// dark ramp: start from `ThemeAccent.fromSeed` (same hue and chroma as
-  /// the seed, tone lifted to 62), then adjust. Every value here holds
-  /// ≥ 4.5:1 as text on the dark card surface and carries its tone-10 ink at
-  /// ≥ 5.4:1; `design_tokens_test` re-measures both on every preset, so a
-  /// retune that drifts fails there rather than in a badge nobody can read.
+  /// Both halves of every entry are finished colours, drawn verbatim as
+  /// `primary` in their brightness (see `ThemeAccent`). Each started from
+  /// `ThemeAccent.fromSeed` on the Material seed the preset is named after —
+  /// same hue and chroma, tone set to 44 for light and lifted to at least 62
+  /// for dark. The light halves *are* that result (`design_tokens_test` pins
+  /// each to `fromSeed(seed).light`); the dark halves were then adjusted by
+  /// eye on the dark ramp. Every light value
+  /// carries white at ≥ 5.5:1 and reads as text on the light canvas at
+  /// ≥ 4.8:1; every dark value holds ≥ 4.5:1 as text on the dark card and
+  /// carries its tone-10 ink at ≥ 5.4:1. `design_tokens_test` re-measures
+  /// all of it on every preset, so a retune that drifts fails there rather
+  /// than in a badge nobody can read.
   ///
-  /// Stored by **key**, not by hex — so a preset's dark half can be retuned
-  /// in a later version and every user who picked it gets the retune.
+  /// Stored by **key**, not by hex — so a preset can be retuned in a later
+  /// version and every user who picked it gets the retune.
   static const Map<String, ThemeAccent> presetThemes = {
     // The design spec's own accent, and the app's default. Kept first so the
-    // swatch row opens on the colour the mockups were drawn in. The dark half
-    // is the spec's own too — frame `10b` draws its accent at `#5B8DFF`.
-    'Blue': ThemeAccent(light: Color(0xFF4A72E8), dark: Color(0xFF5B8DFF)),
-    // The seed is a low-chroma slate; the light scheme's vibrant variant
-    // pulls it to a saturated `#006783`. The dark half sits between the two
-    // (chroma ~28) so the pair still reads as one colour.
-    'BlueGrey': ThemeAccent(light: Colors.blueGrey, dark: Color(0xFF6F9DB5)),
-    'Indigo': ThemeAccent(light: Colors.indigo, dark: Color(0xFF7A8DFF)),
-    'Teal': ThemeAccent(light: Colors.teal, dark: Color(0xFF1FA89A)),
-    // Lifted to 65, not 62: green's chroma peaks higher up the tone scale,
-    // and at 62 it went muddy.
-    'Green': ThemeAccent(light: Colors.green, dark: Color(0xFF4FB252)),
-    // Already tone 72 as a seed. Kept there, just a point warmer, so the
-    // dark accent is recognisably the orange the swatch shows.
-    'Orange': ThemeAccent(light: Colors.orange, dark: Color(0xFFF59A1A)),
-    'DeepPurple': ThemeAccent(light: Colors.deepPurple, dark: Color(0xFFA97DFF)),
-    'Rose': ThemeAccent(light: Colors.pink, dark: Color(0xFFFF5B83)),
+    // swatch row opens on the colour the mockups were drawn in. The light
+    // half is the spec's `#4A72E8` at tone 44 — its hue and chroma, as close
+    // as white text on it allows (the spec's own value is 4.3:1). The dark
+    // half is the spec's own too — frame `10b` draws its accent at `#5B8DFF`.
+    'Blue': ThemeAccent(light: Color(0xFF3560D5), dark: Color(0xFF5B8DFF)),
+    // A low-chroma slate (chroma 20). The vibrant palette's tone 40 pulled
+    // it to a saturated `#006783`; the light half keeps the slate. The dark
+    // half sits a little above (chroma ~28) so it still reads on the dark
+    // card without turning into a blue.
+    'BlueGrey': ThemeAccent(light: Color(0xFF4F6C7A), dark: Color(0xFF6F9DB5)),
+    // Material's indigo is tone 38 and chroma 55; the palette's tone 40 was
+    // `#1242FF`, an electric blue. The light half is the indigo.
+    'Indigo': ThemeAccent(light: Color(0xFF4E5FC4), dark: Color(0xFF7A8DFF)),
+    'Teal': ThemeAccent(light: Color(0xFF00756A), dark: Color(0xFF1FA89A)),
+    // Dark lifted to 65, not 62: green's chroma peaks higher up the tone
+    // scale, and at 62 it went muddy.
+    'Green': ThemeAccent(light: Color(0xFF047921), dark: Color(0xFF4FB252)),
+    // Orange has no light half that is both orange and legible under white:
+    // any tone that carries white at AA is amber-brown. `#985900` is the
+    // ceiling — the lightest, warmest value that still does. The dark half is
+    // where this preset is actually orange; the seed is tone 72 already and
+    // is kept there, just a point warmer.
+    'Orange': ThemeAccent(light: Color(0xFF985900), dark: Color(0xFFF59A1A)),
+    // The palette's tone 40 was `#7801FF`, a violet neon; the light half is
+    // deep purple's own chroma 63.
+    'DeepPurple': ThemeAccent(light: Color(0xFF7A4ECB), dark: Color(0xFFA97DFF)),
+    'Rose': ThemeAccent(light: Color(0xFFCF0053), dark: Color(0xFFFF5B83)),
   };
 
   // Font selection. [systemFontKey] is a sentinel meaning "use the platform

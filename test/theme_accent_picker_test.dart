@@ -95,7 +95,7 @@ void main() {
     );
     final String text = tip.richMessage!.toPlainText();
     expect(text, startsWith('Blue'));
-    expect(text, contains('#0050E1'), reason: 'the rendered light primary, not the seed #4A72E8');
+    expect(text, contains('#3560D5'), reason: 'the rendered light primary — the spec\'s #4A72E8 at tone 44');
     expect(text, contains('#5B8DFF'));
     expect(text, isNot(contains('#4A72E8')));
   });
@@ -122,4 +122,69 @@ void main() {
     expect(lefts.reduce((a, b) => a > b ? a : b) + DualToneSwatch.hitSize, lessThanOrEqualTo(390),
         reason: 'every dot is inside the viewport');
   });
+
+  group('the preview matches the theme', _previewMatchesTheThemeTests);
+}
+
+// The preview card must not promise what the app does not draw.
+//
+// Each half of a card paints a button in that brightness's `primary` /
+// `onPrimary`. For that to be true the real theme's filled button has to take
+// the same two colours — which it did not, once: dark filled from the light
+// half, so the card's dark side showed `#5B8DFF` while every real CTA in dark
+// mode was still the light blue. Checked against the theme the app builds,
+// not against the scheme the card reads, so the two cannot drift apart again.
+void _previewMatchesTheThemeTests() {
+  for (final MapEntry<String, ThemeAccent> preset in AppConstants.presetThemes.entries) {
+    testWidgets('the card\'s buttons are the CTA the theme draws — ${preset.key}', (tester) async {
+      tester.view.physicalSize = const Size(600, 400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final Map<Brightness, ThemeData> themes = {
+        for (final b in Brightness.values) b: buildAppTheme(accent: preset.value, brightness: b),
+      };
+      await tester.pumpWidget(MaterialApp(
+        theme: themes[Brightness.dark],
+        home: Scaffold(
+          body: Center(
+            child: ThemeAccentPreviewCard(
+              accent: preset.value,
+              name: preset.key,
+              selected: false,
+              onTap: () {},
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Split by side, not pooled: the left half is light, the right dark,
+      // and a pooled set would let dark's CTA pass on the colour the *light*
+      // half paints — which is exactly the regression this guards against.
+      final Rect card = tester.getRect(find.byType(ThemeAccentPreviewCard));
+      final Set<Color> leftPainted = <Color>{};
+      final Set<Color> rightPainted = <Color>{};
+      for (final Element e in find
+          .descendant(of: find.byType(ThemeAccentPreviewCard), matching: find.byType(Container))
+          .evaluate()) {
+        final Color? color = ((e.widget as Container).decoration as BoxDecoration?)?.color;
+        if (color == null) continue;
+        final RenderBox box = e.renderObject! as RenderBox;
+        final double x = box.localToGlobal(box.size.center(Offset.zero)).dx;
+        (x < card.center.dx ? leftPainted : rightPainted).add(color);
+      }
+
+      for (final brightness in Brightness.values) {
+        final ButtonStyle cta = themes[brightness]!.filledButtonTheme.style!;
+        final Color fill = cta.backgroundColor!.resolve({})!;
+        final Color label = cta.foregroundColor!.resolve({})!;
+        final Set<Color> painted = brightness == Brightness.light ? leftPainted : rightPainted;
+        expect(painted, contains(fill),
+            reason: '${preset.key} ${brightness.name}: that half draws no button in the CTA fill $fill');
+        expect(painted, contains(label),
+            reason: '${preset.key} ${brightness.name}: that half draws no label in the CTA ink $label');
+      }
+    });
+  }
 }

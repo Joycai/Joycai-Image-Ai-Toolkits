@@ -279,13 +279,16 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
+            // The tint ladder, not the container roles: those are the
+            // palette's tones 90 / 30 at maximum chroma, a neon tile at the
+            // teal and green presets.
+            color: colorScheme.accentTint,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             isEdit ? Icons.edit_outlined : Icons.add_box_outlined,
             size: 22,
-            color: colorScheme.onPrimaryContainer,
+            color: colorScheme.onAccentTint,
           ),
         ),
         const SizedBox(width: 12),

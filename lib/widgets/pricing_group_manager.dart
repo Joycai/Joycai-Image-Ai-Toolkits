@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
+import '../core/design_tokens.dart';
 import '../core/fee_group_palette.dart';
 import '../core/metric_palette.dart';
 import '../core/responsive.dart';
@@ -208,7 +209,7 @@ class PricingGroupManager extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer.withAlpha(40),
+                color: Theme.of(context).colorScheme.accentTint,
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.monetization_on_outlined, size: 64, color: Theme.of(context).colorScheme.primary.withAlpha(150)),

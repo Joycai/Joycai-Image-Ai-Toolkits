@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_semantic_colors.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -273,7 +274,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
           width: isSelected ? 2 : 1,
         ),
       ),
-      color: isSelected ? colorScheme.primaryContainer.withAlpha(30) : null,
+      color: isSelected ? colorScheme.accentTint : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: isAdded ? null : () {

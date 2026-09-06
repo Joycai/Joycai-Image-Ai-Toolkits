@@ -291,7 +291,11 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  color: colorScheme.primaryContainer.withAlpha(100),
+                  // The accent wash, not `primaryContainer`: the container
+                  // role is the palette's tone 90 at maximum chroma, a neon
+                  // slab at the teal and green presets. The wash is the
+                  // pairing every other tinted surface in the app uses.
+                  color: colorScheme.accentTint,
                   child: Row(
                     children: [
                       Icon(Icons.info_outline, size: 16, color: colorScheme.primary),
@@ -299,7 +303,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
                       Expanded(
                         child: Text(
                           l10n.iosOutputRecommend,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onPrimaryContainer),
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onAccentTint),
                         ),
                       ),
                     ],

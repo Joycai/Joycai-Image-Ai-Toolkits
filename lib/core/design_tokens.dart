@@ -271,6 +271,17 @@ extension AppAccent on ColorScheme {
   /// The edge around that element, and the glow ring on a focused input.
   Color get accentRing => primary.withValues(alpha: AppAlpha.ring);
 
+  /// What a navigation item draws under itself when [selected] — the wash —
+  /// and nothing otherwise. The desktop rail, the drawer and the phone's
+  /// bottom bar all read this pair, so they cannot drift apart.
+  Color navBackground({required bool selected}) =>
+      selected ? accentTint : Colors.transparent;
+
+  /// The ink a navigation item draws when [selected] — the wash label — and
+  /// the quiet grey otherwise. See [navBackground].
+  Color navForeground({required bool selected}) =>
+      selected ? onAccentTint : onSurfaceVariant;
+
   /// Text and icons drawn *on* [accentTint].
   ///
   /// The spec's 主色深 is a tone *near* the accent, not a near-black: measured
@@ -278,29 +289,21 @@ extension AppAccent on ColorScheme {
   /// accent, and dark is `#4ECDC0` ≈ tone 76 against `#3FC1B0` ≈ tone 71. Ten
   /// tones of separation, so the label still reads *as the accent*.
   ///
-  /// Measured against the SDK rather than reasoned from the tone tables, which
-  /// have churned across Material revisions. What
-  /// [ColorScheme.fromSeed] actually returns today, at teal:
+  /// Since the accent became a light/dark **pair** (`ThemeAccent`),
+  /// `primary` is the pair's tuned half in each brightness — tone ~44 in
+  /// light, ~62 in dark, at the picked colour's own chroma — and
+  /// `buildAppColorScheme` rewrites one wash-label role to match: light
+  /// `onPrimaryFixedVariant` to tone 30 and dark `primaryFixedDim` to tone
+  /// 80, both *at that accent's chroma*. This getter reads exactly those two
+  /// roles; what `fromSeed` would have put in them is irrelevant, because it
+  /// never reaches the scheme. (Do not reach for `onPrimaryContainer`
+  /// instead: that one is *not* rewritten, and at the teal and green presets
+  /// it is the palette's neon — the thing `design_tokens_test`'s source scan
+  /// keeps out of the UI.)
   ///
-  /// | | `primary` | `onPrimaryContainer` | `onPrimaryFixedVariant` | `primaryFixedDim` |
-  /// |---|---|---|---|---|
-  /// | light | `#006A60` | `#005048` | `#005048` | `#82D5C8` |
-  /// | dark  | `#82D5C8` | `#9EF2E4` | `#005048`   | `#82D5C8` |
-  ///
-  /// That table is what `fromSeed` returns; it is no longer what this app's
-  /// dark scheme holds. Since the accent became a light/dark **pair**
-  /// (`ThemeAccent`), dark `primary` is the pair's tuned dark half at tone
-  /// ~62 — not tone 80 — and `primaryFixedDim` is rewritten by
-  /// `buildAppColorScheme` to tone 80 *at that accent's chroma*. Which
-  /// changes which role is right in each brightness:
-  ///
-  /// - In **light**, the two candidates are *identical* (tone 30). The
-  ///   `Fixed` role is taken because its tone is pinned by definition, where
-  ///   `onPrimaryContainer`'s is a brightness-dependent assignment that
-  ///   Material has already moved once (it was near-black at tone 10 for a
-  ///   spell, which on a 12% wash reads as plain dark text, not as the
-  ///   accent). Same pixels today, insured against that revision returning.
-  /// - In **dark**, `primaryFixedDim` is now eighteen tones *above* the
+  /// - In **light**, `onPrimaryFixedVariant`: fourteen tones *below* the
+  ///   accent, like the spec's 主色深 under 主色.
+  /// - In **dark**, `primaryFixedDim` is eighteen tones *above* the
   ///   accent, at the accent's own chroma — exactly the "主色深" relation the
   ///   spec draws (`#4ECDC0` ≈ 76 on `#3FC1B0` ≈ 71). It used to be unusable
   ///   here because it *was* the accent; that is the one thing the pair

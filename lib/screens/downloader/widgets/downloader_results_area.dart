@@ -144,7 +144,8 @@ class _GuideStep extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withAlpha(90),
+              // The accent wash — `primaryContainer` is a neon at some presets.
+              color: colorScheme.accentTint,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 20, color: colorScheme.primary),

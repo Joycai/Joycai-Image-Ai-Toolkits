@@ -696,6 +696,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 icon: const Icon(Icons.auto_awesome_outlined, size: 20),
                 onPressed: () => _showDiscoveryDialog(l10n, channel, appState),
                 tooltip: l10n.fetchModels,
+                // The accent wash, not Material's `secondaryContainer` — a
+                // hue-rotated grey-with-a-tint that matches nothing else here.
+                style: IconButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.accentTint,
+                  foregroundColor: Theme.of(context).colorScheme.onAccentTint,
+                ),
               ),
             const SizedBox(width: 4),
           ],
