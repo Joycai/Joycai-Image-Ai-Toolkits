@@ -59,6 +59,12 @@ Future<void> runFolderTransfer(
   final name = p.basename(source);
   final isMove = mode == FolderTransferMode.move;
 
+  // Everything shown from here on is shown from the root navigator, not from
+  // the row this was called on: the menu's "Move to…" arrives on the *source*
+  // row, and a move rebuilds the tree without it — so the row's own context
+  // is unmounted exactly when `13f` has a summary or a snackbar to show.
+  final host = Navigator.of(context, rootNavigator: true).context;
+
   final rejection = FolderOperationsService.canTransfer(
     source,
     destination,
@@ -66,7 +72,7 @@ Future<void> runFolderTransfer(
     mode: mode,
   );
   if (rejection != null) {
-    AppSnackBar.warning(context, _rejectionText(l10n, rejection));
+    AppSnackBar.warning(host, _rejectionText(l10n, rejection));
     return;
   }
 
@@ -79,7 +85,7 @@ Future<void> runFolderTransfer(
     dialogShown = true;
     // Not awaited: the transfer owns its own lifetime and pops this itself.
     unawaited(showDialog<void>(
-      context: context,
+      context: host,
       barrierDismissible: false,
       builder: (_) => _FolderProgressDialog(
         name: name,
@@ -101,22 +107,22 @@ Future<void> runFolderTransfer(
       mode: mode,
       onProgress: (value) {
         progress.value = value;
-        if (!dialogShown && context.mounted) showProgress();
+        if (!dialogShown && host.mounted) showProgress();
       },
       isCancelled: () => cancelled,
     );
   } on FileSystemException catch (e) {
-    if (dialogShown && context.mounted) Navigator.of(context, rootNavigator: true).pop();
+    if (dialogShown && host.mounted) Navigator.of(host).pop();
     progress.dispose();
-    if (context.mounted) AppSnackBar.error(context, l10n.folderOpFailed(e.message));
+    if (host.mounted) AppSnackBar.error(host, l10n.folderOpFailed(e.message));
     return;
   }
 
-  if (dialogShown && context.mounted) Navigator.of(context, rootNavigator: true).pop();
+  if (dialogShown && host.mounted) Navigator.of(host).pop();
   // After the pop, never before — the dialog listens to this until its route
   // is gone.
   progress.dispose();
-  if (!context.mounted) return;
+  if (!host.mounted) return;
 
   if (isMove && outcome.isClean) {
     await applyFolderPathChange(appState, staging, source, outcome.targetPath);
@@ -124,20 +130,20 @@ Future<void> runFolderTransfer(
     await appState.fileBrowserState.refresh();
   }
   await staging.revalidate();
-  if (!context.mounted) return;
+  if (!host.mounted) return;
 
   if (outcome.cancelled) {
-    await _showCancelled(context, source, outcome, mode);
+    await _showCancelled(host, source, outcome, mode);
     return;
   }
   if (outcome.failure != null) {
-    AppSnackBar.error(context, l10n.folderOpFailed(outcome.failure!));
+    AppSnackBar.error(host, l10n.folderOpFailed(outcome.failure!));
     return;
   }
 
   appState.fileBrowserState.flash(outcome.targetPath);
   final target = p.basename(destination);
-  AppSnackBar.success(context, isMove ? l10n.folderMoved(name, target) : l10n.folderCopied(name, target));
+  AppSnackBar.success(host, isMove ? l10n.folderMoved(name, target) : l10n.folderCopied(name, target));
 }
 
 String _rejectionText(AppLocalizations l10n, FolderMoveRejection rejection) => switch (rejection) {

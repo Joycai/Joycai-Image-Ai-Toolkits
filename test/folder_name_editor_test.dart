@@ -24,7 +24,11 @@ void main() {
           width: 240,
           child: FolderNameEditor(
             initialName: initial,
-            validate: (name) => name.trim() == 'taken' ? 'A folder with this name already exists' : null,
+            validate: (name) => switch (name.trim()) {
+              '' => 'Name cannot be empty',
+              'taken' => 'A folder with this name already exists',
+              _ => null,
+            },
             onSubmit: (name) async {
               submitted.add(name);
               return nextFailure;
@@ -67,6 +71,25 @@ void main() {
     expect(submitted, isEmpty);
     expect(cancelled, 0);
     expect(find.byType(TextField), findsOneWidget);
+  });
+
+  testWidgets('Enter on an empty name shows the reason; clicking away from it cancels',
+      (tester) async {
+    await pump(tester);
+    await tester.enterText(find.byType(TextField), '');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+
+    expect(find.text('Name cannot be empty'), findsOneWidget);
+    expect(submitted, isEmpty);
+    expect(cancelled, 0);
+    expect(find.byType(TextField), findsOneWidget);
+
+    tester.widget<TextField>(find.byType(TextField)).focusNode!.unfocus();
+    await tester.pump();
+
+    expect(submitted, isEmpty);
+    expect(cancelled, 1);
   });
 
   testWidgets('Escape cancels', (tester) async {

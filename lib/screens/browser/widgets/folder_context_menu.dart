@@ -60,7 +60,7 @@ void showFolderContextMenu({
         onTap: () => appState.fileBrowserState.clearActiveDirectories(),
       ),
       if (staged > 0) ...[
-        const PopupMenuDivider(),
+        _divider,
         // The count is in the label because this menu commits immediately —
         // there is no second screen between the click and the files moving,
         // so the number of files has to be on the thing being clicked.
@@ -75,14 +75,14 @@ void showFolderContextMenu({
           onTap: () => runStagingPaste(context, mode: FileTransferMode.copy, destination: path),
         ),
       ],
-      const PopupMenuDivider(),
+      _divider,
       _item(
         icon: Icons.open_in_new,
         label: l10n.showInSystem,
         onTap: () => FileUtils.openPath(path),
       ),
       if (manages) ...[
-        const PopupMenuDivider(),
+        _divider,
         _item(
           icon: Icons.create_new_folder_outlined,
           label: l10n.newSubfolder,
@@ -123,6 +123,10 @@ void showFolderContextMenu({
     ],
   );
 }
+
+/// `13a`: a 1px rule with 4px above and below. Material's 16px divider would
+/// put the nine-item menu past what `13g`'s 260px drawer has room for.
+const PopupMenuEntry<void> _divider = PopupMenuDivider(height: 9);
 
 PopupMenuItem<void> _item({
   required IconData icon,

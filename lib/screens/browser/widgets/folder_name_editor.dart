@@ -14,7 +14,8 @@ import '../../../core/design_tokens.dart';
 /// not changed is a cancel that costs nothing.
 ///
 /// Validation runs on every keystroke and shows under the field; Enter on an
-/// invalid name shakes the field once instead of committing.
+/// invalid name — an empty one included — shakes the field once instead of
+/// committing, and clicking away from an invalid name abandons it.
 class FolderNameEditor extends StatefulWidget {
   final String initialName;
 
@@ -99,11 +100,14 @@ class _FolderNameEditorState extends State<FolderNameEditor> {
   Future<void> _submit({bool fromBlur = false}) async {
     if (_closed || _submitting) return;
     final name = _controller.text;
-    if (name.trim().isEmpty || name.trim() == widget.initialName.trim()) {
+    if (name.trim() == widget.initialName.trim()) {
       _cancel();
       return;
     }
 
+    // An empty name goes through the validator like any other bad name —
+    // `13b` lists "cannot be empty" first among the messages, so Enter on it
+    // shakes rather than silently closing the row.
     final error = widget.validate(name);
     if (error != null) {
       // Clicking away from a bad name abandons it; pressing Enter on one
@@ -116,6 +120,11 @@ class _FolderNameEditorState extends State<FolderNameEditor> {
           _shake++;
         });
       }
+      return;
+    }
+    if (name.trim().isEmpty) {
+      // A validator that let an empty name through: still nothing to create.
+      _cancel();
       return;
     }
 

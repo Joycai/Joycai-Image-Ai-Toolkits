@@ -103,11 +103,19 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     }
 
     if (widget.useFileBrowserState) {
-      final flash = Provider.of<FileBrowserState>(context).flashPath;
+      final browser = Provider.of<FileBrowserState>(context);
+      final flash = browser.flashPath;
       if (flash != null && flash != _pulsedFor) {
         if (p.equals(flash, widget.path)) {
           _pulsedFor = flash;
           _pulse++;
+          // A renamed row comes back under its new key, closed. `13c`: it
+          // was open before, so it is open after — the state follows the
+          // directory even though the widget could not.
+          if (browser.flashExpanded && !_isExpanded) {
+            _isExpanded = true;
+            _loadSubDirectories();
+          }
         } else if (p.equals(p.dirname(flash), widget.path) && !_isExpanded) {
           // The row to pulse is a child of this one and this one is closed:
           // open it, or the pulse plays to nobody.
@@ -274,10 +282,13 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
 
     // Everything that named the old path follows it — this row's own
     // registration too, when it is a root. The parent reloads on the refresh
-    // and the renamed row comes back under its new key, pulsing.
-    appState.fileBrowserState.flash(renamed);
+    // and the renamed row comes back under its new key, pulsing, and open if
+    // this one was.
+    appState.fileBrowserState.flash(renamed, expand: _isExpanded);
+    // Said now, while this row is still here to say it: by the time the lists
+    // are in step the tree has been rebuilt and this row is gone.
+    AppSnackBar.success(context, l10n.folderRenamed(p.basename(renamed)));
     await applyFolderPathChange(appState, staging, widget.path, renamed);
-    if (mounted) AppSnackBar.success(context, l10n.folderRenamed(p.basename(renamed)));
     return null;
   }
 
@@ -398,7 +409,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
         ? colorScheme.primary.withValues(alpha: 0.6)
         : (widget.isRoot ? colorScheme.outlineVariant.withAlpha(120) : Colors.transparent);
 
-    final leading = Row(
+    // [hovered]: a drop is about to land here, so the folder shows open
+    // (`13e`) — the same glyph it would have once the drop goes in.
+    Widget leading(bool hovered) => Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (isUnreachable)
@@ -431,7 +444,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         Icon(
-          _isExpanded ? Icons.folder_open : Icons.folder,
+          _isExpanded || hovered ? Icons.folder_open : Icons.folder,
           size: 20,
           // Folders keep their own colour rather than tracking selection:
           // the checkbox beside it and the box around it already report
@@ -443,20 +456,20 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       ],
     );
 
-    final Widget rowBody;
-    if (_edit == _RowEdit.renaming) {
-      rowBody = _EditorRow(
-        indentRoot: widget.isRoot,
-        checkboxSlot: !isUnreachable,
-        editor: FolderNameEditor(
-          initialName: folderName,
-          validate: (name) => _nameError(l10n, p.dirname(widget.path), name, currentPath: widget.path),
-          onSubmit: _commitRename,
-          onCancel: _cancelEdit,
-        ),
-      );
-    } else {
-      rowBody = ListTile(
+    Widget rowBody(bool hovered) {
+      if (_edit == _RowEdit.renaming) {
+        return _EditorRow(
+          indentRoot: widget.isRoot,
+          checkboxSlot: !isUnreachable,
+          editor: FolderNameEditor(
+            initialName: folderName,
+            validate: (name) => _nameError(l10n, p.dirname(widget.path), name, currentPath: widget.path),
+            onSubmit: _commitRename,
+            onCancel: _cancelEdit,
+          ),
+        );
+      }
+      return ListTile(
         dense: true,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 4, right: 4),
@@ -467,7 +480,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
         // to two.
         minLeadingWidth: 0,
         horizontalTitleGap: 6,
-        leading: leading,
+        leading: leading(hovered),
         title: Text(
           folderName,
           style: theme.textTheme.titleSmall?.copyWith(
@@ -556,7 +569,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 onSecondaryTapDown: widget.useFileBrowserState && _edit == null
                     ? (details) => _showMenu(details.globalPosition)
                     : null,
-                child: rowBody,
+                child: rowBody(hovered),
               ),
             ),
           );
@@ -865,11 +878,18 @@ class _MaybeDropTargetState extends State<_MaybeDropTarget> {
         children: [
           widget.builder(context, candidate.isNotEmpty),
           if (candidate.isNotEmpty)
+            // Inset inside the solid edge (`13e`: inset 2, radius 6). Drawn
+            // on the same line as the solid rule the two merged into one
+            // thick stroke and the dash was lost.
             Positioned.fill(
+              left: 2,
+              top: 2,
+              right: 2,
+              bottom: 2,
               child: IgnorePointer(
                 child: DashedBorder(
                   color: Theme.of(context).colorScheme.primary,
-                  radius: 8,
+                  radius: 6,
                   strokeWidth: 1.5,
                 ),
               ),
