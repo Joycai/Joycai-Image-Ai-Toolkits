@@ -80,7 +80,7 @@
   "stagingEmptyTitle": "Staging is empty",
   "stagingEmptyDesc": "Pick files and hit Add to Staging to note down what you want to move. It only marks them - nothing is moved. Switching folders, filtering, or restarting the app will not lose it.",
   "stagingTarget": "DESTINATION",
-  "stagingNoTarget": "No destination picked",
+  "stagingNoTarget": "Not set",
   "stagingTargetHint": "Right-click a folder in the left column and choose Move / Copy here, or drag files onto a folder.",
   "stagingRestored": "Restored {count} from the last session",
   "@stagingRestored": {
@@ -162,7 +162,7 @@
   "pasteNoDestination": "Pick a destination folder first",
   "pasteDestinationGone": "The destination folder no longer exists",
   "pasteNothingToDo": "Nothing to transfer",
-  "conflictsTitle": "Resolve name conflicts",
+  "conflictsTitle": "Name conflicts",
   "conflictSkip": "Skip",
   "conflictOverwrite": "Overwrite",
   "conflictRename": "Keep both",

@@ -178,7 +178,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stagingTarget => '目标目录';
 
   @override
-  String get stagingNoTarget => '未选择目标目录';
+  String get stagingNoTarget => '未指定';
 
   @override
   String get stagingTargetHint => '在左栏文件夹上右键「移动 / 复制到此」，或把文件直接拖到文件夹上。';
@@ -253,7 +253,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pasteNothingToDo => '没有可搬运的文件';
 
   @override
-  String get conflictsTitle => '处理同名冲突';
+  String get conflictsTitle => '同名冲突';
 
   @override
   String get conflictSkip => '跳过';
@@ -492,7 +492,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get pasteRollbackNote => '跨磁盘移动按「复制 + 删除」执行；取消时已复制的文件将被回滚删除，源文件保持不动。';
+  String get pasteRollbackNote =>
+      '跨磁盘移动按「复制 + 删除」执行；取消时正在复制中的那份副本会被删除，其源文件保持不动。';
 
   @override
   String get pasteRunInBackground => '后台运行';
@@ -4112,7 +4113,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get stagingTarget => '目標目錄';
 
   @override
-  String get stagingNoTarget => '未選擇目標目錄';
+  String get stagingNoTarget => '未指定';
 
   @override
   String get stagingTargetHint => '在左欄資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。';
@@ -4187,7 +4188,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get pasteNothingToDo => '沒有可搬運的檔案';
 
   @override
-  String get conflictsTitle => '處理同名衝突';
+  String get conflictsTitle => '同名衝突';
 
   @override
   String get conflictSkip => '跳過';
@@ -4426,7 +4427,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get pasteRollbackNote => '跨磁碟移動按「複製 + 刪除」執行；取消時已複製的檔案將被回滾刪除，來源檔案保持不動。';
+  String get pasteRollbackNote =>
+      '跨磁碟移動按「複製 + 刪除」執行；取消時正在複製中的那份副本會被刪除，其來源檔案保持不動。';
 
   @override
   String get pasteRunInBackground => '背景執行';

@@ -181,7 +181,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stagingTarget => 'DESTINATION';
 
   @override
-  String get stagingNoTarget => 'No destination picked';
+  String get stagingNoTarget => 'Not set';
 
   @override
   String get stagingTargetHint =>
@@ -257,7 +257,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pasteNothingToDo => 'Nothing to transfer';
 
   @override
-  String get conflictsTitle => 'Resolve name conflicts';
+  String get conflictsTitle => 'Name conflicts';
 
   @override
   String get conflictSkip => 'Skip';

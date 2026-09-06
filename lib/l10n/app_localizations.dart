@@ -422,7 +422,7 @@ abstract class AppLocalizations {
   /// No description provided for @stagingNoTarget.
   ///
   /// In en, this message translates to:
-  /// **'No destination picked'**
+  /// **'Not set'**
   String get stagingNoTarget;
 
   /// No description provided for @stagingTargetHint.
@@ -536,7 +536,7 @@ abstract class AppLocalizations {
   /// No description provided for @conflictsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Resolve name conflicts'**
+  /// **'Name conflicts'**
   String get conflictsTitle;
 
   /// No description provided for @conflictSkip.
