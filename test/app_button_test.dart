@@ -47,8 +47,8 @@ void main() {
     // ground: the role is tone 40 in light but tone 80 in dark, so a filled
     // button wearing it came out a pale pink slab with dark text — the app's
     // only irreversible action rendering lighter than the primary beside it.
-    // `errorFillScheme` is the counterpart of `buttonFillScheme` and stays one
-    // committed red under both brightnesses.
+    // `errorFillScheme` stays one committed red under both brightnesses; the
+    // primary CTA gets the same treatment from the theme pair's dark half.
     for (final brightness in Brightness.values) {
       await tester.pumpWidget(host(
         AppButton(label: 'Delete', onPressed: () {}, variant: AppButtonVariant.destructive),

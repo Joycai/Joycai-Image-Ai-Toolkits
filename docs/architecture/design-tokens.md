@@ -74,7 +74,7 @@
 
 | 设计稿 | 形态 | 用 |
 |---|---|---|
-| 主色实底 | 主 CTA 填充 | `buttonFillScheme(accent.light).primary`（已有，light+vibrant，保证暗色下不发灰） |
+| 主色实底 | 主 CTA 填充 | `colorScheme.primary` / `onPrimary`（亮色 = 种子的 tone 40 压白字；暗色 = 配对的暗色半压 tone 10 墨，见 §1「主题色是一对」） |
 | 主色描边 / 开关开 / 复选框选中 / 聚焦边 | 纯色 | `colorScheme.primary` |
 | 主色 12% 底 | 选中态背景 | `colorScheme.accentTint` |
 | 「主色深」——12% 底**上的文字/图标** | 文字色 | `colorScheme.onAccentTint` |
@@ -90,7 +90,9 @@
 | `light` | **种子** | 亮色方案照旧从它长出来，`primary` 取 tone 40。种子本身不直接画：`#4A72E8` 压白字是 4.3:1，差一点不合规，Material 的 tone 40 正是修这个的 |
 | `dark` | **成品** | 暗色方案的调色板角色（容器、secondary、tertiary）仍从它长出来，但 `primary` **原样画它**。这个值是对着暗色底调出来的，调完再让调色板换一个就没意义了 |
 
-`buildAppColorScheme` 暗色分支因此改写三个角色：`primary` = `accent.dark`；`onPrimary` = `accent.onDark`（同色相 tone 10 的墨，**不是白**——tone ~62 上白字只有 3:1，是经典的中间调陷阱）；`primaryFixedDim` = `accent.darkOnTint`（**按 accent 自己的彩度**取 tone 80，而不是 vibrant 调色板那个最大彩度的 tone 80——teal 下后者是 `#00DECB`，一支荧光色，压在 `#1FA89A` 的 12% 底上已经不像同一个颜色）。亮色分支一个都不碰，`app_theme_test` 钉着 `light.primary == buttonFillScheme(...).primary`。
+`buildAppColorScheme` 暗色分支因此改写三个角色：`primary` = `accent.dark`；`onPrimary` = `accent.onDark`（同色相 tone 10 的墨，**不是白**——tone ~62 上白字只有 3:1，是经典的中间调陷阱）；`primaryFixedDim` = `accent.darkOnTint`（**按 accent 自己的彩度**取 tone 80，而不是 vibrant 调色板那个最大彩度的 tone 80——teal 下后者是 `#00DECB`，一支荧光色，压在 `#1FA89A` 的 12% 底上已经不像同一个颜色）。亮色分支一个都不碰，`design_tokens_test` 逐预设钉着 `light.primary` 就是 `fromSeed(light, vibrant)` 长出来的 tone 40。
+
+**主 CTA 两边都穿 `primary`。** 配对之前主按钮在暗色下也从一支单独的亮色方案取填充（`buttonFillScheme`，已删），因为 Material 的暗色 `primary` 是 tone 80 粉彩，当填充是一块淡紫色板。暗色半现在本身就是为填充调的（tone ~62 压 tone 10 墨），设计稿 `D1a` 也明说「里面的按钮……都用该模式实际会画出的那个色号」。配对合入后有一段时间 CTA 仍取亮色半，结果是暗色下唯一一个还穿亮色的控件，而且设置页预览卡的暗色半画的按钮是 app 从没画过的。`theme_accent_picker_test`「the preview matches the theme」逐预设把卡片上画的按钮色钉到真实 `filledButtonTheme` 上。危险按钮的 `errorFillScheme` 不动：错误色没有配对，暗色下仍是亮色红实底。
 
 各预设的暗色值都是从 `ThemeAccent.fromSeed`（同色相同彩度、tone 提到 62）起步再手调的，调法与门槛：
 
@@ -115,12 +117,9 @@
 
 `ColorScheme.fromSeed` 默认的 `tonalSpot` 会把主色调色板的彩度**压掉**。在设计稿自己的那支种子色 `#4A72E8`（一支鲜蓝）上，它返回的 `primary` 是 `#4C5C92`——一支发灰的板岩蓝。于是上表后三行——选中行、徽标、复选框、开关——画出来的色调**会随种子色变，但永远不像用户选的那支**：选了颜色，画出来的是它的影子。
 
-这件事这份代码发现过一次，但只给最响的那一处打了补丁：`buttonFillScheme` 就是一支单独的 light + `vibrant` 配色，存在的唯一理由是别让主按钮成为屏幕上最灰的东西。结果是整扇窗里只有 CTA 是鲜的，其余每一处强调色都比它暗一档。
+这件事这份代码发现过一次，但只给最响的那一处打了补丁：曾有一支单独的 light + `vibrant` 配色（`buttonFillScheme`）专供主按钮，存在的唯一理由是别让它成为屏幕上最灰的东西。结果是整扇窗里只有 CTA 是鲜的，其余每一处强调色都比它暗一档。
 
-现在 `buildAppColorScheme` 整体走 `vibrant`，补丁挪回了病根上。注意两点：
-
-- **只有强调色角色活下来。** 灰阶在下面被那张固定冷蓝表覆盖（见 §0），而 `vibrant` 自己的灰阶比 `tonalSpot` **更**染种子色，所以那部分永远到不了界面上。
-- **`buttonFillScheme` 仍然要留着**，但只为它另一半理由：暗色下 `primary` 是给前景用的浅色调 80，拿它当填充是一块淡紫色板压着深色文字——比旁边的普通控件还亮，偏偏落在最该有分量的那颗按钮上。这跟变体无关。浅色下这两者现在是同一个色值，`app_theme_test` 把这条也钉住了。
+现在 `buildAppColorScheme` 整体走 `vibrant`，补丁挪回了病根上。注意：**只有强调色角色活下来。** 灰阶在下面被那张固定冷蓝表覆盖（见 §0），而 `vibrant` 自己的灰阶比 `tonalSpot` **更**染种子色，所以那部分永远到不了界面上。那支单独配色曾因第二个理由多活了一阵（暗色 `primary` 是 tone 80 粉彩，不能当填充），主题色变成一对之后这个理由也没了，见 §1。
 
 ### `onAccentTint` 是这里唯一的难点
 

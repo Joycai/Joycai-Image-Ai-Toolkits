@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
+import 'package:material_color_utilities/material_color_utilities.dart';
 
 /// Covers the app-wide button theme.
 ///
@@ -20,39 +21,41 @@ void main() {
   ThemeData dark() => buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.dark);
   ThemeData light() => buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
 
-  test('filled buttons take the fill scheme, whatever the brightness', () {
-    final scheme = buttonFillScheme(seed);
-
+  test('filled buttons take the scheme\'s primary, whatever the brightness', () {
+    // The CTA is no longer a special case. It used to fill from a separate
+    // *light* scheme in both brightnesses, because Material's dark `primary`
+    // is a tone-80 pastel meant to be read as a foreground and a button filled
+    // with it was a lavender slab under dark text. The theme colour is a pair
+    // now and dark `primary` is a hand-tuned fill, so the second scheme went.
     for (final theme in [dark(), light()]) {
-      expect(resolve(theme, {})!, scheme.primary);
-      expect(styleOf(theme).foregroundColor?.resolve({}), scheme.onPrimary);
+      expect(resolve(theme, {})!, theme.colorScheme.primary);
+      expect(styleOf(theme).foregroundColor?.resolve({}), theme.colorScheme.onPrimary);
+      expect(styleOf(theme).shadowColor?.resolve({}), theme.colorScheme.primary,
+          reason: 'the coloured lift must follow the fill it lifts');
     }
   });
 
-  test('the fill is a dark ground in dark mode, where primary is a pale one', () {
-    // What [buttonFillScheme] is still for. It used to be for two things —
-    // dark's pale primary, and `tonalSpot` capping chroma at every tone — and
-    // the second is gone: the whole scheme is `vibrant` now, so in *light* the
-    // fill and `colorScheme.primary` are legitimately the same colour and
-    // asserting they differ would be pinning a workaround to its own scaffold.
-    //
-    // Dark is the half that remains. There `primary` is a pale tone 80 meant
-    // to be read as a foreground, and a button filled with it is a lavender
-    // slab under dark text — lighter than the ordinary controls beside it, on
-    // the one element that should carry the most weight.
-    final fill = HSLColor.fromColor(buttonFillScheme(seed).primary);
-    final darkPrimary = HSLColor.fromColor(dark().colorScheme.primary);
+  test('in dark the CTA wears the pair\'s dark half and its own ink', () {
+    // The half of the pair that exists to be a fill. Before, dark took the
+    // light half here, which left the CTA the only control in dark still
+    // wearing the light accent, and the settings preview card — which draws
+    // its dark-half button in dark `primary` — promising a button the app
+    // never drew.
+    final accent = ThemeAccent.fromSeed(seed);
 
-    expect(fill.lightness, lessThan(darkPrimary.lightness));
-    expect(resolve(dark(), {})!, isNot(dark().colorScheme.primary));
+    expect(resolve(dark(), {})!, accent.dark);
+    expect(styleOf(dark()).foregroundColor?.resolve({}), accent.onDark);
   });
 
-  test('light mode no longer needs a second scheme for the fill', () {
-    // The change this records: `buildAppColorScheme` is `vibrant` too, so the
-    // accent a selected row wears and the accent the CTA is filled with are
-    // finally the same colour. Before, the CTA was the only vivid thing in the
-    // window and every other accent a step duller than it.
-    expect(light().colorScheme.primary, buttonFillScheme(seed).primary);
+  test('the light CTA is tone 40 of the seed, not the seed itself', () {
+    // Why light `primary` is still grown rather than drawn verbatim: white on
+    // the seed itself is under AA at the spec's own blue (4.3:1 at `#4A72E8`).
+    // Material's tone 40 is what lifts it over, and the CTA — the one place
+    // the accent carries white text at body size — is where that has to hold.
+    final primary = Hct.fromInt(light().colorScheme.primary.toARGB32());
+
+    expect(primary.tone, closeTo(40, 1));
+    expect(light().colorScheme.primary, isNot(seed));
   });
 
   test('the label keeps a readable contrast against the fill', () {
@@ -267,7 +270,7 @@ void _metricsOnlyTests() {
         .style!;
 
     expect(rendered.color, isNot(light().colorScheme.onSurface));
-    expect(rendered.color, buttonFillScheme(seed).onPrimary);
+    expect(rendered.color, light().colorScheme.onPrimary);
     expect(rendered.fontSize, light().textTheme.bodySmall?.fontSize);
   });
 }

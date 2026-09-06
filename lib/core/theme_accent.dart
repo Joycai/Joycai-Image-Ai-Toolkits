@@ -19,9 +19,9 @@ import 'package:material_color_utilities/material_color_utilities.dart';
 /// The two halves are used differently, on purpose:
 ///
 /// - [light] is a **seed**. [buildAppColorScheme] grows a light scheme from
-///   it and draws `primary` at tone 40 (see `buttonFillScheme` for why a fill
-///   under white text cannot be the seed itself — `#4A72E8` on white is
-///   4.3:1, a hair under AA, and Material's tone 40 is what fixes that).
+///   it and draws `primary` at tone 40 — a fill under white text cannot be
+///   the seed itself: `#4A72E8` on white is 4.3:1, a hair under AA, and
+///   Material's tone 40 is what fixes that.
 /// - [dark] is **the accent**, drawn as-is as dark `primary`. It is the value
 ///   a designer tuned looking at it on the dark canvas, and it would be
 ///   pointless to tune a colour and then let a palette pick a different one.

@@ -180,13 +180,19 @@ void main() {
       });
 
       test('light is untouched by the pair — ${preset.key}', () {
-        // The light half is still a seed, and light primary is still the
-        // tone-40 CTA fill. Restated per preset because the dark override in
+        // The light half is still a seed, and light primary is still what
+        // Material grows from it: tone 40, the CTA fill white text is legible
+        // on. Restated per preset because the dark override in
         // buildAppColorScheme is guarded by a brightness check that would be
         // easy to widen by accident.
         final light = buildAppColorScheme(accent: accent, brightness: Brightness.light);
-        expect(light.primary, buttonFillScheme(accent.light).primary);
-        expect(light.onPrimary, buttonFillScheme(accent.light).onPrimary);
+        final grown = ColorScheme.fromSeed(
+          seedColor: accent.light,
+          brightness: Brightness.light,
+          dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+        );
+        expect(light.primary, grown.primary);
+        expect(light.onPrimary, grown.onPrimary);
       });
     }
 
@@ -291,18 +297,24 @@ void main() {
               'errorFillScheme — it exists because of this');
     });
 
-    // The rule that keeps emphasis honest. Every `buttonFillScheme` primary
-    // lands in a narrow luminance band by construction (light + vibrant is
-    // tone 40 whatever the hue), so the destructive fill belongs in the *same*
-    // band: equally committed, differing only in hue. Anything outside it is
-    // either a pale slab (the bug) or louder than the design allows.
+    // The rule that keeps emphasis honest. Every light primary lands in a
+    // narrow luminance band by construction (light + vibrant is tone 40
+    // whatever the hue), so the destructive fill belongs in the *same* band:
+    // equally committed, differing only in hue. Anything outside it is either
+    // a pale slab (the bug) or louder than the design allows.
+    //
+    // Light only. In dark the CTA fills with the pair's tuned dark half
+    // (tone ~62 under tone-10 ink) while the destructive fill keeps its
+    // committed red — different constructions, so the band is not shared
+    // there, and neither is a pale slab.
     //
     // Not "darker than primary" — that would be a coincidence of the ramp
     // rather than a rule, and it would fail the day a seed lands a point
     // lighter. Band membership is the thing that actually has to hold.
     for (final MapEntry<String, ThemeAccent> seed in AppConstants.presetThemes.entries) {
       test('it carries the same weight as the primary CTA — ${seed.key}', () {
-        final primaryFill = buttonFillScheme(seed.value.light);
+        final primaryFill =
+            buildAppColorScheme(accent: seed.value, brightness: Brightness.light);
         expect(
           (luminance(errorFill.primary) - luminance(primaryFill.primary)).abs(),
           lessThan(0.03),

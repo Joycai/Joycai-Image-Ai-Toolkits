@@ -178,17 +178,15 @@ ColorScheme buildAppColorScheme({
     // it: the user picked a colour and the app rendered its shadow.
     //
     // The codebase had already found this once and patched around it for the
-    // one loudest case — [buttonFillScheme] is a light `vibrant` scheme built
-    // solely so the primary button would not be the greyest thing on screen.
-    // Which left the CTA as the only vivid accent in the window and every
-    // other accent a step duller than it. This moves the fix to where the
-    // problem was.
+    // one loudest case — a separate light `vibrant` scheme built solely so
+    // the primary button would not be the greyest thing on screen. Which left
+    // the CTA as the only vivid accent in the window and every other accent a
+    // step duller than it. This moves the fix to where the problem was; the
+    // CTA now fills with `primary` like everything else.
     //
     // Only the accent roles survive: the neutrals are overwritten below, so
     // vibrant's own greys — which are *more* seed-tinted than tonalSpot's —
-    // never reach the app. `buttonFillScheme` still exists, for its other
-    // reason: in dark, `primary` is a pale tone 80 under a dark `onPrimary`,
-    // which is wrong for a fill whatever the variant.
+    // never reach the app.
     dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
   );
   final neutral = isDark ? _Neutrals.dark : _Neutrals.light;
@@ -202,9 +200,9 @@ ColorScheme buildAppColorScheme({
     // `primaryFixedDim` is overwritten because it is the role
     // [AppAccent.onAccentTint] and [AppAccent.accentOnOverlay] read in dark,
     // and the vibrant palette's own tone 80 is at maximum chroma — a neon
-    // beside an accent that is not. Light is untouched: its `primary` is the
-    // tone 40 `buttonFillScheme` also lands on, and `app_theme_test` pins
-    // the two being one colour.
+    // beside an accent that is not. Light is untouched: its `primary` stays
+    // Material's tone 40 of the seed, which is what puts white on it past AA
+    // (`#4A72E8` itself on white is 4.3:1); `app_theme_test` pins that.
     primary: isDark ? accent.dark : null,
     onPrimary: isDark ? accent.onDark : null,
     primaryFixedDim: isDark ? accent.darkOnTint : null,
@@ -239,8 +237,6 @@ ThemeData buildAppTheme({
   String? fontFamily,
 }) {
   final colorScheme = buildAppColorScheme(accent: accent, brightness: brightness);
-  // The light half in both brightnesses — see [buttonFillScheme].
-  final fill = buttonFillScheme(accent.light);
 
   return ThemeData(
     useMaterial3: true,
@@ -458,9 +454,18 @@ ThemeData buildAppTheme({
       // button was casting a full-strength glow in the user's own theme
       // colour — on a dark canvas it read as a ring around the button, making
       // the one control that does nothing the loudest thing in the row.
+      // `primary` / `onPrimary` in both brightnesses. Until the theme colour
+      // became a pair this took a separate *light* scheme in dark too, because
+      // Material's dark `primary` is a tone-80 pastel meant to be read as a
+      // foreground, and a button filled with it was a lavender slab under dark
+      // text. Dark `primary` is now the pair's hand-tuned dark half with its
+      // own tone-10 ink — a fill by construction, and the one the design's
+      // dark frames draw the CTA in. Taking it from the light half instead
+      // left the CTA the only control in dark still wearing the light accent,
+      // and the settings preview card promising a button the app never drew.
       style: FilledButton.styleFrom(
-        backgroundColor: fill.primary,
-        foregroundColor: fill.onPrimary,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         // Material's own disabled tones. They have to be spelled out: naming a
         // background in a theme replaces the default's whole state machine, and
         // a disabled button with no colour of its own paints nothing at all.
@@ -470,7 +475,7 @@ ThemeData buildAppTheme({
         // shadow is invisible, and the lift is what separates the one button
         // that commits from the text beside it that cancels.
         elevation: 2,
-        shadowColor: fill.primary,
+        shadowColor: colorScheme.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appButtonRadius)),
         minimumSize: const Size(0, appButtonMinHeight),
         visualDensity: VisualDensity.standard,
@@ -702,32 +707,6 @@ TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
   return fontFamily == null ? merged : merged.apply(fontFamily: fontFamily);
 }
 
-/// The scheme a primary button takes its fill and label from.
-///
-/// Material's dark scheme pairs a pale `primary` with a dark `onPrimary`, so a
-/// filled button comes out a washed-out lavender slab — lighter than the
-/// ordinary controls beside it, on the one element that should carry the most
-/// weight. `primary` is tuned to be read *as a foreground* in dark; a fill
-/// wants the opposite.
-///
-/// So the fill comes from a **light** scheme in both themes, which is why this
-/// takes no [Brightness]. Both halves still come from one scheme, so the label
-/// keeps the contrast Material computes for it — which a hand-picked "brighter
-/// purple" under white would not, at any seed the user might pick.
-///
-/// This used to carry a second job: `tonalSpot` capped chroma, so *no* tone of
-/// the app's palette was vivid, and this was the one place the seed's own
-/// colour survived. [buildAppColorScheme] is `vibrant` now, so in light mode
-/// this and `colorScheme.primary` are the same colour — as they should be. The
-/// dark half is the reason it still exists.
-ColorScheme buttonFillScheme(Color seedColor) {
-  return ColorScheme.fromSeed(
-    seedColor: seedColor,
-    brightness: Brightness.light,
-    dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
-  );
-}
-
 /// The skin a slider wears when it is not editing a value.
 ///
 /// `10e` 「滑杆」 splits the family in two, and the split is about meaning
@@ -772,9 +751,7 @@ const Color _errorSource = Color(0xFFB3261E);
 
 /// The scheme a destructive button takes its fill and label from.
 ///
-/// [buttonFillScheme]'s counterpart, and it exists for exactly the same reason
-/// — restated because the symmetry is the whole argument. A filled button
-/// needs a *dark, saturated* ground under a light label in both brightnesses;
+/// A filled button needs a *dark, saturated* ground under a light label;
 /// [ColorScheme.error] is not that. It is tone 40 in light and tone 80 in
 /// dark, because its job is to be legible *as a foreground* — which is right
 /// for [AppButtonVariant.destructiveOutline] and `destructiveText`, and wrong
@@ -785,8 +762,10 @@ const Color _errorSource = Color(0xFFB3261E);
 /// same hue family, so colour told the user nothing at all.
 ///
 /// Always light + vibrant, so the fill is the same committed red under both
-/// brightnesses — the same trick [buttonFillScheme] plays with the seed, and
-/// the reason it takes no [Brightness].
+/// brightnesses, which is why this takes no [Brightness]. The primary CTA
+/// used to be built the same way, until the theme colour became a pair with a
+/// dark half tuned to be a fill; the error colour has no such pair, so this
+/// stays.
 ColorScheme errorFillScheme() {
   return ColorScheme.fromSeed(
     seedColor: _errorSource,
