@@ -152,11 +152,14 @@ class FolderOperationsService {
     final unchanged = currentPath != null && _sameName(candidate, currentPath);
     if (unchanged) return null;
 
+    // `13b`'s order: what is on the disk outranks what is in the list. A
+    // registered path normally exists as well, so `registered` is left for
+    // the stale registration whose folder is no longer there.
+    if (_entryExists(parent, clean)) return FolderNameError.exists;
+
     if (registered.any((r) => p.equals(r, candidate))) {
       return FolderNameError.registered;
     }
-
-    if (_entryExists(parent, clean)) return FolderNameError.exists;
     return null;
   }
 

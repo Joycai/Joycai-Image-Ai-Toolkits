@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
@@ -48,15 +49,17 @@ Future<void> runFolderDelete(BuildContext context, String path) async {
     return;
   }
 
+  // Said now, from the row that asked: the refresh below reloads its
+  // parent's children and this row is gone before the lists are in step.
+  if (context.mounted) {
+    AppSnackBar.success(context, toTrash ? l10n.folderTrashed(name) : l10n.folderDeleted(name));
+  }
+
   // The marks under it are now genuinely missing — that is the state
   // `revalidate` exists to report, so it is asked to rather than told.
   await appState.fileBrowserState.pruneRemoved(path);
   await staging.revalidate();
   await appState.fileBrowserState.refresh();
-
-  if (context.mounted) {
-    AppSnackBar.success(context, toTrash ? l10n.folderTrashed(name) : l10n.folderDeleted(name));
-  }
 }
 
 class _FolderDeleteDialog extends StatefulWidget {
@@ -100,88 +103,98 @@ class _FolderDeleteDialogState extends State<_FolderDeleteDialog> {
           : l10n.deleteFolderCount(inventory.items);
     }
 
-    return AppDialog(
-      icon: Icons.delete_outline,
-      iconColor: colorScheme.error,
-      title: widget.toTrash ? l10n.trashFolderTitle : l10n.deleteFolderTitle,
-      subtitle: counting ? '${widget.path} · ${l10n.inventoryCounting}' : widget.path,
-      maxWidth: 420,
-      content: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (!counting && empty)
-            Text(
-              widget.toTrash ? l10n.trashFolderEmptyDesc : l10n.deleteFolderEmptyDesc,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                height: AppType.proseHeight,
-              ),
-            )
-          else ...[
-            Row(
-              children: [
-                Expanded(
-                  child: _CountCell(
-                    value: inventory?.folders,
-                    label: l10n.inventorySubfolders,
-                  ),
+    // `13d`: Enter lands on Cancel. The red button confirms, and so does a
+    // second press of the key that opened this — once the count is in.
+    // Repeats are ignored so a held key cannot delete on its own.
+    void confirm() => Navigator.pop(context, true);
+    return CallbackShortcuts(
+      bindings: counting
+          ? const <ShortcutActivator, VoidCallback>{}
+          : <ShortcutActivator, VoidCallback>{
+              const SingleActivator(LogicalKeyboardKey.delete, includeRepeats: false): confirm,
+              const SingleActivator(LogicalKeyboardKey.backspace, includeRepeats: false): confirm,
+            },
+      child: AppDialog(
+        icon: Icons.delete_outline,
+        iconColor: colorScheme.error,
+        title: widget.toTrash ? l10n.trashFolderTitle : l10n.deleteFolderTitle,
+        subtitle: counting ? '${widget.path} · ${l10n.inventoryCounting}' : widget.path,
+        maxWidth: 420,
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!counting && empty)
+              Text(
+                widget.toTrash ? l10n.trashFolderEmptyDesc : l10n.deleteFolderEmptyDesc,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: AppType.proseHeight,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _CountCell(
-                    value: inventory?.files,
-                    label: l10n.inventoryFiles,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _CountCell(
-                    text: inventory == null ? null : AppConstants.formatFileSize(inventory.bytes),
-                    label: l10n.inventorySize,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  widget.toTrash ? Icons.restore_from_trash_outlined : Icons.warning_amber_rounded,
-                  size: AppSize.iconSm,
-                  color: widget.toTrash ? colorScheme.onSurfaceVariant : colorScheme.error,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    widget.toTrash ? l10n.trashFolderRestorable : l10n.deleteFolderIrreversible,
-                    style: textTheme.labelMedium?.copyWith(
-                      color: widget.toTrash ? colorScheme.onSurfaceVariant : colorScheme.error,
-                      fontWeight: FontWeight.w500,
+              )
+            else ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: _CountCell(
+                      value: inventory?.folders,
+                      label: l10n.inventorySubfolders,
                     ),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _CountCell(
+                      value: inventory?.files,
+                      label: l10n.inventoryFiles,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _CountCell(
+                      text: inventory == null ? null : AppConstants.formatFileSize(inventory.bytes),
+                      label: l10n.inventorySize,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    widget.toTrash ? Icons.restore_from_trash_outlined : Icons.warning_amber_rounded,
+                    size: AppSize.iconSm,
+                    color: widget.toTrash ? colorScheme.onSurfaceVariant : colorScheme.error,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.toTrash ? l10n.trashFolderRestorable : l10n.deleteFolderIrreversible,
+                      style: textTheme.labelMedium?.copyWith(
+                        color: widget.toTrash ? colorScheme.onSurfaceVariant : colorScheme.error,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
+        ),
+        actions: [
+          AppButton(
+            label: l10n.cancel,
+            variant: AppButtonVariant.text,
+            autofocus: true,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          AppButton(
+            label: confirmLabel,
+            variant: AppButtonVariant.destructive,
+            loading: counting,
+            onPressed: counting ? null : () => Navigator.pop(context, true),
+          ),
         ],
       ),
-      actions: [
-        // Enter lands on Cancel. Delete needs a click on the red button, or
-        // a second press of the key that opened this.
-        AppButton(
-          label: l10n.cancel,
-          variant: AppButtonVariant.text,
-          autofocus: true,
-          onPressed: () => Navigator.pop(context, false),
-        ),
-        AppButton(
-          label: confirmLabel,
-          variant: AppButtonVariant.destructive,
-          loading: counting,
-          onPressed: counting ? null : () => Navigator.pop(context, true),
-        ),
-      ],
     );
   }
 }

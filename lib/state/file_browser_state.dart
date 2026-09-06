@@ -226,12 +226,19 @@ class FileBrowserState extends ChangeNotifier {
   String? _flashPath;
   Timer? _flashTimer;
 
-  void flash(String path) {
+  /// Whether the row at [flashPath] should also draw open. A renamed folder
+  /// comes back under a new key, closed; `13c` wants it open if it was.
+  bool get flashExpanded => _flashExpanded;
+  bool _flashExpanded = false;
+
+  void flash(String path, {bool expand = false}) {
     _flashTimer?.cancel();
     _flashPath = path;
+    _flashExpanded = expand;
     notifyListeners();
     _flashTimer = Timer(const Duration(milliseconds: 1500), () {
       _flashPath = null;
+      _flashExpanded = false;
       notifyListeners();
     });
   }

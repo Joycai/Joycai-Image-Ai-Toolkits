@@ -227,7 +227,13 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
             ? Colors.transparent
             : colorScheme.surfaceContainer,
         drawer: isNarrow
-            ? const Drawer(child: UnifiedSidebar(useFileBrowserState: true))
+            ? const Drawer(
+                // `13g`: the drawer is the desktop column at its resting
+                // width, not Material's 304, so the tree's rows, menu and
+                // in-row editor keep the geometry they were drawn at.
+                width: 260,
+                child: UnifiedSidebar(useFileBrowserState: true),
+              )
             : null,
         bottomNavigationBar: const AppRunConsole(),
         body: Row(
