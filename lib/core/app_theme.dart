@@ -156,12 +156,12 @@ class _Neutrals {
 /// containers, so the accent survives exactly where it should: on things the
 /// user acts on.
 ///
-/// The accent is a [ThemeAccent] — a light/dark *pair* — and the two halves
-/// are not treated alike. Light grows a scheme from its half as a seed and
-/// takes Material's tone-40 `primary`. Dark grows a scheme from its half for
-/// the palette roles, then draws `primary` **as the half itself**: that hex
-/// was tuned on the dark canvas, and the tone-80 pastel `fromSeed` would put
-/// there is the thing [ThemeAccent] exists to replace. See it for the rest.
+/// The accent is a [ThemeAccent] — a light/dark *pair* of finished colours.
+/// Each brightness grows a scheme from its half for the palette roles, then
+/// draws `primary` **as the half itself**: that hex was tuned on its own
+/// canvas, and what `fromSeed` would put there instead — a tone-80 pastel in
+/// dark, a maximum-chroma tone 40 in light — is the thing [ThemeAccent]
+/// exists to replace. See it for the rest.
 ColorScheme buildAppColorScheme({
   required ThemeAccent accent,
   required Brightness brightness,
@@ -192,19 +192,18 @@ ColorScheme buildAppColorScheme({
   final neutral = isDark ? _Neutrals.dark : _Neutrals.light;
 
   return seeded.copyWith(
-    // Dark only. `fromSeed` puts dark `primary` at tone 80 — legible as a
-    // foreground, and a pastel of whatever the user picked on every control
-    // that wears it. The pair's dark half is the accent a designer tuned on
-    // this ramp, so it is drawn verbatim; what goes *on* it and on a wash of
-    // it move with it (see [ThemeAccent.onDark] / [ThemeAccent.darkOnTint]).
-    // `primaryFixedDim` is overwritten because it is the role
-    // [AppAccent.onAccentTint] and [AppAccent.accentOnOverlay] read in dark,
-    // and the vibrant palette's own tone 80 is at maximum chroma — a neon
-    // beside an accent that is not. Light is untouched: its `primary` stays
-    // Material's tone 40 of the seed, which is what puts white on it past AA
-    // (`#4A72E8` itself on white is 4.3:1); `app_theme_test` pins that.
-    primary: isDark ? accent.dark : null,
-    onPrimary: isDark ? accent.onDark : null,
+    // The pair's half for this brightness, verbatim, with what goes *on* it
+    // and on a wash of it moving with it. `fromSeed` would put a tone-80
+    // pastel here in dark and the vibrant palette's maximum-chroma tone 40
+    // in light — a neon of the picked colour either way. The wash-label
+    // roles are overwritten for the same reason: they are what
+    // [AppAccent.onAccentTint] reads (`onPrimaryFixedVariant` in light,
+    // `primaryFixedDim` in dark — the latter also [AppAccent.accentOnOverlay]),
+    // and the palette's own are at maximum chroma, a different colour beside
+    // an accent that is not. See [ThemeAccent] for each value's tone.
+    primary: isDark ? accent.dark : accent.light,
+    onPrimary: isDark ? accent.onDark : accent.onLight,
+    onPrimaryFixedVariant: isDark ? null : accent.lightOnTint,
     primaryFixedDim: isDark ? accent.darkOnTint : null,
     surface: neutral.surface,
     surfaceDim: neutral.surfaceDim,

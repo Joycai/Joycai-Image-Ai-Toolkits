@@ -12,12 +12,13 @@ import '../core/theme_accent.dart';
 /// Design `D1a 20a` / `20d` / `20e`.
 ///
 /// Both halves are the **rendered** accents — what `primary` actually is in
-/// each brightness — not the pair's stored values. The light half of a
-/// [ThemeAccent] is a seed the scheme takes tone 40 of, and is itself drawn
-/// nowhere; a swatch that showed it would be promising a colour no button
-/// wears. The dark half is drawn verbatim, so for it the two are the same.
-/// The dot itself is therefore identical in both modes: it pictures the two
-/// values, not the current one.
+/// each brightness — read from the scheme rather than from the pair's stored
+/// values. Today the two are the same, because both halves are drawn
+/// verbatim; going through the scheme means a swatch can never promise a
+/// colour no button wears, whatever the scheme does to the half later (the
+/// light half *was* a seed the scheme took tone 40 of, once). The dot itself
+/// is identical in both modes: it pictures the two values, not the current
+/// one.
 ///
 /// Four states, all drawn *outside* the 36px dot so it never changes size:
 ///

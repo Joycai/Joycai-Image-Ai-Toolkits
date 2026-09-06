@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
@@ -16,31 +14,47 @@ import 'package:material_color_utilities/material_color_utilities.dart';
 /// draws its accent at tone 60, not 80, and this is how that gets honoured
 /// for every preset instead of only the blue one.
 ///
-/// The two halves are used differently, on purpose:
+/// Both halves are **finished colours**, drawn verbatim as `primary` in their
+/// brightness. Each was tuned on its own ramp — the light one against white
+/// and the light canvas, the dark one against the dark card — and it would be
+/// pointless to tune a colour and then let a palette pick a different one.
+/// The palette's remaining roles (containers, secondary, tertiary) are still
+/// grown from the half, so their hue follows.
 ///
-/// - [light] is a **seed**. [buildAppColorScheme] grows a light scheme from
-///   it and draws `primary` at tone 40 — a fill under white text cannot be
-///   the seed itself: `#4A72E8` on white is 4.3:1, a hair under AA, and
-///   Material's tone 40 is what fixes that.
-/// - [dark] is **the accent**, drawn as-is as dark `primary`. It is the value
-///   a designer tuned looking at it on the dark canvas, and it would be
-///   pointless to tune a colour and then let a palette pick a different one.
-///   The dark palette's remaining roles (containers, secondary, tertiary) are
-///   still grown from it, so their hue follows.
+/// Neither half is the raw Material seed it started from. Light used to be:
+/// the scheme grew from it and took Material's tone-40 `primary`, which is
+/// the *vibrant* palette's tone 40 — at maximum chroma. Indigo came out
+/// `#1242FF`, deep purple `#7801FF`, blue-grey a saturated `#006783`: the
+/// user picked a colour and the app rendered a neon of it. The light half is
+/// now the seed's own hue and chroma at tone 44 — as close to the picked
+/// colour as white text on it allows (≥ 5.5:1; the seed itself, `#4A72E8`
+/// on white, is 4.3:1).
 ///
 /// Presets live in `AppConstants.presetThemes`; [ThemeAccent.fromSeed] is for
-/// a colour that has no hand-tuned dark half — tests, and the screenshot
-/// harness — and is also the starting point each preset's dark hex was tuned
+/// a colour that has no hand-tuned halves — tests, and the screenshot
+/// harness — and is also the starting point each preset's hexes were tuned
 /// from.
 @immutable
 class ThemeAccent {
   const ThemeAccent({required this.light, required this.dark});
 
-  /// The seed the light scheme is grown from.
+  /// The accent light mode draws, as-is, as `primary`. Also the seed the
+  /// rest of the light palette is grown from.
   final Color light;
 
-  /// The accent dark mode draws, as-is, as `primary`.
+  /// The accent dark mode draws, as-is, as `primary`. Also the seed the
+  /// rest of the dark palette is grown from.
   final Color dark;
+
+  /// Where [fromSeed] puts the light accent's tone (HCT, so L\*).
+  ///
+  /// Chosen against white and the light canvas, not by taste: at 44 white
+  /// text on the accent is ≥ 5.5:1 and the accent as text on the canvas
+  /// (`#ECEFF8`) is ≥ 4.8:1. At 47 the canvas figure drops under AA; at 40
+  /// — Material's own choice — both hold with more room, but every colour is
+  /// four tones further from the one the user picked. 44 keeps the margin
+  /// and gives the tones back.
+  static const double derivedLightTone = 44;
 
   /// Where [fromSeed] puts the dark accent's tone (HCT, so L\*).
   ///
@@ -53,23 +67,33 @@ class ThemeAccent {
   /// own dark blue sits at 60.
   static const double derivedDarkTone = 62;
 
-  /// A pair from one seed: the dark half keeps the seed's hue and chroma and
-  /// lifts its tone to at least [derivedDarkTone].
+  /// A pair from one seed: both halves keep the seed's hue and chroma; the
+  /// light one lowers its tone to at most [derivedLightTone], the dark one
+  /// lifts it to at least [derivedDarkTone].
   ///
-  /// "At least": a seed that is already lighter than that (Material's orange
-  /// is tone 72) is kept where it is rather than darkened — the point of the
-  /// lift is legibility on a dark ground, and a lighter seed already has it.
+  /// "At most" and "at least": a seed already on the legible side of a
+  /// threshold is kept where it is rather than pushed through it. Material's
+  /// orange is tone 72 and stays there in dark — the lift is for legibility
+  /// on a dark ground, which a lighter seed already has — and indigo is tone
+  /// 38 and stays there in light, for the same reason under white.
   factory ThemeAccent.fromSeed(Color seed) {
     final Hct hct = Hct.fromInt(seed.toARGB32());
     return ThemeAccent(
-      light: seed,
-      dark: _atTone(hct, math.max(hct.tone, derivedDarkTone)),
+      light: hct.tone <= derivedLightTone ? seed : _atTone(hct, derivedLightTone),
+      dark: hct.tone >= derivedDarkTone ? seed : _atTone(hct, derivedDarkTone),
     );
   }
 
   /// The half this brightness draws.
   Color forBrightness(Brightness brightness) =>
       brightness == Brightness.dark ? dark : light;
+
+  /// Ink drawn *on* [light] — the CTA's label, a badge's digits.
+  ///
+  /// White, which is the design's rule for light mode and the reason the
+  /// light half sits at tone 44 rather than at the seed: the tone is what
+  /// makes white legible on it, so white is the ink.
+  Color get onLight => const Color(0xFFFFFFFF);
 
   /// Ink drawn *on* [dark] — a badge's digits, a selected chip's label.
   ///
@@ -90,6 +114,16 @@ class ThemeAccent {
   /// same chroma, eighteen tones lighter: the label reads as the accent
   /// speaking, not as a different colour.
   Color get darkOnTint => _atTone(Hct.fromInt(dark.toARGB32()), 80);
+
+  /// Text drawn on a 12% wash of [light] — the light-mode counterpart of
+  /// [darkOnTint]. See `AppAccent.onAccentTint`.
+  ///
+  /// Tone 30 at the accent's own chroma, for the same reason [darkOnTint]
+  /// is at its own: the vibrant palette's tone 30 is at maximum chroma, and
+  /// next to a light half that is not (blue-grey is chroma 20) it is a
+  /// different colour, not a darker one. Fourteen tones below the accent,
+  /// like the spec's 主色深 (`#3355C4` ≈ 40 under `#4A72E8` ≈ 51).
+  Color get lightOnTint => _atTone(Hct.fromInt(light.toARGB32()), 30);
 
   static Color _atTone(Hct hct, double tone) =>
       Color(Hct.from(hct.hue, hct.chroma, tone).toInt());

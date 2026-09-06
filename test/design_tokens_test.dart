@@ -7,6 +7,7 @@ import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
+import 'package:material_color_utilities/material_color_utilities.dart';
 
 /// Pins the rule that lets one design spec, drawn in a single teal, render
 /// correctly under all seven of the app's seed colours.
@@ -103,10 +104,10 @@ void main() {
           reason: 'buildAppColorScheme rewrites primaryFixedDim in dark to '
               'tone 80 at the accent\'s own chroma — the vibrant palette\'s '
               'tone 80 is at maximum chroma, a neon beside a calmer accent');
-      expect(light.onPrimaryContainer, light.onPrimaryFixedVariant,
-          reason: 'Material has moved onPrimaryContainer off tone 30 in light. '
-              'The Fixed role this getter uses is the pinned one, so nothing '
-              'is broken — but the doc comment now understates why it matters');
+      expect(light.onPrimaryFixedVariant, accent.lightOnTint,
+          reason: 'buildAppColorScheme rewrites onPrimaryFixedVariant in light '
+              'to tone 30 at the accent\'s own chroma, for the same reason as '
+              'primaryFixedDim in dark');
     });
   });
 
@@ -179,44 +180,117 @@ void main() {
             reason: '${preset.key}: light hue $a vs dark hue $b');
       });
 
-      test('light is untouched by the pair — ${preset.key}', () {
-        // The light half is still a seed, and light primary is still what
-        // Material grows from it: tone 40, the CTA fill white text is legible
-        // on. Restated per preset because the dark override in
-        // buildAppColorScheme is guarded by a brightness check that would be
-        // easy to widen by accident.
-        final light = buildAppColorScheme(accent: accent, brightness: Brightness.light);
-        final grown = ColorScheme.fromSeed(
-          seedColor: accent.light,
+      final light = buildAppColorScheme(accent: accent, brightness: Brightness.light);
+
+      test('light primary is the tuned light half, verbatim, under white — ${preset.key}', () {
+        // The light half was a seed once, and light primary was Material's
+        // tone 40 of it — the *vibrant* palette's tone 40, at maximum chroma,
+        // which turned indigo into `#1242FF` and deep purple into `#7801FF`.
+        // Now it is drawn as-is, like the dark half.
+        expect(light.primary, accent.light);
+        expect(light.onPrimary, accent.onLight);
+        expect(light.onPrimary.toARGB32(), Colors.white.toARGB32());
+      });
+
+      test('the light accent is the picked colour, not the palette\'s neon of it — ${preset.key}', () {
+        // Measured against the seed the preset is named after: same hue, and
+        // the seed's own chroma rather than whatever the gamut allows at that
+        // tone. Hue in HCT, where "same" means the same thing at every chroma.
+        final int legacySeed = AppConstants.legacySeedPresets.entries
+            .firstWhere((e) => e.value == preset.key)
+            .key;
+        final Hct seed = Hct.fromInt(legacySeed);
+        final Hct half = Hct.fromInt(accent.light.toARGB32());
+        final double hueDelta = (seed.hue - half.hue).abs();
+        expect(hueDelta > 180 ? 360 - hueDelta : hueDelta, lessThan(4),
+            reason: '${preset.key}: seed hue ${seed.hue} vs light half ${half.hue}');
+        expect(half.chroma, lessThanOrEqualTo(seed.chroma + 2),
+            reason: '${preset.key}: the light half is more saturated than the '
+                'seed — that is the palette\'s tone 40 creeping back');
+
+        final Color grown = ColorScheme.fromSeed(
+          seedColor: Color(legacySeed),
           brightness: Brightness.light,
           dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
-        );
-        expect(light.primary, grown.primary);
-        expect(light.onPrimary, grown.onPrimary);
+        ).primary;
+        expect(light.primary, isNot(grown),
+            reason: '${preset.key}: light primary is the palette\'s tone 40 again');
+      });
+
+      test('white reads on the light accent, and the accent reads on every light ground — ${preset.key}', () {
+        // The CTA carries white at body size; `primary` is also text — a
+        // TextButton label, a link — on every light ground from white down
+        // to the canvas. Both bound the tone from above; 44 holds both.
+        expect(contrast(light.onPrimary, light.primary), greaterThanOrEqualTo(4.5),
+            reason: '${preset.key}: the light half is too light for white text');
+        for (final (name, ground) in [
+          ('surfaceContainerLowest', light.surfaceContainerLowest),
+          ('surface', light.surface),
+          ('surfaceContainerLow', light.surfaceContainerLow),
+          ('surfaceContainer', light.surfaceContainer),
+          ('surfaceDim', light.surfaceDim),
+        ]) {
+          final double ratio = contrast(light.primary, ground);
+          expect(ratio, greaterThanOrEqualTo(4.5),
+              reason: '${preset.key} on $name: ${ratio.toStringAsFixed(2)}:1 — '
+                  'the light half was tuned too light');
+        }
+      });
+
+      test('the light wash label is tone 30 at the light half\'s own chroma — ${preset.key}', () {
+        expect(light.onPrimaryFixedVariant, accent.lightOnTint);
+        expect(Hct.fromInt(light.onAccentTint.toARGB32()).chroma,
+            lessThanOrEqualTo(Hct.fromInt(accent.light.toARGB32()).chroma + 2),
+            reason: '${preset.key}: the wash label is the palette\'s tone 30, '
+                'more saturated than the accent it labels');
       });
     }
 
-    test('fromSeed lifts a mid seed and leaves a light one where it is', () {
-      // Teal is tone ~56: lifted to 62, hue kept. Orange is tone 72 already
-      // and is not pulled *down* — the lift is for legibility on a dark
-      // ground, which a lighter seed already has.
+    test('fromSeed pushes each half to its threshold and no further', () {
+      // Teal is tone ~56: lowered to 44 in light, lifted to 62 in dark, hue
+      // and chroma kept. Orange is tone 72 already and is not pulled *down*
+      // in dark — the lift is for legibility on a dark ground, which a
+      // lighter seed already has. Indigo is tone 38 and is not pushed *up*
+      // in light, for the same reason under white.
       final teal = ThemeAccent.fromSeed(Colors.teal);
-      expect(teal.light, Colors.teal);
+      expect(luminance(teal.light), lessThan(luminance(Colors.teal)));
       expect(luminance(teal.dark), greaterThan(luminance(Colors.teal)));
+      expect(Hct.fromInt(teal.light.toARGB32()).tone, closeTo(ThemeAccent.derivedLightTone, 0.5));
+      expect(Hct.fromInt(teal.dark.toARGB32()).tone, closeTo(ThemeAccent.derivedDarkTone, 0.5));
 
       final orange = ThemeAccent.fromSeed(Colors.orange);
       expect((luminance(orange.dark) - luminance(Colors.orange)).abs(), lessThan(0.02));
+
+      final indigo = ThemeAccent.fromSeed(Colors.indigo);
+      expect(indigo.light.toARGB32(), Colors.indigo.toARGB32());
     });
 
     test('a pair is equal by value, so a preset round-trips through state', () {
       // The settings swatch marks the selected preset by comparing the
       // AppState's accent to each entry; the harness names a screenshot the
       // same way. Both need value equality, not identity.
-      const a = ThemeAccent(light: Color(0xFF4A72E8), dark: Color(0xFF5B8DFF));
-      const b = ThemeAccent(light: Color(0xFF4A72E8), dark: Color(0xFF5B8DFF));
+      const a = ThemeAccent(light: Color(0xFF3560D5), dark: Color(0xFF5B8DFF));
+      const b = ThemeAccent(light: Color(0xFF3560D5), dark: Color(0xFF5B8DFF));
       expect(a, b);
       expect(a.hashCode, b.hashCode);
       expect(AppConstants.presetThemes[AppConstants.defaultThemeAccentKey], a);
+    });
+
+    test('every pre-pair seed still finds its preset', () {
+      // The pre-pair preference stored the Material seed as an ARGB int.
+      // Those seeds are no longer any preset's light half, so the load path
+      // goes through legacySeedPresets — and that table has to name every
+      // preset exactly once, with a seed that is actually the same colour.
+      expect(AppConstants.legacySeedPresets.values.toSet(),
+          AppConstants.presetThemes.keys.toSet());
+      for (final MapEntry<int, String> row in AppConstants.legacySeedPresets.entries) {
+        final double seedHue = Hct.fromInt(row.key).hue;
+        final double halfHue =
+            Hct.fromInt(AppConstants.presetThemes[row.value]!.light.toARGB32()).hue;
+        final double delta = (seedHue - halfHue).abs();
+        expect(delta > 180 ? 360 - delta : delta, lessThan(4),
+            reason: '${row.value}: legacy seed maps to a preset of a different hue');
+      }
     });
   });
 

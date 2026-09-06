@@ -156,7 +156,7 @@ class AppState extends ChangeNotifier {
   // Persisted by preset *key* (`theme_accent`), not by colour, so a preset's
   // tuned dark half can move in a later version and follow the user. The
   // pre-pair setting (`theme_seed_color`, one ARGB int) is still read on
-  // load as a fallback and mapped to the preset whose light half it was.
+  // load as a fallback and mapped through `AppConstants.legacySeedPresets`.
   ThemeAccent themeAccent = AppConstants.presetThemes[AppConstants.defaultThemeAccentKey]!;
   // Font family key. Defaults to the bundled NotoSansSC to preserve the
   // existing look. The sentinel [AppConstants.systemFontKey] means "use the
@@ -428,18 +428,15 @@ class AppState extends ChangeNotifier {
     if (savedAccent != null) {
       themeAccent = savedAccent;
     } else {
-      // The pre-pair setting: one ARGB int, the light half of a preset. Find
-      // the preset by that half; an unrecognised value (a hand-edited row)
-      // keeps the default rather than guessing a dark half for it.
+      // The pre-pair setting: one ARGB int, the Material seed a preset was
+      // named after. Look it up in the legacy table; an unrecognised value
+      // (a hand-edited row) keeps the default rather than guessing a pair
+      // for it.
       final savedSeed = await _db.getSetting('theme_seed_color');
       final int? seedArgb = savedSeed == null ? null : int.tryParse(savedSeed);
-      if (seedArgb != null) {
-        for (final preset in AppConstants.presetThemes.values) {
-          if (preset.light.toARGB32() == seedArgb) {
-            themeAccent = preset;
-            break;
-          }
-        }
+      final String? legacyKey = seedArgb == null ? null : AppConstants.legacySeedPresets[seedArgb];
+      if (legacyKey != null) {
+        themeAccent = AppConstants.presetThemes[legacyKey]!;
       }
     }
 

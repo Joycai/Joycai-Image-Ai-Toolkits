@@ -288,18 +288,20 @@ extension AppAccent on ColorScheme {
   /// | dark  | `#82D5C8` | `#9EF2E4` | `#005048`   | `#82D5C8` |
   ///
   /// That table is what `fromSeed` returns; it is no longer what this app's
-  /// dark scheme holds. Since the accent became a light/dark **pair**
-  /// (`ThemeAccent`), dark `primary` is the pair's tuned dark half at tone
-  /// ~62 — not tone 80 — and `primaryFixedDim` is rewritten by
-  /// `buildAppColorScheme` to tone 80 *at that accent's chroma*. Which
-  /// changes which role is right in each brightness:
+  /// scheme holds. Since the accent became a light/dark **pair**
+  /// (`ThemeAccent`), `primary` is the pair's tuned half in each brightness
+  /// — tone ~44 in light, ~62 in dark, at the picked colour's own chroma —
+  /// and `buildAppColorScheme` rewrites the wash-label role to match: light
+  /// `onPrimaryFixedVariant` to tone 30 and dark `primaryFixedDim` to tone
+  /// 80, both *at that accent's chroma*. Which role is right in each
+  /// brightness:
   ///
-  /// - In **light**, the two candidates are *identical* (tone 30). The
-  ///   `Fixed` role is taken because its tone is pinned by definition, where
-  ///   `onPrimaryContainer`'s is a brightness-dependent assignment that
-  ///   Material has already moved once (it was near-black at tone 10 for a
-  ///   spell, which on a 12% wash reads as plain dark text, not as the
-  ///   accent). Same pixels today, insured against that revision returning.
+  /// - In **light**, `onPrimaryFixedVariant` — the role the pair rewrites.
+  ///   The `Fixed` role rather than `onPrimaryContainer` because its tone is
+  ///   pinned by definition, where `onPrimaryContainer`'s is a
+  ///   brightness-dependent assignment that Material has already moved once
+  ///   (it was near-black at tone 10 for a spell, which on a 12% wash reads
+  ///   as plain dark text, not as the accent).
   /// - In **dark**, `primaryFixedDim` is now eighteen tones *above* the
   ///   accent, at the accent's own chroma — exactly the "主色深" relation the
   ///   spec draws (`#4ECDC0` ≈ 76 on `#3FC1B0` ≈ 71). It used to be unusable

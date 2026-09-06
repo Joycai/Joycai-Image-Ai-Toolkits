@@ -95,7 +95,7 @@ void main() {
     );
     final String text = tip.richMessage!.toPlainText();
     expect(text, startsWith('Blue'));
-    expect(text, contains('#0050E1'), reason: 'the rendered light primary, not the seed #4A72E8');
+    expect(text, contains('#3560D5'), reason: 'the rendered light primary — the spec\'s #4A72E8 at tone 44');
     expect(text, contains('#5B8DFF'));
     expect(text, isNot(contains('#4A72E8')));
   });

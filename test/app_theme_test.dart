@@ -47,15 +47,17 @@ void main() {
     expect(styleOf(dark()).foregroundColor?.resolve({}), accent.onDark);
   });
 
-  test('the light CTA is tone 40 of the seed, not the seed itself', () {
-    // Why light `primary` is still grown rather than drawn verbatim: white on
-    // the seed itself is under AA at the spec's own blue (4.3:1 at `#4A72E8`).
-    // Material's tone 40 is what lifts it over, and the CTA — the one place
-    // the accent carries white text at body size — is where that has to hold.
+  test('in light the CTA wears the pair\'s light half under white', () {
+    // The light half is a finished colour too, drawn verbatim — at a tone
+    // white text is legible on, which the raw seed need not be (4.3:1 at the
+    // spec's own `#4A72E8`). The CTA is the one place the accent carries
+    // white at body size, so this is where that has to hold.
+    final accent = ThemeAccent.fromSeed(seed);
     final primary = Hct.fromInt(light().colorScheme.primary.toARGB32());
 
-    expect(primary.tone, closeTo(40, 1));
-    expect(light().colorScheme.primary, isNot(seed));
+    expect(resolve(light(), {})!, accent.light);
+    expect(styleOf(light()).foregroundColor?.resolve({}), Colors.white);
+    expect(primary.tone, lessThanOrEqualTo(ThemeAccent.derivedLightTone + 0.5));
   });
 
   test('the label keeps a readable contrast against the fill', () {
