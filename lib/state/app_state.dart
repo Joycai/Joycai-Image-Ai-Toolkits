@@ -11,6 +11,7 @@ import '../l10n/app_localizations.dart';
 import '../services/llm/llm_dispatcher.dart';
 import '../services/llm/llm_types.dart';
 import '../services/llm/model_capabilities.dart';
+import '../services/llm/model_descriptor.dart';
 import '../services/llm/model_family.dart';
 import '../models/app_image.dart';
 import '../models/llm_channel.dart';
@@ -312,8 +313,33 @@ class AppState extends ChangeNotifier {
       channelType: channel.type,
       endpoint: channel.endpoint,
       apiKey: channel.apiKey,
+      tag: m.tag,
       wireProtocol: m.wireProtocol,
     ));
+  }
+
+  /// The layer-3 facts for [m] as its channel serves it: family (the
+  /// parameter-memory namespace) and capability table (the parameter panel).
+  ///
+  /// Use this, never `ModelCapabilities.forModel(m.modelId)`. The id alone
+  /// does not know that a relay's `nano-banana-pro` is pinned to the Images
+  /// API, so it hands the workbench an empty parameter panel for a model that
+  /// has one — and writes its parameters under a namespace the request never
+  /// reads.
+  ///
+  /// A model whose channel is gone answers for its id, which is all there is
+  /// left to go on.
+  ModelDescriptor descriptorForModel(LLMModel m) {
+    final channel = _channels.cast<LLMChannel?>().firstWhere(
+        (c) => c?.id == m.channelId,
+        orElse: () => null);
+    if (channel == null) return ModelDescriptor.of(m.modelId);
+    return LLMDispatcher.descriptorFor(
+      channelType: channel.type,
+      modelId: m.modelId,
+      tag: m.tag,
+      wireProtocol: m.wireProtocol,
+    );
   }
 
   bool isVideoCompatibleModel(int? modelDbId) {

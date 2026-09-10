@@ -33,10 +33,16 @@ class ModelSelectionSection extends StatelessWidget {
   final ValueChanged<int?> onModelChanged;
 
   /// Resolves the current (validated) value for a parameter of the given model.
-  final String Function(String modelId, ParamSpec spec) imageParamResolver;
+  final String Function(LLMModel model, ParamSpec spec) imageParamResolver;
 
   /// Persists a parameter change for the given model.
-  final void Function(String modelId, String paramKey, String value) onImageParamChanged;
+  final void Function(LLMModel model, String paramKey, String value) onImageParamChanged;
+
+  /// The capability table for the given model as its channel serves it
+  /// (`AppState.descriptorForModel`). Asked for rather than derived from the
+  /// id here: a relay model pinned to a protocol has that protocol's
+  /// parameters, which its id cannot know.
+  final ModelCapabilities Function(LLMModel model) capabilitiesOf;
 
   const ModelSelectionSection({
     super.key,
@@ -50,6 +56,7 @@ class ModelSelectionSection extends StatelessWidget {
     required this.onModelChanged,
     required this.imageParamResolver,
     required this.onImageParamChanged,
+    required this.capabilitiesOf,
   });
 
   @override
@@ -155,14 +162,14 @@ class ModelSelectionSection extends StatelessWidget {
             ),
           ),
           if (modelInChannel != null)
-            _buildModelSpecificOptions(context, modelInChannel.modelId, l10n),
+            _buildModelSpecificOptions(context, modelInChannel, l10n),
         ],
       ),
     );
   }
 
-  Widget _buildModelSpecificOptions(BuildContext context, String modelId, AppLocalizations l10n) {
-    final caps = ModelCapabilities.forModel(modelId);
+  Widget _buildModelSpecificOptions(BuildContext context, LLMModel model, AppLocalizations l10n) {
+    final caps = capabilitiesOf(model);
     if (!caps.isImageGenerator || caps.imageParams.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -170,7 +177,7 @@ class ModelSelectionSection extends StatelessWidget {
     final fields = <Widget>[];
     for (final spec in caps.imageParams) {
       if (fields.isNotEmpty) fields.add(const SizedBox(height: 8));
-      fields.add(_buildParamRow(context, modelId, spec, l10n));
+      fields.add(_buildParamRow(context, model, spec, l10n));
     }
 
     return Padding(
@@ -179,8 +186,8 @@ class ModelSelectionSection extends StatelessWidget {
     );
   }
 
-  Widget _buildParamRow(BuildContext context, String modelId, ParamSpec spec, AppLocalizations l10n) {
-    final current = imageParamResolver(modelId, spec);
+  Widget _buildParamRow(BuildContext context, LLMModel model, ParamSpec spec, AppLocalizations l10n) {
+    final current = imageParamResolver(model, spec);
 
     Widget control;
     switch (spec.control) {
@@ -200,7 +207,7 @@ class ModelSelectionSection extends StatelessWidget {
               AppDropdownItem(value: o.value, label: _optionLabel(l10n, spec.key, o.value)),
           ],
           onChanged: (v) {
-            if (v != null) onImageParamChanged(modelId, spec.key, v);
+            if (v != null) onImageParamChanged(model, spec.key, v);
           },
         );
         break;
@@ -213,7 +220,7 @@ class ModelSelectionSection extends StatelessWidget {
                   ))
               .toList(),
           value: current,
-          onChanged: (v) => onImageParamChanged(modelId, spec.key, v),
+          onChanged: (v) => onImageParamChanged(model, spec.key, v),
           compact: true,
           // `16a` gives every option `flex:1` and lifts the chosen one out on
           // white. Tinted and self-sized, this row read as four unequal
@@ -242,7 +249,7 @@ class ModelSelectionSection extends StatelessWidget {
               spec: spec,
               currentValue: current,
             );
-            if (picked != null) onImageParamChanged(modelId, spec.key, picked);
+            if (picked != null) onImageParamChanged(model, spec.key, picked);
           },
           child: Row(
             children: [

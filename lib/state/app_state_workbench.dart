@@ -127,32 +127,35 @@ extension AppStateWorkbench on AppState {
     if (legacyRes != null) _imageParamStore['$ns.imageSize'] = legacyRes;
   }
 
-  String _familyKey(String modelId) =>
-      ModelFamilyClassifier.classify(modelId).name;
+  /// The parameter-memory namespace for [model]: its family *as its channel
+  /// serves it*, so a relay model pinned to the Images API remembers its size
+  /// alongside `gpt-image`'s rather than under the `other` its id classifies
+  /// as. A model routed by its id keeps exactly the key it always had.
+  String _familyKey(LLMModel model) => descriptorForModel(model).family.name;
 
-  /// Current value for [spec] under the selected [modelId], validated against
-  /// the spec's options (falls back to the spec default).
-  String getImageParam(String modelId, ParamSpec spec) {
-    final stored = _imageParamStore['${_familyKey(modelId)}.${spec.key}'];
+  /// Current value for [spec] under [model], validated against the spec's
+  /// options (falls back to the spec default).
+  String getImageParam(LLMModel model, ParamSpec spec) {
+    final stored = _imageParamStore['${_familyKey(model)}.${spec.key}'];
     return spec.normalize(stored);
   }
 
-  Future<void> setImageParam(String modelId, String paramKey, String value) async {
+  Future<void> setImageParam(LLMModel model, String paramKey, String value) async {
     _imageParamStore = {
       ..._imageParamStore,
-      '${_familyKey(modelId)}.$paramKey': value,
+      '${_familyKey(model)}.$paramKey': value,
     };
     imageParamsRevision++;
     await _db.saveSetting('workbench_image_params', jsonEncode(_imageParamStore));
     notify();
   }
 
-  /// Validated parameter map to send with a generation task for [modelId].
-  Map<String, dynamic> effectiveImageParams(String modelId) {
-    final caps = ModelCapabilities.forModel(modelId);
+  /// Validated parameter map to send with a generation task for [model].
+  Map<String, dynamic> effectiveImageParams(LLMModel model) {
+    final caps = descriptorForModel(model).capabilities;
     final result = <String, dynamic>{};
     for (final spec in caps.imageParams) {
-      result[spec.key] = getImageParam(modelId, spec);
+      result[spec.key] = getImageParam(model, spec);
     }
     return result;
   }
@@ -169,15 +172,15 @@ extension AppStateWorkbench on AppState {
     }
   }
 
-  String getVideoParam(String modelId, ParamSpec spec) {
-    final stored = _videoParamStore['${_familyKey(modelId)}.${spec.key}'];
+  String getVideoParam(LLMModel model, ParamSpec spec) {
+    final stored = _videoParamStore['${_familyKey(model)}.${spec.key}'];
     return spec.normalize(stored);
   }
 
-  Future<void> setVideoParam(String modelId, String paramKey, String value) async {
+  Future<void> setVideoParam(LLMModel model, String paramKey, String value) async {
     _videoParamStore = {
       ..._videoParamStore,
-      '${_familyKey(modelId)}.$paramKey': value,
+      '${_familyKey(model)}.$paramKey': value,
     };
     videoParamsRevision++;
     await _db.saveSetting('workbench_video_params', jsonEncode(_videoParamStore));
@@ -187,11 +190,11 @@ extension AppStateWorkbench on AppState {
   /// Validated parameter map of video-only extras (seconds, quality, …) for
   /// the model. Empty for families without [ModelCapabilities.videoParams]
   /// (e.g. Veo, which still uses its fixed enums).
-  Map<String, dynamic> effectiveVideoParams(String modelId) {
-    final caps = ModelCapabilities.forModel(modelId);
+  Map<String, dynamic> effectiveVideoParams(LLMModel model) {
+    final caps = descriptorForModel(model).capabilities;
     final result = <String, dynamic>{};
     for (final spec in caps.videoParams) {
-      result[spec.key] = getVideoParam(modelId, spec);
+      result[spec.key] = getVideoParam(model, spec);
     }
     return result;
   }

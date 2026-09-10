@@ -1,4 +1,6 @@
+import '../../core/constants.dart' show ModelTag;
 import 'llm_types.dart';
+import 'model_capabilities.dart';
 import 'model_descriptor.dart';
 import 'model_family.dart';
 import 'protocols/anthropic_chat_protocol.dart';
@@ -92,21 +94,76 @@ class LLMDispatcher {
   static final _anthropicDiscovery = AnthropicDiscoveryProtocol();
 
   /// Resolve the (vendor, model) pair for a request.
+  ///
+  /// The descriptor is the model *as the resolved route serves it*. For the
+  /// overwhelming majority of rows that is the model as its id classifies —
+  /// [_servedBy] answers null whenever the route is the one the id alone
+  /// takes — so every family branch below reads exactly what it read before
+  /// the model's kind and protocol selection were consulted. Only a selection
+  /// (or a kind) that moves the route re-describes the model, and the
+  /// branches then follow it without a line of their own.
   LLMTarget resolveTarget(LLMModelConfig config) => LLMTarget(
         config: config,
         vendor: Vendors.byId(config.channelType),
-        model: ModelDescriptor.of(config.modelId),
+        model: descriptorFor(
+          channelType: config.channelType,
+          modelId: config.modelId,
+          tag: config.tag,
+          wireProtocol: config.wireProtocol,
+        ),
       );
+
+  /// The layer-3 facts for a stored model as its channel serves it: the
+  /// family, and the capability table the workbench must render.
+  ///
+  /// The one door for UI and state. `ModelDescriptor.of(modelId)` on a stored
+  /// model answers for the id alone, which is wrong for exactly the models
+  /// this exists for — a relay's `nano-banana-pro` pinned to the Images API
+  /// has the Images API's parameters, not the empty table its id implies.
+  static ModelDescriptor descriptorFor({
+    required String channelType,
+    required String modelId,
+    String? tag,
+    String? wireProtocol,
+  }) =>
+      ModelDescriptor.of(modelId,
+          servedBy: _servedBy(channelType, modelId,
+              tag: tag, stored: wireProtocol));
 
   // ---------------------------------------------------------------------------
   // Protocol menus and the per-model selection (`llm_models.wire_protocol`)
   // ---------------------------------------------------------------------------
+  //
+  // Resolution order, all of it here:
+  //
+  //   surface   = the model's kind (`llm_models.tag`), else its id's family
+  //   menu      = [protocolMenu] for that surface: options + auto
+  //   effective = the stored selection when it is on the menu, else auto
+  //   servedBy  = effective, unless it is the route the id alone takes
+  //
+  // "Auto" is today's route by construction — [_familyRoute] is the family
+  // switch the generate / startLongRunning branches implement — so a row
+  // whose kind agrees with its id and carries no selection resolves exactly
+  // as it did before either column was read. Kinds are written by `inferTag`
+  // at discovery, which reads the same two predicates as [_surfaceOfFamily],
+  // so agreement is the default rather than a hope.
 
-  /// The surface a model's requests belong to, for menu selection. Video and
-  /// image-generation families get their own surfaces; everything else —
-  /// chat, multimodal, unknown — is the chat surface.
-  static Surface surfaceForModel(String modelId) {
-    final family = ModelDescriptor.of(modelId).family;
+  /// The surface a model's requests belong to: the kind the user declared,
+  /// or — for callers without a model row — the one its id classifies into.
+  static Surface surfaceForModel(String modelId, {String? tag}) =>
+      _surfaceOfTag(tag) ??
+      _surfaceOfFamily(ModelDescriptor.of(modelId).family);
+
+  static Surface? _surfaceOfTag(String? tag) {
+    if (tag == null || tag.isEmpty) return null;
+    return switch (ModelTag.fromString(tag)) {
+      ModelTag.image => Surface.imageGen,
+      ModelTag.video => Surface.videoJob,
+      ModelTag.chat || ModelTag.multimodal || ModelTag.refiner => Surface.chat,
+    };
+  }
+
+  static Surface _surfaceOfFamily(ModelFamily family) {
     if (ModelFamilyClassifier.isVideo(family)) return Surface.videoJob;
     if (ModelFamilyClassifier.isImageGeneration(family)) {
       return Surface.imageGen;
@@ -114,45 +171,202 @@ class LLMDispatcher {
     return Surface.chat;
   }
 
-  /// The protocol menu offered for this (channel type, model id) pair: the
-  /// vendor's declared menu for the model's surface, intersected with what
-  /// the concrete model supports (layer 3). This is the single source for
-  /// both routing below and the model editor's selector — one entry (or
-  /// none) means there is no choice and no UI.
-  static List<WireProtocol> protocolMenuFor(
-      String channelType, String modelId) {
+  /// The protocol menu for this (channel, model, kind): what the model editor
+  /// offers and what "auto" resolves to. The single source for the editor's
+  /// selector, the model card's stale chip, and routing below.
+  ///
+  /// * **Chat** — the vendor's chat menu, unchanged.
+  /// * **Image / video** — the vendor's declared native surfaces, plus its
+  ///   family's generic ones where the vendor serves them
+  ///   ([VendorProfile.offersFamilyMediaSurfaces]), plus auto if neither list
+  ///   names it. A declared image menu is no longer intersected with the id's
+  ///   family: that intersection decides *auto* (a `qwen-image` on a MiniMax
+  ///   channel still routes through chat), but a user who pins MiniMax's
+  ///   image surface for it has made a statement the id cannot overrule.
+  /// * **Midjourney** — [ProtocolMenu.fixed].
+  ///
+  /// A kind the id does not corroborate — a relay's `nano-banana-pro` tagged
+  /// image — resolves as an *unrecognized* model of that kind: auto is then
+  /// the channel's default for the kind, never a route the id's own family
+  /// would pick.
+  static ProtocolMenu protocolMenu(String channelType, String modelId,
+      {String? tag}) {
     final vendor = Vendors.byId(channelType);
     final model = ModelDescriptor.of(modelId);
-    final surface = surfaceForModel(modelId);
+    final idSurface = _surfaceOfFamily(model.family);
+    final surface = _surfaceOfTag(tag) ?? idSurface;
+    final recognized = surface == idSurface;
+    final family = recognized ? model.family : ModelFamily.other;
+
+    if (surface == Surface.chat) {
+      final options = vendor.menuFor(Surface.chat);
+      return ProtocolMenu(
+          surface: surface,
+          options: options,
+          auto: options.first,
+          recognized: recognized);
+    }
+    if (vendor.family == ProtocolFamily.midjourney) {
+      return ProtocolMenu.fixed(surface);
+    }
+
+    final options = <WireProtocol>{
+      if (surface == Surface.imageGen)
+        ..._declaredImageMenu(vendor, family, model.capabilities)
+      else if (vendor.videoProtocol != null)
+        vendor.videoProtocol!,
+      // Generic video only where the vendor declares none: a declared video
+      // surface *replaces* the family default (xAI serves no Sora-shaped
+      // `/videos`), exactly as startLongRunning treats it.
+      if (vendor.offersFamilyMediaSurfaces &&
+          (surface == Surface.imageGen || vendor.videoProtocol == null))
+        ..._familyMediaSurfaces(vendor.family, surface),
+    }.toList();
+    // Video alone falls back to the menu. An image model always has chat to
+    // ride, so its auto is never null; a video model the family rules do not
+    // recognize used to be refused outright, and the menu's first entry is
+    // the channel's own answer for "a video model". An empty menu means the
+    // channel has no video surface at all.
+    final auto = _familyRoute(vendor, surface, family, model.capabilities) ??
+        (surface == Surface.videoJob ? options.firstOrNull : null);
+    if (auto != null && !options.contains(auto)) options.add(auto);
+    return ProtocolMenu(
+        surface: surface,
+        options: List.unmodifiable(options),
+        auto: auto,
+        recognized: recognized);
+  }
+
+  /// The vendor's declared image menu, less the async task for a DashScope
+  /// model known not to have one (`qwen-image*` documents only the
+  /// synchronous route). An id that does not classify as DashScope's keeps
+  /// both: nothing is known about it either way.
+  static List<WireProtocol> _declaredImageMenu(
+      VendorProfile vendor, ModelFamily family, ModelCapabilities caps) {
+    final dropAsync = _imageProtocolsFor(family)
+            .contains(WireProtocol.dashscopeImagesAsync) &&
+        !caps.supportsAsyncImageTask;
+    return [
+      for (final p in vendor.imageMenu)
+        if (!(dropAsync && p == WireProtocol.dashscopeImagesAsync)) p,
+    ];
+  }
+
+  /// The vendor-native image face serving [family] by default, or null when
+  /// the vendor declares none that serves it.
+  static WireProtocol? _nativeImageFace(
+      VendorProfile vendor, ModelFamily family, ModelCapabilities caps) {
+    final serving = _imageProtocolsFor(family);
+    return _declaredImageMenu(vendor, family, caps)
+        .where(serving.contains)
+        .firstOrNull;
+  }
+
+  /// A protocol family's generic media surfaces — the ones a relay or a
+  /// generic host of that family can be expected to serve. Images through
+  /// chat is listed last: it is the fallback, not the headline.
+  static List<WireProtocol> _familyMediaSurfaces(
+      ProtocolFamily family, Surface surface) {
+    final image = surface == Surface.imageGen;
+    switch (family) {
+      case ProtocolFamily.openai:
+        return image
+            ? const [WireProtocol.openaiImages, WireProtocol.chatImage]
+            : const [WireProtocol.openaiVideos];
+      case ProtocolFamily.gemini:
+        return image
+            ? const [WireProtocol.geminiImagen, WireProtocol.chatImage]
+            : const [WireProtocol.geminiVeo];
+      case ProtocolFamily.anthropic:
+      case ProtocolFamily.dashscope:
+      case ProtocolFamily.midjourney:
+        return const [];
+    }
+  }
+
+  /// The route the family rules take for [family] on [surface] — what the
+  /// generate / startLongRunning branches below do with no selection in play.
+  /// Null where those branches refuse (a video model a family has no surface
+  /// for) or where the route is not a nameable protocol (Midjourney).
+  ///
+  /// Written as a mirror of the branches, not derived from them, and pinned
+  /// by the routing tests: auto must be today's route, or every model without
+  /// a selection silently moves.
+  static WireProtocol? _familyRoute(VendorProfile vendor, Surface surface,
+      ModelFamily family, ModelCapabilities caps) {
     switch (surface) {
       case Surface.chat:
-        return vendor.menuFor(Surface.chat);
+        return vendor.menuFor(Surface.chat).first;
       case Surface.imageGen:
-        // Only the families the dispatcher actually routes to a vendor's
-        // native image surface get its menu; every other image family rides
-        // a fixed route (its own protocol, or chat on a relay) and offers no
-        // choice.
-        //
-        // The menu is also intersected with what this vendor serves, not just
-        // with what the model is: an id classifies by its own name, so a
-        // `qwen-image` typed into a MiniMax channel would otherwise be handed
-        // that vendor's menu and routed at an endpoint that has never heard
-        // of it.
-        final menu = vendor
-            .menuFor(Surface.imageGen)
-            .where((p) => _imageProtocolsFor(model.family).contains(p))
-            .toList();
-        if (menu.isEmpty) return const [];
-        if (!model.capabilities.supportsAsyncImageTask) {
-          return menu
-              .where((p) => p != WireProtocol.dashscopeImagesAsync)
-              .toList();
+        switch (vendor.family) {
+          case ProtocolFamily.midjourney:
+            return null;
+          case ProtocolFamily.gemini:
+            return family == ModelFamily.geminiImagen
+                ? WireProtocol.geminiImagen
+                : WireProtocol.chatImage;
+          case ProtocolFamily.openai:
+            if (family == ModelFamily.openaiImage) {
+              return WireProtocol.openaiImages;
+            }
+            final native = _nativeImageFace(vendor, family, caps);
+            if (native != null) return native;
+            if (family == ModelFamily.xaiImage) {
+              return vendor.imageMenu.contains(WireProtocol.xaiImages)
+                  ? WireProtocol.xaiImages
+                  : WireProtocol.openaiImages;
+            }
+            return WireProtocol.chatImage;
+          case ProtocolFamily.anthropic:
+          case ProtocolFamily.dashscope:
+            return _nativeImageFace(vendor, family, caps) ??
+                WireProtocol.chatImage;
         }
-        return menu;
       case Surface.videoJob:
-        // A video model has exactly one route per vendor today.
-        return vendor.menuFor(Surface.videoJob);
+        switch (vendor.family) {
+          case ProtocolFamily.midjourney:
+            return null;
+          case ProtocolFamily.gemini:
+            return WireProtocol.geminiVeo;
+          case ProtocolFamily.openai:
+            return family == ModelFamily.openaiVideo
+                ? (vendor.videoProtocol ?? WireProtocol.openaiVideos)
+                : null;
+          case ProtocolFamily.dashscope:
+            return family == ModelFamily.openaiVideo &&
+                    vendor.videoProtocol == WireProtocol.dashscopeVideo
+                ? WireProtocol.dashscopeVideo
+                : null;
+          case ProtocolFamily.anthropic:
+            return family == ModelFamily.openaiVideo
+                ? vendor.videoProtocol
+                : null;
+        }
     }
+  }
+
+  /// The protocol to describe the model by ([ModelDescriptor.of]'s
+  /// `servedBy`), or null when the route is the one the id alone takes.
+  ///
+  /// Comparing against the id's own route rather than against "no selection"
+  /// is what keeps a pin that names today's route inert: choosing "images
+  /// through chat" for a relay's `qwen-image`, which rides chat already, must
+  /// not strip the DashScope parameter table it has always shown.
+  static WireProtocol? _servedBy(String channelType, String modelId,
+      {String? tag, String? stored}) {
+    final menu = protocolMenu(channelType, modelId, tag: tag);
+    final effective = _validPin(menu, stored) ?? menu.auto;
+    if (effective == null) return null;
+    final model = ModelDescriptor.of(modelId);
+    final byId = _familyRoute(Vendors.byId(channelType),
+        _surfaceOfFamily(model.family), model.family, model.capabilities);
+    return effective == byId ? null : effective;
+  }
+
+  /// [stored] when it names one of [menu]'s options, else null.
+  static WireProtocol? _validPin(ProtocolMenu menu, String? stored) {
+    final pinned = WireProtocol.tryParse(stored);
+    return pinned != null && menu.options.contains(pinned) ? pinned : null;
   }
 
   /// The native image protocols that can serve [family] — the intersection
@@ -187,35 +401,33 @@ class LLMDispatcher {
   bool _hasNativeImageRoute(LLMTarget target) => target.vendor.imageMenu
       .any((p) => _imageProtocolsFor(target.model.family).contains(p));
 
-  /// What "auto" resolves to for this pair — the menu's first entry. Null
-  /// when the surface has no vendor menu at all (relay image models riding
-  /// chat, families with a single fixed route).
-  static WireProtocol? autoProtocolFor(String channelType, String modelId) {
-    final menu = protocolMenuFor(channelType, modelId);
-    return menu.isEmpty ? null : menu.first;
-  }
+  /// What "auto" resolves to for this (channel, model, kind). Null when the
+  /// channel has no route for the surface, and for a fixed route.
+  static WireProtocol? autoProtocolFor(String channelType, String modelId,
+          {String? tag}) =>
+      protocolMenu(channelType, modelId, tag: tag).auto;
 
-  /// Whether a stored selection is stale for this pair: non-empty but no
-  /// longer valid (unknown id, wrong surface, or off the current vendor's
-  /// menu — typically after the channel changed suppliers). Stale values are
-  /// silently ignored by routing and surfaced, not blocked, by the UI.
+  /// Whether a stored selection is stale: non-empty but not on the current
+  /// menu — an unknown id, the channel having changed suppliers, or the
+  /// model's kind having changed so that the selection names another
+  /// surface. Stale values are silently ignored by routing and surfaced, not
+  /// blocked, by the UI.
   static bool isStaleProtocolSelection(
-      String channelType, String modelId, String? stored) {
+      String channelType, String modelId, String? stored,
+      {String? tag}) {
     if (stored == null || stored.isEmpty) return false;
-    final parsed = WireProtocol.tryParse(stored);
-    if (parsed == null) return true;
-    return !protocolMenuFor(channelType, modelId).contains(parsed);
+    return _validPin(protocolMenu(channelType, modelId, tag: tag), stored) ==
+        null;
   }
 
   /// The model's explicit, still-valid protocol selection for [surface], or
-  /// null for auto. Invalid values (unknown, wrong surface, off the menu)
+  /// null for auto. Invalid values (unknown, another surface, off the menu)
   /// degrade to auto here — routing never fails on a stale preference.
   WireProtocol? _pinnedProtocol(LLMTarget target, Surface surface) {
-    final pinned = WireProtocol.tryParse(target.config.wireProtocol);
-    if (pinned == null || pinned.surface != surface) return null;
-    final menu =
-        protocolMenuFor(target.config.channelType, target.config.modelId);
-    return menu.contains(pinned) ? pinned : null;
+    final menu = protocolMenu(target.config.channelType, target.config.modelId,
+        tag: target.config.tag);
+    if (menu.surface != surface) return null;
+    return _validPin(menu, target.config.wireProtocol);
   }
 
   /// [target] with its endpoint rewritten for a generic protocol served on
@@ -251,7 +463,8 @@ class LLMDispatcher {
       };
 
   /// The native image protocol serving this target — the model's pinned
-  /// choice, else the vendor's first entry for that model's family.
+  /// choice, else what auto resolves to (the vendor's first entry serving
+  /// that model's family).
   ///
   /// Only ever called behind [_hasNativeImageRoute], so the fallback is
   /// unreachable in practice; it stays because "no native route" and "the
@@ -259,8 +472,9 @@ class LLMDispatcher {
   ImageGenProtocol _nativeImageProtocol(LLMTarget target) {
     final pinned = _pinnedProtocol(target, Surface.imageGen);
     final face = pinned ??
-        protocolMenuFor(target.config.channelType, target.config.modelId)
-            .firstOrNull;
+        protocolMenu(target.config.channelType, target.config.modelId,
+                tag: target.config.tag)
+            .auto;
     switch (face) {
       case WireProtocol.dashscopeImagesAsync:
         return _dashscopeImagesAsync;
@@ -536,7 +750,7 @@ class LLMDispatcher {
   /// turning the knob changes the request — a knob whose only effect is
   /// nothing is worse than no knob. The answer lives here, with every other
   /// capability query the UI consults (`streamSupportsTools`,
-  /// `protocolMenuFor`), because a copy of it in the editor is a silent
+  /// `protocolMenu`), because a copy of it in the editor is a silent
   /// failure the day a family gains the ability: C2 read
   /// `effectiveReasoningEffort` to drive `enable_thinking` from the day it
   /// shipped, while the editor's own two-family gate kept the control hidden

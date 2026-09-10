@@ -854,7 +854,98 @@ void main() {
       );
     });
   }
+
+  // Spec D2a: the relay states of the same editor. Each shot opens one seeded
+  // model — see fixture_seed for why each exists — and photographs it at the
+  // sizes and brightnesses its frame is about.
+  for (final _EditorShot shot in _editorShots) {
+    for (final String sizeLabel in shot.sizes) {
+      for (final Brightness brightness in shot.brightnesses) {
+        testWidgets('modelEditor ${shot.suffix} @ $sizeLabel ${brightness.name}', (WidgetTester tester) async {
+          await shoot(
+            tester,
+            env: env,
+            screen: AppScreen.models,
+            size: kShotSizes.firstWhere((ShotSize s) => s.label == sizeLabel),
+            brightness: brightness,
+            suffix: shot.suffix,
+            after: (WidgetTester tester) async {
+              Future<void> tapText(String label) async {
+                final Finder finder = find.text(label);
+                if (finder.evaluate().isEmpty) return;
+                await tester.tap(finder.first, warnIfMissed: false);
+                for (int i = 0; i < 5; i++) {
+                  await tester.pump(const Duration(milliseconds: 100));
+                }
+              }
+
+              // Same detour rule as the GPT-5 shot above: on a phone the
+              // models tab is already on screen, and 「渠道管理」 would land on
+              // the channel editor instead of the model.
+              if (sizeLabel != 'mobile') await tapText('渠道管理');
+              await tapText(shot.channel);
+              await tapText(shot.model);
+              // A phone's single column puts the section below the fold; the
+              // frame (20j) is about the section, so bring its caption to the
+              // top of the dialog's scroll view.
+              if (sizeLabel == 'mobile') {
+                final Finder caption = find.text('接口协议');
+                if (caption.evaluate().isNotEmpty) {
+                  await tester.ensureVisible(caption.first);
+                  for (int i = 0; i < 5; i++) {
+                    await tester.pump(const Duration(milliseconds: 100));
+                  }
+                }
+              }
+            },
+          );
+        });
+      }
+    }
+  }
 }
+
+/// One D2a editor frame: which seeded model to open, from which channel.
+class _EditorShot {
+  const _EditorShot(
+    this.suffix,
+    this.channel,
+    this.model, {
+    this.sizes = const <String>['desktop'],
+    this.brightnesses = const <Brightness>[Brightness.light],
+  });
+
+  final String suffix;
+  final String channel;
+  final String model;
+  final List<String> sizes;
+  final List<Brightness> brightnesses;
+}
+
+const List<_EditorShot> _editorShots = <_EditorShot>[
+  // 20b / 20i / 20j: unrecognized image model on auto — the unrecognized
+  // sentence and the neutral parameter row.
+  _EditorShot(
+    'editorRelayAuto',
+    '中转 · OpenAI 兼容',
+    'Nano Banana Pro',
+    sizes: <String>['desktop', 'mobile'],
+    brightnesses: <Brightness>[Brightness.light, Brightness.dark],
+  ),
+  // 20c / 20i / 20j: pinned to the Images API — tinted field and row, the
+  // ignored streaming toggle, 「改回自动」.
+  _EditorShot(
+    'editorRelayPinned',
+    '中转 · OpenAI 兼容',
+    'Img Fast',
+    sizes: <String>['desktop', 'mobile'],
+    brightnesses: <Brightness>[Brightness.light, Brightness.dark],
+  ),
+  // 20d: one route for an unrecognized video model — the read-only line.
+  _EditorShot('editorRelayVideo', '中转 · OpenAI 兼容', 'My Sora'),
+  // 20e: a video model on a channel with no video endpoint — the notice.
+  _EditorShot('editorNoSurface', 'Claude 格式中转', 'My Video'),
+];
 
 class _FeeGroupShot {
   const _FeeGroupShot(this.name, this.open);

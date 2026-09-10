@@ -435,6 +435,18 @@ class LLMModelConfig {
   /// auto instead of failing (and survives a save/restore round-trip intact).
   final String? wireProtocol;
 
+  /// The model's declared kind (`llm_models.tag` verbatim: chat / image /
+  /// video / multimodal), or null when the caller has no model row — which
+  /// then routes exactly as it did before the kind was read, by classifying
+  /// the id.
+  ///
+  /// Which surface a model is on is the user's statement, not a guess: a
+  /// relay names its models freely, so `nano-banana-pro` classifies as chat
+  /// while the user knows it draws. The dispatcher reads this to pick the
+  /// protocol menu, and so which [wireProtocol] selections are valid. Same
+  /// rule as [wireProtocol]: only [LLMConfigResolver] reads the column.
+  final String? tag;
+
   final double inputFee;
 
   /// Rate for cached input tokens, or null when the fee group leaves it unset —
@@ -461,6 +473,7 @@ class LLMModelConfig {
     this.reasoningEffort,
     this.enableWebSearch = false,
     this.wireProtocol,
+    this.tag,
     this.inputFee = 0.0,
     this.cacheInputFee,
     this.outputFee = 0.0,
@@ -487,6 +500,7 @@ class LLMModelConfig {
         reasoningEffort: reasoningEffort,
         enableWebSearch: enableWebSearch,
         wireProtocol: wireProtocol,
+        tag: tag,
         inputFee: inputFee,
         cacheInputFee: cacheInputFee,
         outputFee: outputFee,

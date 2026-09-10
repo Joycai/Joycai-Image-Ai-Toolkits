@@ -1992,7 +1992,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get protocolAutoHelper =>
-      'Follows the channel provider; re-resolved automatically when the provider changes.';
+      'Follows the channel and the model type; re-resolved automatically when either changes.';
 
   @override
   String protocolStaleHelper(String name) {
@@ -2026,11 +2026,112 @@ class AppLocalizationsEn extends AppLocalizations {
       'Submit, then poll for the result; cancellable while queued';
 
   @override
-  String get protocolVideoTask => 'Async video task';
+  String get protocolChatImage => 'Image via chat reply';
 
   @override
-  String get protocolStreamIgnoredAsync =>
-      'Async tasks do not use streaming; this setting is ignored';
+  String get protocolChatImageDesc =>
+      'Images come back in the chat reply; how most relays serve image models';
+
+  @override
+  String get protocolImagesApiDesc =>
+      'OpenAI\'s image endpoint, the gpt-image family';
+
+  @override
+  String get protocolImagenDesc => 'Google\'s dedicated image endpoint';
+
+  @override
+  String get protocolVideosApiDesc =>
+      'OpenAI\'s video task endpoint (Sora-style)';
+
+  @override
+  String get protocolVeoDesc => 'Google\'s video task endpoint';
+
+  @override
+  String get protocolXaiImages => 'xAI Images';
+
+  @override
+  String get protocolXaiVideos => 'xAI Video';
+
+  @override
+  String get protocolMinimaxImages => 'MiniMax Images';
+
+  @override
+  String get protocolMinimaxVideo => 'MiniMax Video';
+
+  @override
+  String protocolAutoMenuDesc(String name) {
+    return 'Follows the channel and model type; resolves to “$name”';
+  }
+
+  @override
+  String protocolUnrecognizedAuto(String name) {
+    return 'This model ID isn\'t recognized, so it is sent the channel\'s default way. If your relay uses “$name”, choose it here.';
+  }
+
+  @override
+  String protocolUnrecognizedSingle(String name) {
+    return 'This model ID isn\'t recognized; parameters follow the “$name” defaults.';
+  }
+
+  @override
+  String get protocolParamsLabel => 'Parameters';
+
+  @override
+  String protocolParamsDefault(String name, String items) {
+    return '“$name” defaults — $items';
+  }
+
+  @override
+  String get protocolParamsNone =>
+      'No model-specific parameters; just the prompt and reference images';
+
+  @override
+  String get protocolParamReferenceLimit => 'reference image limit';
+
+  @override
+  String protocolSendVia(String name) {
+    return 'Sent via “$name”';
+  }
+
+  @override
+  String get protocolOnlyOneWay => '· the only way this channel offers';
+
+  @override
+  String protocolNoSurface(String format, String kind) {
+    return 'This channel uses the $format format, which has no $kind endpoint. The model can be saved, but won\'t appear in the workbench.';
+  }
+
+  @override
+  String protocolChatImageUnlikely(String format) {
+    return 'The $format format rarely returns images; whether this works depends on the relay.';
+  }
+
+  @override
+  String protocolStaleKindHelper(String kind, String name) {
+    return 'The type is now “$kind”, so the previous choice “$name” no longer applies; back to Auto.';
+  }
+
+  @override
+  String protocolStreamIgnored(String name) {
+    return '“$name” does not use streaming; this setting is ignored';
+  }
+
+  @override
+  String get protocolAutoSuffix => '· Auto';
+
+  @override
+  String get protocolBackToAuto => 'Back to Auto';
+
+  @override
+  String get contextImageUnsetDesc =>
+      'Image models don\'t use the context budget; leave this unset.';
+
+  @override
+  String get contextVideoUnsetDesc =>
+      'Video models don\'t use the context budget; leave this unset.';
+
+  @override
+  String get protocolVideoTask => 'Async video task';
 
   @override
   String get protocolAsyncQueueNote =>

@@ -144,11 +144,16 @@ class Vendors {
       id: openAIRest,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // OpenAI itself serves `/images` and `/videos`, and an unspecified
+      // relay's model names are free text — the generic media surfaces have
+      // to be on the menu for a user to correct a guess.
+      offersFamilyMediaSurfaces: true,
     ),
     VendorProfile(
       id: newApiOpenAI,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      offersFamilyMediaSurfaces: true,
     ),
     VendorProfile(
       id: xaiApi,
@@ -164,16 +169,19 @@ class Vendors {
       id: googleRest,
       family: ProtocolFamily.gemini,
       auth: AuthScheme.googleApiKeyWithBearerFallback,
+      offersFamilyMediaSurfaces: true,
     ),
     VendorProfile(
       id: officialGoogle,
       family: ProtocolFamily.gemini,
       auth: AuthScheme.googleApiKey,
+      offersFamilyMediaSurfaces: true,
     ),
     VendorProfile(
       id: newApiGemini,
       family: ProtocolFamily.gemini,
       auth: AuthScheme.bearer,
+      offersFamilyMediaSurfaces: true,
     ),
     VendorProfile(
       id: deepseek,

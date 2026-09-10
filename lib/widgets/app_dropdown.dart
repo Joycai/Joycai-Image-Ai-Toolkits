@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../core/app_theme.dart';
 import '../core/design_tokens.dart';
 import 'app_field_size.dart';
 
@@ -20,12 +21,22 @@ class AppDropdownItem<T> {
   /// "none" row that is a real answer but not a thing.
   final bool muted;
 
+  /// A second line under [label], in the open menu only. The closed field
+  /// never shows it — it is there to help choose, not to restate a choice.
+  final String? description;
+
+  /// A short mono token at the end of the row, in the open menu only (the
+  /// model editor's endpoint path, D2a ruling 3). Untranslated by intent.
+  final String? trailing;
+
   const AppDropdownItem({
     required this.value,
     required this.label,
     this.icon,
     this.selectedLabel,
     this.muted = false,
+    this.description,
+    this.trailing,
   });
 }
 
@@ -196,7 +207,54 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
           style: item.muted ? valueStyle?.copyWith(color: outline) : null,
         );
 
-    final hasSelectedLabels = widget.items.any((i) => i.selectedLabel != null);
+    // Rows that carry more than a label are two lines tall, so the menu has
+    // to size them itself rather than at Material's fixed 48 — and the closed
+    // field has to be told to show the label alone.
+    final hasRichItems = widget.items.any((i) => i.description != null || i.trailing != null);
+    final hasSelectedLabels = hasRichItems || widget.items.any((i) => i.selectedLabel != null);
+
+    Widget richItem(AppDropdownItem<T> item) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              if (item.icon != null) ...[
+                Icon(item.icon, size: AppSize.iconSm),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: valueStyle?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: item.muted ? outline : null,
+                      ),
+                    ),
+                    if (item.description != null)
+                      Text(
+                        item.description!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                  ],
+                ),
+              ),
+              if (item.trailing != null) ...[
+                const SizedBox(width: 12),
+                Text(
+                  item.trailing!,
+                  style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+                ),
+              ],
+            ],
+          ),
+        );
 
     Widget field = InputDecorator(
       decoration: InputDecoration(
@@ -221,6 +279,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
           focusNode: _focusNode,
           isExpanded: true,
           isDense: true,
+          itemHeight: hasRichItems ? null : kMinInteractiveDimension,
           // expand_more, not the filled triangle: the design draws one
           // downward chevron on every select-like field. The gap before it is
           // the size's, not Material's.
@@ -248,16 +307,18 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
             for (final item in widget.items)
               DropdownMenuItem<T>(
                 value: item.value,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (item.icon != null) ...[
-                      Icon(item.icon, size: AppSize.iconSm),
-                      const SizedBox(width: 8),
-                    ],
-                    Flexible(child: itemText(item, item.label)),
-                  ],
-                ),
+                child: hasRichItems
+                    ? richItem(item)
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (item.icon != null) ...[
+                            Icon(item.icon, size: AppSize.iconSm),
+                            const SizedBox(width: 8),
+                          ],
+                          Flexible(child: itemText(item, item.label)),
+                        ],
+                      ),
               ),
           ],
           onChanged: enabled ? widget.onChanged : null,

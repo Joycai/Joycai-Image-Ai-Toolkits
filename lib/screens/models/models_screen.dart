@@ -1119,7 +1119,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (LLMDispatcher.isStaleProtocolSelection(
-        channel.type, model.modelId, pin)) {
+        channel.type, model.modelId, pin,
+        tag: model.tag)) {
       return Tooltip(
         message: l10n.protocolStaleTooltip(storedProtocolLabel(l10n, pin)),
         child: _specChip(
@@ -1129,15 +1130,26 @@ class _ModelsScreenState extends State<ModelsScreen> {
         ),
       );
     }
-    return _specChip(
-      storedProtocolLabel(l10n, pin),
-      bg: colorScheme.accentTint,
-      fg: colorScheme.onAccentTint,
+    // Narrower than the other spec chips, with the full name one hover away
+    // (D2a 20k): protocol names are the one open vocabulary on the card, and
+    // the longest of them in Japanese would otherwise push the fee group off
+    // the row. The table keeps every name under the cap, so the ellipsis is a
+    // backstop rather than a look.
+    final label = storedProtocolLabel(l10n, pin);
+    return Tooltip(
+      message: label,
+      child: _specChip(
+        label,
+        bg: colorScheme.accentTint,
+        fg: colorScheme.onAccentTint,
+        maxWidth: 128,
+      ),
     );
   }
 
   /// A quiet spec token: rounded 6, faint fill, one short fact.
-  Widget _specChip(String text, {Color? bg, Color? fg, bool mono = false, bool outlined = false}) {
+  Widget _specChip(String text,
+      {Color? bg, Color? fg, bool mono = false, bool outlined = false, double maxWidth = 180}) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final base = textTheme.labelSmall?.copyWith(
@@ -1147,7 +1159,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      constraints: const BoxConstraints(maxWidth: 180),
+      constraints: BoxConstraints(maxWidth: maxWidth),
       decoration: BoxDecoration(
         color: outlined ? null : (bg ?? colorScheme.surfaceContainerHigh),
         borderRadius: BorderRadius.circular(AppRadius.xs),
