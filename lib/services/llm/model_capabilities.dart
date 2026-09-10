@@ -1,4 +1,5 @@
 import 'model_family.dart';
+import 'vendors/vendor_profile.dart' show WireProtocol;
 
 /// How a parameter should be rendered in the workbench config UI.
 ///
@@ -408,6 +409,63 @@ class ModelCapabilities {
     }
 
     return forFamily(family);
+  }
+
+  /// The table a protocol implies for a model this layer cannot identify by
+  /// its id — the fallback behind a protocol selection on a relay whose model
+  /// names are free text.
+  ///
+  /// A relay's `nano-banana-pro` pinned to the Images API has, for every
+  /// purpose the workbench cares about, the Images API's parameters: without
+  /// this it resolved to the empty table its id classifies into, and the
+  /// parameter panel came up blank for a model that has one. Only reached
+  /// when the id is *not* one of the protocol's own models (see
+  /// `ModelDescriptor.of`); a recognized id keeps its precise table from
+  /// [forModel].
+  ///
+  /// Where a protocol serves several tables, the stricter one stands in:
+  /// DashScope's defaults to qwen's (the smaller reference-image ceiling, the
+  /// narrower size vocabulary), so a guess errs toward a request upstream
+  /// accepts.
+  static ModelCapabilities forProtocol(WireProtocol protocol) {
+    switch (protocol) {
+      case WireProtocol.openaiImages:
+        return _openaiImage;
+      case WireProtocol.xaiImages:
+        return _xaiImage;
+      case WireProtocol.geminiImagen:
+        return _imagen;
+      case WireProtocol.dashscopeImagesSync:
+      case WireProtocol.dashscopeImagesAsync:
+        return _dashscopeQwenImage;
+      case WireProtocol.minimaxImages:
+        return _minimaxImage;
+      case WireProtocol.chatImage:
+        // No parameters to offer, but an image generator all the same: both
+        // chat wires key image *output* off this flag — Gemini declares
+        // `responseModalities: IMAGE` by it, and the OpenAI-shaped wire only
+        // takes a bare-link reply as an image when it is set.
+        return const ModelCapabilities(isImageGenerator: true);
+      case WireProtocol.openaiVideos:
+        return _openaiVideo;
+      case WireProtocol.xaiVideos:
+        return _grokImagineVideo;
+      case WireProtocol.geminiVeo:
+        return const ModelCapabilities(isVideoGenerator: true);
+      case WireProtocol.dashscopeVideo:
+        return _dashscopeWanVideo;
+      case WireProtocol.minimaxVideo:
+        return _minimaxVideo;
+      case WireProtocol.minimaxH3BaseVideo:
+        return _minimaxH3Base;
+      case WireProtocol.midjourney:
+        return _midjourney;
+      case WireProtocol.openaiChat:
+      case WireProtocol.anthropicChat:
+      case WireProtocol.geminiChat:
+      case WireProtocol.dashscopeChat:
+        return const ModelCapabilities();
+    }
   }
 
   static ModelCapabilities forFamily(ModelFamily family) {

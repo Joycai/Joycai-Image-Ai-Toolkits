@@ -2,7 +2,15 @@ class LLMModel {
   final int? id;
   final String modelId;
   final String modelName;
-  final String tag; // image, chat, multimodal
+  /// The model's kind: `chat`, `image`, `video`, `multimodal` (or the legacy
+  /// `refiner`). Written by `inferTag` at discovery and editable by the user.
+  ///
+  /// Not only a picker filter: it is the user's declaration of which surface
+  /// the model is on, and the dispatcher routes by it — which protocol menu
+  /// the model gets, and so which `wireProtocol` selections are valid. That is
+  /// what lets a relay model whose free-text name classifies as nothing be
+  /// sent to the image or video surface at all.
+  final String tag;
   final bool isPaid;
   final bool supportsStream;
   final bool supportsStandard;

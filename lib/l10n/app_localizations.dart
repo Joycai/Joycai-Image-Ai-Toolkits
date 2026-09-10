@@ -3577,7 +3577,7 @@ abstract class AppLocalizations {
   /// No description provided for @protocolAutoHelper.
   ///
   /// In en, this message translates to:
-  /// **'Follows the channel provider; re-resolved automatically when the provider changes.'**
+  /// **'Follows the channel and the model type; re-resolved automatically when either changes.'**
   String get protocolAutoHelper;
 
   /// No description provided for @protocolStaleHelper.
@@ -3634,17 +3634,173 @@ abstract class AppLocalizations {
   /// **'Submit, then poll for the result; cancellable while queued'**
   String get protocolImageAsyncDesc;
 
+  /// No description provided for @protocolChatImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image via chat reply'**
+  String get protocolChatImage;
+
+  /// No description provided for @protocolChatImageDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Images come back in the chat reply; how most relays serve image models'**
+  String get protocolChatImageDesc;
+
+  /// No description provided for @protocolImagesApiDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI\'s image endpoint, the gpt-image family'**
+  String get protocolImagesApiDesc;
+
+  /// No description provided for @protocolImagenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Google\'s dedicated image endpoint'**
+  String get protocolImagenDesc;
+
+  /// No description provided for @protocolVideosApiDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI\'s video task endpoint (Sora-style)'**
+  String get protocolVideosApiDesc;
+
+  /// No description provided for @protocolVeoDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Google\'s video task endpoint'**
+  String get protocolVeoDesc;
+
+  /// No description provided for @protocolXaiImages.
+  ///
+  /// In en, this message translates to:
+  /// **'xAI Images'**
+  String get protocolXaiImages;
+
+  /// No description provided for @protocolXaiVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'xAI Video'**
+  String get protocolXaiVideos;
+
+  /// No description provided for @protocolMinimaxImages.
+  ///
+  /// In en, this message translates to:
+  /// **'MiniMax Images'**
+  String get protocolMinimaxImages;
+
+  /// No description provided for @protocolMinimaxVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'MiniMax Video'**
+  String get protocolMinimaxVideo;
+
+  /// No description provided for @protocolAutoMenuDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Follows the channel and model type; resolves to “{name}”'**
+  String protocolAutoMenuDesc(String name);
+
+  /// No description provided for @protocolUnrecognizedAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'This model ID isn\'t recognized, so it is sent the channel\'s default way. If your relay uses “{name}”, choose it here.'**
+  String protocolUnrecognizedAuto(String name);
+
+  /// No description provided for @protocolUnrecognizedSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'This model ID isn\'t recognized; parameters follow the “{name}” defaults.'**
+  String protocolUnrecognizedSingle(String name);
+
+  /// No description provided for @protocolParamsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Parameters'**
+  String get protocolParamsLabel;
+
+  /// No description provided for @protocolParamsDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” defaults — {items}'**
+  String protocolParamsDefault(String name, String items);
+
+  /// No description provided for @protocolParamsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No model-specific parameters; just the prompt and reference images'**
+  String get protocolParamsNone;
+
+  /// No description provided for @protocolParamReferenceLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'reference image limit'**
+  String get protocolParamReferenceLimit;
+
+  /// No description provided for @protocolSendVia.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent via “{name}”'**
+  String protocolSendVia(String name);
+
+  /// No description provided for @protocolOnlyOneWay.
+  ///
+  /// In en, this message translates to:
+  /// **'· the only way this channel offers'**
+  String get protocolOnlyOneWay;
+
+  /// No description provided for @protocolNoSurface.
+  ///
+  /// In en, this message translates to:
+  /// **'This channel uses the {format} format, which has no {kind} endpoint. The model can be saved, but won\'t appear in the workbench.'**
+  String protocolNoSurface(String format, String kind);
+
+  /// No description provided for @protocolChatImageUnlikely.
+  ///
+  /// In en, this message translates to:
+  /// **'The {format} format rarely returns images; whether this works depends on the relay.'**
+  String protocolChatImageUnlikely(String format);
+
+  /// No description provided for @protocolStaleKindHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'The type is now “{kind}”, so the previous choice “{name}” no longer applies; back to Auto.'**
+  String protocolStaleKindHelper(String kind, String name);
+
+  /// No description provided for @protocolStreamIgnored.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” does not use streaming; this setting is ignored'**
+  String protocolStreamIgnored(String name);
+
+  /// No description provided for @protocolAutoSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'· Auto'**
+  String get protocolAutoSuffix;
+
+  /// No description provided for @protocolBackToAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Auto'**
+  String get protocolBackToAuto;
+
+  /// No description provided for @contextImageUnsetDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Image models don\'t use the context budget; leave this unset.'**
+  String get contextImageUnsetDesc;
+
+  /// No description provided for @contextVideoUnsetDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Video models don\'t use the context budget; leave this unset.'**
+  String get contextVideoUnsetDesc;
+
   /// No description provided for @protocolVideoTask.
   ///
   /// In en, this message translates to:
   /// **'Async video task'**
   String get protocolVideoTask;
-
-  /// No description provided for @protocolStreamIgnoredAsync.
-  ///
-  /// In en, this message translates to:
-  /// **'Async tasks do not use streaming; this setting is ignored'**
-  String get protocolStreamIgnoredAsync;
 
   /// No description provided for @protocolAsyncQueueNote.
   ///

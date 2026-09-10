@@ -53,6 +53,14 @@ enum WireProtocol {
   midjourney('midjourney', Surface.chat),
   dashscopeChat('dashscope-chat', Surface.chat),
   openaiImages('openai-images', Surface.imageGen),
+
+  /// Images through the channel's *chat* face, delivered inside the chat
+  /// reply — how most relays serve image models. Not a protocol class of its
+  /// own: it names the route the dispatcher's image branches have always
+  /// fallen through to, which until it had a name could be taken but not
+  /// chosen (a relay's `gpt-image-1` could not be sent through chat). It
+  /// resolves to code that exists, so it keeps the scarcity rule.
+  chatImage('chat-image', Surface.imageGen),
   xaiImages('xai-images', Surface.imageGen),
   geminiImagen('gemini-imagen', Surface.imageGen),
   dashscopeImagesSync('dashscope-images-sync', Surface.imageGen),
@@ -79,6 +87,52 @@ enum WireProtocol {
     }
     return null;
   }
+}
+
+/// One surface's protocol menu for a (channel, model, kind), as
+/// `LLMDispatcher.protocolMenu` resolves it: what the model editor may offer,
+/// and what "auto" routes to.
+///
+/// [auto] is its own field rather than "the first option". The menu lists
+/// every route the user may pin, which can be more than the route auto takes:
+/// a `qwen-image` on a MiniMax channel is offered MiniMax's image surface but
+/// keeps riding chat until someone says otherwise. When non-null it is always
+/// one of [options], so "auto · resolves to X" is never a lie.
+class ProtocolMenu {
+  final Surface surface;
+  final List<WireProtocol> options;
+
+  /// What an unset selection routes to. Null when the channel has no route
+  /// for this surface at all (an Anthropic relay asked for video), and for a
+  /// [fixed] menu.
+  final WireProtocol? auto;
+
+  /// One route and nothing to choose, which is not the same answer as "no
+  /// route": Midjourney's generation lives inside its own protocol whatever
+  /// the model is, so the editor shows no protocol section there rather than
+  /// a "this channel cannot" note.
+  final bool fixed;
+
+  /// Whether the model's id corroborates [surface] — it classifies into a
+  /// family of that surface. False for a relay's `nano-banana-pro` tagged
+  /// image: auto is then the channel's default for the kind rather than a
+  /// route chosen for the model, and parameters come from the protocol's
+  /// default table. The editor says so ("未识别此模型 ID") and explains where
+  /// the parameters come from; a recognized model needs neither.
+  final bool recognized;
+
+  const ProtocolMenu({
+    required this.surface,
+    required this.options,
+    required this.auto,
+    required this.recognized,
+  }) : fixed = false;
+
+  const ProtocolMenu.fixed(this.surface)
+      : options = const [],
+        auto = null,
+        fixed = true,
+        recognized = true;
 }
 
 /// The `anthropic-version` every Anthropic-shaped request must carry.
@@ -270,6 +324,25 @@ class VendorProfile {
   /// get past the check.
   final bool keyOptional;
 
+  /// Whether this vendor also serves its protocol family's *generic* media
+  /// surfaces — ① `openaiImages` / `openaiVideos`, ③ `geminiImagen` /
+  /// `geminiVeo` — plus images through chat, as protocol choices beyond what
+  /// [imageMenu] and [videoProtocol] declare.
+  ///
+  /// True for the generic hosts and relays, where model names are free text
+  /// and the only way to route a `nano-banana-pro` or a `my-sora` correctly is
+  /// to let the user say which surface serves it.
+  ///
+  /// False by default, and for every first-party vendor whose declared menus
+  /// are the whole answer: Bailian's compatible face has no `/images`, xAI no
+  /// Sora-shaped `/videos`, DeepSeek neither — offering them would put a
+  /// guaranteed 404 on the menu. Also false, deliberately, for the local
+  /// runtimes (Ollama, LM Studio) until their upstream docs are checked for
+  /// an image surface. A family default that is today's route for a
+  /// recognized id is still offered regardless (it is auto), so turning this
+  /// off never takes a working route away.
+  final bool offersFamilyMediaSurfaces;
+
   const VendorProfile({
     required this.id,
     required this.family,
@@ -282,6 +355,7 @@ class VendorProfile {
     this.thinking = ThinkingDialect.none,
     this.promptCaching = false,
     this.keyOptional = false,
+    this.offersFamilyMediaSurfaces = false,
   });
 
   /// The menu of protocols this vendor offers for [surface], honoring the

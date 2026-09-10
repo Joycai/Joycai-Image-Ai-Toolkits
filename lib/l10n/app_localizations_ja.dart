@@ -1953,7 +1953,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get protocolAutoHelper => 'チャネルのプロバイダーに従い、プロバイダー変更時に自動で再解決されます。';
+  String get protocolAutoHelper => 'チャネルとモデル種別に従い、どちらかを変更すると自動で再解決されます。';
 
   @override
   String protocolStaleHelper(String name) {
@@ -1986,10 +1986,106 @@ class AppLocalizationsJa extends AppLocalizations {
   String get protocolImageAsyncDesc => '送信後に結果をポーリング。生成中はキャンセル可能';
 
   @override
-  String get protocolVideoTask => '非同期動画タスク';
+  String get protocolChatImage => 'チャット経由で画像を返す';
 
   @override
-  String get protocolStreamIgnoredAsync => '非同期タスクはストリーミングを使用しないため、この設定は無視されます';
+  String get protocolChatImageDesc => '画像はチャットの返信で返されます。多くの中継サービスはこの方式です';
+
+  @override
+  String get protocolImagesApiDesc => 'OpenAI の画像 API、gpt-image シリーズ';
+
+  @override
+  String get protocolImagenDesc => 'Google の画像生成専用 API';
+
+  @override
+  String get protocolVideosApiDesc => 'OpenAI の動画タスク API（Sora 形式）';
+
+  @override
+  String get protocolVeoDesc => 'Google の動画タスク API';
+
+  @override
+  String get protocolXaiImages => 'xAI 画像';
+
+  @override
+  String get protocolXaiVideos => 'xAI 動画';
+
+  @override
+  String get protocolMinimaxImages => 'MiniMax 画像';
+
+  @override
+  String get protocolMinimaxVideo => 'MiniMax 動画';
+
+  @override
+  String protocolAutoMenuDesc(String name) {
+    return 'チャネルとモデル種別に従い、現在は「$name」に解決';
+  }
+
+  @override
+  String protocolUnrecognizedAuto(String name) {
+    return 'このモデル ID は認識できないため、チャネルの既定方式で送信します。中継サービスが「$name」を使う場合は手動で選択してください。';
+  }
+
+  @override
+  String protocolUnrecognizedSingle(String name) {
+    return 'このモデル ID は認識できないため、パラメータは「$name」の既定値に従います。';
+  }
+
+  @override
+  String get protocolParamsLabel => 'パラメータ';
+
+  @override
+  String protocolParamsDefault(String name, String items) {
+    return '「$name」の既定値 — $items';
+  }
+
+  @override
+  String get protocolParamsNone => '専用パラメータはなく、プロンプトと参照画像のみ';
+
+  @override
+  String get protocolParamReferenceLimit => '参照画像の上限';
+
+  @override
+  String protocolSendVia(String name) {
+    return '「$name」で送信';
+  }
+
+  @override
+  String get protocolOnlyOneWay => '· このチャネルはこの方式のみ';
+
+  @override
+  String protocolNoSurface(String format, String kind) {
+    return 'このチャネルは $format 形式で、$kindの API がありません。モデルは保存できますが、ワークベンチには表示されません。';
+  }
+
+  @override
+  String protocolChatImageUnlikely(String format) {
+    return '$format 形式はほとんど画像を返しません。成功するかは中継サービス次第です。';
+  }
+
+  @override
+  String protocolStaleKindHelper(String kind, String name) {
+    return '種別が「$kind」に変わったため、以前の選択「$name」は適用されず、自動に戻りました。';
+  }
+
+  @override
+  String protocolStreamIgnored(String name) {
+    return '「$name」はストリーミングを使用しないため、この設定は無視されます';
+  }
+
+  @override
+  String get protocolAutoSuffix => '· 自動';
+
+  @override
+  String get protocolBackToAuto => '自動に戻す';
+
+  @override
+  String get contextImageUnsetDesc => '画像モデルはコンテキスト予算を使いません。未設定のままで構いません。';
+
+  @override
+  String get contextVideoUnsetDesc => '動画モデルはコンテキスト予算を使いません。未設定のままで構いません。';
+
+  @override
+  String get protocolVideoTask => '非同期動画タスク';
 
   @override
   String get protocolAsyncQueueNote => '送信後はタスクキューでポーリングされ、生成中はキャンセルできます。';

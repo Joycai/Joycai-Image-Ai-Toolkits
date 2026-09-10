@@ -1267,7 +1267,7 @@
       }
     }
   },
-  "protocolAutoHelper": "Follows the channel provider; re-resolved automatically when the provider changes.",
+  "protocolAutoHelper": "Follows the channel and the model type; re-resolved automatically when either changes.",
   "protocolStaleHelper": "The previous choice “{name}” is unavailable with this provider; back to Auto.",
   "@protocolStaleHelper": {
     "placeholders": {
@@ -1284,8 +1284,106 @@
   "protocolImageSyncDesc": "One request returns the image directly",
   "protocolImageAsync": "Async task",
   "protocolImageAsyncDesc": "Submit, then poll for the result; cancellable while queued",
+  "protocolChatImage": "Image via chat reply",
+  "protocolChatImageDesc": "Images come back in the chat reply; how most relays serve image models",
+  "protocolImagesApiDesc": "OpenAI's image endpoint, the gpt-image family",
+  "protocolImagenDesc": "Google's dedicated image endpoint",
+  "protocolVideosApiDesc": "OpenAI's video task endpoint (Sora-style)",
+  "protocolVeoDesc": "Google's video task endpoint",
+  "protocolXaiImages": "xAI Images",
+  "protocolXaiVideos": "xAI Video",
+  "protocolMinimaxImages": "MiniMax Images",
+  "protocolMinimaxVideo": "MiniMax Video",
+  "protocolAutoMenuDesc": "Follows the channel and model type; resolves to “{name}”",
+  "@protocolAutoMenuDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "protocolUnrecognizedAuto": "This model ID isn't recognized, so it is sent the channel's default way. If your relay uses “{name}”, choose it here.",
+  "@protocolUnrecognizedAuto": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "protocolUnrecognizedSingle": "This model ID isn't recognized; parameters follow the “{name}” defaults.",
+  "@protocolUnrecognizedSingle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "protocolParamsLabel": "Parameters",
+  "protocolParamsDefault": "“{name}” defaults — {items}",
+  "@protocolParamsDefault": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "protocolParamsNone": "No model-specific parameters; just the prompt and reference images",
+  "protocolParamReferenceLimit": "reference image limit",
+  "protocolSendVia": "Sent via “{name}”",
+  "@protocolSendVia": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "protocolOnlyOneWay": "· the only way this channel offers",
+  "protocolNoSurface": "This channel uses the {format} format, which has no {kind} endpoint. The model can be saved, but won't appear in the workbench.",
+  "@protocolNoSurface": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      },
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "protocolChatImageUnlikely": "The {format} format rarely returns images; whether this works depends on the relay.",
+  "@protocolChatImageUnlikely": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      }
+    }
+  },
+  "protocolStaleKindHelper": "The type is now “{kind}”, so the previous choice “{name}” no longer applies; back to Auto.",
+  "@protocolStaleKindHelper": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "protocolStreamIgnored": "“{name}” does not use streaming; this setting is ignored",
+  "@protocolStreamIgnored": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "protocolAutoSuffix": "· Auto",
+  "protocolBackToAuto": "Back to Auto",
+  "contextImageUnsetDesc": "Image models don't use the context budget; leave this unset.",
+  "contextVideoUnsetDesc": "Video models don't use the context budget; leave this unset.",
   "protocolVideoTask": "Async video task",
-  "protocolStreamIgnoredAsync": "Async tasks do not use streaming; this setting is ignored",
   "protocolAsyncQueueNote": "Submitted to the task queue and polled; can be cancelled while generating.",
   "protocolPinStale": "Selection inactive",
   "protocolStaleTooltip": "“{name}” is unavailable; running on Auto.",

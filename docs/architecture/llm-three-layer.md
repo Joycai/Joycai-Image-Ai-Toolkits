@@ -89,9 +89,10 @@ surface 开关"表达不了它。绑定关系升级为：
 - **解析顺序**（全部在 dispatcher）：模型点单（合法时）→ vendor 该 surface
   默认 → 家族推断。点单失效（通道换供应商、未知 id、模型不支持）**静默回退
   auto**，由 UI 展示而非路由报错；用户下次保存时清空。
-- **单点查询**：菜单/失效判定只经 `LLMDispatcher.protocolMenuFor` /
-  `isStaleProtocolSelection` / `surfaceForModel`（UI 与路由共用，static）。
-  `wire_protocol` 列只由 `LLMConfigResolver` 读取。
+- **单点查询**：菜单/失效判定只经 `LLMDispatcher.protocolMenu` /
+  `isStaleProtocolSelection` / `surfaceForModel`（UI 与路由共用，static，
+  2026-09 起都接 `tag:`，见下一节）。`wire_protocol` 与 `tag` 两列只由
+  `LLMConfigResolver` 读进路由。
 - **`protocolBases` 是双向的**：百炼原生通道存 `…/api/v1`，兼容面
   （① chat 与**唯一那个 `GET /models`**）由 `dashscopeCompatibleBase` 反推；
   兼容面通道存 `…/compatible-mode/v1`，原生的图片/视频/chat 由
@@ -134,6 +135,67 @@ surface 开关"表达不了它。绑定关系升级为：
   base 推导 —— 其中媒体项的嵌套形状、`metadata` 计数的字符串类型两条，都是
   "写错了上游不报错、照常出片并计费"的那种，所以按上游样例逐字断言。
 
+## 模型类型声明与多媒体协议点单（2026-09）
+
+> 完整设计、取舍与测试清单见
+> [`docs/plans/2026-09-model-kind-protocol-pin.md`](../plans/2026-09-model-kind-protocol-pin.md)。
+
+中转站的模型名是自由文本，`nano-banana-pro` 按 id 分类是 chat、`my-sora` 什么都
+不是 —— 生图模型被当对话发、视频模型在工作台里根本不出现，而上一节的点单下拉在
+中转上永远不渲染（中转 vendor 没有声明菜单，交集为空）。改成两个**已有的用户
+字段**各升一级职责，不加列、不加协议族：
+
+- **`llm_models.tag` 声明 surface。** image → imageGen、video → videoJob、
+  chat / multimodal / refiner → chat。经 `LLMConfigResolver` →
+  `LLMModelConfig.tag` → dispatcher 一条线；为 null（没有模型行的调用方、测试
+  夹具）时退回按 id 分类，行为与改动前完全相同。
+- **菜单：`LLMDispatcher.protocolMenu(channelType, modelId, tag:)` 返回
+  `ProtocolMenu { surface, options, auto, fixed }`**，取代旧的
+  `protocolMenuFor` 列表。`auto` 单独成字段、且恒在 `options` 里 —— 菜单列的是
+  "允许点的"，比 auto 实际走的多（MiniMax 渠道上的 `qwen-image` 可以点 MiniMax
+  出图，但自动仍走 chat）。`fixed` 专给 Midjourney：一条路没得选，和"这个渠道
+  没有该 surface"（`auto == null`）不是一个答案。
+- **options 的构成**：厂商声明的原生面（图像菜单**不再**与 id family 求交 ——
+  交集只用于算 auto）＋ `VendorProfile.offersFamilyMediaSurfaces` 为真时的家族
+  通用面（① `openaiImages` / `openaiVideos`，③ `geminiImagen` / `geminiVeo`，
+  外加 `chatImage`）＋ auto 补位。该开关只在 openAIRest、newApiOpenAI、
+  googleRest、officialGoogle、newApiGemini 上为真；一方厂商（百炼 compatible 面
+  没有 `/images`、xAI 没有 Sora 形态 `/videos`、DeepSeek 都没有）与本地运行时
+  （Ollama / LM Studio，未核实上游文档）一律为假。**中转站不提供任何厂商原生
+  协议**：原生协议从 endpoint 推导路径，在中转 host 上推出来的路径没有意义。
+- **`WireProtocol.chatImage`（`chat-image`）**：图像 surface 上"走渠道的 chat 面、
+  图片随回复返回"。不是新协议类，是给 dispatcher 一直存在的 `_chatGenerate` 兜底
+  路由起个名字 —— 没有它，中转上的 `gpt-image-1` 无法强制走 chat。解析得到已有
+  代码，不违反"枚举值稀缺"。
+- **auto ＝ 今天的路由，按构造成立。** `_familyRoute` 是 generate /
+  startLongRunning 家族分支的镜像（不是从分支推导，由测试钉住）。唯一有意的变化：
+  video surface 上家族规则拒绝的模型（非 ③ 渠道上的 Veo id、未识别的视频别名）
+  不再抛错，auto 取菜单首项；菜单为空才是"该渠道没有视频面"。
+- **`servedBy`：路由不同于 id 自身路由时才重新描述模型。**
+  `ModelDescriptor.of(id, servedBy:)` —— 有独立面的协议（Images API、视频任务…）
+  服务得了该 id 的 family 时保留 id 的精细表，否则按协议给 family 与
+  `ModelCapabilities.forProtocol` 的保底表；chat 面与 `chatImage` 把"有专属路由"
+  的 family 降为同源 chat family（`gemini*` → `geminiChat`，其余 → `other`）。
+  dispatcher 只在 effective ≠ id 自身路由时才传 `servedBy`，所以**点单点到
+  auto 本来就走的那条路，descriptor 不变** —— 中转上的 `qwen-image` 点
+  "对话出图"不会丢掉 DashScope 参数表和生成级超时。
+- **三个静默坑，写在这里是因为它们都不报错：**
+  1. `chatImage` 的保底表必须 `isImageGenerator: true`。两条 chat wire 都按这个
+     flag 决定"要不要出图"：③ 据此发 `responseModalities: IMAGE`，① 只在它为真时
+     把"整条回复就是一个链接"当成图片下载。假的后果是请求成功、回复里的图被丢。
+  2. `gemini*` 降级不能降成 `other`：OpenAI 兼容 chat wire 按 family
+     （`isGeminiFamily`）加 Gemini 扩展字段，降错就静默丢扩展。
+  3. descriptor 缓存按 `(modelId, servedBy)` 记录键，不是按 id。同一个 id 在两个
+     渠道点了不同协议，按 id 缓存时后解析的会读到前一个的 family 与参数表。
+- **UI / state 只走 `LLMDispatcher.descriptorFor(...)` /
+  `AppState.descriptorForModel(model)`**。工作台的参数面板、参考图上限、参数记忆
+  命名空间都从这里读；`ModelCapabilities.forModel(model.modelId)` 在
+  `services/llm/` 之外出现，就是把点单绕过去了。
+- **测试**：`test/model_kind_protocol_pin_test.dart` 钉住中转图像/视频、无通用面的
+  渠道、一方厂商未收录的新 id、失效与缓存隔离，以及一条回归门 —— 对所有 vendor ×
+  一组代表性 id，`tag = inferTag(id)` 时 descriptor 与 auto 必须和不带 tag 时
+  是同一个对象 / 同一个值。
+
 ## 分层纪律（违反会静默腐化）
 
 1. **只有 `ModelDescriptor` 允许嗅探 modelId。**
@@ -159,7 +221,9 @@ LLMService.request(modelIdentifier, messages, ...)
   → LLMConfigResolver: DB 查 model 行 + channel 行 + 计费组 → LLMModelConfig
   → LLMDispatcher.generate(config, ...)
       vendor = Vendors.byId(config.channelType)      // Layer 2
-      model  = ModelDescriptor.of(config.modelId)    // Layer 3
+      model  = descriptorFor(modelId, tag, wireProtocol)
+               // Layer 3：id 自身路由时 == ModelDescriptor.of(modelId)；
+               // 点单/类型把路由挪走时按协议重新描述（servedBy）
       switch (vendor.family) { ... }                 // → Layer 1 协议
   → 协议执行 HTTP，产出 LLMResponse / chunk 流
   → LLMService 记录 token 用量、维护会话
@@ -197,6 +261,8 @@ review 时用下面的模式全仓库 grep 一遍即可：
 | `vendor.id ==` 任何位置 | 协议一旦认识具体厂商，厂商差异就会重新散落 | `VendorProfile` 加声明式字段（surface 菜单 / `protocolBases` / `thinking`），dispatcher 据此选协议 |
 | `if (protocol == ...)` 路由分支出现在 `llm_dispatcher.dart` 之外；UI 自拼协议 id 字符串 | 协议解析必须单点可审计；裸字符串拼错静默失效 | 菜单与失效判定读 `LLMDispatcher.protocolMenuFor` 等 static 查询；显示名走 `wire_protocol_labels.dart` 的唯一映射表 |
 | `llm_models.wire_protocol` 在 `LLMConfigResolver` 之外被读取 | 点单是偏好不是路由事实，多个读取点会各自发明失效语义 | 列 → resolver → `LLMModelConfig.wireProtocol` → dispatcher 消费，一条线 |
+| `llm_models.tag` 在 `LLMConfigResolver` 之外被当成路由事实读（按它选协议、判 surface） | 类型已参与路由；第二个读取点会和 dispatcher 的 surface 判定分叉 | 列 → resolver → `LLMModelConfig.tag` → dispatcher；UI 只把它原样传给 `LLMDispatcher.protocolMenu` / `isStaleProtocolSelection` / `descriptorFor` 的 `tag:` 参数。工作台选择器按 tag 过滤列表不在此列 |
+| `ModelCapabilities.forModel(...)` / `ModelDescriptor.of(...)` 在 `services/llm/` 之外用于**一个已存储的模型**（参数面板、参考图上限、参数记忆键） | 只按 id 解析，绕过了点单：中转上点了 Images API 的模型会拿到空参数表，参数写进请求读不到的命名空间，不报错 | `AppState.descriptorForModel(model)`（内部走 `LLMDispatcher.descriptorFor`）。按 id 问的是 chat 事实（如 `acceptsImageInput`）时不受点单影响，可以直接用 |
 | `channelType ==` / `channel.type ==` 出现在 `vendors/`、`llm_dispatcher.dart` 之外 | 这是重构前 `isXai`/`isNewApiGemini` 散点判断的复活形态 | 语义抬升为 `Vendors.byId(...)` 后读 profile 字段 |
 | UI/state 里出现 `'openai-api-rest'` 这类裸字符串字面量 | 拼错静默失效；重命名时漏改（`Vendors.byId` 对未知 id 静默回退 openAIRest，错拼永远不报错） | 引用 `Vendors.openAIRest` 等常量。**两条豁免**：`database_migrations.dart`（迁移代码按当时的字面量冻结，改成常量反而会让未来的常量重命名悄悄改写历史迁移）；`channel_provider_presets.dart` 的 `ChannelProviderPreset.id`（那是向导自己的预设命名空间，与 vendor id 拼写雷同但语义无关——真正进 `llm_channels.type` 的是 `preset.channelType` 字段，它已全部引用 `Vendors.*`） |
 | `if (family == ...)` 路由分支出现在 `llm_dispatcher.dart` 和 Layer 3 之外 | 路由规则必须单点可审计 | 挪进 dispatcher 对应 switch，加注释说明规则来源 |
@@ -415,12 +481,17 @@ dispatcher 的 anthropic 分支从"整族抛 UnsupportedError"改成先看 vendo
 
 ## 遗留与已知取舍
 
-- 模型 family 仍由 modelId 字符串规则推断（`model_family.dart`），
-  第三方中转乱起名仍可能误判 —— 这是本轮"只理结构、不做增强"刻意保留的。
-  将来若要改成"路由看配置"，改动点只有 Layer 3 的 `ModelDescriptor.of`。
-- `state/app_state_workbench.dart` 用 family 名做参数记忆的命名空间，
-  `discovery_dialog` 用 `inferTag` 自动打标 —— 都是 UI 对 Layer 3 的
-  合法只读消费。
+- 模型 family 的**默认值**仍由 modelId 字符串规则推断（`model_family.dart`）。
+  中转乱起名的问题已由"模型类型声明 + 多媒体协议点单"解决（见上文「模型类型
+  声明与多媒体协议点单」一节）；未点单、类型与 id 一致的模型仍逐位按 id 路由。
+- `state/app_state_workbench.dart` 用 family 名做参数记忆的命名空间 ——
+  现在读的是 `AppState.descriptorForModel(model).family`（按渠道所服务的形态），
+  未点单模型的键与改动前相同，存量参数记忆不丢。`discovery_dialog` 用
+  `inferTag` 自动打标，是 UI 对 Layer 3 的合法只读消费。
+- dispatcher 的图像/视频分支仍按 descriptor 的 family 分派，点单靠
+  "从协议反推 family"（`ModelDescriptor.of(id, servedBy:)`）打通，分支本身没改。
+  改成按 effective 协议直接 switch 更干净，但要重写 generate / generateStream /
+  startLongRunning / generateTimeout / streamSupportsTools 五处，留作后续。
 - 协议文件里保留了 `AppState().enableApiDebug` 的调试日志钩子
   （历史模式，未在本轮改动）。
 

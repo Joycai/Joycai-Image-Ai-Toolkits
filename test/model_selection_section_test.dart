@@ -6,6 +6,7 @@ import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/model_selection_section.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dropdown.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
@@ -46,8 +47,8 @@ void main() {
     required List<LLMModel> models,
     required int? selectedModelDbId,
     required int? selectedChannelId,
-    required String Function(String modelId, dynamic spec) resolver,
-    void Function(String, String, String)? onParamChanged,
+    required String Function(LLMModel model, dynamic spec) resolver,
+    void Function(LLMModel, String, String)? onParamChanged,
     List<LLMChannel>? channels,
   }) {
     return MaterialApp(
@@ -70,8 +71,12 @@ void main() {
             onToggleExpansion: () {},
             onChannelChanged: (_) {},
             onModelChanged: (_) {},
-            imageParamResolver: (modelId, spec) => resolver(modelId, spec),
+            imageParamResolver: (model, spec) => resolver(model, spec),
             onImageParamChanged: onParamChanged ?? (_, _, _) {},
+            // No channel type to resolve against here, and none needed: these
+            // are recognized ids with no selection, so the id's own table is
+            // exactly what the dispatcher would hand back.
+            capabilitiesOf: (m) => ModelDescriptor.of(m.modelId).capabilities,
           ),
         ),
       ),

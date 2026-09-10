@@ -76,6 +76,7 @@ class LLMConfigResolver {
       reasoningEffort: ReasoningEffort.tryParse(modelData.reasoningEffort),
       enableWebSearch: modelData.enableWebSearch,
       wireProtocol: modelData.wireProtocol,
+      tag: modelData.tag,
       inputFee: inputFee,
       cacheInputFee: cacheInputFee,
       outputFee: outputFee,

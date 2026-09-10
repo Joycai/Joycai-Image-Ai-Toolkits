@@ -22,6 +22,10 @@ void main() {
         wireProtocol: wireProtocol,
       );
 
+  List<WireProtocol> menuFor(String channelType, String modelId,
+          {String? tag}) =>
+      LLMDispatcher.protocolMenu(channelType, modelId, tag: tag).options;
+
   group('surfaceForModel', () {
     test('classifies by family kind', () {
       expect(LLMDispatcher.surfaceForModel('qwen-max'), Surface.chat);
@@ -33,10 +37,10 @@ void main() {
     });
   });
 
-  group('protocolMenuFor', () {
+  group('protocolMenu', () {
     test('DashScope chat models offer all three faces, compatible first', () {
       expect(
-        LLMDispatcher.protocolMenuFor(Vendors.dashscope, 'qwen-max'),
+        menuFor(Vendors.dashscope, 'qwen-max'),
         [
           WireProtocol.openaiChat,
           WireProtocol.anthropicChat,
@@ -47,7 +51,7 @@ void main() {
 
     test('the native vendor offers the same three, native first', () {
       expect(
-        LLMDispatcher.protocolMenuFor(Vendors.dashscopeNative, 'qwen-max'),
+        menuFor(Vendors.dashscopeNative, 'qwen-max'),
         [
           WireProtocol.dashscopeChat,
           WireProtocol.openaiChat,
@@ -58,18 +62,18 @@ void main() {
 
     test('the native vendor keeps the same image and video menus', () {
       expect(
-        LLMDispatcher.protocolMenuFor(Vendors.dashscopeNative, 'wan2.7-image'),
+        menuFor(Vendors.dashscopeNative, 'wan2.7-image'),
         [WireProtocol.dashscopeImagesSync, WireProtocol.dashscopeImagesAsync],
       );
       expect(
-        LLMDispatcher.protocolMenuFor(Vendors.dashscopeNative, 'wan3.0-video'),
+        menuFor(Vendors.dashscopeNative, 'wan3.0-video'),
         [WireProtocol.dashscopeVideo],
       );
     });
 
     test('wan2.7 image offers sync + async, sync first', () {
       expect(
-        LLMDispatcher.protocolMenuFor(Vendors.dashscope, 'wan2.7-image'),
+        menuFor(Vendors.dashscope, 'wan2.7-image'),
         [WireProtocol.dashscopeImagesSync, WireProtocol.dashscopeImagesAsync],
       );
     });
@@ -77,48 +81,57 @@ void main() {
     test('qwen-image is sync-only — the async entry is filtered by layer 3',
         () {
       expect(
-        LLMDispatcher.protocolMenuFor(Vendors.dashscope, 'qwen-image-3.0'),
+        menuFor(Vendors.dashscope, 'qwen-image-3.0'),
         [WireProtocol.dashscopeImagesSync],
       );
     });
 
-    test('a relay listing qwen-image offers no menu (chat route stands)', () {
-      expect(
-        LLMDispatcher.protocolMenuFor(Vendors.openAIRest, 'qwen-image-3.0'),
-        isEmpty,
-      );
-      expect(
-        LLMDispatcher.protocolMenuFor(Vendors.newApiOpenAI, 'wan2.7-image'),
-        isEmpty,
-      );
+    test('a relay listing qwen-image still rides chat on auto', () {
+      // The route has not moved: auto is images-through-chat, which is where
+      // relays serve these (they answer with images in the chat reply). What
+      // changed is that a relay now *offers* its family's generic image
+      // surfaces, so a user can correct a model its id cannot place.
+      for (final (vendor, id) in [
+        (Vendors.openAIRest, 'qwen-image-3.0'),
+        (Vendors.newApiOpenAI, 'wan2.7-image'),
+      ]) {
+        final menu = LLMDispatcher.protocolMenu(vendor, id);
+        expect(menu.auto, WireProtocol.chatImage, reason: '$id on $vendor');
+        expect(menu.options,
+            [WireProtocol.openaiImages, WireProtocol.chatImage],
+            reason: '$id on $vendor');
+      }
     });
 
     test('video is a single fixed route per vendor', () {
       expect(
-        LLMDispatcher.protocolMenuFor(Vendors.dashscope, 'wan3.0-video'),
+        menuFor(Vendors.dashscope, 'wan3.0-video'),
         [WireProtocol.dashscopeVideo],
       );
+      // A relay's single entry is its family default: one option, so still
+      // no selector.
       expect(
-        LLMDispatcher.protocolMenuFor(Vendors.openAIRest, 'sora-2'),
-        isEmpty,
+        menuFor(Vendors.openAIRest, 'sora-2'),
+        [WireProtocol.openaiVideos],
       );
     });
 
     test('single-face vendors degrade to a single-entry chat menu', () {
-      expect(LLMDispatcher.protocolMenuFor(Vendors.anthropicRest, 'claude-x'),
+      expect(menuFor(Vendors.anthropicRest, 'claude-x'),
           [WireProtocol.anthropicChat]);
-      expect(LLMDispatcher.protocolMenuFor(Vendors.ollama, 'llama3'),
+      expect(menuFor(Vendors.ollama, 'llama3'),
           [WireProtocol.openaiChat]);
-      expect(LLMDispatcher.protocolMenuFor(Vendors.officialGoogle, 'gemini-2.5-pro'),
+      expect(menuFor(Vendors.officialGoogle, 'gemini-2.5-pro'),
           [WireProtocol.geminiChat]);
     });
 
     test('xAI image models have a fixed native route, no menu beyond it', () {
       // The menu is only rendered when length > 1; xAI's single entry is a
-      // routing fact, not a user choice.
+      // routing fact, not a user choice. xAI serves no generic image
+      // surface, so nothing joins it.
       expect(
-        LLMDispatcher.protocolMenuFor(Vendors.xaiApi, 'grok-imagine-image'),
-        isEmpty,
+        menuFor(Vendors.xaiApi, 'grok-imagine-image'),
+        [WireProtocol.xaiImages],
       );
     });
   });
@@ -433,11 +446,11 @@ void main() {
       // family alone. A ④ *vendor* can still declare one.
       expect(LLMDispatcher.surfaceForModel('image-01'), Surface.imageGen);
       expect(
-        LLMDispatcher.protocolMenuFor(Vendors.minimaxAnthropic, 'image-01'),
+        menuFor(Vendors.minimaxAnthropic, 'image-01'),
         [WireProtocol.minimaxImages],
       );
       expect(
-        LLMDispatcher.protocolMenuFor(Vendors.minimax, 'image-01'),
+        menuFor(Vendors.minimax, 'image-01'),
         [WireProtocol.minimaxImages],
       );
       // Single entry means no selector renders, but the route still exists.
@@ -451,7 +464,11 @@ void main() {
       // through its own compatibility layer and would 404 on
       // /v1/image_generation.
       for (final id in [Vendors.openAIRest, Vendors.newApiOpenAI]) {
-        expect(LLMDispatcher.protocolMenuFor(id, 'image-01'), isEmpty,
+        final menu = LLMDispatcher.protocolMenu(id, 'image-01');
+        expect(menu.auto, WireProtocol.chatImage, reason: id);
+        // Relays never offer a vendor's native surface — only their family's
+        // generic ones.
+        expect(menu.options, isNot(contains(WireProtocol.minimaxImages)),
             reason: id);
       }
     });
@@ -461,11 +478,23 @@ void main() {
       // both vendors declare a non-empty imageMenu. Before the menus were
       // intersected per family, `imageMenu.isNotEmpty` was the whole test —
       // so a qwen-image typed into a MiniMax channel resolved to MiniMax's
-      // endpoint, and vice versa.
-      expect(LLMDispatcher.protocolMenuFor(Vendors.minimax, 'qwen-image'),
-          isEmpty);
-      expect(LLMDispatcher.protocolMenuFor(Vendors.dashscope, 'image-01'),
-          isEmpty);
+      // endpoint, and vice versa. The intersection now decides *auto*: the
+      // other vendor's surface is offered (a user may pin it) but never
+      // taken on its own.
+      final dispatcher = LLMDispatcher();
+      for (final (vendor, id) in [
+        (Vendors.minimax, 'qwen-image'),
+        (Vendors.dashscope, 'image-01'),
+      ]) {
+        expect(LLMDispatcher.autoProtocolFor(vendor, id),
+            WireProtocol.chatImage,
+            reason: '$id on $vendor');
+        expect(
+            dispatcher.streamIsSingleShot(LLMModelConfig(
+                modelId: id, channelType: vendor, endpoint: 'https://x', apiKey: 'k')),
+            isFalse,
+            reason: '$id on $vendor rides chat');
+      }
     });
 
     test('an image model declares no streaming tools on either face', () {
@@ -502,7 +531,7 @@ void main() {
     test('the video route survives on the anthropic-led face', () {
       expect(LLMDispatcher.surfaceForModel('MiniMax-H3'), Surface.videoJob);
       for (final id in [Vendors.minimax, Vendors.minimaxAnthropic]) {
-        expect(LLMDispatcher.protocolMenuFor(id, 'MiniMax-H3'),
+        expect(menuFor(id, 'MiniMax-H3'),
             [WireProtocol.minimaxVideo],
             reason: id);
       }
@@ -569,7 +598,7 @@ void main() {
       expect(v.chatMenu, isEmpty);
       expect(v.imageMenu, isEmpty);
       expect(
-        LLMDispatcher.protocolMenuFor(
+        menuFor(
             Vendors.minimaxH3Base, 'MiniMaxAI/MiniMax-H3'),
         [WireProtocol.minimaxH3BaseVideo],
       );

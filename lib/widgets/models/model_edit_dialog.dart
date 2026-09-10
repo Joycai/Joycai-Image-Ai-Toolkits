@@ -9,6 +9,7 @@ import '../../models/llm_model.dart';
 import '../../models/pricing_group.dart';
 import '../../services/llm/context_budget.dart';
 import '../../services/llm/llm_dispatcher.dart';
+import '../../services/llm/llm_types.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../app_button.dart';
@@ -22,7 +23,9 @@ import '../app_text_field.dart';
 import '../searchable_picker.dart';
 import 'channel_avatar.dart';
 import 'model_picker_options.dart';
+import 'model_protocol_section.dart';
 import 'model_tag_chip.dart';
+import 'protocol_section_form.dart';
 import 'wire_protocol_labels.dart';
 import '../../core/design_tokens.dart';
 
@@ -63,6 +66,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   /// (18a state ④: never mutate what the user hasn't opened).
   String? wireProtocol;
 
+  /// The selection each protocol surface had when the kind chip last moved
+  /// off it, for this opening of the dialog only (D2a 20f). See [_selectKind].
+  final Map<Surface, String?> _pinBySurface = {};
+
   /// Viewport width at which the form splits into two panes.
   ///
   /// Above the desktop breakpoint rather than at it: at 1000 the dialog would
@@ -100,7 +107,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
     return ChoiceChip(
       selected: selected,
-      onSelected: (_) => setState(() => tag = value),
+      onSelected: (_) => _selectKind(value),
       // A stadium, not Material's default rounded rectangle: the spec draws
       // the kind picker as pills, one full step rounder than the input boxes
       // around it.
@@ -659,7 +666,13 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           padding: const EdgeInsets.only(top: 8),
           child: Text(
             switch (contextMode) {
-              ContextWindowMode.unset => l10n.contextUnsetDesc,
+              // An image or video model has no conversation to budget, so
+              // "unset" is not a guess there but the right answer (18a, D2a).
+              ContextWindowMode.unset => switch (tag) {
+                  'image' => l10n.contextImageUnsetDesc,
+                  'video' => l10n.contextVideoUnsetDesc,
+                  _ => l10n.contextUnsetDesc,
+                },
               ContextWindowMode.specified => l10n.contextWindowHint,
               ContextWindowMode.unlimited => l10n.contextUnlimitedDesc,
             },
@@ -674,6 +687,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     final l10n = widget.l10n;
     final textTheme = Theme.of(context).textTheme;
     final asyncPinned = _asyncImagePinned;
+    final streamIgnoredBy = _streamIgnoredBy;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -681,20 +695,22 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       children: [
         _sectionHeader(l10n.capabilities),
         const SizedBox(height: 4),
-        // With the async task pinned the streaming toggle is inert: the value
-        // is preserved, not rewritten (18a state ③ — switch back to auto and
-        // it comes back untouched), the row just dims and says why.
+        // With a non-streaming route pinned the streaming toggle is inert:
+        // the value is preserved, not rewritten (18a state ③, D2a 20c —
+        // switch back to auto and it comes back untouched), the row just dims
+        // and names the protocol that ignores it.
         Opacity(
-          opacity: asyncPinned ? 0.55 : 1.0,
+          opacity: streamIgnoredBy != null ? 0.55 : 1.0,
           child: AppToggleRow(
             icon: Icons.waves,
             title: l10n.supportsStreaming,
-            description: asyncPinned
-                ? l10n.protocolStreamIgnoredAsync
+            description: streamIgnoredBy != null
+                ? l10n.protocolStreamIgnored(wireProtocolLabel(l10n, streamIgnoredBy))
                 : l10n.supportsStreamingDesc,
             value: supportsStream,
-            onChanged:
-                asyncPinned ? null : (v) => setState(() => supportsStream = v),
+            onChanged: streamIgnoredBy != null
+                ? null
+                : (v) => setState(() => supportsStream = v),
           ),
         ),
         AppToggleRow(
@@ -829,6 +845,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     final channel = _selectedChannel(appState);
     final family = _channelFamily(appState);
     final name = nameCtrl.text.trim();
+    final menu = _menu;
 
     final capabilities = [
       if (supportsStream) l10n.capabilityStreamingShort,
@@ -909,13 +926,28 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
                   .firstWhere((o) => o.$1 == (reasoningEffort ?? ''))
                   .$2,
             ),
+          // D2a 20h: the request method, as the card will carry it. Only
+          // where the editor shows a protocol at all — a recognized model on
+          // its one route has nothing to preview, and a channel with no
+          // interface for the kind has nothing to name.
+          if (menu != null &&
+              _showProtocolSection &&
+              _protocolForm != ProtocolSectionForm.notice)
+            _previewRow(
+              colorScheme,
+              l10n.requestMethod,
+              '',
+              valueWidget: ProtocolPreviewValue(menu: menu, activePin: _activePin),
+            ),
           _previewRow(colorScheme, l10n.feeGroup, feeGroup?.name ?? l10n.noFeeGroup),
         ],
       ),
     );
   }
 
-  Widget _previewRow(ColorScheme colorScheme, String label, String value) {
+  /// One key–value line of the preview card. [valueWidget], when given,
+  /// stands in for [value] — for a value the card draws as a chip.
+  Widget _previewRow(ColorScheme colorScheme, String label, String value, {Widget? valueWidget}) {
     final textTheme = Theme.of(context).textTheme;
 
     return Padding(
@@ -929,13 +961,15 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w500),
-            ),
+            child: valueWidget != null
+                ? Align(alignment: AlignmentDirectional.centerEnd, child: valueWidget)
+                : Text(
+                    value,
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w500),
+                  ),
           ),
         ],
       ),
@@ -944,15 +978,19 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
   // --- Wire protocol (18a) ------------------------------------------------
 
-  /// The protocol menu for the current channel + model-id pair, or empty when
-  /// either is missing. Length ≤ 1 means the whole section does not render —
-  /// state ①: no section header, no placeholder height.
-  List<WireProtocol> get _protocolMenu {
+  /// The protocol menu for the current channel, model id and kind chip, or
+  /// null when channel or id is missing. The kind is read because it decides
+  /// the surface: the same id tagged 生图 offers the image menu.
+  ProtocolMenu? get _menu {
     final channel = _selectedChannel(widget.appState);
     final id = idCtrl.text.trim();
-    if (channel == null || id.isEmpty) return const [];
-    return LLMDispatcher.protocolMenuFor(channel.type, id);
+    if (channel == null || id.isEmpty) return null;
+    return LLMDispatcher.protocolMenu(channel.type, id, tag: tag);
   }
+
+  /// The menu's options, or empty. Length ≤ 1 means the whole section does
+  /// not render — state ①: no section header, no placeholder height.
+  List<WireProtocol> get _protocolMenu => _menu?.options ?? const [];
 
   /// The stored selection when it is still valid on the current menu; null
   /// for auto *and* for a stale value (which routes as auto).
@@ -971,63 +1009,86 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   bool get _asyncImagePinned =>
       _activePin == WireProtocol.dashscopeImagesAsync;
 
-  /// Whether the protocol section renders at all: a real choice exists, or a
-  /// stale selection needs explaining (18a state ④ shows the section on a
-  /// single-protocol vendor so the fallback note has somewhere to live).
-  bool get _showProtocolSection => _protocolMenu.length > 1 || _pinIsStale;
+  /// Which of D2a's shapes the protocol section takes (dropdown, read-only
+  /// line, notice, or nothing) — see [protocolSectionForm].
+  ProtocolSectionForm get _protocolForm =>
+      protocolSectionForm(_menu, pinIsStale: _pinIsStale);
+
+  /// Whether the protocol section renders at all. False is 18a state ①: no
+  /// section header, no placeholder height.
+  bool get _showProtocolSection => _protocolForm != ProtocolSectionForm.none;
+
+  /// The pinned protocol when its route has no streaming form (every image
+  /// surface but chat, 20c), else null. Asked of the dispatcher with the form
+  /// as it stands rather than listed here, so the editor cannot disagree with
+  /// the router about which protocols stream. Auto never dims the toggle: it
+  /// is only ignored because of something the user chose.
+  WireProtocol? get _streamIgnoredBy {
+    final pin = _activePin;
+    final channel = _selectedChannel(widget.appState);
+    if (pin == null || channel == null) return null;
+    final singleShot = LLMDispatcher().streamIsSingleShot(LLMModelConfig(
+      modelId: idCtrl.text.trim(),
+      channelType: channel.type,
+      endpoint: channel.endpoint,
+      apiKey: channel.apiKey,
+      tag: tag,
+      wireProtocol: pin.id,
+    ));
+    return singleShot ? pin : null;
+  }
+
+  /// Moves the kind chip (D2a 20f).
+  ///
+  /// A kind on another surface swaps the protocol menu, so the selection made
+  /// for the old surface is set aside and the new surface's comes back — auto
+  /// if it never had one. Remembered per *surface*, not per kind as the frame
+  /// sketches it: 对话 and 多模态 share one menu, and swapping between them
+  /// must not throw away a chat-face choice that is still valid. Lives only
+  /// as long as this dialog; saving writes the current surface's choice.
+  void _selectKind(String value) {
+    if (value == tag) return;
+    final id = idCtrl.text.trim();
+    final from = LLMDispatcher.surfaceForModel(id, tag: tag);
+    final to = LLMDispatcher.surfaceForModel(id, tag: value);
+    setState(() {
+      if (from != to) {
+        _pinBySurface[from] = wireProtocol;
+        wireProtocol = _pinBySurface[to];
+      }
+      tag = value;
+    });
+  }
 
   Widget _protocolSection(ColorScheme colorScheme) {
-    final l10n = widget.l10n;
-    final menu = _protocolMenu;
-    final active = _activePin;
-    final auto = menu.isEmpty ? null : menu.first;
-
-    final String? helper;
-    if (_pinIsStale) {
-      // State ④: helper-text tone, not a warning — the model still runs.
-      helper = l10n.protocolStaleHelper(
-          storedProtocolLabel(l10n, wireProtocol!));
-    } else if (active == null) {
-      helper = l10n.protocolAutoHelper;
-    } else {
-      helper = wireProtocolDescription(l10n, active);
+    final menu = _menu;
+    final family = _channelFamily(widget.appState);
+    final channel = _selectedChannel(widget.appState);
+    if (menu == null || family == null || channel == null) {
+      return const SizedBox.shrink();
     }
+    final id = idCtrl.text.trim();
+    final name = nameCtrl.text.trim();
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionHeader(l10n.requestMethod),
-        const SizedBox(height: 12),
-        AppLabelledField(
-          label: l10n.interfaceProtocol,
-          // Controlled, so the menu can change with the channel and the id
-          // without the field having to be re-keyed to forget an old value.
-          child: AppDropdown<String>(
-            // '' stands in for auto, same convention as the effort dropdown.
-            // A stale stored value also *displays* as auto (that is how it
-            // routes) — the helper line below says why.
-            value: active?.id ?? '',
-            items: [
-              // The closed field answers "which one actually runs": the auto
-              // entry names its resolution (18a: 自动 · 当前解析为 X).
-              AppDropdownItem(
-                value: '',
-                label: l10n.protocolAuto,
-                selectedLabel: auto == null
-                    ? l10n.protocolAuto
-                    : l10n.protocolAutoResolved(wireProtocolLabel(l10n, auto)),
-              ),
-              for (final p in menu) AppDropdownItem(value: p.id, label: wireProtocolLabel(l10n, p)),
-            ],
-            onChanged: (v) => setState(
-                () => wireProtocol = (v == null || v.isEmpty) ? null : v),
-            prefixIcon: Icons.alt_route_outlined,
-            helperText: helper,
-            helperMaxLines: 3,
-          ),
-        ),
-      ],
+    return ModelProtocolSection(
+      header: _sectionHeader(widget.l10n.requestMethod),
+      menu: menu,
+      form: _protocolForm,
+      channelFamily: family,
+      kind: tag,
+      modelName: name.isEmpty ? id : name,
+      stored: wireProtocol,
+      activePin: _activePin,
+      pinIsStale: _pinIsStale,
+      // As the model will be served once saved: with the choice on screen,
+      // not the one in the database.
+      paramsCapabilities: LLMDispatcher.descriptorFor(
+        channelType: channel.type,
+        modelId: id,
+        tag: tag,
+        wireProtocol: _activePin?.id,
+      ).capabilities,
+      onChanged: (v) => setState(() => wireProtocol = v),
     );
   }
 

@@ -85,7 +85,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       'lastFramePath': uiState.videoLastFrame?.path,
       // Per-family video extras (e.g. Sora's seconds / quality). Empty for
       // families with no capability-driven controls.
-      ...appState.effectiveVideoParams(selectedModel.modelId),
+      ...appState.effectiveVideoParams(selectedModel),
     };
 
     appState.submitVideoTask(selectedModel.id, params, modelIdDisplay: selectedModel.modelName);
@@ -365,7 +365,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     // resolution/aspect-ratio pickers.
     final caps = modelInChannel == null
         ? const ModelCapabilities()
-        : ModelCapabilities.forModel(modelInChannel.modelId);
+        : appState.descriptorForModel(modelInChannel).capabilities;
     final overridesResolution = caps.videoParams.any((p) => p.key == 'resolution');
     final overridesAspectRatio = caps.videoParams.any((p) => p.key == 'aspectRatio');
 
@@ -499,7 +499,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     LLMModel model,
     AppState appState,
   ) {
-    final caps = ModelCapabilities.forModel(model.modelId);
+    final caps = appState.descriptorForModel(model).capabilities;
     if (caps.videoParams.isEmpty) return const SizedBox.shrink();
 
     // Rebuild when a param changes.
@@ -522,7 +522,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
                 ),
                 Expanded(
-                  child: _buildVideoParamControl(spec, model.modelId, appState, colorScheme, l10n),
+                  child: _buildVideoParamControl(spec, model, appState, colorScheme, l10n),
                 ),
               ],
             ),
@@ -534,12 +534,12 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
 
   Widget _buildVideoParamControl(
     ParamSpec spec,
-    String modelId,
+    LLMModel model,
     AppState appState,
     ColorScheme colorScheme,
     AppLocalizations l10n,
   ) {
-    final current = appState.getVideoParam(modelId, spec);
+    final current = appState.getVideoParam(model, spec);
     switch (spec.control) {
       case ParamControl.dropdown:
         // The same box as the shared resolution and aspect fields above it —
@@ -553,7 +553,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
               AppDropdownItem(value: o.value, label: _videoOptionLabel(l10n, spec.key, o.value)),
           ],
           onChanged: (v) {
-            if (v != null) appState.setVideoParam(modelId, spec.key, v);
+            if (v != null) appState.setVideoParam(model, spec.key, v);
           },
         );
       case ParamControl.segmented:
@@ -565,7 +565,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                   ))
               .toList(),
           value: current,
-          onChanged: (v) => appState.setVideoParam(modelId, spec.key, v),
+          onChanged: (v) => appState.setVideoParam(model, spec.key, v),
           compact: true,
           // `17b` draws 时长 and 质量 as equal shares with the chosen one
           // lifted out on white — the same control the image panel's 质量 row
@@ -592,7 +592,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                 max: hi.toDouble(),
                 divisions: hi - lo,
                 label: '${value}s',
-                onChanged: (v) => appState.setVideoParam(modelId, spec.key, v.round().toString()),
+                onChanged: (v) => appState.setVideoParam(model, spec.key, v.round().toString()),
               ),
             ),
             SizedBox(

@@ -10,7 +10,6 @@ import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/prompt_history_entry.dart';
 import '../../models/tag.dart';
-import '../../services/llm/model_capabilities.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
@@ -157,7 +156,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     // Determine selected model from AppState
     int? selectedModelDbId;
     int? selectedChannelId;
-    String? selectedModelIdStr;
+    LLMModel? resolvedModel;
 
     if (imageModels.isNotEmpty) {
       final savedModelId = lastSelectedModelId;
@@ -176,7 +175,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       final resolved = match ?? imageModels.first;
       selectedModelDbId = resolved.id;
       selectedChannelId = resolved.channelId;
-      selectedModelIdStr = resolved.modelId;
+      resolvedModel = resolved;
     }
 
     final appState = Provider.of<AppState>(context, listen: false);
@@ -258,7 +257,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildSelectionPreview(context, selectedImages, colorScheme, l10n),
-                  _buildReferenceImageNotice(context, selectedModelIdStr, selectedImages.length, colorScheme, l10n),
+                  _buildReferenceImageNotice(context, resolvedModel, selectedImages.length, colorScheme, l10n),
                 ],
               ),
             ),
@@ -294,10 +293,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               onModelChanged: (val) {
                 _updateConfig(modelDbId: val);
               },
-              imageParamResolver: (modelId, spec) =>
-                  Provider.of<AppState>(context, listen: false).getImageParam(modelId, spec),
-              onImageParamChanged: (modelId, key, value) =>
-                  Provider.of<AppState>(context, listen: false).setImageParam(modelId, key, value),
+              imageParamResolver: (model, spec) =>
+                  Provider.of<AppState>(context, listen: false).getImageParam(model, spec),
+              onImageParamChanged: (model, key, value) =>
+                  Provider.of<AppState>(context, listen: false).setImageParam(model, key, value),
+              capabilitiesOf: (model) =>
+                  Provider.of<AppState>(context, listen: false).descriptorForModel(model).capabilities,
               ),
             ),
 
@@ -438,7 +439,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
 
                         final params = <String, dynamic>{
                           'prompt': _promptController.text,
-                          ...appState.effectiveImageParams(selectedModel.modelId),
+                          ...appState.effectiveImageParams(selectedModel),
                         };
 
                         appState.submitTask(selectedModelDbId, params, modelIdDisplay: modelName);
@@ -748,10 +749,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
   /// Warns when the selected model can't use the images the user has picked as
   /// references (Imagen accepts none; OpenAI image caps the count).
   Widget _buildReferenceImageNotice(
-      BuildContext context, String? modelId, int selectedCount, ColorScheme colorScheme, AppLocalizations l10n) {
-    if (modelId == null || selectedCount == 0) return const SizedBox.shrink();
+      BuildContext context, LLMModel? model, int selectedCount, ColorScheme colorScheme, AppLocalizations l10n) {
+    if (model == null || selectedCount == 0) return const SizedBox.shrink();
 
-    final caps = ModelCapabilities.forModel(modelId);
+    // As the channel serves it: a relay model pinned to the Images API has
+    // that surface's reference-image ceiling, which its id cannot report.
+    final caps = Provider.of<AppState>(context, listen: false).descriptorForModel(model).capabilities;
     String? message;
     if (!caps.supportsReferenceImages) {
       message = l10n.referenceImagesNotSupported;

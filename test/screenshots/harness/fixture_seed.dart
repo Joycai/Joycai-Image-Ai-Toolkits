@@ -139,6 +139,18 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     tagColor: 0xFFFF6A00,
   ).toMap(includeId: false));
 
+  // A Claude-format relay (D2a 20e): the one fixture channel with no generic
+  // media surface, so a video-kind model on it opens the editor on the
+  // "this channel has no video endpoint" note.
+  final int claudeRelayId = await db.addChannel(LLMChannel(
+    displayName: 'Claude 格式中转',
+    endpoint: 'https://claude.example-relay.com/v1',
+    apiKey: 'fixture-key-claude-relay',
+    type: Vendors.newApiAnthropic,
+    tag: '中转',
+    tagColor: 0xFF6D4C41,
+  ).toMap(includeId: false));
+
   final int flashFee = await db.addPricingGroup(PricingGroup(
     name: 'Gemini Flash',
     inputPrice: 0.075,
@@ -230,6 +242,44 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
       channelId: dashscopeId,
       feeGroupId: perImageFee,
       sortOrder: 7,
+    ),
+    // D2a: relay models whose ids classify as nothing. The editor opens on
+    // state ⑥ (image kind, auto through chat, a menu of two) and state ⑧
+    // (video kind, one route, the read-only line).
+    LLMModel(
+      modelId: 'nano-banana-pro',
+      modelName: 'Nano Banana Pro',
+      tag: ModelTag.image.value,
+      channelId: openaiId,
+      feeGroupId: perImageFee,
+      sortOrder: 8,
+    ),
+    LLMModel(
+      modelId: 'my-sora',
+      modelName: 'My Sora',
+      tag: ModelTag.video.value,
+      channelId: openaiId,
+      sortOrder: 9,
+    ),
+    // D2a state ⑦: the same kind of model with the Images API pinned — the
+    // tinted field, the tinted parameter row and the ignored streaming
+    // toggle, and the pinned chip on its card.
+    LLMModel(
+      modelId: 'img-fast',
+      modelName: 'Img Fast',
+      tag: ModelTag.image.value,
+      channelId: openaiId,
+      feeGroupId: perImageFee,
+      wireProtocol: 'openai-images',
+      sortOrder: 10,
+    ),
+    // D2a state ⑨: a video model on a channel with no video endpoint.
+    LLMModel(
+      modelId: 'my-video',
+      modelName: 'My Video',
+      tag: ModelTag.video.value,
+      channelId: claudeRelayId,
+      sortOrder: 11,
     ),
   ];
 

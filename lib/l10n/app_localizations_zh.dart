@@ -1934,7 +1934,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get protocolAutoHelper => '跟随渠道供应商，换供应商后自动重解析。';
+  String get protocolAutoHelper => '跟随渠道与模型类型，换渠道或改类型后自动重解析。';
 
   @override
   String protocolStaleHelper(String name) {
@@ -1966,10 +1966,106 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolImageAsyncDesc => '提交后轮询结果，生成中可取消';
 
   @override
-  String get protocolVideoTask => '异步视频任务';
+  String get protocolChatImage => '对话出图';
 
   @override
-  String get protocolStreamIgnoredAsync => '异步任务不使用流式传输，此项已忽略';
+  String get protocolChatImageDesc => '图片随对话回复返回，多数中转站用这种方式';
+
+  @override
+  String get protocolImagesApiDesc => 'OpenAI 图像接口，gpt-image 系列';
+
+  @override
+  String get protocolImagenDesc => 'Google 独立生图接口';
+
+  @override
+  String get protocolVideosApiDesc => 'OpenAI 视频任务接口（Sora 形态）';
+
+  @override
+  String get protocolVeoDesc => 'Google 视频任务接口';
+
+  @override
+  String get protocolXaiImages => 'xAI 图像';
+
+  @override
+  String get protocolXaiVideos => 'xAI 视频';
+
+  @override
+  String get protocolMinimaxImages => 'MiniMax 图像';
+
+  @override
+  String get protocolMinimaxVideo => 'MiniMax 视频';
+
+  @override
+  String protocolAutoMenuDesc(String name) {
+    return '跟随渠道与模型类型，当前解析为「$name」';
+  }
+
+  @override
+  String protocolUnrecognizedAuto(String name) {
+    return '未识别此模型 ID，按渠道默认方式发送。如果中转站用的是「$name」，请手动选择。';
+  }
+
+  @override
+  String protocolUnrecognizedSingle(String name) {
+    return '未识别此模型 ID，参数按「$name」默认。';
+  }
+
+  @override
+  String get protocolParamsLabel => '参数';
+
+  @override
+  String protocolParamsDefault(String name, String items) {
+    return '按「$name」默认 — $items';
+  }
+
+  @override
+  String get protocolParamsNone => '无专属参数，只有提示词与参考图';
+
+  @override
+  String get protocolParamReferenceLimit => '参考图上限';
+
+  @override
+  String protocolSendVia(String name) {
+    return '按「$name」发送';
+  }
+
+  @override
+  String get protocolOnlyOneWay => '· 此渠道只有这一种方式';
+
+  @override
+  String protocolNoSurface(String format, String kind) {
+    return '此渠道是 $format 格式，没有$kind接口。模型可以保存，但工作台里不会出现。';
+  }
+
+  @override
+  String protocolChatImageUnlikely(String format) {
+    return '$format 格式本身基本不出图，能否成功取决于中转站。';
+  }
+
+  @override
+  String protocolStaleKindHelper(String kind, String name) {
+    return '类型已改为「$kind」，原选择「$name」不再适用，已回到自动。';
+  }
+
+  @override
+  String protocolStreamIgnored(String name) {
+    return '「$name」不使用流式传输，此项已忽略';
+  }
+
+  @override
+  String get protocolAutoSuffix => '· 自动';
+
+  @override
+  String get protocolBackToAuto => '改回自动';
+
+  @override
+  String get contextImageUnsetDesc => '生图模型不参与上下文预算，保持未设置即可。';
+
+  @override
+  String get contextVideoUnsetDesc => '视频模型不参与上下文预算，保持未设置即可。';
+
+  @override
+  String get protocolVideoTask => '异步视频任务';
 
   @override
   String get protocolAsyncQueueNote => '提交后进入任务队列轮询，生成中可取消。';
@@ -5882,7 +5978,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get protocolAutoHelper => '跟隨渠道供應商，更換供應商後自動重新解析。';
+  String get protocolAutoHelper => '跟隨渠道與模型類型，更換渠道或類型後自動重新解析。';
 
   @override
   String protocolStaleHelper(String name) {
@@ -5914,10 +6010,106 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get protocolImageAsyncDesc => '提交後輪詢結果，生成中可取消';
 
   @override
-  String get protocolVideoTask => '非同步影片任務';
+  String get protocolChatImage => '對話出圖';
 
   @override
-  String get protocolStreamIgnoredAsync => '非同步任務不使用串流傳輸，此項已忽略';
+  String get protocolChatImageDesc => '圖片隨對話回覆傳回，多數中轉站採用這種方式';
+
+  @override
+  String get protocolImagesApiDesc => 'OpenAI 圖像介面，gpt-image 系列';
+
+  @override
+  String get protocolImagenDesc => 'Google 獨立生圖介面';
+
+  @override
+  String get protocolVideosApiDesc => 'OpenAI 影片任務介面（Sora 形態）';
+
+  @override
+  String get protocolVeoDesc => 'Google 影片任務介面';
+
+  @override
+  String get protocolXaiImages => 'xAI 圖像';
+
+  @override
+  String get protocolXaiVideos => 'xAI 影片';
+
+  @override
+  String get protocolMinimaxImages => 'MiniMax 圖像';
+
+  @override
+  String get protocolMinimaxVideo => 'MiniMax 影片';
+
+  @override
+  String protocolAutoMenuDesc(String name) {
+    return '跟隨渠道與模型類型，目前解析為「$name」';
+  }
+
+  @override
+  String protocolUnrecognizedAuto(String name) {
+    return '未識別此模型 ID，按渠道預設方式傳送。如果中轉站用的是「$name」，請手動選擇。';
+  }
+
+  @override
+  String protocolUnrecognizedSingle(String name) {
+    return '未識別此模型 ID，參數按「$name」預設。';
+  }
+
+  @override
+  String get protocolParamsLabel => '參數';
+
+  @override
+  String protocolParamsDefault(String name, String items) {
+    return '按「$name」預設 — $items';
+  }
+
+  @override
+  String get protocolParamsNone => '無專屬參數，只有提示詞與參考圖';
+
+  @override
+  String get protocolParamReferenceLimit => '參考圖上限';
+
+  @override
+  String protocolSendVia(String name) {
+    return '按「$name」傳送';
+  }
+
+  @override
+  String get protocolOnlyOneWay => '· 此渠道只有這一種方式';
+
+  @override
+  String protocolNoSurface(String format, String kind) {
+    return '此渠道是 $format 格式，沒有$kind介面。模型可以儲存，但工作台裡不會出現。';
+  }
+
+  @override
+  String protocolChatImageUnlikely(String format) {
+    return '$format 格式本身基本不出圖，能否成功取決於中轉站。';
+  }
+
+  @override
+  String protocolStaleKindHelper(String kind, String name) {
+    return '類型已改為「$kind」，原選擇「$name」不再適用，已回到自動。';
+  }
+
+  @override
+  String protocolStreamIgnored(String name) {
+    return '「$name」不使用串流傳輸，此項已忽略';
+  }
+
+  @override
+  String get protocolAutoSuffix => '· 自動';
+
+  @override
+  String get protocolBackToAuto => '改回自動';
+
+  @override
+  String get contextImageUnsetDesc => '生圖模型不參與上下文預算，保持未設定即可。';
+
+  @override
+  String get contextVideoUnsetDesc => '影片模型不參與上下文預算，保持未設定即可。';
+
+  @override
+  String get protocolVideoTask => '非同步影片任務';
 
   @override
   String get protocolAsyncQueueNote => '提交後進入任務佇列輪詢，生成中可取消。';
