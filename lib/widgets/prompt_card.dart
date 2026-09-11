@@ -24,7 +24,9 @@ class PromptCardAction {
 
   final IconData icon;
   final String label;
-  final VoidCallback onPressed;
+
+  /// Null draws the action disabled.
+  final VoidCallback? onPressed;
   final bool danger;
 }
 
@@ -32,8 +34,8 @@ class PromptCardAction {
 ///
 /// An opaque panel card at r10 with a hairline: an optional leading grip,
 /// type glyph or selection circle, then the title with its category chips on
-/// one line and two lines of the content under it, and the move-to-top /
-/// move-to-bottom glyphs at the trailing edge. Tapping discloses the whole
+/// one line and two lines of the content under it, and the move glyphs (up,
+/// down, top, bottom) at the trailing edge. Tapping discloses the whole
 /// prompt; in selection mode the card is the checkbox.
 ///
 /// Category chips carry the category's identity colour as a 6px dot only —
@@ -49,6 +51,12 @@ class PromptCard extends StatelessWidget {
   /// A leading widget after the grip — a template's type glyph.
   final Widget? leading;
   final bool showCategory;
+
+  /// Move one place up / down, and to the top / bottom (`00d` 行尾菜单). The
+  /// four are drawn together once any of them is given; a null one is drawn
+  /// disabled — the card is already at that end — so the row does not shift.
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
   final VoidCallback? onMoveToTop;
   final VoidCallback? onMoveToBottom;
 
@@ -77,6 +85,8 @@ class PromptCard extends StatelessWidget {
     this.actions,
     this.leading,
     this.showCategory = true,
+    this.onMoveUp,
+    this.onMoveDown,
     this.onMoveToTop,
     this.onMoveToBottom,
     this.dragHandle,
@@ -98,6 +108,9 @@ class PromptCard extends StatelessWidget {
   static const double _padV = 12;
   static const double _gap = 12;
 
+  /// The grip's own width.
+  static const double _grip = 20;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -113,6 +126,9 @@ class PromptCard extends StatelessWidget {
     // The selected edge is a pixel heavier; the inset gives that pixel back so
     // the content does not shift when a card is picked.
     final inset = borderWidth - 1;
+    // `00d · 1f`: on a phone the grip is hit across the card's leading inset
+    // too, so the row starts at the card's edge and the grip takes the inset.
+    final double? gripInset = phone && !selectionMode && dragHandle != null ? _padH - inset : null;
 
     return AnimatedContainer(
       duration: AppMotion.durationOf(context, AppMotion.hover),
@@ -129,9 +145,12 @@ class PromptCard extends StatelessWidget {
           onTap: onToggle,
           onLongPress: onLongPress,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: _padH - inset, vertical: _padV - inset),
+            padding: gripInset != null
+                ? EdgeInsetsDirectional.fromSTEB(0, _padV - inset, _padH - inset, _padV - inset)
+                : EdgeInsets.symmetric(horizontal: _padH - inset, vertical: _padV - inset),
             child: LayoutBuilder(
-              builder: (context, constraints) => _buildBody(context, scheme, constraints.maxWidth, phone),
+              builder: (context, constraints) =>
+                  _buildBody(context, scheme, constraints.maxWidth, phone, gripInset),
             ),
           ),
         ),
@@ -139,22 +158,51 @@ class PromptCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(BuildContext context, ColorScheme scheme, double width, bool phone) {
+  Widget _buildBody(BuildContext context, ColorScheme scheme, double width, bool phone, double? gripInset) {
     final l10n = AppLocalizations.of(context)!;
     final showActions = !selectionMode;
 
+    // `00d · 1f` 左侧 44 宽命中区: the grip is picked up anywhere across the
+    // card's leading inset, the grip and the gap after it (46), while the glyph
+    // stays exactly where it was drawn — the handle is laid out centred on the
+    // glyph, running past the hit-tested slot by the inset's excess over the
+    // gap.
+    final Widget? wideGrip = gripInset == null
+        ? null
+        : SizedBox(
+            width: gripInset + _grip + _gap,
+            height: AppSize.compact,
+            child: OverflowBox(
+              minWidth: 2 * gripInset + _grip,
+              maxWidth: 2 * gripInset + _grip,
+              alignment: AlignmentDirectional.centerStart,
+              child: dragHandle,
+            ),
+          );
+
     final lead = <Widget>[
-      if (selectionMode) _SelectionCircle(selected: selected) else ?dragHandle,
+      if (selectionMode) _SelectionCircle(selected: selected) else if (wideGrip == null) ?dragHandle,
       ?leading,
     ];
-    final leadWidth = (selectionMode ? 20.0 : (dragHandle != null ? 20.0 : 0.0)) +
+    final leadWidth = (wideGrip != null ? gripInset! + _grip + _gap : 0.0) +
+        (selectionMode || (dragHandle != null && wideGrip == null) ? _grip : 0.0) +
         (leading != null ? AppSize.compact : 0.0) +
         _gap * lead.length;
 
-    final moveCount = (onMoveToTop != null ? 1 : 0) + (onMoveToBottom != null ? 1 : 0);
-    final inlineWidth = (menuActions.length + moveCount + (actions?.length ?? 0)) * _action +
+    final bool hasMoves = onMoveUp != null || onMoveDown != null || onMoveToTop != null || onMoveToBottom != null;
+    final moves = <PromptCardAction>[
+      if (hasMoves) ...[
+        PromptCardAction(icon: Icons.keyboard_arrow_up_rounded, label: l10n.moveUp, onPressed: onMoveUp),
+        PromptCardAction(icon: Icons.keyboard_arrow_down_rounded, label: l10n.moveDown, onPressed: onMoveDown),
+        PromptCardAction(icon: Icons.vertical_align_top_rounded, label: l10n.moveToTop, onPressed: onMoveToTop),
+        PromptCardAction(icon: Icons.vertical_align_bottom_rounded, label: l10n.moveToBottom, onPressed: onMoveToBottom),
+      ],
+    ];
+    final moveCount = moves.length;
+    final extraCount = actions?.length ?? 0;
+    final inlineWidth = (menuActions.length + moveCount + extraCount) * _action +
         (menuActions.isNotEmpty && moveCount > 0 ? GlassDivider.extent : 0);
-    final hasTrailing = showActions && (menuActions.isNotEmpty || moveCount > 0 || (actions?.isNotEmpty ?? false));
+    final hasTrailing = showActions && (menuActions.isNotEmpty || moveCount > 0 || extraCount > 0);
     final inline = !phone && width - leadWidth - _gap - inlineWidth >= _minContent;
 
     final trailing = <Widget>[];
@@ -166,24 +214,13 @@ class PromptCard extends StatelessWidget {
         if (menuActions.isNotEmpty && moveCount > 0) {
           trailing.add(const GlassDivider(height: 16));
         }
-        if (onMoveToTop != null) {
-          trailing.add(_ActionGlyph(
-              icon: Icons.vertical_align_top_rounded, tooltip: l10n.moveToTop, onPressed: onMoveToTop!));
-        }
-        if (onMoveToBottom != null) {
-          trailing.add(_ActionGlyph(
-              icon: Icons.vertical_align_bottom_rounded, tooltip: l10n.moveToBottom, onPressed: onMoveToBottom!));
+        for (final m in moves) {
+          trailing.add(_ActionGlyph(icon: m.icon, tooltip: m.label, onPressed: m.onPressed));
         }
       } else {
         trailing.add(_OverflowMenu(
-          actions: [
-            ...menuActions,
-            if (onMoveToTop != null)
-              PromptCardAction(icon: Icons.vertical_align_top_rounded, label: l10n.moveToTop, onPressed: onMoveToTop!),
-            if (onMoveToBottom != null)
-              PromptCardAction(
-                  icon: Icons.vertical_align_bottom_rounded, label: l10n.moveToBottom, onPressed: onMoveToBottom!),
-          ],
+          actions: [...menuActions, ...moves],
+          dividerAt: menuActions.isNotEmpty && moveCount > 0 ? menuActions.length : null,
         ));
       }
       if (actions != null) trailing.addAll(actions!);
@@ -217,6 +254,7 @@ class PromptCard extends StatelessWidget {
 
     final row = Row(
       children: [
+        ?wideGrip,
         for (final w in lead) ...[w, const SizedBox(width: _gap)],
         Expanded(child: content),
         if (trailing.isNotEmpty) ...[
@@ -238,7 +276,7 @@ class PromptCard extends StatelessWidget {
             alignment: Alignment.topCenter,
             child: isExpanded
                 ? Padding(
-                    padding: EdgeInsets.only(top: AppSpace.s10, left: lead.isEmpty ? 0 : leadWidth),
+                    padding: EdgeInsetsDirectional.only(top: AppSpace.s10, start: leadWidth),
                     child: _buildExpandedContent(context, scheme),
                   )
                 : const SizedBox(width: double.infinity),
@@ -347,21 +385,25 @@ class _ActionGlyph extends StatelessWidget {
 
   final IconData icon;
   final String tooltip;
-  final VoidCallback onPressed;
+
+  /// Null draws the glyph disabled.
+  final VoidCallback? onPressed;
   final bool danger;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final ink = danger ? scheme.error : scheme.onSurfaceVariant;
     return SizedBox(
       width: PromptCard._action,
       height: PromptCard._action,
       child: IconButton(
         icon: Icon(icon, size: AppSize.iconMd),
-        color: danger ? scheme.error : scheme.onSurfaceVariant,
         tooltip: tooltip,
         padding: EdgeInsets.zero,
         style: IconButton.styleFrom(
+          foregroundColor: ink,
+          disabledForegroundColor: ink.withValues(alpha: AppAlpha.disabled),
           minimumSize: const Size(PromptCard._action, PromptCard._action),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
         ),
@@ -374,9 +416,39 @@ class _ActionGlyph extends StatelessWidget {
 /// The card's actions folded into one menu, for a card too narrow to show
 /// them as glyphs.
 class _OverflowMenu extends StatelessWidget {
-  const _OverflowMenu({required this.actions});
+  const _OverflowMenu({required this.actions, this.dividerAt});
 
   final List<PromptCardAction> actions;
+
+  /// A divider before the action at this index.
+  final int? dividerAt;
+
+  PopupMenuItem<int> _item(BuildContext context, ColorScheme scheme, int i) {
+    final action = actions[i];
+    final enabled = action.onPressed != null;
+    Color ink(Color c) => enabled ? c : c.withValues(alpha: AppAlpha.disabled);
+    return PopupMenuItem<int>(
+      value: i,
+      enabled: enabled,
+      height: AppSize.large,
+      child: Row(
+        children: [
+          Icon(
+            action.icon,
+            size: AppSize.iconMd,
+            color: ink(action.danger ? scheme.error : scheme.onSurfaceVariant),
+          ),
+          const SizedBox(width: AppSpace.s10),
+          Text(
+            action.label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: ink(action.danger ? scheme.error : scheme.onSurface),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -390,29 +462,12 @@ class _OverflowMenu extends StatelessWidget {
         padding: EdgeInsets.zero,
         iconSize: AppSize.iconLg,
         icon: Icon(Icons.more_vert, color: scheme.onSurfaceVariant),
-        onSelected: (i) => actions[i].onPressed(),
+        onSelected: (i) => actions[i].onPressed?.call(),
         itemBuilder: (context) => [
-          for (int i = 0; i < actions.length; i++)
-            PopupMenuItem<int>(
-              value: i,
-              height: AppSize.large,
-              child: Row(
-                children: [
-                  Icon(
-                    actions[i].icon,
-                    size: AppSize.iconMd,
-                    color: actions[i].danger ? scheme.error : scheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: AppSpace.s10),
-                  Text(
-                    actions[i].label,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: actions[i].danger ? scheme.error : scheme.onSurface,
-                        ),
-                  ),
-                ],
-              ),
-            ),
+          for (int i = 0; i < actions.length; i++) ...[
+            if (i == dividerAt) const PopupMenuDivider(),
+            _item(context, scheme, i),
+          ],
         ],
       ),
     );

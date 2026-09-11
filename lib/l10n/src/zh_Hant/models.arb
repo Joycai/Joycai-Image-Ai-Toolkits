@@ -388,7 +388,6 @@
   "moveUp": "上移",
   "moveDown": "下移",
   "channelReorderFootnote": "懸停顯示把手 · 拖動重排 · 右鍵或 Alt+↑/↓ 同效",
-  "channelReorderLockedNote": "搜尋或篩選中不能重排——清單只顯示了一部分，落點是假的。清除後恢復。",
   "noModelsConfiguredHint": "用「取得模型」自動探索，或手動新增一個。",
   "addModelManually": "手動新增",
   "selectAChannelHint": "左側選一個渠道，這裡顯示它的模型。",

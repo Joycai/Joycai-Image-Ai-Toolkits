@@ -1,16 +1,20 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/browser_file.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/dashed_border.dart';
+import '../../widgets/drag/app_drag_session.dart';
 import 'directory_tree_item.dart';
 import 'widgets/result_tree_item.dart';
 
@@ -154,19 +158,21 @@ class _FolderListState extends State<FolderList> {
           Expanded(
             child: sourceDirectories.isEmpty
                 ? _buildEmptyState(context, colorScheme, l10n)
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpace.s6),
-                    itemCount: sourceDirectories.length,
-                    itemBuilder: (context, index) {
-                      final path = sourceDirectories[index];
-                      return DirectoryTreeItem(
-                        key: ValueKey(path),
-                        path: path,
-                        isRoot: true,
-                        useFileBrowserState: useFileBrowserState,
-                        onRemove: _requestRemove,
-                      );
-                    },
+                : _ArmedTreeEdge(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpace.s6),
+                      itemCount: sourceDirectories.length,
+                      itemBuilder: (context, index) {
+                        final path = sourceDirectories[index];
+                        return DirectoryTreeItem(
+                          key: ValueKey(path),
+                          path: path,
+                          isRoot: true,
+                          useFileBrowserState: useFileBrowserState,
+                          onRemove: _requestRemove,
+                        );
+                      },
+                    ),
                   ),
           ),
           // `B1a · 1a`: how a drop onto a folder behaves, said once at the foot
@@ -175,7 +181,10 @@ class _FolderListState extends State<FolderList> {
             Padding(
               padding: const EdgeInsets.fromLTRB(AppSpace.s16, AppSpace.s10, AppSpace.s16, AppSpace.s10),
               child: Text(
-                l10n.browserDragFootnote,
+                // The copy key is ⌥ on macOS, as `AppCopyModifier` reads it.
+                defaultTargetPlatform == TargetPlatform.macOS
+                    ? l10n.browserDragFootnoteMac
+                    : l10n.browserDragFootnote,
                 style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
                       fontWeight: FontWeight.w400,
                       color: colorScheme.outline,
@@ -516,6 +525,60 @@ class _RemoveFolderCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// `00d · 1d` 可放: while a file selection or a folder is dragged, the tree it
+/// can land on takes a 1px dashed accent edge at r10 — "drop over here".
+///
+/// The ground does not change and nothing moves: the edge is painted over the
+/// list, inset by half a row's margin, rather than put around it, so arming
+/// never reflows the rows under the pointer.
+class _ArmedTreeEdge extends StatelessWidget {
+  const _ArmedTreeEdge({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color accent = Theme.of(context).colorScheme.primary;
+    final double inset = FolderTreeMetrics.of(context).margin / 2;
+    return ValueListenableBuilder<Object?>(
+      valueListenable: AppDragSession.current,
+      child: child,
+      builder: (context, payload, child) {
+        final armed = payload is List<BrowserFile> || payload is FolderDragPayload;
+        return CustomPaint(
+          foregroundPainter: _ArmedEdgePainter(color: armed ? accent : null, inset: inset),
+          child: child,
+        );
+      },
+    );
+  }
+}
+
+class _ArmedEdgePainter extends CustomPainter {
+  const _ArmedEdgePainter({required this.color, required this.inset});
+
+  /// Null while nothing the tree takes is in flight.
+  final Color? color;
+  final double inset;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final edge = color;
+    if (edge == null) return;
+    drawDashedRRect(
+      canvas,
+      RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(AppRadius.control)).deflate(inset),
+      Paint()
+        ..color = edge
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ArmedEdgePainter old) => old.color != color || old.inset != inset;
 }
 
 /// A borderless 28px action in the directory column's caption row

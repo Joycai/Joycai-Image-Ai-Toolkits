@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -23,8 +27,9 @@ import '../../../widgets/app_field_size.dart';
 import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/app_switch.dart';
-import '../../../widgets/dashed_border.dart';
 import '../../../widgets/dialogs/library_dialog.dart';
+import '../../../widgets/drag/app_drag_session.dart';
+import '../../../widgets/drag/app_drop_zone.dart';
 import '../../../widgets/dialogs/prompt_history_dialog.dart';
 import '../../../widgets/markdown_editor.dart';
 import '../../../widgets/models/model_picker_options.dart';
@@ -259,6 +264,8 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                       onDrop: (img) => uiState.setVideoFirstFrame(img),
                       onClear: () => uiState.setVideoFirstFrame(null),
                       emptyIcon: Icons.first_page,
+                      emptyTitle: l10n.dropFirstFrame,
+                      confirmMessage: l10n.dropSetAsFirstFrame,
                     ),
                   ),
                   const SizedBox(width: _kCardInnerGap),
@@ -269,6 +276,8 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                       onDrop: (img) => uiState.setVideoLastFrame(img),
                       onClear: () => uiState.setVideoLastFrame(null),
                       emptyIcon: Icons.last_page,
+                      emptyTitle: l10n.dropLastFrame,
+                      confirmMessage: l10n.dropSetAsLastFrame,
                     ),
                   ),
                 ],
@@ -971,74 +980,240 @@ class _ParamCell extends StatelessWidget {
   }
 }
 
-/// A drop place with nothing in it (`A2 · 1a` 尾帧, `1b` 参考图): the
-/// column's ground inside a dashed hairline, a glyph and a hint in the muted
-/// ink. While something is dragged over it (`1b` 首帧) the ground takes the
-/// accent wash, the edge a 2px dashed accent, and the hint the deep ink.
+/// A reference cell (`00d` 尺寸 「参考图格 72」), and the gap between cells.
+const double _kReferenceCell = 72;
+const double _kReferenceGap = _kCardInnerGap;
+
+/// How far outside a full grid its drop verdict's edge sits, so the dashed
+/// line runs beside the thumbnails rather than over their corners. Inside the
+/// card's 10 inset, so the card's clip never shaves it.
+const double _kVerdictOutset = AppSpace.s4;
+
+/// How long a drop's confirmation note stays (`00d` 确认 「一条 ok 说明条」).
+/// Not a motion token: nothing moves for this long, it is read.
+const Duration _kDropNoteHold = Duration(seconds: 2);
+
+/// Whether an in-app drag carries a picture a slot takes. Gallery cards drag
+/// videos too, and those are refused with a reason rather than ignored.
+bool _isDroppableImage(Object? payload) => payload is AppImage && AppConstants.isImageFile(payload.path);
+
+/// Reads a drop's result out, as its note says it (`00d` 无障碍).
+void _announceDrop(BuildContext context, String message) {
+  SemanticsService.sendAnnouncement(View.of(context), message, Directionality.of(context));
+}
+
+/// A drop place with nothing in it (`00d · 1c` 投放槽 / 投放区): the zone
+/// ladder's ground and dashed edge, a glyph, the slot's name and a hint.
+///
+/// The words degrade by measuring, not by width thresholds: the hint goes
+/// first, then the glyph; a name that would not fit its two lines is left out
+/// rather than cut mid-word, so a narrow cell keeps its glyph alone. What was
+/// left out is still read to screen readers.
 class _DropSlot extends StatelessWidget {
   const _DropSlot({
-    required this.hovering,
+    required this.state,
     required this.icon,
-    this.hoverIcon,
+    this.title,
     this.hint,
     this.onTap,
   });
 
-  final bool hovering;
+  final AppDropZoneState state;
+
+  /// The resting glyph; hover, reject and full bring their own.
   final IconData icon;
-  final IconData? hoverIcon;
+
+  /// The slot's name at rest, or what a release does, or why it will not.
+  final String? title;
+
+  /// A second line at rest: the other way to fill the slot.
   final String? hint;
+
   final VoidCallback? onTap;
+
+  static const double _padding = AppSpace.s6;
+  static const double _gap = AppSpace.s4;
+  static const int _maxLines = 2;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final radius = BorderRadius.circular(AppRadius.control);
-    final hint = this.hint;
 
-    return Material(
-      color: hovering ? colorScheme.accentTint : colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(borderRadius: radius),
-      // Unclipped: the dashed stroke is centred on the edge, and a clip would
-      // shave its outer half away.
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: radius,
-        child: DashedBorder(
-          color: hovering ? colorScheme.primary : colorScheme.outlineVariant,
-          radius: AppRadius.control,
-          strokeWidth: hovering ? 2 : 1,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpace.s6),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    hovering ? (hoverIcon ?? icon) : icon,
-                    size: AppSize.iconLg,
-                    color: hovering ? colorScheme.primary : colorScheme.outline,
-                  ),
-                  if (hint != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      hint,
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: hovering ? colorScheme.onAccentTint : colorScheme.outline,
-                        fontWeight: hovering ? FontWeight.w500 : FontWeight.w400,
-                      ),
+    final IconData glyph = switch (state) {
+      AppDropZoneState.hover => Icons.download,
+      AppDropZoneState.reject => Icons.block,
+      AppDropZoneState.full => Icons.layers_outlined,
+      AppDropZoneState.rest || AppDropZoneState.armed => icon,
+    };
+    final Color glyphInk = state == AppDropZoneState.rest ? colorScheme.outline : state.edge(context);
+    final TextStyle titleStyle = theme.textTheme.labelMedium!.copyWith(color: state.ink(context));
+    final TextStyle hintStyle = theme.textTheme.labelSmall!.copyWith(
+      fontWeight: FontWeight.w400,
+      color: colorScheme.outline,
+    );
+
+    return AppDropZoneFrame(
+      state: state,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final double width = math.max(0, box.maxWidth - _padding * 2);
+              final double room = box.maxHeight - _padding * 2;
+              final double? titleHeight = _fittedTextHeight(context, title, titleStyle, width, maxLines: _maxLines);
+              final double? hintHeight = _fittedTextHeight(context, hint, hintStyle, width, maxLines: _maxLines);
+
+              double stacked({required bool glyph, required bool name, required bool second}) {
+                final parts = <double>[
+                  if (glyph) AppSize.iconLg,
+                  if (name && titleHeight != null) titleHeight,
+                  if (second && hintHeight != null) hintHeight,
+                ];
+                if (parts.isEmpty) return 0;
+                return parts.reduce((a, b) => a + b) + _gap * (parts.length - 1);
+              }
+
+              bool withTitle = titleHeight != null;
+              bool withHint = hintHeight != null;
+              bool withGlyph = true;
+              if (withHint && stacked(glyph: true, name: withTitle, second: true) > room) withHint = false;
+              if (stacked(glyph: true, name: withTitle, second: withHint) > room) withGlyph = false;
+              if (withTitle && stacked(glyph: false, name: true, second: withHint) > room) {
+                withTitle = false;
+                withGlyph = true;
+              }
+
+              return Semantics(
+                label: title,
+                hint: hint,
+                excludeSemantics: true,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(_padding),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (withGlyph) Icon(glyph, size: AppSize.iconLg, color: glyphInk),
+                        if (withTitle) ...[
+                          if (withGlyph) const SizedBox(height: _gap),
+                          Text(
+                            title!,
+                            textAlign: TextAlign.center,
+                            maxLines: _maxLines,
+                            overflow: TextOverflow.ellipsis,
+                            style: titleStyle,
+                          ),
+                        ],
+                        if (withHint) ...[
+                          if (withGlyph || withTitle) const SizedBox(height: _gap),
+                          Text(
+                            hint!,
+                            textAlign: TextAlign.center,
+                            maxLines: _maxLines,
+                            overflow: TextOverflow.ellipsis,
+                            style: hintStyle,
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
-              ),
-            ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The height [text] takes at [width] within [maxLines], or null when it would
+/// not fit them — how drop copy decides what to leave out, by measuring rather
+/// than by width thresholds.
+double? _fittedTextHeight(
+  BuildContext context,
+  String? text,
+  TextStyle style,
+  double width, {
+  int maxLines = 2,
+}) {
+  if (text == null) return null;
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textAlign: TextAlign.center,
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: maxLines,
+  )..layout(maxWidth: width);
+  final double? height = painter.didExceedMaxLines ? null : painter.height;
+  painter.dispose();
+  return height;
+}
+
+/// Drop copy laid over a picture: on the fixed image plate, since the design
+/// never lays `--tint` over an image (`00d` 颜色角色). The [hint] line joins
+/// only where it fits the room the plate is given.
+class _PlateLabel extends StatelessWidget {
+  const _PlateLabel(this.text, {this.hint});
+
+  final String text;
+  final String? hint;
+
+  static const EdgeInsets _padding = EdgeInsets.symmetric(horizontal: AppSpace.s6, vertical: 2);
+  static const double _gap = 2;
+  static const int _maxLines = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextStyle textStyle = Theme.of(context).textTheme.labelSmall!.copyWith(color: AppOverlay.onImagePlate);
+    final TextStyle hintStyle = textStyle.copyWith(fontWeight: FontWeight.w400);
+
+    return LayoutBuilder(
+      builder: (context, box) {
+        final double width = math.max(0, box.maxWidth - _padding.horizontal);
+        final double? textHeight = _fittedTextHeight(context, text, textStyle, width, maxLines: _maxLines);
+        final double? hintHeight = _fittedTextHeight(context, hint, hintStyle, width, maxLines: _maxLines);
+        final bool withHint = textHeight != null &&
+            hintHeight != null &&
+            _padding.vertical + textHeight + _gap + hintHeight <= box.maxHeight;
+
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppOverlay.imagePlate,
+            borderRadius: BorderRadius.circular(AppRadius.xs),
+          ),
+          child: Padding(
+            padding: _padding,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  text,
+                  textAlign: TextAlign.center,
+                  maxLines: _maxLines,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyle,
+                ),
+                if (withHint) ...[
+                  const SizedBox(height: _gap),
+                  Text(
+                    hint!,
+                    textAlign: TextAlign.center,
+                    maxLines: _maxLines,
+                    overflow: TextOverflow.ellipsis,
+                    style: hintStyle,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1077,9 +1252,10 @@ class _PlateCloseButton extends StatelessWidget {
   }
 }
 
-/// A first- or last-frame slot (`A2 · 1a`): the caption, a 92px place
-/// (96 on a tablet, 104 on a phone), and the file's name — or that the frame
-/// is optional — under it.
+/// A first- or last-frame slot (`A2 · 1a`; drop states `00d · 1c`): the
+/// caption, a 92px place (96 on a tablet, 104 on a phone), and the file's
+/// name — or that the frame is optional — under it. A drop rings the slot and
+/// the name line gives way to the confirmation for a moment.
 class _FrameDropTarget extends StatefulWidget {
   final String label;
   final AppImage? image;
@@ -1087,12 +1263,20 @@ class _FrameDropTarget extends StatefulWidget {
   final VoidCallback onClear;
   final IconData emptyIcon;
 
+  /// The empty slot's name (「拖入首帧」).
+  final String emptyTitle;
+
+  /// What the note under the slot says after a drop (「已放入首帧」).
+  final String confirmMessage;
+
   const _FrameDropTarget({
     required this.label,
     required this.image,
     required this.onDrop,
     required this.onClear,
     required this.emptyIcon,
+    required this.emptyTitle,
+    required this.confirmMessage,
   });
 
   @override
@@ -1104,6 +1288,17 @@ class _FrameDropTargetState extends State<_FrameDropTarget> {
   /// themselves through the [DragTarget] instead.
   bool _osDragging = false;
 
+  /// Changed on every accepted drop to flash the slot's ring.
+  Object? _confirmToken;
+  bool _showNote = false;
+  Timer? _noteTimer;
+
+  @override
+  void dispose() {
+    _noteTimer?.cancel();
+    super.dispose();
+  }
+
   void _setOsDragging(bool value) {
     if (_osDragging != value) setState(() => _osDragging = value);
   }
@@ -1113,6 +1308,21 @@ class _FrameDropTargetState extends State<_FrameDropTarget> {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked == null || !mounted) return;
     widget.onDrop(AppImage(path: picked.path, name: picked.name));
+  }
+
+  /// Takes a dropped picture and confirms it where it landed (`00d` 确认):
+  /// the slot's ring and a note under it — not a snackbar, and no focus taken.
+  void _accept(AppImage image) {
+    widget.onDrop(image);
+    _noteTimer?.cancel();
+    setState(() {
+      _confirmToken = Object();
+      _showNote = true;
+    });
+    _noteTimer = Timer(_kDropNoteHold, () {
+      if (mounted) setState(() => _showNote = false);
+    });
+    _announceDrop(context, widget.confirmMessage);
   }
 
   @override
@@ -1144,53 +1354,79 @@ class _FrameDropTargetState extends State<_FrameDropTarget> {
             if (details.files.isNotEmpty) {
               final file = details.files.first;
               if (AppConstants.isImageFile(file.path)) {
-                widget.onDrop(AppImage(path: file.path, name: file.name));
+                _accept(AppImage(path: file.path, name: file.name));
               }
             }
           },
-          child: DragTarget<AppImage>(
-            onAcceptWithDetails: (details) => widget.onDrop(details.data),
-            builder: (context, candidateData, rejectedData) {
-              final bool hovering = _osDragging || candidateData.isNotEmpty;
-              void onTap() {
-                if (isMobile) {
-                  Provider.of<AppState>(context, listen: false).setWorkbenchTab(0);
-                } else {
-                  _pickFrame();
-                }
-              }
+          // `00d` 「可放」: an in-app drag this slot would take, still elsewhere.
+          child: ValueListenableBuilder<Object?>(
+            valueListenable: AppDragSession.current,
+            builder: (context, payload, _) => DragTarget<AppImage>(
+              onWillAcceptWithDetails: (details) => _isDroppableImage(details.data),
+              onAcceptWithDetails: (details) => _accept(details.data),
+              builder: (context, candidateData, rejectedData) {
+                final AppDropZoneState state = rejectedData.isNotEmpty
+                    ? AppDropZoneState.reject
+                    : (candidateData.isNotEmpty || _osDragging)
+                        ? AppDropZoneState.hover
+                        : _isDroppableImage(payload)
+                            ? AppDropZoneState.armed
+                            : AppDropZoneState.rest;
 
-              return SizedBox(
-                height: slotHeight,
-                child: image == null
-                    ? _DropSlot(
-                        hovering: hovering,
-                        icon: widget.emptyIcon,
-                        hoverIcon: Icons.download,
-                        hint: hovering
-                            ? l10n.videoDropRelease
-                            : (isMobile ? l10n.tapToPick : l10n.videoDropOrPick),
-                        onTap: onTap,
-                      )
-                    : _FilledFrameSlot(
-                        image: image,
-                        hovering: hovering,
-                        onClear: widget.onClear,
-                        onTap: onTap,
-                      ),
-              );
-            },
+                void onTap() {
+                  if (isMobile) {
+                    Provider.of<AppState>(context, listen: false).setWorkbenchTab(0);
+                  } else {
+                    _pickFrame();
+                  }
+                }
+
+                return AppDropConfirmRing(
+                  trigger: _confirmToken,
+                  child: SizedBox(
+                    height: slotHeight,
+                    child: image == null
+                        ? _DropSlot(
+                            state: state,
+                            icon: widget.emptyIcon,
+                            title: switch (state) {
+                              AppDropZoneState.hover => l10n.dropRelease,
+                              AppDropZoneState.reject => l10n.dropImagesOnly,
+                              _ => widget.emptyTitle,
+                            },
+                            hint: state == AppDropZoneState.rest || state == AppDropZoneState.armed
+                                ? (isMobile ? l10n.tapToPick : l10n.videoDropOrPick)
+                                : null,
+                            onTap: onTap,
+                          )
+                        : _FilledFrameSlot(
+                            image: image,
+                            state: state,
+                            onClear: widget.onClear,
+                            onTap: onTap,
+                          ),
+                  ),
+                );
+              },
+            ),
           ),
         ),
         const SizedBox(height: AppSpace.s4),
-        Text(
-          image?.name ?? l10n.videoFrameOptional,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: textTheme.labelSmall?.mono.copyWith(
-            fontWeight: FontWeight.w400,
-            color: image == null ? colorScheme.outline : colorScheme.onSurfaceVariant,
-          ),
+        AnimatedSize(
+          duration: AppMotion.durationOf(context, AppMotion.reveal),
+          curve: AppMotion.enter,
+          alignment: AlignmentDirectional.topStart,
+          child: _showNote
+              ? AppDropNote(widget.confirmMessage)
+              : Text(
+                  image?.name ?? l10n.videoFrameOptional,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelSmall?.mono.copyWith(
+                    fontWeight: FontWeight.w400,
+                    color: image == null ? colorScheme.outline : colorScheme.onSurfaceVariant,
+                  ),
+                ),
         ),
       ],
     );
@@ -1198,17 +1434,19 @@ class _FrameDropTargetState extends State<_FrameDropTarget> {
 }
 
 /// A frame slot holding its image: the picture at r10 and a round clear
-/// button on the image plate, top-right (20 / 22 / 24 by width).
+/// button on the image plate, top-right (20 / 22 / 24 by width). While a drag
+/// is in flight only the edge changes over the picture, with the words on the
+/// image plate.
 class _FilledFrameSlot extends StatelessWidget {
   const _FilledFrameSlot({
     required this.image,
-    required this.hovering,
+    required this.state,
     required this.onClear,
     required this.onTap,
   });
 
   final AppImage image;
-  final bool hovering;
+  final AppDropZoneState state;
   final VoidCallback onClear;
   final VoidCallback onTap;
 
@@ -1220,6 +1458,11 @@ class _FilledFrameSlot extends StatelessWidget {
     final double clearSize = Responsive.value<double>(context, mobile: 24, tablet: 22, desktop: 20);
     final double inset = isMobile ? AppSpace.s6 : AppSpace.s4;
     final radius = BorderRadius.circular(AppRadius.control);
+    final String? message = switch (state) {
+      AppDropZoneState.hover => l10n.dropRelease,
+      AppDropZoneState.reject => l10n.dropImagesOnly,
+      _ => null,
+    };
 
     return Material(
       color: colorScheme.surfaceContainerLow,
@@ -1231,14 +1474,26 @@ class _FilledFrameSlot extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Image(image: image.imageProvider, fit: BoxFit.cover),
-            // A replacement hovering over a filled slot: the same wash and a
-            // solid accent edge, so the picture stays readable under it.
-            if (hovering)
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colorScheme.accentTint,
-                  borderRadius: radius,
-                  border: Border.all(color: colorScheme.primary, width: 2),
+            // A replacement in flight: the ladder's edge alone — `ground:
+            // false`, no `--tint` over the picture.
+            if (state != AppDropZoneState.rest)
+              IgnorePointer(
+                child: AppDropZoneFrame(
+                  state: state,
+                  ground: false,
+                  child: message == null
+                      ? null
+                      : Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpace.s6),
+                            child: _PlateLabel(
+                              message,
+                              // What a release does to the picture under it,
+                              // where the slot has the room.
+                              hint: state == AppDropZoneState.hover ? l10n.dropReplacesFrame : null,
+                            ),
+                          ),
+                        ),
                 ),
               ),
             Positioned(
@@ -1253,10 +1508,10 @@ class _FilledFrameSlot extends StatelessWidget {
   }
 }
 
-/// The reference-image card (`A2 · 1a` / `1b`): caption and the "n / max"
-/// count, then 64px thumbnails (72 on a phone) followed by an add slot — or,
-/// with nothing added yet, one dashed drop zone. The whole card accepts a
-/// drop.
+/// The reference-image card (`A2 · 1a`; drop states `00d · 1c`): caption and
+/// the "n / max" count, then 72 thumbnails and a drop cell taking the rest of
+/// the last row — or, with nothing added yet, one dashed drop zone. The whole
+/// card accepts a drop; at the model's ceiling it refuses more and says why.
 class _ReferenceImagesSection extends StatefulWidget {
   const _ReferenceImagesSection({
     required this.images,
@@ -1282,16 +1537,90 @@ class _ReferenceImagesSection extends StatefulWidget {
 class _ReferenceImagesSectionState extends State<_ReferenceImagesSection> {
   bool _osDragging = false;
 
+  /// The pictures the last drop landed (added, or already there), and the
+  /// token that rings their thumbnails.
+  Set<String> _confirmedPaths = const {};
+  Object? _confirmToken;
+
+  /// The count the confirmation note reports; null while there is no note.
+  int? _noteCount;
+  Timer? _noteTimer;
+
+  @override
+  void dispose() {
+    _noteTimer?.cancel();
+    super.dispose();
+  }
+
   void _setOsDragging(bool value) {
     if (_osDragging != value) setState(() => _osDragging = value);
   }
+
+  /// At the selected model's ceiling (`00d` 已满).
+  bool get _isFull {
+    final max = widget.maxImages;
+    return max != null && widget.images.length >= max;
+  }
+
+  bool _takes(Object? payload) => _isDroppableImage(payload) && !_isFull;
+
+  /// Adds what fits under the ceiling, then confirms it (`00d` 确认): a ring
+  /// on each thumbnail that landed and a note with the new count.
+  void _acceptAll(List<AppImage> dropped) {
+    final max = widget.maxImages;
+    final present = {for (final image in widget.images) image.path};
+    final landed = <String>{};
+    var count = widget.images.length;
+    var added = 0;
+    for (final image in dropped) {
+      if (present.contains(image.path)) {
+        // Already there: nothing to add, but show where it is.
+        landed.add(image.path);
+        continue;
+      }
+      if (max != null && count >= max) break;
+      widget.onDrop(image);
+      present.add(image.path);
+      landed.add(image.path);
+      count++;
+      added++;
+    }
+    if (landed.isEmpty) return;
+
+    final int? noteCount = added > 0 ? count : null;
+    _noteTimer?.cancel();
+    setState(() {
+      _confirmedPaths = landed;
+      _confirmToken = null;
+      _noteCount = noteCount;
+    });
+    // A ring fires on a change of its trigger, and a thumbnail this drop
+    // mounts has nothing to change from: it gets the token a frame later.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _confirmToken = Object());
+    });
+    _noteTimer = Timer(_kDropNoteHold, () {
+      if (!mounted) return;
+      setState(() {
+        _confirmedPaths = const {};
+        _confirmToken = null;
+        _noteCount = null;
+      });
+    });
+    if (noteCount != null) {
+      _announceDrop(context, _addedMessage(AppLocalizations.of(context)!, noteCount, max));
+    }
+  }
+
+  /// 「已加入参考图 · 3 / 3」, or the bare count when the model sets no ceiling.
+  static String _addedMessage(AppLocalizations l10n, int count, int? max) =>
+      max == null ? l10n.dropAddedToReferencesUnlimited(count) : l10n.dropAddedToReferences(count, max);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    final double thumbSize = Responsive.isMobile(context) ? 72 : 64;
     final images = widget.images;
     final max = widget.maxImages;
 
@@ -1300,126 +1629,227 @@ class _ReferenceImagesSectionState extends State<_ReferenceImagesSection> {
       onDragExited: (_) => _setOsDragging(false),
       onDragDone: (details) {
         _setOsDragging(false);
-        for (final file in details.files) {
-          if (AppConstants.isImageFile(file.path)) {
-            widget.onDrop(AppImage(path: file.path, name: file.name));
-          }
-        }
+        _acceptAll([
+          for (final file in details.files)
+            if (AppConstants.isImageFile(file.path)) AppImage(path: file.path, name: file.name),
+        ]);
       },
-      child: DragTarget<AppImage>(
-        onAcceptWithDetails: (details) => widget.onDrop(details.data),
-        builder: (context, candidateData, rejectedData) {
-          final bool hovering = _osDragging || candidateData.isNotEmpty;
-
-          final String? count = max != null && max > 0
-              ? '${images.length} / $max'
-              : (images.isEmpty ? null : '${images.length}');
-
-          // The model's limits, said where the images are: none accepted, or
-          // more added than it will take.
-          String? notice;
-          if (images.isNotEmpty && max != null) {
-            if (max == 0) {
-              notice = l10n.referenceImagesNotSupported;
-            } else if (images.length > max) {
-              notice = l10n.referenceImagesLimited(max);
+      // `00d` 「可放」: an in-app drag this card would take, still elsewhere.
+      child: ValueListenableBuilder<Object?>(
+        valueListenable: AppDragSession.current,
+        builder: (context, payload, _) => DragTarget<AppImage>(
+          onWillAcceptWithDetails: (details) => _takes(details.data),
+          onAcceptWithDetails: (details) => _acceptAll([details.data]),
+          builder: (context, candidateData, rejectedData) {
+            final bool full = _isFull;
+            final AppDropZoneState state;
+            if (candidateData.isNotEmpty) {
+              state = AppDropZoneState.hover;
+            } else if (rejectedData.isNotEmpty) {
+              // A picture turned away can only have met the ceiling.
+              state = _isDroppableImage(rejectedData.first) ? AppDropZoneState.full : AppDropZoneState.reject;
+            } else if (_osDragging) {
+              // What the OS carries is unknown until the release; the ceiling
+              // is known now.
+              state = full ? AppDropZoneState.full : AppDropZoneState.hover;
+            } else if (_takes(payload)) {
+              state = AppDropZoneState.armed;
+            } else {
+              state = AppDropZoneState.rest;
             }
-          }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.referenceImages,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: widget.captionStyle,
-                    ),
-                  ),
-                  if (count != null)
-                    Text(
-                      count,
-                      style: theme.textTheme.labelSmall?.mono.copyWith(
-                        fontWeight: FontWeight.w400,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: _kCardInnerGap),
-              if (images.isEmpty)
-                SizedBox(
-                  height: _kReferenceZoneHeight,
-                  child: _DropSlot(
-                    hovering: hovering,
-                    icon: Icons.add_photo_alternate_outlined,
-                    hint: hovering
-                        ? l10n.videoDropRelease
-                        : (max != null && max > 0
-                            ? l10n.videoReferenceDropMax(max)
-                            : l10n.dropVideoReferenceHere),
-                  ),
-                )
-              else
-                Wrap(
-                  spacing: AppSpace.s6,
-                  runSpacing: AppSpace.s6,
+            final String zoneTitle = switch (state) {
+              AppDropZoneState.hover => l10n.dropRelease,
+              AppDropZoneState.reject => l10n.dropImagesOnly,
+              AppDropZoneState.full => max != null && max > 0
+                  ? l10n.dropReferenceLimit(max)
+                  : l10n.referenceImagesNotSupported,
+              AppDropZoneState.rest || AppDropZoneState.armed => max != null && max > 0
+                  ? l10n.videoReferenceDropMax(max)
+                  : l10n.dropVideoReferenceHere,
+            };
+            final IconData zoneIcon = images.isEmpty ? Icons.add_photo_alternate_outlined : Icons.add;
+
+            final String? count = max != null && max > 0
+                ? '${images.length} / $max'
+                : (images.isEmpty ? null : '${images.length}');
+
+            // The model's limits, said where the images are: none accepted, or
+            // more added than it will take.
+            String? notice;
+            if (images.isNotEmpty && max != null) {
+              if (max == 0) {
+                notice = l10n.referenceImagesNotSupported;
+              } else if (images.length > max) {
+                notice = l10n.referenceImagesLimited(max);
+              }
+            }
+
+            final int? noteCount = _noteCount;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
-                    for (final img in images)
-                      _ReferenceThumbnail(
-                        image: img,
-                        size: thumbSize,
-                        onRemove: () => widget.onRemove(img),
+                    Expanded(
+                      child: Text(
+                        l10n.referenceImages,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: widget.captionStyle,
                       ),
-                    if (max == null || images.length < max)
-                      SizedBox.square(
-                        dimension: thumbSize,
-                        child: _DropSlot(hovering: hovering, icon: Icons.add),
+                    ),
+                    if (count != null)
+                      Text(
+                        count,
+                        style: theme.textTheme.labelSmall?.mono.copyWith(
+                          fontWeight: FontWeight.w400,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                   ],
                 ),
-              if (notice != null) ...[
                 const SizedBox(height: _kCardInnerGap),
-                _WarningNotice(message: notice),
+                if (images.isEmpty)
+                  SizedBox(
+                    height: _kReferenceZoneHeight,
+                    child: _DropSlot(state: state, icon: zoneIcon, title: zoneTitle),
+                  )
+                else
+                  LayoutBuilder(
+                    builder: (context, box) {
+                      final double width = box.maxWidth;
+                      final int perRow = math.max(
+                        1,
+                        ((width + _kReferenceGap) / (_kReferenceCell + _kReferenceGap)).floor(),
+                      );
+                      // The drop cell takes what the last row leaves — at
+                      // least one cell, since a row never holds more than fit.
+                      final int inLastRow = images.length % perRow;
+                      final double zoneWidth =
+                          (width - inLastRow * (_kReferenceCell + _kReferenceGap)).floorToDouble();
+                      final Widget grid = Wrap(
+                        spacing: _kReferenceGap,
+                        runSpacing: _kReferenceGap,
+                        children: [
+                          for (final img in images)
+                            _ReferenceThumbnail(
+                              key: ValueKey(img.path),
+                              image: img,
+                              size: _kReferenceCell,
+                              confirmTrigger: _confirmedPaths.contains(img.path) ? _confirmToken : null,
+                              onRemove: () => widget.onRemove(img),
+                            ),
+                          // Under the ceiling the drop cell is always there;
+                          // at it there is none, in every state — a drag
+                          // passing over must never reflow the card.
+                          if (!full)
+                            SizedBox(
+                              width: zoneWidth,
+                              height: _kReferenceCell,
+                              child: _DropSlot(state: state, icon: zoneIcon, title: zoneTitle),
+                            ),
+                        ],
+                      );
+                      if (!full) return grid;
+
+                      // At the ceiling the verdict is laid over the grid at
+                      // the grid's own size: the ladder's edge just outside
+                      // the thumbnails, no ground over the pictures, and the
+                      // reason on the image plate.
+                      return Stack(
+                        fit: StackFit.passthrough,
+                        clipBehavior: Clip.none,
+                        children: [
+                          grid,
+                          if (state.edgeWidth > 1)
+                            Positioned.fill(
+                              left: -_kVerdictOutset,
+                              top: -_kVerdictOutset,
+                              right: -_kVerdictOutset,
+                              bottom: -_kVerdictOutset,
+                              child: IgnorePointer(
+                                child: AppDropZoneFrame(
+                                  state: state,
+                                  ground: false,
+                                  radius: AppRadius.control + _kVerdictOutset,
+                                  child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(AppSpace.s6),
+                                      child: _PlateLabel(zoneTitle),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                AnimatedSize(
+                  duration: AppMotion.durationOf(context, AppMotion.reveal),
+                  curve: AppMotion.enter,
+                  alignment: AlignmentDirectional.topStart,
+                  child: noteCount != null
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: _kCardInnerGap),
+                          child: AppDropNote(_addedMessage(l10n, noteCount, max)),
+                        )
+                      : const SizedBox(width: double.infinity),
+                ),
+                if (notice != null) ...[
+                  const SizedBox(height: _kCardInnerGap),
+                  _WarningNotice(message: notice),
+                ],
               ],
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
 }
 
+/// A reference picture with its remove button; [confirmTrigger] rings it
+/// after the drop that brought it (`00d` 确认).
 class _ReferenceThumbnail extends StatelessWidget {
   final AppImage image;
   final double size;
   final VoidCallback onRemove;
+  final Object? confirmTrigger;
 
-  const _ReferenceThumbnail({required this.image, required this.size, required this.onRemove});
+  const _ReferenceThumbnail({
+    super.key,
+    required this.image,
+    required this.size,
+    required this.onRemove,
+    this.confirmTrigger,
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return SizedBox.square(
       dimension: size,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.control),
-              child: Image(image: image.imageProvider, fit: BoxFit.cover),
+      child: AppDropConfirmRing(
+        trigger: confirmTrigger,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.control),
+                child: Image(image: image.imageProvider, fit: BoxFit.cover),
+              ),
             ),
-          ),
-          Positioned(
-            top: AppSpace.s4,
-            right: AppSpace.s4,
-            child: _PlateCloseButton(size: 20, tooltip: l10n.remove, onPressed: onRemove),
-          ),
-        ],
+            Positioned(
+              top: AppSpace.s4,
+              right: AppSpace.s4,
+              child: _PlateCloseButton(size: 20, tooltip: l10n.remove, onPressed: onRemove),
+            ),
+          ],
+        ),
       ),
     );
   }

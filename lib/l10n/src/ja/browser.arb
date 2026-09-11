@@ -497,14 +497,6 @@
     }
   },
   "conflictApplyAndContinue": "適用して続行",
-  "dragMoveHint": "{count} 件を移動 · Ctrl でコピー",
-  "@dragMoveHint": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "showInSystem": "システムで表示",
   "newSubfolder": "新しいサブフォルダー",
   "newFolderDefaultName": "新しいフォルダー",

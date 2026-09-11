@@ -511,14 +511,6 @@
     }
   },
   "conflictApplyAndContinue": "Apply and continue",
-  "dragMoveHint": "Move {count} · hold Ctrl to copy",
-  "@dragMoveHint": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "showInSystem": "Show in system",
   "newSubfolder": "New subfolder",
   "newFolderDefaultName": "New folder",

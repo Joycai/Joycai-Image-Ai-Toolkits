@@ -567,11 +567,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get conflictApplyAndContinue => '应用并继续';
 
   @override
-  String dragMoveHint(int count) {
-    return '移动 $count 项 · 按住 Ctrl 复制';
-  }
-
-  @override
   String get showInSystem => '在系统中显示';
 
   @override
@@ -994,6 +989,117 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get experimental => '实验性';
+
+  @override
+  String dropAtPosition(int position) {
+    return '放到第 $position 位';
+  }
+
+  @override
+  String get dropAtEnd => '放到最后';
+
+  @override
+  String reorderPositionOf(int position, int count) {
+    return '第 $position 位，共 $count 位';
+  }
+
+  @override
+  String get reorderOffFiltered => '列表已筛选，暂时不能拖动排序；用行尾菜单的「上移 / 下移」';
+
+  @override
+  String get dragKeepToScroll => '继续拖动以滚动';
+
+  @override
+  String get dropRelease => '松手放入';
+
+  @override
+  String get dropFirstFrame => '拖入首帧';
+
+  @override
+  String get dropLastFrame => '拖入尾帧';
+
+  @override
+  String get dropSetAsFirstFrame => '已放入首帧';
+
+  @override
+  String get dropSetAsLastFrame => '已放入尾帧';
+
+  @override
+  String dropAddedToReferences(int count, int max) {
+    return '已加入参考图 · $count / $max';
+  }
+
+  @override
+  String get dropImagesOnly => '只接受图片';
+
+  @override
+  String dropReferenceLimit(int count) {
+    return '参考图最多 $count 张';
+  }
+
+  @override
+  String get galleryDropSystemHint => '也可以从系统窗口拖文件进来';
+
+  @override
+  String dropMoveTo(String name) {
+    return '移动到 $name';
+  }
+
+  @override
+  String dropCopyTo(String name) {
+    return '复制到 $name';
+  }
+
+  @override
+  String dropCopyItemsTo(int count, String name) {
+    return '复制 $count 项到 $name';
+  }
+
+  @override
+  String dragMoveItems(int count) {
+    return '移动 $count 项';
+  }
+
+  @override
+  String dragCopyItems(int count) {
+    return '复制 $count 项';
+  }
+
+  @override
+  String dropMovedItems(int count) {
+    return '已移动 $count 项';
+  }
+
+  @override
+  String dropCopiedItems(int count) {
+    return '已复制 $count 项';
+  }
+
+  @override
+  String get dropRejectIntoItself => '不能移动到它自己的子文件夹里';
+
+  @override
+  String get dropRejectSameFolder => '已经在这个文件夹里';
+
+  @override
+  String get dropRejectRoot => '根目录不能接收文件';
+
+  @override
+  String get dropRejectReadOnly => '这个文件夹是只读的';
+
+  @override
+  String dropAddedToReferencesUnlimited(int count) {
+    return '已加入参考图 · $count';
+  }
+
+  @override
+  String get dropReplacesFrame => '替换当前帧';
+
+  @override
+  String get dropRejectNameTaken => '这里已有同名文件夹';
+
+  @override
+  String get browserDragFootnoteMac => '拖到文件夹上 = 移动 · 按住 ⌥ 改为复制';
 
   @override
   String get downloader => '下载器';
@@ -2308,9 +2414,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get channelReorderFootnote => '悬停显示把手 · 拖动重排 · 右键或 Alt+↑/↓ 同效';
-
-  @override
-  String get channelReorderLockedNote => '搜索或筛选中不能重排——列表只显示了一部分，落点是假的。清除后恢复。';
 
   @override
   String get noModelsConfiguredHint => '用「获取模型」自动发现，或手动添加一个。';
@@ -4487,9 +4590,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get galleryDropTitle => '将图片拖放到此处…';
 
   @override
-  String get galleryDropHint => '将加入临时工作区并切换到工作区视图';
-
-  @override
   String get galleryEmptyWorkspaceTitle => '拖放文件到此处';
 
   @override
@@ -4543,9 +4643,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get videoDropOrPick => '拖入或点击选择';
-
-  @override
-  String get videoDropRelease => '松手放入';
 
   @override
   String videoReferenceDropMax(int count) {
@@ -5145,11 +5242,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get conflictApplyAndContinue => '套用並繼續';
 
   @override
-  String dragMoveHint(int count) {
-    return '移動 $count 項 · 按住 Ctrl 複製';
-  }
-
-  @override
   String get showInSystem => '在系統中顯示';
 
   @override
@@ -5569,6 +5661,117 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get experimental => '實驗性';
+
+  @override
+  String dropAtPosition(int position) {
+    return '放到第 $position 位';
+  }
+
+  @override
+  String get dropAtEnd => '放到最後';
+
+  @override
+  String reorderPositionOf(int position, int count) {
+    return '第 $position 位，共 $count 位';
+  }
+
+  @override
+  String get reorderOffFiltered => '列表已篩選，暫時不能拖動排序；用列尾選單的「上移 / 下移」';
+
+  @override
+  String get dragKeepToScroll => '繼續拖動以捲動';
+
+  @override
+  String get dropRelease => '放開以放入';
+
+  @override
+  String get dropFirstFrame => '拖入首幀';
+
+  @override
+  String get dropLastFrame => '拖入尾幀';
+
+  @override
+  String get dropSetAsFirstFrame => '已放入首幀';
+
+  @override
+  String get dropSetAsLastFrame => '已放入尾幀';
+
+  @override
+  String dropAddedToReferences(int count, int max) {
+    return '已加入參考圖 · $count / $max';
+  }
+
+  @override
+  String get dropImagesOnly => '只接受圖片';
+
+  @override
+  String dropReferenceLimit(int count) {
+    return '參考圖最多 $count 張';
+  }
+
+  @override
+  String get galleryDropSystemHint => '也可以從系統視窗拖檔案進來';
+
+  @override
+  String dropMoveTo(String name) {
+    return '移動到 $name';
+  }
+
+  @override
+  String dropCopyTo(String name) {
+    return '複製到 $name';
+  }
+
+  @override
+  String dropCopyItemsTo(int count, String name) {
+    return '複製 $count 項到 $name';
+  }
+
+  @override
+  String dragMoveItems(int count) {
+    return '移動 $count 項';
+  }
+
+  @override
+  String dragCopyItems(int count) {
+    return '複製 $count 項';
+  }
+
+  @override
+  String dropMovedItems(int count) {
+    return '已移動 $count 項';
+  }
+
+  @override
+  String dropCopiedItems(int count) {
+    return '已複製 $count 項';
+  }
+
+  @override
+  String get dropRejectIntoItself => '不能移動到它自己的子資料夾裡';
+
+  @override
+  String get dropRejectSameFolder => '已經在這個資料夾裡';
+
+  @override
+  String get dropRejectRoot => '根目錄不能接收檔案';
+
+  @override
+  String get dropRejectReadOnly => '這個資料夾是唯讀的';
+
+  @override
+  String dropAddedToReferencesUnlimited(int count) {
+    return '已加入參考圖 · $count';
+  }
+
+  @override
+  String get dropReplacesFrame => '取代目前的幀';
+
+  @override
+  String get dropRejectNameTaken => '這裡已有同名資料夾';
+
+  @override
+  String get browserDragFootnoteMac => '拖到資料夾上 = 移動 · 按住 ⌥ 改為複製';
 
   @override
   String get downloader => '下載器';
@@ -6883,9 +7086,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get channelReorderFootnote => '懸停顯示把手 · 拖動重排 · 右鍵或 Alt+↑/↓ 同效';
-
-  @override
-  String get channelReorderLockedNote => '搜尋或篩選中不能重排——清單只顯示了一部分，落點是假的。清除後恢復。';
 
   @override
   String get noModelsConfiguredHint => '用「取得模型」自動探索，或手動新增一個。';
@@ -9062,9 +9262,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get galleryDropTitle => '將圖片拖放到此處…';
 
   @override
-  String get galleryDropHint => '將加入臨時工作區並切換到工作區檢視';
-
-  @override
   String get galleryEmptyWorkspaceTitle => '拖放檔案到此處';
 
   @override
@@ -9118,9 +9315,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get videoDropOrPick => '拖入或點擊選擇';
-
-  @override
-  String get videoDropRelease => '放開以放入';
 
   @override
   String videoReferenceDropMax(int count) {

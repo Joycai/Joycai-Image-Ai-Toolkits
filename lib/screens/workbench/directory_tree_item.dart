@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
+import '../../core/app_semantic_colors.dart';
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
@@ -21,7 +23,10 @@ import '../../state/file_browser_state.dart';
 import '../../state/file_staging_state.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/app_snackbar.dart';
-import '../../widgets/glass/app_glass.dart';
+import '../../widgets/drag/app_drag_follower.dart';
+import '../../widgets/drag/app_drag_session.dart';
+import '../../widgets/drag/app_drop_zone.dart';
+import '../../widgets/glass/glass_controls.dart' show measureGlassText;
 import '../browser/folder_move_flow.dart';
 import '../browser/staging_paste_flow.dart';
 import '../browser/widgets/folder_context_menu.dart';
@@ -45,6 +50,105 @@ class FolderDragPayload {
 
   const FolderDragPayload(this.path);
 }
+
+/// Why a folder row refuses what is dragged over it (`00d · 1d` 拒绝).
+enum FolderDropRejection {
+  /// A folder over itself, or over one of its own subfolders.
+  intoItself,
+
+  /// Everything dragged already sits in this folder — a release would do
+  /// nothing.
+  sameFolder,
+
+  /// A registered root, which stays where it is.
+  root,
+
+  /// The folder grants no one write permission.
+  readOnly,
+
+  /// The folder already holds an entry with the dragged folder's name.
+  nameTaken,
+}
+
+extension FolderDropRejectionLabel on FolderDropRejection {
+  /// The reason, as the row's chip and the follower say it.
+  String label(AppLocalizations l10n) => switch (this) {
+        FolderDropRejection.intoItself => l10n.dropRejectIntoItself,
+        FolderDropRejection.sameFolder => l10n.dropRejectSameFolder,
+        FolderDropRejection.root => l10n.dropRejectRoot,
+        FolderDropRejection.readOnly => l10n.dropRejectReadOnly,
+        FolderDropRejection.nameTaken => l10n.dropRejectNameTaken,
+      };
+}
+
+/// The refusal of the folder row under the pointer, told to the drag follower
+/// (`00d · 1e` 拒绝态).
+///
+/// A [DragTarget] learns the payload but has no way to reach the feedback
+/// widget, so the row under the pointer posts its verdict here and the
+/// follower listens. Only that row writes it, and only it clears it.
+class FolderDropFeedback {
+  FolderDropFeedback._();
+
+  static final ValueNotifier<FolderDropRejection?> _rejection = ValueNotifier(null);
+  static Object? _owner;
+
+  /// The reason the row under the pointer gives, or null when there is none —
+  /// no row, or one that takes the drag.
+  static ValueListenable<FolderDropRejection?> get rejection => _rejection;
+
+  static void _post(Object owner, FolderDropRejection? why) {
+    _owner = owner;
+    _rejection.value = why;
+  }
+
+  static void _withdraw(Object owner) {
+    if (!identical(_owner, owner)) return;
+    _owner = null;
+    _rejection.value = null;
+  }
+}
+
+/// A drag follower for payloads the file browser's folder rows take: [builder]
+/// draws the move or copy chip, following the copy key live; over a row that
+/// refuses the payload the follower becomes that refusal instead.
+class FolderDropFollower extends StatelessWidget {
+  const FolderDropFollower({super.key, required this.builder});
+
+  final Widget Function(BuildContext context, bool copying) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return ValueListenableBuilder<FolderDropRejection?>(
+      valueListenable: FolderDropFeedback.rejection,
+      builder: (context, why, _) {
+        if (why != null) {
+          return AppDragFollower(icon: Icons.block, label: why.label(l10n), tone: AppDragTone.reject);
+        }
+        return ValueListenableBuilder<bool>(
+          valueListenable: AppCopyModifier.instance,
+          builder: (context, copying, _) => builder(context, copying),
+        );
+      },
+    );
+  }
+}
+
+/// What a folder row shows while something is dragged over it (`00d · 1d`).
+enum FolderDropTone {
+  /// A release moves it here: `--tint` and the accent ring.
+  move,
+
+  /// A release copies it here: the success container and ring.
+  copy,
+
+  /// This row will not take it: the error container and ring.
+  reject,
+}
+
+/// A row's drop state and the wording at its end.
+typedef _RowDrop = ({FolderDropTone tone, String note});
 
 /// Which in-row edit a tree row is running.
 enum _RowEdit { creating, renaming }
@@ -90,9 +194,8 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
 
   _RowEdit? _edit;
 
-  /// Follows Ctrl/Meta while this row is being dragged, so the chip can say
-  /// "copy" the moment the key goes down rather than at drag start.
-  final ValueNotifier<bool> _copyModifier = ValueNotifier(false);
+  /// This folder is being dragged.
+  bool _dragging = false;
 
   /// Bumped when the browser asks this row to pulse; 0 means never.
   int _pulse = 0;
@@ -147,8 +250,6 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   @override
   void dispose() {
     _focusNode.dispose();
-    _copyModifier.dispose();
-    HardwareKeyboard.instance.removeHandler(_trackCopyModifier);
     super.dispose();
   }
 
@@ -366,25 +467,20 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
 
   // --------------------------------------------------------------- 13e drag
 
-  void _syncCopyModifier() {
-    final hw = HardwareKeyboard.instance;
-    _copyModifier.value = hw.isControlPressed || hw.isMetaPressed;
-  }
-
-  /// Observes only — never claims the key, so Ctrl keeps doing whatever else
-  /// it does while the drag is live.
-  bool _trackCopyModifier(KeyEvent event) {
-    _syncCopyModifier();
-    return false;
-  }
-
+  /// The copy key is followed by [AppCopyModifier], which the follower and
+  /// the row under the pointer listen to; this row only reports that a drag
+  /// is in flight, so the tree can show it will take it.
   void _onDragStarted() {
-    _syncCopyModifier();
-    HardwareKeyboard.instance.addHandler(_trackCopyModifier);
+    setState(() => _dragging = true);
+    AppDragSession.begin(FolderDragPayload(widget.path));
   }
 
+  /// Wired to every end callback: `onDragEnd` is skipped once this row has
+  /// been unmounted — a drop that moved the folder away — and the session
+  /// must end regardless.
   void _onDragEnded() {
-    HardwareKeyboard.instance.removeHandler(_trackCopyModifier);
+    if (mounted && _dragging) setState(() => _dragging = false);
+    AppDragSession.end();
   }
 
   @override
@@ -481,19 +577,25 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       }
     }
 
-    // [dropHovered]: a drop is about to land here, so the folder shows open
-    // (`13e`) — the same glyph it would have once the drop goes in.
-    Widget row(bool dropHovered) => FolderTreeRow(
+    // [drop]: something is dragged over this row (`00d · 1d`). A folder about
+    // to take it shows open — the glyph it will have once the drop goes in —
+    // and one refusing it shows the block glyph.
+    Widget row(_RowDrop? drop) => FolderTreeRow(
           depth: widget.depth,
           disclosure: disclosure,
           onToggle: () => _handleExpansionChanged(!_isExpanded),
           marker: marker,
-          icon: dropHovered ? Icons.folder_open_outlined : Icons.folder_outlined,
+          icon: switch (drop?.tone) {
+            null => Icons.folder_outlined,
+            FolderDropTone.reject => Icons.block,
+            FolderDropTone.move || FolderDropTone.copy => Icons.folder_open_outlined,
+          },
           iconColor: isUnreachable ? colorScheme.error.withValues(alpha: AppAlpha.disabled) : null,
           label: folderName,
           labelColor: isUnreachable ? colorScheme.error : null,
           selected: highlight,
-          dropHovered: dropHovered,
+          dropTone: drop?.tone,
+          dropNote: drop?.note,
           // The workbench has no context menu, so this is its only way to
           // take a folder off the list.
           hoverAction: _isRegisteredRoot && widget.onRemove != null && _edit == null
@@ -523,21 +625,21 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     final rowWidget = Padding(
       padding: EdgeInsets.symmetric(horizontal: metrics.margin),
       // `12d`'s second way to name a destination: drop the selection on a
-      // folder. Default is move, Ctrl copies — the convention every file
-      // manager already trained the user on. Browser only; the workbench
-      // shares this tree and has nothing to paste. `13e` adds folders to
-      // what can be dropped here, under the same rule.
+      // folder. Default is move; the copy key (Ctrl, ⌥ on macOS) copies — the
+      // convention every file manager already trained the user on. Browser
+      // only; the workbench shares this tree and has nothing to paste. `13e`
+      // adds folders to what can be dropped here, under the same rule.
       child: _MaybeDropTarget(
         enabled: widget.useFileBrowserState && _edit == null,
         path: widget.path,
         onHoverExpand: () {
           if (!_isExpanded) _handleExpansionChanged(true);
         },
-        builder: (context, hovered) {
+        builder: (context, drop) {
           Widget child = Focus(
             focusNode: _focusNode,
             onKeyEvent: _onKey,
-            child: row(hovered),
+            child: row(drop),
           );
           if (_pulse > 0) child = _Pulsed(key: ValueKey(_pulse), child: child);
           return child;
@@ -595,13 +697,17 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       data: FolderDragPayload(widget.path),
       maxSimultaneousDrags: _edit == null ? 1 : 0,
       dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: _FolderDragChip(name: folderName, copying: _copyModifier),
-      // The row and its subtree fade together: what is being picked up is
-      // the whole branch, and the tree must not reflow under the pointer.
-      childWhenDragging: Opacity(opacity: 0.45, child: column),
+      feedback: _FolderDragChip(name: folderName),
       onDragStarted: _onDragStarted,
       onDragEnd: (_) => _onDragEnded(),
-      child: column,
+      onDragCompleted: _onDragEnded,
+      onDraggableCanceled: (_, _) => _onDragEnded(),
+      // `00d`: a drag out of its place leaves the source at half strength.
+      // The row and its subtree fade together — what is picked up is the whole
+      // branch, and the tree must not reflow under the pointer. An Opacity in
+      // place rather than `childWhenDragging`, which would remount the subtree
+      // and close every open subfolder the moment the drag began.
+      child: Opacity(opacity: _dragging ? 0.5 : 1, child: column),
     );
   }
 }
@@ -766,7 +872,8 @@ class FolderTreeRow extends StatefulWidget {
     this.hoverAction,
     this.editor,
     this.selected = false,
-    this.dropHovered = false,
+    this.dropTone,
+    this.dropNote,
     this.onTap,
     this.onSecondaryTapDown,
   });
@@ -783,10 +890,12 @@ class FolderTreeRow extends StatefulWidget {
   /// Drawn between the chevron and the icon — the tree's checkbox.
   final Widget? marker;
 
-  /// Overrides the icon's colour, which otherwise follows [selected].
+  /// Overrides the icon's colour, which otherwise follows [selected]. A
+  /// [dropTone] outranks it.
   final Color? iconColor;
 
-  /// Overrides the label's colour, which otherwise follows [selected].
+  /// Overrides the label's colour, which otherwise follows [selected]. A
+  /// [dropTone] outranks it.
   final Color? labelColor;
 
   final String? count;
@@ -799,8 +908,14 @@ class FolderTreeRow extends StatefulWidget {
 
   final bool selected;
 
-  /// A drop is about to land here.
-  final bool dropHovered;
+  /// Something is dragged over this row (`00d · 1d`): what a release does,
+  /// or that it is refused. Null at rest.
+  final FolderDropTone? dropTone;
+
+  /// The destination wording or the reason for a refusal, set at the row's
+  /// end in place of the count and action — while the row has room for it
+  /// beside the name.
+  final String? dropNote;
 
   final VoidCallback? onTap;
   final GestureTapDownCallback? onSecondaryTapDown;
@@ -830,14 +945,27 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
     final double band = editing ? AppSize.control : metrics.height;
     final double gap = widget.disclosure == null ? metrics.fixedGap : metrics.gap;
 
-    final Color ground = widget.dropHovered || selected
-        ? colorScheme.accentTint
-        : (_hovered && !editing
-            ? colorScheme.onSurface.withValues(alpha: 0.06)
-            : colorScheme.onSurface.withValues(alpha: 0));
-    final Color iconColor = widget.iconColor ??
-        (selected || widget.dropHovered ? colorScheme.primary : colorScheme.onSurfaceVariant);
-    final Color labelColor = widget.labelColor ?? (selected ? colorScheme.onAccentTint : colorScheme.onSurface);
+    // `00d · 1d`: the ground, ring and ink of a row something is dragged over.
+    // Move is `--tint` under the accent ring and the deep ink; copy swaps the
+    // set for the success colours, a refusal for the error colours.
+    final semantic = context.semantic;
+    final (Color? dropGround, Color? dropEdge, Color? dropInk) = switch (widget.dropTone) {
+      null => (null, null, null),
+      FolderDropTone.move => (colorScheme.accentTint, colorScheme.primary, colorScheme.onAccentTint),
+      FolderDropTone.copy => (semantic.successContainer, semantic.success, semantic.onSuccessContainer),
+      FolderDropTone.reject => (colorScheme.errorContainer, colorScheme.error, colorScheme.onErrorContainer),
+    };
+
+    final Color ground = dropGround ??
+        (selected
+            ? colorScheme.accentTint
+            : (_hovered && !editing
+                ? colorScheme.onSurface.withValues(alpha: 0.06)
+                : colorScheme.onSurface.withValues(alpha: 0)));
+    final Color iconColor =
+        dropEdge ?? widget.iconColor ?? (selected ? colorScheme.primary : colorScheme.onSurfaceVariant);
+    final Color labelColor =
+        dropInk ?? widget.labelColor ?? (selected ? colorScheme.onAccentTint : colorScheme.onSurface);
     final Color countColor = selected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant;
 
     final bool showAction =
@@ -856,6 +984,16 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
       SizedBox(width: gap),
       if (editing)
         Expanded(child: widget.editor!)
+      else if (widget.dropNote != null && dropInk != null)
+        Expanded(
+          child: _DropNoteSlot(
+            label: widget.label,
+            labelStyle: metrics.labelStyle(theme.textTheme).copyWith(color: labelColor),
+            note: widget.dropNote!,
+            ink: dropInk,
+            gap: gap,
+          ),
+        )
       else ...[
         Expanded(
           child: Text(
@@ -906,12 +1044,15 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
         color: ground,
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
-      // Foreground, so the edge does not push the content over by its width.
+      // Foreground, so the edge does not push the content over by its width;
+      // drawn inside the ground (`outline-offset: -2`), so it frames the row
+      // and not the gutter. Always 2px, only the colour changes, so the M1
+      // transition fades the ring rather than growing it.
       foregroundDecoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
-          color: widget.dropHovered ? colorScheme.primary : colorScheme.primary.withValues(alpha: 0),
-          width: 1.5,
+          color: dropEdge ?? colorScheme.primary.withValues(alpha: 0),
+          width: 2,
         ),
       ),
       child: Row(
@@ -1071,73 +1212,175 @@ class _Pulsed extends StatelessWidget {
   }
 }
 
-/// What follows the pointer while a folder is dragged — `13e`. Same ink chip
-/// as the file drag, with a small amber folder so the two read differently.
+/// What follows the pointer while a folder is dragged (`00d · 1e`): the
+/// opaque follower chip with the folder glyph and its name, saying move or
+/// copy as the copy key goes down and up — or, over a row that refuses the
+/// folder, that row's reason.
 class _FolderDragChip extends StatelessWidget {
   final String name;
-  final ValueListenable<bool> copying;
 
-  const _FolderDragChip({required this.name, required this.copying});
+  const _FolderDragChip({required this.name});
 
-  /// `B1a · 1b`: the same small G2 glass piece the file drag uses, 32 tall at
-  /// r10, with the move or copy wording following the Ctrl key.
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(left: 12, top: 12),
-      child: Material(
-        type: MaterialType.transparency,
-        child: SizedBox(
-          height: AppSize.control,
-          child: AppGlass(
-            grade: GlassGrade.float,
-            borderRadius: BorderRadius.circular(AppRadius.control),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.drive_file_move_outline, size: AppSize.iconMd, color: scheme.primary),
-                const SizedBox(width: AppSpace.s6),
-                ValueListenableBuilder<bool>(
-                  valueListenable: copying,
-                  builder: (context, copy, _) => Text(
-                    copy ? l10n.dragCopyFolderHint(name) : l10n.dragMoveFolderHint(name),
-                    maxLines: 1,
-                    style: Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    return FolderDropFollower(
+      builder: (context, copying) => AppDragFollower(
+        icon: Icons.folder_outlined,
+        label: copying ? l10n.dragCopyFolderHint(name) : l10n.dragMoveFolderHint(name),
+        tone: copying ? AppDragTone.copy : AppDragTone.move,
       ),
     );
   }
 }
 
-/// A folder row that accepts a dragged selection or a dragged folder, when
-/// the browser owns this tree.
+/// A folder row's name with the drop wording at its end (`00d · 1d`): 「移动到
+/// X」, 「复制 12 项到 X」, or the reason for a refusal, on a small panel chip.
+///
+/// The chip takes the room the name does not need, down to half the slot;
+/// past that the name matters more, and the follower already says what a
+/// release does. Measured, so the rule holds in every language. Either way
+/// the wording is announced.
+class _DropNoteSlot extends StatelessWidget {
+  const _DropNoteSlot({
+    required this.label,
+    required this.labelStyle,
+    required this.note,
+    required this.ink,
+    required this.gap,
+  });
+
+  final String label;
+  final TextStyle labelStyle;
+  final String note;
+  final Color ink;
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final noteStyle = theme.textTheme.labelSmall!.copyWith(
+      color: ink,
+      fontWeight: FontWeight.w500,
+      height: AppType.tightHeight,
+    );
+    final name = Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: labelStyle);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double chipWidth = (measureGlassText(context, note, noteStyle) + AppSpace.s6 * 2).ceilToDouble();
+        final double nameWidth = measureGlassText(context, label, labelStyle);
+        final double room = constraints.maxWidth - chipWidth - gap;
+        final bool fits = room >= math.min(nameWidth, constraints.maxWidth / 2);
+
+        if (!fits) {
+          return Row(
+            children: [
+              Expanded(child: name),
+              Semantics(liveRegion: true, label: note),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(child: name),
+            SizedBox(width: gap),
+            Semantics(
+              liveRegion: true,
+              child: Container(
+                height: 20,
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.s6),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
+                ),
+                child: Text(note, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: noteStyle),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Builds with the copy key's state, following [AppCopyModifier] only while
+/// [active] — a tree of rows is not listening to the keyboard for the whole of
+/// its life, only the one row a drag is over.
+///
+/// A widget of its own rather than a [ValueListenableBuilder] swapped in and
+/// out, so the row under it keeps its element while hover comes and goes.
+class _CopyModifierListener extends StatefulWidget {
+  const _CopyModifierListener({required this.active, required this.builder});
+
+  final bool active;
+  final Widget Function(BuildContext context, bool copying) builder;
+
+  @override
+  State<_CopyModifierListener> createState() => _CopyModifierListenerState();
+}
+
+class _CopyModifierListenerState extends State<_CopyModifierListener> {
+  bool _listening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(_CopyModifierListener oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _sync();
+  }
+
+  @override
+  void dispose() {
+    if (_listening) AppCopyModifier.instance.removeListener(_changed);
+    super.dispose();
+  }
+
+  void _sync() {
+    if (widget.active == _listening) return;
+    _listening = widget.active;
+    if (_listening) {
+      AppCopyModifier.instance.addListener(_changed);
+    } else {
+      AppCopyModifier.instance.removeListener(_changed);
+    }
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context, _listening && AppCopyModifier.instance.value);
+}
+
+/// A folder row that takes a dragged selection or a dragged folder, when the
+/// browser owns this tree — `00d · 1d` 投放到对象.
 ///
 /// Split out so the tree item itself stays one widget whichever screen it is
 /// on: the workbench's copy builds the row through the same builder with the
 /// target simply absent.
 ///
-/// A folder that may not land here — itself, one of its ancestors, its own
-/// parent — is refused at [DragTarget.onWillAcceptWithDetails], so the row
-/// never lights up. Not lighting up *is* the refusal; there is no toast.
+/// What this folder will not take — a folder over itself or one of its own
+/// subfolders, a payload already in this folder — is refused at
+/// [DragTarget.onWillAcceptWithDetails], and the row says why: the error ring
+/// and the reason at its end, with the follower carrying the same reason.
+/// Never lit as a place to drop, never a haptic, never a toast.
 class _MaybeDropTarget extends StatefulWidget {
   final bool enabled;
   final String path;
 
-  /// Called after the pointer has hovered with an acceptable payload for a
-  /// moment, so a closed folder opens to receive a deeper drop.
+  /// Called after the pointer has rested on the row with a payload it takes,
+  /// so a closed folder opens to receive a deeper drop.
   final VoidCallback onHoverExpand;
 
-  final Widget Function(BuildContext context, bool hovered) builder;
+  final Widget Function(BuildContext context, _RowDrop? drop) builder;
 
   const _MaybeDropTarget({
     required this.enabled,
@@ -1151,94 +1394,171 @@ class _MaybeDropTarget extends StatefulWidget {
 }
 
 class _MaybeDropTargetState extends State<_MaybeDropTarget> {
+  /// `00d`: a closed folder opens once an accepted drag has rested on it this
+  /// long. Opening changes the view, not the target.
+  static const Duration _expandDelay = Duration(milliseconds: 600);
+
   Timer? _expandTimer;
+
+  /// The verdict on the payload over the row, reached once as it enters:
+  /// deciding touches the disk, and [DragTarget.onMove] fires per pointer
+  /// event.
+  bool _hoverAccepted = false;
+  FolderDropRejection? _hoverRejection;
+
+  /// Replaced on every drop this row takes, to flash the confirmation ring.
+  Object? _dropped;
 
   @override
   void dispose() {
     _expandTimer?.cancel();
+    // A row torn down mid-hover is never told the pointer left. Withdrawn
+    // after the frame: the follower cannot be asked to rebuild while this
+    // tree is being taken apart.
+    final Object owner = this;
+    WidgetsBinding.instance.addPostFrameCallback((_) => FolderDropFeedback._withdraw(owner));
     super.dispose();
   }
 
-  static bool get _copyKeyDown =>
-      HardwareKeyboard.instance.isControlPressed || HardwareKeyboard.instance.isMetaPressed;
-
-  bool _accepts(Object? data) {
-    if (data is List<BrowserFile>) return data.isNotEmpty;
-    if (data is FolderDragPayload) {
+  /// Why this folder refuses [data], or null when a release here lands.
+  ///
+  /// A move and a copy are judged alike: a copy into the folder the payload
+  /// already sits in collides with itself, which is "already here" too.
+  FolderDropRejection? _rejection(Object data) {
+    if (data is List<BrowserFile>) {
+      // Only when all of it is here. A mixed selection still has somewhere
+      // to go, and the transfer plan skips the files already in place.
+      if (data.every((file) => p.equals(p.dirname(file.path), widget.path))) {
+        return FolderDropRejection.sameFolder;
+      }
+    } else if (data is FolderDragPayload) {
       final roots = Provider.of<FileBrowserState>(context, listen: false).sourceDirectories.toSet();
-      return FolderOperationsService.canTransfer(
-            data.path,
-            widget.path,
-            roots: roots,
-            mode: _copyKeyDown ? FolderTransferMode.copy : FolderTransferMode.move,
-          ) ==
-          null;
+      final refused = FolderOperationsService.canTransfer(
+        data.path,
+        widget.path,
+        roots: roots,
+        mode: AppCopyModifier.isDown ? FolderTransferMode.copy : FolderTransferMode.move,
+      );
+      if (refused != null) {
+        return switch (refused) {
+          FolderMoveRejection.isRoot => FolderDropRejection.root,
+          FolderMoveRejection.intoSelf || FolderMoveRejection.intoDescendant => FolderDropRejection.intoItself,
+          FolderMoveRejection.sameParent => FolderDropRejection.sameFolder,
+          FolderMoveRejection.targetExists => p.equals(p.dirname(data.path), widget.path)
+              ? FolderDropRejection.sameFolder
+              : FolderDropRejection.nameTaken,
+        };
+      }
     }
-    return false;
+    return _isReadOnly(widget.path) ? FolderDropRejection.readOnly : null;
+  }
+
+  /// A folder that grants no one write permission. Only the POSIX mode bits
+  /// are read: Windows keeps a folder's read-only attribute for the shell and
+  /// ignores it for writes, and ownership, ACLs and sandboxes are left to the
+  /// transfer, which reports what it could not do.
+  static bool _isReadOnly(String path) {
+    if (Platform.isWindows) return false;
+    final stat = FileStat.statSync(path);
+    // 0x92 is 0o222: the write bit for owner, group and others.
+    return stat.type == FileSystemEntityType.directory && (stat.mode & 0x92) == 0;
+  }
+
+  bool _willAccept(Object data) {
+    if (data is! List<BrowserFile> && data is! FolderDragPayload) {
+      _hoverAccepted = false;
+      _hoverRejection = null;
+      return false;
+    }
+    final why = _rejection(data);
+    _hoverAccepted = why == null;
+    _hoverRejection = why;
+    FolderDropFeedback._post(this, why);
+    return why == null;
   }
 
   void _armExpand() {
-    _expandTimer ??= Timer(const Duration(milliseconds: 700), () {
+    _expandTimer ??= Timer(_expandDelay, () {
       _expandTimer = null;
       if (mounted) widget.onHoverExpand();
     });
   }
 
-  void _disarm() {
+  void _endHover() {
     _expandTimer?.cancel();
     _expandTimer = null;
+    _hoverAccepted = false;
+    _hoverRejection = null;
+    FolderDropFeedback._withdraw(this);
+  }
+
+  void _drop(Object data) {
+    _endHover();
+    // Read at drop time, not at drag start: the user can reach for the copy
+    // key (Ctrl, ⌥ on macOS) after picking the files up, which is when they
+    // decide it is a copy.
+    final copying = AppCopyModifier.isDown;
+    setState(() => _dropped = Object());
+    if (data is List<BrowserFile>) {
+      runStagingPaste(
+        context,
+        mode: copying ? FileTransferMode.copy : FileTransferMode.move,
+        destination: widget.path,
+        files: data,
+      );
+    } else if (data is FolderDragPayload) {
+      runFolderTransfer(
+        context,
+        source: data.path,
+        destination: widget.path,
+        mode: copying ? FolderTransferMode.copy : FolderTransferMode.move,
+      );
+    }
+  }
+
+  /// What a release of an accepted [data] does, in the row's words.
+  String _note(AppLocalizations l10n, Object? data, bool copying) {
+    final name = p.basename(widget.path);
+    if (!copying) return l10n.dropMoveTo(name);
+    return data is List<BrowserFile> ? l10n.dropCopyItemsTo(data.length, name) : l10n.dropCopyTo(name);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.enabled) return widget.builder(context, false);
+    if (!widget.enabled) return widget.builder(context, null);
+    final l10n = AppLocalizations.of(context)!;
 
     return DragTarget<Object>(
-      onWillAcceptWithDetails: (details) => _accepts(details.data),
-      onMove: (details) {
-        if (_accepts(details.data)) _armExpand();
+      onWillAcceptWithDetails: (details) => _willAccept(details.data),
+      onMove: (_) {
+        if (_hoverAccepted) _armExpand();
       },
-      onLeave: (_) => _disarm(),
-      onAcceptWithDetails: (details) {
-        _disarm();
-        // Read at drop time, not at drag start: the user can reach for Ctrl
-        // after picking the files up, which is when they decide it is a copy.
-        final copying = _copyKeyDown;
-        final data = details.data;
-        if (data is List<BrowserFile>) {
-          runStagingPaste(
-            context,
-            mode: copying ? FileTransferMode.copy : FileTransferMode.move,
-            destination: widget.path,
-            files: data,
-          );
-        } else if (data is FolderDragPayload) {
-          runFolderTransfer(
-            context,
-            source: data.path,
-            destination: widget.path,
-            mode: copying ? FolderTransferMode.copy : FolderTransferMode.move,
-          );
-        }
+      onLeave: (_) => _endHover(),
+      onAcceptWithDetails: (details) => _drop(details.data),
+      builder: (context, candidate, rejected) {
+        final bool accepted = candidate.isNotEmpty;
+        // A payload from elsewhere in the app lands in `rejected` too; only
+        // one this row judged has a reason to show.
+        final FolderDropRejection? why = rejected.isNotEmpty ? _hoverRejection : null;
+        return AppDropConfirmRing(
+          trigger: _dropped,
+          radius: AppRadius.sm,
+          child: _CopyModifierListener(
+            active: accepted,
+            builder: (context, copying) {
+              final _RowDrop? drop = why != null
+                  ? (tone: FolderDropTone.reject, note: why.label(l10n))
+                  : accepted
+                      ? (
+                          tone: copying ? FolderDropTone.copy : FolderDropTone.move,
+                          note: _note(l10n, candidate.first, copying),
+                        )
+                      : null;
+              return widget.builder(context, drop);
+            },
+          ),
+        );
       },
-      builder: (context, candidate, rejected) => Stack(
-        children: [
-          widget.builder(context, candidate.isNotEmpty),
-          if (candidate.isNotEmpty)
-            // `B1a · 1b`: the target folder takes a solid 2px accent ring over
-            // its tint ground, at the row's own r6.
-            Positioned.fill(
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }

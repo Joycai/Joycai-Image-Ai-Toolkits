@@ -554,7 +554,6 @@
   "moveUp": "Move Up",
   "moveDown": "Move Down",
   "channelReorderFootnote": "Hover for the handle · drag to reorder · right-click or Alt+↑/↓ does the same",
-  "channelReorderLockedNote": "Reordering is off while searching: only part of the list is shown, so a drop position would be wrong. Clear the search to restore it.",
   "noModelsConfiguredHint": "Use Fetch Models to discover them, or add one by hand.",
   "addModelManually": "Add manually",
   "selectAChannelHint": "Pick a channel on the left to see its models here.",

@@ -96,5 +96,127 @@
   "actionClear": "Clear",
   "actionRun": "Run",
   "actionChange": "Change",
-  "experimental": "Experimental"
+  "experimental": "Experimental",
+  "dropAtPosition": "Drop at {position}",
+  "@dropAtPosition": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      }
+    }
+  },
+  "dropAtEnd": "Drop at end",
+  "reorderPositionOf": "Position {position} of {count}",
+  "@reorderPositionOf": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reorderOffFiltered": "Reordering is off while the list is filtered. Use Move up / Move down in the row menu.",
+  "dragKeepToScroll": "Keep dragging to scroll",
+  "dropRelease": "Release to drop",
+  "dropFirstFrame": "Drop first frame",
+  "dropLastFrame": "Drop last frame",
+  "dropSetAsFirstFrame": "Set as first frame",
+  "dropSetAsLastFrame": "Set as last frame",
+  "dropAddedToReferences": "Added to reference images · {count} / {max}",
+  "@dropAddedToReferences": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "dropImagesOnly": "Images only",
+  "dropReferenceLimit": "Up to {count} reference images",
+  "@dropReferenceLimit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "galleryDropSystemHint": "Or drag files in from your file manager",
+  "dropMoveTo": "Move to {name}",
+  "@dropMoveTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dropCopyTo": "Copy to {name}",
+  "@dropCopyTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dropCopyItemsTo": "{count, plural, =1{Copy 1 item to {name}} other{Copy {count} items to {name}}}",
+  "@dropCopyItemsTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dragMoveItems": "{count, plural, =1{Move 1 item} other{Move {count} items}}",
+  "@dragMoveItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dragCopyItems": "{count, plural, =1{Copy 1 item} other{Copy {count} items}}",
+  "@dragCopyItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dropMovedItems": "{count, plural, =1{Moved 1 item} other{Moved {count} items}}",
+  "@dropMovedItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dropCopiedItems": "{count, plural, =1{Copied 1 item} other{Copied {count} items}}",
+  "@dropCopiedItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dropRejectIntoItself": "Can't move a folder into itself",
+  "dropRejectSameFolder": "Already in this folder",
+  "dropRejectRoot": "The root folder can't hold files",
+  "dropRejectReadOnly": "This folder is read-only",
+  "dropAddedToReferencesUnlimited": "Added to reference images · {count}",
+  "@dropAddedToReferencesUnlimited": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dropReplacesFrame": "Replaces the current frame",
+  "dropRejectNameTaken": "A folder with this name is already here",
+  "browserDragFootnoteMac": "Drag onto a folder to move · hold ⌥ to copy"
 }

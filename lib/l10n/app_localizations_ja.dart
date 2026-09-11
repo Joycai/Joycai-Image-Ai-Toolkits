@@ -569,11 +569,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get conflictApplyAndContinue => '適用して続行';
 
   @override
-  String dragMoveHint(int count) {
-    return '$count 件を移動 · Ctrl でコピー';
-  }
-
-  @override
   String get showInSystem => 'システムで表示';
 
   @override
@@ -997,6 +992,118 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get experimental => '試験的';
+
+  @override
+  String dropAtPosition(int position) {
+    return '$position 番目に置く';
+  }
+
+  @override
+  String get dropAtEnd => '最後に置く';
+
+  @override
+  String reorderPositionOf(int position, int count) {
+    return '$count 件中 $position 番目';
+  }
+
+  @override
+  String get reorderOffFiltered =>
+      'リストが絞り込まれている間は並べ替えできません。行メニューの「上へ / 下へ」を使ってください。';
+
+  @override
+  String get dragKeepToScroll => 'ドラッグを続けるとスクロールします';
+
+  @override
+  String get dropRelease => '離して追加';
+
+  @override
+  String get dropFirstFrame => '最初のフレームをドロップ';
+
+  @override
+  String get dropLastFrame => '最後のフレームをドロップ';
+
+  @override
+  String get dropSetAsFirstFrame => '最初のフレームに設定しました';
+
+  @override
+  String get dropSetAsLastFrame => '最後のフレームに設定しました';
+
+  @override
+  String dropAddedToReferences(int count, int max) {
+    return '参考画像に追加しました · $count / $max';
+  }
+
+  @override
+  String get dropImagesOnly => '画像のみ';
+
+  @override
+  String dropReferenceLimit(int count) {
+    return '参考画像は $count 枚まで';
+  }
+
+  @override
+  String get galleryDropSystemHint => 'ファイルマネージャーからドラッグすることもできます';
+
+  @override
+  String dropMoveTo(String name) {
+    return '$name に移動';
+  }
+
+  @override
+  String dropCopyTo(String name) {
+    return '$name にコピー';
+  }
+
+  @override
+  String dropCopyItemsTo(int count, String name) {
+    return '$count 件を $name にコピー';
+  }
+
+  @override
+  String dragMoveItems(int count) {
+    return '$count 件を移動';
+  }
+
+  @override
+  String dragCopyItems(int count) {
+    return '$count 件をコピー';
+  }
+
+  @override
+  String dropMovedItems(int count) {
+    return '$count 件を移動しました';
+  }
+
+  @override
+  String dropCopiedItems(int count) {
+    return '$count 件をコピーしました';
+  }
+
+  @override
+  String get dropRejectIntoItself => 'フォルダーをそれ自身の中には移動できません';
+
+  @override
+  String get dropRejectSameFolder => 'すでにこのフォルダーにあります';
+
+  @override
+  String get dropRejectRoot => 'ルートフォルダーにはファイルを置けません';
+
+  @override
+  String get dropRejectReadOnly => 'このフォルダーは読み取り専用です';
+
+  @override
+  String dropAddedToReferencesUnlimited(int count) {
+    return '参考画像に追加しました · $count';
+  }
+
+  @override
+  String get dropReplacesFrame => '現在のフレームを置き換えます';
+
+  @override
+  String get dropRejectNameTaken => '同じ名前のフォルダーがすでにあります';
+
+  @override
+  String get browserDragFootnoteMac => 'フォルダーにドラッグで移動 · ⌥ を押しながらでコピー';
 
   @override
   String get downloader => 'ダウンローダー';
@@ -2335,10 +2442,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get channelReorderFootnote =>
       'ホバーでハンドル表示 · ドラッグで並べ替え · 右クリックか Alt+↑/↓ でも可';
-
-  @override
-  String get channelReorderLockedNote =>
-      '検索中は並べ替えできません。一覧の一部しか表示されていないため、ドロップ位置が正しくなりません。検索をクリアすると戻ります。';
 
   @override
   String get noModelsConfiguredHint => '「モデル取得」で検出するか、手動で追加してください。';
@@ -4534,9 +4637,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get galleryDropTitle => 'ここに画像をドロップ…';
 
   @override
-  String get galleryDropHint => '一時ワークスペースに追加され、表示が切り替わります';
-
-  @override
   String get galleryEmptyWorkspaceTitle => 'ここにファイルをドロップ';
 
   @override
@@ -4590,9 +4690,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get videoDropOrPick => 'ドロップまたはクリックで選択';
-
-  @override
-  String get videoDropRelease => '離して追加';
 
   @override
   String videoReferenceDropMax(int count) {

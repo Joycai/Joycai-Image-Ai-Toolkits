@@ -6,6 +6,8 @@ import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/drag/app_drag_lift.dart';
+import '../../../widgets/drag/app_reorder_gap.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
@@ -283,56 +285,67 @@ class _PhoneChannelsTab extends StatelessWidget {
     final channels = appState.allChannels;
     final draggable = channels.length > 1;
 
-    return ReorderableListView.builder(
-      padding: EdgeInsets.fromLTRB(12, top + 8, 12, bottom + AppSpace.s16),
+    // `00d · 1f`: the gap under the finger says where the row lands, with a
+    // selection click per change and a light one on the drop.
+    return AppReorderGap(
       itemCount: channels.length,
-      buildDefaultDragHandles: false,
-      onReorderItem: actions.moveChannel,
-      onReorderStart: (_) => HapticFeedback.selectionClick(),
-      proxyDecorator: channelDragProxy,
-      footer: Padding(
-        padding: EdgeInsets.only(top: channels.isEmpty ? 0 : 8),
-        child: FeeManagementEntry(
-          groupCount: appState.allPricingGroups.length,
-          onTap: actions.openFeeManager,
-          filled: true,
-        ),
-      ),
-      itemBuilder: (context, index) {
-        final channel = channels[index];
-        final row = Padding(
-          padding: const EdgeInsets.only(bottom: AppSpace.s4),
-          child: ChannelRow(
-            channel: channel,
-            modelCount: appState.getModelsForChannel(channel.id).length,
+      touch: true,
+      slotPadding: const EdgeInsets.only(bottom: AppSpace.s4),
+      builder: (context, gap) => ReorderableListView.builder(
+        padding: EdgeInsets.fromLTRB(12, top + 8, 12, bottom + AppSpace.s16),
+        itemCount: channels.length,
+        buildDefaultDragHandles: false,
+        onReorderItem: gap.onReorderItem(actions.moveChannel),
+        // `1f` 到时：触觉 medium + 抬起.
+        onReorderStart: gap.onReorderStart((_) => HapticFeedback.mediumImpact()),
+        proxyDecorator: channelDragProxy,
+        footer: Padding(
+          padding: EdgeInsets.only(top: channels.isEmpty ? 0 : 8),
+          child: FeeManagementEntry(
+            groupCount: appState.allPricingGroups.length,
+            onTap: actions.openFeeManager,
             filled: true,
-            onTap: () => actions.editChannel(channel),
-            trailing: Builder(
-              builder: (anchor) => IconButton(
-                icon: const Icon(Icons.more_vert, size: AppSize.iconLg),
-                tooltip: l10n.more,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                onPressed: () => showAppGlassMenu(
-                  anchor,
-                  position: appGlassMenuPositionBelow(anchor),
-                  entries: channelMenuItems(
+          ),
+        ),
+        itemBuilder: (context, index) {
+          final channel = channels[index];
+          final row = Padding(
+            padding: const EdgeInsets.only(bottom: AppSpace.s4),
+            child: ChannelRow(
+              channel: channel,
+              modelCount: appState.getModelsForChannel(channel.id).length,
+              filled: true,
+              onTap: () => actions.editChannel(channel),
+              trailing: Builder(
+                builder: (anchor) => IconButton(
+                  icon: const Icon(Icons.more_vert, size: AppSize.iconLg),
+                  tooltip: l10n.more,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  onPressed: () => showAppGlassMenu(
                     anchor,
-                    actions: actions,
-                    channel: channel,
-                    index: index,
-                    count: channels.length,
-                    reorderLocked: false,
+                    position: appGlassMenuPositionBelow(anchor),
+                    entries: channelMenuItems(
+                      anchor,
+                      actions: actions,
+                      channel: channel,
+                      index: index,
+                      count: channels.length,
+                      reorderLocked: false,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
-        if (!draggable) return KeyedSubtree(key: ValueKey(channel.id), child: row);
-        // No hover to reveal a grip on a phone, so a row is picked up by
-        // holding it.
-        return ChannelLongPressDragListener(key: ValueKey(channel.id), index: index, child: row);
-      },
+          );
+          return gap.item(
+            key: ValueKey(channel.id),
+            index: index,
+            // No hover to reveal a grip on a phone, so a row is picked up by
+            // holding it (300ms).
+            child: draggable ? AppLongPressDragStartListener(index: index, child: row) : row,
+          );
+        },
+      ),
     );
   }
 }

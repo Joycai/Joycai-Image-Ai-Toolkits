@@ -574,11 +574,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get conflictApplyAndContinue => 'Apply and continue';
 
   @override
-  String dragMoveHint(int count) {
-    return 'Move $count · hold Ctrl to copy';
-  }
-
-  @override
   String get showInSystem => 'Show in system';
 
   @override
@@ -1007,6 +1002,149 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get experimental => 'Experimental';
+
+  @override
+  String dropAtPosition(int position) {
+    return 'Drop at $position';
+  }
+
+  @override
+  String get dropAtEnd => 'Drop at end';
+
+  @override
+  String reorderPositionOf(int position, int count) {
+    return 'Position $position of $count';
+  }
+
+  @override
+  String get reorderOffFiltered =>
+      'Reordering is off while the list is filtered. Use Move up / Move down in the row menu.';
+
+  @override
+  String get dragKeepToScroll => 'Keep dragging to scroll';
+
+  @override
+  String get dropRelease => 'Release to drop';
+
+  @override
+  String get dropFirstFrame => 'Drop first frame';
+
+  @override
+  String get dropLastFrame => 'Drop last frame';
+
+  @override
+  String get dropSetAsFirstFrame => 'Set as first frame';
+
+  @override
+  String get dropSetAsLastFrame => 'Set as last frame';
+
+  @override
+  String dropAddedToReferences(int count, int max) {
+    return 'Added to reference images · $count / $max';
+  }
+
+  @override
+  String get dropImagesOnly => 'Images only';
+
+  @override
+  String dropReferenceLimit(int count) {
+    return 'Up to $count reference images';
+  }
+
+  @override
+  String get galleryDropSystemHint => 'Or drag files in from your file manager';
+
+  @override
+  String dropMoveTo(String name) {
+    return 'Move to $name';
+  }
+
+  @override
+  String dropCopyTo(String name) {
+    return 'Copy to $name';
+  }
+
+  @override
+  String dropCopyItemsTo(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Copy $count items to $name',
+      one: 'Copy 1 item to $name',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dragMoveItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Move $count items',
+      one: 'Move 1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dragCopyItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Copy $count items',
+      one: 'Copy 1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dropMovedItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Moved $count items',
+      one: 'Moved 1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dropCopiedItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Copied $count items',
+      one: 'Copied 1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dropRejectIntoItself => 'Can\'t move a folder into itself';
+
+  @override
+  String get dropRejectSameFolder => 'Already in this folder';
+
+  @override
+  String get dropRejectRoot => 'The root folder can\'t hold files';
+
+  @override
+  String get dropRejectReadOnly => 'This folder is read-only';
+
+  @override
+  String dropAddedToReferencesUnlimited(int count) {
+    return 'Added to reference images · $count';
+  }
+
+  @override
+  String get dropReplacesFrame => 'Replaces the current frame';
+
+  @override
+  String get dropRejectNameTaken => 'A folder with this name is already here';
+
+  @override
+  String get browserDragFootnoteMac =>
+      'Drag onto a folder to move · hold ⌥ to copy';
 
   @override
   String get downloader => 'Downloader';
@@ -2395,10 +2533,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get channelReorderFootnote =>
       'Hover for the handle · drag to reorder · right-click or Alt+↑/↓ does the same';
-
-  @override
-  String get channelReorderLockedNote =>
-      'Reordering is off while searching: only part of the list is shown, so a drop position would be wrong. Clear the search to restore it.';
 
   @override
   String get noModelsConfiguredHint =>
@@ -4646,10 +4780,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get galleryDropTitle => 'Drop images here…';
 
   @override
-  String get galleryDropHint =>
-      'They join the temporary workspace, and the view switches to it';
-
-  @override
   String get galleryEmptyWorkspaceTitle => 'Drop files here';
 
   @override
@@ -4705,9 +4835,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get videoDropOrPick => 'Drop or click to pick';
-
-  @override
-  String get videoDropRelease => 'Release to add';
 
   @override
   String videoReferenceDropMax(int count) {

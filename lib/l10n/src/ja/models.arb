@@ -388,7 +388,6 @@
   "moveUp": "上へ移動",
   "moveDown": "下へ移動",
   "channelReorderFootnote": "ホバーでハンドル表示 · ドラッグで並べ替え · 右クリックか Alt+↑/↓ でも可",
-  "channelReorderLockedNote": "検索中は並べ替えできません。一覧の一部しか表示されていないため、ドロップ位置が正しくなりません。検索をクリアすると戻ります。",
   "noModelsConfiguredHint": "「モデル取得」で検出するか、手動で追加してください。",
   "addModelManually": "手動で追加",
   "selectAChannelHint": "左でチャネルを選ぶと、ここにそのモデルが表示されます。",

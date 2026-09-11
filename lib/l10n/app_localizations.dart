@@ -1036,12 +1036,6 @@ abstract class AppLocalizations {
   /// **'Apply and continue'**
   String get conflictApplyAndContinue;
 
-  /// No description provided for @dragMoveHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Move {count} · hold Ctrl to copy'**
-  String dragMoveHint(int count);
-
   /// No description provided for @showInSystem.
   ///
   /// In en, this message translates to:
@@ -1785,6 +1779,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Experimental'**
   String get experimental;
+
+  /// No description provided for @dropAtPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop at {position}'**
+  String dropAtPosition(int position);
+
+  /// No description provided for @dropAtEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop at end'**
+  String get dropAtEnd;
+
+  /// No description provided for @reorderPositionOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Position {position} of {count}'**
+  String reorderPositionOf(int position, int count);
+
+  /// No description provided for @reorderOffFiltered.
+  ///
+  /// In en, this message translates to:
+  /// **'Reordering is off while the list is filtered. Use Move up / Move down in the row menu.'**
+  String get reorderOffFiltered;
+
+  /// No description provided for @dragKeepToScroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep dragging to scroll'**
+  String get dragKeepToScroll;
+
+  /// No description provided for @dropRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Release to drop'**
+  String get dropRelease;
+
+  /// No description provided for @dropFirstFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop first frame'**
+  String get dropFirstFrame;
+
+  /// No description provided for @dropLastFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop last frame'**
+  String get dropLastFrame;
+
+  /// No description provided for @dropSetAsFirstFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as first frame'**
+  String get dropSetAsFirstFrame;
+
+  /// No description provided for @dropSetAsLastFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as last frame'**
+  String get dropSetAsLastFrame;
+
+  /// No description provided for @dropAddedToReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to reference images · {count} / {max}'**
+  String dropAddedToReferences(int count, int max);
+
+  /// No description provided for @dropImagesOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Images only'**
+  String get dropImagesOnly;
+
+  /// No description provided for @dropReferenceLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} reference images'**
+  String dropReferenceLimit(int count);
+
+  /// No description provided for @galleryDropSystemHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Or drag files in from your file manager'**
+  String get galleryDropSystemHint;
+
+  /// No description provided for @dropMoveTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to {name}'**
+  String dropMoveTo(String name);
+
+  /// No description provided for @dropCopyTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy to {name}'**
+  String dropCopyTo(String name);
+
+  /// No description provided for @dropCopyItemsTo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Copy 1 item to {name}} other{Copy {count} items to {name}}}'**
+  String dropCopyItemsTo(int count, String name);
+
+  /// No description provided for @dragMoveItems.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Move 1 item} other{Move {count} items}}'**
+  String dragMoveItems(int count);
+
+  /// No description provided for @dragCopyItems.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Copy 1 item} other{Copy {count} items}}'**
+  String dragCopyItems(int count);
+
+  /// No description provided for @dropMovedItems.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Moved 1 item} other{Moved {count} items}}'**
+  String dropMovedItems(int count);
+
+  /// No description provided for @dropCopiedItems.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Copied 1 item} other{Copied {count} items}}'**
+  String dropCopiedItems(int count);
+
+  /// No description provided for @dropRejectIntoItself.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t move a folder into itself'**
+  String get dropRejectIntoItself;
+
+  /// No description provided for @dropRejectSameFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in this folder'**
+  String get dropRejectSameFolder;
+
+  /// No description provided for @dropRejectRoot.
+  ///
+  /// In en, this message translates to:
+  /// **'The root folder can\'t hold files'**
+  String get dropRejectRoot;
+
+  /// No description provided for @dropRejectReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is read-only'**
+  String get dropRejectReadOnly;
+
+  /// No description provided for @dropAddedToReferencesUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to reference images · {count}'**
+  String dropAddedToReferencesUnlimited(int count);
+
+  /// No description provided for @dropReplacesFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaces the current frame'**
+  String get dropReplacesFrame;
+
+  /// No description provided for @dropRejectNameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'A folder with this name is already here'**
+  String get dropRejectNameTaken;
+
+  /// No description provided for @browserDragFootnoteMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag onto a folder to move · hold ⌥ to copy'**
+  String get browserDragFootnoteMac;
 
   /// No description provided for @downloader.
   ///
@@ -4233,12 +4401,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hover for the handle · drag to reorder · right-click or Alt+↑/↓ does the same'**
   String get channelReorderFootnote;
-
-  /// No description provided for @channelReorderLockedNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Reordering is off while searching: only part of the list is shown, so a drop position would be wrong. Clear the search to restore it.'**
-  String get channelReorderLockedNote;
 
   /// No description provided for @noModelsConfiguredHint.
   ///
@@ -8187,12 +8349,6 @@ abstract class AppLocalizations {
   /// **'Drop images here…'**
   String get galleryDropTitle;
 
-  /// No description provided for @galleryDropHint.
-  ///
-  /// In en, this message translates to:
-  /// **'They join the temporary workspace, and the view switches to it'**
-  String get galleryDropHint;
-
   /// No description provided for @galleryEmptyWorkspaceTitle.
   ///
   /// In en, this message translates to:
@@ -8294,12 +8450,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Drop or click to pick'**
   String get videoDropOrPick;
-
-  /// No description provided for @videoDropRelease.
-  ///
-  /// In en, this message translates to:
-  /// **'Release to add'**
-  String get videoDropRelease;
 
   /// No description provided for @videoReferenceDropMax.
   ///

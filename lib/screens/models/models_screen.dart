@@ -60,8 +60,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
   /// a few hundred rows.
   String _channelQuery = '';
 
-  /// Focus for the channel column, which is where Alt+↑/↓ is bound. A row
-  /// tap takes it, so the chord works right after picking a channel.
+  /// Focus for the channel column, which is where Alt+↑/↓ and Ctrl+↑/↓ are
+  /// bound. A row tap takes it, so the chord works right after picking a
+  /// channel.
   final FocusNode _channelFocus = FocusNode(debugLabel: 'ModelsScreen.channels');
 
   @override
@@ -137,7 +138,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
         ? channels
         : [
             for (final c in channels)
-              if (c.displayName.toLowerCase().contains(query) || (c.tag ?? '').toLowerCase().contains(query)) c,
+              if (_matchesQuery(c, query)) c,
           ];
     final dense = Responsive.isTablet(context);
     final width = _sidebarWidth ?? (dense ? 260.0 : 300.0);
@@ -152,6 +153,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
               const SingleActivator(LogicalKeyboardKey.arrowUp, alt: true): () =>
                   _moveSelectedBy(l10n, appState, -1),
               const SingleActivator(LogicalKeyboardKey.arrowDown, alt: true): () =>
+                  _moveSelectedBy(l10n, appState, 1),
+              // `00d` 无障碍: Ctrl+↑ / Ctrl+↓, beside the Alt chord the row menu
+              // and the footnote name.
+              const SingleActivator(LogicalKeyboardKey.arrowUp, control: true): () =>
+                  _moveSelectedBy(l10n, appState, -1),
+              const SingleActivator(LogicalKeyboardKey.arrowDown, control: true): () =>
                   _moveSelectedBy(l10n, appState, 1),
             },
             child: Focus(
@@ -251,17 +258,23 @@ class _ModelsScreenState extends State<ModelsScreen> {
     }
   }
 
-  /// Alt+↑/↓ on the selected channel. A filtered rail says why it will not
-  /// move rather than moving something the user cannot see the neighbours of.
+  /// Plain lowercase substring match of a channel's name and tag against an
+  /// already-lowercased [query].
+  static bool _matchesQuery(LLMChannel channel, String query) =>
+      channel.displayName.toLowerCase().contains(query) || (channel.tag ?? '').toLowerCase().contains(query);
+
+  /// Alt+↑/↓ and Ctrl+↑/↓ on the selected channel: one place in the stored
+  /// order — the move the row menu makes, so like the menu it works while a
+  /// search narrows the rail (`00d` 禁用: the menu is how a filtered rail is
+  /// reordered). A selected channel the search hides is left where it is: the
+  /// user can see neither it nor what it would pass.
   void _moveSelectedBy(AppLocalizations l10n, AppState appState, int delta) {
-    if (_channelQuery.trim().isNotEmpty) {
-      AppSnackBar.info(context, l10n.reorderDisabledWhileFiltered);
-      return;
-    }
     final channels = appState.allChannels;
     final index = channels.indexWhere((c) => c.id == _selectedChannelId);
     final target = index + delta;
     if (index < 0 || target < 0 || target >= channels.length) return;
+    final query = _channelQuery.trim().toLowerCase();
+    if (query.isNotEmpty && !_matchesQuery(channels[index], query)) return;
     _reorderChannels(l10n, appState, index, target);
   }
 
