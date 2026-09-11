@@ -94,13 +94,6 @@ class FileTransferPlan {
     required this.entries,
   });
 
-  Iterable<FileTransferEntry> get conflicts => entries.where((e) => e.hasConflict);
-
-  bool get hasConflicts => entries.any((e) => e.hasConflict);
-
-  /// How many entries transfer with no decision from the user.
-  int get readyCount => entries.where((e) => !e.hasConflict).length;
-
   int get totalBytes => entries.fold(0, (sum, e) => sum + e.size);
 
   /// Whether this paste is a move that has to cross a volume, which means

@@ -95,7 +95,7 @@ void main() {
     state.clear();
 
     expect(state.isEmpty, isTrue);
-    expect(state.stagedPaths, isEmpty);
+    expect(state.contains(p.join(root.path, 'a.png')), isFalse);
   });
 
   test('source directories are distinct and in first-seen order', () async {

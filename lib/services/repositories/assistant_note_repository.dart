@@ -133,25 +133,4 @@ class AssistantNoteRepository {
     );
     return rows.isEmpty ? null : AssistantNote.fromRow(rows.first);
   }
-
-  /// Notes of one session, oldest first (stable order for listings).
-  Future<List<AssistantNote>> listForSession(String sessionId) async {
-    final db = await _getDb();
-    final rows = await db.query(
-      'assistant_notes',
-      where: 'session_id = ?',
-      whereArgs: [sessionId],
-      orderBy: 'id ASC',
-    );
-    return rows.map(AssistantNote.fromRow).toList();
-  }
-
-  /// Removes a session's notes. Called by
-  /// `AssistantSessionRepository.deleteSession` so retention GC covers notes
-  /// without a second policy.
-  Future<void> deleteForSession(String sessionId) async {
-    final db = await _getDb();
-    await db.delete('assistant_notes',
-        where: 'session_id = ?', whereArgs: [sessionId]);
-  }
 }

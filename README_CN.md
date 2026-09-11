@@ -63,8 +63,8 @@ Joycai Image AI Toolkits 是一个功能强大的跨平台桌面与移动应用�
 *   **状态管理**：[Provider](https://pub.dev/packages/provider) — 多状态类（`AppState`、`GalleryState`、`FileBrowserState`、`DownloaderState`、`WorkbenchUIState`）
 *   **数据库**：[SQLite](https://pub.dev/packages/sqflite)（通过 `sqflite_common_ffi` 支持桌面端）
 *   **本地化**：`flutter_localizations`，使用 `lib/l10n/src/` 中的模块化 ARB 源文件
-*   **网络**：`http` 用于 REST API 通信；`shelf` / `shelf_router` 用于本地 MCP/抓取器服务器
-*   **媒体**：`photo_view`、`extended_image`、`video_player` 用于显示；`desktop_drop`、`file_picker` 用于文件输入
+*   **网络**：`http` 用于 REST API 通信
+*   **媒体**：`extended_image`、`video_player` 用于显示；`desktop_drop`、`file_picker` 用于文件输入
 
 ## 📦 快速开始
 

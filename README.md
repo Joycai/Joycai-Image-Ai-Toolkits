@@ -63,8 +63,8 @@ Joycai Image AI Toolkits is a powerful, cross-platform desktop & mobile applicat
 *   **State Management**: [Provider](https://pub.dev/packages/provider) — multi-state (`AppState`, `GalleryState`, `FileBrowserState`, `DownloaderState`, `WorkbenchUIState`)
 *   **Database**: [SQLite](https://pub.dev/packages/sqflite) (via `sqflite_common_ffi` for Desktop support)
 *   **Localization**: `flutter_localizations` with modular ARB source files in `lib/l10n/src/`
-*   **Networking**: `http` for REST API communication; `shelf` / `shelf_router` for local MCP/scraper server
-*   **Media**: `photo_view`, `extended_image`, `video_player` for display; `desktop_drop`, `file_picker` for input
+*   **Networking**: `http` for REST API communication
+*   **Media**: `extended_image`, `video_player` for display; `desktop_drop`, `file_picker` for input
 
 ## 📦 Getting Started
 

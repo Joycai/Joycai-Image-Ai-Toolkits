@@ -58,11 +58,6 @@ class FileStagingState extends ChangeNotifier {
   /// Staged files in the order they were added.
   List<BrowserFile> get items => List.unmodifiable(_items);
 
-  /// Every staged path, for the grid's per-card lookup. Unmodifiable, and
-  /// replaced rather than mutated on every change, so a widget holding the
-  /// previous set sees a different object.
-  Set<String> get stagedPaths => _paths;
-
   /// Staged paths whose file was not on disk at the last [revalidate].
   Set<String> get missingPaths => _missingPaths;
 

@@ -135,7 +135,5 @@ class ImageMetadataService {
     _cache[path] = metadata;
   }
 
-  void clearCache() => _cache.clear();
-  
   void evict(String path) => _cache.remove(path);
 }

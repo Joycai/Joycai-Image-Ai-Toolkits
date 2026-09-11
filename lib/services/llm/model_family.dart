@@ -287,11 +287,6 @@ class ModelFamilyClassifier {
         f == ModelFamily.geminiChat;
   }
 
-  /// True for native OpenAI families.
-  static bool isOpenAINative(ModelFamily f) {
-    return f == ModelFamily.openaiImage || f == ModelFamily.openaiChat;
-  }
-
   /// True when the model's primary job is to *generate* images
   /// (as opposed to chat models that may merely accept image input).
   static bool isImageGeneration(ModelFamily f) {
