@@ -49,5 +49,13 @@
   "guideStep2Desc": "告訴 AI 要尋找的圖像",
   "guideStep3Title": "3 · 挑選下載",
   "guideStep3Desc": "批次選擇並加入任務佇列",
-  "copyLogs": "複製日誌"
+  "copyLogs": "複製日誌",
+  "downloaderFoundCount": "找到 {count} 張",
+  "downloaderAdvancedSubtitle": "只對這個畫面的下載生效",
+  "copyImageUrl": "複製圖片網址",
+  "manualHtmlEmptyTitle": "尚未貼上 HTML",
+  "manualHtmlEmptyDesc": "在瀏覽器裡「檢視原始碼」全選複製，然後點上面的貼上。",
+  "cookieHistoryUse": "使用",
+  "cookieHistoryPairs": "{count} 組",
+  "cookieHistoryEmptyDesc": "貼上過的 Cookie 會記在這裡，方便下次同一網站重複使用。"
 }

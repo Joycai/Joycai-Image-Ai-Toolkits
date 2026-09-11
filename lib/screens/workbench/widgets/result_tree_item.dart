@@ -7,19 +7,25 @@ import 'package:provider/provider.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 import '../directory_tree_item.dart';
-import '../../../core/design_tokens.dart';
 
 /// Read-only folder tree for the RESULTS section. Unlike [DirectoryTreeItem],
 /// there is no selection/aggregate concept — tapping a row browses just that
 /// folder via [GalleryState.setViewFolder].
+///
+/// Drawn through the same [FolderTreeRow] as the source tree: `A1 1a` shows
+/// the two as one family, a result folder being a folder.
 class ResultTreeItem extends StatefulWidget {
   final String path;
   final bool isRoot;
+
+  /// Nesting level — 0 for a root. See [DirectoryTreeItem.depth].
+  final int depth;
 
   const ResultTreeItem({
     super.key,
     required this.path,
     this.isRoot = false,
+    this.depth = 0,
   });
 
   @override
@@ -79,9 +85,9 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final appState = Provider.of<AppState>(context, listen: false);
     final folderName = p.basename(widget.path);
+    final metrics = FolderTreeMetrics.of(context);
 
     // Off GalleryState directly — AppState no longer forwards its changes.
     final isViewing = context.select<GalleryState, bool>((state) =>
@@ -89,78 +95,36 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
         state.folderViewIsResult &&
         state.viewSourcePath == widget.path);
 
-    // Boxed and tinted exactly like a source root. `16a` draws the two trees
-    // as one family — a result folder is a folder — and the outline is what
-    // says where one root's subtree ends. It read as a different kind of row
-    // entirely while this was a bare tile beside the boxed sources.
-    final colorScheme = theme.colorScheme;
-    final Color? boxColor = isViewing ? colorScheme.accentTint : null;
-    final Color borderColor = isViewing
-        ? colorScheme.primary.withValues(alpha: 0.6)
-        : (widget.isRoot ? colorScheme.outlineVariant.withAlpha(120) : Colors.transparent);
+    final TreeDisclosure disclosure = _subDirectories != null && _subDirectories!.isEmpty
+        ? TreeDisclosure.none
+        : _isLoading
+            ? TreeDisclosure.loading
+            : (_isExpanded ? TreeDisclosure.expanded : TreeDisclosure.collapsed);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          margin: const EdgeInsets.fromLTRB(6, 2, 6, 2),
-          child: Material(
-            color: boxColor ?? Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(color: borderColor),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: ListTile(
-          dense: true,
-          selected: isViewing,
-          contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 0, right: 4),
-          minLeadingWidth: 0,
-          horizontalTitleGap: 6,
-          leading: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                _isExpanded ? Icons.folder_open : Icons.folder,
-                size: 20,
-                // Amber, like every other folder in the app — grey here was
-                // the one place the tree's own colour was dropped.
-                color: kFolderAmber,
-              ),
-            ],
-          ),
-          title: Text(
-            folderName,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: isViewing ? FontWeight.w600 : FontWeight.w500,
-              color: isViewing ? theme.colorScheme.primary : null,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: (_subDirectories == null || _subDirectories!.isNotEmpty)
-              ? IconButton(
-                  icon: _isLoading
-                      ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
-                      : Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, size: 18),
-                  onPressed: () => _handleExpansionChanged(!_isExpanded),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  visualDensity: VisualDensity.compact,
-                )
-              : null,
-          onTap: () => appState.galleryState.setViewFolder(widget.path, isResult: true),
-            ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: metrics.margin),
+          child: FolderTreeRow(
+            depth: widget.depth,
+            disclosure: disclosure,
+            onToggle: () => _handleExpansionChanged(!_isExpanded),
+            icon: Icons.folder_outlined,
+            label: folderName,
+            selected: isViewing,
+            onTap: () => appState.galleryState.setViewFolder(widget.path, isResult: true),
           ),
         ),
         if (_isExpanded && _subDirectories != null)
-          Padding(
-            padding: const EdgeInsets.only(left: 24.0),
-            child: Column(
-              children: _subDirectories!
-                  .map((dir) => ResultTreeItem(path: dir.path, isRoot: false))
-                  .toList(),
-            ),
-          ),
+          ..._subDirectories!.map((dir) => ResultTreeItem(
+                // Keyed by path so a child's expansion follows its directory
+                // when siblings come and go across refreshes.
+                key: ValueKey(dir.path),
+                path: dir.path,
+                depth: widget.depth + 1,
+              )),
       ],
     );
   }

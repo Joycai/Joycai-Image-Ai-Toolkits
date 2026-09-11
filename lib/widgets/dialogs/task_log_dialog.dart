@@ -6,20 +6,21 @@ import 'package:provider/provider.dart';
 
 import '../../core/app_semantic_colors.dart';
 import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
+import '../app_breathing_dot.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
 import '../app_snackbar.dart';
-import '../../core/design_tokens.dart';
 
 /// The full log of a single task, in a console the user can read, select and
-/// copy from.
+/// copy from (`B2 · 1b` 任务日志对话框).
 ///
-/// The task card only ever showed `logs.last`, which is the least useful line
-/// of a failed task — the cause is usually several lines up. This shows the
-/// whole thing, for finished tasks as well as failed ones.
+/// The task card only shows one line, which on a failure is rarely the cause —
+/// that is usually several lines up. This shows the whole thing, for finished
+/// tasks as well as failed ones.
 ///
 /// Reads [TaskItem.logs] live off the task object rather than taking a copy, so
 /// a running task's log tails as it is written.
@@ -40,6 +41,9 @@ class TaskLogDialog extends StatefulWidget {
 }
 
 class _TaskLogDialogState extends State<TaskLogDialog> {
+  /// `B2 · 1b`: the log block tops out at 200 and scrolls.
+  static const double _consoleMaxHeight = 200;
+
   final _scrollController = ScrollController();
   StreamSubscription<TaskEvent>? _events;
   Timer? _ticker;
@@ -93,55 +97,103 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
     final media = MediaQuery.sizeOf(context);
 
     return AppDialog(
-      maxWidth: 720,
-      // The console is a ListView, so it needs a ceiling to lay out against
-      // rather than growing with the log.
+      maxWidth: 520,
       maxHeight: media.height * 0.8,
-      // titleWidget rather than title/subtitle/icon: the live indicator sits
-      // on the trailing edge of the heading, which the shell's leading-icon
-      // layout has nowhere to put.
-      titleWidget: _buildHeader(context, colorScheme, l10n),
+      // A heading of its own: the Live badge rides the title and Copy logs
+      // sits in the heading's corner, neither of which the shell's icon/title
+      // layout has a slot for.
+      titleWidget: _buildHeader(context, logs, colorScheme, l10n),
       content: logs.isEmpty ? _buildEmpty(colorScheme, l10n) : _buildConsole(logs, colorScheme),
-      // The line count is part of the footer, pinned opposite the buttons.
-      actionsOverride: _buildActions(logs, colorScheme, l10n),
+      actions: [
+        AppButton(
+          label: l10n.close,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ],
     );
   }
 
-  Widget _buildHeader(BuildContext context, ColorScheme colorScheme, AppLocalizations l10n) {
+  Widget _buildHeader(
+    BuildContext context,
+    List<String> logs,
+    ColorScheme colorScheme,
+    AppLocalizations l10n,
+  ) {
     final task = widget.task;
     final textTheme = Theme.of(context).textTheme;
+    final meta = textTheme.labelSmall!.mono.copyWith(
+      fontWeight: FontWeight.w400,
+      color: colorScheme.onSurfaceVariant,
+    );
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.terminal, size: 22, color: colorScheme.onSurfaceVariant),
-        const SizedBox(width: 10),
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: colorScheme.accentTint,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+          ),
+          child: Icon(Icons.article_outlined, size: 24, color: colorScheme.primary),
+        ),
+        const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Matches the type AppDialog gives a plain title, so this
-              // hand-built heading is not a different size from every other
-              // dialog's.
-              Text(l10n.taskLogTitle, style: textTheme.titleLarge),
-              const SizedBox(height: 2),
-              Text(
-                l10n.taskId(task.id.length > 8 ? task.id.substring(0, 8) : task.id),
-                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        l10n.taskLogTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleLarge,
+                      ),
+                    ),
+                    if (_isLive) ...[
+                      const SizedBox(width: 8),
+                      _LiveBadge(label: l10n.taskLogLive),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                // Three pieces rather than one string: the id gives way first,
+                // and the line count is never the part that gets cut.
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        l10n.taskId(task.id.length > 8 ? task.id.substring(0, 8) : task.id),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: meta,
+                      ),
+                    ),
+                    Text(' · ', style: meta),
+                    Text(l10n.taskLogLineCount(logs.length), maxLines: 1, style: meta),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
-        if (_isLive) ...[
-          SizedBox(
-            width: 12,
-            height: 12,
-            child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary),
-          ),
+        if (logs.isNotEmpty) ...[
           const SizedBox(width: 8),
-          Text(
-            l10n.taskLogLive,
-            style: textTheme.bodySmall?.copyWith(color: colorScheme.accentText),
+          AppButton(
+            label: l10n.copyLogs,
+            icon: Icons.content_copy,
+            variant: AppButtonVariant.text,
+            size: AppButtonSize.compact,
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: logs.join('\n')));
+              AppSnackBar.success(context, l10n.taskLogCopied);
+            },
           ),
         ],
       ],
@@ -149,17 +201,20 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
   }
 
   Widget _buildConsole(List<String> logs, ColorScheme colorScheme) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
+      constraints: const BoxConstraints(maxHeight: _consoleMaxHeight),
+      padding: const EdgeInsets.all(AppSpace.s10),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(isDark ? 90 : 60),
-        borderRadius: BorderRadius.circular(10),
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: SelectionArea(
         child: ListView.builder(
           controller: _scrollController,
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
           itemCount: logs.length,
           itemBuilder: (_, i) => _buildLine(logs[i], colorScheme),
         ),
@@ -168,90 +223,96 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
   }
 
   /// Tints a line by what it says. The executors log plain strings with no
-  /// level attached, so this matches the same wording `_errorSummary` on the
-  /// task card keys off — enough to make a failure findable in a long log
+  /// level attached, so this matches the wording the task card's error
+  /// summary keys off — enough to make a failure findable in a long log
   /// without restructuring every `addLog` call site.
   Widget _buildLine(String line, ColorScheme colorScheme) {
     final isError = line.contains('Error') || line.contains('Failed');
     final isWarning = line.contains('Warning');
     final color = isError
-        ? colorScheme.error
+        ? colorScheme.onErrorContainer
         : isWarning
-            // Was this file's own copy of the amber pair that log_console.dart
-            // and app_snackbar.dart each also carried.
             ? context.semantic.onWarningContainer
             : colorScheme.onSurface;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1),
-      child: Text(
-        line,
-        style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
-              height: AppType.proseHeight,
-              color: color,
-              fontWeight: isError ? FontWeight.w600 : FontWeight.normal,
-            ),
-      ),
+    return Text(
+      line,
+      style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+            height: AppType.looseHeight,
+            color: color,
+            fontWeight: isError ? FontWeight.w600 : FontWeight.w400,
+          ),
     );
   }
 
+  /// `B2 · 1d` 任务日志空: the glyph, the sentence, and why — in the block the
+  /// log would have filled, so the dialog keeps its shape.
   Widget _buildEmpty(ColorScheme colorScheme, AppLocalizations l10n) {
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: AppSpace.s16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(60),
-        borderRadius: BorderRadius.circular(10),
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.notes_outlined, size: 26, color: colorScheme.onSurfaceVariant),
-          const SizedBox(height: 10),
+          Icon(Icons.article_outlined, size: 28, color: colorScheme.outline),
+          const SizedBox(height: AppSpace.s10),
           Text(
             l10n.noTaskLog,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
+            style: textTheme.titleSmall,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpace.s4),
           Text(
-            l10n.noTaskLogHint,
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(color: colorScheme.onSurfaceVariant.withAlpha(170)),
+            // A cancellation is the usual reason a current task has no log;
+            // anything else without one predates logs being kept.
+            widget.task.status == TaskStatus.cancelled
+                ? l10n.noTaskLogCancelledHint
+                : l10n.noTaskLogHint,
             textAlign: TextAlign.center,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: AppType.looseHeight,
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildActions(List<String> logs, ColorScheme colorScheme, AppLocalizations l10n) {
-    return Row(
-      children: [
-        Text(
-          l10n.taskLogLineCount(logs.length),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-        ),
-        const Spacer(),
-        AppButton(
-          label: l10n.copyLogs,
-          icon: Icons.copy_outlined,
-          variant: AppButtonVariant.text,
-          onPressed: logs.isEmpty
-              ? null
-              : () {
-                  Clipboard.setData(ClipboardData(text: logs.join('\n')));
-                  AppSnackBar.success(context, l10n.taskLogCopied);
-                },
-        ),
-        const SizedBox(width: 8),
-        AppButton(
-          label: l10n.close,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ],
+/// The running badge beside the title: the accent's 12% form, the deep ink,
+/// and the breathing dot.
+class _LiveBadge extends StatelessWidget {
+  const _LiveBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: scheme.accentTint,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppBreathingDot(color: scheme.primary, size: 6),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onAccentTint),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,27 +1,25 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_semantic_colors.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
 
-/// Asks which parts of a backup to restore.
+/// Asks which parts of a backup to restore — design `E1 · 1d` 「导入选项」.
 ///
 /// Two presentations of one question: a dialog on desktop, a bottom sheet on
-/// a phone — the sheet because this is a list of switches, and a phone-width
-/// dialog would put them behind a scrim with barely room for their
-/// descriptions.
-///
-/// This lived twice, in `settings/widgets/data_section.dart` and
-/// `wizard/wizard_import.dart`, as three near-identical functions each. They
-/// had already started to drift: one used [AppButtonSize.large] with
-/// `fullWidth`, the other a `SizedBox` around a default-sized button; one
-/// asked [Responsive] which layout to use, the other hard-coded
-/// `MediaQuery.of(context).size.width < 600`.
+/// a phone. Both are the same body: one checkbox row per section of the
+/// backup — a section the file does not contain stays in the list, unchecked
+/// and greyed, with a badge saying so — and a warning that what is checked
+/// gets *replaced*.
 ///
 /// [onUpdate] reports the chosen flags before the future completes, because
-/// both call sites already hold their own `includeX` locals and restore from
-/// those. Returns true if the user confirmed.
+/// both call sites (settings and the setup wizard) already hold their own
+/// `includeX` locals and restore from those. Returns true if the user
+/// confirmed.
 Future<bool?> showImportOptionsDialog(
   BuildContext context, {
   required AppLocalizations l10n,
@@ -35,48 +33,49 @@ Future<bool?> showImportOptionsDialog(
   /// reached at a width the breakpoint would call something else, and it
   /// should still get the sheet.
   bool? isMobile,
+
+  /// The backup's file name, shown under the title in mono.
+  String? fileName,
 }) {
-  // Seeded from what the backup actually contains: a section that isn't in
-  // the file is shown switched off and disabled, so the list doubles as a
-  // description of the backup rather than offering something that cannot
+  // Seeded from what the backup actually contains, so the list doubles as a
+  // description of the file rather than offering something that cannot
   // happen.
   bool dirs = hasDirs;
   bool prompts = hasPrompts;
   bool usage = hasUsage;
 
-  List<Widget> options(StateSetter setState, {required double gap}) => [
-        _ImportOption(
-          title: l10n.includeDirectories,
-          description: l10n.includeDirectoriesDesc,
-          value: dirs,
-          enabled: hasDirs,
-          l10n: l10n,
-          onChanged: (v) => setState(() => dirs = v),
-        ),
-        SizedBox(height: gap),
-        _ImportOption(
-          title: l10n.includePrompts,
-          description: l10n.includePromptsDesc,
-          value: prompts,
-          enabled: hasPrompts,
-          l10n: l10n,
-          onChanged: (v) => setState(() => prompts = v),
-        ),
-        SizedBox(height: gap),
-        _ImportOption(
-          title: l10n.includeUsage,
-          description: l10n.includeUsageDesc,
-          value: usage,
-          enabled: hasUsage,
-          l10n: l10n,
-          onChanged: (v) => setState(() => usage = v),
-        ),
-      ];
-
-  void confirm() {
-    onUpdate(dirs, prompts, usage);
-    Navigator.pop(context, true);
-  }
+  Widget body(StateSetter setState) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ImportOptionRow(
+            title: l10n.includeDirectories,
+            description: l10n.includeDirectoriesDesc,
+            value: dirs,
+            enabled: hasDirs,
+            missingLabel: l10n.notInBackup,
+            onChanged: (v) => setState(() => dirs = v),
+          ),
+          ImportOptionRow(
+            title: l10n.includePrompts,
+            description: l10n.includePromptsDesc,
+            value: prompts,
+            enabled: hasPrompts,
+            missingLabel: l10n.notInBackup,
+            onChanged: (v) => setState(() => prompts = v),
+          ),
+          ImportOptionRow(
+            title: l10n.includeUsage,
+            description: l10n.includeUsageDesc,
+            value: usage,
+            enabled: hasUsage,
+            missingLabel: l10n.notInBackup,
+            onChanged: (v) => setState(() => usage = v),
+          ),
+          const SizedBox(height: AppSpace.s10),
+          _WarningNote(l10n.importSettingsConfirm),
+        ],
+      );
 
   if (isMobile ?? Responsive.isMobile(context)) {
     return showModalBottomSheet<bool>(
@@ -84,24 +83,22 @@ Future<bool?> showImportOptionsDialog(
       isScrollControlled: true,
       useSafeArea: true,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setState) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        builder: (sheetContext, setState) => SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(AppSpace.s22, AppSpace.s22, AppSpace.s22, AppSpace.s28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                l10n.importOptions,
-                style: Theme.of(sheetContext).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              _Caption(l10n.importSettingsConfirm),
-              const SizedBox(height: 24),
-              ...options(setState, gap: 20),
-              const SizedBox(height: 48),
+              Text(l10n.importOptions, style: Theme.of(sheetContext).textTheme.titleLarge),
+              if (fileName != null) ...[
+                const SizedBox(height: 2),
+                _FileName(fileName),
+              ],
+              const SizedBox(height: AppSpace.s16),
+              body(setState),
+              const SizedBox(height: AppSpace.s22),
               AppButton(
-                label: l10n.importNow,
-                variant: AppButtonVariant.destructive,
+                label: l10n.importAndReplace,
                 size: AppButtonSize.large,
                 fullWidth: true,
                 onPressed: () {
@@ -109,7 +106,7 @@ Future<bool?> showImportOptionsDialog(
                   Navigator.pop(sheetContext, true);
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpace.s6),
               AppButton(
                 label: l10n.cancel,
                 variant: AppButtonVariant.text,
@@ -126,19 +123,11 @@ Future<bool?> showImportOptionsDialog(
 
   return AppDialog.show<bool>(
     context,
+    icon: Icons.download_outlined,
     title: l10n.importOptions,
-    maxWidth: 450,
-    content: StatefulBuilder(
-      builder: (_, setState) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _Caption(l10n.importSettingsConfirm),
-          const SizedBox(height: 20),
-          ...options(setState, gap: 12),
-        ],
-      ),
-    ),
+    subtitle: fileName,
+    maxWidth: 440,
+    content: StatefulBuilder(builder: (_, setState) => body(setState)),
     actions: [
       AppButton(
         label: l10n.cancel,
@@ -146,79 +135,160 @@ Future<bool?> showImportOptionsDialog(
         onPressed: () => Navigator.pop(context, false),
       ),
       AppButton(
-        label: l10n.importNow,
-        variant: AppButtonVariant.destructive,
-        onPressed: confirm,
+        label: l10n.importAndReplace,
+        onPressed: () {
+          onUpdate(dirs, prompts, usage);
+          Navigator.pop(context, true);
+        },
       ),
     ],
   );
 }
 
-class _Caption extends StatelessWidget {
-  const _Caption(this.text);
-  final String text;
+/// One checkbox row of an import or export choice: what it covers, and — when
+/// the backup lacks it — a badge saying so, with the row greyed and inert.
+///
+/// Public so the settings export dialog draws its options the same way.
+class ImportOptionRow extends StatelessWidget {
+  const ImportOptionRow({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.value,
+    required this.onChanged,
+    this.enabled = true,
+    this.missingLabel,
+  });
+
+  final String title;
+  final String description;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  /// False when the backup has no such section.
+  final bool enabled;
+
+  /// The badge shown while [enabled] is false.
+  final String? missingLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return InkWell(
+      onTap: enabled ? () => onChanged(!value) : null,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: AppSize.large),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Checkbox(
+                value: value && enabled,
+                onChanged: enabled ? (v) => onChanged(v ?? false) : null,
+              ),
+              const SizedBox(width: AppSpace.s6),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: enabled ? colorScheme.onSurface : colorScheme.outline,
+                      ),
+                    ),
+                    Text(
+                      description,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: enabled ? colorScheme.onSurfaceVariant : colorScheme.outline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!enabled && missingLabel != null) ...[
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
+                    ),
+                    child: Text(
+                      missingLabel!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w400,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FileName extends StatelessWidget {
+  const _FileName(this.name);
+  final String name;
 
   @override
   Widget build(BuildContext context) {
     return Text(
-      text,
-      // Was `Colors.grey` in both copies, which is the same grey in dark mode
-      // as in light and so lost most of its contrast against the sheet.
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+      name,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.bodySmall?.mono.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
     );
   }
 }
 
-/// One switch row: what it restores, and what it means when it can't.
-class _ImportOption extends StatelessWidget {
-  const _ImportOption({
-    required this.title,
-    required this.description,
-    required this.value,
-    required this.enabled,
-    required this.l10n,
-    required this.onChanged,
-  });
-
-  final String title;
-  final String description;
-  final bool value;
-
-  /// False when the backup has no such section. The row stays visible and
-  /// explains itself rather than disappearing, so the list tells the user
-  /// what the file contains.
-  final bool enabled;
-
-  final AppLocalizations l10n;
-  final ValueChanged<bool> onChanged;
+/// The warning under the options: what importing replaces.
+class _WarningNote extends StatelessWidget {
+  const _WarningNote(this.text);
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    // Both copies reached for Colors.grey / Colors.grey[400] here, which do
-    // not follow the theme — a disabled row was the same mid-grey on a white
-    // sheet and on a near-black one.
-    final disabledTitle = colorScheme.onSurface.withValues(alpha: 0.38);
-    final disabledBody = colorScheme.onSurface.withValues(alpha: 0.30);
-
-    return SwitchListTile(
-      value: value && enabled,
-      onChanged: enabled ? onChanged : null,
-      title: Text(
-        title,
-        style: textTheme.titleMedium?.copyWith(color: enabled ? null : disabledTitle),
+    final semantic = context.semantic;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: semantic.warningContainer,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
-      subtitle: Text(
-        enabled ? description : l10n.notInBackup,
-        style: textTheme.bodySmall?.copyWith(
-          color: enabled ? colorScheme.onSurfaceVariant : disabledBody,
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(Icons.warning_amber_rounded, size: AppSize.iconSm, color: semantic.warning),
+          ),
+          const SizedBox(width: AppSpace.s6),
+          Expanded(
+            child: Text(
+              text.trim(),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: semantic.onWarningContainer,
+                    height: AppType.proseHeight,
+                  ),
+            ),
+          ),
+        ],
       ),
-      contentPadding: EdgeInsets.zero,
     );
   }
 }

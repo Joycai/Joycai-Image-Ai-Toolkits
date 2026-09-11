@@ -5,25 +5,40 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/app_button.dart';
-import '../../widgets/app_dialog.dart';
-import '../../widgets/app_icon_button.dart';
-import '../../widgets/panel_resizer.dart';
 import 'directory_tree_item.dart';
 import 'widgets/result_tree_item.dart';
-import '../../core/design_tokens.dart';
 
-class FolderList extends StatelessWidget {
+/// A registered folder the user has asked to take off the list, waiting on
+/// the inline confirmation card.
+typedef _PendingRemoval = ({String path, String name});
+
+/// The folder column — `A1 1a` on the workbench, and the file browser's
+/// directory tree.
+///
+/// Paints no ground of its own: the column (`surfaceContainerLow`) comes from
+/// whatever hosts it — the layout's column panel or the drawer.
+class FolderList extends StatefulWidget {
   final bool useFileBrowserState;
 
   const FolderList({
     super.key,
     this.useFileBrowserState = false,
   });
+
+  @override
+  State<FolderList> createState() => _FolderListState();
+}
+
+class _FolderListState extends State<FolderList> {
+  _PendingRemoval? _pendingRemoval;
+
+  bool get useFileBrowserState => widget.useFileBrowserState;
 
   Future<void> _pickDirectory(BuildContext context, AppState appState) async {
     final l10n = AppLocalizations.of(context)!;
@@ -57,306 +72,343 @@ class FolderList extends StatelessWidget {
         ? context.watch<FileBrowserState>().sourceDirectories
         : galleryState.sourceDirectories;
 
+    // A folder that left the list some other way has nothing left to confirm.
+    final pending = _pendingRemoval != null && sourceDirectories.contains(_pendingRemoval!.path)
+        ? _pendingRemoval
+        : null;
+
     return Column(
-        children: [
-          if (Platform.isIOS || Platform.isAndroid)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  // The accent wash, not `primaryContainer` — see the same
-                  // note on the downloader's iOS banner.
-                  color: colorScheme.accentTint,
-                  borderRadius: BorderRadius.circular(12),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (Platform.isIOS || Platform.isAndroid)
+          _buildSandboxNotice(context, colorScheme, l10n)
+        else if (!useFileBrowserState)
+          Padding(
+            padding: const EdgeInsets.all(AppSpace.s10),
+            // An outline, not a fill: adding a folder sets up the work;
+            // running the model is the work, and the workbench keeps exactly
+            // one solid accent button for that. The *label* carries the deep
+            // ink (`A1 1a`) — the column has nothing else in it to act on.
+            child: AppButton(
+              label: l10n.addFolder,
+              icon: Icons.create_new_folder_outlined,
+              variant: AppButtonVariant.secondary,
+              accentLabel: true,
+              fullWidth: true,
+              onPressed: () => _pickDirectory(context, appState),
+            ),
+          ),
+
+        // File Browser: a plain directory tree (no aggregate nodes), with a
+        // compact header row hosting the add-folder / deselect-all actions.
+        // Workbench gallery: grouped Sources / Results / Workspace.
+        if (useFileBrowserState) ...[
+          // `B1a · 1a`: a compact 40px caption row. The tracked caption in the
+          // deep ink, the count on the track, two borderless 28px actions.
+          Container(
+            height: 40,
+            padding: const EdgeInsets.fromLTRB(AppSpace.s16, 0, 8, 0),
+            child: Row(
+              children: [
+                Text(
+                  l10n.directories.toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: AppType.trackedLabelSpacing,
+                        color: colorScheme.onAccentTint,
+                      ),
                 ),
-                child: Column(
-                  children: [
-                    Icon(Icons.photo_library_outlined, color: colorScheme.primary, size: 32),
-                    const SizedBox(height: 12),
-                    Text(
-                      Platform.isIOS ? l10n.iosSandboxActive : l10n.mobileSandboxActive,
-                      style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onAccentTint),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      Platform.isIOS ? l10n.iosSandboxDesc : l10n.mobileSandboxDesc,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onAccentTint),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                const SizedBox(width: AppSpace.s6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                  ),
+                  child: Text(
+                    '${sourceDirectories.length}',
+                    style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+                          fontWeight: FontWeight.w400,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                  ),
                 ),
-              ),
-            )
-          else if (!useFileBrowserState)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              // An outline, not a fill and not a tonal. Adding a folder sets
-              // up the work; running the model is the work. Two accent buttons
-              // on one screen make the user choose which is the point, so the
-              // workbench keeps exactly one — the process button in the right
-              // panel.
-              //
-              // `10c` draws this one tonal, on an accent wash. Not followed:
-              // its own annotation asks for the button to be *demoted* so that
-              // one solid accent button is left on the screen, and an outline
-              // demotes it further while also keeping §1's rule that the accent
-              // appears only on selection, the main CTA and badges. Tonal here
-              // would put the accent on the action the user is not meant to
-              // take, which is the reason `AppButtonVariant.secondary` stopped
-              // being a tonal in the first place.
-              child: SizedBox(
-                width: double.infinity,
-                child: AppButton(
-                  label: l10n.addFolder,
+                const Spacer(),
+                _HeaderAction(
+                  icon: Icons.deselect,
+                  tooltip: l10n.deselectAllDirectories,
+                  onPressed: appState.fileBrowserState.activeDirectories.isEmpty
+                      ? null
+                      : () => appState.fileBrowserState.clearActiveDirectories(),
+                ),
+                const SizedBox(width: 2),
+                _HeaderAction(
                   icon: Icons.create_new_folder_outlined,
-                  variant: AppButtonVariant.secondary,
-                  // The *label* is the accent, though — `16a` draws it at the
-                  // spec's 主色深 on a neutral hairline box. The box stays
-                  // quiet; the word does not. Without this the button was the
-                  // one thing on the workbench that did not move when the user
-                  // changed their theme, because `secondary` hard-pairs its
-                  // outline with `onSurface`.
-                  accentLabel: true,
+                  tooltip: l10n.addFolder,
                   onPressed: () => _pickDirectory(context, appState),
                 ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: colorScheme.outlineVariant),
+          Expanded(
+            child: sourceDirectories.isEmpty
+                ? _buildEmptyState(context, colorScheme, l10n)
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpace.s6),
+                    itemCount: sourceDirectories.length,
+                    itemBuilder: (context, index) {
+                      final path = sourceDirectories[index];
+                      return DirectoryTreeItem(
+                        key: ValueKey(path),
+                        path: path,
+                        isRoot: true,
+                        useFileBrowserState: useFileBrowserState,
+                        onRemove: _requestRemove,
+                      );
+                    },
+                  ),
+          ),
+          // `B1a · 1a`: how a drop onto a folder behaves, said once at the foot
+          // of the column. Pointer platforms only — a phone has no Ctrl.
+          if (sourceDirectories.isNotEmpty && !(Platform.isIOS || Platform.isAndroid))
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpace.s16, AppSpace.s10, AppSpace.s16, AppSpace.s10),
+              child: Text(
+                l10n.browserDragFootnote,
+                style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: colorScheme.outline,
+                      height: AppType.proseHeight,
+                    ),
               ),
             ),
+        ] else
+          Expanded(
+            child: _buildGalleryGroups(context, galleryState, colorScheme, l10n, sourceDirectories),
+          ),
 
-          // File Browser: a plain directory tree (no aggregate nodes), with a
-          // compact header row hosting the add-folder / deselect-all actions.
-          // Workbench gallery: grouped Sources / Results / Workspace.
-          if (useFileBrowserState) ...[
-            Container(
-              height: kPanelHeaderHeight,
-              padding: const EdgeInsets.fromLTRB(14, 0, 10, 0),
-              child: Row(
-                children: [
-                  Text(
-                    l10n.directories,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: colorScheme.onSurface.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '${sourceDirectories.length}',
-                      style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  AppIconButton(
-                    icon: Icons.remove_done,
-                    tooltip: l10n.deselectAllDirectories,
-                    size: 34,
-                    onPressed: appState.fileBrowserState.activeDirectories.isEmpty
-                        ? null
-                        : () => appState.fileBrowserState.clearActiveDirectories(),
-                  ),
-                  const SizedBox(width: 6),
-                  AppIconButton(
-                    icon: Icons.create_new_folder_outlined,
-                    tooltip: l10n.addFolder,
-                    size: 34,
-                    onPressed: () => _pickDirectory(context, appState),
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(90)),
-            Expanded(
-              child: sourceDirectories.isEmpty
-                  ? _buildEmptyState(context, colorScheme, l10n)
-                  : ListView.builder(
-                      itemCount: sourceDirectories.length,
-                      itemBuilder: (context, index) {
-                        final path = sourceDirectories[index];
-                        return DirectoryTreeItem(
-                          key: ValueKey(path),
-                          path: path,
-                          isRoot: true,
-                          useFileBrowserState: useFileBrowserState,
-                          onRemove: (p, name) => _confirmRemove(context, appState, p, name),
-                        );
-                      },
-                    ),
-            ),
-          ] else
-            Expanded(
-              child: _buildGalleryGroups(context, appState, galleryState, colorScheme, l10n, sourceDirectories),
-            ),
-        ],
+        // `A1 1c`: removing a folder is confirmed in the column it is being
+        // removed from, not in a dialog over the whole window.
+        AnimatedSize(
+          duration: AppMotion.durationOf(context, AppMotion.reveal),
+          curve: AppMotion.enter,
+          alignment: Alignment.bottomCenter,
+          child: pending == null
+              ? const SizedBox(width: double.infinity)
+              : _RemoveFolderCard(
+                  key: ValueKey(pending.path),
+                  folderName: pending.name,
+                  onCancel: () => setState(() => _pendingRemoval = null),
+                  onConfirm: () => _removePending(appState),
+                ),
+        ),
+      ],
     );
   }
 
   Widget _buildGalleryGroups(
     BuildContext context,
-    AppState appState,
     GalleryState galleryState,
     ColorScheme colorScheme,
     AppLocalizations l10n,
     List<String> sourceDirectories,
   ) {
     final resultRoots = galleryState.resultRootDirectories;
+    final metrics = FolderTreeMetrics.of(context);
 
     return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: AppSpace.s10),
       children: [
         // SOURCES — the aggregate "All Sources" view is the head of the group,
         // with the browsable source-folder tree nested beneath it.
-        _buildSectionHeader(context, colorScheme, l10n.sectionSources, count: sourceDirectories.length),
+        _buildSectionHeader(context, metrics, l10n.sectionSources, count: sourceDirectories.length, first: true),
         _buildFixedNode(
-          context,
+          metrics,
           icon: Icons.photo_library_outlined,
           label: l10n.allSources,
           isSelected: galleryState.viewMode == GalleryViewMode.all,
           onTap: () => galleryState.setViewMode(GalleryViewMode.all),
-          colorScheme: colorScheme,
           count: galleryState.galleryImages.length,
         ),
         if (sourceDirectories.isEmpty)
-          _buildInlineHint(context, colorScheme, l10n.noFolders)
+          _buildInlineHint(context, metrics, l10n.noFolders)
         else
           ...sourceDirectories.map((path) => DirectoryTreeItem(
                 key: ValueKey(path),
                 path: path,
                 isRoot: true,
                 useFileBrowserState: false,
-                onRemove: (p, name) => _confirmRemove(context, appState, p, name),
+                onRemove: _requestRemove,
               )),
 
-        const Divider(height: 16),
-
         // RESULTS — the result cache is also a real folder tree, now browsable.
-        _buildSectionHeader(context, colorScheme, l10n.sectionResults, count: resultRoots.length),
+        _buildSectionHeader(context, metrics, l10n.sectionResults, count: resultRoots.length),
         _buildFixedNode(
-          context,
-          icon: Icons.auto_awesome_motion,
+          metrics,
+          icon: Icons.auto_awesome_motion_outlined,
           label: l10n.allResults,
           isSelected: galleryState.viewMode == GalleryViewMode.processed,
           onTap: () => galleryState.setViewMode(GalleryViewMode.processed),
-          colorScheme: colorScheme,
           count: galleryState.processedImages.length,
         ),
         if (resultRoots.isEmpty)
-          _buildInlineHint(context, colorScheme, l10n.noResultsYet)
+          _buildInlineHint(context, metrics, l10n.noResultsYet)
         else
           ...resultRoots.map((path) => ResultTreeItem(key: ValueKey(path), path: path, isRoot: true)),
 
-        const Divider(height: 16),
-
         // WORKSPACE — transient drop zone.
-        _buildSectionHeader(context, colorScheme, l10n.sectionWorkspace),
+        _buildSectionHeader(context, metrics, l10n.sectionWorkspace),
         _buildFixedNode(
-          context,
-          icon: Icons.workspaces_outline,
+          metrics,
+          icon: Icons.inbox_outlined,
           label: l10n.tempWorkspace,
           isSelected: galleryState.viewMode == GalleryViewMode.temp,
           onTap: () => galleryState.setViewMode(GalleryViewMode.temp),
-          colorScheme: colorScheme,
           count: galleryState.droppedImages.length,
         ),
       ],
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, ColorScheme colorScheme, String label, {int? count}) {
+  /// A group caption — 11/500 tracked, in the deep ink (`--p-deep`), with its
+  /// count untracked in mono. The first sits close under the Add Folder
+  /// button; the rest open a gap above themselves instead of a divider.
+  Widget _buildSectionHeader(
+    BuildContext context,
+    FolderTreeMetrics metrics,
+    String label, {
+    int? count,
+    bool first = false,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
+      padding: EdgeInsets.fromLTRB(metrics.headerInset, first ? AppSpace.s6 : 14, metrics.headerInset, AppSpace.s4),
       child: Row(
         children: [
-          Text(
-            label.toUpperCase(),
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurfaceVariant,
-                  letterSpacing: AppType.trackedLabelSpacing,
-                ),
+          Expanded(
+            child: Text(
+              label.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                letterSpacing: AppType.trackedLabelSpacing,
+                color: colorScheme.onAccentTint,
+              ),
+            ),
           ),
-          const Spacer(),
           if (count != null)
-            Text('$count',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline)),
+            Text(
+              '$count',
+              style: theme.textTheme.labelSmall?.mono.copyWith(
+                letterSpacing: 0,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildInlineHint(BuildContext context, ColorScheme colorScheme, String text) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 6, 16, 10),
-      child: Text(text,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.outline)),
+  /// A quiet row where a group's folders would be, starting just past a root
+  /// row's chevron slot.
+  Widget _buildInlineHint(BuildContext context, FolderTreeMetrics metrics, String text) {
+    final theme = Theme.of(context);
+    final inset = metrics.margin + metrics.padding + FolderTreeMetrics.disclosureSize + metrics.gap;
+    return Container(
+      constraints: BoxConstraints(minHeight: metrics.height),
+      alignment: Alignment.centerLeft,
+      padding: EdgeInsets.fromLTRB(inset, 0, metrics.headerInset, 0),
+      child: Text(
+        text,
+        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      ),
     );
   }
 
   Widget _buildFixedNode(
-    BuildContext context, {
+    FolderTreeMetrics metrics, {
     required IconData icon,
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
-    required ColorScheme colorScheme,
     int? count,
   }) {
-    return ListTile(
-      leading: Icon(icon, color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant, size: 20),
-      title: Text(
-        label,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          color: isSelected ? colorScheme.primary : colorScheme.onSurface,
-        ),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: metrics.margin),
+      child: FolderTreeRow(
+        icon: icon,
+        label: label,
+        count: count == null ? null : '$count',
+        selected: isSelected,
+        onTap: onTap,
       ),
-      trailing: count != null
-          ? Text(
-              '$count',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: isSelected ? colorScheme.primary : colorScheme.outline,
-              ),
-            )
-          : null,
-      selected: isSelected,
-      dense: true,
-      onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      visualDensity: VisualDensity.compact,
     );
   }
 
-  void _confirmRemove(BuildContext context, AppState appState, String path, String folderName) {
-    final l10n = AppLocalizations.of(context)!;
-    AppDialog.show<void>(
-      context,
-      title: l10n.removeFolderConfirmTitle,
-      content: Text(l10n.removeFolderConfirmMessage(folderName)),
-      actions: [
-        AppButton(
-          label: l10n.cancel,
-          variant: AppButtonVariant.text,
-          onPressed: () => Navigator.pop(context),
-        ),
-        AppButton(
-          label: l10n.remove,
-          variant: AppButtonVariant.destructive,
-          onPressed: () {
-            if (useFileBrowserState) {
-              appState.fileBrowserState.removeBaseDirectory(path);
-            } else {
-              appState.removeBaseDirectory(path);
-            }
-            Navigator.pop(context);
-          },
-        ),
-      ],
+  /// `A1 1e`: an outlined card in the Add Folder button's place, with the
+  /// explanation set quietly under it.
+  Widget _buildSandboxNotice(BuildContext context, ColorScheme colorScheme, AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, AppSpace.s10, 12, AppSpace.s10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            constraints: const BoxConstraints(minHeight: AppSize.touch),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s6),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppRadius.control),
+              border: Border.all(color: colorScheme.outlineVariant),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.info_outline, size: AppSize.iconMd, color: colorScheme.onAccentTint),
+                const SizedBox(width: AppSpace.s6),
+                Flexible(
+                  child: Text(
+                    Platform.isIOS ? l10n.iosSandboxActive : l10n.mobileSandboxActive,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleMedium?.copyWith(color: colorScheme.onAccentTint),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpace.s4, AppSpace.s6, AppSpace.s4, 0),
+            child: Text(
+              Platform.isIOS ? l10n.iosSandboxDesc : l10n.mobileSandboxDesc,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: AppType.proseHeight,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  void _requestRemove(String path, String folderName) {
+    setState(() => _pendingRemoval = (path: path, name: folderName));
+  }
+
+  void _removePending(AppState appState) {
+    final pending = _pendingRemoval;
+    if (pending == null) return;
+    setState(() => _pendingRemoval = null);
+    if (useFileBrowserState) {
+      appState.fileBrowserState.removeBaseDirectory(pending.path);
+    } else {
+      appState.removeBaseDirectory(pending.path);
+    }
   }
 
   Widget _buildEmptyState(BuildContext context, ColorScheme colorScheme, AppLocalizations l10n) {
@@ -366,21 +418,133 @@ class FolderList extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.folder_off_outlined, size: 48, color: colorScheme.outlineVariant),
-            const SizedBox(height: 16),
+            Icon(Icons.folder_off_outlined, size: 28, color: colorScheme.outline),
+            const SizedBox(height: AppSpace.s6),
             Text(
               l10n.noFolders,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.onSurface),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpace.s6),
             Text(
               l10n.clickAddFolder,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: AppType.proseHeight,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// `A1 1c`: the remove-folder confirmation, set at the foot of the column.
+///
+/// Panel ground on the column, hairline, r10. Cancel is the deep-ink text
+/// button; Remove is the one solid error fill, and only appears here — after
+/// the user has already asked.
+class _RemoveFolderCard extends StatelessWidget {
+  final String folderName;
+  final VoidCallback onCancel;
+  final VoidCallback onConfirm;
+
+  const _RemoveFolderCard({
+    super.key,
+    required this.folderName,
+    required this.onCancel,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final body = theme.textTheme.bodySmall?.copyWith(height: AppType.proseHeight);
+
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: Container(
+        margin: const EdgeInsets.all(AppSpace.s6),
+        padding: const EdgeInsets.all(AppSpace.s10),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          border: Border.all(color: colorScheme.outlineVariant),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.removeFolderConfirmTitle,
+              style: body?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurface),
+            ),
+            Text(
+              l10n.removeFolderConfirmMessage(folderName),
+              style: body?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: AppSpace.s6),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: AppSpace.s4,
+              runSpacing: AppSpace.s4,
+              children: [
+                AppButton(
+                  label: l10n.cancel,
+                  variant: AppButtonVariant.text,
+                  size: AppButtonSize.compact,
+                  onPressed: onCancel,
+                ),
+                AppButton(
+                  label: l10n.remove,
+                  variant: AppButtonVariant.destructive,
+                  size: AppButtonSize.compact,
+                  onPressed: onConfirm,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A borderless 28px action in the directory column's caption row
+/// (`B1a · 1a`): the deep ink, and the outline once there is nothing to do.
+class _HeaderAction extends StatelessWidget {
+  const _HeaderAction({required this.icon, required this.tooltip, required this.onPressed});
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return IconButton(
+      icon: Icon(icon),
+      tooltip: tooltip,
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        foregroundColor: colorScheme.onAccentTint,
+        disabledForegroundColor: colorScheme.outline,
+        iconSize: AppSize.iconMd,
+        fixedSize: const Size.square(AppSize.compact),
+        minimumSize: const Size.square(AppSize.compact),
+        maximumSize: const Size.square(AppSize.compact),
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.standard,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
       ),
     );
   }

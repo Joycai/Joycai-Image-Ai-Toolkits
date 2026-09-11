@@ -45,5 +45,20 @@
   "filterPrompts": "篩選提示...",
   "shareFailed": "分享失敗: {error}",
   "more": "更多",
-  "confirm": "確認"
+  "confirm": "確認",
+  "moreSheetDesktopOnlyNote": "檔案瀏覽器與圖片下載器僅在桌面 / 平板提供。",
+  "consoleIdle": "閒置",
+  "consoleFailedCount": "{count} 個失敗",
+  "logSearchHint": "篩選日誌…",
+  "logLevelError": "錯誤",
+  "logLevelRunning": "執行",
+  "logLevelSuccess": "成功",
+  "goToSettings": "前往設定",
+  "actionImport": "匯入",
+  "actionExport": "匯出",
+  "actionOpen": "開啟",
+  "actionClear": "清理",
+  "actionRun": "執行",
+  "actionChange": "變更",
+  "experimental": "實驗性"
 }

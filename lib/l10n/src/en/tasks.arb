@@ -165,5 +165,17 @@
     }
   },
   "viewAllTasks": "View all",
-  "durationLabel": "Elapsed"
+  "durationLabel": "Elapsed",
+  "clearAllTasksTitle": "Clear all tasks?",
+  "clearAllRunningNote": "Includes {count} running tasks",
+  "@clearAllRunningNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearAllKeepsFiles": "Running tasks are left alone. Generated files stay in the output folder; only the queue's records are cleared.",
+  "taskNoOutputsFailed": "No outputs. The task failed before writing any.",
+  "noTaskLogCancelledHint": "The task was cancelled before it started, so it left no log."
 }

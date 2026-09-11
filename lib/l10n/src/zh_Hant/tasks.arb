@@ -173,5 +173,10 @@
     }
   },
   "viewAllTasks": "查看全部",
-  "durationLabel": "用時"
+  "durationLabel": "用時",
+  "clearAllTasksTitle": "清除全部任務？",
+  "clearAllRunningNote": "包含 {count} 個正在執行的任務",
+  "clearAllKeepsFiles": "執行中的任務不受影響。已產生的檔案保留在輸出目錄裡，只是佇列裡的紀錄被清空。",
+  "taskNoOutputsFailed": "本次沒有產物——任務在寫入前就失敗了",
+  "noTaskLogCancelledHint": "任務在開始執行前被取消，所以沒有留下日誌。"
 }

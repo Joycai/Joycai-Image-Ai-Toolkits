@@ -500,5 +500,93 @@
     }
   },
   "channelReorderHandleTooltip": "Drag to reorder",
-  "channelOrderSaveFailed": "Could not save the order; the previous one is back."
+  "channelOrderSaveFailed": "Could not save the order; the previous one is back.",
+  "wizardStepCounter": "Step {current} / {total}",
+  "@wizardStepCounter": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "wizardStepsAdaptNote": "Steps adjust to the provider's access method",
+  "providerNoMatchHint": "\"{query}\" isn't in the list. Use the Custom group and choose OpenAI compatible.",
+  "@providerNoMatchHint": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "providerUseCustom": "Add as custom",
+  "probeSkippableNote": "Optional; you can still set the name and tag next",
+  "endpointPresetValue": "Preset value: {endpoint}",
+  "@endpointPresetValue": {
+    "placeholders": {
+      "endpoint": {
+        "type": "String"
+      }
+    }
+  },
+  "variantResultLabel": "Result",
+  "probeOkNext": "You can turn on model discovery right away",
+  "probeNoModelsNext": "Endpoint and key work, but the model list is empty. Add a Model ID by hand.",
+  "probeAuthFailedNext": "Check the key was copied in full and hasn't expired.",
+  "probeNotAnApiNext": "An HTML page came back, probably a console URL. API endpoints usually end in /v1 or /v1beta.",
+  "probeUnreachableNext": "DNS failed or timed out. Check the URL, proxy and network.",
+  "probeNotSupportedNext": "This protocol has no model list; it can only be verified by submitting a task.",
+  "previewEmptyKeyNote": "No key yet. You can add it later in Edit Channel.",
+  "presetShortHint": "Fills endpoint and protocol in one tap",
+  "deleteChannel": "Delete channel",
+  "discoveryOffEffect": "When off, Fetch Models is disabled for this channel",
+  "protocolUnavailable": "Unavailable",
+  "reasoningEffortUnsupported": "This model takes no reasoning parameters. The section stays greyed out and lights up when you switch to a chat model.",
+  "modelIdRequiredTitle": "Model ID can't be empty",
+  "modelIdRequiredDesc": "It's the only required field; a blank name uses the ID as the display name.",
+  "contextSpecifyInvalid": "Enter a positive whole number; blank or 0 can't be saved.",
+  "addModelSubtitle": "When adding by hand, only the ID is required",
+  "addModelIdHelper": "Leaving this blank blocks saving; a blank name uses the ID.",
+  "addModelDefaultsNote": "Protocol, context window and capability switches stay on Auto or their defaults. Add it first, run it once, then pin what needs pinning.",
+  "modelNameOptionalHint": "Can be left blank",
+  "moveUp": "Move Up",
+  "moveDown": "Move Down",
+  "channelReorderFootnote": "Hover for the handle · drag to reorder · right-click or Alt+↑/↓ does the same",
+  "channelReorderLockedNote": "Reordering is off while searching: only part of the list is shown, so a drop position would be wrong. Clear the search to restore it.",
+  "noModelsConfiguredHint": "Use Fetch Models to discover them, or add one by hand.",
+  "addModelManually": "Add manually",
+  "selectAChannelHint": "Pick a channel on the left to see its models here.",
+  "noModelsMatchQuery": "No models match \"{query}\"",
+  "@noModelsMatchQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noFeeGroupsHint": "Create a group, then point models at it.",
+  "noNewModelsFoundHint": "Every model this channel returned is already in the list.",
+  "discoveryCapabilitiesNote": "Discovered models carry only an ID and a type; capabilities, context window and fee group are set per model.",
+  "deleteChannelTitle": "Delete channel \"{name}\"?",
+  "@deleteChannelTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteChannelModelsNote": "Includes {count} models",
+  "@deleteChannelModelsNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteChannelBody": "Workbench settings using these models become \"No model selected\"; submitted tasks are unaffected. Usage records are kept by model name.",
+  "newFeeGroup": "New Group",
+  "cachePriceBlankPlaceholder": "Blank = input price",
+  "fetchFailedTitle": "Connection failed"
 }

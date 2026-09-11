@@ -8,19 +8,30 @@ import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
-import '../../widgets/app_button.dart';
-import '../../widgets/app_search_field.dart';
-import '../../widgets/app_icon_button.dart';
 import '../../widgets/app_run_console.dart';
-import '../../widgets/app_segmented_control.dart';
+import '../../widgets/app_search_field.dart';
+import '../../widgets/glass/app_glass.dart';
 import '../../widgets/panel_resizer.dart';
 import 'prompts_io.dart';
+import 'widgets/prompt_category_strip.dart';
 import 'widgets/prompt_dialogs.dart';
+import 'widgets/prompt_library_parts.dart';
+import 'widgets/prompt_selection_capsule.dart';
+import 'widgets/prompts_header.dart';
 import 'widgets/prompts_sidebar.dart';
 import 'widgets/system_template_list.dart';
 import 'widgets/tag_management_list.dart';
 import 'widgets/user_prompt_list.dart';
 
+/// The Prompt Library (`C1`): user prompts, system templates and categories.
+///
+/// ≥ 600 wide, two opaque columns — the category filter (drag-resizable,
+/// persisted) and the list under a 56px header that folds by measurement and
+/// turns into the selection header while prompts are picked. Tablets add the
+/// horizontal category strip under that header.
+///
+/// < 600, a glass app bar with the pinned search and a three-tab bar, the same
+/// strip under it, and selection actions in a floating glass capsule.
 class PromptsScreen extends StatefulWidget {
   const PromptsScreen({super.key});
 
@@ -34,7 +45,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   final TextEditingController _searchCtrl = TextEditingController();
   late TabController _tabController;
-  double _sidebarWidth = 230;
+  double _sidebarWidth = 260;
 
   /// Drag accumulator, allowed [_kDragSlack] past the limits so the handle
   /// re-engages where the pointer actually is after a drag past the end,
@@ -46,12 +57,14 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   List<SystemPrompt> _systemPrompts = [];
   List<PromptTag> _tags = [];
   String _searchQuery = "";
-  String _selectedSystemType = 'refiner'; // 'refiner' or 'rename'
-  final Set<int> _selectedFilterTagIds = {};
+
+  /// 'all', 'refiner' or 'rename'.
+  String _selectedSystemType = 'all';
+  Set<int> _selectedFilterTagIds = {};
   // When multiple categories are selected: false = match any (OR), true = match all (AND).
   bool _filterMatchAll = false;
 
-  final Set<int> _selectedIds = {};
+  Set<int> _selectedIds = {};
   bool get _isSelectionMode => _selectedIds.isNotEmpty;
 
   @override
@@ -88,28 +101,39 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   void _toggleSelection(int id) {
     setState(() {
-      if (_selectedIds.contains(id)) {
-        _selectedIds.remove(id);
-      } else {
-        _selectedIds.add(id);
-      }
+      _selectedIds = _selectedIds.contains(id)
+          ? ({..._selectedIds}..remove(id))
+          : {..._selectedIds, id};
     });
   }
 
   void _enterSelectionMode(int id) {
     if (!_isSelectionMode) {
-      setState(() {
-        _selectedIds.add(id);
-      });
+      setState(() => _selectedIds = {id});
     }
   }
 
   void _clearSelection() {
     if (_selectedIds.isNotEmpty) {
-      setState(() {
-        _selectedIds.clear();
-      });
+      setState(() => _selectedIds = {});
     }
+  }
+
+  void _toggleFilterTag(int id) {
+    setState(() {
+      _selectedFilterTagIds = _selectedFilterTagIds.contains(id)
+          ? ({..._selectedFilterTagIds}..remove(id))
+          : {..._selectedFilterTagIds, id};
+    });
+  }
+
+  void _clearFilterTags() => setState(() => _selectedFilterTagIds = {});
+
+  void _setView(int index) {
+    setState(() {
+      _tabController.index = index;
+      _clearSelection();
+    });
   }
 
   Future<void> _loadData() async {
@@ -126,97 +150,77 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     }
   }
 
+  // --- Derived lists ---------------------------------------------------------
+
+  List<Prompt> get _filteredUser => _userPrompts.where((p) {
+        final matchesSearch = p.title.toLowerCase().contains(_searchQuery) ||
+            p.content.toLowerCase().contains(_searchQuery);
+        if (_selectedFilterTagIds.isEmpty) return matchesSearch;
+        final promptTagIds = p.tags.map((t) => t.id!).toSet();
+        final matchesTags = _filterMatchAll
+            ? _selectedFilterTagIds.every((id) => promptTagIds.contains(id))
+            : _selectedFilterTagIds.any((id) => promptTagIds.contains(id));
+        return matchesSearch && matchesTags;
+      }).toList();
+
+  List<SystemPrompt> get _filteredSystem => _systemPrompts.where((p) {
+        final matchesType = _selectedSystemType == 'all' || p.type == _selectedSystemType;
+        final matchesSearch = p.title.toLowerCase().contains(_searchQuery) ||
+            p.content.toLowerCase().contains(_searchQuery);
+        return matchesType && matchesSearch;
+      }).toList();
+
+  /// Number of user prompts carrying each tag id.
+  Map<int, int> _computeTagCounts() => {
+        for (final t in _tags)
+          t.id!: _userPrompts.where((p) => p.tags.any((pt) => pt.id == t.id)).length,
+      };
+
+  String _addLabel(AppLocalizations l10n) {
+    if (_tabController.index == 1) return l10n.newTemplate;
+    if (_tabController.index == 2) return l10n.addCategory;
+    return l10n.newPrompt;
+  }
+
+  // --- Build -----------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final phone = Responsive.isMobile(context);
+    final filteredUser = _filteredUser;
+    final filteredSystem = _filteredSystem;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: ResponsiveBuilder(
-        mobile: _buildMobileLayout(l10n),
-        tablet: _buildDesktopLayout(l10n, isTablet: true),
-        desktop: _buildDesktopLayout(l10n),
+        mobile: _buildMobileLayout(l10n, filteredUser, filteredSystem),
+        tablet: _buildDesktopLayout(l10n, filteredUser, filteredSystem, isTablet: true),
+        desktop: _buildDesktopLayout(l10n, filteredUser, filteredSystem),
       ),
       bottomNavigationBar: const AppRunConsole(),
-      floatingActionButton: _isSelectionMode ? _buildBulkActionFAB(l10n) : null,
+      floatingActionButton: phone && _isSelectionMode
+          ? PromptSelectionCapsule(
+              count: _selectedIds.length,
+              onClose: _clearSelection,
+              onCategorize: _handleBulkCategorize,
+              onDelete: _handleBulkDelete,
+            )
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-    );
-  }
-
-  Widget _buildBulkActionFAB(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isNarrow = Responsive.isMobile(context);
-    // The same spec as the browser's selection bar: neutral surface, pill
-    // ends, the overlay shadow rung. This was a primaryContainer Card at its
-    // own elevation and radius — the accent spent on chrome, and the app's
-    // two bulk-action bars disagreeing on every axis.
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        boxShadow: colorScheme.shadowOverlay,
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: _clearSelection,
-              tooltip: l10n.cancel,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              l10n.nSelected(_selectedIds.length),
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(width: 12),
-            const VerticalDivider(width: 1, indent: 8, endIndent: 8),
-            const SizedBox(width: 4),
-            if (isNarrow) ...[
-              IconButton(
-                icon: const Icon(Icons.category_outlined),
-                tooltip: l10n.categorize,
-                onPressed: _handleBulkCategorize,
-              ),
-              IconButton(
-                icon: Icon(Icons.delete_outline, color: colorScheme.error),
-                tooltip: l10n.delete,
-                onPressed: _handleBulkDelete,
-              ),
-            ] else ...[
-              AppButton(
-                label: l10n.categorize,
-                icon: Icons.category_outlined,
-                variant: AppButtonVariant.text,
-                onPressed: _handleBulkCategorize,
-              ),
-              const SizedBox(width: 8),
-              AppButton(
-                label: l10n.delete,
-                icon: Icons.delete_outline,
-                variant: AppButtonVariant.destructiveText,
-                onPressed: _handleBulkDelete,
-              ),
-              const SizedBox(width: 8),
-            ],
-          ],
-        ),
-        ),
-      ),
     );
   }
 
   Future<void> _handleBulkDelete() async {
     final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showBulkDeleteConfirm(context, l10n, _selectedIds.length);
+    final isUser = _tabController.index == 0;
+    final titles = isUser
+        ? [for (final p in _userPrompts) if (_selectedIds.contains(p.id)) p.title]
+        : [for (final p in _systemPrompts) if (_selectedIds.contains(p.id)) p.title];
+    final confirmed = await showBulkDeleteConfirm(context, l10n, _selectedIds.length, titles: titles);
     if (confirmed && mounted) {
       final appState = Provider.of<AppState>(context, listen: false);
-      if (_tabController.index == 0) {
+      if (isUser) {
         await appState.deletePrompts(_selectedIds.toList());
       } else {
         await appState.deleteSystemPrompts(_selectedIds.toList());
@@ -228,7 +232,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   Future<void> _handleBulkCategorize() async {
     final l10n = AppLocalizations.of(context)!;
-    final targetTagIds = await showBulkCategorizeDialog(context, l10n, _tags);
+    final targetTagIds = await showBulkCategorizeDialog(context, l10n, _tags, count: _selectedIds.length);
     if (targetTagIds != null && mounted) {
       final appState = Provider.of<AppState>(context, listen: false);
       if (_tabController.index == 0) {
@@ -241,446 +245,304 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     }
   }
 
-  // --- Mobile Layout ---
-  Widget _buildMobileLayout(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          SliverAppBar(
-            title: Text(_isSelectionMode ? l10n.selectionMode : l10n.promptLibrary),
-            pinned: true,
-            floating: true,
-            snap: true,
-            actions: _isSelectionMode ? [] : [
-              _buildImportExportMenu(l10n),
-              IconButton(onPressed: _handleAddAction, icon: const Icon(Icons.add)),
-            ],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(108),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: _buildSearchField(l10n),
+  /// Whether the list on [tab] is narrowed in a way that turns dragging off.
+  bool _reorderBlocked(int tab, List<Prompt> filteredUser, List<SystemPrompt> filteredSystem) {
+    if (tab == 0) {
+      return (_searchQuery.isNotEmpty || _selectedFilterTagIds.isNotEmpty) && filteredUser.isNotEmpty;
+    }
+    if (tab == 1) return _searchQuery.isNotEmpty && filteredSystem.isNotEmpty;
+    return false;
+  }
+
+  /// [child] with the warning strip under it while dragging is off.
+  Widget _withReorderStrip(bool blocked, Widget child) {
+    return Column(
+      children: [
+        Expanded(child: child),
+        if (blocked) const PromptReorderBlockedStrip(),
+      ],
+    );
+  }
+
+  Widget _buildUserList(List<Prompt> filteredUser) {
+    return UserPromptList(
+      prompts: filteredUser,
+      allPrompts: _userPrompts,
+      searchQuery: _searchQuery,
+      selectedFilterTagIds: _selectedFilterTagIds,
+      onRefresh: _loadData,
+      onShowEditDialog: (l, {prompt}) => _showPromptDialog(l, prompt: prompt),
+      onConfirmDelete: _confirmDelete,
+      selectedIds: _selectedIds,
+      isSelectionMode: _isSelectionMode,
+      onToggleSelection: _toggleSelection,
+      onEnterSelectionMode: _enterSelectionMode,
+    );
+  }
+
+  Widget _buildSystemList(List<SystemPrompt> filteredSystem, {Widget? header}) {
+    return SystemTemplateList(
+      prompts: filteredSystem,
+      allPrompts: _systemPrompts,
+      searchQuery: _searchQuery,
+      onRefresh: _loadData,
+      onShowEditDialog: (l, {prompt}) => _showSystemPromptDialog(l, prompt: prompt),
+      onConfirmDelete: _confirmDelete,
+      header: header,
+      selectedIds: _selectedIds,
+      isSelectionMode: _isSelectionMode,
+      onToggleSelection: _toggleSelection,
+      onEnterSelectionMode: _enterSelectionMode,
+    );
+  }
+
+  Widget _buildTagList() {
+    return TagManagementList(
+      tags: _tags,
+      promptCounts: _computeTagCounts(),
+      onRefresh: _loadData,
+      onShowEditDialog: (l, {tag}) => _showTagDialog(l, tag: tag),
+      onConfirmDelete: _confirmDeleteTag,
+    );
+  }
+
+  // --- Phone -----------------------------------------------------------------
+
+  Widget _buildMobileLayout(
+    AppLocalizations l10n,
+    List<Prompt> filteredUser,
+    List<SystemPrompt> filteredSystem,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    const double searchRow = 40 + 8;
+    const double tabRow = 44;
+
+    return NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) => [
+        SliverAppBar(
+          pinned: true,
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          toolbarHeight: 56,
+          titleSpacing: AppSpace.s16,
+          // The screen's one full-width glass layer, behind the title row, the
+          // search and the tabs alike.
+          flexibleSpace: const AppGlass(
+            grade: GlassGrade.bar,
+            edges: GlassEdges.bottom,
+            shadow: false,
+            child: SizedBox.expand(),
+          ),
+          title: Text(
+            _isSelectionMode ? l10n.selectionMode : l10n.promptLibrary,
+            style: textTheme.headlineMedium,
+          ),
+          actions: _isSelectionMode
+              ? [
+                  IconButton(icon: const Icon(Icons.close), tooltip: l10n.cancel, onPressed: _clearSelection),
+                  const SizedBox(width: AppSpace.s6),
+                ]
+              : [
+                  PromptImportExportMenu(
+                    boxed: false,
+                    onImport: () => _importPrompts(l10n),
+                    onExport: () => _exportPrompts(l10n),
                   ),
-                  TabBar(
+                  IconButton(icon: const Icon(Icons.add), tooltip: _addLabel(l10n), onPressed: _handleAddAction),
+                  const SizedBox(width: AppSpace.s6),
+                ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(searchRow + tabRow),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(AppSpace.s16, 0, AppSpace.s16, 8),
+                  child: SizedBox(
+                    height: 40,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: scheme.onSurface.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(AppRadius.control),
+                      ),
+                      child: AppSearchField(controller: _searchCtrl, hint: l10n.filterPrompts),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: tabRow,
+                  child: TabBar(
                     controller: _tabController,
+                    indicator: UnderlineTabIndicator(
+                      borderSide: BorderSide(color: scheme.primary, width: 2),
+                    ),
+                    indicatorSize: TabBarIndicatorSize.label,
+                    dividerColor: Colors.transparent,
+                    labelColor: scheme.onAccentTint,
+                    unselectedLabelColor: scheme.onSurfaceVariant,
+                    labelStyle: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                    unselectedLabelStyle: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
                     tabs: [
-                      Tab(text: l10n.userPrompts),
-                      Tab(text: l10n.systemTemplates),
-                      Tab(text: l10n.categoriesTab),
+                      Tab(height: tabRow, text: l10n.userPrompts),
+                      Tab(height: tabRow, text: l10n.systemTemplates),
+                      Tab(height: tabRow, text: l10n.categoriesTab),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-        body: Column(
-          children: [
-            if (_tabController.index == 0 && _tags.isNotEmpty)
-              _buildMobileFilterBar(colorScheme),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: _buildTabViews(l10n),
-              ),
-            ),
-          ],
         ),
-      ),
-    );
-  }
-
-  // --- Desktop/Tablet Layout (flush columns, hairlines between) ---
-  Widget _buildDesktopLayout(AppLocalizations l10n, {bool isTablet = false}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final tagCounts = _computeTagCounts();
-    final isCategories = _tabController.index == 2;
-
-    return Scaffold(
-      backgroundColor: colorScheme.surfaceContainer,
-      // Flush columns. `10i` gives the category sidebar a right hairline and
-      // runs both columns into the window, the same as the other resource
-      // screens; this was the last one still inset on the canvas.
-      body: Row(
-          children: [
-            // ── Left column: library header + category filter ──────────────
-            PanelCard(
-              width: _sidebarWidth,
-              shape: PanelShape.column,
-              child: Column(
-                children: [
-                  _buildSidebarHeader(l10n, colorScheme, isCategories: isCategories),
-                  // Category filter list
-                  Expanded(
-                    child: PromptsSidebar(
-                      tags: _tags,
-                      selectedFilterTagIds: _selectedFilterTagIds,
-                      tagCounts: tagCounts,
-                      totalCount: _userPrompts.length,
-                      matchAll: _filterMatchAll,
-                      onMatchModeChanged: (val) => setState(() => _filterMatchAll = val),
-                      onTagToggle: (id) {
-                        setState(() {
-                          if (_selectedFilterTagIds.contains(id)) {
-                            _selectedFilterTagIds.remove(id);
-                          } else {
-                            _selectedFilterTagIds.add(id);
-                          }
-                        });
-                      },
-                      onClear: () => setState(() => _selectedFilterTagIds.clear()),
-                    ),
-                  ),
-                ],
-              ),
+      ],
+      body: Column(
+        children: [
+          if (_tabController.index == 0 && _tags.isNotEmpty)
+            PromptCategoryStrip(
+              tags: _tags,
+              selectedFilterTagIds: _selectedFilterTagIds,
+              totalCount: _userPrompts.length,
+              onTagToggle: _toggleFilterTag,
+              onClear: _clearFilterTags,
+              chipHeight: AppSize.control,
             ),
-            PanelResizer(
-              shape: PanelShape.column,
-              onDrag: (dx) => setState(() {
-                _dragSidebarWidth = ((_dragSidebarWidth ?? _sidebarWidth) + dx)
-                    .clamp(_minSidebarWidth - _kDragSlack, _maxSidebarWidth + _kDragSlack);
-                _sidebarWidth = _dragSidebarWidth!.clamp(_minSidebarWidth, _maxSidebarWidth);
-              }),
-              onDragEnd: () {
-                _dragSidebarWidth = null;
-                DatabaseService()
-                    .saveSetting('prompts_sidebar_width', _sidebarWidth.round().toString());
-              },
-            ),
-
-            // ── Main column: 56px header + content ─────────────────────────
-            Expanded(
-              child: PanelCard(
-                shape: PanelShape.column,
-                child: Column(
-                  children: [
-                    Container(
-                      height: 56,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _withReorderStrip(_reorderBlocked(0, filteredUser, filteredSystem), _buildUserList(filteredUser)),
+                _withReorderStrip(
+                  _reorderBlocked(1, filteredUser, filteredSystem),
+                  _buildSystemList(
+                    filteredSystem,
+                    header: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
+                        color: scheme.surfaceContainerLow,
+                        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+                      ),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: PromptTemplateTypeSegmented(
+                          value: _selectedSystemType,
+                          onChanged: (v) => setState(() => _selectedSystemType = v),
                         ),
                       ),
-                      child: _buildDesktopHeader(l10n, colorScheme,
-                          isCategories: isCategories),
                     ),
-                    // Tablet: horizontal category filter when on user prompts tab
-                    if (isTablet && _tabController.index == 0 && _tags.isNotEmpty)
-                      _buildMobileFilterBar(colorScheme),
-                    // Main content
-                    Expanded(
-                      child: _buildConstrainedContent(
-                        _buildTabViews(l10n)[_tabController.index],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                _buildTagList(),
+              ],
             ),
-          ],
-      ),
-    );
-  }
-
-  Widget _buildSidebarHeader(
-    AppLocalizations l10n,
-    ColorScheme colorScheme, {
-    required bool isCategories,
-  }) {
-    return Container(
-      height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
-        ),
-      ),
-      child: Row(
-        children: [
-          // The same rounded accent tile that fronts a heading elsewhere in the
-          // app, rather than a bare icon floating beside the words.
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: colorScheme.accentTint,
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Icon(Icons.auto_awesome, size: 18, color: colorScheme.primary),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              l10n.promptLibrary,
-              style: Theme.of(context).textTheme.titleMedium,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          // Manage categories: a toggle, so the box fills while its tab is
-          // open. Same box and size as the actions across the header — it is
-          // the same kind of thing, and was the odd one out at 32.
-          AppIconButton(
-            icon: Icons.filter_list,
-            tooltip: l10n.categoriesTab,
-            selected: isCategories,
-            onPressed: () => setState(() {
-              _tabController.index = isCategories ? 0 : 2;
-              _clearSelection();
-            }),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDesktopHeader(
+  // --- Desktop / tablet ------------------------------------------------------
+
+  Widget _buildDesktopLayout(
     AppLocalizations l10n,
-    ColorScheme colorScheme, {
-    bool isCategories = false,
+    List<Prompt> filteredUser,
+    List<SystemPrompt> filteredSystem, {
+    bool isTablet = false,
   }) {
-    // ── Selection mode ──────────────────────────────────────────────────────
-    if (_isSelectionMode) {
-      return Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: _clearSelection,
-            tooltip: l10n.cancel,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            l10n.nSelected(_selectedIds.length),
-            style: TextStyle(color: colorScheme.accentText, fontWeight: FontWeight.w600),
-          ),
-          const Spacer(),
-          AppButton(
-            label: l10n.categorize,
-            icon: Icons.category_outlined,
-            variant: AppButtonVariant.text,
-            onPressed: _handleBulkCategorize,
-          ),
-          const SizedBox(width: 4),
-          AppButton(
-            label: l10n.delete,
-            icon: Icons.delete_outline,
-            variant: AppButtonVariant.destructiveText,
-            onPressed: _handleBulkDelete,
-          ),
-        ],
-      );
-    }
+    final tab = _tabController.index;
+    final isCategories = tab == 2;
 
-    // ── Categories tab ──────────────────────────────────────────────────────
-    if (isCategories) {
-      return Row(
-        children: [
-          Icon(Icons.category, size: 22, color: colorScheme.primary),
-          const SizedBox(width: 10),
-          Text(
-            l10n.categoriesTab,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const Spacer(),
-          AppButton(
-            label: l10n.addCategory,
-            icon: Icons.add,
-            onPressed: _handleAddAction,
-          ),
-        ],
-      );
-    }
+    final Widget content = switch (tab) {
+      1 => _buildSystemList(filteredSystem),
+      2 => _buildTagList(),
+      _ => _buildUserList(filteredUser),
+    };
 
-    // ── User / System prompts ───────────────────────────────────────────────
-    //
-    // Measured, not switched on the breakpoint: the sidebar beside this header
-    // is drag-resizable, so a tablet header is anywhere between ~310px and
-    // ~710px wide and the breakpoint says nothing about which. Below the
-    // threshold the toolbar folds — tighter track, import and export back into
-    // the one overflow menu the phone layout already uses, shorter create
-    // button — which is what the four controls at full size cost in width.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final tight = constraints.maxWidth < 560;
-
-        return Row(
-          children: [
-            _buildTabToggle(l10n, colorScheme, compact: tight),
-            // Takes the slack so the actions stay flush right — the field
-            // itself keeps its width until the slack runs out, and only then
-            // gives way. A Spacer with a fixed-width field beside it cannot do
-            // that: it holds its share and the row overflows instead.
-            Expanded(
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 250),
-                  child: _buildSearchField(l10n),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            if (tight)
-              _buildImportExportMenu(l10n)
-            else
-              _buildImportExportActions(l10n),
-            const SizedBox(width: 10),
-            AppButton(
-              label: _addLabel(l10n),
-              icon: Icons.add,
-              onPressed: _handleAddAction,
-              size: tight ? AppButtonSize.compact : AppButtonSize.normal,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Which list the header is over. The same control the rest of the app uses
-  /// for a choice of two — this screen had grown its own, a track with a plain
-  /// raised chip, which said the same thing in a second dialect.
-  Widget _buildTabToggle(
-    AppLocalizations l10n,
-    ColorScheme colorScheme, {
-    bool compact = false,
-  }) {
-    return AppSegmentedControl<int>(
-      compact: compact,
-      segments: [
-        AppSegment(value: 0, label: l10n.userPrompts),
-        AppSegment(value: 1, label: l10n.systemTemplates),
-      ],
-      value: _tabController.index,
-      onChanged: (index) => setState(() {
-        _tabController.index = index;
-        _clearSelection();
-      }),
-    );
-  }
-
-  /// Number of user prompts carrying each tag id.
-  Map<int, int> _computeTagCounts() => {
-        for (final t in _tags)
-          t.id!: _userPrompts.where((p) => p.tags.any((pt) => pt.id == t.id)).length,
-      };
-
-  /// Caps content width on ultra-wide screens for readability, top-aligned.
-  Widget _buildConstrainedContent(Widget child) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 920),
-        child: child,
-      ),
-    );
-  }
-
-  String _addLabel(AppLocalizations l10n) {
-    if (_tabController.index == 1) return l10n.newTemplate;
-    if (_tabController.index == 2) return l10n.addCategory;
-    return l10n.newPrompt;
-  }
-
-  List<Widget> _buildTabViews(AppLocalizations l10n) {
-    final filteredUser = _userPrompts.where((p) {
-      final matchesSearch = p.title.toLowerCase().contains(_searchQuery) ||
-                            p.content.toLowerCase().contains(_searchQuery);
-      if (_selectedFilterTagIds.isEmpty) return matchesSearch;
-      final promptTagIds = p.tags.map((t) => t.id!).toSet();
-      final matchesTags = _filterMatchAll
-          ? _selectedFilterTagIds.every((id) => promptTagIds.contains(id))
-          : _selectedFilterTagIds.any((id) => promptTagIds.contains(id));
-      return matchesSearch && matchesTags;
-    }).toList();
-
-    final filteredSystem = _systemPrompts.where((p) {
-      final matchesType = p.type == _selectedSystemType;
-      final matchesSearch = p.title.toLowerCase().contains(_searchQuery) ||
-                            p.content.toLowerCase().contains(_searchQuery);
-      return matchesType && matchesSearch;
-    }).toList();
-
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return [
-      UserPromptList(
-        prompts: filteredUser,
-        searchQuery: _searchQuery,
-        selectedFilterTagIds: _selectedFilterTagIds,
-        onRefresh: _loadData,
-        onShowEditDialog: (l, {prompt}) => _showPromptDialog(l, prompt: prompt),
-        onConfirmDelete: _confirmDelete,
-        selectedIds: _selectedIds,
-        isSelectionMode: _isSelectionMode,
-        onToggleSelection: _toggleSelection,
-        onEnterSelectionMode: _enterSelectionMode,
-      ),
-      SystemTemplateList(
-        prompts: filteredSystem,
-        searchQuery: _searchQuery,
-        onRefresh: _loadData,
-        onShowEditDialog: (l, {prompt}) => _showSystemPromptDialog(l, prompt: prompt),
-        onConfirmDelete: _confirmDelete,
-        header: _buildSystemTypeToggle(colorScheme, l10n),
-        selectedIds: _selectedIds,
-        isSelectionMode: _isSelectionMode,
-        onToggleSelection: _toggleSelection,
-        onEnterSelectionMode: _enterSelectionMode,
-      ),
-      TagManagementList(
-        tags: _tags,
-        promptCounts: _computeTagCounts(),
-        onRefresh: _loadData,
-        onShowEditDialog: (l, {tag}) => _showTagDialog(l, tag: tag),
-        onConfirmDelete: _confirmDeleteTag,
-      ),
-    ];
-  }
-
-  /// Fills whatever width it is given. The desktop header caps it; the phone
-  /// header hands it the full row.
-  Widget _buildSearchField(AppLocalizations l10n) {
-    // The outer Container is gone: it existed to give this field a fill and a
-    // border that InputBorder.none had removed from the field itself, which is
-    // the theme's job now.
-    return SizedBox(
-      height: 38,
-      child: AppSearchField(
-        controller: _searchCtrl,
-        hint: l10n.filterPrompts,
-      ),
-    );
-  }
-
-  /// Import and export, boxed rather than filled: they sit beside the one
-  /// button on this header that creates something, and three filled shapes in a
-  /// row would give equal weight to the two that only move files around.
-  Widget _buildImportExportActions(AppLocalizations l10n) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        // Bare arrows: the pair is import next to export, and the direction is
-        // the whole distinction. The document and the circle the two glyphs
-        // used to carry differed from each other more than the arrows did.
-        AppIconButton(
-          icon: Icons.file_upload_outlined,
-          tooltip: l10n.importSettings,
-          onPressed: () => _importPrompts(l10n),
+        // ── Left column: library header + category filter ──────────────
+        PanelCard(
+          width: _sidebarWidth,
+          shape: PanelShape.column,
+          child: Column(
+            children: [
+              PromptsSidebarHeader(
+                isCategories: isCategories,
+                onToggleCategories: () => _setView(isCategories ? 0 : 2),
+              ),
+              Expanded(
+                child: PromptsSidebar(
+                  tags: _tags,
+                  selectedFilterTagIds: _selectedFilterTagIds,
+                  tagCounts: _computeTagCounts(),
+                  totalCount: _userPrompts.length,
+                  matchAll: _filterMatchAll,
+                  matchCount: filteredUser.length,
+                  onMatchModeChanged: (val) => setState(() => _filterMatchAll = val),
+                  onTagToggle: _toggleFilterTag,
+                  onClear: _clearFilterTags,
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(width: 6),
-        AppIconButton(
-          icon: Icons.file_download_outlined,
-          tooltip: l10n.exportSettings,
-          onPressed: () => _exportPrompts(l10n),
+        PanelResizer(
+          shape: PanelShape.column,
+          onDrag: (dx) => setState(() {
+            _dragSidebarWidth = ((_dragSidebarWidth ?? _sidebarWidth) + dx)
+                .clamp(_minSidebarWidth - _kDragSlack, _maxSidebarWidth + _kDragSlack);
+            _sidebarWidth = _dragSidebarWidth!.clamp(_minSidebarWidth, _maxSidebarWidth);
+          }),
+          onDragEnd: () {
+            _dragSidebarWidth = null;
+            DatabaseService()
+                .saveSetting('prompts_sidebar_width', _sidebarWidth.round().toString());
+          },
+        ),
+
+        // ── Main column: 56px header + content ─────────────────────────
+        Expanded(
+          child: PanelCard(
+            shape: PanelShape.column,
+            child: Column(
+              children: [
+                PromptsMainHeader(
+                  view: tab,
+                  onViewChanged: _setView,
+                  searchController: _searchCtrl,
+                  systemType: _selectedSystemType,
+                  onSystemTypeChanged: (v) => setState(() => _selectedSystemType = v),
+                  addLabel: _addLabel(l10n),
+                  onAdd: _handleAddAction,
+                  onImport: () => _importPrompts(l10n),
+                  onExport: () => _exportPrompts(l10n),
+                  selectionCount: _selectedIds.length,
+                  onClearSelection: _clearSelection,
+                  onCategorize: _handleBulkCategorize,
+                  onDelete: _handleBulkDelete,
+                ),
+                // Tablet: horizontal category filter when on user prompts tab
+                if (isTablet && tab == 0 && _tags.isNotEmpty)
+                  PromptCategoryStrip(
+                    tags: _tags,
+                    selectedFilterTagIds: _selectedFilterTagIds,
+                    totalCount: _userPrompts.length,
+                    onTagToggle: _toggleFilterTag,
+                    onClear: _clearFilterTags,
+                  ),
+                Expanded(
+                  child: _withReorderStrip(_reorderBlocked(tab, filteredUser, filteredSystem), content),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
   }
-
 
   void _handleAddAction() {
     final l10n = AppLocalizations.of(context)!;
@@ -691,113 +553,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     } else {
       _showPromptDialog(l10n);
     }
-  }
-
-  Widget _buildImportExportMenu(AppLocalizations l10n) {
-    return PopupMenuButton<String>(
-      onSelected: (val) {
-        if (val == 'import') _importPrompts(l10n);
-        if (val == 'export') _exportPrompts(l10n);
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(value: 'import', child: ListTile(leading: const Icon(Icons.upload_file_outlined), title: Text(l10n.importSettings), dense: true)),
-        PopupMenuItem(value: 'export', child: ListTile(leading: const Icon(Icons.download_for_offline_outlined), title: Text(l10n.exportSettings), dense: true)),
-      ],
-    );
-  }
-
-  Widget _buildMobileFilterBar(ColorScheme colorScheme) {
-    return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant, width: 0.5)),
-      ),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        // +1 for the leading "All" chip that clears the filter.
-        itemCount: _tags.length + 1,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final l10n = AppLocalizations.of(context)!;
-
-          // Leading "All" chip.
-          if (index == 0) {
-            final allSelected = _selectedFilterTagIds.isEmpty;
-            return FilterChip(
-              label: Text(l10n.filterAll, style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: allSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
-                fontWeight: allSelected ? FontWeight.w600 : FontWeight.w400,
-              )),
-              selected: allSelected,
-              onSelected: (_) => setState(() => _selectedFilterTagIds.clear()),
-              selectedColor: colorScheme.primary,
-              checkmarkColor: colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: colorScheme.outlineVariant),
-              ),
-              visualDensity: VisualDensity.compact,
-            );
-          }
-
-          final tag = _tags[index - 1];
-          final id = tag.id!;
-          final isSelected = _selectedFilterTagIds.contains(id);
-          final color = Color(tag.color);
-
-          return FilterChip(
-            label: Text(tag.name, style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: isSelected ? Colors.white : color,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            )),
-            selected: isSelected,
-            onSelected: (val) {
-              setState(() {
-                if (val) {
-                  _selectedFilterTagIds.add(id);
-                } else {
-                  _selectedFilterTagIds.remove(id);
-                }
-              });
-            },
-            selectedColor: color,
-            checkmarkColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: BorderSide(color: color.withValues(alpha: 0.5)),
-            ),
-            visualDensity: VisualDensity.compact,
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildSystemTypeToggle(ColorScheme colorScheme, AppLocalizations l10n) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant, width: 0.5)),
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: AppSegmentedControl<String>(
-            segments: [
-              AppSegment(value: 'refiner', label: l10n.typeRefiner, icon: Icons.auto_fix_high),
-              AppSegment(value: 'rename', label: l10n.typeRename, icon: Icons.drive_file_rename_outline),
-            ],
-            value: _selectedSystemType,
-            onChanged: (val) => setState(() => _selectedSystemType = val),
-            expand: true,
-          ),
-        ),
-      ),
-    );
   }
 
   // --- Dialog wrappers: delegate to prompt_dialogs.dart, then reload on change ---
@@ -813,7 +568,13 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   void _showTagDialog(AppLocalizations l10n, {PromptTag? tag}) async {
-    final saved = await showTagEditDialog(context, l10n, tag: tag, tags: _tags);
+    final saved = await showTagEditDialog(
+      context,
+      l10n,
+      tag: tag,
+      tags: _tags,
+      promptCount: tag == null ? 0 : _computeTagCounts()[tag.id] ?? 0,
+    );
     if (saved) _loadData();
   }
 
@@ -824,7 +585,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       prompt: prompt,
       systemPrompts: _systemPrompts,
       tags: _tags,
-      defaultType: _selectedSystemType,
+      defaultType: _selectedSystemType == 'all' ? 'refiner' : _selectedSystemType,
     );
     if (saved) _loadData();
   }

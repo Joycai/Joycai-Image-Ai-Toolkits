@@ -23,18 +23,13 @@ void main() {
   double hueOf(Color color) => HSVColor.fromColor(color).hue;
 
   for (final brightness in Brightness.values) {
-    test('every neutral role carries the design’s blue, never the seed’s hue in $brightness', () {
-      // Before the restyle this asserted zero chroma: fromSeed tints all of
-      // these with the seed's hue, and any one of them drifting off grey put
-      // the accent hue back into the background.
-      //
-      // The ramp is no longer neutral — the spec's canvas is #ECEFF8 and its
-      // body text #171C3B, both cool by design — so "is it grey" can't be the
-      // question any more. The question that survives is *whose* tint it is.
-      // Seeded here with orange, the hue furthest from the ramp's own: every
-      // neutral must still come out blue. One drifting toward the seed is the
-      // same regression the zero-chroma assertion used to catch.
-      final scheme = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.orange), brightness: brightness);
+    test('every neutral role carries the design’s warm stone, never the seed’s hue in $brightness', () {
+      // The ramp is not grey — `00 设计系统 · 1b` draws a warm stone (canvas
+      // #EBEAE6, body ink #1C1B18, hue ~40–60°) — so "is it grey" is not the
+      // question. The question is *whose* tint it is. Seeded here with blue,
+      // the hue furthest from the ramp's own: every neutral must still come
+      // out warm. One drifting toward the seed is the regression.
+      final scheme = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.blue), brightness: brightness);
 
       final neutrals = {
         'surface': scheme.surface,
@@ -57,8 +52,8 @@ void main() {
       neutrals.forEach((name, color) {
         // White and near-white have no meaningful hue; nothing to check.
         if (chromaOf(color) < 0.01) return;
-        expect(hueOf(color), inInclusiveRange(210, 245),
-            reason: '$name is not the ramp’s blue in $brightness — '
+        expect(hueOf(color), inInclusiveRange(35, 65),
+            reason: '$name is not the ramp’s warm stone in $brightness — '
                 'it has drifted toward the seed');
       });
     });
@@ -179,6 +174,6 @@ void main() {
     final expected = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.teal), brightness: Brightness.light);
 
     expect(theme.colorScheme.surfaceContainerHighest, expected.surfaceContainerHighest);
-    expect(hueOf(theme.colorScheme.surface), inInclusiveRange(210, 245));
+    expect(hueOf(theme.colorScheme.surface), inInclusiveRange(35, 65));
   });
 }

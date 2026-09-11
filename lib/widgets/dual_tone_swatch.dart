@@ -20,19 +20,20 @@ import '../core/theme_accent.dart';
 /// is identical in both modes: it pictures the two values, not the current
 /// one.
 ///
-/// Four states, all drawn *outside* the 36px dot so it never changes size:
+/// Four states, all drawn *outside* the 44px dot (`E1 · 1e`) so it never
+/// changes size:
 ///
 /// - hover: a 3px halo of the accent at 12%, plus a tooltip naming the
 ///   preset and both values (on touch, a long press);
-/// - selected: a 3px gap in the panel colour, then a 2px ring of the accent,
-///   and a 20px disc of panel colour in the middle carrying a tick in the
-///   darker accent — so the pair stays visible as a ring around the disc;
+/// - selected: a 2px gap, then a 2px ring of the accent, and a disc of panel
+///   colour inset 9 from the edge carrying a tick in the deep accent — so the
+///   pair stays visible as a ring around the disc;
 /// - focused: 2px gap + 2px ring when unselected; when already selected, a
 ///   further 3px ring at 32% outside the selection ring.
 ///
-/// The box is 44 square — the dot plus [hitInset] each side — so the tap
-/// target meets the 44px floor; the rings paint past the box's edge and rely
-/// on the parent not clipping, which a [Wrap] does not.
+/// The dot alone meets the 44px touch floor; the box adds [hitInset] each
+/// side so the rings have somewhere to start. They paint past the box's edge
+/// and rely on the parent not clipping, which a [Wrap] does not.
 class DualToneSwatch extends StatefulWidget {
   const DualToneSwatch({
     super.key,
@@ -55,10 +56,11 @@ class DualToneSwatch extends StatefulWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  static const double dotSize = 36;
+  /// `E1 · 1e`: 44, the touch floor on its own.
+  static const double dotSize = 44;
 
   /// How far the hit box extends beyond the dot on each side.
-  static const double hitInset = 4;
+  static const double hitInset = 2;
 
   static const double hitSize = dotSize + 2 * hitInset;
 
@@ -169,9 +171,10 @@ class _DualTonePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = width;
     if (selected) {
-      // 3px gap, 2px accent ring; keyboard focus adds a 3px 32% ring outside.
-      if (focused) canvas.drawCircle(c, r + 6.5, stroke(accentRing, 3));
-      canvas.drawCircle(c, r + 4, stroke(accent, 2));
+      // `E1 · 1e`: 2px gap, 2px accent ring; keyboard focus adds a 3px 32%
+      // ring outside.
+      if (focused) canvas.drawCircle(c, r + 5.5, stroke(accentRing, 3));
+      canvas.drawCircle(c, r + 3, stroke(accent, 2));
     } else if (focused) {
       // 2px gap, 2px accent ring.
       canvas.drawCircle(c, r + 3, stroke(accent, 2));
@@ -187,11 +190,12 @@ class _DualTonePainter extends CustomPainter {
     canvas.drawArc(dotRect, -math.pi / 4, -math.pi, true, fill(light));
 
     if (selected) {
-      canvas.drawCircle(c, 10, fill(panel));
-      // The design's tick: `m5 13 4.5 4.5L19 7` in a 24-box, at 12px,
-      // stroke 3.2 — drawn rather than an [Icon], which at 12px is a
+      // `E1 · 1e`: the disc is inset 9 from the dot's edge.
+      canvas.drawCircle(c, r - 9, fill(panel));
+      // The design's tick: `m5 13 4.5 4.5L19 7` in a 24-box, at 14px,
+      // stroke 3.2 — drawn rather than an [Icon], which at this size is a
       // hairline.
-      const double k = 12 / 24;
+      const double k = 14 / 24;
       final Path tick = Path()
         ..moveTo(c.dx + (5 - 12) * k, c.dy + (13 - 12) * k)
         ..lineTo(c.dx + (9.5 - 12) * k, c.dy + (17.5 - 12) * k)

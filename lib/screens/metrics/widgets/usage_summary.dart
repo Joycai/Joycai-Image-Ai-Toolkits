@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/design_tokens.dart';
 import '../../../core/app_theme.dart';
-import '../../../core/metric_palette.dart';
+import '../../../core/design_tokens.dart';
+import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../widgets/panel_resizer.dart';
+import 'usage_chrome.dart';
+import 'usage_palette.dart';
 import 'usage_stats.dart';
 
-/// The summary block above the usage records, shared by every breakpoint.
+/// The hero card at the top of the usage view (`D2` ①).
 ///
-/// Cost gets a card to itself because it is the number the screen exists to
-/// answer; the three token counts share a second card with the cache hit rate,
-/// which is derived from two of them — a meter next to its own numerator and
-/// denominator needs no explaining. Six equal tiles said all of that was
-/// equally important and left nothing room to breathe.
+/// Cost first and largest, because it is the number the screen exists to
+/// answer, with the period and request count it is a total *of* beneath it.
+/// Then the three token counts, each keyed by its identity colour, and the
+/// cache hit rate — the one figure on the screen drawn in the accent.
 ///
-/// [compact] stacks the two cards instead of setting them side by side, for
-/// mobile and the tablet card.
+/// Three forms of one card: a row on desktop; with [compact], a stacked card
+/// with a 2×2 tile grid on a tablet, and a single column of rows on a phone.
 class UsageSummary extends StatelessWidget {
   final UsageStats stats;
 
   /// The active range preset, named — "Last Week", not the dates it resolved
-  /// to. Every number on these cards is a total *over that range*, and a total
+  /// to. Every number on this card is a total *over that range*, and a total
   /// with no period attached is not a fact. The resolved dates are spelled out
-  /// beside the presets below, where changing them is possible.
+  /// beside the presets, where changing them is possible.
   final String rangeLabel;
 
   final bool compact;
@@ -36,210 +36,98 @@ class UsageSummary extends StatelessWidget {
     this.compact = false,
   });
 
+  /// The card's inset and the gap between its three groups, as drawn.
+  static const double _widePadding = 20;
+  static const double _groupGap = AppSpace.s28;
+  static const double _costWidth = 260;
+  static const double _hitRateWidth = 150;
+  static const double _tileGap = AppSpace.s10;
+
   @override
   Widget build(BuildContext context) {
+    if (!compact) return _buildWide(context);
+    return Responsive.isMobile(context) ? _buildPhone(context) : _buildTablet(context);
+  }
+
+  // --- Forms --------------------------------------------------------------
+
+  Widget _buildWide(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
 
-    final cost = _buildCostCard(context, l10n, colorScheme);
-    final tokens = _buildTokenCard(context, l10n, colorScheme);
-
-    if (compact) {
-      return Column(
-        children: [
-          cost,
-          const SizedBox(height: 8),
-          tokens,
-        ],
-      );
-    }
-
-    // IntrinsicHeight so the shorter cost card matches the token card rather
-    // than floating at its own height beside it.
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(flex: 3, child: cost),
-          const SizedBox(width: 8),
-          Expanded(flex: 7, child: tokens),
-        ],
-      ),
-    );
-  }
-
-  /// The shell both cards share.
-  ///
-  /// Wide layouts sit on the screen's `surfaceContainer` canvas, where a
-  /// `surface` PanelCard reads as a card. Compact ones are hosted inside
-  /// another surface-coloured card (tablet) or straight on the scaffold
-  /// (mobile) — surface on surface would vanish, so those step up a tone.
-  Widget _card(BuildContext context, Widget child) {
-    if (!compact) return PanelCard(child: child);
-
-    return Material(
-      color: Theme.of(context).colorScheme.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(12),
-      clipBehavior: Clip.antiAlias,
-      child: child,
-    );
-  }
-
-  // --- Cost ---------------------------------------------------------------
-
-  /// The one card that is tinted rather than plain, because it holds the one
-  /// number the screen is for. The tint does the emphasising, which frees the
-  /// figure itself to stay `onSurface`: an orange number on an orange wash
-  /// would be less legible, not more emphatic, and the token counts beside it
-  /// need their own accents to stay distinguishable from each other.
-  Widget _buildCostCard(BuildContext context, AppLocalizations l10n, ColorScheme colorScheme) {
-    final textTheme = Theme.of(context).textTheme;
-    return _card(
-      context,
-      DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: const Alignment(0.9, -1.1),
-            radius: 1.4,
-            colors: [
-              usageCostAccent.withAlpha(38),
-              usageCostAccent.withAlpha(8),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return UsagePanel(
+      padding: const EdgeInsets.all(_widePadding),
+      // IntrinsicHeight so every tile takes the tallest one's height rather
+      // than floating at its own.
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: _costWidth,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _iconTile(Icons.attach_money, usageCostAccent),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      l10n.estimatedCost,
-                      style: textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+                  UsageCaption(l10n.estimatedCost),
+                  const SizedBox(height: AppSpace.s6),
+                  _costFigure(context),
+                  const SizedBox(height: AppSpace.s6),
+                  _metaLine(context, l10n),
                 ],
               ),
-              const SizedBox(height: 14),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '\$${stats.totalCost.toStringAsFixed(4)}',
-                  style: textTheme.headlineLarge?.mono.copyWith(
-                    color: colorScheme.onSurface,
-                    height: AppType.displayHeight,
-                  ),
-                ),
+            ),
+            const SizedBox(width: _groupGap),
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (index, token) in UsageToken.values.indexed) ...[
+                    if (index > 0) const SizedBox(width: _tileGap),
+                    Expanded(child: _tokenTile(context, l10n, token, showBar: true)),
+                  ],
+                ],
               ),
-              const SizedBox(height: 12),
-              _buildCostFooter(context, l10n, colorScheme),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// What the cost is a cost *of*: a count of requests, and the period both
-  /// numbers cover.
-  Widget _buildCostFooter(BuildContext context, AppLocalizations l10n, ColorScheme colorScheme) {
-    final textTheme = Theme.of(context).textTheme;
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: usageRequestAccent.withAlpha(30),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            '${_fmt(stats.totalRequestCount)} ${l10n.requests}',
-            style: textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: usageRequestAccent,
             ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            rangeLabel,
-            style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // --- Tokens + hit rate --------------------------------------------------
-
-  Widget _buildTokenCard(BuildContext context, AppLocalizations l10n, ColorScheme colorScheme) {
-    return _card(
-      context,
-      Padding(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _tokenStat(context, usageInputAccent, l10n.inputTokens, stats.totalInput),
-                _tokenStat(context, usageCacheAccent, l10n.cachedInputTokens, stats.totalCache),
-                _tokenStat(context, usageOutputAccent, l10n.outputTokens, stats.totalOutput),
-              ],
+            const SizedBox(width: _groupGap),
+            SizedBox(
+              width: _hitRateWidth,
+              child: _hitRateTile(context, l10n, showBar: true),
             ),
-            const SizedBox(height: 18),
-            _buildHitRateMeter(context, l10n, colorScheme),
           ],
         ),
       ),
     );
   }
 
-  /// A label and its number. The accent on the number is the only marker each
-  /// stat carries — an icon per label repeated the colour without adding to it,
-  /// and three icons in a row read as a toolbar, not as figures.
-  Widget _tokenStat(BuildContext context, Color accent, String label, int value) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+  Widget _buildTablet(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
 
-    return Expanded(
+    return UsagePanel(
+      padding: const EdgeInsets.all(AppSpace.s16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            label,
-            style: textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurfaceVariant,
+          _headlineRow(context, l10n),
+          const SizedBox(height: 12),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _tokenTile(context, l10n, UsageToken.input)),
+                const SizedBox(width: _tileGap),
+                Expanded(child: _tokenTile(context, l10n, UsageToken.cache)),
+              ],
             ),
-            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              _fmt(value),
-              style: textTheme.headlineMedium?.mono.copyWith(
-                color: accent,
-                height: AppType.displayHeight,
-              ),
+          const SizedBox(height: _tileGap),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _tokenTile(context, l10n, UsageToken.output)),
+                const SizedBox(width: _tileGap),
+                Expanded(child: _hitRateTile(context, l10n)),
+              ],
             ),
           ),
         ],
@@ -247,69 +135,271 @@ class UsageSummary extends StatelessWidget {
     );
   }
 
-  /// The hit rate reads as a meter rather than a sixth counter — it is a share
-  /// of the two numbers directly above it, and a bar says "of the whole" in a
-  /// way a bare percentage does not.
-  Widget _buildHitRateMeter(BuildContext context, AppLocalizations l10n, ColorScheme colorScheme) {
+  Widget _buildPhone(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final rate = stats.cacheHitRate;
+
+    return UsagePanel(
+      padding: const EdgeInsets.all(AppSpace.s16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _headlineRow(context, l10n),
+          const SizedBox(height: 12),
+          for (final token in UsageToken.values)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  UsageDot(token.colorOf(context)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      token.labelOf(l10n),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: Text(
+                        _fmt(_tokenValue(token)),
+                        style: textTheme.bodySmall?.mono.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 8),
+          Divider(height: 1, thickness: 1, color: colorScheme.outlineVariant),
+          const SizedBox(height: 8),
+          Tooltip(
+            message: l10n.cacheHitRateHint,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          l10n.cacheHitRate,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpace.s4),
+                      Icon(Icons.help_outline, size: AppSize.iconSm, color: colorScheme.outline),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _rateText(rate),
+                  style: textTheme.bodySmall?.mono.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: rate == null ? colorScheme.outline : colorScheme.onAccentTint,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Pieces -------------------------------------------------------------
+
+  Widget _costFigure(BuildContext context) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: AlignmentDirectional.centerStart,
+      child: Text(
+        '\$${stats.totalCost.toStringAsFixed(4)}',
+        // Ink, never green: a cost is not a success, only a number.
+        style: Theme.of(context).textTheme.headlineLarge?.mono.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              height: AppType.displayHeight,
+            ),
+      ),
+    );
+  }
+
+  TextStyle? _metaStyle(BuildContext context) =>
+      Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          );
+
+  String _requestsText(AppLocalizations l10n) => '${_fmt(stats.totalRequestCount)} ${l10n.requests}';
+
+  /// The period and the request count on one line. Two texts rather than one
+  /// joined string: each is a fact of its own, and gives way on its own.
+  Widget _metaLine(BuildContext context, AppLocalizations l10n) {
+    final style = _metaStyle(context);
+    return Row(
+      children: [
+        Flexible(
+          child: Text(rangeLabel, style: style, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+        Text(' · ', style: style),
+        Flexible(
+          child: Text(_requestsText(l10n), style: style, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+      ],
+    );
+  }
+
+  /// Compact forms: the caption and the cost on the left, the period and the
+  /// request count stacked on the right.
+  Widget _headlineRow(BuildContext context, AppLocalizations l10n) {
+    final style = _metaStyle(context);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              UsageCaption(l10n.estimatedCost),
+              const SizedBox(height: AppSpace.s6),
+              _costFigure(context),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(rangeLabel, style: style, maxLines: 1, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 2),
+              Text(_requestsText(l10n), style: style, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The column-ground tile the token counts and the hit rate share.
+  Widget _tile(BuildContext context, List<Widget> children) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _tileLabel(BuildContext context, String label) {
+    return Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+    );
+  }
+
+  Widget _tileFigure(BuildContext context, String text, {Color? color}) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: AlignmentDirectional.centerStart,
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.headlineMedium?.mono.copyWith(
+              color: color ?? Theme.of(context).colorScheme.onSurface,
+              height: AppType.displayHeight,
+            ),
+      ),
+    );
+  }
+
+  /// A token count, keyed by its dot. On desktop a mini bar under it shows the
+  /// count's share of all three.
+  Widget _tokenTile(BuildContext context, AppLocalizations l10n, UsageToken token, {bool showBar = false}) {
+    final color = token.colorOf(context);
+    final all = stats.totalInput + stats.totalCache + stats.totalOutput;
+    final value = _tokenValue(token);
+
+    return _tile(context, [
+      Row(
+        children: [
+          UsageDot(color),
+          const SizedBox(width: AppSpace.s6),
+          Expanded(child: _tileLabel(context, token.labelOf(l10n))),
+        ],
+      ),
+      const SizedBox(height: AppSpace.s4),
+      _tileFigure(context, _fmt(value)),
+      if (showBar) ...[
+        const SizedBox(height: AppSpace.s6),
+        UsageShareBar(share: all == 0 ? 0 : value / all, color: color),
+      ],
+    ]);
+  }
+
+  /// The cached share of prompt tokens — the one figure here in the accent.
+  Widget _hitRateTile(BuildContext context, AppLocalizations l10n, {bool showBar = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
     final rate = stats.cacheHitRate;
 
     return Tooltip(
       message: l10n.cacheHitRateHint,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.cacheHitRate,
-                  style: textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                // An em dash, not "0.0%": with no prompt tokens in range the
-                // cache was never asked, which is not the same as never hit.
-                rate == null ? '—' : '${(rate * 100).toStringAsFixed(1)}%',
-                style: textTheme.titleSmall?.mono.copyWith(
-                  color: rate == null ? colorScheme.outline : usageCacheAccent,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(3),
-            child: LinearProgressIndicator(
-              value: rate ?? 0,
-              minHeight: 6,
-              backgroundColor: usageCacheAccent.withAlpha(30),
-              valueColor: const AlwaysStoppedAnimation(usageCacheAccent),
-            ),
+      child: _tile(context, [
+        Row(
+          children: [
+            Expanded(child: _tileLabel(context, l10n.cacheHitRate)),
+            const SizedBox(width: AppSpace.s4),
+            Icon(Icons.help_outline, size: AppSize.iconSm, color: colorScheme.outline),
+          ],
+        ),
+        const SizedBox(height: AppSpace.s4),
+        _tileFigure(
+          context,
+          _rateText(rate),
+          color: rate == null ? colorScheme.outline : colorScheme.onAccentTint,
+        ),
+        if (showBar) ...[
+          const SizedBox(height: AppSpace.s6),
+          LinearProgressIndicator(
+            value: rate ?? 0,
+            minHeight: 4,
+            color: colorScheme.primary,
+            backgroundColor: colorScheme.surfaceContainerHighest,
           ),
         ],
-      ),
+      ]),
     );
   }
 
-  /// The rounded accent tile the app puts in front of a heading — same shape
-  /// the fee-group rows and dialog headers use.
-  Widget _iconTile(IconData icon, Color accent) {
-    return Container(
-      width: 30,
-      height: 30,
-      decoration: BoxDecoration(
-        color: accent.withAlpha(35),
-        borderRadius: BorderRadius.circular(9),
-      ),
-      child: Icon(icon, size: 17, color: accent),
-    );
-  }
+  int _tokenValue(UsageToken token) => switch (token) {
+        UsageToken.input => stats.totalInput,
+        UsageToken.cache => stats.totalCache,
+        UsageToken.output => stats.totalOutput,
+      };
+
+  /// An em dash, not "0.0%": with no prompt tokens in range the cache was
+  /// never asked, which is not the same as never hit.
+  String _rateText(double? rate) => rate == null ? '—' : '${(rate * 100).toStringAsFixed(1)}%';
 
   /// Grouped digits: these run to seven figures, and `443,807` is legible at a
   /// glance where `443807` has to be counted.

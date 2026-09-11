@@ -688,5 +688,45 @@
         "type": "String"
       }
     }
+  },
+  "browserViewGrid": "Grid",
+  "browserViewList": "List",
+  "browserSearchEscHint": "Esc to clear",
+  "browserNoFilesHint": "Try another filter, or clear the search",
+  "browserFoldersCount": "{count} folders",
+  "@browserFoldersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "browserScanningCount": "Scanning {count} files…",
+  "@browserScanningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "browserDragFootnote": "Drag onto a folder to move · hold Ctrl to copy",
+  "stagingDropHint": "Drop files on a folder in the left column to stage them",
+  "renameBatchFailedTitle": "Batch {batch} failed",
+  "@renameBatchFailedTitle": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictIncoming": "Incoming",
+  "conflictAlreadyThere": "Already there",
+  "conflictUndecidedCount": "{count} undecided",
+  "@conflictUndecidedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

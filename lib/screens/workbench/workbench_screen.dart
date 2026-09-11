@@ -36,11 +36,13 @@ import '../../widgets/drawing_canvas.dart';
 import '../../widgets/unified_sidebar.dart';
 import '../prompts/widgets/prompt_dialogs.dart';
 import 'gallery.dart';
+import 'widgets/gallery_selection_bar.dart';
+import 'widgets/video_gallery_area.dart';
+import 'widgets/workbench_glass_toolbar.dart';
 import 'widgets/comparator_toolbar.dart';
 import 'widgets/comparator_view.dart';
 import 'widgets/crop_resize_toolbar.dart';
 import 'widgets/crop_resize_view.dart';
-import 'widgets/gallery_toolbar.dart';
 import 'widgets/mask_editor_toolbar.dart';
 import 'widgets/mask_editor_view.dart';
 import 'widgets/metadata_inspector.dart';
@@ -49,8 +51,6 @@ import 'widgets/optimizer_left_panel.dart';
 import 'widgets/prompt_optimizer_toolbar.dart';
 import 'widgets/prompt_optimizer_view.dart';
 import 'widgets/video_config_panel.dart';
-import 'widgets/video_workbench_view.dart';
-import 'widgets/workbench_top_bar.dart';
 import 'workbench_config_panel.dart';
 import 'workbench_layout.dart';
 
@@ -891,89 +891,85 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     // [WorkbenchLayout.centerGround].
     Color? centerGround;
 
+    // A tool tab's own controls, which live in the floating toolbar.
+    Widget? toolControls;
+    double toolControlsWidth = 0;
+
     switch (appState.workbenchTabIndex) {
       case 0: // Image Processing
-        centerContent = const Column(
-          children: [
-            GalleryToolbar(),
-            Expanded(child: Gallery()),
-          ],
-        );
+        // The gallery scrolls under the floating toolbar and above the
+        // selection bar (`A1 · 1a`), so it takes the whole column.
+        centerContent = const Gallery();
         showRightPanel = !isNarrow; // Only show on desktop by default
         break;
       case 1: // Comparator
-        centerContent = const Column(
-          children: [
-            ComparatorToolbar(),
-            Expanded(child: ComparatorView()),
-          ],
-        );
+        // `A5`: the tool's controls sit in the glass bar's slot, so the images
+        // take the whole column below it.
+        centerContent = const ComparatorView();
+        toolControls = const ComparatorToolbar();
+        toolControlsWidth = ComparatorToolbar.preferredWidth(context);
         // The toolbar's metadata button switches this on desktop; on narrow
         // the panel is a drawer the same button opens instead.
         showRightPanel = !isNarrow && context.watch<WorkbenchUIState>().comparatorShowMetadata;
         showLeftPanel = false; // Auto-hide sidebar
         break;
       case 2: // Mask Editor
-        centerContent = Column(
-          children: [
-            MaskEditorToolbar(
-              onUndo: _handleMaskUndo,
-              onClear: _handleMaskClear,
-              onSave: () => _handleMaskSave(selectAfterSave: false),
-              onSaveMask: () => _handleMaskSave(binary: true, selectAfterSave: false),
-              onColorChanged: (c) => setState(() => _maskSelectedColor = c),
-              onBrushSizeChanged: (s) => setState(() => _maskBrushSize = s),
-              onOpacityChanged: (o) => setState(() => _maskOpacity = o),
-              onToggleBinary: () => setState(() => _maskIsBinaryMode = !_maskIsBinaryMode),
-              selectedColor: _maskSelectedColor,
-              brushSize: _maskBrushSize,
-              opacity: _maskOpacity,
-              isBinaryMode: _maskIsBinaryMode,
-              hasPaths: _maskPaths.isNotEmpty,
-            ),
-            Expanded(
-              child: MaskEditorView(
-                paths: _maskPaths,
-                revision: _maskRevision,
-                selectedColor: _maskSelectedColor.withValues(alpha: _maskOpacity),
-                brushSize: _maskBrushSize,
-                isBinaryMode: _maskIsBinaryMode,
-                repaintKey: _maskRepaintKey,
-                mousePosition: _maskMouse,
-                // No setState: the canvas listens to the notifier. This is the
-                // callback that fires on every mouse move.
-                onHover: (pos) => _maskMouse.value = pos,
-                onPanStart: (pos) {
-                  _maskPaths.add(DrawingPath(
-                    points: [pos],
-                    color: _maskSelectedColor.withValues(alpha: _maskOpacity),
-                    strokeWidth: _maskBrushSize,
-                  ));
-                  _maskRevision.value++;
-                  // Once per stroke, for the toolbar's `hasPaths`.
-                  setState(() {});
-                },
-                // Also no setState: a stroke is a drag, so this runs at
-                // pointer rate for as long as the button is held.
-                onPanUpdate: (pos) {
-                  _maskPaths.last.points.add(pos);
-                  _maskRevision.value++;
-                  _maskMouse.value = pos;
-                },
-              ),
-            ),
-          ],
+        // `A6`: the brush, the colours and the saves sit in the glass bar's
+        // slot, so the canvas takes the whole column below it.
+        toolControls = MaskEditorToolbar(
+          onUndo: _handleMaskUndo,
+          onClear: _handleMaskClear,
+          onSave: () => _handleMaskSave(selectAfterSave: false),
+          onSaveMask: () => _handleMaskSave(binary: true, selectAfterSave: false),
+          onColorChanged: (c) => setState(() => _maskSelectedColor = c),
+          onBrushSizeChanged: (s) => setState(() => _maskBrushSize = s),
+          onOpacityChanged: (o) => setState(() => _maskOpacity = o),
+          onToggleBinary: () => setState(() => _maskIsBinaryMode = !_maskIsBinaryMode),
+          selectedColor: _maskSelectedColor,
+          brushSize: _maskBrushSize,
+          opacity: _maskOpacity,
+          isBinaryMode: _maskIsBinaryMode,
+          hasPaths: _maskPaths.isNotEmpty,
+        );
+        toolControlsWidth = MaskEditorToolbar.preferredWidth(context);
+        centerContent = MaskEditorView(
+          paths: _maskPaths,
+          revision: _maskRevision,
+          selectedColor: _maskSelectedColor.withValues(alpha: _maskOpacity),
+          brushSize: _maskBrushSize,
+          isBinaryMode: _maskIsBinaryMode,
+          repaintKey: _maskRepaintKey,
+          mousePosition: _maskMouse,
+          // No setState: the canvas listens to the notifier. This is the
+          // callback that fires on every mouse move.
+          onHover: (pos) => _maskMouse.value = pos,
+          onPanStart: (pos) {
+            _maskPaths.add(DrawingPath(
+              points: [pos],
+              color: _maskSelectedColor.withValues(alpha: _maskOpacity),
+              strokeWidth: _maskBrushSize,
+            ));
+            _maskRevision.value++;
+            // Once per stroke, for the toolbar's `hasPaths`.
+            setState(() {});
+          },
+          // Also no setState: a stroke is a drag, so this runs at
+          // pointer rate for as long as the button is held.
+          onPanUpdate: (pos) {
+            _maskPaths.last.points.add(pos);
+            _maskRevision.value++;
+            _maskMouse.value = pos;
+          },
         );
         showRightPanel = false;
         showLeftPanel = false;
         break;
       case 3: // Crop & Resize
-        centerContent = const Column(
-          children: [
-            CropResizeToolbar(),
-            Expanded(child: CropResizeView()),
-          ],
-        );
+        // `A4`: the tool's controls sit in the glass bar's slot, so the canvas
+        // takes the whole column below it.
+        centerContent = const CropResizeView();
+        toolControls = const CropResizeToolbar();
+        toolControlsWidth = CropResizeToolbar.preferredWidth(context);
         showRightPanel = false;
         showLeftPanel = false;
         break;
@@ -1009,9 +1005,61 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                       ?.id,
                   builder: (context, runningTaskId, _) {
                     final isBusy = session.isRunning || runningTaskId != null;
-                    return Column(
-                      children: [
-                        PromptOptimizerToolbar(
+                    return _optIsLoadingData
+                              ? const Center(child: CircularProgressIndicator())
+                              : PromptOptimizerChatView(
+                                  inputCtrl: _optInputCtrl,
+                                  onSend: _handleOptimizerSend,
+                                  onRetry: _handleOptimizerRetry,
+                                  onApplyPrompt: _handleOptimizerApply,
+                                  onApplyKbEdit: (editId) => _handleKbEditApply(session, editId),
+                                  onRejectKbEdit: (editId) => _handleKbEditReject(session, editId),
+                                  onAnswerAskUser: _handleAskUserAnswer,
+                                  onDistill:
+                                      session.usesKnowledgeBase ? _handleKbDistill : null,
+                                  onSaveFinalPrompt: _handleSaveFinalPrompt,
+                                  isBusy: isBusy,
+                                  // Only while there is a task to stop. A
+                                  // session whose `isRunning` outlived its
+                                  // task — the failure mode a crashed turn
+                                  // leaves behind — has nothing to cancel, and
+                                  // offering the button there would produce a
+                                  // control that does nothing when pressed.
+                                  onAbort: runningTaskId == null
+                                      ? null
+                                      : () => _handleOptimizerAbort(runningTaskId),
+                                );
+                  },
+                );
+              },
+            );
+          },
+        );
+        // `10h` swaps this column for the knowledge tree in library-edit
+        // mode; [OptimizerLeftPanel] owns that choice so the screen still
+        // hands the layout one widget rather than rebuilding the decision.
+        // The assistant's header lives in the floating glass toolbar
+        // (`A3a 1a`), fed by the same session and queue the chat reads.
+        toolControls = Consumer<WorkbenchUIState>(
+          builder: (context, wui, _) {
+            final session = wui.optimizerSession;
+            return ListenableBuilder(
+              listenable: session,
+              builder: (context, _) => Selector<TaskQueueService, String?>(
+                selector: (_, queue) => queue.queue
+                    .cast<TaskItem?>()
+                    .firstWhere(
+                      (t) =>
+                          t!.type == TaskType.promptRefine &&
+                          t.parameters['sessionId'] == session.id &&
+                          (t.status == TaskStatus.pending ||
+                              t.status == TaskStatus.processing),
+                      orElse: () => null,
+                    )
+                    ?.id,
+                builder: (context, runningTaskId, _) {
+                  final isBusy = session.isRunning || runningTaskId != null;
+                  return PromptOptimizerToolbar(
                           onNewSession: () => wui.newOptimizerSession(),
                           onHistory: _showAssistantHistory,
                           onApply: () => _handleOptimizerApply(session.refinedPrompt ?? ''),
@@ -1040,44 +1088,25 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                             AssistantMode.knowledgeBase => Icons.menu_book_outlined,
                             AssistantMode.knowledgeEdit => Icons.edit_note_outlined,
                           },
-                        ),
-                        Expanded(
-                          child: _optIsLoadingData
-                              ? const Center(child: CircularProgressIndicator())
-                              : PromptOptimizerChatView(
-                                  inputCtrl: _optInputCtrl,
-                                  onSend: _handleOptimizerSend,
-                                  onRetry: _handleOptimizerRetry,
-                                  onApplyPrompt: _handleOptimizerApply,
-                                  onApplyKbEdit: (editId) => _handleKbEditApply(session, editId),
-                                  onRejectKbEdit: (editId) => _handleKbEditReject(session, editId),
-                                  onAnswerAskUser: _handleAskUserAnswer,
-                                  onDistill:
-                                      session.usesKnowledgeBase ? _handleKbDistill : null,
-                                  onSaveFinalPrompt: _handleSaveFinalPrompt,
-                                  isBusy: isBusy,
-                                  // Only while there is a task to stop. A
-                                  // session whose `isRunning` outlived its
-                                  // task — the failure mode a crashed turn
-                                  // leaves behind — has nothing to cancel, and
-                                  // offering the button there would produce a
-                                  // control that does nothing when pressed.
-                                  onAbort: runningTaskId == null
-                                      ? null
-                                      : () => _handleOptimizerAbort(runningTaskId),
-                                ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
+                        );
+                },
+              ),
             );
           },
         );
-        // `10h` swaps this column for the knowledge tree in library-edit
-        // mode; [OptimizerLeftPanel] owns that choice so the screen still
-        // hands the layout one widget rather than rebuilding the decision.
+        {
+          final wuiNow = context.read<WorkbenchUIState>();
+          final l10nNow = AppLocalizations.of(context)!;
+          toolControlsWidth = PromptOptimizerToolbar.preferredWidth(
+            context,
+            modeLabel: switch (wuiNow.assistantMode) {
+              AssistantMode.systemPrompt => l10nNow.optModeSystemPrompt,
+              AssistantMode.knowledgeBase => l10nNow.optModeKnowledge,
+              AssistantMode.knowledgeEdit => l10nNow.optModeKnowledgeEdit,
+            },
+            pendingKbEdits: PromptOptimizerAgent.pendingKbEdits(wuiNow.optimizerSession).length,
+          );
+        }
         leftPanel = OptimizerLeftPanel(kbPath: _kbPath);
         showRightPanel = !isNarrow;
         showLeftPanel = !isNarrow; // Show reference images on left
@@ -1087,19 +1116,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         centerGround = Theme.of(context).colorScheme.surface;
         break;
       case 5: // Video Generation
-        centerContent = const Column(
-          children: [
-            GalleryToolbar(),
-            Expanded(
-              child: Stack(
-                children: [
-                  Gallery(),
-                  VideoWorkbenchOverlay(),
-                ],
-              ),
-            ),
-          ],
-        );
+        // The gallery with the last result's player over its bottom edge,
+        // padded so the grid's last row clears it (`A2 · 1a`).
+        centerContent = const VideoGalleryArea();
         showRightPanel = !isNarrow;
         showLeftPanel = appState.isSidebarExpanded;
         break;
@@ -1109,17 +1128,35 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         showLeftPanel = false;
     }
 
+    final tab = appState.workbenchTabIndex;
+    final isGalleryTab = WorkbenchTab.isGallery(tab);
+    // `A1` spec: on a phone the FAB gives way to the selection bar.
+    final hasSelection = context.select<GalleryState, bool>((g) => g.selectedImages.isNotEmpty);
+
     // Context-aware FAB icon for mobile (null = no FAB for that tab)
-    final IconData? fabIcon = switch (appState.workbenchTabIndex) {
-      0 => Icons.tune,
-      1 => Icons.info_outline,
-      4 => Icons.auto_awesome_outlined,
-      5 => Icons.tune,
+    final IconData? fabIcon = switch (tab) {
+      WorkbenchTab.image || WorkbenchTab.video => hasSelection ? null : Icons.tune,
+      WorkbenchTab.comparator => Icons.info_outline,
+      WorkbenchTab.assistant => Icons.auto_awesome_outlined,
       _ => null,
     };
 
+    final l10n = AppLocalizations.of(context)!;
+
     return WorkbenchLayout(
-      topBar: WorkbenchTopBar(tabController: _tabController),
+      toolbarBuilder: (phone) => WorkbenchGlassToolbar(
+        tabController: _tabController,
+        phone: phone,
+        toolControls: toolControls,
+        toolControlsWidth: toolControlsWidth,
+      ),
+      centerOverlay: tab == WorkbenchTab.video
+          ? const VideoTabSelectionBar()
+          : (isGalleryTab ? const GallerySelectionBar() : null),
+      centerScrollsUnderToolbar: isGalleryTab,
+      hasLeftPanel: tab == WorkbenchTab.image || tab == WorkbenchTab.video || tab == WorkbenchTab.assistant,
+      hasRightPanel: tab != WorkbenchTab.mask && tab != WorkbenchTab.crop,
+      rightPanelTitle: isGalleryTab ? l10n.wbGenerationConfig : null,
       leftPanel: leftPanel,
       centerContent: centerContent,
       centerGround: centerGround,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/thumbnail_fit.dart';
@@ -9,60 +10,79 @@ import '../../../models/app_image.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
-import '../../../widgets/app_card.dart';
-import '../../../widgets/app_section_label.dart';
 import '../../../widgets/thumbnail_fit_toggle.dart';
+import 'optimizer_context_card.dart';
 
+/// The Prompt Assistant's left column outside library-edit mode (`A3a 1a` /
+/// `1b`): the reference images the agent can view, then the result images the
+/// user has fed back on.
 class OptimizerReferencePanel extends StatelessWidget {
   const OptimizerReferencePanel({super.key});
 
-  /// The scrim behind a result card's version chip — the same flat dark ink
-  /// the gallery card's meta badge wears (`20c` draws rgba(20,26,52,.62)).
-  /// Deliberately not seed-derived: it sits on a photograph, not on a surface.
-  static const Color _versionScrim = Color(0x9E141A34);
-  static const Color _versionInk = Color(0xF2FFFFFF);
+  /// A reference card's picture. A fixed height rather than the image's own:
+  /// unconstrained, one tall portrait filled the column and pushed the rest out
+  /// of sight, so the numbering the prompt refers to stopped being scannable.
+  static const double _imageHeight = 110;
+
+  /// A result row's thumbnail.
+  static const double _resultThumb = 44;
+
+  /// A card's inset from the column edge, and the gap under it (`margin:0 8 6`).
+  static const EdgeInsets _cardMargin = EdgeInsets.fromLTRB(8, 0, 8, AppSpace.s6);
 
   @override
   Widget build(BuildContext context) {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context);
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final images = workbenchUIState.optimizerReferenceImages;
     final session = workbenchUIState.optimizerSession;
     // Shared with the gallery and the file browser — see [ThumbnailFit].
     // Read here and passed down: the cards are built inside a ListView
     // builder, whose element is the wrong place to hang the dependency.
     final thumbFit = context.select<AppState, ThumbnailFit>((s) => s.thumbnailFit);
+    final countStyle = textTheme.labelSmall?.mono.copyWith(
+      fontWeight: FontWeight.w400,
+      color: colorScheme.onSurfaceVariant,
+    );
 
     if (images.isEmpty) {
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppSectionLabel(
-            l10n.referenceImages,
-            padding: const EdgeInsets.fromLTRB(16, 16, 12, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, AppSpace.s10, 12, AppSpace.s6),
+            child: OptimizerPanelCaption(l10n.referenceImages),
           ),
           Expanded(
             child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.collections_outlined, size: 40, color: colorScheme.outlineVariant),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.noImagesSelected,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.photo_library_outlined, size: 28, color: colorScheme.outline),
+                    const SizedBox(height: OptimizerPanelCard.gap),
+                    Text(
+                      l10n.noImagesSelected,
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpace.s4),
+                    Text(
                       l10n.optEmptyImagesHint,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        height: AppType.proseHeight,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -72,7 +92,7 @@ class OptimizerReferencePanel extends StatelessWidget {
 
     // The whole panel listens to the session, not just the list: which group a
     // card belongs to is derived from the history (a feedback turn moves an
-    // image into the results group), and the "viewed" badges move mid-turn.
+    // image into the results group), and the "viewed" markers move mid-turn.
     return ListenableBuilder(
       listenable: session,
       builder: (context, _) {
@@ -94,77 +114,73 @@ class OptimizerReferencePanel extends StatelessWidget {
         final rowCount = refs.length + (results.isEmpty ? 0 : results.length + 1);
 
         return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AppSectionLabel(
-              l10n.referenceImages,
-              padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
-              // The count and the fit control share the label's baseline row.
-              // The control belongs here rather than in the workbench toolbar
-              // above: that bar names the assistant, this one names the strip
-              // whose cards the setting redraws.
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (refs.isNotEmpty)
-                    Text(
-                      '${refs.length}',
-                      style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
-                            color: colorScheme.outline,
-                          ),
-                    ),
-                  const ThumbnailFitToggle(iconSize: 16, size: 28),
-                ],
+            Padding(
+              // Tighter than the empty state's caption: the fit control is a
+              // 28px target, and the row takes its height.
+              padding: const EdgeInsets.fromLTRB(12, AppSpace.s4, AppSpace.s6, 2),
+              child: OptimizerPanelCaption(
+                l10n.referenceImages,
+                // The fit control belongs here rather than in the workbench
+                // toolbar: that bar names the assistant, this one names the
+                // strip whose cards the setting redraws.
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (refs.isNotEmpty) Text('${refs.length}', style: countStyle),
+                    const ThumbnailFitToggle(iconSize: AppSize.iconMd, size: AppSize.compact),
+                  ],
+                ),
               ),
             ),
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                padding: const EdgeInsets.only(top: 2, bottom: AppSpace.s6),
                 itemCount: rowCount,
                 itemBuilder: (context, row) {
                   if (row < refs.length) {
                     final index = refs[row];
-                    return _imageCard(context, l10n, colorScheme, workbenchUIState,
-                        session, images[index], index, thumbFit,
-                        meta: null);
+                    return _referenceCard(context, l10n, colorScheme, textTheme, workbenchUIState,
+                        session, images[index], index, thumbFit);
                   }
                   if (row == refs.length) {
-                    // The results group header, with the hairline that
-                    // separates the two groups (`20c`).
+                    // The results group header, under the hairline that
+                    // separates the two groups.
                     return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         if (refs.isNotEmpty)
-                          Divider(height: 1, color: colorScheme.outlineVariant),
-                        AppSectionLabel(
-                          l10n.optResultImages,
-                          padding: const EdgeInsets.fromLTRB(4, 10, 0, 8),
-                          trailing: Text(
-                            '${results.length}',
-                            style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
-                                  color: colorScheme.outline,
-                                ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: AppSpace.s4),
+                            child: Divider(height: 1, color: colorScheme.outlineVariant),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, AppSpace.s10, 12, AppSpace.s6),
+                          child: OptimizerPanelCaption(
+                            l10n.optResultImages,
+                            trailing: Text('${results.length}', style: countStyle),
                           ),
                         ),
                       ],
                     );
                   }
-                  final index = results[row - refs.length - 1];
-                  final image = images[index];
-                  return _imageCard(context, l10n, colorScheme, workbenchUIState,
-                      session, image, index, thumbFit,
-                      meta: resultInfo[image.name]);
+                  final image = images[results[row - refs.length - 1]];
+                  return _resultCard(context, l10n, colorScheme, textTheme, workbenchUIState,
+                      session, image, thumbFit, resultInfo[image.name]!);
                 },
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              padding: const EdgeInsets.fromLTRB(12, AppSpace.s4, 12, AppSpace.s10),
               child: Text(
                 l10n.optRefNumberingHint,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: colorScheme.outline,
-                      height: AppType.looseHeight,
-                    ),
+                style: textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w400,
+                  color: colorScheme.outline,
+                  height: AppType.looseHeight,
+                ),
               ),
             ),
           ],
@@ -173,37 +189,32 @@ class OptimizerReferencePanel extends StatelessWidget {
     );
   }
 
-  /// One card of either group. [meta] null = reference (numbered badge, plain
-  /// filename footer); non-null = result (version chip on the picture, the
-  /// user's feedback digest in the footer).
-  Widget _imageCard(
+  /// A reference: the picture with its number and a remove control on it, and
+  /// under it the filename the prompt will cite and whether the agent has
+  /// looked at it yet.
+  Widget _referenceCard(
     BuildContext context,
     AppLocalizations l10n,
     ColorScheme colorScheme,
+    TextTheme textTheme,
     WorkbenchUIState workbenchUIState,
     PromptOptimizerSession session,
     AppImage image,
     int index,
-    ThumbnailFit thumbFit, {
-    required ({int? promptVersion, String feedback})? meta,
-  }) {
+    ThumbnailFit thumbFit,
+  ) {
     final viewed = session.viewedImagePaths.contains(image.path);
+    final viewedColor = viewed ? context.semantic.success : colorScheme.outline;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: AppCard(
-        outlined: true,
-        padding: EdgeInsets.zero,
+      padding: _cardMargin,
+      child: _CardShell(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // A fixed 4:3 window rather than the image's own height:
-            // unconstrained, one tall portrait shot filled the panel and
-            // pushed the rest out of sight, so the numbering the prompt
-            // refers to was no longer scannable.
-            AspectRatio(
-              aspectRatio: 4 / 3,
+            SizedBox(
+              height: _imageHeight,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -212,114 +223,71 @@ class OptimizerReferencePanel extends StatelessWidget {
                     child: Image(image: image.imageProvider, fit: thumbFit.boxFit),
                   ),
                   Positioned(
-                    top: 7,
-                    left: 7,
-                    child: meta == null
-                        // The agent addresses images by this 1-based id, and
-                        // the optimized prompt cites the same number.
-                        ? _Badge(
-                            text: '${index + 1}',
-                            background: colorScheme.primary,
-                            foreground: colorScheme.onPrimary,
-                          )
-                        : (meta.promptVersion == null
-                            ? const SizedBox.shrink()
-                            : Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: _versionScrim,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  'v${meta.promptVersion}',
-                                  style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                                        color: _versionInk,
-                                        fontWeight: FontWeight.w600,
-                                        height: AppType.tightHeight,
-                                      ),
-                                ),
-                              )),
+                    top: AppSpace.s6,
+                    left: AppSpace.s6,
+                    // The agent addresses images by this 1-based id, and the
+                    // optimized prompt cites the same number.
+                    child: _Plate(
+                      child: Text(
+                        '${index + 1}',
+                        style: textTheme.labelSmall?.mono.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppOverlay.onImagePlate,
+                        ),
+                      ),
+                    ),
                   ),
                   Positioned(
-                    top: 7,
-                    right: 7,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (viewed) ...[
-                          Tooltip(
-                            message: l10n.optViewed,
-                            child: _Badge(
-                              icon: Icons.visibility_outlined,
-                              background: colorScheme.surface.withValues(alpha: 0.9),
-                              foreground: colorScheme.onSurfaceVariant,
-                              border: colorScheme.outlineVariant,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                        ],
-                        Tooltip(
-                          message: l10n.optRemoveImage,
-                          // Neutral, not the error colour it used to wear.
-                          // Taking a picture off the list is undone by
-                          // selecting it again — nothing is destroyed — and a
-                          // red ✕ on every card made the panel read as a
-                          // column of warnings.
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: () => workbenchUIState.removeAssistantImage(image),
-                            child: _Badge(
-                              icon: Icons.close,
-                              background: colorScheme.surface.withValues(alpha: 0.9),
-                              foreground: colorScheme.onSurfaceVariant,
-                              border: colorScheme.outlineVariant,
-                            ),
-                          ),
-                        ),
-                      ],
+                    top: AppSpace.s6,
+                    right: AppSpace.s6,
+                    // Neutral, not the error colour: taking a picture off the
+                    // list is undone by selecting it again — nothing is
+                    // destroyed.
+                    child: _Plate(
+                      tooltip: l10n.optRemoveImage,
+                      onTap: () => workbenchUIState.removeAssistantImage(image),
+                      child: const Icon(Icons.close, size: AppSize.iconSm, color: AppOverlay.onImagePlate),
                     ),
                   ),
                 ],
               ),
             ),
-            // The name the prompt will cite, off the picture so it never
-            // covers the thing being referred to. A result card leads with the
-            // user's own words about it instead — that digest is what tells
-            // the cards apart once every thumbnail is the same character.
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: colorScheme.outlineVariant),
-                ),
-              ),
-              padding: const EdgeInsets.fromLTRB(9, 6, 9, 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: AppSpace.s6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (meta != null) ...[
-                    Tooltip(
-                      message: meta.feedback.isEmpty ? l10n.optResultNoFeedback : meta.feedback,
-                      child: Text(
-                        meta.feedback.isEmpty ? l10n.optResultNoFeedback : meta.feedback,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: meta.feedback.isEmpty
-                                  ? colorScheme.outline
-                                  : colorScheme.onSurfaceVariant,
-                            ),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                  ],
                   Text(
                     image.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                          color: meta == null ? colorScheme.onSurfaceVariant : colorScheme.outline,
+                    style: textTheme.labelSmall?.mono.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(
+                        viewed ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        size: AppSize.iconSm,
+                        color: viewedColor,
+                      ),
+                      const SizedBox(width: AppSpace.s4),
+                        Flexible(
+                          child: Text(
+                            viewed ? l10n.optViewed : l10n.optNotViewed,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w400,
+                              color: viewedColor,
+                            ),
+                          ),
                         ),
+                    ],
                   ),
                 ],
               ),
@@ -329,55 +297,163 @@ class OptimizerReferencePanel extends StatelessWidget {
       ),
     );
   }
+
+  /// A result: a small thumbnail beside the prompt version it came from, its
+  /// filename and the user's feedback on it — that digest is what tells the
+  /// rows apart once every thumbnail shows the same character.
+  Widget _resultCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    WorkbenchUIState workbenchUIState,
+    PromptOptimizerSession session,
+    AppImage image,
+    ThumbnailFit thumbFit,
+    ({int? promptVersion, String feedback}) meta,
+  ) {
+    final semantic = context.semantic;
+    final viewed = session.viewedImagePaths.contains(image.path);
+    final hasFeedback = meta.feedback.isNotEmpty;
+    final feedback = hasFeedback ? meta.feedback : l10n.optResultNoFeedback;
+    final monoStyle = textTheme.labelSmall?.mono.copyWith(fontWeight: FontWeight.w400);
+
+    return Padding(
+      padding: _cardMargin,
+      child: _CardShell(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                child: SizedBox.square(
+                  dimension: _resultThumb,
+                  child: ColoredBox(
+                    color: colorScheme.surfaceContainerHighest,
+                    child: Image(image: image.imageProvider, fit: thumbFit.boxFit),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        if (meta.promptVersion != null) ...[
+                          Text(
+                            'v${meta.promptVersion}',
+                            style: monoStyle?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onAccentTint,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpace.s4),
+                        ],
+                        Expanded(
+                          child: Text(
+                            image.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: monoStyle?.copyWith(color: colorScheme.onSurface),
+                          ),
+                        ),
+                        if (viewed)
+                          Tooltip(
+                            message: l10n.optViewed,
+                            child: Icon(Icons.visibility_outlined, size: AppSize.iconSm, color: semantic.success),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Tooltip(
+                      message: feedback,
+                      child: Text(
+                        feedback,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w400,
+                          color: hasFeedback ? colorScheme.onSurfaceVariant : colorScheme.outline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpace.s4),
+              Tooltip(
+                message: l10n.optRemoveImage,
+                child: InkWell(
+                  onTap: () => workbenchUIState.removeAssistantImage(image),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  child: SizedBox.square(
+                    dimension: 20,
+                    child: Icon(Icons.close, size: AppSize.iconSm, color: colorScheme.outline),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-/// A fixed 20px round plate over a thumbnail — the reference number, and the
-/// two neutral controls beside it.
-///
-/// One size and one shape for all three. They sit in the same 7px inset on
-/// opposite corners of the same picture, and the earlier mix of rounded squares
-/// (the number, the eye) with a circle (the ✕) read as three unrelated marks
-/// rather than as one set of affordances on one card.
-class _Badge extends StatelessWidget {
-  final String? text;
-  final IconData? icon;
-  final Color background;
-  final Color foreground;
+/// A card in this column: the panel ground, a hairline, r10, its content
+/// clipped to the corners.
+class _CardShell extends StatelessWidget {
+  const _CardShell({required this.child});
 
-  /// A hairline for the translucent plates, which otherwise vanish over a pale
-  /// patch of the image underneath.
-  final Color? border;
-
-  static const double _diameter = 20;
-
-  const _Badge({
-    this.text,
-    this.icon,
-    required this.background,
-    required this.foreground,
-    this.border,
-  });
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: _diameter,
-      height: _diameter,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: background,
-        shape: BoxShape.circle,
-        border: border == null ? null : Border.all(color: border!),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Material, so the remove control's ink lands on the card; the shape's
+    // side is painted above the child, so the picture never covers the edge.
+    return Material(
+      color: colorScheme.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
-      child: text != null
-          ? Text(
-              text!,
-              style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: foreground,
-                  ),
-            )
-          : Icon(icon, size: 12, color: foreground),
+      child: child,
     );
+  }
+}
+
+/// A 20px square on the fixed image plate over a thumbnail — the reference
+/// number, and the remove control opposite it.
+///
+/// One size and one shape for both: they sit in the same 6px inset on
+/// opposite corners of the same picture, and read as one set of marks.
+class _Plate extends StatelessWidget {
+  const _Plate({required this.child, this.onTap, this.tooltip});
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final String? tooltip;
+
+  static const double _size = 20;
+
+  @override
+  Widget build(BuildContext context) {
+    final plate = Material(
+      color: AppOverlay.imagePlate,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox.square(dimension: _size, child: Center(child: child)),
+      ),
+    );
+    return tooltip == null ? plate : Tooltip(message: tooltip!, child: plate);
   }
 }

@@ -4,29 +4,77 @@ import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
+import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/knowledge_base_service.dart';
 import '../../../services/prompt_optimizer_agent.dart';
-import '../../../widgets/app_empty_state.dart';
 import '../../../widgets/app_search_field.dart';
-import '../../../widgets/app_section_label.dart';
+import 'optimizer_context_card.dart';
 
-/// The library-edit mode's left column — `A2 10h`.
+/// Row, field and inset sizes for the three places this column is drawn:
+/// inline on desktop (`A3b 1a`), the tablet drawer (`1c`) and the phone
+/// drawer (`1d`). The drawers are touched rather than clicked, so their rows
+/// grow and their header becomes a title rather than a caption.
+typedef _TreeDensity = ({
+  double row,
+  double rowGap,
+  double headerGap,
+  EdgeInsets header,
+  EdgeInsets footer,
+  bool titled,
+  bool large,
+});
+
+_TreeDensity _densityOf(BuildContext context) {
+  if (Responsive.isMobile(context)) {
+    return (
+      row: 40.0,
+      rowGap: 8.0,
+      headerGap: 8.0,
+      header: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      footer: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      titled: true,
+      large: true,
+    );
+  }
+  if (Responsive.isTablet(context)) {
+    return (
+      row: 36.0,
+      rowGap: 6.0,
+      headerGap: 8.0,
+      header: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      footer: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      titled: true,
+      large: false,
+    );
+  }
+  return (
+    row: 30.0,
+    rowGap: 6.0,
+    headerGap: 6.0,
+    header: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+    footer: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    titled: false,
+    large: false,
+  );
+}
+
+/// The library-edit mode's left column — `A3b 1a` / `1c` / `1d`.
 ///
-/// It replaces the reference-image strip while that mode is on, which is the
-/// design's call and a defensible one: an agent rearranging the knowledge base
-/// is not looking at pictures, and what the user needs beside the conversation
-/// is which documents exist and which ones are about to change.
+/// It replaces the reference-image strip while that mode is on: an agent
+/// rearranging the knowledge base is not looking at pictures, and what the
+/// user needs beside the conversation is which documents exist and which ones
+/// are about to change.
 ///
 /// Read-only. Everything actionable about a staged edit lives on its card in
 /// the transcript and in the right panel's pending list; this is the map, and
-/// a third place to press 写入 would be a third place to get it wrong.
+/// a third place to press Write would be a third place to get it wrong.
 class KnowledgeTreePanel extends StatefulWidget {
   /// The configured knowledge-base root, or null when there is none.
   final String? kbPath;
 
   /// Edits the agent has staged and the user has not answered. Drives the
-  /// per-row badges and the footer count.
+  /// per-row badges, which folders start open, and the footer count.
   final List<OptimizerChatEntry> pendingKbEdits;
 
   const KnowledgeTreePanel({
@@ -50,15 +98,22 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
   /// problem, and sends the user off to re-pick a folder that is already set.
   bool _scanFailed = false;
 
-  /// Folders the user has opened. Seeded once, on the first successful scan,
-  /// with the folders on the way to a staged edit — the rest start closed. A
-  /// fully expanded 33-document base is a scroll view of forty rows in a 236px
-  /// column, and the folders worth being open are exactly the ones with
-  /// something waiting inside them.
+  /// Folders the user has opened. Seeded on the first successful scan with the
+  /// folders on the way to a staged edit, and grown as new edits are staged —
+  /// the rest start closed. A fully expanded base is a scroll view of forty
+  /// rows in a 220px column, and the folders worth being open are exactly the
+  /// ones with something waiting inside them.
   final Set<String> _expanded = {};
   bool _seededExpansion = false;
 
   String _query = '';
+
+  /// Where a root row starts, one nesting level, and the chevron's box — which
+  /// every row reserves, open, closed or a file, so names never shift sideways
+  /// as folders toggle (`A3b` 「根 8 · 一级 24 · 二级 40」).
+  static const double _rootIndent = 8;
+  static const double _indentStep = 16;
+  static const double _chevronBox = 14;
 
   @override
   void initState() {
@@ -69,6 +124,15 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
   @override
   void didUpdateWidget(KnowledgeTreePanel old) {
     super.didUpdateWidget(old);
+    // An edit staged after the first scan opens the path to it too. Only new
+    // ones: a folder the user has since closed stays closed for edits it
+    // already held.
+    if (_seededExpansion) {
+      final before = {for (final e in old.pendingKbEdits) e.targetPath};
+      for (final e in widget.pendingKbEdits) {
+        if (!before.contains(e.targetPath)) _expanded.addAll(_ancestorsOf(e.targetPath ?? ''));
+      }
+    }
     // A different base is a different tree. A changed pending list is not —
     // staging an edit does not touch disk, so re-walking the folder there
     // would be synchronous IO for a tree that cannot have changed.
@@ -92,8 +156,8 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
     final root = widget.kbPath;
     // Blank counts as unset, not as a folder to go looking for: an empty
     // setting string is how "no knowledge base" is stored, and walking it
-    // would resolve to the working directory and then fail — which now
-    // reports a *read failure*, a different and wrong thing to say.
+    // would resolve to the working directory and then fail — which reports a
+    // *read failure*, a different and wrong thing to say.
     if (root == null || root.trim().isEmpty) {
       if (mounted) {
         setState(() {
@@ -254,188 +318,322 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final density = _densityOf(context);
     final entries = _entries;
+    // Merged once per build, and counted after the merge, so the header
+    // number and the rows agree — a create the tree shows but the count leaves
+    // out reads as a rendering fault.
+    final merged = entries == null ? null : _withPendingCreates(entries);
+
+    final Widget? count = merged == null
+        ? null
+        : Text(
+            l10n.optKbDocCount(merged.where((e) => !e.isDir).length),
+            style: textTheme.labelSmall?.mono.copyWith(
+              fontWeight: FontWeight.w400,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          );
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppSectionLabel(
-          l10n.knowledgeBase,
-          padding: const EdgeInsets.fromLTRB(16, 16, 12, 8),
-          trailing: entries == null
-              ? null
-              : Text(
-                  // Counted after the merge, so the number and the rows agree
-                  // — a create the tree shows but the count leaves out reads
-                  // as a rendering fault.
-                  l10n.optKbDocCount(
-                    _withPendingCreates(entries).where((e) => !e.isDir).length,
+        Padding(
+          padding: density.header,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (density.titled)
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.knowledgeBase,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    if (count != null) ...[
+                      const SizedBox(width: AppSpace.s6),
+                      count,
+                    ],
+                  ],
+                )
+              else
+                OptimizerPanelCaption(l10n.knowledgeBase, trailing: count),
+              if (entries != null && entries.isNotEmpty) ...[
+                SizedBox(height: density.headerGap),
+                // The panel ground under the theme's hairline box: the field
+                // sits on the column and has to read as a well in it.
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.control),
                   ),
-                  style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.outline),
+                  child: SizedBox(
+                    height: density.row,
+                    child: AppSearchField(
+                      controller: _searchCtrl,
+                      hint: l10n.optKbSearchDocs,
+                      compact: !density.large,
+                      onChanged: (v) => setState(() => _query = v),
+                    ),
+                  ),
                 ),
-        ),
-        if (entries != null && entries.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: SizedBox(
-              height: AppSize.compact,
-              child: AppSearchField(
-                controller: _searchCtrl,
-                hint: l10n.optKbSearchDocs,
-                compact: true,
-                onChanged: (v) => setState(() => _query = v),
-              ),
-            ),
+              ],
+            ],
           ),
-        Expanded(child: _buildBody(entries, l10n, colorScheme, textTheme)),
-        if (widget.pendingKbEdits.isNotEmpty)
-          _buildFooter(l10n, colorScheme, textTheme),
+        ),
+        Expanded(child: _buildBody(merged, density, l10n, colorScheme, textTheme)),
+        if (widget.pendingKbEdits.isNotEmpty) _buildFooter(density, l10n, colorScheme, textTheme),
       ],
     );
   }
 
   Widget _buildBody(
-    List<KbTreeEntry>? entries,
+    List<KbTreeEntry>? all,
+    _TreeDensity density,
     AppLocalizations l10n,
     ColorScheme colorScheme,
     TextTheme textTheme,
   ) {
-    if (entries == null) {
-      return Center(
-        child: _scanning
-            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-            : AppEmptyState(
-                compact: true,
-                icon: _scanFailed
-                    ? Icons.folder_off_outlined
-                    : Icons.menu_book_outlined,
-                label: _scanFailed
-                    ? l10n.optKbTreeScanFailed
-                    : l10n.optKbNotConfigured,
-              ),
-      );
+    if (all == null) {
+      if (_scanning) {
+        return const Center(
+          child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+        );
+      }
+      return _scanFailed
+          ? _stateCard(
+              colorScheme,
+              textTheme,
+              icon: Icons.error_outline,
+              iconColor: colorScheme.error,
+              title: l10n.optKbTreeScanFailed,
+            )
+          : _stateCard(
+              colorScheme,
+              textTheme,
+              icon: Icons.folder_open_outlined,
+              iconColor: colorScheme.outline,
+              title: l10n.optKbNotConfiguredShort,
+              body: l10n.optKbNotConfigured,
+            );
     }
 
-    final rows = _visibleRows(_withPendingCreates(entries));
+    final rows = _visibleRows(all);
     if (rows.isEmpty) {
-      return Center(
-        child: AppEmptyState(
-          compact: true,
-          icon: _query.isEmpty ? Icons.menu_book_outlined : Icons.search_off,
-          label: _query.isEmpty ? l10n.optKbTreeEmpty : l10n.optKbTreeNoMatch,
-        ),
+      return _stateCard(
+        colorScheme,
+        textTheme,
+        icon: _query.isEmpty ? Icons.folder_off_outlined : Icons.search_off,
+        iconColor: colorScheme.outline,
+        title: _query.isEmpty ? l10n.optKbTreeEmpty : l10n.optKbTreeNoMatch,
       );
     }
 
     final edits = _editsByPath;
+    // The folders on the way to something waiting, drawn in the deep ink so
+    // the path reads down to the badge at its end.
+    final onPendingPath = <String>{
+      for (final e in widget.pendingKbEdits) ..._ancestorsOf(e.targetPath ?? ''),
+    };
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      padding: const EdgeInsets.only(top: 2, bottom: AppSpace.s6),
       itemCount: rows.length,
-      itemBuilder: (context, index) =>
-          _buildRow(rows[index], edits[rows[index].relPath], l10n, colorScheme, textTheme),
+      itemBuilder: (context, index) {
+        final entry = rows[index];
+        return _buildRow(
+          entry,
+          edits[entry.relPath],
+          onPendingPath.contains(entry.relPath),
+          density,
+          l10n,
+          colorScheme,
+          textTheme,
+        );
+      },
+    );
+  }
+
+  /// `A3b 1d`'s empty / no-match / unreadable / not-configured cards: the
+  /// panel ground, a hairline, r10, a 28px glyph over one or two lines.
+  Widget _stateCard(
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    required IconData icon,
+    required Color iconColor,
+    String? title,
+    String? body,
+  }) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 2, 12, 12),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpace.s16),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 28, color: iconColor),
+              const SizedBox(height: AppSpace.s4),
+              if (title != null)
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              if (body != null)
+                Text(
+                  body,
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: AppType.proseHeight,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildRow(
     KbTreeEntry entry,
     OptimizerChatEntry? edit,
+    bool onPendingPath,
+    _TreeDensity density,
     AppLocalizations l10n,
     ColorScheme colorScheme,
     TextTheme textTheme,
   ) {
     final semantic = context.semantic;
+    final changed = edit != null;
     final isCreate = edit != null && edit.oldContent == null;
     final open = _expanded.contains(entry.relPath);
 
-    // The tint is the badge's own colour at the wash alpha, so a row and its
-    // label say the same thing twice rather than two different things.
-    final Color? tint = edit == null
-        ? null
-        : (isCreate ? semantic.success : semantic.warning).withValues(alpha: AppAlpha.tint);
+    // Files in the secondary ink; a changed file in the colour of its badge,
+    // so the glyph and the label say the same thing twice rather than two
+    // different things.
+    final IconData icon;
+    final Color iconColor;
+    if (entry.isDir) {
+      icon = open ? Icons.folder_open_outlined : Icons.folder_outlined;
+      iconColor = colorScheme.onSurfaceVariant;
+    } else if (!changed) {
+      icon = Icons.description_outlined;
+      iconColor = colorScheme.onSurfaceVariant;
+    } else if (isCreate) {
+      icon = Icons.note_add_outlined;
+      iconColor = semantic.success;
+    } else {
+      icon = Icons.edit_document;
+      iconColor = semantic.info;
+    }
+    final accented = changed || onPendingPath;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.xs),
-      onTap: entry.isDir
-          ? () => setState(() {
-                if (!_expanded.remove(entry.relPath)) _expanded.add(entry.relPath);
-              })
-          : () => _openFile(entry.relPath),
-      child: Container(
-        height: _rowHeight,
-        // The indent is the depth, and files sit one step further in than the
-        // folder glyph above them so a folder's contents read as its contents.
-        padding: EdgeInsets.only(left: 6 + entry.depth * _indentStep + (entry.isDir ? 0 : 16), right: 6),
-        decoration: BoxDecoration(
-          color: tint,
-          borderRadius: BorderRadius.circular(AppRadius.xs),
-        ),
-        child: Row(
-          children: [
-            if (entry.isDir) ...[
-              Icon(
-                open ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                size: 14,
-                color: colorScheme.outline,
-              ),
-              const SizedBox(width: 2),
-              Icon(Icons.folder_outlined, size: 13, color: colorScheme.onSurfaceVariant),
-            ] else
-              Icon(Icons.description_outlined, size: 13, color: colorScheme.outline),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                entry.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                // Folders in the sans face at a heavier weight, files in the
-                // mono one: the same split the transcript's step rows use, and
-                // what lets a name be recognised as a filename at 11px.
-                style: entry.isDir
-                    ? textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurfaceVariant,
-                      )
-                    : textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s6),
+      child: Material(
+        // The pending change itself wears the wash; the folders above it only
+        // the deep ink.
+        color: changed ? colorScheme.accentTint : Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          onTap: entry.isDir
+              ? () => setState(() {
+                    if (!_expanded.remove(entry.relPath)) _expanded.add(entry.relPath);
+                  })
+              : () => _openFile(entry.relPath),
+          child: SizedBox(
+            height: density.row,
+            child: Padding(
+              padding: EdgeInsets.only(left: _rootIndent + entry.depth * _indentStep, right: 8),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: _chevronBox,
+                    child: entry.isDir
+                        ? Icon(
+                            open ? Icons.expand_more : Icons.chevron_right,
+                            size: _chevronBox,
+                            color: colorScheme.outline,
+                          )
+                        : null,
+                  ),
+                  SizedBox(width: density.rowGap),
+                  Icon(icon, size: AppSize.iconMd, color: iconColor),
+                  SizedBox(width: density.rowGap),
+                  Expanded(
+                    child: Text(
+                      entry.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: (density.large ? textTheme.bodyMedium : textTheme.bodySmall)?.copyWith(
+                        color: accented ? colorScheme.onAccentTint : colorScheme.onSurface,
+                        fontWeight: accented || entry.isDir ? FontWeight.w500 : FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                  if (changed) ...[
+                    const SizedBox(width: AppSpace.s6),
+                    OptimizerTagBadge(
+                      mono: true,
+                      label: isCreate ? l10n.optKbTreeAdded : l10n.optKbTreeChanged,
+                      background: isCreate ? semantic.successContainer : semantic.infoContainer,
+                      foreground: isCreate ? semantic.onSuccessContainer : semantic.onInfoContainer,
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (edit != null) ...[
-              const SizedBox(width: 6),
-              Text(
-                isCreate ? l10n.optKbTreeAdded : l10n.optKbTreeChanged,
-                style: textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: isCreate ? semantic.success : semantic.warning,
-                ),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildFooter(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
-    final semantic = context.semantic;
+  /// The count of what is waiting on the user, on the accent wash under a
+  /// hairline — the column's one reminder that the tree is not the whole story.
+  Widget _buildFooter(
+    _TreeDensity density,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return Container(
       width: double.infinity,
+      padding: density.footer,
       decoration: BoxDecoration(
+        color: colorScheme.accentTint,
         border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 9, 16, 12),
       child: Row(
         children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(color: semantic.warning, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 7),
+          Icon(Icons.pending_actions, size: AppSize.iconMd, color: colorScheme.primary),
+          const SizedBox(width: AppSpace.s6),
           Flexible(
             child: Text(
               l10n.optKbTreePending(widget.pendingKbEdits.length),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: textTheme.labelMedium?.copyWith(color: semantic.warning),
+              style: (density.large ? textTheme.bodyMedium : textTheme.bodySmall)?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onAccentTint,
+              ),
             ),
           ),
         ],
@@ -459,10 +657,4 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
       // business opening anyway.
     }
   }
-
-  /// `10h` draws every row of the tree at 24px, folders and files alike.
-  static const double _rowHeight = 24;
-
-  /// One nesting level, in pixels.
-  static const double _indentStep = 10;
 }

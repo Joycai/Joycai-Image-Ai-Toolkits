@@ -7,8 +7,9 @@ import 'screenshots/harness/fixture_env.dart';
 import 'screenshots/harness/fixture_seed.dart';
 import 'screenshots/harness/shoot.dart';
 
-/// The crop tool's size badge — `A3 10e` draws it inside the selection's
-/// top-left corner, reading the dimensions a save would actually produce.
+/// The crop tool's size badge — `A4 · 1a` draws it inside the selection,
+/// centred along its top edge, reading the dimensions a save would actually
+/// produce.
 ///
 /// Two things went wrong with it and neither was visible from the code. It was
 /// anchored on [EditActionDetails.screenCropRect], which differs from the
@@ -43,11 +44,11 @@ void main() {
         },
       );
 
-  /// The badge's own text, found by the `×` no other label on this screen uses
-  /// between two bare numbers.
+  /// The badge's own text: it *starts* with two bare numbers either side of a
+  /// spaced `×`. The toolbar's source caption and the output card carry sizes
+  /// too, but after a word, and unspaced.
   Finder badge() => find.byWidgetPredicate(
-        (Widget w) =>
-            w is Text && (w.data ?? '').contains('×') && !(w.data ?? '').contains('→'),
+        (Widget w) => w is Text && RegExp(r'^\d+ × \d+').hasMatch(w.data ?? ''),
       );
 
   testWidgets('the selection is measured before anything is dragged', (WidgetTester tester) async {
@@ -82,8 +83,9 @@ void main() {
     final Rect drawn = tester.getRect(badge());
     expect(selectionOnScreen.contains(drawn.topLeft), isTrue,
         reason: 'badge $drawn is outside the selection $selectionOnScreen');
-    // Near the corner, not merely somewhere inside it.
+    // Along the top edge and centred on it, not merely somewhere inside.
     expect(drawn.top - selectionOnScreen.top, lessThan(24));
-    expect(drawn.left - selectionOnScreen.left, lessThan(24));
+    expect((drawn.center.dx - selectionOnScreen.center.dx).abs(), lessThan(2),
+        reason: 'badge $drawn is not centred on the selection $selectionOnScreen');
   });
 }

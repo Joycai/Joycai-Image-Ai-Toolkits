@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
@@ -8,12 +9,19 @@ import '../../services/llm/model_capabilities.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_field_size.dart';
 import '../../widgets/app_segmented_control.dart';
-import '../../widgets/app_labelled_field.dart';
-import '../../widgets/app_text_field.dart';
 import '../../widgets/dialogs/image_size_picker_dialog.dart';
 import '../../widgets/models/model_picker_options.dart';
 import '../../widgets/searchable_picker.dart';
 
+/// Vertical rhythm inside the card: header → pickers → parameter grid
+/// (`A1 · 1a`, `gap:8`).
+const double _kGap = 8;
+
+/// The model card's contents: a collapsible caption, the channel and model
+/// pickers, and whichever parameters the selected model declares.
+///
+/// Drawn without a card of its own — the panel hosts it in one, the way it
+/// hosts the selection and the toggles.
 class ModelSelectionSection extends StatelessWidget {
   /// The image models to choose from, in the type the state already holds
   /// them in.
@@ -61,7 +69,9 @@ class ModelSelectionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final l10n = AppLocalizations.of(context)!;
 
     // One pass over the models, for the two things a build actually needs: the
@@ -92,73 +102,100 @@ class ModelSelectionSection extends StatelessWidget {
 
     final collapsedModelName = !isExpanded ? modelInChannel?.modelName : null;
 
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        tilePadding: EdgeInsets.zero,
-        childrenPadding: EdgeInsets.zero,
-        initiallyExpanded: isExpanded,
-        onExpansionChanged: (_) => onToggleExpansion(),
-        leading: Icon(Icons.tune_outlined, size: 20, color: colorScheme.primary),
-        title: Text(l10n.modelSelection, style: Theme.of(context).textTheme.titleSmall),
-        subtitle: collapsedModelName != null
-            ? Text(collapsedModelName, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline))
-            : null,
-        children: [
-          const SizedBox(height: 8),
-          // Filled, per `16a`: these two sit inside a card, where an outline
-          // alone leaves them flush with it. Scoped to the pickers rather than
-          // the whole panel — the prompt editor below is deliberately boxless.
-          FilledFieldScope(
-            child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    // `A1 · 1a`: an 11/500 tracked caption in the deep ink, and the chevron
+    // that folds the card. Collapsed, the header still names the model, so
+    // the card says what will run without having to be opened.
+    final header = Semantics(
+      expanded: isExpanded,
+      child: InkWell(
+        onTap: onToggleExpansion,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: SizedBox(
+          height: AppSize.iconLg,
+          child: Row(
             children: [
-              // Regular, per `16a`: a sidebar card's fields are the 32px size.
-              Expanded(
-                child: AppLabelledField(
-                  label: l10n.channel,
-                  size: AppFieldSize.regular,
-                  child: SearchablePickerField<int>(
-                    size: AppFieldSize.regular,
-                    selected: selectedChannel == null ? null : channelPickerOption(selectedChannel),
-                    optionsBuilder: () => channels.map(channelPickerOption).toList(),
-                    onChanged: onChannelChanged,
-                    hint: l10n.selectAChannel,
-                    searchHint: l10n.searchChannels,
-                    dialogIcon: Icons.hub_outlined,
-                    enabled: channels.isNotEmpty,
-                    // A dot, not a chip: this field is half a 340px column,
-                    // and `16a` spends what is left on the channel's name.
-                    badgeStyle: PickerBadge.dot,
-                  ),
+              Text(
+                l10n.modelSelection,
+                style: textTheme.labelSmall?.copyWith(
+                  letterSpacing: AppType.trackedLabelSpacing,
+                  color: colorScheme.onAccentTint,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpace.s6),
               Expanded(
-                child: AppLabelledField(
-                  // `model`, not `modelSelection` — the card's own heading is
-                  // already 「模型选择」, and the caption under it was saying it
-                  // a second time. `16a` labels the field 「模型」.
-                  label: l10n.model,
-                  size: AppFieldSize.regular,
-                  child: SearchablePickerField<int>(
-                    size: AppFieldSize.regular,
-                    selected: modelInChannel == null ? null : modelPickerOption(modelInChannel),
-                    // Built on open, not on build. This is the list that used
-                    // to freeze the window for hundreds of milliseconds.
-                    optionsBuilder: () => [
-                      for (final m in availableModels)
-                        if (m.channelId == selectedChannelId) modelPickerOption(m),
-                    ],
-                    onChanged: onModelChanged,
-                    hint: l10n.selectAModel,
-                    searchHint: l10n.searchModels,
-                    dialogIcon: Icons.memory_outlined,
-                    enabled: channelHasModels,
-                  ),
-                ),
+                child: collapsedModelName == null
+                    ? const SizedBox.shrink()
+                    : Text(
+                        collapsedModelName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+              ),
+              const SizedBox(width: AppSpace.s4),
+              Icon(
+                isExpanded ? Icons.expand_less : Icons.expand_more,
+                size: AppSize.iconMd,
+                color: colorScheme.onSurfaceVariant,
               ),
             ],
+          ),
+        ),
+      ),
+    );
+
+    final body = Theme(
+      // `A1 · 1a`: a field inside a card takes the column's ground as its fill,
+      // under the theme's own hairline (颜色角色 「输入填充 = col」).
+      data: theme.copyWith(
+        inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+          filled: true,
+          fillColor: colorScheme.surfaceContainerLow,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Stacked full width and uncaptioned, as `1a` draws them: the
+          // channel's dot and the model's name say which is which. The caption
+          // is kept for screen readers, merged into the field it names.
+          MergeSemantics(
+            child: Semantics(
+              label: l10n.channel,
+              child: SearchablePickerField<int>(
+                size: AppFieldSize.regular,
+                selected: selectedChannel == null ? null : channelPickerOption(selectedChannel),
+                optionsBuilder: () => channels.map(channelPickerOption).toList(),
+                onChanged: onChannelChanged,
+                hint: l10n.selectAChannel,
+                searchHint: l10n.searchChannels,
+                dialogIcon: Icons.hub_outlined,
+                enabled: channels.isNotEmpty,
+                badgeStyle: PickerBadge.dot,
+              ),
+            ),
+          ),
+          const SizedBox(height: _kGap),
+          MergeSemantics(
+            child: Semantics(
+              label: l10n.model,
+              child: SearchablePickerField<int>(
+                size: AppFieldSize.regular,
+                selected: modelInChannel == null ? null : modelPickerOption(modelInChannel),
+                // Built on open, not on build. This is the list that used
+                // to freeze the window for hundreds of milliseconds.
+                optionsBuilder: () => [
+                  for (final m in availableModels)
+                    if (m.channelId == selectedChannelId) modelPickerOption(m),
+                ],
+                onChanged: onModelChanged,
+                hint: l10n.selectAModel,
+                searchHint: l10n.searchModels,
+                dialogIcon: Icons.memory_outlined,
+                enabled: channelHasModels,
+              ),
             ),
           ),
           if (modelInChannel != null)
@@ -166,39 +203,102 @@ class ModelSelectionSection extends StatelessWidget {
         ],
       ),
     );
-  }
 
-  Widget _buildModelSpecificOptions(BuildContext context, LLMModel model, AppLocalizations l10n) {
-    final caps = capabilitiesOf(model);
-    if (!caps.isImageGenerator || caps.imageParams.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final fields = <Widget>[];
-    for (final spec in caps.imageParams) {
-      if (fields.isNotEmpty) fields.add(const SizedBox(height: 8));
-      fields.add(_buildParamRow(context, model, spec, l10n));
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Column(children: fields),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        header,
+        AnimatedSize(
+          duration: AppMotion.durationOf(context, AppMotion.reveal),
+          curve: AppMotion.enter,
+          alignment: AlignmentDirectional.topStart,
+          child: isExpanded
+              ? Padding(padding: const EdgeInsets.only(top: _kGap), child: body)
+              : const SizedBox(width: double.infinity),
+        ),
+      ],
     );
   }
 
-  Widget _buildParamRow(BuildContext context, LLMModel model, ParamSpec spec, AppLocalizations l10n) {
+  /// Whether a parameter needs the whole row rather than half of it.
+  ///
+  /// A segmented track of three or four options at half the card's width
+  /// leaves each option ~30px — room for 「低」, not for "Medium". Two options
+  /// and every select-like control fit a half.
+  static bool _spansRow(ParamSpec spec) =>
+      spec.control == ParamControl.segmented && spec.options.length > 2;
+
+  Widget _buildModelSpecificOptions(BuildContext context, LLMModel model, AppLocalizations l10n) {
+    final caps = capabilitiesOf(model);
+    // Sliders are video-only (grok-imagine-video's duration); no image family
+    // declares one, and this card has nothing to draw for it.
+    final specs = [
+      for (final spec in caps.imageParams)
+        if (spec.control != ParamControl.slider) spec,
+    ];
+    if (!caps.isImageGenerator || specs.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // `A1 · 1a`: a two-column grid, gap 6. Cells pair up in declaration order;
+    // a cell that spans the row, or a half left without a partner, takes the
+    // full width rather than leaving a hole beside it.
+    final rows = <Widget>[];
+    Widget? pendingHalf;
+    for (final spec in specs) {
+      final cell = _buildParamCell(context, model, spec, l10n);
+      if (_spansRow(spec)) {
+        if (pendingHalf != null) {
+          rows.add(pendingHalf);
+          pendingHalf = null;
+        }
+        rows.add(cell);
+      } else if (pendingHalf == null) {
+        pendingHalf = cell;
+      } else {
+        rows.add(Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: pendingHalf),
+            const SizedBox(width: AppSpace.s6),
+            Expanded(child: cell),
+          ],
+        ));
+        pendingHalf = null;
+      }
+    }
+    if (pendingHalf != null) rows.add(pendingHalf);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: _kGap),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final (index, row) in rows.indexed) ...[
+            if (index > 0) const SizedBox(height: AppSpace.s6),
+            row,
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// One grid cell: an 11px secondary caption over its control.
+  Widget _buildParamCell(BuildContext context, LLMModel model, ParamSpec spec, AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final current = imageParamResolver(model, spec);
 
-    Widget control;
+    final Widget control;
     switch (spec.control) {
       case ParamControl.dropdown:
-        // The library's dropdown, which is drawn as the same box as the two
-        // pickers above it. A raw `DropdownButtonFormField` here was the
-        // theme's outline around Material's own dense button — ten pixels
-        // taller than the pickers, in a larger face, under a filled triangle —
-        // and `16a` draws the three as one family. Controlled, so the value
-        // is the resolver's every build; the `FormField` this replaces owned
-        // its own and had to be re-keyed per model to drop a stale one.
+        // The library's dropdown, drawn as the same box as the two pickers
+        // above it. Controlled, so the value is the resolver's every build; the
+        // `FormField` this replaced owned its own and had to be re-keyed per
+        // model to drop a stale one.
         control = AppDropdown<String>(
           size: AppFieldSize.regular,
           value: current,
@@ -212,6 +312,8 @@ class ModelSelectionSection extends StatelessWidget {
         );
         break;
       case ParamControl.segmented:
+        // `1a` 「质量」: every option `flex:1` on the track, the chosen one
+        // lifted out on the panel's ground.
         control = AppSegmentedControl<String>(
           segments: spec.options
               .map((o) => AppSegment(
@@ -222,26 +324,23 @@ class ModelSelectionSection extends StatelessWidget {
           value: current,
           onChanged: (v) => onImageParamChanged(model, spec.key, v),
           compact: true,
-          // `16a` gives every option `flex:1` and lifts the chosen one out on
-          // white. Tinted and self-sized, this row read as four unequal
-          // buttons with one of them washed — and on the accent tint the
-          // chosen option was the *dimmest* box in the card.
           expand: true,
           style: AppSegmentStyle.raised,
         );
         break;
       case ParamControl.customSize:
-        // Render as a button that displays the current value and opens the
-        // size-picker dialog. The dialog handles preset chips + free-form
-        // WxH input + per-rule live validation.
+        // A field-shaped button showing the current value; it opens the
+        // size-picker dialog (preset chips + free-form WxH + per-rule live
+        // validation). `1d` draws it as a select box with an open-in-new glyph
+        // rather than a chevron, because it opens a dialog, not a menu.
         control = OutlinedButton(
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            // The row's other controls are the regular 32; this one is too.
-            minimumSize: const Size(0, 32),
-            visualDensity: VisualDensity.compact,
-            textStyle: Theme.of(context).textTheme.bodySmall,
-            alignment: Alignment.centerLeft,
+            backgroundColor: colorScheme.surfaceContainerLow,
+            foregroundColor: colorScheme.onSurface,
+            side: BorderSide(color: colorScheme.outlineVariant),
+            minimumSize: const Size(0, AppSize.control),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+            alignment: AlignmentDirectional.centerStart,
           ),
           onPressed: () async {
             final picked = await showImageSizePickerDialog(
@@ -256,33 +355,40 @@ class ModelSelectionSection extends StatelessWidget {
               Expanded(
                 child: Text(
                   _optionLabel(l10n, spec.key, current).replaceAll('x', '×'),
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  // A pixel pair is a figure, and `16a` sets it in the mono
-                  // face for the same reason every other id and count in the
-                  // app is: the digits line up between one model and the next.
-                  style: Theme.of(context).textTheme.bodySmall?.mono,
+                  // A pixel pair is a figure, set in the mono face so the
+                  // digits line up between one model and the next.
+                  style: textTheme.bodySmall?.mono,
                 ),
               ),
-              const Icon(Icons.tune, size: 14),
+              const SizedBox(width: AppSpace.s6),
+              Icon(Icons.open_in_new, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
             ],
           ),
         );
         break;
       case ParamControl.slider:
-        // Video-only (grok-imagine-video's duration); no image family uses it.
+        // Filtered out above; kept so the switch stays exhaustive.
         control = const SizedBox.shrink();
         break;
     }
 
-    return Row(
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text(_paramLabel(l10n, spec.labelKey),
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
-        ),
-        Expanded(child: control),
-      ],
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _paramLabel(l10n, spec.labelKey),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: AppSpace.s4),
+          control,
+        ],
+      ),
     );
   }
 
@@ -336,10 +442,3 @@ class ModelSelectionSection extends StatelessWidget {
     return value;
   }
 }
-
-/// A control under its own bold caption.
-///
-/// The caption is [TextTheme.labelMedium] in bold, which is what the parameter
-/// rows below already use for theirs — the two pickers and the aspect-ratio
-/// row beneath them are labelled the same way rather than each inventing a
-/// weight.

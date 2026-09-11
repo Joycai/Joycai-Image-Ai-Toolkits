@@ -139,5 +139,28 @@
       "year": {},
       "holder": {}
     }
-  }
+  },
+  "themeMode": "主題模式",
+  "visualEffects": "效果",
+  "settingsGroupNotifications": "通知與日誌",
+  "settingsGroupDirectories": "目錄",
+  "settingsGroupAssistant": "助手",
+  "customAccentTitle": "自訂主題色",
+  "customAccentHint": "拖動色環或貼上 hex 值",
+  "customAccentDerived": "推導出的一對",
+  "customAccentPassed": "白字可用，主按鈕保持白字。",
+  "customAccentInkFallback": "白字壓不住，主按鈕改用同色相深墨字。",
+  "customAccentFailed": "該顏色無法滿足對比度要求。",
+  "fontFollowSystem": "跟隨作業系統",
+  "fontNotDownloaded": "未下載",
+  "fontDownloadedOffline": "已下載 · 可離線使用",
+  "languageFollowSystem": "跟隨系統語言",
+  "exportSettingsNote": "可選目錄設定 / 提示詞 / 用量紀錄；不含 API 金鑰",
+  "clearTempFilesNote": "遮罩 · 裁剪副本 · 下載器快取 · 影片縮圖",
+  "resetAllSettingsNote": "回到首次執行狀態",
+  "resetIrreversible": "這一步無法復原",
+  "proxyAppliesToAll": "對所有渠道請求生效",
+  "notificationsDesc": "任務完成或失敗時跳出系統通知",
+  "mcpServerDesc": "讓外部工具透過 MCP 呼叫本機能力",
+  "mcpComingSoon": "即將推出（目前版本未實作）"
 }

@@ -1,29 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../l10n/app_localizations.dart';
-import '../../../models/prompt.dart';
 import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
-import '../../../core/text_diff.dart';
 import '../../../core/file_utils.dart';
+import '../../../core/text_diff.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../models/prompt.dart';
 import '../../../services/assistant_context_usage.dart';
-import '../../../services/llm/context_budget.dart';
 import '../../../services/knowledge_base_service.dart';
+import '../../../services/llm/context_budget.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/app_breathing_dot.dart';
 import '../../../widgets/app_button.dart';
-import '../../../widgets/app_card.dart';
-import '../../../widgets/app_icon_button.dart';
+import '../../../widgets/app_field_size.dart';
 import '../../../widgets/app_segmented_control.dart';
-import '../../../widgets/app_status_badge.dart';
+import '../../../widgets/app_switch.dart';
 import '../../../widgets/chat_model_selector.dart';
 import '../../../widgets/searchable_picker.dart';
-import '../../../widgets/app_section_label.dart';
-import '../../../widgets/app_setting_row.dart';
 import 'optimizer_context_card.dart';
 
+/// The Prompt Assistant's right column (`A3a 1a`, `A3b 1a`/`1b`/`1d`).
+///
+/// Top to bottom: the refiner model, the three-mode switch, then the mode's
+/// own cards — the system prompt; or the knowledge base's status, its write
+/// permissions and pending changes (edit mode only), and what this round
+/// cited — then the iteration timeline and the context usage in every mode.
 class OptimizerConfigPanel extends StatefulWidget {
   final int? selectedModelDbId;
 
@@ -37,14 +41,13 @@ class OptimizerConfigPanel extends StatefulWidget {
   final KbStatus kbStatus;
   final String? kbPath;
 
-  /// Every refiner template in the library. Unfiltered: `10g` draws one
-  /// template picker and no tag control, and the picker itself is searchable —
-  /// including on the tag, which rides along as each row's badge.
+  /// Every refiner template in the library. Unfiltered: the picker is
+  /// searchable — including on the tag, which rides along as each row's badge.
   final List<SystemPrompt> sysPrompts;
 
-  /// True while a turn is queued or running. `10i` puts the knowledge card
-  /// into its "reading" state and takes the actions that would disturb the run
-  /// out of reach.
+  /// True while a turn is queued or running. Puts the knowledge card into its
+  /// "reading" state and takes the actions that would disturb the run out of
+  /// reach.
   final bool running;
 
   /// Knowledge edits the agent has staged and the user has not yet answered,
@@ -60,15 +63,12 @@ class OptimizerConfigPanel extends StatefulWidget {
   final List<String> citedKnowledgeFiles;
 
   /// What the session currently spends of the model's window. Measured by the
-  /// caller for the same reason as [citedKnowledgeFiles] — it needs the live
-  /// session and the selected model's configured window, neither of which this
-  /// panel should reach for itself.
+  /// caller for the same reason as [citedKnowledgeFiles].
   final ContextUsageSnapshot contextUsage;
 
-  /// The session transcript, for the iteration timeline (`20e`). Passed in
-  /// whole rather than pre-digested: the timeline is a projection of prompt
-  /// and feedback entries, and the projection is this panel's presentation
-  /// concern, same as [citedKnowledgeFiles] staying raw paths.
+  /// The session transcript, for the iteration timeline. Passed in whole: the
+  /// timeline is a projection of prompt and feedback entries, and the
+  /// projection is this panel's presentation concern.
   final List<OptimizerChatEntry> transcript;
   final Function(int?) onModelChanged;
   final Function(String?) onSysPromptChanged;
@@ -77,23 +77,26 @@ class OptimizerConfigPanel extends StatefulWidget {
   final void Function(int? id, String? content) onSysPromptTemplateChanged;
 
   /// Writes the editor's text back over the template it came from. Owned by
-  /// the parent, which is what holds the repository — this panel stays
-  /// presentational, like it does for the knowledge scaffold below.
+  /// the parent, which is what holds the repository.
   final Future<void> Function(SystemPrompt template, String content) onSaveTemplate;
 
-  /// Answers every staged edit at once, from `10h`'s 全部写入 / 全部丢弃.
+  /// Answers every staged edit at once — Write all / Discard all.
   final VoidCallback? onWriteAllKbEdits;
   final VoidCallback? onDiscardAllKbEdits;
 
-  /// Persists a change to the three write switches. Owned by the parent for
-  /// the same reason [onSaveTemplate] is — this panel reaches for no store.
+  /// Persists a change to the three write switches.
   final ValueChanged<KbWritePolicy>? onWritePolicyChanged;
+
+  /// Asks to switch mode. The parent confirms before starting the new session
+  /// a switch implies.
   final Function(AssistantMode) onModeChanged;
 
   /// Creates any missing starter knowledge-base file, picking a folder first
   /// when none is configured. Owned by the parent — this panel stays
   /// presentational.
   final Future<void> Function() onScaffoldKb;
+
+  /// Handed in only by the phone's bottom sheet, which drives the scroll.
   final ScrollController? scrollController;
 
   const OptimizerConfigPanel({
@@ -140,15 +143,15 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
   KbTreeStats? _kbStats;
   bool _scanning = false;
 
-  /// Cited files listed before the "all N" link takes over.
+  /// Cited files listed before the "All N" figure takes over.
   static const int _citedPreviewCount = 3;
 
-  /// The single gap between every card in this column.
-  ///
-  /// One constant rather than a `Padding(top:)` grown onto each card as it was
-  /// added: the panel had picked up 4, 12 and 16 between neighbours, and the
-  /// design draws one rhythm down the whole column.
-  static const double _cardGap = 12;
+  /// The one gap between every card in this column (`gap:10`).
+  static const double _cardGap = AppSpace.s10;
+
+  /// Inside the phone's bottom sheet — the only host that hands a controller —
+  /// where `1d` sizes the controls for a finger.
+  bool get _touch => widget.scrollController != null;
 
   @override
   void initState() {
@@ -177,9 +180,8 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
   /// Counts the tree off the build path.
   ///
   /// [KnowledgeBaseService.scanTree] is synchronous file IO; a large base
-  /// walked during build would drop frames. There is nothing to invalidate
-  /// here — the count is only ever as fresh as its last run, which is exactly
-  /// what the card claims.
+  /// walked during build would drop frames. The count is only ever as fresh as
+  /// its last run, which is exactly what the card claims.
   Future<void> _loadKbStats() async {
     final root = widget.kbPath;
     if (root == null || widget.kbStatus != KbStatus.ok) {
@@ -221,90 +223,110 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final appState = Provider.of<AppState>(context);
+    final mode = widget.mode;
 
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildModeSelector(l10n, colorScheme),
-        const SizedBox(height: _cardGap),
-        ChatModelSelector(
-          selectedModelId: widget.selectedModelDbId,
-          label: l10n.refinerModel,
-          onChanged: widget.onModelChanged,
-          models: appState.multimodalModels,
-          prefixIcon: Icons.tune,
-          style: ChatModelSelectorStyle.card,
-        ),
-        if (widget.mode == AssistantMode.systemPrompt) ...[
-          _buildSysPromptSection(l10n, colorScheme),
-          const SizedBox(height: _cardGap),
-          // In every mode, not only the knowledge ones the design draws: a
-          // system-prompt session fills the same window, and a long custom
-          // prompt is exactly the thing that fills it without the user
-          // suspecting it.
-          OptimizerContextCard(usage: widget.contextUsage, note: l10n.optSysPromptNoTools),
-        ] else ...[
-          const SizedBox(height: _cardGap),
-          _buildKnowledgeStatus(l10n, colorScheme),
-          // Directly under the base it governs, and above the usage report:
-          // `10h` puts the permissions where the folder is, because the two
-          // questions — which folder, and what may happen to it — are asked
-          // together or not at all.
-          if (widget.mode == AssistantMode.knowledgeEdit) ...[
-            const SizedBox(height: _cardGap),
-            _buildWritePolicy(l10n, colorScheme),
-          ],
-          const SizedBox(height: _cardGap),
-          OptimizerContextCard(usage: widget.contextUsage),
-          const SizedBox(height: _cardGap),
-          // Its own card, not a tail on the status card: the base's
-          // configuration is fixed for the session while this changes with
-          // every answer, and reading them as one block invites the two to be
-          // confused for each other.
-          _buildCitedThisRound(l10n, colorScheme, Theme.of(context).textTheme),
-          // The iteration timeline (`20e`): another read-only report, so it
-          // rides with the other two rather than among the action cards.
-          ..._buildIterationTimeline(l10n, colorScheme, Theme.of(context).textTheme),
-          // Above the cited list would put a queue of actions between two
-          // read-only reports; below it, it is the last thing in the column
-          // and the one the user came to the panel to act on.
-          if (widget.mode == AssistantMode.knowledgeEdit &&
-              widget.pendingKbEdits.isNotEmpty) ...[
-            const SizedBox(height: _cardGap),
-            _buildPendingKbEdits(l10n, colorScheme, Theme.of(context).textTheme),
-          ],
+    final cards = <Widget>[
+      _buildModelCard(l10n, colorScheme, appState),
+      _buildModeSelector(l10n),
+      if (mode == AssistantMode.systemPrompt)
+        _buildSysPromptSection(l10n, colorScheme, textTheme)
+      else ...[
+        _buildKnowledgeStatus(l10n, colorScheme, textTheme),
+        // Directly under the base they govern (`A3b 1a`): which folder, and
+        // what may happen to it, are asked together or not at all. The
+        // pending list follows the switches that decide whether it exists.
+        if (mode == AssistantMode.knowledgeEdit) ...[
+          _buildWritePolicy(l10n, colorScheme, textTheme),
+          if (widget.pendingKbEdits.isNotEmpty) _buildPendingKbEdits(l10n, colorScheme, textTheme),
         ],
+        _buildCitedThisRound(l10n, colorScheme, textTheme),
       ],
-    );
+      ?_buildIterationTimeline(l10n, colorScheme, textTheme),
+      // In every mode: a system-prompt session fills the same window, and a
+      // long custom prompt is exactly what fills it unsuspected.
+      OptimizerContextCard(usage: widget.contextUsage),
+    ];
 
     // Expanded inside a Column, not a bare SingleChildScrollView: on its own
-    // the scroll view shrink-wraps to its content, and the panel card then
-    // shrinks with it and floats in the middle of the canvas. The column
-    // claims the full height the card offers and lets the body scroll inside
-    // it.
+    // the scroll view shrink-wraps to its content, and the column then
+    // shrinks with it. The column claims the height it is offered and lets the
+    // body scroll inside it.
     return Column(
       children: [
         Expanded(
           child: SingleChildScrollView(
             controller: widget.scrollController,
-            padding: const EdgeInsets.all(16),
-            child: content,
+            padding: EdgeInsets.all(_touch ? AppSpace.s16 : AppSpace.s10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final (index, card) in cards.indexed) ...[
+                  if (index > 0) const SizedBox(height: _cardGap),
+                  card,
+                ],
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  /// The three assistant modes, as the panel's top-level navigation.
+  /// A picker field as the right column draws one: the column's own ground
+  /// inside the theme's hairline box, 32 high (40 in the phone sheet).
+  InputDecoration _fieldDecoration(ColorScheme colorScheme) =>
+      InputDecoration(filled: true, fillColor: colorScheme.surfaceContainerLow);
+
+  AppFieldSize get _fieldSize => _touch ? AppFieldSize.large : AppFieldSize.regular;
+
+  /// The 11px secondary line every card uses for its notes.
+  TextStyle? _noteStyle(ColorScheme colorScheme, TextTheme textTheme) => textTheme.labelSmall?.copyWith(
+        fontWeight: FontWeight.w400,
+        color: colorScheme.onSurfaceVariant,
+        height: AppType.proseHeight,
+      );
+
+  /// Mono 11 — paths, filenames, counts.
+  TextStyle? _monoStyle(TextTheme textTheme, Color color) =>
+      textTheme.labelSmall?.mono.copyWith(fontWeight: FontWeight.w400, color: color);
+
+  /// A row with a hairline above it and the card's rhythm under that hairline.
+  Widget _hairlined(ColorScheme colorScheme, Widget child) => Container(
+        padding: const EdgeInsets.only(top: OptimizerPanelCard.gap),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+        ),
+        child: child,
+      );
+
+  Widget _buildModelCard(AppLocalizations l10n, ColorScheme colorScheme, AppState appState) {
+    return OptimizerPanelCard(
+      children: [
+        OptimizerPanelCaption(l10n.refinerModel),
+        ChatModelSelector(
+          selectedModelId: widget.selectedModelDbId,
+          // The picker dialog's title and glyph; the caption above names the
+          // field on the card.
+          label: l10n.refinerModel,
+          prefixIcon: Icons.tune,
+          onChanged: widget.onModelChanged,
+          models: appState.multimodalModels,
+          size: _fieldSize,
+          decoration: _fieldDecoration(colorScheme),
+        ),
+      ],
+    );
+  }
+
+  /// The three assistant modes, as the column's top-level navigation.
   ///
   /// No icons and the short edit label on purpose: three segments share the
-  /// width of a panel that narrows to 250px, and a glyph plus five characters
-  /// each leaves every one of them ellipsized. The raised style keeps the
-  /// accent free for the state *inside* the tab — the ready badge, the cited
-  /// files — rather than spending it on the tab strip.
-  Widget _buildModeSelector(AppLocalizations l10n, ColorScheme colorScheme) {
+  /// width of a column that narrows to 250px. The selection wears the accent
+  /// wash under the deep ink, as `A3b` draws it.
+  Widget _buildModeSelector(AppLocalizations l10n) {
     final kbSelectable = widget.kbStatus == KbStatus.ok;
     return AppSegmentedControl<AssistantMode>(
       segments: [
@@ -327,112 +349,129 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       onChanged: widget.onModeChanged,
       expand: true,
       compact: true,
-      style: AppSegmentStyle.raised,
+      style: AppSegmentStyle.tinted,
     );
   }
 
-  Widget _buildKnowledgeStatus(AppLocalizations l10n, ColorScheme colorScheme) {
-    final ok = widget.kbStatus == KbStatus.ok;
-    final textTheme = Theme.of(context).textTheme;
+  /// `A3b 1b`'s knowledge card: a status badge, then either what the base
+  /// holds or what is wrong with it and the way out.
+  Widget _buildKnowledgeStatus(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+    final semantic = context.semantic;
+    final status = widget.kbStatus;
+    final noteStyle = _noteStyle(colorScheme, textTheme);
+    final pathStyle = _monoStyle(textTheme, colorScheme.onSurfaceVariant);
 
-    final String problem;
-    switch (widget.kbStatus) {
-      case KbStatus.ok:
-        problem = '';
-      case KbStatus.notSet:
-        problem = l10n.optKbNotConfigured;
-      case KbStatus.missingDir:
-        problem = l10n.kbInvalidDir;
-      case KbStatus.missingEntry:
-        problem = l10n.kbMissingEntry;
+    // Ready / Reading are the accent's — a configured base is a source the
+    // agent reads from on every turn, not a finished job. The three faults
+    // take the track (nothing chosen yet), the error wash (a folder that is
+    // gone) and the warning wash (a folder missing its entry file).
+    final (String label, Color background, Color foreground) = switch (status) {
+      KbStatus.ok => (
+          widget.running ? l10n.optKbSearching : l10n.optKbReady,
+          colorScheme.accentTint,
+          colorScheme.onAccentTint,
+        ),
+      KbStatus.notSet => (l10n.notSet, colorScheme.surfaceContainerHighest, colorScheme.onSurfaceVariant),
+      KbStatus.missingDir => (l10n.kbInvalidDir, colorScheme.errorContainer, colorScheme.onErrorContainer),
+      KbStatus.missingEntry => (
+          l10n.optKbEntryMissingShort(KnowledgeBaseService.entryFileName),
+          semantic.warningContainer,
+          semantic.onWarningContainer,
+        ),
+    };
+    final badge = OptimizerTagBadge(
+      label: label,
+      background: background,
+      foreground: foreground,
+      leading: status == KbStatus.ok
+          ? AppBreathingDot(color: colorScheme.primary, size: 6, breathing: widget.running)
+          : null,
+    );
+
+    if (status != KbStatus.ok) {
+      return OptimizerPanelCard(
+        children: [
+          Align(alignment: AlignmentDirectional.centerStart, child: badge),
+          if (status == KbStatus.missingDir && (widget.kbPath ?? '').isNotEmpty)
+            _ElidedPath(path: widget.kbPath!, style: pathStyle),
+          if (status == KbStatus.missingDir) Text(l10n.optKbPathInvalidDesc, style: noteStyle),
+          if (status == KbStatus.notSet) Text(l10n.optKbNotConfigured, style: noteStyle),
+          if (status == KbStatus.missingEntry) Text(l10n.kbMissingEntry, style: noteStyle),
+          AppButton(
+            label: l10n.kbScaffoldCreate,
+            // Solid where there is nothing yet, tonal where the folder only
+            // needs its entry file, and the quiet form beside a folder that is
+            // gone — where initializing is the less likely answer.
+            variant: switch (status) {
+              KbStatus.notSet => AppButtonVariant.primary,
+              KbStatus.missingEntry => AppButtonVariant.tonal,
+              _ => AppButtonVariant.secondary,
+            },
+            accentLabel: true,
+            size: _touch ? AppButtonSize.normal : AppButtonSize.compact,
+            fullWidth: true,
+            loading: _scaffolding,
+            onPressed: _handleScaffold,
+          ),
+        ],
+      );
     }
 
-    return AppCard(
-      outlined: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Icon(
-                ok ? Icons.menu_book_outlined : Icons.warning_amber_outlined,
-                size: AppSize.iconSm,
-                color: ok ? colorScheme.onSurfaceVariant : colorScheme.error,
-              ),
-              const SizedBox(width: 8),
-              Expanded(child: Text(l10n.knowledgeBase, style: textTheme.titleSmall)),
-              // `running`, which is the accent-tinted pill with a dot the spec
-              // draws here — and the honest reading of the state: a configured
-              // base is not a finished job, it is a source the agent reads from
-              // on every turn for as long as the mode is on. While a turn is
-              // actually in flight the same pill says so, per `10i`.
-              if (ok)
-                AppStatusBadge(
-                  label: widget.running ? l10n.optKbSearching : l10n.optKbReady,
-                  kind: AppStatusKind.running,
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          if (!ok)
-            Text(problem, style: textTheme.bodySmall?.copyWith(color: colorScheme.error))
-          else ...[
-            // The folder, in a code-ish chip: it is a path, and paths read
-            // badly as prose at the end of a wrapped sentence.
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(AppRadius.xs),
-              ),
-              child: _ElidedPath(
-                path: widget.kbPath ?? '',
-                style: textTheme.labelSmall?.mono.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+    final stats = _kbStats;
+    final updated = stats?.newestModified;
+
+    return OptimizerPanelCard(
+      children: [
+        Row(
+          children: [
+            badge,
+            const Spacer(),
+            // Off during a turn: the agent is reading this folder right now,
+            // and a count taken mid-run describes a tree the answer on screen
+            // was not built from.
+            _TextLink(
+              label: l10n.optKbRescan,
+              loading: _scanning,
+              onTap: widget.running ? null : _loadKbStats,
+            ),
+          ],
+        ),
+        _ElidedPath(path: widget.kbPath ?? '', style: pathStyle),
+        // Nothing rather than a spinner while there are no counts: a scan that
+        // fails would otherwise leave one turning forever. Rescan carries the
+        // progress instead, where it resolves.
+        //
+        // "Content updated", not "last indexed": there is no index. The
+        // question the user is asking is whether the edit they just made will
+        // be picked up, which the newest file timestamp answers directly.
+        if (stats != null) Text(l10n.optKbTreeStats(stats.files, stats.directories), style: noteStyle),
+        if (updated != null) Text(l10n.optKbContentUpdated(_formatStamp(updated)), style: noteStyle),
+        Wrap(
+          spacing: AppSpace.s10,
+          runSpacing: AppSpace.s4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _TextLink(
+              label: l10n.openInFolder,
+              onTap: widget.kbPath == null ? null : () => FileUtils.openPath(widget.kbPath!),
+            ),
+            // Kept visible and disabled once the base has an entry file, rather
+            // than hidden: initializing is a one-time act, and an action that
+            // silently disappears leaves the user wondering where it went. The
+            // tooltip says why it is off. KnowledgeBaseStarter.scaffold refuses
+            // independently — this is only the first gate.
+            Tooltip(
+              message: l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName),
+              child: AppButton(
+                label: l10n.kbScaffoldCreate,
+                variant: AppButtonVariant.text,
+                size: AppButtonSize.compact,
+                onPressed: null,
               ),
             ),
-            const SizedBox(height: 8),
-            _buildTreeStatsLine(l10n, colorScheme, textTheme),
           ],
-          const SizedBox(height: 10),
-          _buildKbActions(l10n, ok),
-        ],
-      ),
-    );
-  }
-
-  /// How much the assistant can see, and how fresh it is.
-  ///
-  /// Deliberately "content updated", not "last indexed": there is no index.
-  /// The service reads the folder on every call, so the only thing that can
-  /// be stale is this card — and the question the user is actually asking is
-  /// whether the edit they just made will be picked up, which the newest file
-  /// timestamp answers directly.
-  Widget _buildTreeStatsLine(
-    AppLocalizations l10n,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
-    final stats = _kbStats;
-    // Nothing rather than a spinner while there are no counts. A scan that
-    // fails — an unreadable folder, a path that moved — would otherwise leave
-    // an indeterminate spinner turning forever, which reads as a hung app
-    // when the truth is simply that there is nothing to report. The rescan
-    // button carries the progress instead, where it resolves.
-    if (stats == null) return const SizedBox.shrink();
-
-    final updated = stats.newestModified;
-    final parts = [
-      l10n.optKbTreeStats(stats.files, stats.directories),
-      if (updated != null) l10n.optKbContentUpdated(_formatStamp(updated)),
-    ];
-
-    return Text(
-      parts.join(' · '),
-      style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+      ],
     );
   }
 
@@ -446,75 +485,14 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     return sameDay ? clock : '${two(when.month)}-${two(when.day)} $clock';
   }
 
-  Widget _buildKbActions(AppLocalizations l10n, bool ok) {
-    if (_scaffolding) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 6),
-        child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
-      );
-    }
-
-    // Kept visible and disabled once the base has an entry file, rather than
-    // hidden: initializing is a one-time act, and an action that silently
-    // disappears leaves the user wondering where it went. The tooltip says
-    // why it is off. KnowledgeBaseStarter.scaffold refuses independently —
-    // this is only the first gate.
-    final initialize = Tooltip(
-      message: ok ? l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName) : '',
-      child: AppButton(
-        label: l10n.kbScaffoldCreate,
-        icon: Icons.auto_awesome_outlined,
-        variant: AppButtonVariant.secondary,
-        onPressed: ok ? null : _handleScaffold,
-      ),
-    );
-
-    if (!ok) return Align(alignment: Alignment.centerLeft, child: initialize);
-
-    // Wrap, not Row: the panel narrows to 250px, and three labelled controls
-    // on one line there would each be a few ellipsized characters.
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        initialize,
-        // Rescan is the live action once the base exists, so it takes the
-        // tonal weight while initialize sits spent beside it.
-        AppButton(
-          label: l10n.optKbRescan,
-          icon: Icons.refresh,
-          variant: AppButtonVariant.secondary,
-          loading: _scanning,
-          // Off during a turn, as `10i` draws it: the agent is reading this
-          // folder right now, and a count taken mid-run describes a tree the
-          // answer on screen was not built from.
-          onPressed: widget.running ? null : _loadKbStats,
-        ),
-        AppIconButton(
-          icon: Icons.folder_open_outlined,
-          tooltip: l10n.openInFolder,
-          onPressed: widget.kbPath == null ? null : () => FileUtils.openPath(widget.kbPath!),
-        ),
-      ],
-    );
-  }
-
-  /// The iteration timeline (`20e`): every prompt version with the feedback
-  /// rounds between them, projected from the transcript on each build.
+  /// The iteration timeline: every prompt version with the feedback rounds
+  /// between them, projected from the transcript on each build.
   ///
-  /// Returned as a spread-able list so a session with no versions yet
-  /// contributes nothing — an empty timeline card would be a heading with no
-  /// story under it. Two deliberate deviations from the design frame: no
-  /// chevrons and no tap-to-jump (the transcript is a lazy list, and a
-  /// control that promises navigation it cannot deliver is worse than none),
-  /// and no "已采用" state on the last node (the app does not track which
-  /// version the user actually generated with).
-  List<Widget> _buildIterationTimeline(
-    AppLocalizations l10n,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
+  /// Null for a session with no versions yet — a timeline card with no story
+  /// under its heading is noise. No tap-to-jump (the transcript is a lazy list,
+  /// and a control that promises navigation it cannot deliver is worse than
+  /// none), and no time column: transcript entries carry no timestamp.
+  Widget? _buildIterationTimeline(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
     final nodes = <(OptimizerEntryKind, String, int?)>[
       for (final e in widget.transcript)
         if (e.kind == OptimizerEntryKind.prompt)
@@ -522,134 +500,66 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
         else if (e.kind == OptimizerEntryKind.resultFeedback)
           (e.kind, e.text, e.version),
     ];
-    final versionCount =
-        nodes.where((n) => n.$1 == OptimizerEntryKind.prompt).length;
-    if (versionCount == 0) return const [];
-    final lastVersionIndex =
-        nodes.lastIndexWhere((n) => n.$1 == OptimizerEntryKind.prompt);
+    final versionCount = nodes.where((n) => n.$1 == OptimizerEntryKind.prompt).length;
+    if (versionCount == 0) return null;
+    final lastVersionIndex = nodes.lastIndexWhere((n) => n.$1 == OptimizerEntryKind.prompt);
 
-    return [
-      const SizedBox(height: _cardGap),
-      AppCard(
-        outlined: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppSectionLabel(
-              l10n.optTimelineTitle,
-              padding: EdgeInsets.zero,
-              trailing: Text(
-                l10n.optTimelineCount(versionCount),
-                style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.outline),
-              ),
-            ),
-            const SizedBox(height: 10),
-            for (var i = 0; i < nodes.length; i++)
-              _timelineRow(
-                nodes[i],
-                l10n,
-                colorScheme,
-                textTheme,
-                isLast: i == nodes.length - 1,
-                isCurrent: i == lastVersionIndex,
-              ),
-          ],
-        ),
-      ),
-    ];
+    return OptimizerPanelCard(
+      children: [
+        OptimizerPanelCaption('${l10n.optTimelineTitle} · ${l10n.optTimelineCount(versionCount)}'),
+        for (var i = 0; i < nodes.length; i++)
+          _timelineRow(nodes[i], l10n, colorScheme, textTheme, isCurrent: i == lastVersionIndex),
+      ],
+    );
   }
 
+  /// One node: a 6px dot — the accent for the version on screen, amber for a
+  /// feedback round, the muted grey for an older version — and its label.
   Widget _timelineRow(
     (OptimizerEntryKind, String, int?) node,
     AppLocalizations l10n,
     ColorScheme colorScheme,
     TextTheme textTheme, {
-    required bool isLast,
     required bool isCurrent,
   }) {
+    final semantic = context.semantic;
     final isVersion = node.$1 == OptimizerEntryKind.prompt;
-    final dot = Container(
-      width: isVersion ? 9 : 5,
-      height: isVersion ? 9 : 5,
-      margin: EdgeInsets.only(top: isVersion ? 5 : 7),
-      decoration: BoxDecoration(
-        color: isVersion
-            ? (isCurrent ? colorScheme.primary : colorScheme.outlineVariant)
-            : colorScheme.primary,
-        shape: BoxShape.circle,
-      ),
-    );
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            width: 14,
-            child: Column(
-              children: [
-                dot,
-                if (!isLast)
-                  Expanded(
-                    child: Container(width: 1.5, color: colorScheme.outlineVariant),
-                  ),
-              ],
+    final Color dot = !isVersion
+        ? semantic.warning
+        : (isCurrent ? colorScheme.primary : colorScheme.outline);
+    final Color ink = !isVersion
+        ? colorScheme.onSurfaceVariant
+        : (isCurrent ? colorScheme.onAccentTint : colorScheme.onSurface);
+    final label = isVersion
+        ? (isCurrent
+            ? 'v${node.$3 ?? '?'} · ${l10n.optTimelineCurrent} · ${node.$2}'
+            : 'v${node.$3 ?? '?'} · ${node.$2}')
+        : '${l10n.optFeedbackShort} · ${node.$2}';
+
+    final row = Row(
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: OptimizerPanelCard.gap),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodySmall?.copyWith(
+              color: ink,
+              fontWeight: isCurrent ? FontWeight.w500 : null,
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
-              child: isVersion
-                  ? Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: isCurrent
-                                ? colorScheme.accentTint
-                                : colorScheme.surfaceContainerHigh,
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Text(
-                            'v${node.$3 ?? '?'}',
-                            style: textTheme.labelSmall?.mono.copyWith(
-                              color: isCurrent
-                                  ? colorScheme.onAccentTint
-                                  : colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 7),
-                        Flexible(
-                          child: Text(
-                            node.$2,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.labelMedium?.copyWith(
-                              color: colorScheme.onSurface,
-                              fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Tooltip(
-                      message: node.$2,
-                      child: Text(
-                        '${l10n.optFeedbackShort} · ${node.$2}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.labelSmall?.copyWith(color: colorScheme.outline),
-                      ),
-                    ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
+    // The feedback is the user's own words and routinely longer than a row.
+    return isVersion ? row : Tooltip(message: node.$2, child: row);
   }
 
   /// The documents holding up the answer on screen.
@@ -657,266 +567,277 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
   /// Derived from the session's own history rather than tracked, so it cannot
   /// drift from what was actually sent — see
   /// [PromptOptimizerAgent.citedKnowledgeFiles].
-  Widget _buildCitedThisRound(
-    AppLocalizations l10n,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
+  Widget _buildCitedThisRound(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
     final cited = widget.citedKnowledgeFiles;
     final shown = cited.take(_citedPreviewCount).toList();
+    final more = cited.length > shown.length;
+    final allLabel = Text(
+      l10n.optKbCitedAll(cited.length),
+      style: textTheme.labelMedium?.copyWith(color: colorScheme.onAccentTint),
+    );
 
-    return AppCard(
-      outlined: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // The tracked caption, not a card title: the spec draws this and the
-          // context card's heading as the same small label, and they sit two
-          // cards apart in the same column.
-          AppSectionLabel(
-            l10n.optKbCitedThisRound,
-            padding: EdgeInsets.zero,
-            // `10i` writes this as `5 / 进行中`: a list that is still being
-            // added to reads as a complete one otherwise, and "the answer
-            // rests on these four documents" is a different claim from "on
-            // these four so far".
-            trailing: !widget.running
-                ? null
-                : Text(
-                    '${cited.length} · ${l10n.optKbCitedRunning}',
-                    style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.outline),
+    return OptimizerPanelCard(
+      children: [
+        OptimizerPanelCaption(
+          l10n.optKbCitedThisRound,
+          // `2 · in progress` while the turn runs: "the answer rests on these
+          // documents" and "on these so far" are different claims.
+          trailing: widget.running
+              ? Text(
+                  '${cited.length} · ${l10n.optKbCitedRunning}',
+                  style: _monoStyle(textTheme, colorScheme.onAccentTint),
+                )
+              : (more ? allLabel : null),
+        ),
+        if (cited.isEmpty)
+          Text(
+            l10n.optKbCitedNone,
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          )
+        else
+          for (final path in shown)
+            Row(
+              children: [
+                Icon(Icons.description_outlined, size: AppSize.iconSm, color: colorScheme.outline),
+                const SizedBox(width: AppSpace.s6),
+                Expanded(
+                  child: Text(
+                    path,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _monoStyle(textTheme, colorScheme.onSurfaceVariant),
                   ),
-          ),
-          const SizedBox(height: 8),
-          if (cited.isEmpty)
-            Text(
-              l10n.optKbCitedNone,
-              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-            )
-          else ...[
-            for (final path in shown)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    Icon(Icons.description_outlined, size: 14, color: colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 7),
-                    Flexible(
-                      // Monospace, like every other filename on this screen —
-                      // the reference panel's captions and the timeline's step
-                      // rows name the same files.
-                      child: Text(
-                        path,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodySmall?.mono.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
-              ),
-            if (cited.length > shown.length)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  l10n.optKbCitedAll(cited.length),
-                  // onAccentTint, not `primary`: at 11.5px this is thin text on
-                  // a plain surface, and `primary` lands near the contrast floor
-                  // on the warmer seeds. See AppSectionLabel's own note.
-                  style: textTheme.labelMedium?.copyWith(color: colorScheme.onAccentTint),
-                ),
-              ),
-          ],
-        ],
-      ),
+              ],
+            ),
+        // While running the caption carries the progress, so the total that
+        // would otherwise sit there moves under the list.
+        if (widget.running && more) allLabel,
+      ],
     );
   }
 
-  /// `10h`'s 写入权限 card: what the agent may do to the folder above.
+  /// `A3b 1a`'s write-permissions card: what the agent may do to the folder.
   ///
   /// Three switches rather than one because they fail differently. The first
   /// withdraws the write tool outright — the model is not offered it, so it
-  /// cannot be talked into calling it. The second is the approval gate these
-  /// cards exist for, and turning it off is the one setting here that lets
-  /// LLM-authored text reach the user's files unread; the note under the row
-  /// says so in those words. The third is the answer to having turned the
-  /// second off.
-  Widget _buildWritePolicy(AppLocalizations l10n, ColorScheme colorScheme) {
+  /// cannot be talked into calling it. The second is the approval gate, and
+  /// turning it off is the one setting here that lets LLM-authored text reach
+  /// the user's files unread; the amber row under it says so, and only while
+  /// it is true. The third is the answer to having turned the second off.
+  Widget _buildWritePolicy(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
     final policy = widget.writePolicy;
-    final textTheme = Theme.of(context).textTheme;
+    final semantic = context.semantic;
 
     void update(KbWritePolicy next) => widget.onWritePolicyChanged?.call(next);
 
-    return AppCard(
-      outlined: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.lock_outline, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
-              const SizedBox(width: 8),
-              Expanded(child: Text(l10n.kbWritePolicyTitle, style: textTheme.titleSmall)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          AppToggleRow(
-            title: l10n.kbWriteAllow,
-            value: policy.allowWrites,
-            onChanged: (v) => update(policy.copyWith(allowWrites: v)),
-          ),
-          AppToggleRow(
+    return OptimizerPanelCard(
+      children: [
+        OptimizerPanelCaption(l10n.kbWritePolicyTitle),
+        _policyRow(
+          colorScheme,
+          textTheme,
+          title: l10n.kbWriteAllow,
+          value: policy.allowWrites,
+          onChanged: (v) => update(policy.copyWith(allowWrites: v)),
+        ),
+        _hairlined(
+          colorScheme,
+          _policyRow(
+            colorScheme,
+            textTheme,
             title: l10n.kbWriteConfirmEach,
             value: policy.confirmEachWrite,
-            // Off with writing itself off: nothing can be proposed, so there
-            // is nothing to confirm, and a live switch there would offer to
-            // change something that cannot happen.
+            // Off with writing itself off: nothing can be proposed, so there is
+            // nothing to confirm.
             onChanged: policy.allowWrites
                 ? (v) => update(policy.copyWith(confirmEachWrite: v))
                 : null,
           ),
-          AppToggleRow(
+        ),
+        if (policy.allowWrites && !policy.confirmEachWrite)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: AppSpace.s6),
+            decoration: BoxDecoration(
+              color: semantic.warningContainer,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(Icons.warning_amber_rounded, size: AppSize.iconSm, color: semantic.warning),
+                ),
+                const SizedBox(width: AppSpace.s6),
+                Expanded(
+                  child: Text(
+                    l10n.kbWriteNoConfirmWarning,
+                    style: textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: semantic.onWarningContainer,
+                      height: AppType.proseHeight,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        _hairlined(
+          colorScheme,
+          _policyRow(
+            colorScheme,
+            textTheme,
             title: l10n.kbWriteBackup,
             value: policy.backupBeforeOverwrite,
             onChanged: policy.allowWrites
                 ? (v) => update(policy.copyWith(backupBeforeOverwrite: v))
                 : null,
           ),
-          if (policy.allowWrites && !policy.confirmEachWrite) ...[
-            const SizedBox(height: 6),
-            // Only while it is true. A standing warning about a state the user
-            // is not in is noise, and noise is what makes the real one
-            // invisible.
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.warning_amber_outlined, size: 14, color: context.semantic.warning),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    l10n.kbWriteNoConfirmWarning,
-                    style: textTheme.labelSmall?.copyWith(
-                      color: context.semantic.warning,
-                      height: AppType.looseHeight,
-                    ),
-                  ),
-                ),
-              ],
+        ),
+      ],
+    );
+  }
+
+  Widget _policyRow(
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    required String title,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    return ConstrainedBox(
+      // `1d` gives each switch row a 44px touch band in the phone sheet.
+      constraints: BoxConstraints(minHeight: _touch ? AppSize.touch - OptimizerPanelCard.gap : 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: (_touch ? textTheme.bodyMedium : textTheme.bodySmall)?.copyWith(
+                color: onChanged == null ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
+                height: AppType.tightHeight,
+              ),
             ),
-          ],
+          ),
+          const SizedBox(width: OptimizerPanelCard.gap),
+          AppSwitch(value: value, onChanged: onChanged),
         ],
       ),
     );
   }
 
-  /// `10h`'s 待确认改动 card: every staged edit in one list, and the two
-  /// bulk answers.
+  /// `A3b 1a`'s pending-changes card: every staged edit in one list, and the
+  /// two bulk answers.
   ///
   /// The transcript already carries each edit as its own reviewable card, so
   /// this is deliberately not a second place to review them — it is the count,
   /// the files, and the way out of a queue of six without scrolling back
   /// through six cards to find them.
-  Widget _buildPendingKbEdits(
-    AppLocalizations l10n,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
-    final semantic = context.semantic;
+  Widget _buildPendingKbEdits(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
     final edits = widget.pendingKbEdits;
+    final onWriteAll = widget.running ? null : widget.onWriteAllKbEdits;
+    final onDiscardAll = widget.running ? null : widget.onDiscardAllKbEdits;
 
-    return AppCard(
-      outlined: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppSectionLabel(
-            l10n.kbEditPendingTitle,
-            padding: EdgeInsets.zero,
-            trailing: Text(
-              '${edits.length}',
-              style: textTheme.labelMedium?.mono.copyWith(
-                fontWeight: FontWeight.w600,
-                color: semantic.warning,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          for (final edit in edits)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: _buildPendingRow(edit, colorScheme, textTheme, semantic),
-            ),
-          const SizedBox(height: 2),
-          Row(
+    final Widget actions = _touch
+        // `1d`: two equal 44px buttons across the sheet.
+        ? Row(
             children: [
               Expanded(
                 child: AppButton(
-                  label: l10n.kbEditWriteAll,
-                  icon: Icons.save_outlined,
-                  variant: AppButtonVariant.tonal,
+                  label: l10n.kbEditDiscardAll,
+                  variant: AppButtonVariant.destructiveOutline,
+                  size: AppButtonSize.large,
                   fullWidth: true,
-                  onPressed: widget.running ? null : widget.onWriteAllKbEdits,
+                  onPressed: onDiscardAll,
                 ),
               ),
-              const SizedBox(width: 8),
-              AppButton(
-                label: l10n.kbEditDiscardAll,
-                variant: AppButtonVariant.secondary,
-                onPressed: widget.running ? null : widget.onDiscardAllKbEdits,
+              const SizedBox(width: OptimizerPanelCard.gap),
+              Expanded(
+                child: AppButton(
+                  label: l10n.kbEditWriteAll,
+                  size: AppButtonSize.large,
+                  fullWidth: true,
+                  onPressed: onWriteAll,
+                ),
               ),
             ],
-          ),
-        ],
-      ),
+          )
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Flexible(
+                child: AppButton(
+                  label: l10n.kbEditDiscardAll,
+                  variant: AppButtonVariant.destructiveText,
+                  size: AppButtonSize.compact,
+                  onPressed: onDiscardAll,
+                ),
+              ),
+              const SizedBox(width: AppSpace.s6),
+              Flexible(
+                child: AppButton(
+                  label: l10n.kbEditWriteAll,
+                  size: AppButtonSize.compact,
+                  onPressed: onWriteAll,
+                ),
+              ),
+            ],
+          );
+
+    return OptimizerPanelCard(
+      children: [
+        OptimizerPanelCaption(
+          l10n.kbEditPendingTitle,
+          trailing: Text('${edits.length}', style: _monoStyle(textTheme, colorScheme.onSurfaceVariant)),
+        ),
+        for (final edit in edits) _buildPendingRow(edit, l10n, colorScheme, textTheme),
+        _hairlined(colorScheme, actions),
+      ],
     );
   }
 
   Widget _buildPendingRow(
     OptimizerChatEntry edit,
+    AppLocalizations l10n,
     ColorScheme colorScheme,
     TextTheme textTheme,
-    AppSemanticColors semantic,
   ) {
+    final semantic = context.semantic;
     final isCreate = edit.oldContent == null;
     final (added, removed) = _pendingCounts(edit);
+    // The line counts ride on the row's tooltip: the column narrows to 250px,
+    // and the path and its change kind are what have to survive there.
+    final counts = [if (added > 0) '+$added', if (removed > 0) '−$removed'].join(' ');
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppRadius.control),
-      ),
+    final row = ConstrainedBox(
+      constraints: BoxConstraints(minHeight: _touch ? AppSize.large - OptimizerPanelCard.gap : 0),
       child: Row(
         children: [
-          // One glyph rather than the chat card's spelled-out badge: this
-          // column narrows to 250px, and the path is what has to survive.
           Icon(
-            isCreate ? Icons.note_add_outlined : Icons.edit_note_outlined,
-            size: 14,
-            color: isCreate ? semantic.success : semantic.warning,
+            isCreate ? Icons.note_add_outlined : Icons.edit_document,
+            size: AppSize.iconMd,
+            color: isCreate ? semantic.success : semantic.info,
           ),
-          const SizedBox(width: 7),
+          const SizedBox(width: OptimizerPanelCard.gap),
           Expanded(
             child: _ElidedPath(
               path: edit.targetPath ?? '',
-              style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
+              style: (_touch ? textTheme.bodySmall?.mono : textTheme.labelSmall?.mono)
+                  ?.copyWith(fontWeight: FontWeight.w400, color: colorScheme.onSurface),
             ),
           ),
-          const SizedBox(width: 7),
-          if (added > 0)
-            Text('+$added', style: textTheme.labelSmall?.mono.copyWith(color: semantic.success)),
-          if (removed > 0) ...[
-            const SizedBox(width: 5),
-            Text('−$removed', style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.error)),
-          ],
+          const SizedBox(width: OptimizerPanelCard.gap),
+          OptimizerTagBadge(
+            mono: true,
+            label: isCreate ? l10n.optKbTreeAdded : l10n.optKbTreeChanged,
+            background: isCreate ? semantic.successContainer : semantic.infoContainer,
+            foreground: isCreate ? semantic.onSuccessContainer : semantic.onInfoContainer,
+          ),
         ],
       ),
     );
+    return counts.isEmpty ? row : Tooltip(message: counts, child: row);
   }
 
   /// Line counts for one staged edit, memoized by its id.
@@ -954,58 +875,44 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     }
   }
 
-  /// `10g`'s system-prompt card: which template is loaded, its text, what the
-  /// text costs, and the two ways out of an edit.
+  /// `A3a 1a`'s system-prompt card: which template is loaded, its text, what
+  /// the text costs, the two ways out of an edit, and why this mode makes no
+  /// tool calls.
   ///
-  /// Replaces a 预设/自定义 chip pair over two bare dropdowns. That arrangement
-  /// made "preset" and "custom" two different places rather than two states of
-  /// one: picking a preset showed its title and never its text, so the
-  /// instructions actually being sent to the model were not visible anywhere,
-  /// and editing them meant flipping to a mode that started from a blank box.
-  /// Here the text is always on screen, a template is where it starts, and the
-  /// edit is a state the card can report and undo.
-  Widget _buildSysPromptSection(AppLocalizations l10n, ColorScheme colorScheme) {
-    final textTheme = Theme.of(context).textTheme;
+  /// The text is always on screen, a template is where it starts, and the edit
+  /// is a state the card can report and undo.
+  Widget _buildSysPromptSection(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+    final semantic = context.semantic;
     final template = _template;
     final text = widget.selectedSysPrompt ?? '';
     final dirty = template != null && text != template.content;
 
-    return AppCard(
-      outlined: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.notes_outlined, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
-              const SizedBox(width: 8),
-              Expanded(child: Text(l10n.systemPrompt, style: textTheme.titleSmall)),
-              // Amber, not the accent: this is a condition to act on — text
-              // that will be lost when another template is loaded over it —
-              // and the accent in this panel means "selected".
-              if (dirty) AppStatusBadge(label: l10n.optSysPromptUnsaved, kind: AppStatusKind.warning),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _buildTemplatePicker(l10n, colorScheme, template),
-          const SizedBox(height: 10),
-          _buildSysPromptEditor(l10n, colorScheme),
-          const SizedBox(height: 8),
-          _buildSysPromptMeter(l10n, colorScheme, textTheme, text),
-          if (template != null) ...[
-            const SizedBox(height: 10),
-            _buildSysPromptActions(l10n, template, text, dirty),
-          ],
-        ],
-      ),
+    return OptimizerPanelCard(
+      children: [
+        OptimizerPanelCaption(
+          l10n.systemPrompt,
+          // Amber, not the accent: this is a condition to act on — text that
+          // will be lost when another template is loaded over it.
+          trailing: dirty
+              ? OptimizerTagBadge(
+                  label: l10n.optSysPromptUnsaved,
+                  background: semantic.warningContainer,
+                  foreground: semantic.onWarningContainer,
+                )
+              : null,
+        ),
+        _buildTemplatePicker(l10n, colorScheme, template),
+        _buildSysPromptEditor(l10n, colorScheme, textTheme),
+        _buildSysPromptMeter(l10n, colorScheme, textTheme, text),
+        if (template != null) _buildSysPromptActions(l10n, template, text, dirty),
+        _hairlined(colorScheme, Text(l10n.optSysPromptNoTools, style: _noteStyle(colorScheme, textTheme))),
+      ],
     );
   }
 
-  /// The template row. A [SearchablePickerField] rather than the dropdown pair
-  /// it replaces: the tag that used to need its own dropdown rides along as
-  /// each row's badge, and the picker matches on it — so filtering by tag is
-  /// typing its name rather than setting a second control first.
+  /// The template row. A [SearchablePickerField]: the tag rides along as each
+  /// row's badge and the picker matches on it, so filtering by tag is typing
+  /// its name rather than setting a second control first.
   Widget _buildTemplatePicker(
     AppLocalizations l10n,
     ColorScheme colorScheme,
@@ -1038,43 +945,38 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       searchHint: l10n.optSysPromptSearch,
       dialogTitle: l10n.optSysPromptPick,
       dialogIcon: Icons.notes_outlined,
-      // The caption inside the field rather than above it: the card already
-      // carries a title, and a second label stacked over a 36px row cost more
-      // height than the row it names.
-      decoration: InputDecoration(labelText: l10n.optSysPromptTemplate),
-      // A dot, like the workbench's own channel picker: the panel narrows to
-      // 250px and a spelled-out tag there is a coloured box with no letters
-      // left in it.
+      size: _fieldSize,
+      decoration: _fieldDecoration(colorScheme),
+      // A dot: the column narrows to 250px and a spelled-out tag there is a
+      // coloured box with no letters left in it.
       badgeStyle: PickerBadge.dot,
     );
   }
 
   /// The instructions themselves.
   ///
-  /// `10g` gives this the remaining height of the panel. Here it is a
-  /// minimum-height box inside the panel's scroll view instead: the column
-  /// this sits in scrolls — it has to, since the context card below it cannot
-  /// be pushed off — and a child that claims the leftover space cannot live in
-  /// a viewport that has none to give.
-  Widget _buildSysPromptEditor(AppLocalizations l10n, ColorScheme colorScheme) {
+  /// `A3a` gives this the remaining height of the column. Here it is a
+  /// minimum-height box inside the column's scroll view instead: the column
+  /// scrolls — it has to, since the cards below cannot be pushed off — and a
+  /// child that claims the leftover space cannot live in a viewport that has
+  /// none to give.
+  Widget _buildSysPromptEditor(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+    final style = textTheme.bodySmall?.copyWith(
+      height: AppType.proseHeight,
+      color: colorScheme.onSurface,
+    );
     return TextField(
       controller: _sysPromptCtrl,
       minLines: 8,
       maxLines: null,
       onChanged: widget.onSysPromptChanged,
-      // Monospace, as the spec sets it: this is a written-to-a-machine
-      // document with a numbered structure, and proportional text made its
-      // indentation stop lining up.
-      style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
-            height: AppType.proseHeight,
-            color: colorScheme.onSurface,
-          ),
+      style: style,
       decoration: InputDecoration(
         hintText: l10n.optSysPromptHint,
-        hintStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-            ),
-        contentPadding: const EdgeInsets.all(10),
+        hintStyle: style?.copyWith(color: colorScheme.outline),
+        filled: true,
+        fillColor: colorScheme.surfaceContainerLow,
+        contentPadding: const EdgeInsets.all(AppSpace.s10),
       ),
     );
   }
@@ -1082,9 +984,8 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
   /// What the text costs, in the two units the user thinks in.
   ///
   /// The token figure is an estimate and says so with `~`: it is the same
-  /// [ContextBudget.charsPerToken] ratio the context card below measures
-  /// against, so the two numbers on this panel cannot disagree about the size
-  /// of the same prompt.
+  /// [ContextBudget.charsPerToken] ratio the context card measures against, so
+  /// the two numbers on this column cannot disagree about the same prompt.
   Widget _buildSysPromptMeter(
     AppLocalizations l10n,
     ColorScheme colorScheme,
@@ -1092,22 +993,11 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     String text,
   ) {
     final tokens = (text.length / ContextBudget.charsPerToken).round();
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            l10n.optSysPromptChars(text.length),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          l10n.optSysPromptTokens(_formatCount(tokens)),
-          style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
-        ),
-      ],
+    return Text(
+      '${l10n.optSysPromptChars(text.length)} · ${l10n.optSysPromptTokens(_formatCount(tokens))}',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: _monoStyle(textTheme, colorScheme.onSurfaceVariant),
     );
   }
 
@@ -1123,29 +1013,24 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     String text,
     bool dirty,
   ) {
-    // Compact, and the reset unlabelled by its glyph: at the 250px this panel
-    // narrows to, two full-size labelled buttons overflow the card by ~17px,
-    // and of the two it is the destination — 保存 — whose word has to survive.
+    final size = _touch ? AppButtonSize.normal : AppButtonSize.compact;
     return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Expanded(
-          child: AppButton(
-            label: l10n.optSysPromptSave,
-            icon: Icons.save_outlined,
-            size: AppButtonSize.compact,
-            fullWidth: true,
-            loading: _savingTemplate,
-            onPressed: dirty ? () => _handleSaveTemplate(template, text) : null,
-          ),
-        ),
-        const SizedBox(width: 8),
         AppButton(
           label: l10n.optSysPromptReset,
-          variant: AppButtonVariant.secondary,
-          size: AppButtonSize.compact,
+          variant: AppButtonVariant.text,
+          size: size,
           onPressed: dirty
               ? () => widget.onSysPromptTemplateChanged(template.id, template.content)
               : null,
+        ),
+        const SizedBox(width: AppSpace.s6),
+        AppButton(
+          label: l10n.optSysPromptSave,
+          size: size,
+          loading: _savingTemplate,
+          onPressed: dirty ? () => _handleSaveTemplate(template, text) : null,
         ),
       ],
     );
@@ -1161,11 +1046,58 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
   }
 
   /// `18.2K` past a thousand — the same shape [OptimizerContextCard] uses, so
-  /// the two figures on this panel are read off the same scale.
+  /// the two figures on this column are read off the same scale.
   static String _formatCount(int value) {
     if (value < 1000) return '$value';
     if (value < 1000000) return '${(value / 1000).toStringAsFixed(1)}K';
     return '${(value / 1000000).toStringAsFixed(1)}M';
+  }
+}
+
+/// A deep-ink text action with no box — the knowledge card's Rescan and Open
+/// in Folder.
+///
+/// Not a text [AppButton]: that one insets its label 10px, and `A3b 1b` draws
+/// these flush with the path and counts beside them.
+class _TextLink extends StatelessWidget {
+  const _TextLink({required this.label, required this.onTap, this.loading = false});
+
+  final String label;
+  final VoidCallback? onTap;
+
+  /// Shows a spinner before the label and takes the action out of reach.
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final enabled = onTap != null && !loading;
+    final color = enabled ? colorScheme.accentText : colorScheme.outline;
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (loading) ...[
+                SizedBox.square(
+                  dimension: 10,
+                  child: CircularProgressIndicator(strokeWidth: 1.5, color: color),
+                ),
+                const SizedBox(width: AppSpace.s6),
+              ],
+              Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: color)),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1220,7 +1152,7 @@ class _ElidedPath extends StatelessWidget {
           shown,
           maxLines: 1,
           // Still set: the final fallback is one very long segment, and it has
-          // to end somewhere rather than overflow the chip.
+          // to end somewhere rather than overflow the row.
           overflow: TextOverflow.ellipsis,
           style: style,
         );

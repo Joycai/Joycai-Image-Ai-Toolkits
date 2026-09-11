@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
-import '../../core/app_semantic_colors.dart';
 import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
@@ -40,9 +39,9 @@ Future<void> runStagingPaste(
 
   /// Files to transfer instead of the staging list.
   ///
-  /// What a drop onto a folder passes: `12d`'s second entry point moves the
-  /// *selection*, not the staging area, and routing it through here anyway is
-  /// what keeps one conflict pass and one progress surface for both gestures.
+  /// What a drop onto a folder passes: the drop moves the *selection*, not
+  /// the staging area, and routing it through here anyway is what keeps one
+  /// conflict pass and one progress surface for both gestures.
   List<BrowserFile>? files,
 }) async {
   final l10n = AppLocalizations.of(context)!;
@@ -104,8 +103,8 @@ bool _isNameClash(FileTransferEntry e) =>
     e.conflict == FileTransferConflict.duplicateInBatch;
 
 /// Executes [plan], keeping the progress dialog and the staging list in step,
-/// and reports the outcome — as `12f`'s summary card if the dialog is still
-/// up, or as a toast if the user sent it to the background.
+/// and reports the outcome — as the finished dialog if the progress dialog is
+/// still up, or as a toast if the user sent it to the background.
 Future<void> _runAndReport(
   BuildContext context,
   AppState appState,
@@ -181,7 +180,7 @@ String _summaryLine(AppLocalizations l10n, FileTransferOutcome outcome) => <Stri
       if (outcome.failed.isNotEmpty) l10n.pasteFailedCount(outcome.failed.length),
     ].join(' · ');
 
-// --------------------------------------------------------------- 12e dialog
+// ------------------------------------------------------------ 1b conflicts
 
 /// The conflict pass — one decision per clashing file, plus a checkbox that
 /// hands the same answer to everything left.
@@ -195,10 +194,10 @@ Future<Map<String, FileConflictResolution>?> _askConflicts(
   final conflicts = plan.entries.where(_isNameClash).toList();
   if (conflicts.isEmpty) return const {};
 
-  // Read once, before the dialog opens. `12e` compares the file about to be
-  // written with the one already there — which is the whole basis for choosing
-  // between them — and doing that stat per build would hit the disk on every
-  // rebuild of the list.
+  // Read once, before the dialog opens. The dialog compares the file about to
+  // be written with the one already there — which is the whole basis for
+  // choosing between them — and doing that stat per build would hit the disk
+  // on every rebuild of the list.
   final existing = <String, FileStat?>{};
   final incoming = <String, FileStat?>{};
   for (final entry in conflicts) {
@@ -269,79 +268,106 @@ class _ConflictDialogState extends State<_ConflictDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final semantic = AppSemanticColors.of(context);
     final textTheme = Theme.of(context).textTheme;
 
     // Every row answered, or the checkbox is about to answer the rest.
     final canContinue = _undecided == 0 || (_applyToRest && _leadChoice != null);
+    final showApplyRest = _undecided > 0 && _leadChoice != null;
 
     return AppDialog(
-      icon: Icons.rule_folder_outlined,
-      iconColor: semantic.warning,
-      title: l10n.conflictsTitle,
-      subtitle: l10n.conflictsSubtitle(
-        widget.conflicts.length,
-        widget.plan.entries.length,
-        _shortFolder(widget.plan.destination),
+      titleWidget: TransferDialogHeading(
+        icon: Icons.file_copy_outlined,
+        tone: TransferTone.warn,
+        title: l10n.conflictsTitle,
+        subtitle: l10n.conflictsSubtitle(
+          widget.conflicts.length,
+          widget.plan.entries.length,
+          transferShortPath(widget.plan.destination),
+        ),
+        subtitleMono: false,
+        subtitleTooltip: widget.plan.destination,
       ),
-      maxWidth: 560,
-      maxHeight: MediaQuery.sizeOf(context).height * 0.75,
+      maxWidth: 640,
+      maxHeight: MediaQuery.sizeOf(context).height * 0.8,
       scrollable: true,
-      contentPadding: EdgeInsets.zero,
       content: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 2, 20, 10),
-            child: Text(
-              l10n.conflictsIntro,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                height: 1.6,
-              ),
+          Text(
+            l10n.conflictsIntro,
+            style: textTheme.bodySmall!.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: AppType.proseHeight,
             ),
           ),
-          for (final entry in widget.conflicts)
-            _ConflictRow(
+          const SizedBox(height: AppSpace.s10),
+          for (final (index, entry) in widget.conflicts.indexed) ...[
+            if (index > 0) const SizedBox(height: 8),
+            _ConflictCard(
               entry: entry,
               existing: widget.existing[entry.sourcePath],
               incoming: widget.incoming[entry.sourcePath],
               choice: _choices[entry.sourcePath],
               onChanged: (choice) => setState(() => _choices[entry.sourcePath] = choice),
             ),
-        ],
-      ),
-      // No Padding around this row: AppDialog pads the footer band itself, and
-      // a second one turns the strip above the buttons into dead space.
-      actionsOverride: Row(
-        children: [
-          if (_undecided > 0 && _leadChoice != null) ...[
-            SizedBox(
-              width: 20,
-              height: 20,
-              child: Checkbox(
-                value: _applyToRest,
-                onChanged: (v) => setState(() => _applyToRest = v ?? false),
+          ],
+          if (showApplyRest) ...[
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () => setState(() => _applyToRest = !_applyToRest),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpace.s4),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: Checkbox(
+                        value: _applyToRest,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        onChanged: (v) => setState(() => _applyToRest = v ?? false),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpace.s10),
+                    Expanded(
+                      child: Text(
+                        l10n.conflictApplyRestCount(_undecided),
+                        style: textTheme.bodyMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 10),
+          ],
+        ],
+      ),
+      // No Padding around this row: AppDialog pads the footer band itself.
+      actionsOverride: Row(
+        children: [
+          if (_undecided > 0)
             Flexible(
               child: Text(
-                l10n.conflictApplyRestCount(_undecided),
-                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                l10n.conflictUndecidedCount(_undecided),
+                style: textTheme.labelSmall!.mono.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w400,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-          ],
           const Spacer(),
           AppButton(
             label: l10n.cancel,
             variant: AppButtonVariant.text,
             onPressed: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpace.s6),
           AppButton(
             label: l10n.conflictApplyAndContinue,
             onPressed: canContinue ? () => Navigator.pop(context, _result) : null,
@@ -352,14 +378,16 @@ class _ConflictDialogState extends State<_ConflictDialog> {
   }
 }
 
-class _ConflictRow extends StatelessWidget {
+/// `1b` 冲突卡: the name and why it clashes, the incoming file beside the one
+/// already there, and the three answers.
+class _ConflictCard extends StatelessWidget {
   final FileTransferEntry entry;
   final FileStat? existing;
   final FileStat? incoming;
   final FileConflictResolution? choice;
   final ValueChanged<FileConflictResolution> onChanged;
 
-  const _ConflictRow({
+  const _ConflictCard({
     required this.entry,
     required this.existing,
     required this.incoming,
@@ -371,102 +399,172 @@ class _ConflictRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final semantic = AppSemanticColors.of(context);
     final textTheme = Theme.of(context).textTheme;
 
+    final Widget outcome;
+    switch (choice) {
+      case null:
+        outcome = TransferBadge(label: l10n.conflictPending, tone: TransferTone.track);
+      case FileConflictResolution.overwrite:
+        outcome = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.warning_amber_rounded, size: AppSize.iconSm, color: colorScheme.error),
+            const SizedBox(width: AppSpace.s4),
+            Flexible(
+              child: Text(
+                l10n.conflictOverwriteWarning,
+                style: textTheme.labelSmall!.copyWith(color: colorScheme.onErrorContainer),
+              ),
+            ),
+          ],
+        );
+      case FileConflictResolution.rename:
+        // Resolved live, so the card shows the name it will actually land on
+        // rather than promising "a different one".
+        outcome = Text(
+          '→ ${p.basename(FileTransferService.uniqueTargetPath(p.dirname(entry.targetPath), entry.name))}',
+          style: textTheme.labelSmall!.mono.copyWith(color: colorScheme.onAccentTint),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+      case FileConflictResolution.skip:
+        outcome = const SizedBox.shrink();
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.all(AppSpace.s10),
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: colorScheme.outlineVariant.withAlpha(120))),
+        color: colorScheme.surfaceContainerLow,
+        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(AppRadius.control),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Thumb(path: entry.sourcePath, size: 30),
-              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   entry.name,
-                  style: textTheme.bodySmall?.mono.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: textTheme.bodySmall!.mono.copyWith(fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 10),
-              _ChoiceTrack(choice: choice, onChanged: onChanged),
-              if (choice == null) ...[
-                const SizedBox(width: 8),
-                _Pill(
-                  label: l10n.conflictPending,
-                  color: semantic.onWarningContainer,
-                  background: semantic.warningContainer,
-                ),
-              ],
+              const SizedBox(width: 8),
+              _reasonBadge(l10n, entry.conflict),
             ],
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 8),
           // Which file is bigger and which is newer is the whole basis for
-          // choosing between them, and the flow this replaced made the user
-          // guess from a filename.
-          Padding(
-            padding: const EdgeInsets.only(left: 40),
-            child: Wrap(
-              spacing: 18,
-              runSpacing: 2,
-              children: [
-                Text(
-                  l10n.conflictWriteInfo(
-                    AppConstants.formatFileSize(entry.size),
-                    _shortDate(incoming?.modified),
-                  ),
-                  style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+          // choosing between them.
+          Row(
+            children: [
+              Expanded(
+                child: _Side(
+                  path: entry.sourcePath,
+                  caption: l10n.conflictIncoming,
+                  meta: '${AppConstants.formatFileSize(entry.size)} · ${_shortDate(incoming?.modified)}',
+                  accent: true,
                 ),
-                if (existing != null)
-                  Text(
-                    l10n.conflictExistingInfo(
-                      AppConstants.formatFileSize(existing!.size),
-                      _shortDate(existing!.modified),
-                    ),
-                    style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
-                  ),
-              ],
-            ),
+              ),
+              const SizedBox(width: AppSpace.s10),
+              Expanded(
+                child: existing == null
+                    ? const SizedBox.shrink()
+                    : _Side(
+                        path: entry.targetPath,
+                        caption: l10n.conflictAlreadyThere,
+                        meta: '${AppConstants.formatFileSize(existing!.size)} · ${_shortDate(existing!.modified)}',
+                        accent: false,
+                      ),
+              ),
+            ],
           ),
-          if (choice == FileConflictResolution.rename)
-            Padding(
-              padding: const EdgeInsets.only(left: 40, top: 5),
-              child: Text(
-                // Resolved live, so the row shows the name it will actually
-                // land on rather than promising "a different one".
-                '→ ${p.basename(FileTransferService.uniqueTargetPath(p.dirname(entry.targetPath), entry.name))}',
-                style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.onAccentTint),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          if (choice == FileConflictResolution.overwrite)
-            Padding(
-              padding: const EdgeInsets.only(left: 40, top: 5),
-              child: Text(
-                l10n.conflictOverwriteWarning,
-                style: textTheme.labelSmall?.copyWith(
-                  color: colorScheme.error,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: AppSpace.s6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _ChoiceTrack(choice: choice, onChanged: onChanged),
+              outcome,
+            ],
+          ),
         ],
       ),
     );
   }
+
+  /// The four reasons a planned entry can clash, each in its own tone.
+  static Widget _reasonBadge(AppLocalizations l10n, FileTransferConflict conflict) => switch (conflict) {
+        FileTransferConflict.targetExists =>
+          TransferBadge(label: l10n.conflictReasonExists, tone: TransferTone.warn),
+        FileTransferConflict.duplicateInBatch =>
+          TransferBadge(label: l10n.conflictReasonDuplicate, tone: TransferTone.info),
+        FileTransferConflict.sameLocation =>
+          TransferBadge(label: l10n.conflictReasonSameLocation, tone: TransferTone.track),
+        FileTransferConflict.sourceMissing =>
+          TransferBadge(label: l10n.conflictReasonMissing, tone: TransferTone.err),
+        FileTransferConflict.none => const SizedBox.shrink(),
+      };
 }
 
-/// Skip / overwrite / rename as one raised track, the way `12e` draws it.
+/// One side of the comparison: a thumbnail, its caption (`Incoming` /
+/// `Already there`) and a mono `size · date` line under it.
+class _Side extends StatelessWidget {
+  final String path;
+  final String caption;
+  final String meta;
+
+  /// The incoming caption speaks in the deep accent; the existing one in ink2.
+  final bool accent;
+
+  const _Side({required this.path, required this.caption, required this.meta, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      children: [
+        TransferThumb(path: path, size: 32),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                caption,
+                style: textTheme.labelSmall!.copyWith(
+                  color: accent ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                meta,
+                style: textTheme.labelSmall!.mono.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w400,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Skip / Overwrite / Keep both on a track: the chosen answer takes the 12%
+/// wash under the deep ink — except Overwrite, the only answer that destroys
+/// a file, which takes the error container.
 class _ChoiceTrack extends StatelessWidget {
   final FileConflictResolution? choice;
   final ValueChanged<FileConflictResolution> onChanged;
@@ -481,7 +579,7 @@ class _ChoiceTrack extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(AppRadius.control),
       ),
       child: Row(
@@ -500,35 +598,36 @@ class _ChoiceTrack extends StatelessWidget {
     final selected = choice == value;
     final destructive = value == FileConflictResolution.overwrite;
 
-    return Material(
-      // The chosen answer lifts out of the track rather than tinting: three
-      // answers to one question is navigation, and the accent in this dialog
-      // belongs to the button that commits.
-      color: selected ? colorScheme.surface : Colors.transparent,
-      borderRadius: BorderRadius.circular(AppRadius.xs),
-      elevation: selected ? 1 : 0,
-      shadowColor: Colors.black.withValues(alpha: 0.10),
-      child: InkWell(
-        onTap: () => onChanged(value),
-        borderRadius: BorderRadius.circular(AppRadius.xs),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: selected
-                      ? (destructive ? colorScheme.error : colorScheme.onSurface)
-                      : colorScheme.onSurfaceVariant,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                ),
-          ),
+    final Color fill = !selected
+        ? colorScheme.surfaceContainerHighest.withValues(alpha: 0)
+        : (destructive ? colorScheme.errorContainer : colorScheme.accentTint);
+    final Color ink = !selected
+        ? colorScheme.onSurfaceVariant
+        : (destructive ? colorScheme.onErrorContainer : colorScheme.onAccentTint);
+
+    return InkWell(
+      onTap: () => onChanged(value),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: AnimatedContainer(
+        duration: AppMotion.durationOf(context, AppMotion.hover),
+        curve: AppMotion.quick,
+        height: 24,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: fill, borderRadius: BorderRadius.circular(AppRadius.sm)),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                color: ink,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              ),
         ),
       ),
     );
   }
 }
 
-// -------------------------------------------------------------- 12f dialogs
+// ------------------------------------------------------- 1c progress/finish
 
 class _ProgressDialog extends StatelessWidget {
   final FileTransferPlan plan;
@@ -547,25 +646,31 @@ class _ProgressDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final semantic = AppSemanticColors.of(context);
     final textTheme = Theme.of(context).textTheme;
     final isMove = plan.mode == FileTransferMode.move;
     final sourceDir = plan.entries.isEmpty ? '' : p.dirname(plan.entries.first.sourcePath);
+    final mono11 = textTheme.labelSmall!.mono.copyWith(
+      color: colorScheme.onSurfaceVariant,
+      fontWeight: FontWeight.w400,
+    );
 
     return PopScope(
       // Escape would leave the transfer running with nothing reporting it.
       // "Run in background" is the deliberate version of that.
       canPop: false,
       child: AppDialog(
-        icon: isMove ? Icons.drive_file_move_outlined : Icons.file_copy_outlined,
-        iconColor: semantic.info,
-        title: isMove
-            ? l10n.pasteMovingCount(plan.entries.length)
-            : l10n.pasteCopyingCount(plan.entries.length),
-        subtitle: <String>[
-          l10n.pasteRoute(_shortFolder(sourceDir), _shortFolder(plan.destination)),
-          if (plan.crossVolume) l10n.pasteCrossVolumeTag,
-        ].join(' · '),
+        titleWidget: TransferDialogHeading(
+          icon: isMove ? Icons.drive_file_move_outlined : Icons.content_copy_outlined,
+          tone: TransferTone.accent,
+          title: isMove
+              ? l10n.pasteMovingCount(plan.entries.length)
+              : l10n.pasteCopyingCount(plan.entries.length),
+          subtitle: l10n.pasteRoute(transferShortPath(sourceDir), transferShortPath(plan.destination)),
+          subtitleTooltip: l10n.pasteRoute(sourceDir, plan.destination),
+          badge: plan.crossVolume
+              ? TransferBadge(label: l10n.pasteCrossVolumeTag, tone: TransferTone.warn)
+              : null,
+        ),
         maxWidth: 460,
         content: ValueListenableBuilder<FileTransferProgress?>(
           valueListenable: progress,
@@ -574,67 +679,60 @@ class _ProgressDialog extends StatelessWidget {
             final total = value?.total ?? plan.entries.length;
             final fraction = total == 0 ? 0.0 : done / total;
             return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.xs),
-                  child: LinearProgressIndicator(
-                    value: fraction,
-                    minHeight: 6,
-                    backgroundColor: colorScheme.surfaceContainerHighest,
+                if (plan.crossVolume) ...[
+                  TransferNote(
+                    text: l10n.pasteRollbackNote,
+                    tone: TransferTone.warn,
+                    icon: Icons.info_outline,
                   ),
-                ),
-                const SizedBox(height: 10),
+                  const SizedBox(height: 14),
+                ],
+                TransferProgressBar(fraction: fraction),
+                const SizedBox(height: 8),
                 Row(
                   children: [
+                    Text(l10n.pasteProgressCount(done, total), style: mono11),
+                    const SizedBox(width: AppSpace.s10),
                     Expanded(
                       child: Text(
-                        l10n.pasteProgressItems(
-                          done,
-                          total,
-                          AppConstants.formatFileSize(value?.bytesDone ?? 0),
-                          AppConstants.formatFileSize(plan.totalBytes),
-                        ),
-                        style: textTheme.labelMedium?.mono
-                            .copyWith(color: colorScheme.onSurfaceVariant),
+                        '${AppConstants.formatFileSize(value?.bytesDone ?? 0)} / '
+                        '${AppConstants.formatFileSize(plan.totalBytes)}',
+                        style: mono11,
+                        textAlign: TextAlign.end,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text(
-                      '${(fraction * 100).round()}%',
-                      style: textTheme.labelMedium?.mono
-                          .copyWith(color: colorScheme.onSurfaceVariant),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpace.s4),
                 Text(
                   value == null || value.name.isEmpty ? '' : l10n.pasteCurrentFile(value.name),
-                  style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+                  style: mono11,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (plan.crossVolume) ...[
-                  const SizedBox(height: 12),
-                  TransferInfoNote(text: l10n.pasteRollbackNote),
-                ],
               ],
             );
           },
         ),
         actionsOverride: Row(
           children: [
-            AppButton(
-              label: l10n.pasteRunInBackground,
-              variant: AppButtonVariant.text,
-              onPressed: onBackground,
+            Flexible(
+              child: AppButton(
+                label: l10n.pasteRunInBackground,
+                icon: Icons.minimize,
+                variant: AppButtonVariant.text,
+                onPressed: onBackground,
+              ),
             ),
             const Spacer(),
             AppButton(
               label: l10n.cancel,
-              variant: AppButtonVariant.destructiveOutline,
+              variant: AppButtonVariant.secondary,
               onPressed: onCancel,
             ),
           ],
@@ -644,7 +742,7 @@ class _ProgressDialog extends StatelessWidget {
   }
 }
 
-/// The closing card — `12f`'s right half.
+/// The closing dialog — `1c` 完成 / 取消.
 ///
 /// Three counts rather than a sentence: succeeded, skipped and failed answer
 /// three different questions, and a toast that runs them together makes the
@@ -657,65 +755,45 @@ Future<void> _showSummary(
 ) {
   final l10n = AppLocalizations.of(context)!;
   final colorScheme = Theme.of(context).colorScheme;
-  final semantic = AppSemanticColors.of(context);
   final textTheme = Theme.of(context).textTheme;
   final isMove = plan.mode == FileTransferMode.move;
 
+  final (IconData icon, TransferTone tone) = outcome.cancelled
+      ? (Icons.cancel_outlined, TransferTone.neutral)
+      : outcome.failed.isEmpty
+          ? (Icons.check_circle_outline, TransferTone.ok)
+          : (Icons.error_outline, TransferTone.err);
+
+  Future<void> retry() async {
+    Navigator.pop(context);
+    await runStagingPaste(context, mode: plan.mode, destination: plan.destination);
+  }
+
   return AppDialog.show<void>(
     context,
-    icon: outcome.failed.isEmpty ? Icons.check_circle_outline : Icons.error_outline,
-    iconColor: outcome.failed.isEmpty ? semantic.success : colorScheme.error,
-    title: outcome.cancelled
-        ? l10n.pasteCancelledTitle
-        : (isMove ? l10n.pasteMoveDone : l10n.pasteCopyDone),
-    subtitle: l10n.pasteElapsed(plan.entries.length, _formatDuration(elapsed)),
+    titleWidget: TransferDialogHeading(
+      icon: icon,
+      tone: tone,
+      title: outcome.cancelled
+          ? l10n.pasteCancelledTitle
+          : (isMove ? l10n.pasteMoveDone : l10n.pasteCopyDone),
+      subtitle: l10n.pasteElapsed(plan.entries.length, _formatDuration(elapsed)),
+    ),
     maxWidth: 460,
-    maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+    maxHeight: MediaQuery.sizeOf(context).height * 0.75,
     scrollable: true,
     content: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: TransferStatCell(
-                value: outcome.succeeded.length,
-                label: l10n.pasteStatSucceeded,
-                color: semantic.success,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TransferStatCell(
-                value: outcome.skipped.length,
-                label: l10n.pasteStatSkipped,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TransferStatCell(
-                value: outcome.failed.length,
-                label: l10n.pasteStatFailed,
-                color: colorScheme.error,
-              ),
-            ),
-          ],
+        TransferStatTiles(
+          transferred: outcome.succeeded.length,
+          skipped: outcome.skipped.length,
+          failed: outcome.failed.length,
         ),
-        for (final failure in outcome.failed) ...[
-          const SizedBox(height: 10),
-          _FailureRow(
-            failure: failure,
-            onRetry: () async {
-              Navigator.pop(context);
-              await runStagingPaste(
-                context,
-                mode: plan.mode,
-                destination: plan.destination,
-              );
-            },
-          ),
+        if (outcome.failed.isNotEmpty) ...[
+          const SizedBox(height: AppSpace.s10),
+          for (final failure in outcome.failed) _FailureRow(failure: failure),
         ],
         // A copy leaves every mark where it was (see `_runAndReport`), so the
         // sentence about the successes being taken out is only said of a move.
@@ -726,19 +804,38 @@ Future<void> _showSummary(
               outcome.skipped.length + outcome.failed.length,
               outcome.succeeded.length,
             ),
-            style: textTheme.labelSmall?.copyWith(color: colorScheme.outline, height: 1.5),
+            style: textTheme.bodySmall!.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: AppType.proseHeight,
+            ),
           ),
         ],
       ],
     ),
     actionsOverride: Row(
       children: [
-        AppButton(
-          label: l10n.pasteExportLog,
-          variant: AppButtonVariant.text,
-          onPressed: () => _exportLog(context, plan, outcome, elapsed),
+        Expanded(
+          child: Wrap(
+            spacing: AppSpace.s4,
+            runSpacing: AppSpace.s4,
+            children: [
+              if (outcome.failed.isNotEmpty)
+                AppButton(
+                  label: l10n.pasteRetry,
+                  icon: Icons.refresh,
+                  variant: AppButtonVariant.text,
+                  onPressed: retry,
+                ),
+              AppButton(
+                label: l10n.pasteExportLog,
+                icon: Icons.download_outlined,
+                variant: AppButtonVariant.text,
+                onPressed: () => _exportLog(context, plan, outcome, elapsed),
+              ),
+            ],
+          ),
         ),
-        const Spacer(),
+        const SizedBox(width: AppSpace.s6),
         AppButton(
           label: l10n.finish,
           onPressed: () => Navigator.pop(context),
@@ -750,54 +847,42 @@ Future<void> _showSummary(
 
 class _FailureRow extends StatelessWidget {
   final FileTransferFailure failure;
-  final VoidCallback onRetry;
 
-  const _FailureRow({required this.failure, required this.onRetry});
+  const _FailureRow({required this.failure});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-      decoration: BoxDecoration(
-        color: colorScheme.error.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(AppRadius.control),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpace.s4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline, size: AppSize.iconSm, color: colorScheme.error),
-          const SizedBox(width: 9),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(Icons.error_outline, size: AppSize.iconSm, color: colorScheme.error),
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   p.basename(failure.sourcePath),
-                  style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.onSurface),
+                  style: textTheme.bodySmall!.mono,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 1),
                 Text(
                   failure.message,
-                  style: textTheme.labelSmall?.copyWith(color: colorScheme.error),
+                  style: textTheme.labelSmall!.copyWith(color: colorScheme.onErrorContainer),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: 10),
-          OutlinedButton(
-            onPressed: onRetry,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 28),
-              padding: const EdgeInsets.symmetric(horizontal: 9),
-            ),
-            child: Text(l10n.pasteRetry, style: textTheme.bodySmall),
           ),
         ],
       ),
@@ -855,69 +940,6 @@ Future<void> _exportLog(
 
 // ------------------------------------------------------------------ helpers
 
-class _Thumb extends StatelessWidget {
-  final String path;
-  final double size;
-
-  const _Thumb({required this.path, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final category = BrowserFile.categoryOf(path);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(7),
-      child: Container(
-        width: size,
-        height: size,
-        color: colorScheme.surfaceContainerHighest,
-        child: category == FileCategory.image
-            ? Image(
-                image: ResizeImage(FileImage(File(path)), width: (size * 2).round()),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stack) =>
-                    Icon(category.icon, size: 14, color: colorScheme.outline),
-              )
-            : Icon(category.icon, size: 14, color: category.color.withAlpha(180)),
-      ),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  final String label;
-  final Color color;
-  final Color background;
-
-  const _Pill({required this.label, required this.color, required this.background});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall
-            ?.copyWith(color: color, fontWeight: FontWeight.w500),
-      ),
-    );
-  }
-}
-
-/// Last two segments of a path — a dialog subtitle has no room for the rest.
-String _shortFolder(String path) {
-  final parts = p.split(path).where((s) => s.isNotEmpty).toList();
-  if (parts.length <= 2) return path;
-  return parts.sublist(parts.length - 2).join(' / ');
-}
-
 String _shortDate(DateTime? when) {
   if (when == null) return '—';
   String two(int n) => n.toString().padLeft(2, '0');
@@ -938,5 +960,5 @@ String _formatDuration(Duration d) {
   if (d.inHours > 0) {
     return '${d.inHours}:${two(d.inMinutes % 60)}:${two(d.inSeconds % 60)}';
   }
-  return '${d.inMinutes}:${two(d.inSeconds % 60)}';
+  return '${two(d.inMinutes)}:${two(d.inSeconds % 60)}';
 }

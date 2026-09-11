@@ -41,5 +41,8 @@
   "usageItemCount": "{count} 项",
   "noUsageInRange": "所选时间范围内没有用量数据。",
   "loadMore": "加载更多",
-  "invalidPriceValue": "请输入有效的非负数字"
+  "invalidPriceValue": "请输入有效的非负数字",
+  "usageLoadingRecords": "正在汇总用量记录…",
+  "noUsageInRangeHint": "换一个区间，或先跑一个任务。",
+  "usageLoadMoreStatus": "每页 {pageSize} · 已显示 {shown} / {total}"
 }

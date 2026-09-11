@@ -1,223 +1,166 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../services/database_service.dart';
 import '../../../state/app_state.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_dialog.dart';
+import '../../../widgets/app_segmented_control.dart';
+import 'usage_chrome.dart';
+import 'usage_controller.dart';
 import 'usage_list.dart';
 import 'usage_range.dart';
-import 'usage_stats.dart';
 import 'usage_summary.dart';
 
-/// Mobile/narrow layout for the token-usage tab: a pinned filter bar over a
-/// single scroll of summary cards and records.
+/// Phone layout for the token-usage tab (`D2` 1c): the hero, the range presets
+/// split evenly across the width, and the records, in one scroll.
+///
+/// Refresh and Clear All live in the screen's glass header, which shares
+/// [controller] with this body. Mounted without one, the view owns its data
+/// and puts both actions beside the presets instead, so they are never lost.
 class UsageViewMobile extends StatefulWidget {
-  const UsageViewMobile({super.key});
+  const UsageViewMobile({super.key, this.controller, this.topInset = 0});
+
+  /// The data this view shows, when the screen around it needs to act on it.
+  final UsageController? controller;
+
+  /// Space to keep clear at the top for a header floating over the scroll.
+  final double topInset;
 
   @override
   State<UsageViewMobile> createState() => _UsageViewMobileState();
 }
 
 class _UsageViewMobileState extends State<UsageViewMobile> {
-  final DatabaseService _db = DatabaseService();
-  final List<Map<String, dynamic>> _pagedUsageData = [];
-  UsageStats _stats = UsageStats.empty();
-  bool _isLoading = true;
-  bool _isLoadingMore = false;
-  bool _hasMore = true;
-  int _currentPage = 0;
   static const int _pageSize = 50;
 
-  String _activePreset = 'week';
-  DateTimeRange _dateRange = usageRangeForPreset('week');
+  UsageController? _own;
+
+  UsageController get _controller => widget.controller ?? _own!;
 
   @override
   void initState() {
     super.initState();
-    _loadData(reset: true);
+    if (widget.controller == null) _own = _createController();
+    _controller.load(reset: true);
   }
 
-  Future<void> _loadData({bool reset = false}) async {
-    if (!mounted) return;
+  @override
+  void didUpdateWidget(UsageViewMobile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller == widget.controller) return;
 
-    if (reset) {
-      setState(() {
-        _isLoading = true;
-        _currentPage = 0;
-        _pagedUsageData.clear();
-        _hasMore = true;
-      });
+    if (widget.controller == null) {
+      _own = _createController();
     } else {
-      setState(() => _isLoadingMore = true);
+      _own?.dispose();
+      _own = null;
     }
+    _controller.load(reset: true);
+  }
 
-    try {
-      final appState = Provider.of<AppState>(context, listen: false);
-
-      // 1. Fetch full stats (using checkpoints if available - background logic)
-      if (reset) {
-        // For stats calculation, we still need to scan the range once.
-        // The checkpoint + offset logic makes this fast.
-        final allInRange = await _db.getTokenUsage(
-          start: _dateRange.start,
-          end: _dateRange.end,
-        );
-        if (mounted) {
-          _stats = calculateStats(allInRange, appState.allModels);
-        }
-      }
-
-      // 2. Fetch paged data for the list
-      final pagedData = await _db.getTokenUsage(
-        start: _dateRange.start,
-        end: _dateRange.end,
-        limit: _pageSize,
-        offset: _currentPage * _pageSize,
+  UsageController _createController() => UsageController(
+        models: () => Provider.of<AppState>(context, listen: false).allModels,
+        pageSize: _pageSize,
       );
 
-      if (mounted) {
-        setState(() {
-          _pagedUsageData.addAll(pagedData);
-          _hasMore = pagedData.length == _pageSize;
-          _currentPage++;
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-      }
-    }
-  }
-
-  void _updateRange(String preset) {
-    setState(() {
-      _dateRange = usageRangeForPreset(preset);
-      _activePreset = preset;
-    });
-    _loadData(reset: true);
-  }
-
-  void _confirmClearAll() {
-    final l10n = AppLocalizations.of(context)!;
-    AppDialog.show<void>(
-      context,
-      title: l10n.clearAllUsage,
-      content: Text(l10n.clearUsageWarning),
-      actions: [
-        AppButton(
-          label: l10n.cancel,
-          variant: AppButtonVariant.text,
-          onPressed: () => Navigator.pop(context),
-        ),
-        AppButton(
-          label: l10n.clearAll,
-          variant: AppButtonVariant.destructive,
-          onPressed: () async {
-            await _db.clearTokenUsage();
-            if (mounted) {
-              Navigator.pop(context);
-              _loadData(reset: true);
-            }
-          },
-        ),
-      ],
-    );
+  @override
+  void dispose() {
+    _own?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
+    final appState = Provider.of<AppState>(context);
+    final modelTags = {
+      for (final m in appState.allModels)
+        if (m.id != null) m.id!: m.tag,
+    };
 
-    return Column(
-      children: [
-        _buildFilterBar(l10n),
-        Expanded(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: UsageSummary(
-                          stats: _stats,
-                          rangeLabel: usagePresetLabel(l10n, _activePreset),
-                          compact: true,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Records step up a tone for the same reason the compact
-                      // summary cards do: this view is hosted on a card at
-                      // tablet width, and surface on surface has no edge.
-                      Material(
-                        color: colorScheme.surfaceContainerHigh,
-                        child: UsageList(
-                          usageData: _pagedUsageData,
-                          onRefresh: () => _loadData(reset: true),
-                          hasMore: _hasMore,
-                          isLoadingMore: _isLoadingMore,
-                          onLoadMore: () => _loadData(),
-                        ),
-                      ),
-                    ],
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) {
+        final c = _controller;
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            AppSpace.s16,
+            widget.topInset + 12,
+            AppSpace.s16,
+            MediaQuery.paddingOf(context).bottom + AppSpace.s16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              UsageSummary(
+                stats: c.stats,
+                rangeLabel: usagePresetLabel(l10n, c.preset),
+                compact: true,
+              ),
+              const SizedBox(height: 12),
+              _buildRangeRow(context, l10n, c),
+              const SizedBox(height: 12),
+              if (c.isLoading)
+                const UsageLoadingCard()
+              else
+                UsagePanel(
+                  child: UsageList(
+                    usageData: c.rows,
+                    onRefresh: () => c.load(reset: true),
+                    hasMore: c.hasMore,
+                    isLoadingMore: c.isLoadingMore,
+                    onLoadMore: () => c.load(),
+                    modelTags: modelTags,
+                    totalCount: c.totalRecords,
+                    pageSize: c.pageSize,
                   ),
                 ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// The presets pick which stretch of time to look at, not a setting — so the
+  /// chosen one is lifted out of the track rather than tinted.
+  Widget _buildRangeRow(BuildContext context, AppLocalizations l10n, UsageController c) {
+    final segments = AppSegmentedControl<String>(
+      segments: [
+        for (final preset in usagePresets)
+          AppSegment(
+            value: preset,
+            label: usagePresetLabel(l10n, preset),
+            enabled: !c.isLoading,
+          ),
+      ],
+      value: c.preset,
+      onChanged: c.selectPreset,
+      expand: true,
+      compact: true,
+      style: AppSegmentStyle.raised,
+    );
+
+    if (widget.controller != null) return segments;
+
+    return Row(
+      children: [
+        Expanded(child: segments),
+        const SizedBox(width: AppSpace.s6),
+        UsageToolIconButton(
+          icon: Icons.refresh,
+          tooltip: l10n.refresh,
+          onPressed: c.isLoading ? null : () => c.load(reset: true),
+        ),
+        const SizedBox(width: AppSpace.s6),
+        UsageToolIconButton(
+          icon: Icons.delete_sweep_outlined,
+          tooltip: l10n.clearAll,
+          danger: true,
+          onPressed: () => showClearAllUsageDialog(context, c),
         ),
       ],
-    );
-  }
-
-  Widget _buildFilterBar(AppLocalizations l10n) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final preset in usagePresets) ...[
-                    _buildPresetChip(preset, usagePresetLabel(l10n, preset)),
-                    const SizedBox(width: 4),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh, size: 20),
-            onPressed: _isLoading ? null : () => _loadData(reset: true),
-            tooltip: l10n.refresh,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_sweep_outlined, size: 20, color: Colors.red),
-            onPressed: _confirmClearAll,
-            tooltip: l10n.clearAll,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Selectable, not just tappable: the chips are the only thing on this view
-  /// that says which range every number below them covers.
-  Widget _buildPresetChip(String preset, String label) {
-    return ChoiceChip(
-      label: Text(label, style: Theme.of(context).textTheme.labelMedium?.metricsOnly),
-      selected: _activePreset == preset,
-      onSelected: (_) => _updateRange(preset),
-      padding: EdgeInsets.zero,
-      visualDensity: VisualDensity.compact,
     );
   }
 }

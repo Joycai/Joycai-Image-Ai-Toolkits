@@ -68,5 +68,15 @@
   "reorderDisabledWhileFiltered": "フィルターまたは検索中は並べ替えできません",
   "matchModeLabel": "一致",
   "matchAny": "いずれか",
-  "matchAllTags": "すべて"
+  "matchAllTags": "すべて",
+  "promptFilterSummary": "{count} 個のカテゴリで絞り込み · {matches} 件一致",
+  "promptEditorSubtitle": "保存するとワークベンチからワンクリックで適用できます",
+  "categoryColorHint": "色はカテゴリを見分けるためだけに使います",
+  "promptCount": "{count} 件のプロンプト",
+  "categoryDeleteNote": "カテゴリを削除すると、そのプロンプトは General に移り、削除はされません。",
+  "importFileSummary": "{file} · {count} 件",
+  "importMergeDetail": "既存の {current} 件を残し、重複しないものを追加",
+  "importReplaceDetail": "既存の {current} 件を削除し、ファイルの {count} 件だけを残す",
+  "promptLibraryEmptyHint": "ワークベンチでよく使うプロンプトを保存すれば、次からワンクリックで適用できます。",
+  "colorPresets": "プリセット"
 }

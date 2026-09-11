@@ -755,6 +755,50 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get browserViewGrid => 'グリッド';
+
+  @override
+  String get browserViewList => 'リスト';
+
+  @override
+  String get browserSearchEscHint => 'Esc でクリア';
+
+  @override
+  String get browserNoFilesHint => '別のフィルターを試すか、検索をクリアしてください';
+
+  @override
+  String browserFoldersCount(int count) {
+    return '$count 個のフォルダー';
+  }
+
+  @override
+  String browserScanningCount(int count) {
+    return '$count 個のファイルをスキャン中…';
+  }
+
+  @override
+  String get browserDragFootnote => 'フォルダーへドラッグで移動 · Ctrl を押しながらでコピー';
+
+  @override
+  String get stagingDropHint => '左列のフォルダーにドロップしてステージに追加';
+
+  @override
+  String renameBatchFailedTitle(int batch) {
+    return 'バッチ $batch が失敗しました';
+  }
+
+  @override
+  String get conflictIncoming => '移動元';
+
+  @override
+  String get conflictAlreadyThere => '既存';
+
+  @override
+  String conflictUndecidedCount(int count) {
+    return '未決定 $count 件';
+  }
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override
@@ -907,6 +951,54 @@ class AppLocalizationsJa extends AppLocalizations {
   String get confirm => '確認';
 
   @override
+  String get moreSheetDesktopOnlyNote =>
+      'ファイルブラウザと画像ダウンローダーはデスクトップ／タブレットでのみ利用できます。';
+
+  @override
+  String get consoleIdle => 'アイドル';
+
+  @override
+  String consoleFailedCount(int count) {
+    return '$count 件失敗';
+  }
+
+  @override
+  String get logSearchHint => 'ログを絞り込む…';
+
+  @override
+  String get logLevelError => 'エラー';
+
+  @override
+  String get logLevelRunning => '実行';
+
+  @override
+  String get logLevelSuccess => '成功';
+
+  @override
+  String get goToSettings => '設定へ';
+
+  @override
+  String get actionImport => 'インポート';
+
+  @override
+  String get actionExport => 'エクスポート';
+
+  @override
+  String get actionOpen => '開く';
+
+  @override
+  String get actionClear => 'クリア';
+
+  @override
+  String get actionRun => '実行';
+
+  @override
+  String get actionChange => '変更';
+
+  @override
+  String get experimental => '試験的';
+
+  @override
   String get downloader => 'ダウンローダー';
 
   @override
@@ -1039,6 +1131,35 @@ class AppLocalizationsJa extends AppLocalizations {
   String get copyLogs => 'ログをコピー';
 
   @override
+  String downloaderFoundCount(int count) {
+    return '$count 件見つかりました';
+  }
+
+  @override
+  String get downloaderAdvancedSubtitle => 'この画面からのダウンロードにのみ適用';
+
+  @override
+  String get copyImageUrl => '画像の URL をコピー';
+
+  @override
+  String get manualHtmlEmptyTitle => 'HTML がまだ貼り付けられていません';
+
+  @override
+  String get manualHtmlEmptyDesc =>
+      'ブラウザーでページのソースを表示して全選択・コピーし、上の貼り付けを押してください。';
+
+  @override
+  String get cookieHistoryUse => '使用';
+
+  @override
+  String cookieHistoryPairs(int count) {
+    return '$count 組';
+  }
+
+  @override
+  String get cookieHistoryEmptyDesc => '貼り付けた Cookie はここに記録され、同じサイトで再利用できます。';
+
+  @override
   String get usage => '使用状況';
 
   @override
@@ -1132,6 +1253,17 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get invalidPriceValue => '0以上の有効な数値を入力してください';
+
+  @override
+  String get usageLoadingRecords => '使用記録を集計中…';
+
+  @override
+  String get noUsageInRangeHint => '別の期間を選ぶか、先にタスクを実行してください。';
+
+  @override
+  String usageLoadMoreStatus(int pageSize, int shown, int total) {
+    return '1 ページ $pageSize 件 · $shown / $total 件表示';
+  }
 
   @override
   String get models => 'モデル';
@@ -2105,6 +2237,157 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelOrderSaveFailed => '並び順を保存できませんでした。元の順序に戻しました';
 
   @override
+  String wizardStepCounter(int current, int total) {
+    return 'ステップ $current / $total';
+  }
+
+  @override
+  String get wizardStepsAdaptNote => 'プロバイダーの接続方式に応じてステップが変わります';
+
+  @override
+  String providerNoMatchHint(String query) {
+    return '「$query」は一覧にありません。「カスタム」グループでエンドポイントを入力し、OpenAI 互換を選んでください。';
+  }
+
+  @override
+  String get providerUseCustom => 'カスタムとして追加';
+
+  @override
+  String get probeSkippableNote => '省略可。次のステップで名前とタグを設定できます';
+
+  @override
+  String endpointPresetValue(String endpoint) {
+    return 'プリセット値：$endpoint';
+  }
+
+  @override
+  String get variantResultLabel => '結果';
+
+  @override
+  String get probeOkNext => 'すぐにモデル検出を有効にできます';
+
+  @override
+  String get probeNoModelsNext =>
+      'エンドポイントとキーは有効ですが、モデル一覧が空です。Model ID を手動で追加してください。';
+
+  @override
+  String get probeAuthFailedNext => 'キーが完全にコピーされているか、期限切れでないか確認してください。';
+
+  @override
+  String get probeNotAnApiNext =>
+      'HTML ページが返りました。コンソールの URL かもしれません。API エンドポイントは通常 /v1 か /v1beta で終わります。';
+
+  @override
+  String get probeUnreachableNext =>
+      'DNS の解決に失敗したかタイムアウトしました。URL、プロキシ、ネットワークを確認してください。';
+
+  @override
+  String get probeNotSupportedNext =>
+      'このプロトコルにはモデル一覧がないため、タスクを送信して確認するしかありません。';
+
+  @override
+  String get previewEmptyKeyNote => 'キーは未入力です。あとでチャネル編集から追加できます。';
+
+  @override
+  String get presetShortHint => 'エンドポイントとプロトコルをワンタップで入力';
+
+  @override
+  String get deleteChannel => 'チャネルを削除';
+
+  @override
+  String get discoveryOffEffect => 'オフにすると、このチャネルでは「モデル取得」が無効になります';
+
+  @override
+  String get protocolUnavailable => '利用不可';
+
+  @override
+  String get reasoningEffortUnsupported =>
+      'このモデルは推論パラメーターを受け付けません。グレー表示のまま残り、チャットモデルに切り替えると有効になります。';
+
+  @override
+  String get modelIdRequiredTitle => 'Model ID は空にできません';
+
+  @override
+  String get modelIdRequiredDesc => '唯一の必須項目です。名前を空にすると ID が表示名になります。';
+
+  @override
+  String get contextSpecifyInvalid => '正の整数を入力してください。空欄や 0 は保存できません。';
+
+  @override
+  String get addModelSubtitle => '手動で追加する場合、必須は ID だけです';
+
+  @override
+  String get addModelIdHelper => '空欄では保存できません。名前が空なら ID を使います。';
+
+  @override
+  String get addModelDefaultsNote =>
+      'プロトコル、コンテキストウィンドウ、機能スイッチは Auto / 既定のままです。まず追加して一度動かし、必要なものだけ固定してください。';
+
+  @override
+  String get modelNameOptionalHint => '空欄でも可';
+
+  @override
+  String get moveUp => '上へ移動';
+
+  @override
+  String get moveDown => '下へ移動';
+
+  @override
+  String get channelReorderFootnote =>
+      'ホバーでハンドル表示 · ドラッグで並べ替え · 右クリックか Alt+↑/↓ でも可';
+
+  @override
+  String get channelReorderLockedNote =>
+      '検索中は並べ替えできません。一覧の一部しか表示されていないため、ドロップ位置が正しくなりません。検索をクリアすると戻ります。';
+
+  @override
+  String get noModelsConfiguredHint => '「モデル取得」で検出するか、手動で追加してください。';
+
+  @override
+  String get addModelManually => '手動で追加';
+
+  @override
+  String get selectAChannelHint => '左でチャネルを選ぶと、ここにそのモデルが表示されます。';
+
+  @override
+  String noModelsMatchQuery(String query) {
+    return '「$query」に一致するモデルはありません';
+  }
+
+  @override
+  String get noFeeGroupsHint => 'グループを作成し、モデルを割り当ててください。';
+
+  @override
+  String get noNewModelsFoundHint => 'このチャネルが返したモデルはすべて一覧にあります。';
+
+  @override
+  String get discoveryCapabilitiesNote =>
+      '検出されたモデルは ID と種類だけを持ちます。機能、コンテキストウィンドウ、料金グループはモデルごとに設定します。';
+
+  @override
+  String deleteChannelTitle(String name) {
+    return 'チャネル「$name」を削除しますか？';
+  }
+
+  @override
+  String deleteChannelModelsNote(int count) {
+    return 'モデル $count 件も削除されます';
+  }
+
+  @override
+  String get deleteChannelBody =>
+      'これらのモデルを使うワークベンチの設定は「モデル未選択」になります。送信済みのタスクには影響しません。使用記録はモデル名で残ります。';
+
+  @override
+  String get newFeeGroup => '新しいグループ';
+
+  @override
+  String get cachePriceBlankPlaceholder => '空欄 = 入力価格と同じ';
+
+  @override
+  String get fetchFailedTitle => '接続に失敗しました';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override
@@ -2250,6 +2533,47 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get matchAllTags => 'すべて';
+
+  @override
+  String promptFilterSummary(int count, int matches) {
+    return '$count 個のカテゴリで絞り込み · $matches 件一致';
+  }
+
+  @override
+  String get promptEditorSubtitle => '保存するとワークベンチからワンクリックで適用できます';
+
+  @override
+  String get categoryColorHint => '色はカテゴリを見分けるためだけに使います';
+
+  @override
+  String promptCount(int count) {
+    return '$count 件のプロンプト';
+  }
+
+  @override
+  String get categoryDeleteNote => 'カテゴリを削除すると、そのプロンプトは General に移り、削除はされません。';
+
+  @override
+  String importFileSummary(String file, int count) {
+    return '$file · $count 件';
+  }
+
+  @override
+  String importMergeDetail(int current) {
+    return '既存の $current 件を残し、重複しないものを追加';
+  }
+
+  @override
+  String importReplaceDetail(int current, int count) {
+    return '既存の $current 件を削除し、ファイルの $count 件だけを残す';
+  }
+
+  @override
+  String get promptLibraryEmptyHint =>
+      'ワークベンチでよく使うプロンプトを保存すれば、次からワンクリックで適用できます。';
+
+  @override
+  String get colorPresets => 'プリセット';
 
   @override
   String get settings => '設定';
@@ -2592,6 +2916,75 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get themeMode => 'テーマモード';
+
+  @override
+  String get visualEffects => 'エフェクト';
+
+  @override
+  String get settingsGroupNotifications => '通知とログ';
+
+  @override
+  String get settingsGroupDirectories => 'ディレクトリ';
+
+  @override
+  String get settingsGroupAssistant => 'アシスタント';
+
+  @override
+  String get customAccentTitle => 'カスタムテーマカラー';
+
+  @override
+  String get customAccentHint => 'リングをドラッグするか hex 値を貼り付け';
+
+  @override
+  String get customAccentDerived => '導出されたペア';
+
+  @override
+  String get customAccentPassed => '白文字で読めます。ボタンは白文字のままです。';
+
+  @override
+  String get customAccentInkFallback => 'この色では白文字が読みにくいため、ボタンは同じ色相の濃いインクを使います。';
+
+  @override
+  String get customAccentFailed => 'この色はコントラストの基準を満たせません。';
+
+  @override
+  String get fontFollowSystem => 'OS に従う';
+
+  @override
+  String get fontNotDownloaded => '未ダウンロード';
+
+  @override
+  String get fontDownloadedOffline => 'ダウンロード済み · オフラインで利用可';
+
+  @override
+  String get languageFollowSystem => 'システムの言語に従う';
+
+  @override
+  String get exportSettingsNote => 'ディレクトリ・プロンプト・使用記録は任意。API キーは含まれません';
+
+  @override
+  String get clearTempFilesNote => 'マスク · 切り抜きのコピー · ダウンローダーのキャッシュ · 動画サムネイル';
+
+  @override
+  String get resetAllSettingsNote => '初回起動の状態に戻します';
+
+  @override
+  String get resetIrreversible => '元に戻せません';
+
+  @override
+  String get proxyAppliesToAll => 'すべてのチャネルのリクエストに適用';
+
+  @override
+  String get notificationsDesc => 'タスクの完了・失敗時に通知します';
+
+  @override
+  String get mcpServerDesc => '外部ツールから MCP 経由でこのアプリを呼び出せるようにします';
+
+  @override
+  String get mcpComingSoon => '近日公開（このバージョンでは未実装）';
+
+  @override
   String get tasks => 'タスク';
 
   @override
@@ -2819,6 +3212,24 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get durationLabel => '所要時間';
+
+  @override
+  String get clearAllTasksTitle => 'すべてのタスクを消去しますか？';
+
+  @override
+  String clearAllRunningNote(int count) {
+    return '実行中のタスク $count 件を含みます';
+  }
+
+  @override
+  String get clearAllKeepsFiles =>
+      '実行中のタスクはそのままです。生成済みのファイルは出力フォルダーに残り、キューの記録だけが消去されます。';
+
+  @override
+  String get taskNoOutputsFailed => '出力はありません。書き込み前にタスクが失敗しました。';
+
+  @override
+  String get noTaskLogCancelledHint => '開始前にキャンセルされたため、ログはありません。';
 
   @override
   String get setupWizardTitle => 'ようこそセットアップ';
@@ -3444,7 +3855,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optChatHint => 'アイデアやラフなプロンプトを入力...';
 
   @override
-  String get optSend => '送信 (Ctrl+Enter)';
+  String get optSend => '送信';
 
   @override
   String get optNewSession => '新しい会話';
@@ -4084,4 +4495,123 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get kbWriteNoConfirmWarning =>
       '個別確認をオフにすると、agent が作成した内容が確認なしでファイルに書き込まれます。';
+
+  @override
+  String get wbToolComparatorShort => '比較';
+
+  @override
+  String get wbToolMaskShort => 'マスク';
+
+  @override
+  String get wbToolCropShort => 'クロップ';
+
+  @override
+  String get wbToolAssistantShort => 'アシスタント';
+
+  @override
+  String get galleryViewWorkspace => 'ワークスペース';
+
+  @override
+  String get galleryViewSourcesShort => 'ソース';
+
+  @override
+  String get galleryViewResultsShort => '結果';
+
+  @override
+  String get galleryDropTitle => 'ここに画像をドロップ…';
+
+  @override
+  String get galleryDropHint => '一時ワークスペースに追加され、表示が切り替わります';
+
+  @override
+  String get galleryEmptyWorkspaceTitle => 'ここにファイルをドロップ';
+
+  @override
+  String get galleryEmptyWorkspaceDesc => '画像や動画をドラッグして一時ワークスペースに追加';
+
+  @override
+  String get galleryEmptySourceDesc => 'このソースには対応する画像がありません';
+
+  @override
+  String get galleryScanning => 'ファイルをスキャン中…';
+
+  @override
+  String get wbGenerationConfig => '生成設定';
+
+  @override
+  String get selectionSendToAssistant => 'アシスタントへ送る';
+
+  @override
+  String shareCount(int count) {
+    return '共有 ($count)';
+  }
+
+  @override
+  String get selectionReorderHint => 'ドラッグで並べ替え · 番号がモデルに送る順番です';
+
+  @override
+  String get videoPlay => '再生';
+
+  @override
+  String get videoPause => '一時停止';
+
+  @override
+  String get videoMute => 'ミュート';
+
+  @override
+  String get videoUnmute => 'ミュート解除';
+
+  @override
+  String get videoRetry => '再試行';
+
+  @override
+  String get videoPlaybackFailed => '再生できません';
+
+  @override
+  String videoPlaybackFailedReason(String name) {
+    return 'ファイルがないか、エンコードに対応していません：$name';
+  }
+
+  @override
+  String get videoFrameOptional => '任意';
+
+  @override
+  String get videoDropOrPick => 'ドロップまたはクリックで選択';
+
+  @override
+  String get videoDropRelease => '離して追加';
+
+  @override
+  String videoReferenceDropMax(int count) {
+    return '参照画像をドロップ（最大 $count 枚）';
+  }
+
+  @override
+  String get optErrorTitle => 'リクエストに失敗しました';
+
+  @override
+  String get optNotViewed => 'まだ見ていません';
+
+  @override
+  String get optTimelineCurrent => '現在';
+
+  @override
+  String get optKbPathInvalidDesc => 'パスが無効か、アクセスできません';
+
+  @override
+  String optKbEntryMissingShort(String file) {
+    return '$file がありません';
+  }
+
+  @override
+  String get optKbNotConfiguredShort => '未設定';
+
+  @override
+  String get cropEmptyDesc => '先にギャラリーで画像を選んでください';
+
+  @override
+  String get maskEmptyDesc => 'マスクは画像の上に描きます';
+
+  @override
+  String get maskLoadFailedDesc => 'ファイルが移動または削除された可能性があります';
 }

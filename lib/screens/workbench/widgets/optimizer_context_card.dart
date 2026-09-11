@@ -1,32 +1,168 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/context_usage_palette.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/assistant_context_usage.dart';
-import '../../../widgets/app_card.dart';
-import '../../../widgets/app_section_label.dart';
+
+/// A card in the Prompt Assistant's side columns (`A3a` / `A3b`): the panel
+/// ground laid on the column, a hairline, r16, a 10px inset and an 8px rhythm
+/// between its rows.
+///
+/// Its own widget rather than `AppCard`: that one is r10 on the near-white
+/// rung with a panel-edge outline, which is the previous system's card. These
+/// columns are the one place the liquid-glass frames draw a stack of r16
+/// cards, and every panel of the assistant shares this file already.
+class OptimizerPanelCard extends StatelessWidget {
+  const OptimizerPanelCard({super.key, required this.children});
+
+  final List<Widget> children;
+
+  /// The spec's `gap:8` inside a card. Off the 4/6/10 ladder, as drawn.
+  static const double gap = 8;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Material, not a decorated box: buttons and links inside draw their ink
+    // on the nearest Material, and a fill painted above that would hide it.
+    return Material(
+      color: colorScheme.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpace.s10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final (index, child) in children.indexed) ...[
+              if (index > 0) const SizedBox(height: gap),
+              child,
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The 11/500 tracked caption in the deep ink that heads a card or a column,
+/// with an optional figure or action on its right.
+///
+/// Upper-cased like `AppSectionLabel`, which the rest of the app heads its
+/// groups with: a no-op on CJK, and the spec's caption is upper case in the
+/// Latin locales (`EXECUTION LOGS`).
+class OptimizerPanelCaption extends StatelessWidget {
+  const OptimizerPanelCaption(this.label, {super.key, this.trailing});
+
+  final String label;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  letterSpacing: AppType.trackedLabelSpacing,
+                  color: colorScheme.onAccentTint,
+                ),
+          ),
+        ),
+        if (trailing != null) ...[
+          const SizedBox(width: AppSpace.s6),
+          trailing!,
+        ],
+      ],
+    );
+  }
+}
+
+/// A small r4 label on a container colour — a status (`Ready`, `Unsaved`) or,
+/// with [mono], a file's change kind (`edited`, `new`).
+class OptimizerTagBadge extends StatelessWidget {
+  const OptimizerTagBadge({
+    super.key,
+    required this.label,
+    required this.background,
+    required this.foreground,
+    this.leading,
+    this.mono = false,
+  });
+
+  final String label;
+  final Color background;
+  final Color foreground;
+
+  /// A dot or glyph before the label — the knowledge card's breathing dot.
+  final Widget? leading;
+
+  /// The tree's and the pending list's `edited` / `new`: mono 11/600 in a
+  /// tighter box, where the status form is 11/500 in the sans face.
+  final bool mono;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: mono
+          ? const EdgeInsets.symmetric(horizontal: 5, vertical: 1)
+          : const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: AppSpace.s4),
+          ],
+          Text(
+            label,
+            maxLines: 1,
+            style: mono
+                ? textTheme.labelSmall?.mono.copyWith(fontWeight: FontWeight.w600, color: foreground)
+                : textTheme.labelSmall?.copyWith(color: foreground),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// How much of the model's context window this session is spending, and on
 /// what.
 ///
-/// The three slices are *identity* colours, not conditions — they tell parts of
-/// one whole apart rather than reporting success or trouble. They borrow
-/// [AppSemanticColors.info] and `warning` because those are the only
-/// seed-independent hues the app has and the bar has exactly three parts; a
-/// fourth slice would be the point to give it its own palette module beside
-/// `core/fee_group_palette.dart`.
+/// The slices are parts of one whole, not conditions. `A3a` / `A3b` draw them
+/// as the accent (system prompt), a fixed steel blue (tool definitions — a
+/// different blue rather than a lighter one, so it survives next to a blue
+/// accent), the warning amber (the conversation, the one slice compaction acts
+/// on and the one that grows until something gives) and the track (what is
+/// left).
 ///
 /// Purely presentational: every number arrives measured, from
 /// `PromptOptimizerAgent.measureContext`.
 class OptimizerContextCard extends StatelessWidget {
   final ContextUsageSnapshot usage;
 
-  /// A line under the legend explaining something about *this mode's* usage —
-  /// `10g` uses it to say that the system-prompt mode mounts no tools, which
-  /// is why one of the slices is always empty there. Null in the modes that
-  /// have nothing to explain.
+  /// A line under the legend explaining something about *this mode's* usage.
+  /// Null in the modes that have nothing to explain.
   final String? note;
 
   const OptimizerContextCard({
@@ -35,113 +171,95 @@ class OptimizerContextCard extends StatelessWidget {
     this.note,
   });
 
-  /// The height of the stacked bar. Under [AppRadius] territory — it is a rule,
-  /// not a container — so it stays a literal beside the pill radius that caps
-  /// its ends.
+  /// The stacked bar's height, and the radius that caps its ends.
   static const double _barHeight = 8;
 
-  static const double _dotSize = 8;
+  static const double _dotSize = 6;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final semantic = context.semantic;
 
-    // Its own palette since the restyle, not `primary` / `info` / `warning`.
-    // The default seed is blue and `semantic.info` is also blue, so the first
-    // two slices — the two that sit side by side — came out the same colour.
-    // See [ContextUsagePalette] for why these are identity colours rather than
-    // theme roles.
-    final brightness = colorScheme.brightness;
     final colors = <ContextUsageSlice, Color>{
-      for (final slice in ContextUsageSlice.values)
-        slice: ContextUsagePalette.of(slice, brightness),
+      ContextUsageSlice.systemPrompt: colorScheme.primary,
+      ContextUsageSlice.tools: ContextUsagePalette.of(ContextUsageSlice.tools, colorScheme.brightness),
+      ContextUsageSlice.history: semantic.warning,
     };
+    final remaining = colorScheme.surfaceContainerHighest;
     final labels = <ContextUsageSlice, String>{
       ContextUsageSlice.systemPrompt: l10n.optCtxSystemPrompt,
       ContextUsageSlice.tools: l10n.optCtxTools,
       ContextUsageSlice.history: l10n.optCtxHistory,
     };
+    final noteStyle = textTheme.labelSmall?.copyWith(
+      fontWeight: FontWeight.w400,
+      color: colorScheme.onSurfaceVariant,
+      height: AppType.looseHeight,
+    );
 
-    return AppCard(
-      outlined: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppSectionLabel(
-            l10n.optCtxTitle,
-            padding: EdgeInsets.zero,
-            trailing: _buildReadout(l10n, colorScheme, textTheme),
-          ),
-          const SizedBox(height: 10),
-          _buildBar(colorScheme, colors),
-          const SizedBox(height: 10),
-          for (final slice in ContextUsageSlice.values)
+    return OptimizerPanelCard(
+      children: [
+        OptimizerPanelCaption(
+          l10n.optCtxTitle,
+          trailing: _buildReadout(l10n, colorScheme, textTheme),
+        ),
+        _buildBar(colors, remaining),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final slice in ContextUsageSlice.values)
+              _buildLegendRow(
+                colorScheme,
+                textTheme,
+                dot: colors[slice]!,
+                label: labels[slice]!,
+                // A missing key is a slice nobody has measured yet — '—', not a
+                // zero the user would read as "this costs nothing".
+                value: usage.isUnknown ? null : usage.slices[slice],
+              ),
             _buildLegendRow(
               colorScheme,
               textTheme,
-              dot: colors[slice]!,
-              label: labels[slice]!,
-              // A missing key is a slice nobody has measured yet — '—', not a
-              // zero the user would read as "this costs nothing".
-              value: usage.isUnknown ? null : usage.slices[slice],
-            ),
-          _buildLegendRow(
-            colorScheme,
-            textTheme,
-            dot: ContextUsagePalette.remaining(colorScheme.brightness),
-            label: l10n.optCtxRemaining,
-            // An unlimited model has real figures and no ceiling: the three
-            // slices still say what was spent, but there is no remainder to
-            // report and a "0 left" there would be exactly backwards.
-            value: usage.hasWindow ? usage.remainingChars : null,
-            muted: true,
-          ),
-          // Said once, under the numbers it qualifies: the window being drawn
-          // is not this model's, it is the default the compaction budget also
-          // assumes. Without it the bar claims a measurement it doesn't have.
-          if (usage.basis == ContextWindowBasis.assumed) ...[
-            const SizedBox(height: 6),
-            Text(
-              l10n.optCtxWindowAssumed,
-              style: textTheme.labelSmall?.copyWith(color: colorScheme.outline, height: AppType.looseHeight),
+              dot: remaining,
+              label: l10n.optCtxRemaining,
+              // An unlimited model has real figures and no ceiling: there is no
+              // remainder to report, and a "0 left" there would be backwards.
+              value: usage.hasWindow ? usage.remainingChars : null,
             ),
           ],
-          if (note != null) ...[
-            const SizedBox(height: 6),
-            Text(
-              note!,
-              style: textTheme.labelSmall?.copyWith(color: colorScheme.outline, height: AppType.looseHeight),
-            ),
-          ],
-        ],
-      ),
+        ),
+        // Said once, under the numbers it qualifies: the window being drawn is
+        // the default the compaction budget assumes, not this model's.
+        if (usage.basis == ContextWindowBasis.assumed) Text(l10n.optCtxWindowAssumed, style: noteStyle),
+        if (note != null) Text(note!, style: noteStyle),
+      ],
     );
   }
 
-  /// `102.2K / 200K` — the spent half in the body colour, the window it is
-  /// spent against in the muted one, so the ratio reads before the digits do.
+  /// `102.2K / 200K` in mono — the spent half in the body ink, the window in
+  /// the secondary one, so the ratio reads before the digits do.
   Widget _buildReadout(
     AppLocalizations l10n,
     ColorScheme colorScheme,
     TextTheme textTheme,
   ) {
+    final base = textTheme.labelSmall?.mono.copyWith(fontWeight: FontWeight.w400);
     if (usage.isUnknown) {
       return Text(
         l10n.optCtxWindowUnknown,
-        style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+        style: base?.copyWith(color: colorScheme.onSurfaceVariant),
       );
     }
 
-    final base = textTheme.labelMedium?.mono;
     return Text.rich(
       TextSpan(
         children: [
           TextSpan(
             text: _formatChars(usage.usedChars),
-            style: base?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurface),
+            style: base?.copyWith(color: colorScheme.onSurface),
           ),
           TextSpan(
             text: usage.hasWindow
@@ -154,21 +272,18 @@ class OptimizerContextCard extends StatelessWidget {
     );
   }
 
-  /// The stacked bar: three slices over the window they are drawn from.
+  /// The stacked bar: three slices over the remainder they are drawn from.
   ///
   /// [LayoutBuilder] with explicit widths rather than `Expanded(flex:)` —
   /// `flex` must be at least 1, so a zero-length slice (which an unmeasured or
-  /// unlimited session makes all three) would assert rather than simply not
-  /// draw.
-  Widget _buildBar(ColorScheme colorScheme, Map<ContextUsageSlice, Color> colors) {
+  /// unlimited session makes all three) would assert rather than not draw.
+  Widget _buildBar(Map<ContextUsageSlice, Color> colors, Color remaining) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.pill),
+      borderRadius: BorderRadius.circular(AppRadius.xs),
       child: SizedBox(
         height: _barHeight,
         child: ColoredBox(
-          // The unfilled remainder of the bar, which is the same thing the
-          // "remaining window" legend dot names — so it takes the same colour.
-          color: ContextUsagePalette.remaining(colorScheme.brightness),
+          color: remaining,
           child: LayoutBuilder(
             builder: (context, constraints) => Row(
               children: [
@@ -185,21 +300,18 @@ class OptimizerContextCard extends StatelessWidget {
     );
   }
 
+  /// One legend pair: dot and label on the left, the figure on the right.
+  /// Rows rather than a wrapping grid — the column narrows to 250px, and a
+  /// label must ellipsize there without clipping the figure beside it.
   Widget _buildLegendRow(
     ColorScheme colorScheme,
     TextTheme textTheme, {
     required Color dot,
     required String label,
     required int? value,
-    bool muted = false,
   }) {
-    final valueColor = muted ? colorScheme.onSurfaceVariant : colorScheme.onSurface;
-
-    // Four rows rather than a grid: the right panel narrows to 250px, and a
-    // two-column grid there cannot ellipsize the label without also clipping
-    // the figure beside it.
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 1),
       child: Row(
         children: [
           Container(
@@ -207,20 +319,24 @@ class OptimizerContextCard extends StatelessWidget {
             height: _dotSize,
             decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSpace.s6),
           Expanded(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+              style: textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w400,
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: OptimizerPanelCard.gap),
           Text(
             value == null ? '—' : _formatChars(value),
-            style: textTheme.labelMedium?.mono.copyWith(
-              color: valueColor,
+            style: textTheme.labelSmall?.mono.copyWith(
+              fontWeight: FontWeight.w400,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -229,12 +345,8 @@ class OptimizerContextCard extends StatelessWidget {
   }
 
   /// `18.2K` past a thousand, `1.6M` past a million, the bare figure below
-  /// both. Locale-independent on purpose: this is a magnitude beside a coloured
-  /// slice, not a quantity the user is expected to do arithmetic with.
-  ///
-  /// The `M` step is not cosmetic — a 1M-token model's window is `1572.9K`,
-  /// which is four digits of precision nobody reads and which pushes the
-  /// readout into the title beside it at 250px.
+  /// both. The `M` step keeps a 1M-token window from reading `1572.9K` and
+  /// pushing the readout into the caption at 250px.
   static String _formatChars(int chars) {
     if (chars < 1000) return '$chars';
     if (chars < 1000000) return '${(chars / 1000).toStringAsFixed(1)}K';

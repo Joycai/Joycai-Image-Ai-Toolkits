@@ -3,9 +3,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/app_semantic_colors.dart';
+import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
+import '../../../l10n/app_localizations.dart';
 
-/// The in-row name field for creating or renaming a folder — `B1b 13b/13c`.
+/// The in-row name field for creating or renaming a folder — `B1b 1d`
+/// 「内联改名校验五态」.
 ///
 /// Lives inside the directory tree row in place of the folder's name, so the
 /// user names the thing where it is going to be rather than in a dialog
@@ -13,9 +17,11 @@ import '../../../core/design_tokens.dart';
 /// Enter commits, Escape cancels, clicking away commits, and a name that has
 /// not changed is a cancel that costs nothing.
 ///
-/// Validation runs on every keystroke and shows under the field; Enter on an
-/// invalid name — an empty one included — shakes the field once instead of
-/// committing, and clicking away from an invalid name abandons it.
+/// Validation runs on every keystroke and shows **under the field**, never as
+/// a snackbar: an error in the error colour, "already in the list" as a
+/// warning. Enter on an invalid name — an empty one included — shakes the
+/// field once instead of committing, and clicking away from an invalid name
+/// abandons it.
 class FolderNameEditor extends StatefulWidget {
   final String initialName;
 
@@ -106,8 +112,8 @@ class _FolderNameEditorState extends State<FolderNameEditor> {
     }
 
     // An empty name goes through the validator like any other bad name —
-    // `13b` lists "cannot be empty" first among the messages, so Enter on it
-    // shakes rather than silently closing the row.
+    // the spec lists "cannot be empty" first among the messages, so Enter on
+    // it shakes rather than silently closing the row.
     final error = widget.validate(name);
     if (error != null) {
       // Clicking away from a bad name abandons it; pressing Enter on one
@@ -147,29 +153,51 @@ class _FolderNameEditorState extends State<FolderNameEditor> {
     if (error != _error) setState(() => _error = error);
   }
 
+  /// "This path is already in the list" is the one message that is a warning
+  /// rather than an error: nothing about the name is wrong, the folder is
+  /// simply registered already.
+  bool _isWarning(BuildContext context, String message) =>
+      message == AppLocalizations.of(context)?.folderPathRegistered;
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final accent = _error == null ? colorScheme.primary : colorScheme.error;
+    final semantic = context.semantic;
 
-    final field = Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+    final error = _error;
+    final warning = error != null && _isWarning(context, error);
+
+    final Color edge;
+    final Color halo;
+    if (error == null) {
+      edge = colorScheme.primary;
+      halo = colorScheme.accentRing;
+    } else if (warning) {
+      edge = semantic.warning;
+      halo = semantic.warning.withValues(alpha: AppAlpha.tint);
+    } else {
+      edge = colorScheme.error;
+      halo = colorScheme.error.withValues(alpha: AppAlpha.tint);
+    }
+
+    final field = AnimatedContainer(
+      duration: AppMotion.durationOf(context, AppMotion.hover),
+      curve: AppMotion.quick,
+      height: AppSize.control,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.control),
-        border: Border.all(color: accent, width: 1.5),
-        boxShadow: [
-          BoxShadow(color: accent.withValues(alpha: AppAlpha.tint), spreadRadius: 3),
-        ],
+        border: Border.all(color: edge),
+        boxShadow: [BoxShadow(color: halo, spreadRadius: 3)],
       ),
       alignment: Alignment.centerLeft,
       child: TextField(
         controller: _controller,
         focusNode: _focusNode,
         enabled: !_submitting,
-        style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w500),
+        style: textTheme.bodySmall!.mono.copyWith(color: colorScheme.onSurface),
         decoration: const InputDecoration.collapsed(hintText: null),
         maxLines: 1,
         onChanged: _onChanged,
@@ -181,19 +209,38 @@ class _FolderNameEditorState extends State<FolderNameEditor> {
       ),
     );
 
+    final Color messageInk = warning ? semantic.onWarningContainer : colorScheme.onErrorContainer;
+    final Color messageGlyph = warning ? semantic.warning : colorScheme.error;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         _shaken(field),
-        if (_error != null)
+        if (error != null)
           Padding(
-            padding: const EdgeInsets.only(top: 4, left: 2),
-            child: Text(
-              _error!,
-              style: textTheme.labelSmall?.copyWith(color: colorScheme.error),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            padding: const EdgeInsets.only(top: AppSpace.s6, left: 2),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(
+                    warning ? Icons.warning_amber_rounded : Icons.error_outline,
+                    size: 12,
+                    color: messageGlyph,
+                  ),
+                ),
+                const SizedBox(width: AppSpace.s4),
+                Expanded(
+                  child: Text(
+                    error,
+                    style: textTheme.labelSmall!.copyWith(color: messageInk),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
       ],
@@ -206,7 +253,7 @@ class _FolderNameEditorState extends State<FolderNameEditor> {
     return TweenAnimationBuilder<double>(
       key: ValueKey(_shake),
       tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 320),
+      duration: AppMotion.durationOf(context, AppMotion.panel),
       builder: (context, t, child) => Transform.translate(
         offset: Offset(math.sin(t * math.pi * 4) * 4 * (1 - t), 0),
         child: child,

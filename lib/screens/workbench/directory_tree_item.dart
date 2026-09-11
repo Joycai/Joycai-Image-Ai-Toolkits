@@ -8,7 +8,9 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
+import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/browser_file.dart';
 import '../../services/file_permission_service.dart';
@@ -19,15 +21,19 @@ import '../../state/file_browser_state.dart';
 import '../../state/file_staging_state.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/app_snackbar.dart';
-import '../../widgets/dashed_border.dart';
+import '../../widgets/glass/app_glass.dart';
 import '../browser/folder_move_flow.dart';
 import '../browser/staging_paste_flow.dart';
 import '../browser/widgets/folder_context_menu.dart';
 import '../browser/widgets/folder_delete_dialog.dart';
 import '../browser/widgets/folder_name_editor.dart';
 
-/// Folders are amber everywhere in the app. It is the one colour in the tree
-/// that is not reporting state, which is exactly why a folder can keep it.
+/// The amber a folder takes where it stands for a *destination* — the staging
+/// panel's target, the drag chip.
+///
+/// The folder column itself no longer uses it: `A1 1a` draws the tree's
+/// folders in the quiet secondary ink, so the only colour in the column is
+/// the selection.
 const Color kFolderAmber = Color(0xFFE0A64B);
 
 /// What a folder row hands to a drop target when it is dragged — `B1b 13e`.
@@ -45,7 +51,17 @@ enum _RowEdit { creating, renaming }
 
 class DirectoryTreeItem extends StatefulWidget {
   final String path;
+
+  /// Whether this item heads a registered tree. Kept for callers; the row's
+  /// geometry comes from [depth], and "is this a registration" is asked of
+  /// the state, not of this flag.
   final bool isRoot;
+
+  /// Nesting level — 0 for a root. Indents the row's *content* by
+  /// [FolderTreeMetrics.indentStep] per level while its ground keeps the
+  /// column's full width (`A1` `srcFolders`: 10px root, 26px child).
+  final int depth;
+
   final bool useFileBrowserState;
   final Function(String, String)? onRemove;
 
@@ -53,6 +69,7 @@ class DirectoryTreeItem extends StatefulWidget {
     super.key,
     required this.path,
     this.isRoot = false,
+    this.depth = 0,
     this.useFileBrowserState = false,
     this.onRemove,
   });
@@ -397,139 +414,114 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
         ? appState.unreachableBrowserDirectories.contains(widget.path)
         : appState.galleryState.unreachableDirectories.contains(widget.path);
     final folderName = p.basename(widget.path);
-    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
+    final metrics = FolderTreeMetrics.of(context);
+    final renaming = _edit == _RowEdit.renaming;
 
-    // A root is boxed so the eye can find where one tree ends and the next
-    // begins; below it, only the highlighted row is drawn. Nesting already says
-    // a child is a child — an outline on each one would say it twice.
-    final colorScheme = theme.colorScheme;
-    final Color? boxColor = highlight ? colorScheme.accentTint : null;
-    final Color borderColor = highlight
-        ? colorScheme.primary.withValues(alpha: 0.6)
-        : (widget.isRoot ? colorScheme.outlineVariant.withAlpha(120) : Colors.transparent);
-
-    // [hovered]: a drop is about to land here, so the folder shows open
-    // (`13e`) — the same glyph it would have once the drop goes in.
-    Widget leading(bool hovered) => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (isUnreachable)
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Tooltip(
-              message: "Access Denied (Click to re-authorize)",
-              child: InkWell(
-                onTap: () => _reAuthorize(context, appState),
-                child: Icon(Icons.lock_person, size: 18, color: theme.colorScheme.error),
-              ),
-            ),
-          )
-        else
-          Checkbox(
-            value: isSelected,
-            onChanged: (val) {
-              if (widget.useFileBrowserState) {
-                appState.fileBrowserState.toggleDirectory(widget.path);
-              } else {
-                // Checkbox = include/exclude from the aggregate; the live
-                // aggregate rescans, no forced view switch.
-                appState.galleryState.toggleDirectory(widget.path);
-              }
-            },
-            visualDensity: VisualDensity.compact,
-            // The box, not the 48px tap target around it. `16a` draws a
-            // 16px square, and in a 236px column the target's padding is
-            // the difference between a readable name and an ellipsis.
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    // The checkbox is not in `A1 1a`, which draws the tree bare. It stays: in
+    // the gallery it is the only control for what All Sources aggregates, in
+    // the browser it is which folders are listed. While the name is being
+    // typed its slot is kept blank, so the field lines up with the rows
+    // around it.
+    final Widget marker;
+    if (renaming) {
+      marker = SizedBox(width: metrics.markerBox);
+    } else if (isUnreachable) {
+      marker = Tooltip(
+        message: "Access Denied (Click to re-authorize)",
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _reAuthorize(context, appState),
+          child: SizedBox.square(
+            dimension: metrics.markerBox,
+            child: Icon(Icons.lock_person, size: AppSize.iconMd, color: colorScheme.error),
           ),
-        Icon(
-          _isExpanded || hovered ? Icons.folder_open : Icons.folder,
-          size: 20,
-          // Folders keep their own colour rather than tracking selection:
-          // the checkbox beside it and the box around it already report
-          // that, and a tree of grey folders reads as a tree of disabled
-          // ones.
-          color: isUnreachable ? colorScheme.error.withAlpha(100) : kFolderAmber,
         ),
-        const SizedBox(width: 8),
-      ],
-    );
-
-    Widget rowBody(bool hovered) {
-      if (_edit == _RowEdit.renaming) {
-        return _EditorRow(
-          indentRoot: widget.isRoot,
-          checkboxSlot: !isUnreachable,
-          editor: FolderNameEditor(
-            initialName: folderName,
-            validate: (name) => _nameError(l10n, p.dirname(widget.path), name, currentPath: widget.path),
-            onSubmit: _commitRename,
-            onCancel: _cancelEdit,
-          ),
-        );
-      }
-      return ListTile(
-        dense: true,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 4, right: 4),
-        // ListTile budgets 40px for a leading slot and 16 between it and the
-        // title, both of which this row has already spent inside its own
-        // leading Row. At `16a`'s 236px column that reserved-but-unused
-        // space came out of the folder name — a six-letter name ellipsized
-        // to two.
-        minLeadingWidth: 0,
-        horizontalTitleGap: 6,
-        leading: leading(hovered),
-        title: Text(
-          folderName,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
-            color: highlight ? theme.colorScheme.primary : (isUnreachable ? theme.colorScheme.error : null),
-          ),
-          overflow: TextOverflow.ellipsis,
+      );
+    } else {
+      marker = SizedBox.square(
+        dimension: metrics.markerBox,
+        child: Checkbox(
+          value: isSelected,
+          onChanged: (_) {
+            if (widget.useFileBrowserState) {
+              appState.fileBrowserState.toggleDirectory(widget.path);
+            } else {
+              // Checkbox = include/exclude from the aggregate; the live
+              // aggregate rescans, no forced view switch.
+              appState.galleryState.toggleDirectory(widget.path);
+            }
+          },
+          visualDensity: metrics.markerDensity,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!isUnreachable && (_subDirectories == null || _subDirectories!.isNotEmpty))
-              IconButton(
-                icon: _isLoading
-                  ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, size: 18),
-                onPressed: () => _handleExpansionChanged(!_isExpanded),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                visualDensity: VisualDensity.compact,
-              ),
-
-            if (_isRegisteredRoot && widget.onRemove != null)
-              IconButton(
-                icon: const Icon(Icons.close, size: 16),
-                onPressed: () => widget.onRemove!(widget.path, folderName),
-                padding: const EdgeInsets.only(left: 4),
-                constraints: const BoxConstraints(),
-                visualDensity: VisualDensity.compact,
-              ),
-          ],
-        ),
-        onTap: () {
-          _focusNode.requestFocus();
-          if (isUnreachable) {
-            _reAuthorize(context, appState);
-          } else if (widget.useFileBrowserState) {
-            // File Browser keeps tap-to-toggle.
-            appState.fileBrowserState.toggleDirectory(widget.path);
-          } else {
-            // Gallery: tapping the name browses just this folder.
-            appState.galleryState.setViewFolder(widget.path);
-          }
-        },
       );
     }
 
-    final row = Container(
-      margin: const EdgeInsets.fromLTRB(6, 2, 6, 2),
+    final canExpand = !isUnreachable &&
+        !renaming &&
+        (_subDirectories == null || _subDirectories!.isNotEmpty);
+    final TreeDisclosure disclosure = !canExpand
+        ? TreeDisclosure.none
+        : _isLoading
+            ? TreeDisclosure.loading
+            : (_isExpanded ? TreeDisclosure.expanded : TreeDisclosure.collapsed);
+
+    void onTap() {
+      _focusNode.requestFocus();
+      if (isUnreachable) {
+        _reAuthorize(context, appState);
+      } else if (widget.useFileBrowserState) {
+        // File Browser keeps tap-to-toggle.
+        appState.fileBrowserState.toggleDirectory(widget.path);
+      } else {
+        // Gallery: tapping the name browses just this folder.
+        appState.galleryState.setViewFolder(widget.path);
+      }
+    }
+
+    // [dropHovered]: a drop is about to land here, so the folder shows open
+    // (`13e`) — the same glyph it would have once the drop goes in.
+    Widget row(bool dropHovered) => FolderTreeRow(
+          depth: widget.depth,
+          disclosure: disclosure,
+          onToggle: () => _handleExpansionChanged(!_isExpanded),
+          marker: marker,
+          icon: dropHovered ? Icons.folder_open_outlined : Icons.folder_outlined,
+          iconColor: isUnreachable ? colorScheme.error.withValues(alpha: AppAlpha.disabled) : null,
+          label: folderName,
+          labelColor: isUnreachable ? colorScheme.error : null,
+          selected: highlight,
+          dropHovered: dropHovered,
+          // The workbench has no context menu, so this is its only way to
+          // take a folder off the list.
+          hoverAction: _isRegisteredRoot && widget.onRemove != null && _edit == null
+              ? FolderTreeRowAction(
+                  icon: Icons.close,
+                  tooltip: l10n.remove,
+                  onPressed: () => widget.onRemove!(widget.path, folderName),
+                )
+              : null,
+          editor: renaming
+              ? FolderNameEditor(
+                  initialName: folderName,
+                  validate: (name) => _nameError(l10n, p.dirname(widget.path), name, currentPath: widget.path),
+                  onSubmit: _commitRename,
+                  onCancel: _cancelEdit,
+                )
+              : null,
+          onTap: renaming ? null : onTap,
+          // The file browser's paste target is named on the folder's own
+          // context menu (`12d`); the workbench's copy of this tree has no
+          // staging area behind it.
+          onSecondaryTapDown: widget.useFileBrowserState && _edit == null
+              ? (details) => _showMenu(details.globalPosition)
+              : null,
+        );
+
+    final rowWidget = Padding(
+      padding: EdgeInsets.symmetric(horizontal: metrics.margin),
       // `12d`'s second way to name a destination: drop the selection on a
       // folder. Default is move, Ctrl copies — the convention every file
       // manager already trained the user on. Browser only; the workbench
@@ -542,82 +534,55 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
           if (!_isExpanded) _handleExpansionChanged(true);
         },
         builder: (context, hovered) {
-          // The box is a Material rather than a decorated Container: ListTile
-          // paints its own fill and its ink onto the nearest Material
-          // ancestor, and a Container painting on top of that hid both — the
-          // framework says so at every build. Same fill, same border, same
-          // radius.
-          Widget material = Material(
-            color: hovered ? colorScheme.accentTint : (boxColor ?? Colors.transparent),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: hovered
-                  ? BorderSide(color: colorScheme.primary, width: 1.5)
-                  : BorderSide(color: borderColor),
-            ),
-            clipBehavior: Clip.antiAlias,
-            // The file browser's paste target is named here and nowhere else.
-            // `12d` puts it on the folder's own context menu because that is
-            // the only place in the app where a folder is a thing you can
-            // point at — the grid shows a merged listing with no folder of its
-            // own. Gated on the browser: the workbench's copy of this tree has
-            // no staging area behind it.
-            child: Focus(
-              focusNode: _focusNode,
-              onKeyEvent: _onKey,
-              child: GestureDetector(
-                onSecondaryTapDown: widget.useFileBrowserState && _edit == null
-                    ? (details) => _showMenu(details.globalPosition)
-                    : null,
-                child: rowBody(hovered),
-              ),
-            ),
+          Widget child = Focus(
+            focusNode: _focusNode,
+            onKeyEvent: _onKey,
+            child: row(hovered),
           );
-          if (_pulse > 0) material = _Pulsed(key: ValueKey(_pulse), child: material);
-          return material;
+          if (_pulse > 0) child = _Pulsed(key: ValueKey(_pulse), child: child);
+          return child;
         },
       ),
     );
 
     final column = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        row,
-        if (_isExpanded && (_subDirectories != null || _edit == _RowEdit.creating))
-          Padding(
-            padding: const EdgeInsets.only(left: 24.0),
-            child: Column(
-              children: [
-                if (_edit == _RowEdit.creating)
-                  Container(
-                    margin: const EdgeInsets.fromLTRB(6, 2, 6, 2),
-                    child: _EditorRow(
-                      indentRoot: false,
-                      checkboxSlot: true,
-                      editor: FolderNameEditor(
-                        initialName: l10n.newFolderDefaultName,
-                        validate: (name) => _nameError(l10n, widget.path, name),
-                        onSubmit: _commitCreate,
-                        onCancel: _cancelEdit,
-                      ),
-                    ),
-                  ),
-                ...(_subDirectories ?? const <Directory>[]).map((dir) {
-                  return DirectoryTreeItem(
-                    // Keyed by path so expansion state follows the directory
-                    // when siblings are added/removed across refreshes.
-                    key: ValueKey(dir.path),
-                    path: dir.path,
-                    isRoot: false,
-                    useFileBrowserState: widget.useFileBrowserState,
-                    // Registered roots can also appear below another root.
-                    // Carry this callback so those rows remain protected.
-                    onRemove: widget.onRemove,
-                  );
-                }),
-              ],
+        rowWidget,
+        if (_isExpanded && (_subDirectories != null || _edit == _RowEdit.creating)) ...[
+          if (_edit == _RowEdit.creating)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: metrics.margin),
+              child: FolderTreeRow(
+                depth: widget.depth + 1,
+                disclosure: TreeDisclosure.none,
+                marker: SizedBox(width: metrics.markerBox),
+                icon: Icons.folder_outlined,
+                label: l10n.newFolderDefaultName,
+                editor: FolderNameEditor(
+                  initialName: l10n.newFolderDefaultName,
+                  validate: (name) => _nameError(l10n, widget.path, name),
+                  onSubmit: _commitCreate,
+                  onCancel: _cancelEdit,
+                ),
+              ),
             ),
-          ),
+          ...(_subDirectories ?? const <Directory>[]).map((dir) {
+            return DirectoryTreeItem(
+              // Keyed by path so expansion state follows the directory
+              // when siblings are added/removed across refreshes.
+              key: ValueKey(dir.path),
+              path: dir.path,
+              isRoot: false,
+              depth: widget.depth + 1,
+              useFileBrowserState: widget.useFileBrowserState,
+              // Registered roots can also appear below another root.
+              // Carry this callback so those rows remain protected.
+              onRemove: widget.onRemove,
+            );
+          }),
+        ],
       ],
     );
 
@@ -641,48 +606,431 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   }
 }
 
-/// The row while its name is being typed — `13b`. Same geometry as the
-/// [ListTile] it replaces: the checkbox slot is kept (blank, same size) so the
-/// folder icon and the field line up with the rows above and below.
-class _EditorRow extends StatelessWidget {
-  final bool indentRoot;
-  final bool checkboxSlot;
-  final Widget editor;
+// ------------------------------------------------------------ shared rows
 
-  const _EditorRow({
-    required this.indentRoot,
-    required this.checkboxSlot,
-    required this.editor,
+/// Whether a tree row draws a disclosure chevron, and which way it points.
+///
+/// A row with no disclosure *slot* at all — a fixed node such as All Sources —
+/// passes null instead of [none].
+enum TreeDisclosure {
+  /// The slot is kept, empty, so a leaf's name lines up with its siblings'.
+  none,
+  collapsed,
+  expanded,
+  loading,
+}
+
+/// The geometry of one row of the folder column: `A1 1a` under a pointer,
+/// `A1 1e`'s drawer below the phone breakpoint.
+///
+/// Shared by the source tree, the result tree and the fixed nodes above them,
+/// so the three read as one list.
+@immutable
+class FolderTreeMetrics {
+  const FolderTreeMetrics._({
+    required this.touch,
+    required this.height,
+    required this.margin,
+    required this.padding,
+    required this.gap,
+    required this.fixedGap,
+    required this.icon,
+    required this.markerBox,
+    required this.markerGap,
+    required this.markerDensity,
+    required this.headerInset,
   });
+
+  /// Whether this is the phone drawer's variant.
+  final bool touch;
+
+  /// Row height: 32, or 44 for a finger.
+  final double height;
+
+  /// Horizontal gap between the row's ground and the column's edge.
+  final double margin;
+
+  /// Horizontal padding inside the ground, before any indent.
+  final double padding;
+
+  /// Gap between a row's pieces when it has a disclosure slot.
+  final double gap;
+
+  /// Gap between a fixed node's icon and label (`1a`: 8 there, 6 in the tree).
+  final double fixedGap;
+
+  /// The row's leading glyph.
+  final double icon;
+
+  /// The square the checkbox (or its blank stand-in) occupies.
+  final double markerBox;
+
+  /// Space after the marker. The checkbox's box already pads its glyph.
+  final double markerGap;
+
+  final VisualDensity markerDensity;
+
+  /// Horizontal inset of a group caption.
+  final double headerInset;
+
+  /// Content indent per nesting level (`A1` `srcFolders`: 10 → 26).
+  static const double indentStep = 16;
+
+  /// The chevron glyph, and the width its slot reserves.
+  static const double disclosureSize = AppSize.iconSm;
+
+  static const FolderTreeMetrics _pointer = FolderTreeMetrics._(
+    touch: false,
+    height: AppSize.control,
+    margin: AppSpace.s6,
+    padding: AppSpace.s10,
+    gap: AppSpace.s6,
+    fixedGap: 8,
+    icon: AppSize.iconMd,
+    markerBox: 24,
+    markerGap: 2,
+    markerDensity: VisualDensity(
+      horizontal: VisualDensity.minimumDensity,
+      vertical: VisualDensity.minimumDensity,
+    ),
+    headerInset: AppSpace.s16,
+  );
+
+  static const FolderTreeMetrics _touch = FolderTreeMetrics._(
+    touch: true,
+    height: AppSize.touch,
+    margin: 8,
+    padding: 12,
+    gap: AppSpace.s10,
+    fixedGap: AppSpace.s10,
+    icon: AppSize.iconLg,
+    markerBox: 32,
+    markerGap: 0,
+    markerDensity: VisualDensity.compact,
+    headerInset: 18,
+  );
+
+  /// A touch tablet keeps the pointer geometry at a finger's 40
+  /// (`B1a · 1c`: drawer rows 40).
+  static const FolderTreeMetrics _tablet = FolderTreeMetrics._(
+    touch: false,
+    height: AppSize.large,
+    margin: AppSpace.s6,
+    padding: AppSpace.s10,
+    gap: AppSpace.s6,
+    fixedGap: 8,
+    icon: AppSize.iconMd,
+    markerBox: 24,
+    markerGap: 2,
+    markerDensity: VisualDensity(
+      horizontal: VisualDensity.minimumDensity,
+      vertical: VisualDensity.minimumDensity,
+    ),
+    headerInset: AppSpace.s16,
+  );
+
+  static FolderTreeMetrics of(BuildContext context) {
+    if (Responsive.isMobile(context)) return _touch;
+    if (Platform.isAndroid || Platform.isIOS) return _tablet;
+    return _pointer;
+  }
+
+  /// The row's name: 13, or the drawer's 14.
+  TextStyle labelStyle(TextTheme textTheme) =>
+      (touch ? textTheme.bodyLarge : textTheme.bodyMedium) ?? const TextStyle();
+
+  /// A row's count: mono 11 (12 in the drawer) at regular weight, untracked.
+  TextStyle countStyle(TextTheme textTheme) =>
+      ((touch ? textTheme.bodySmall : textTheme.labelSmall) ?? const TextStyle())
+          .mono
+          .copyWith(fontWeight: FontWeight.w400, letterSpacing: 0);
+}
+
+/// One row of the folder column — `A1 1a`.
+///
+/// Draws its own ground (selected wash, hover wash, drop-target edge) inside
+/// the margin its caller gives it, so a drop target wrapped around it frames
+/// the ground and not the gutter.
+class FolderTreeRow extends StatefulWidget {
+  const FolderTreeRow({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.depth = 0,
+    this.disclosure,
+    this.onToggle,
+    this.marker,
+    this.iconColor,
+    this.labelColor,
+    this.count,
+    this.hoverAction,
+    this.editor,
+    this.selected = false,
+    this.dropHovered = false,
+    this.onTap,
+    this.onSecondaryTapDown,
+  });
+
+  final IconData icon;
+  final String label;
+  final int depth;
+
+  /// Null for a row with no disclosure slot at all.
+  final TreeDisclosure? disclosure;
+
+  final VoidCallback? onToggle;
+
+  /// Drawn between the chevron and the icon — the tree's checkbox.
+  final Widget? marker;
+
+  /// Overrides the icon's colour, which otherwise follows [selected].
+  final Color? iconColor;
+
+  /// Overrides the label's colour, which otherwise follows [selected].
+  final Color? labelColor;
+
+  final String? count;
+
+  /// Revealed while the row is hovered or selected, and always on a phone.
+  final Widget? hoverAction;
+
+  /// Replaces the label, count and action — the in-row name field.
+  final Widget? editor;
+
+  final bool selected;
+
+  /// A drop is about to land here.
+  final bool dropHovered;
+
+  final VoidCallback? onTap;
+  final GestureTapDownCallback? onSecondaryTapDown;
+
+  @override
+  State<FolderTreeRow> createState() => _FolderTreeRowState();
+}
+
+class _FolderTreeRowState extends State<FolderTreeRow> {
+  bool _hovered = false;
+
+  void _setHovered(bool value) {
+    if (_hovered != value) setState(() => _hovered = value);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(left: indentRoot ? 8 : 4, right: 4, top: 4, bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (checkboxSlot)
-            Visibility(
-              visible: false,
-              maintainSize: true,
-              maintainAnimation: true,
-              maintainState: true,
-              child: Checkbox(
-                value: false,
-                onChanged: null,
-                visualDensity: VisualDensity.compact,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final metrics = FolderTreeMetrics.of(context);
+    final duration = AppMotion.durationOf(context, AppMotion.hover);
+    final selected = widget.selected;
+    final editing = widget.editor != null;
+
+    // In an editing row the leading pieces sit level with the 32px field
+    // rather than centred on a row the error line may have made taller.
+    final double band = editing ? AppSize.control : metrics.height;
+    final double gap = widget.disclosure == null ? metrics.fixedGap : metrics.gap;
+
+    final Color ground = widget.dropHovered || selected
+        ? colorScheme.accentTint
+        : (_hovered && !editing
+            ? colorScheme.onSurface.withValues(alpha: 0.06)
+            : colorScheme.onSurface.withValues(alpha: 0));
+    final Color iconColor = widget.iconColor ??
+        (selected || widget.dropHovered ? colorScheme.primary : colorScheme.onSurfaceVariant);
+    final Color labelColor = widget.labelColor ?? (selected ? colorScheme.onAccentTint : colorScheme.onSurface);
+    final Color countColor = selected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant;
+
+    final bool showAction =
+        _hovered || selected || metrics.touch || Platform.isIOS || Platform.isAndroid;
+
+    final children = <Widget>[
+      if (widget.disclosure != null) _disclosure(colorScheme, band, gap),
+      if (widget.marker != null) ...[
+        SizedBox(height: band, child: Center(child: widget.marker)),
+        if (metrics.markerGap > 0) SizedBox(width: metrics.markerGap),
+      ],
+      SizedBox(
+        height: band,
+        child: Center(child: Icon(widget.icon, size: metrics.icon, color: iconColor)),
+      ),
+      SizedBox(width: gap),
+      if (editing)
+        Expanded(child: widget.editor!)
+      else ...[
+        Expanded(
+          child: Text(
+            widget.label,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: metrics.labelStyle(theme.textTheme).copyWith(
+                  color: labelColor,
+                  fontWeight: selected ? FontWeight.w500 : null,
+                ),
+          ),
+        ),
+        if (widget.count != null) ...[
+          SizedBox(width: gap),
+          Text(widget.count!, style: metrics.countStyle(theme.textTheme).copyWith(color: countColor)),
+        ],
+        if (widget.hoverAction != null) ...[
+          const SizedBox(width: AppSpace.s4),
+          ExcludeSemantics(
+            excluding: !showAction,
+            child: IgnorePointer(
+              ignoring: !showAction,
+              child: AnimatedOpacity(
+                opacity: showAction ? 1 : 0,
+                duration: duration,
+                curve: AppMotion.quick,
+                child: widget.hoverAction,
               ),
             ),
-          const Padding(
-            padding: EdgeInsets.only(top: 6),
-            child: Icon(Icons.folder, size: 20, color: kFolderAmber),
           ),
-          const SizedBox(width: 8),
-          Expanded(child: editor),
-          const SizedBox(width: 4),
         ],
+      ],
+    ];
+
+    final double vertical = editing ? AppSpace.s4 : 0;
+    final body = AnimatedContainer(
+      duration: duration,
+      curve: AppMotion.quick,
+      constraints: BoxConstraints(minHeight: metrics.height),
+      padding: EdgeInsets.fromLTRB(
+        metrics.padding + widget.depth * FolderTreeMetrics.indentStep,
+        vertical,
+        metrics.padding,
+        vertical,
+      ),
+      decoration: BoxDecoration(
+        color: ground,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      // Foreground, so the edge does not push the content over by its width.
+      foregroundDecoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(
+          color: widget.dropHovered ? colorScheme.primary : colorScheme.primary.withValues(alpha: 0),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: editing ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        children: children,
+      ),
+    );
+
+    return MouseRegion(
+      cursor: widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+      onEnter: (_) => _setHovered(true),
+      onExit: (_) => _setHovered(false),
+      child: Semantics(
+        button: widget.onTap != null,
+        selected: selected,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          onSecondaryTapDown: widget.onSecondaryTapDown,
+          child: body,
+        ),
+      ),
+    );
+  }
+
+  Widget _disclosure(ColorScheme colorScheme, double band, double gap) {
+    final disclosure = widget.disclosure!;
+    final Widget glyph = switch (disclosure) {
+      TreeDisclosure.none => const SizedBox.shrink(),
+      TreeDisclosure.loading => SizedBox.square(
+          dimension: 10,
+          child: CircularProgressIndicator(strokeWidth: 1.5, color: colorScheme.outline),
+        ),
+      TreeDisclosure.collapsed =>
+        Icon(Icons.chevron_right, size: FolderTreeMetrics.disclosureSize, color: colorScheme.outline),
+      TreeDisclosure.expanded =>
+        Icon(Icons.expand_more, size: FolderTreeMetrics.disclosureSize, color: colorScheme.outline),
+    };
+
+    // The gap after the chevron is part of its hit area: a 14px glyph alone
+    // is too small a target.
+    final slot = SizedBox(
+      width: FolderTreeMetrics.disclosureSize + gap,
+      height: band,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: SizedBox.square(
+          dimension: FolderTreeMetrics.disclosureSize,
+          child: Center(child: glyph),
+        ),
+      ),
+    );
+
+    final interactive = widget.onToggle != null &&
+        (disclosure == TreeDisclosure.collapsed || disclosure == TreeDisclosure.expanded);
+    if (!interactive) return slot;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onToggle,
+        child: slot,
+      ),
+    );
+  }
+}
+
+/// A small glyph action at the end of a [FolderTreeRow] — remove a folder
+/// from the list.
+///
+/// No ink: the row paints its own ground above the nearest [Material], which
+/// would hide a splash. The glyph darkens on hover instead.
+class FolderTreeRowAction extends StatefulWidget {
+  const FolderTreeRowAction({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  State<FolderTreeRowAction> createState() => _FolderTreeRowActionState();
+}
+
+class _FolderTreeRowActionState extends State<FolderTreeRowAction> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final metrics = FolderTreeMetrics.of(context);
+    return Tooltip(
+      message: widget.tooltip,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: Semantics(
+          button: true,
+          label: widget.tooltip,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onPressed,
+            child: SizedBox.square(
+              dimension: metrics.touch ? AppSize.control : 20,
+              child: Center(
+                child: Icon(
+                  widget.icon,
+                  size: AppSize.iconSm,
+                  color: _hovered ? colorScheme.onSurface : colorScheme.outline,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -711,7 +1059,7 @@ class _Pulsed extends StatelessWidget {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: colorScheme.primary.withValues(alpha: AppAlpha.tint * t),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                 ),
               ),
@@ -731,41 +1079,40 @@ class _FolderDragChip extends StatelessWidget {
 
   const _FolderDragChip({required this.name, required this.copying});
 
+  /// `B1a · 1b`: the same small G2 glass piece the file drag uses, 32 tall at
+  /// r10, with the move or copy wording following the Ctrl key.
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        margin: const EdgeInsets.only(left: 12, top: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppOverlay.ink,
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, top: 12),
+      child: Material(
+        type: MaterialType.transparency,
+        child: SizedBox(
+          height: AppSize.control,
+          child: AppGlass(
+            grade: GlassGrade.float,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.drive_file_move_outline, size: AppSize.iconMd, color: scheme.primary),
+                const SizedBox(width: AppSpace.s6),
+                ValueListenableBuilder<bool>(
+                  valueListenable: copying,
+                  builder: (context, copy, _) => Text(
+                    copy ? l10n.dragCopyFolderHint(name) : l10n.dragMoveFolderHint(name),
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.folder, size: 14, color: kFolderAmber),
-            const SizedBox(width: 6),
-            ValueListenableBuilder<bool>(
-              valueListenable: copying,
-              builder: (context, copy, _) => Text(
-                copy ? l10n.dragCopyFolderHint(name) : l10n.dragMoveFolderHint(name),
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: AppOverlay.onInk, fontWeight: FontWeight.w500),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -878,19 +1225,15 @@ class _MaybeDropTargetState extends State<_MaybeDropTarget> {
         children: [
           widget.builder(context, candidate.isNotEmpty),
           if (candidate.isNotEmpty)
-            // Inset inside the solid edge (`13e`: inset 2, radius 6). Drawn
-            // on the same line as the solid rule the two merged into one
-            // thick stroke and the dash was lost.
+            // `B1a · 1b`: the target folder takes a solid 2px accent ring over
+            // its tint ground, at the row's own r6.
             Positioned.fill(
-              left: 2,
-              top: 2,
-              right: 2,
-              bottom: 2,
               child: IgnorePointer(
-                child: DashedBorder(
-                  color: Theme.of(context).colorScheme.primary,
-                  radius: 6,
-                  strokeWidth: 1.5,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
+                  ),
                 ),
               ),
             ),

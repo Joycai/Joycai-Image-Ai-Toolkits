@@ -1,49 +1,29 @@
 import 'package:flutter/material.dart';
 
-/// Success, warning and information — the three meanings the seed colour is
-/// not allowed to touch.
+/// Success, warning and information — the meanings the theme colour is not
+/// allowed to touch.
 ///
-/// Everything else in the app takes its hue from whichever of the seven
-/// [AppConstants.presetThemes] the user picked. These three must not: green
-/// means *this worked* and amber means *look at this* in every theme, and a
-/// success badge that turned orange because the user likes orange would be
-/// telling them something false. So these are literals — the only literals in
-/// the theme — with a pair per brightness, taken from the *Joycai 设计规范*
-/// sheet.
+/// A success badge that turned orange because the user likes orange would be
+/// telling them something false, so these are literals, a set per brightness,
+/// from `00 设计系统 · 1b`. Containers are **opaque**: they land on panels,
+/// columns and cards alike, and a translucent wash would read as a different
+/// colour on each.
 ///
-/// **Destructive is deliberately absent.** [ColorScheme.error] already is this
-/// colour: [ColorScheme.fromSeed] builds the error palette from a fixed hue
-/// rather than from the seed, so it is seed-independent for the same reason
-/// these are, and Material supplies the container/on-container pair too. A
-/// fourth field here would be a second answer to a question already answered —
-/// which is exactly how the app ended up with the same amber written out in
-/// three files. Use `colorScheme.error` / `errorContainer` / `onErrorContainer`.
-///
-/// **Identity colours are also absent** — the per-metric accents in
-/// `usage_summary.dart` and the model-type chip colours in `models_screen.dart`
-/// pick a hue to tell categories apart, not to state a condition. Those belong
-/// in their own palette module beside `core/fee_group_palette.dart`; putting
-/// them here would make this a junk drawer of every colour that isn't the seed.
+/// Destructive is [ColorScheme.error], which `buildAppColorScheme` writes from
+/// the same table (`--err` / `--err-bg` / `--err-ink`). Identity colours —
+/// fee groups, model-type chips — are not states and do not belong here.
 @immutable
 class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
-  /// The colour at full strength: an icon, a dot, a progress bar, a 1px rule.
-  ///
-  /// For *text*, prefer [onSuccessContainer] on [successContainer] — a label
-  /// in this colour on a plain surface is legible but shouty, and the spec
-  /// only ever draws it as a fill.
+  /// Full strength: an icon, a dot, a progress bar, a 1px rule.
   final Color success;
 
-  /// A label sitting on a solid [success] fill.
+  /// A label on a solid [success] fill.
   final Color onSuccess;
 
-  /// The wash behind a success badge. Opaque, not an alpha over the surface:
-  /// these land on cards, panels and the canvas alike, and a translucent
-  /// version would read as a different colour on each.
+  /// The opaque wash behind a success badge (`--ok-bg`).
   final Color successContainer;
 
-  /// Text and icons on [successContainer]. A tone darker (light) or lighter
-  /// (dark) than [success], which is what keeps a badge's label readable
-  /// without the badge itself going solid.
+  /// Text on [successContainer] (`--ok-ink`).
   final Color onSuccessContainer;
 
   final Color warning;
@@ -71,55 +51,40 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     required this.onInfoContainer,
   });
 
-  /// Spec §色板, light. Base hues are the sheet's own values; the containers
-  /// are those hues flattened at ~11% over the sheet's white surface, so they
-  /// match what it draws while staying opaque.
   static const AppSemanticColors light = AppSemanticColors(
-    success: Color(0xFF1A9E57),
+    success: Color(0xFF1F7A3E),
     onSuccess: Color(0xFFFFFFFF),
-    successContainer: Color(0xFFE5F4ED),
-    // The sheet draws #158046 here. That measures 4.40:1 on the container
-    // above — near enough to look right and just under AA, which is the worst
-    // place for a value to sit. Darkened one step to clear 4.5; see
-    // design_tokens_test.
-    onSuccessContainer: Color(0xFF127843),
-    warning: Color(0xFFE09030),
-    // Amber is the one hue where white is unreadable at any usable tone, so a
-    // solid warning fill carries dark text. This is why `onWarning` exists as
-    // a field rather than every semantic fill assuming white.
-    onWarning: Color(0xFF3A2600),
-    warningContainer: Color(0xFFFBF3E8),
-    onWarningContainer: Color(0xFF9A6417),
-    info: Color(0xFF1F6FD6),
+    successContainer: Color(0xFFDDF2E3),
+    onSuccessContainer: Color(0xFF155C2E),
+    warning: Color(0xFFA1620A),
+    onWarning: Color(0xFFFFFFFF),
+    warningContainer: Color(0xFFFBEBD0),
+    onWarningContainer: Color(0xFF6E4306),
+    info: Color(0xFF2F6FB0),
     onInfo: Color(0xFFFFFFFF),
-    infoContainer: Color(0xFFE6EFFB),
-    onInfoContainer: Color(0xFF1A5AAE),
+    infoContainer: Color(0xFFDDEAF8),
+    onInfoContainer: Color(0xFF1F4E80),
   );
 
-  /// Spec §色板, dark. Not the light values inverted: the sheet lifts each hue
-  /// toward its lighter tones so it survives a near-black canvas, the same
-  /// move Material makes between its own light and dark schemes.
+  /// Not light inverted: each hue is lifted to survive a near-black ground,
+  /// and its container sinks to sit on one.
   static const AppSemanticColors dark = AppSemanticColors(
-    success: Color(0xFF3FC47F),
-    onSuccess: Color(0xFF062616),
-    successContainer: Color(0xFF172D22),
-    onSuccessContainer: Color(0xFF5FD494),
-    warning: Color(0xFFE8A852),
-    onWarning: Color(0xFF2E1D00),
-    warningContainer: Color(0xFF2E291C),
-    onWarningContainer: Color(0xFFF0BC74),
-    info: Color(0xFF5F9FF2),
-    onInfo: Color(0xFF06264D),
-    infoContainer: Color(0xFF1B2732),
-    onInfoContainer: Color(0xFF8CBAF6),
+    success: Color(0xFF4FB86F),
+    onSuccess: Color(0xFF0A2414),
+    successContainer: Color(0xFF173A24),
+    onSuccessContainer: Color(0xFFB8EBC6),
+    warning: Color(0xFFE5A040),
+    onWarning: Color(0xFF2A1A00),
+    warningContainer: Color(0xFF3F2C10),
+    onWarningContainer: Color(0xFFFBD9A0),
+    info: Color(0xFF6AA7E8),
+    onInfo: Color(0xFF0A1E33),
+    infoContainer: Color(0xFF1B3350),
+    onInfoContainer: Color(0xFFBFDBFA),
   );
 
-  /// The set registered on the ambient theme.
-  ///
-  /// Falls back on [ThemeData.brightness] rather than asserting: a widget test
-  /// that mounts a bare [MaterialApp], and the several dialogs the app builds
-  /// under a locally-constructed theme, would otherwise crash on a null
-  /// extension for a colour that was never in doubt.
+  /// The set registered on the ambient theme, falling back on brightness for
+  /// a bare `MaterialApp` in a widget test.
   static AppSemanticColors of(BuildContext context) {
     final theme = Theme.of(context);
     return theme.extension<AppSemanticColors>() ??
@@ -177,8 +142,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   }
 }
 
-/// `context.semantic.success` at a call site, matching how `colorScheme` is
-/// reached for everywhere else in the app.
+/// `context.semantic.success` at a call site.
 extension AppSemanticColorsX on BuildContext {
   AppSemanticColors get semantic => AppSemanticColors.of(this);
 }

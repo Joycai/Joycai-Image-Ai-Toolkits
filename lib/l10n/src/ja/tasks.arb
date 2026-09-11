@@ -173,5 +173,10 @@
     }
   },
   "viewAllTasks": "すべて表示",
-  "durationLabel": "所要時間"
+  "durationLabel": "所要時間",
+  "clearAllTasksTitle": "すべてのタスクを消去しますか？",
+  "clearAllRunningNote": "実行中のタスク {count} 件を含みます",
+  "clearAllKeepsFiles": "実行中のタスクはそのままです。生成済みのファイルは出力フォルダーに残り、キューの記録だけが消去されます。",
+  "taskNoOutputsFailed": "出力はありません。書き込み前にタスクが失敗しました。",
+  "noTaskLogCancelledHint": "開始前にキャンセルされたため、ログはありません。"
 }

@@ -6,15 +6,22 @@ import 'package:provider/provider.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../services/image_metadata_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
-import '../../../widgets/dashed_border.dart';
 
-/// Radius of a pane inside the canvas. Deliberately the smallest step on the
-/// ladder: the panes sit 2px apart on a flat ground and read as one surface
-/// split in two, not as two cards.
-const double _kPaneRadius = AppRadius.xs;
+/// Space around each image and between the two (`A5 · 1c`: inset 10, gap 10).
+const double _kGutter = AppSpace.s10;
 
+/// Where a plate sits inside the image it labels.
+const double _kPlateInset = 8;
+
+/// The comparator's canvas (`A5 · 1c`, `A5 · 1d`).
+///
+/// A content layer, not glass: the images sit straight on the window's aurora
+/// at r10 with 10px around them, and everything written over them — the role
+/// badges, the filenames, the zoom readout — is on the fixed image plate, so a
+/// label never takes its colour from the theme it happens to cover.
 class ComparatorView extends StatefulWidget {
   const ComparatorView({super.key});
 
@@ -38,9 +45,13 @@ class _ComparatorViewState extends State<ComparatorView> {
   ///
   /// A notifier rather than a field behind `setState`: it is driven by
   /// `MouseRegion.onHover`, so it moves at pointer rate, and a rebuild of this
-  /// view reconstructs both full-size image layers and the footer to move a
-  /// clip rect. Only the curtain, the handle and the two badges read it.
+  /// view reconstructs both full-size image layers to move a clip rect. Only
+  /// the curtain, the handle and the two badges read it.
   final ValueNotifier<double> _scanRatio = ValueNotifier<double>(0.5);
+
+  /// The curtain drag's own accumulator, in pixels, allowed slightly past the
+  /// pane so the handle keeps its grab offset at the edges. Null between drags.
+  double? _dragScanPos;
 
   @override
   void initState() {
@@ -57,16 +68,17 @@ class _ComparatorViewState extends State<ComparatorView> {
   /// Two-way rather than the old one-way copy: with a controller on each pane
   /// both are interactive, and mirroring only the left one meant panning the
   /// right pane silently broke the alignment the mode exists to hold.
-  /// The curtain drag's own accumulator, in pixels, allowed slightly past the
-  /// pane so the handle keeps its grab offset at the edges. Null between drags.
-  double? _dragScanPos;
-
   void _mirror(TransformationController from, TransformationController to) {
     if (!_sync || _mirroring || from.value == to.value) return;
     _mirroring = true;
     to.value = from.value;
     _mirroring = false;
   }
+
+  /// Hands the user to the gallery — the comparator is filled from an image's
+  /// context menu there, so this goes to the place that can do it rather than
+  /// opening a second, parallel picker.
+  void _openLibrary() => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0);
 
   @override
   void dispose() {
@@ -82,7 +94,6 @@ class _ComparatorViewState extends State<ComparatorView> {
   Widget build(BuildContext context) {
     final uiState = Provider.of<WorkbenchUIState>(context);
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
 
     if (_sync != uiState.comparatorSyncTransform) {
       _sync = uiState.comparatorSyncTransform;
@@ -96,15 +107,14 @@ class _ComparatorViewState extends State<ComparatorView> {
     }
 
     if (uiState.comparatorRawPath == null && uiState.comparatorAfterPath == null) {
-      return _EmptyState(l10n: l10n, colorScheme: colorScheme);
+      return _EmptyState(onPick: _openLibrary);
     }
 
-    return Column(
+    return Stack(
       children: [
-        Expanded(
-          child: Container(
-            color: colorScheme.surfaceContainerHigh,
-            padding: const EdgeInsets.all(2),
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.all(_kGutter),
             child: switch (uiState.comparatorLayout) {
               ComparatorLayout.sideBySide => _buildSplit(uiState, l10n, Axis.horizontal),
               ComparatorLayout.stacked => _buildSplit(uiState, l10n, Axis.vertical),
@@ -112,68 +122,116 @@ class _ComparatorViewState extends State<ComparatorView> {
             },
           ),
         ),
-        _buildFooter(uiState, l10n, colorScheme),
+        // Centred along the foot of the canvas, 10px inside the images.
+        Positioned(
+          left: _kGutter,
+          right: _kGutter,
+          bottom: _kGutter * 2,
+          child: IgnorePointer(
+            child: Center(
+              // Rebuilt from the controller alone: a zoom readout that re-ran
+              // the whole view on every pan would re-decode both images for a
+              // number.
+              child: AnimatedBuilder(
+                animation: _rawController,
+                builder: (context, _) {
+                  final percent = (_rawController.value.getMaxScaleOnAxis() * 100).round();
+                  final synced = uiState.comparatorLayout == ComparatorLayout.slider ||
+                      uiState.comparatorSyncTransform;
+                  return _ImagePlate(
+                    text: synced
+                        ? l10n.comparatorZoomSynced(percent)
+                        : l10n.comparatorZoomIndependent(percent),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  /// Two panes across or down, each with its own badge and filename caption.
+  /// Two panes across or down, each with its own badge and filename.
   Widget _buildSplit(WorkbenchUIState uiState, AppLocalizations l10n, Axis axis) {
     final panes = [
       Expanded(
-        child: _buildPane(uiState.comparatorRawPath, l10n.labelRaw, l10n, _rawController, isAfter: false),
+        child: _buildPane(
+          uiState.comparatorRawPath,
+          label: l10n.labelRaw,
+          pickLabel: l10n.comparatorPickRaw,
+          controller: _rawController,
+          l10n: l10n,
+        ),
       ),
-      const SizedBox(width: 2, height: 2),
+      const SizedBox(width: _kGutter, height: _kGutter),
       Expanded(
-        child: _buildPane(uiState.comparatorAfterPath, l10n.labelAfter, l10n, _afterController, isAfter: true),
+        child: _buildPane(
+          uiState.comparatorAfterPath,
+          label: l10n.labelAfter,
+          pickLabel: l10n.comparatorPickAfter,
+          controller: _afterController,
+          l10n: l10n,
+        ),
       ),
     ];
 
-    return axis == Axis.horizontal ? Row(children: panes) : Column(children: panes);
+    return axis == Axis.horizontal
+        ? Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: panes)
+        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: panes);
   }
 
   Widget _buildPane(
-    String? path,
-    String label,
-    AppLocalizations l10n,
-    TransformationController controller, {
-    required bool isAfter,
+    String? path, {
+    required String label,
+    required String pickLabel,
+    required TransformationController controller,
+    required AppLocalizations l10n,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // One side still missing: the pane is the way to fill it.
+    if (path == null) {
+      return Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: SizedBox(
+            width: 180,
+            child: _ChooseCard(label: pickLabel, hint: l10n.selectFromLibrary, onTap: _openLibrary),
+          ),
+        ),
+      );
+    }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(_kPaneRadius),
-      child: Container(
-        color: colorScheme.surfaceContainerHighest,
-        child: path == null
-            ? Center(
-                child: Text(
-                  l10n.noImagesSelected,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.outline),
-                ),
-              )
-            : Stack(
-                fit: StackFit.expand,
+      borderRadius: BorderRadius.circular(AppRadius.control),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          InteractiveViewer(
+            transformationController: controller,
+            minScale: 0.1,
+            maxScale: 10.0,
+            child: Center(child: Image.file(File(path), fit: BoxFit.contain)),
+          ),
+          // The filename rides beside the badge rather than at the foot, where
+          // the design draws it: the zoom readout is centred along the foot of
+          // the canvas, and in side-by-side the right pane's filename started
+          // exactly under it.
+          Positioned(
+            top: _kPlateInset,
+            left: _kPlateInset,
+            right: _kPlateInset,
+            child: IgnorePointer(
+              child: Row(
                 children: [
-                  InteractiveViewer(
-                    transformationController: controller,
-                    minScale: 0.1,
-                    maxScale: 10.0,
-                    child: Center(child: Image.file(File(path), fit: BoxFit.contain)),
-                  ),
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: IgnorePointer(child: _RoleBadge(label: label, isAfter: isAfter)),
-                  ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: IgnorePointer(child: _FileNameOverlay(path: path)),
-                  ),
+                  _ImagePlate(text: label, strong: true),
+                  const SizedBox(width: AppSpace.s4),
+                  Flexible(child: _FileNamePlate(path: path)),
                 ],
               ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -182,110 +240,102 @@ class _ComparatorViewState extends State<ComparatorView> {
   /// ride the same controller — the reveal is only meaningful if the two are
   /// registered pixel for pixel.
   Widget _buildSlider(WorkbenchUIState uiState, AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return ClipRRect(
-      borderRadius: BorderRadius.circular(_kPaneRadius),
-      child: Container(
-        color: colorScheme.surfaceContainerHighest,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // Built once per rebuild of this view, and handed to the builders
-            // below as their `child` so the curtain moving never rebuilds
-            // them. These are full-resolution images inside an
-            // InteractiveViewer; reconstructing them per hover event was the
-            // whole cost.
-            final afterLayer = _buildLayer(uiState.comparatorAfterPath, l10n);
-            final rawLayer = _buildLayer(uiState.comparatorRawPath, l10n);
+      borderRadius: BorderRadius.circular(AppRadius.control),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Built once per rebuild of this view, and handed to the builders
+          // below as their `child` so the curtain moving never rebuilds them.
+          // These are full-resolution images inside an InteractiveViewer;
+          // reconstructing them per hover event was the whole cost.
+          final afterLayer = _buildLayer(uiState.comparatorAfterPath, l10n);
+          final rawLayer = _buildLayer(uiState.comparatorRawPath, l10n);
 
-            return MouseRegion(
-              onHover: (event) => _scanRatio.value =
-                  (event.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  afterLayer,
-                  ValueListenableBuilder<double>(
+          return MouseRegion(
+            onHover: (event) =>
+                _scanRatio.value = (event.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                afterLayer,
+                ValueListenableBuilder<double>(
+                  valueListenable: _scanRatio,
+                  child: rawLayer,
+                  builder: (context, ratio, child) => ClipRect(
+                    clipper: _CurtainClipper(ratio),
+                    child: child,
+                  ),
+                ),
+                // Positioned has to be the Stack's direct child, so the
+                // listener sits inside a fill and re-positions the handle
+                // within a nested Stack of its own.
+                Positioned.fill(
+                  child: ValueListenableBuilder<double>(
                     valueListenable: _scanRatio,
-                    child: rawLayer,
-                    builder: (context, ratio, child) => ClipRect(
-                      clipper: _CurtainClipper(ratio),
-                      child: child,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onHorizontalDragStart: (_) =>
+                          _dragScanPos = constraints.maxWidth * _scanRatio.value,
+                      // The accumulator, not the ratio, absorbs the drag:
+                      // recomputing from the clamped ratio meant that once the
+                      // curtain pinned at an edge, the handle re-engaged the
+                      // moment the pointer reversed — wherever the pointer
+                      // happened to be. 24px of slack, same as the panel
+                      // resizers.
+                      onHorizontalDragUpdate: (details) {
+                        _dragScanPos =
+                            ((_dragScanPos ?? constraints.maxWidth * _scanRatio.value) + details.delta.dx)
+                                .clamp(-24.0, constraints.maxWidth + 24.0);
+                        _scanRatio.value = (_dragScanPos! / constraints.maxWidth).clamp(0.0, 1.0);
+                      },
+                      onHorizontalDragEnd: (_) => _dragScanPos = null,
+                      onHorizontalDragCancel: () => _dragScanPos = null,
+                      child: const _CurtainHandle(),
+                    ),
+                    builder: (context, ratio, child) => Stack(
+                      children: [
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          left: constraints.maxWidth * ratio - _CurtainHandle.hitWidth / 2,
+                          child: child!,
+                        ),
+                      ],
                     ),
                   ),
-                  // Positioned has to be the Stack's direct child, so the
-                  // listener sits inside a fill and re-positions the handle
-                  // within a nested Stack of its own.
-                  Positioned.fill(
+                ),
+                Positioned(
+                  top: _kPlateInset,
+                  left: _kPlateInset,
+                  child: IgnorePointer(
                     child: ValueListenableBuilder<double>(
                       valueListenable: _scanRatio,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onHorizontalDragStart: (_) =>
-                            _dragScanPos = constraints.maxWidth * _scanRatio.value,
-                        // The accumulator, not the ratio, absorbs the drag:
-                        // recomputing from the clamped ratio meant that once
-                        // the curtain pinned at an edge, the handle re-engaged
-                        // the moment the pointer reversed — wherever the
-                        // pointer happened to be. 24px of slack, same as the
-                        // panel resizers.
-                        onHorizontalDragUpdate: (details) {
-                          _dragScanPos = ((_dragScanPos ??
-                                      constraints.maxWidth * _scanRatio.value) +
-                                  details.delta.dx)
-                              .clamp(-24.0, constraints.maxWidth + 24.0);
-                          _scanRatio.value =
-                              (_dragScanPos! / constraints.maxWidth).clamp(0.0, 1.0);
-                        },
-                        onHorizontalDragEnd: (_) => _dragScanPos = null,
-                        onHorizontalDragCancel: () => _dragScanPos = null,
-                        child: _CurtainHandle(colorScheme: colorScheme),
-                      ),
-                      builder: (context, ratio, child) => Stack(
-                        children: [
-                          Positioned(
-                            top: 0,
-                            bottom: 0,
-                            left: constraints.maxWidth * ratio - 20, // wider hit area
-                            child: child!,
-                          ),
-                        ],
+                      builder: (context, ratio, _) => _ImagePlate(
+                        text: l10n.labelRaw,
+                        strong: true,
+                        opacity: (1.0 - ratio).clamp(0.4, 1.0),
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: IgnorePointer(
-                      child: ValueListenableBuilder<double>(
-                        valueListenable: _scanRatio,
-                        builder: (context, ratio, _) => _RoleBadge(
-                          label: l10n.labelRaw,
-                          isAfter: false,
-                          opacity: (1.0 - ratio).clamp(0.4, 1.0),
-                        ),
+                ),
+                Positioned(
+                  top: _kPlateInset,
+                  right: _kPlateInset,
+                  child: IgnorePointer(
+                    child: ValueListenableBuilder<double>(
+                      valueListenable: _scanRatio,
+                      builder: (context, ratio, _) => _ImagePlate(
+                        text: l10n.labelAfter,
+                        strong: true,
+                        opacity: ratio.clamp(0.4, 1.0),
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: IgnorePointer(
-                      child: ValueListenableBuilder<double>(
-                        valueListenable: _scanRatio,
-                        builder: (context, ratio, _) => _RoleBadge(
-                          label: l10n.labelAfter,
-                          isAfter: true,
-                          opacity: ratio.clamp(0.4, 1.0),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -296,7 +346,7 @@ class _ComparatorViewState extends State<ComparatorView> {
         child: Text(
           l10n.noImagesSelected,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
         ),
       );
@@ -308,356 +358,236 @@ class _ComparatorViewState extends State<ComparatorView> {
       child: Center(child: Image.file(File(path), fit: BoxFit.contain)),
     );
   }
-
-  /// Which two files are being compared, and how the canvas is currently
-  /// navigated — the same strip the crop editor carries, so both tools state
-  /// their result in the same place.
-  Widget _buildFooter(WorkbenchUIState uiState, AppLocalizations l10n, ColorScheme colorScheme) {
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(top: BorderSide(color: colorScheme.outlineVariant.withAlpha(80))),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                Flexible(
-                  child: _FooterEntry(
-                    label: l10n.labelRaw,
-                    path: uiState.comparatorRawPath,
-                    isAfter: false,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Icon(Icons.arrow_right_alt, size: 16, color: colorScheme.onSurfaceVariant),
-                ),
-                Flexible(
-                  child: _FooterEntry(
-                    label: l10n.labelAfter,
-                    path: uiState.comparatorAfterPath,
-                    isAfter: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Rebuilt from the controller alone: a zoom readout that re-ran the
-          // whole view on every pan would re-decode both images for a number.
-          AnimatedBuilder(
-            animation: _rawController,
-            builder: (context, _) {
-              final percent = (_rawController.value.getMaxScaleOnAxis() * 100).round();
-              final synced = uiState.comparatorLayout == ComparatorLayout.slider ||
-                  uiState.comparatorSyncTransform;
-              return _StatusPill(
-                label: synced
-                    ? l10n.comparatorZoomSynced(percent)
-                    : l10n.comparatorZoomIndependent(percent),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-/// "RAW" / "AFTER" over the top-left of a pane.
+/// A label on the fixed dark plate laid over user images: mono 11 at r4.
 ///
-/// The before badge stays neutral ink and the after badge takes the accent:
-/// the accent means *this is the result* here, which is the one distinction
-/// the whole screen exists to draw.
-class _RoleBadge extends StatelessWidget {
-  final String label;
-  final bool isAfter;
-  final double opacity;
+/// Never themed (`A4–A6` 「角标」): what sits under it is a photograph, not
+/// the app.
+class _ImagePlate extends StatelessWidget {
+  const _ImagePlate({
+    required this.text,
+    this.strong = false,
+    this.opacity = 1.0,
+    this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+  });
 
-  const _RoleBadge({required this.label, required this.isAfter, this.opacity = 1.0});
+  final String text;
+
+  /// The role badges (RAW / AFTER) are 600; readouts and filenames are 400.
+  final bool strong;
+  final double opacity;
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    // Ink, not surface: these sit on a photograph, where a theme-tinted plate
-    // would tint whatever it covers.
-    final background = isAfter
-        ? colorScheme.primary.withValues(alpha: 0.85 * opacity)
-        : Colors.black.withValues(alpha: 0.72 * opacity);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+    final plate = Container(
+      padding: padding,
       decoration: BoxDecoration(
-        color: background,
+        color: AppOverlay.imagePlate,
         borderRadius: BorderRadius.circular(AppRadius.xs),
       ),
       child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: isAfter ? colorScheme.onPrimary : Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
-  }
-}
-
-/// The filename along the foot of a pane, on a gradient that fades into the
-/// picture rather than a bar that cuts across it.
-class _FileNameOverlay extends StatelessWidget {
-  final String path;
-
-  const _FileNameOverlay({required this.path});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.55)],
-        ),
-      ),
-      child: Text(
-        path.split(Platform.pathSeparator).last,
+        text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-              color: Colors.white,
+        softWrap: false,
+        style: Theme.of(context).textTheme.labelSmall!.metricsOnly.mono.copyWith(
+              color: AppOverlay.onImagePlate,
+              fontWeight: strong ? FontWeight.w600 : FontWeight.w400,
             ),
       ),
     );
+    return opacity >= 1.0 ? plate : Opacity(opacity: opacity, child: plate);
   }
 }
 
-/// One "role chip + filename" pair in the footer strip.
-class _FooterEntry extends StatelessWidget {
-  final String label;
-  final String? path;
-  final bool isAfter;
+/// `IMG_2041.png · 4000×3000`: the file's name and, once measured, its pixels.
+class _FileNamePlate extends StatelessWidget {
+  const _FileNamePlate({required this.path});
 
-  const _FooterEntry({required this.label, required this.path, required this.isAfter});
+  final String path;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-          decoration: BoxDecoration(
-            color: isAfter ? colorScheme.accentTint : colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(AppRadius.xs),
-          ),
-          child: Text(
-            label,
-            style: textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: isAfter ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            path?.split(Platform.pathSeparator).last ?? '—',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.bodySmall?.mono.copyWith(
-              color: isAfter ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ],
+    final name = path.split(Platform.pathSeparator).last;
+    final service = ImageMetadataService();
+    return FutureBuilder<ImageMetadata?>(
+      // The service caches and de-duplicates reads, and the inspector asks
+      // for the same two files — this costs nothing after the first frame.
+      future: service.getMetadata(path),
+      initialData: service.peek(path),
+      builder: (context, snapshot) {
+        final meta = snapshot.data;
+        final text = meta != null && meta.width > 0 ? '$name · ${meta.width}×${meta.height}' : name;
+        return _ImagePlate(text: text);
+      },
     );
   }
 }
 
-/// The capsule at the right of the footer strip, matching the crop editor's.
-class _StatusPill extends StatelessWidget {
-  final String label;
-
-  const _StatusPill({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: colorScheme.accentTint,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onAccentTint),
-      ),
-    );
-  }
-}
-
-/// The curtain's grab line: a hairline with a round grip at its middle, so it
-/// reads as draggable on touch as well as under a mouse.
+/// The curtain's grab line: a 2px white rule with a round grip at its middle,
+/// so it reads as draggable on touch as well as under a mouse.
 class _CurtainHandle extends StatelessWidget {
-  final ColorScheme colorScheme;
+  const _CurtainHandle();
 
-  const _CurtainHandle({required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 40,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 2,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 4)],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 6)],
-            ),
-            child: const RotatedBox(
-              quarterTurns: 1,
-              child: Icon(Icons.unfold_more, size: 16, color: Colors.black87),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Nothing loaded yet: what the comparator is for, and the two ways to fill it.
-class _EmptyState extends StatelessWidget {
-  final AppLocalizations l10n;
-  final ColorScheme colorScheme;
-
-  const _EmptyState({required this.l10n, required this.colorScheme});
+  /// The hit area, wider than the grip it centres.
+  static const double hitWidth = AppSize.touch;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      color: colorScheme.surfaceContainerHigh,
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.dialog),
-                  border: Border.all(color: colorScheme.outlineVariant),
-                ),
-                child: Icon(Icons.compare, size: 28, color: colorScheme.onSurfaceVariant),
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      child: SizedBox(
+        width: hitWidth,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 2,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 8)],
               ),
-              const SizedBox(height: 22),
-              Text(l10n.sendToComparator, style: textTheme.titleMedium),
-              const SizedBox(height: 6),
-              Text(
-                l10n.comparatorEmptyHint,
-                textAlign: TextAlign.center,
-                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 22),
-              // Wrap, not Row: on a phone the two cards stack instead of
-              // being squeezed to half a label each.
-              Wrap(
-                spacing: 14,
-                runSpacing: 14,
-                alignment: WrapAlignment.center,
-                children: [
-                  _PickCard(
-                    icon: Icons.photo_outlined,
-                    title: l10n.comparatorPickRaw,
-                    subtitle: l10n.selectFromLibrary,
-                  ),
-                  _PickCard(
-                    icon: Icons.auto_fix_high,
-                    title: l10n.comparatorPickAfter,
-                    subtitle: l10n.selectFromLibrary,
+            ),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-            ],
-          ),
+              child: const Icon(Icons.code, size: AppSize.iconMd, color: AppOverlay.ink),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// A "choose an image" target. Dashed rather than outlined: the edge says the
-/// box is waiting to be filled, which a solid border reads as already being.
-///
-/// Tapping goes to the gallery — the comparator is filled from an image's
-/// context menu there, so this hands the user to the place that can do it
-/// rather than opening a second, parallel picker.
-class _PickCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
+/// Nothing loaded yet (`A5 · 1d` centre): what the comparator is for, and the
+/// two ways to fill it.
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onPick});
 
-  const _PickCard({required this.icon, required this.title, required this.subtitle});
+  final VoidCallback onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpace.s22),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.compare, size: 28, color: colorScheme.outline),
+            const SizedBox(height: AppSpace.s10),
+            Text(
+              l10n.sendToComparator,
+              textAlign: TextAlign.center,
+              style: textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
+            ),
+            const SizedBox(height: AppSpace.s10),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: Text(
+                l10n.comparatorEmptyHint,
+                textAlign: TextAlign.center,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: AppType.proseHeight,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            // Wrap, not Row: on a phone the two cards stack instead of being
+            // squeezed to half a label each.
+            Wrap(
+              spacing: AppSpace.s10,
+              runSpacing: AppSpace.s10,
+              alignment: WrapAlignment.center,
+              children: [
+                SizedBox(width: 160, child: _ChooseCard(label: l10n.comparatorPickRaw, onTap: onPick)),
+                SizedBox(width: 160, child: _ChooseCard(label: l10n.comparatorPickAfter, onTap: onPick)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A "choose an image" target: a panel card with the accent's wash behind the
+/// glyph, used by the empty state and by a pane still waiting for its image.
+class _ChooseCard extends StatelessWidget {
+  const _ChooseCard({required this.label, required this.onTap, this.hint});
+
+  final String label;
+  final String? hint;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return InkWell(
-      onTap: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: DashedBorder(
-        color: colorScheme.outlineVariant,
-        radius: AppRadius.lg,
-        // 1.5, as this pair has always drawn: the edge *is* the drop target,
-        // and it has to hold up while something is dragged over it.
-        strokeWidth: 1.5,
-        child: Container(
-          width: 200,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+    return Material(
+      color: colorScheme.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.s16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: AppSize.touch,
+                height: AppSize.touch,
                 decoration: BoxDecoration(
                   color: colorScheme.accentTint,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderRadius: BorderRadius.circular(AppRadius.control),
                 ),
-                child: Icon(icon, size: 17, color: colorScheme.onAccentTint),
+                child: Icon(Icons.add_photo_alternate_outlined, size: 24, color: colorScheme.primary),
               ),
-              const SizedBox(height: 10),
-              Text(title, style: textTheme.titleSmall),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpace.s10),
               Text(
-                subtitle,
-                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
               ),
+              if (hint != null) ...[
+                const SizedBox(height: AppSpace.s4),
+                Text(
+                  hint!,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+              ],
             ],
           ),
         ),
@@ -665,7 +595,6 @@ class _PickCard extends StatelessWidget {
     );
   }
 }
-
 
 class _CurtainClipper extends CustomClipper<Rect> {
   final double ratio;

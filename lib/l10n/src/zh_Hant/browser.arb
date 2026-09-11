@@ -674,5 +674,17 @@
         "type": "String"
       }
     }
-  }
+  },
+  "browserViewGrid": "網格",
+  "browserViewList": "列表",
+  "browserSearchEscHint": "Esc 清空",
+  "browserNoFilesHint": "換一個篩選或清空搜尋",
+  "browserFoldersCount": "{count} 個資料夾",
+  "browserScanningCount": "正在掃描 {count} 個檔案…",
+  "browserDragFootnote": "拖到資料夾上 = 移動 · 按住 Ctrl 改為複製",
+  "stagingDropHint": "拖檔案到左欄資料夾 = 加入暫存",
+  "renameBatchFailedTitle": "第 {batch} 批失敗",
+  "conflictIncoming": "寫入",
+  "conflictAlreadyThere": "已存在",
+  "conflictUndecidedCount": "{count} 項未決定"
 }

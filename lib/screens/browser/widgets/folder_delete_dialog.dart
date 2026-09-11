@@ -15,9 +15,10 @@ import '../../../state/file_staging_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_snackbar.dart';
+import 'transfer_dialog_parts.dart';
 
 /// Confirms and performs the deletion of a folder in the browser's tree —
-/// `B1b 13d`, then the tidy-up the tree needs afterwards.
+/// `B1b 1d`'s two delete dialogs, then the tidy-up the tree needs afterwards.
 ///
 /// Goes to the system trash wherever the platform has one, and says so in the
 /// dialog before the user decides; only where there is none does it delete
@@ -103,9 +104,9 @@ class _FolderDeleteDialogState extends State<_FolderDeleteDialog> {
           : l10n.deleteFolderCount(inventory.items);
     }
 
-    // `13d`: Enter lands on Cancel. The red button confirms, and so does a
-    // second press of the key that opened this — once the count is in.
-    // Repeats are ignored so a held key cannot delete on its own.
+    // Enter lands on Cancel. The red button confirms, and so does a second
+    // press of the key that opened this — once the count is in. Repeats are
+    // ignored so a held key cannot delete on its own.
     void confirm() => Navigator.pop(context, true);
     return CallbackShortcuts(
       bindings: counting
@@ -115,67 +116,44 @@ class _FolderDeleteDialogState extends State<_FolderDeleteDialog> {
               const SingleActivator(LogicalKeyboardKey.backspace, includeRepeats: false): confirm,
             },
       child: AppDialog(
-        icon: Icons.delete_outline,
-        iconColor: colorScheme.error,
-        title: widget.toTrash ? l10n.trashFolderTitle : l10n.deleteFolderTitle,
-        subtitle: counting ? '${widget.path} · ${l10n.inventoryCounting}' : widget.path,
-        maxWidth: 420,
+        // Trash is recoverable, so it is a warning; a delete that skips the
+        // trash is the error plate with the "forever" glyph.
+        titleWidget: TransferDialogHeading(
+          icon: widget.toTrash ? Icons.delete_outline : Icons.delete_forever_outlined,
+          tone: widget.toTrash ? TransferTone.warn : TransferTone.err,
+          title: widget.toTrash ? l10n.trashFolderTitle : l10n.deleteFolderTitle,
+          subtitle: transferShortPath(widget.path),
+          subtitleTooltip: widget.path,
+        ),
+        maxWidth: 440,
         content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
             if (!counting && empty)
               Text(
                 widget.toTrash ? l10n.trashFolderEmptyDesc : l10n.deleteFolderEmptyDesc,
-                style: textTheme.bodySmall?.copyWith(
+                style: textTheme.bodySmall!.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   height: AppType.proseHeight,
                 ),
               )
-            else ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: _CountCell(
-                      value: inventory?.folders,
-                      label: l10n.inventorySubfolders,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _CountCell(
-                      value: inventory?.files,
-                      label: l10n.inventoryFiles,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _CountCell(
-                      text: inventory == null ? null : AppConstants.formatFileSize(inventory.bytes),
-                      label: l10n.inventorySize,
-                    ),
-                  ),
-                ],
+            else
+              _InventoryCard(inventory: inventory),
+            if (widget.toTrash && !(empty && !counting)) ...[
+              const SizedBox(height: AppSpace.s10),
+              TransferNote(
+                text: l10n.trashFolderRestorable,
+                tone: TransferTone.ok,
+                icon: Icons.restore_from_trash_outlined,
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    widget.toTrash ? Icons.restore_from_trash_outlined : Icons.warning_amber_rounded,
-                    size: AppSize.iconSm,
-                    color: widget.toTrash ? colorScheme.onSurfaceVariant : colorScheme.error,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.toTrash ? l10n.trashFolderRestorable : l10n.deleteFolderIrreversible,
-                      style: textTheme.labelMedium?.copyWith(
-                        color: widget.toTrash ? colorScheme.onSurfaceVariant : colorScheme.error,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
+            ],
+            if (!widget.toTrash && !(empty && !counting)) ...[
+              const SizedBox(height: AppSpace.s10),
+              TransferNote(
+                text: l10n.deleteFolderIrreversible,
+                tone: TransferTone.err,
+                icon: Icons.warning_amber_rounded,
               ),
             ],
           ],
@@ -199,58 +177,76 @@ class _FolderDeleteDialogState extends State<_FolderDeleteDialog> {
   }
 }
 
-/// One of the three counts — number in mono, label under it — or its
-/// placeholder while the count is still coming.
-class _CountCell extends StatelessWidget {
-  final int? value;
-  final String? text;
-  final String label;
+/// `1d`'s inventory card: Subfolders / Files / Size on the column colour, the
+/// figures right-aligned in mono, "Counting…" in their place until the
+/// isolate reports.
+class _InventoryCard extends StatelessWidget {
+  final FolderInventory? inventory;
 
-  const _CountCell({this.value, this.text, required this.label});
+  const _InventoryCard({required this.inventory});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final display = text ?? value?.toString();
+    final value = inventory;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: AppSpace.s4),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: colorScheme.surfaceContainerLow,
         border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.control),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (display == null)
-            Container(
-              width: 36,
-              height: 18,
-              margin: const EdgeInsets.symmetric(vertical: 2),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(AppRadius.xs),
-              ),
-            )
-          else
-            Text(
-              display,
-              style: textTheme.titleLarge?.mono.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
+          _InventoryRow(label: l10n.inventorySubfolders, value: value?.folders.toString()),
+          _InventoryRow(label: l10n.inventoryFiles, value: value?.files.toString()),
+          _InventoryRow(
+            label: l10n.inventorySize,
+            value: value == null ? null : AppConstants.formatFileSize(value.bytes),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InventoryRow extends StatelessWidget {
+  final String label;
+
+  /// Null while counting.
+  final String? value;
+
+  const _InventoryRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return SizedBox(
+      height: AppSize.compact,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: textTheme.bodyMedium!.copyWith(color: colorScheme.onSurfaceVariant),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-          const SizedBox(height: 3),
+          ),
+          const SizedBox(width: AppSpace.s10),
           Text(
-            label,
-            style: textTheme.labelSmall?.copyWith(color: colorScheme.outline),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            value ?? l10n.inventoryCounting,
+            style: value == null
+                ? textTheme.bodySmall!.copyWith(color: colorScheme.outline)
+                : textTheme.bodySmall!.mono.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
           ),
         ],
       ),

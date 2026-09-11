@@ -85,7 +85,9 @@ void main() {
     expect(result, 'confirmed');
   });
 
-  testWidgets('the surface takes surfaceContainer at a 12px radius, matching PanelCard', (tester) async {
+  testWidgets('the surface is an opaque panel at r22, clipped to its corners', (tester) async {
+    // `01 · 1h`: dialogs are content, never glass — the panel colour at r22,
+    // with the shadow outside the clip.
     await tester.pumpWidget(host((context) {
       return Center(
         child: ElevatedButton(
@@ -101,9 +103,17 @@ void main() {
     final theme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light);
     final dialog = tester.widget<Dialog>(find.byType(Dialog));
     final shape = dialog.shape! as RoundedRectangleBorder;
-
-    expect(dialog.backgroundColor, theme.colorScheme.surfaceContainer);
+    expect(appDialogRadius, 22);
     expect(shape.borderRadius, BorderRadius.circular(appDialogRadius));
+    expect(dialog.backgroundColor, Colors.transparent,
+        reason: 'the panel is drawn inside the clip, so the shadow can sit outside it');
+
+    final clip = tester.widget<ClipRRect>(
+        find.descendant(of: find.byType(Dialog), matching: find.byType(ClipRRect)).first);
+    expect(clip.borderRadius, BorderRadius.circular(appDialogRadius));
+    final panel = tester.widget<Material>(
+        find.descendant(of: find.byType(ClipRRect), matching: find.byType(Material)).first);
+    expect(panel.color, theme.colorScheme.surface);
   });
 
   group('the dialog grows into place', () {

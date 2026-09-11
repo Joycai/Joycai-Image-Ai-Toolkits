@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
-import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../../services/llm/vendors/vendors.dart';
-import '../app_dropdown.dart';
-import '../app_labelled_field.dart';
+import 'model_edit_controls.dart';
 import 'protocol_section_form.dart';
 import 'wire_protocol_labels.dart';
 
@@ -37,14 +35,7 @@ List<String> paramSourceNames(
   final video = surface == Surface.videoJob;
   final names = <String>[if (video) l10n.resolution, if (video) l10n.aspectRatio];
   for (final spec in video ? caps.videoParams : caps.imageParams) {
-    final name = switch (spec.labelKey) {
-      'resolution' => video ? l10n.resolution : l10n.imageSizeLabel,
-      'aspectRatio' => l10n.aspectRatio,
-      'quality' => l10n.quality,
-      'videoSeconds' => l10n.videoSeconds,
-      'promptExtend' => l10n.promptExtend,
-      _ => null,
-    };
+    final name = _paramName(l10n, spec.labelKey, video);
     if (name != null && !names.contains(name)) names.add(name);
   }
   final ceiling = caps.maxReferenceImages;
@@ -54,11 +45,52 @@ List<String> paramSourceNames(
   return names;
 }
 
-/// The model editor's 「请求方式」 section (spec D2 18a, D2a 20a–20g, 20j).
+/// The chips of the parameter summary under the request method (D1c `1a`,
+/// `1c`): each parameter with the value it starts at, in the surface's fixed
+/// order — video always opens with resolution and aspect ratio — and the
+/// reference-image ceiling last.
+///
+/// Read from the capability table the dispatcher resolves for the form as it
+/// stands, so a pin on the Images API lists the Images API's parameters.
+List<String> paramSummaryItems(
+    AppLocalizations l10n, ModelCapabilities caps, Surface surface) {
+  final video = surface == Surface.videoJob;
+  final seen = <String>{if (video) l10n.resolution, if (video) l10n.aspectRatio};
+  final items = <String>[...seen];
+  for (final spec in video ? caps.videoParams : caps.imageParams) {
+    final name = _paramName(l10n, spec.labelKey, video);
+    if (name == null || !seen.add(name)) continue;
+    items.add(spec.defaultValue.isEmpty ? name : '$name: ${spec.defaultValue}');
+  }
+  final ceiling = caps.maxReferenceImages;
+  if (ceiling != null && ceiling > 0) {
+    items.add('${l10n.protocolParamReferenceLimit} ≤ $ceiling');
+  }
+  return items;
+}
+
+String? _paramName(AppLocalizations l10n, String labelKey, bool video) => switch (labelKey) {
+      'resolution' => video ? l10n.resolution : l10n.imageSizeLabel,
+      'aspectRatio' => l10n.aspectRatio,
+      'quality' => l10n.quality,
+      'videoSeconds' => l10n.videoSeconds,
+      'promptExtend' => l10n.promptExtend,
+      _ => null,
+    };
+
+/// The model editor's 「请求方式 · 接口协议」 section (spec D1c `1a`, `1b`,
+/// `1e`).
 ///
 /// Takes one of the shapes [protocolSectionForm] decides; the dialog owns the
 /// state (the stored selection, the kind) and hands both down, so this widget
-/// only draws.
+/// only draws. Four states:
+///
+/// 1. **Auto** — 「Auto · resolves to …」 in the field, a helper line, the
+///    parameter summary.
+/// 2. **Pinned** — the protocol's name with a `primary` stroke, 「改回自动」
+///    right-aligned under it, no helper sentence.
+/// 3. **Unrecognised id** — Auto, the parameters, an info notice.
+/// 4. **No interface** — an error notice in the field's place.
 class ModelProtocolSection extends StatelessWidget {
   const ModelProtocolSection({
     super.key,
@@ -96,7 +128,7 @@ class ModelProtocolSection extends StatelessWidget {
   final bool pinIsStale;
 
   /// The capability table the model will have as the form stands: what the
-  /// 「参数」 row describes.
+  /// parameter summary describes.
   final ModelCapabilities paramsCapabilities;
 
   /// Null means auto.
@@ -106,54 +138,95 @@ class ModelProtocolSection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (form == ProtocolSectionForm.none) return const SizedBox.shrink();
     final l10n = AppLocalizations.of(context)!;
-    final effective = activePin ?? menu.auto;
+    final metrics = ModelEditMetrics.of(context);
+    final pin = activePin;
+    final effective = pin ?? menu.auto;
 
-    final Widget body = switch (form) {
+    final Widget field = switch (form) {
       ProtocolSectionForm.none => const SizedBox.shrink(),
-      // 20e: the heading stays, the body is one sentence. No disabled control
-      // and no empty box — there is nothing to choose.
-      ProtocolSectionForm.notice => _HelperLine(l10n.protocolNoSurface(
-          protocolFamilyFormatName(channelFamily), modelKindLabel(l10n, kind))),
+      // ④: nothing to choose — the field says 「不可用」 and opens nothing,
+      // and the reason follows in the error tone.
+      ProtocolSectionForm.notice => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ModelEditUnavailableField(),
+            const SizedBox(height: AppSpace.s6),
+            ModelEditNotice(
+              tone: ModelEditTone.error,
+              text: l10n.protocolNoSurface(
+                  protocolFamilyFormatName(channelFamily), modelKindLabel(l10n, kind)),
+            ),
+          ],
+        ),
       ProtocolSectionForm.readOnly => _readOnly(context, l10n),
-      ProtocolSectionForm.dropdown => Responsive.isMobile(context)
-          ? _pickerField(context, l10n)
-          : _dropdown(l10n),
+      ProtocolSectionForm.dropdown =>
+        metrics.phone ? _phoneField(context, l10n) : _desktopField(context, l10n),
     };
 
-    final showParams = effective != null && showsParamSourceRow(menu, form);
+    final helper = _helper(l10n);
+    final unrecognized = _unrecognizedNotice(l10n);
+    final caveat = effective == null || form == ProtocolSectionForm.notice
+        ? null
+        : wireProtocolCaveat(l10n, effective, channelFamily);
+    final showParams = menu.surface != Surface.chat &&
+        effective != null &&
+        form != ProtocolSectionForm.notice;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         header,
-        const SizedBox(height: 12),
-        body,
+        const SizedBox(height: AppSpace.s6),
+        field,
+        if (form == ProtocolSectionForm.dropdown && pin != null)
+          ModelEditBackToAuto(onPressed: () => onChanged(null)),
         AnimatedSize(
           duration: AppMotion.durationOf(context, AppMotion.reveal),
           curve: AppMotion.enter,
           alignment: Alignment.topCenter,
-          child: showParams
-              ? Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: _ParamSourceRow(
-                    protocolName: wireProtocolLabel(l10n, effective),
-                    names: paramSourceNames(l10n, paramsCapabilities, menu.surface),
-                    pinned: activePin != null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (helper != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpace.s6),
+                  child: ModelEditHelperText(helper),
+                ),
+              if (showParams)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpace.s10),
+                  child: ModelEditParamBlock(
+                    items: paramSummaryItems(l10n, paramsCapabilities, menu.surface),
                   ),
-                )
-              : const SizedBox(width: double.infinity),
+                ),
+              if (unrecognized != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpace.s10),
+                  child: ModelEditNotice(tone: ModelEditTone.info, text: unrecognized),
+                ),
+              if (caveat != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpace.s10),
+                  child: ModelEditNotice(tone: ModelEditTone.warning, text: caveat),
+                ),
+              const SizedBox(width: double.infinity),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  /// The line under the control, or null when the control speaks for itself.
+  /// The line under the field, or null when the field — or a notice — says
+  /// it already.
   String? _helper(AppLocalizations l10n) {
     final stored = this.stored;
     if (pinIsStale && stored != null) {
-      // State ④ and its kind twin ④′: helper tone, not a warning — the model
-      // still runs, on auto.
+      // A stale selection and its kind twin: helper tone, not a warning —
+      // the model still runs, on auto.
       final name = storedProtocolLabel(l10n, stored);
       final parsed = WireProtocol.tryParse(stored);
       return parsed != null && parsed.surface != menu.surface
@@ -161,135 +234,144 @@ class ModelProtocolSection extends StatelessWidget {
           : l10n.protocolStaleHelper(name);
     }
     // Pinned: the field names the choice and 「改回自动」 sits under it, so
-    // there is nothing left to explain (18a ③, 20c). The unrecognized
-    // sentence goes with it — the user has answered that question.
-    if (activePin != null) return null;
-
+    // there is nothing left to explain (`1b` ②).
+    if (activePin != null || form != ProtocolSectionForm.dropdown) return null;
     final auto = menu.auto;
     if (auto == null) return null;
-    final caveat = wireProtocolCaveat(l10n, auto, channelFamily);
-    if (caveat != null) return caveat;
-
-    if (menu.surface != Surface.chat && !menu.recognized) {
-      if (form == ProtocolSectionForm.readOnly) {
-        return l10n.protocolUnrecognizedSingle(wireProtocolLabel(l10n, auto));
-      }
-      final alternative = menu.options.where((p) => p != auto).firstOrNull;
-      return alternative == null
-          ? null
-          : l10n.protocolUnrecognizedAuto(wireProtocolLabel(l10n, alternative));
-    }
+    if (_unrecognizedNotice(l10n) != null) return null;
+    if (wireProtocolCaveat(l10n, auto, channelFamily) != null) return null;
     return l10n.protocolAutoHelper;
   }
 
-  Widget _dropdown(AppLocalizations l10n) {
+  /// `1b` ③: an id that does not corroborate its kind rides the channel's
+  /// default for it. Said once, as an info notice, while on auto.
+  String? _unrecognizedNotice(AppLocalizations l10n) {
+    if (activePin != null || pinIsStale) return null;
+    final auto = menu.auto;
+    if (auto == null || menu.surface == Surface.chat || menu.recognized) return null;
+    final single = l10n.protocolUnrecognizedSingle(wireProtocolLabel(l10n, auto));
+    if (form == ProtocolSectionForm.readOnly) return single;
+    final alternative = menu.options.where((p) => p != auto).firstOrNull;
+    return alternative == null
+        ? single
+        : l10n.protocolUnrecognizedAuto(wireProtocolLabel(l10n, alternative));
+  }
+
+  Widget _leadingIcon(BuildContext context) => Icon(
+        activePin != null ? Icons.route : Icons.auto_awesome,
+        size: AppSize.iconMd,
+        color: Theme.of(context).colorScheme.primary,
+      );
+
+  /// `1a`: 「Auto」 at 500, then the resolution in mono and the secondary ink.
+  ///
+  /// The string is one translated sentence; it is split where it begins with
+  /// the Auto label, which is how every locale writes it, and drawn whole in
+  /// one style otherwise.
+  Widget _autoFace(BuildContext context, AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final auto = menu.auto;
+    final prefix = l10n.protocolAuto;
+    final resolved =
+        auto == null ? null : l10n.protocolAutoResolved(wireProtocolLabel(l10n, auto));
+    final spans = resolved != null && resolved.startsWith(prefix)
+        ? [
+            TextSpan(text: prefix),
+            TextSpan(
+              text: resolved.substring(prefix.length),
+              style: theme.textTheme.bodySmall?.mono.copyWith(
+                fontWeight: FontWeight.w400,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ]
+        : [TextSpan(text: resolved ?? prefix)];
+
+    return Text.rich(
+      TextSpan(children: spans),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+    );
+  }
+
+  Widget _desktopField(BuildContext context, AppLocalizations l10n) {
+    final textTheme = Theme.of(context).textTheme;
     final auto = menu.auto;
     final pin = activePin;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ModelEditMenuField<String>(
+      emphasis: pin != null ? ModelEditFieldEmphasis.accent : ModelEditFieldEmphasis.normal,
+      leading: _leadingIcon(context),
+      // '' stands in for auto. A stale stored value also *displays* as auto
+      // (that is how it routes); the helper line says why.
+      selected: pin?.id ?? '',
+      onSelected: (v) => onChanged(v.isEmpty ? null : v),
+      entries: [
+        ModelEditMenuEntry(
+          value: '',
+          label: l10n.protocolAuto,
+          description:
+              auto == null ? null : l10n.protocolAutoMenuDesc(wireProtocolLabel(l10n, auto)),
+        ),
+        for (final p in menu.options)
+          ModelEditMenuEntry(
+            value: p.id,
+            label: wireProtocolLabel(l10n, p),
+            description: wireProtocolDescription(l10n, p),
+            trailing: wireProtocolPath(p, channelFamily),
+          ),
+      ],
+      child: pin != null
+          ? Text(
+              wireProtocolLabel(l10n, pin),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            )
+          : _autoFace(context, l10n),
+    );
+  }
+
+  /// One route for a model its id does not identify. The user needs to see
+  /// how it will be sent, but a control that cannot open would say something
+  /// is broken — so it is a line in the field's place.
+  Widget _readOnly(BuildContext context, AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    // A read-only menu has exactly one option, and auto is always one of the
+    // options, so it is never null here.
+    final auto = menu.auto!;
+
+    return Row(
       children: [
-        AppLabelledField(
-          label: l10n.interfaceProtocol,
-          child: _PinnedFieldSkin(
-            pinned: pin != null,
-            // Controlled, so the menu can change with the channel, the id and
-            // the kind without the field having to be re-keyed.
-            child: AppDropdown<String>(
-              // '' stands in for auto. A stale stored value also *displays*
-              // as auto (that is how it routes); the helper line says why.
-              value: pin?.id ?? '',
-              items: [
-                // The closed field answers "which one actually runs"; the open
-                // menu says why (20g).
-                AppDropdownItem(
-                  value: '',
-                  label: l10n.protocolAuto,
-                  selectedLabel: auto == null
-                      ? l10n.protocolAuto
-                      : l10n.protocolAutoResolved(wireProtocolLabel(l10n, auto)),
-                  description: auto == null
-                      ? null
-                      : l10n.protocolAutoMenuDesc(wireProtocolLabel(l10n, auto)),
-                ),
-                for (final p in menu.options)
-                  AppDropdownItem(
-                    value: p.id,
-                    label: wireProtocolLabel(l10n, p),
-                    description: wireProtocolDescription(l10n, p),
-                    trailing: wireProtocolPath(p, channelFamily),
-                  ),
-              ],
-              onChanged: (v) => onChanged(v == null || v.isEmpty ? null : v),
-              prefixIcon: Icons.alt_route_outlined,
-              helperText: _helper(l10n),
-              helperMaxLines: 3,
-            ),
+        _leadingIcon(context),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text.rich(
+            TextSpan(children: [
+              TextSpan(
+                text: l10n.protocolSendVia(wireProtocolLabel(l10n, auto)),
+                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              ),
+              const TextSpan(text: ' '),
+              TextSpan(
+                text: l10n.protocolOnlyOneWay,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ]),
           ),
         ),
-        if (pin != null) _BackToAuto(onPressed: () => onChanged(null)),
       ],
     );
   }
 
-  /// 20d: one route for a model its id does not identify. The user needs to
-  /// see how it will be sent, but a disabled dropdown would say something is
-  /// broken — so it is a sentence in the field's place, under the same
-  /// caption.
-  Widget _readOnly(BuildContext context, AppLocalizations l10n) {
+  /// `1e`: a two-line card opening a bottom sheet — the name, and under it
+  /// the endpoint path once pinned.
+  Widget _phoneField(BuildContext context, AppLocalizations l10n) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    // A read-only menu has exactly one option, and auto is always one of the
-    // options, so it is never null here.
-    final auto = menu.auto!;
-    final helper = _helper(l10n);
-
-    return AppLabelledField(
-      label: l10n.interfaceProtocol,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 24),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text.rich(
-                TextSpan(children: [
-                  TextSpan(
-                    text: l10n.protocolSendVia(wireProtocolLabel(l10n, auto)),
-                    style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-                  ),
-                  const TextSpan(text: ' '),
-                  TextSpan(
-                    text: l10n.protocolOnlyOneWay,
-                    style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                ]),
-              ),
-            ),
-          ),
-          if (helper != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: _HelperLine(helper),
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// 20j: on a phone the choice opens a bottom sheet, and the field grows a
-  /// second line — the resolution on auto, the endpoint path once pinned.
-  Widget _pickerField(BuildContext context, AppLocalizations l10n) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
     final auto = menu.auto;
     final pin = activePin;
-
     final title = pin != null
         ? wireProtocolLabel(l10n, pin)
         : (auto == null
@@ -297,47 +379,31 @@ class ModelProtocolSection extends StatelessWidget {
             : l10n.protocolAutoResolved(wireProtocolLabel(l10n, auto)));
     final path = pin == null ? null : wireProtocolPath(pin, channelFamily);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppLabelledField(
-          label: l10n.interfaceProtocol,
-          child: _PinnedFieldSkin(
-            pinned: pin != null,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppRadius.control),
-              onTap: () => _openSheet(context, l10n),
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.alt_route_outlined, size: AppSize.iconLg),
-                  suffixIcon: Icon(Icons.expand_more, color: colorScheme.outline),
-                  helperText: _helper(l10n),
-                  helperMaxLines: 3,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-                    ),
-                    if (path != null)
-                      Text(
-                        path,
-                        style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+    return ModelEditMenuField<String>(
+      autoHeight: true,
+      emphasis: pin != null ? ModelEditFieldEmphasis.accent : ModelEditFieldEmphasis.normal,
+      leading: _leadingIcon(context),
+      onTap: () => _openSheet(context, l10n),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
           ),
-        ),
-        if (pin != null) _BackToAuto(onPressed: () => onChanged(null)),
-      ],
+          if (path != null)
+            Text(
+              path,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.mono
+                  .copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+        ],
+      ),
     );
   }
 
@@ -360,10 +426,9 @@ class ModelProtocolSection extends StatelessWidget {
   }
 }
 
-/// The model-card preview's 「请求方式」 value (D2a 20h): the pinned chip
-/// exactly as the card will draw it, or the resolution with an 「· 自动」
-/// suffix, so the user can tell a row that follows the channel from one they
-/// set.
+/// A request method as a model card carries it: the pinned protocol as a
+/// tinted chip, or the resolution with an 「· 自动」 suffix, so a row that
+/// follows the channel reads apart from one the user set.
 class ProtocolPreviewValue extends StatelessWidget {
   const ProtocolPreviewValue({super.key, required this.menu, required this.activePin});
 
@@ -420,144 +485,8 @@ class ProtocolPreviewValue extends StatelessWidget {
   }
 }
 
-/// A helper sentence in the section's own voice. Never a warning colour (18a,
-/// D2a).
-///
-/// `onSurfaceVariant`, the colour Material gives a field's helper line — so a
-/// sentence standing in for a field reads exactly like the helper under the
-/// dropdown in the neighbouring state. `outline` rendered it a step fainter
-/// than that helper, which made the read-only and notice states look disabled.
-class _HelperLine extends StatelessWidget {
-  const _HelperLine(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Text(
-      text,
-      style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-    );
-  }
-}
-
-/// 18a ③: the pinned field swaps two tokens and nothing else — the border to
-/// the accent, the fill to its tint.
-///
-/// Reads the theme from its *own* context, below the dialog's
-/// `FilledFieldScope`. Rebuilding the decoration theme from a context above
-/// that scope would drop the fill it adds.
-class _PinnedFieldSkin extends StatelessWidget {
-  const _PinnedFieldSkin({required this.pinned, required this.child});
-
-  final bool pinned;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!pinned) return child;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final decoration = theme.inputDecorationTheme;
-    InputBorder? accent(InputBorder? border) => border is OutlineInputBorder
-        ? border.copyWith(borderSide: border.borderSide.copyWith(color: colorScheme.primary))
-        : border;
-
-    return Theme(
-      data: theme.copyWith(
-        inputDecorationTheme: decoration.copyWith(
-          fillColor: colorScheme.accentTint,
-          border: accent(decoration.border),
-          enabledBorder: accent(decoration.enabledBorder),
-        ),
-      ),
-      child: child,
-    );
-  }
-}
-
-/// 18a ③: 「改回自动」, a dense inline action under the pinned field rather
-/// than a row of its own.
-class _BackToAuto extends StatelessWidget {
-  const _BackToAuto({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: AlignmentDirectional.centerEnd,
-      child: TextButton(
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          visualDensity: VisualDensity.compact,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          minimumSize: const Size(0, 28),
-        ),
-        child: Text(AppLocalizations.of(context)!.protocolBackToAuto),
-      ),
-    );
-  }
-}
-
-/// D2a ruling 4: where an unidentified model's parameters come from, in the
-/// same container as 18a's explanation row. Neutral on auto, tinted once
-/// pinned — the tint follows the choice.
-class _ParamSourceRow extends StatelessWidget {
-  const _ParamSourceRow({
-    required this.protocolName,
-    required this.names,
-    required this.pinned,
-  });
-
-  final String protocolName;
-  final List<String> names;
-  final bool pinned;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    final foreground = pinned ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant;
-    final text = names.isEmpty
-        ? l10n.protocolParamsNone
-        : l10n.protocolParamsDefault(protocolName, names.join(' · '));
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: pinned ? colorScheme.accentTint : colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        border: Border.all(color: pinned ? colorScheme.accentRing : colorScheme.outlineVariant),
-      ),
-      child: Text.rich(
-        TextSpan(children: [
-          TextSpan(
-            text: l10n.protocolParamsLabel,
-            style: textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              letterSpacing: AppType.trackedLabelSpacing,
-              color: foreground,
-            ),
-          ),
-          const TextSpan(text: '  '),
-          TextSpan(
-            text: text,
-            style: textTheme.labelMedium?.copyWith(color: foreground),
-          ),
-        ]),
-      ),
-    );
-  }
-}
-
-/// 20j's bottom sheet: the same entries as the desktop menu, word for word,
-/// with the path at the end of each row.
+/// The phone's bottom sheet: the same entries as the desktop menu, word for
+/// word, with the path at the end of each row.
 ///
 /// Rows carry a radio glyph rather than being `RadioListTile`s: the
 /// `groupValue` API is deprecated, and the sheet closes on the tap anyway, so
@@ -590,15 +519,17 @@ class _ProtocolSheet extends StatelessWidget {
     Widget option(String value, String label, String? description, String? path) {
       final isSelected = value == selected;
       return ListTile(
+        minTileHeight: AppSize.touch,
         leading: Icon(
           isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-          size: 22,
+          size: AppSize.iconLg,
           color: isSelected ? colorScheme.primary : colorScheme.outline,
         ),
         title: Text(label, style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
         subtitle: description == null
             ? null
-            : Text(description, style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+            : Text(description,
+                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
         trailing: path == null
             ? null
             : Text(path, style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline)),
@@ -617,7 +548,8 @@ class _ProtocolSheet extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: textTheme.titleMedium),
-                Text(subtitle, style: textTheme.bodySmall?.copyWith(color: colorScheme.outline)),
+                Text(subtitle,
+                    style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
               ],
             ),
           ),

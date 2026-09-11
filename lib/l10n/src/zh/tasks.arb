@@ -165,5 +165,10 @@
     }
   },
   "viewAllTasks": "查看全部",
-  "durationLabel": "用时"
+  "durationLabel": "用时",
+  "clearAllTasksTitle": "清除全部任务？",
+  "clearAllRunningNote": "包含 {count} 个正在运行的任务",
+  "clearAllKeepsFiles": "运行中的任务不受影响。已生成的文件保留在输出目录里，只是队列里的记录被清空。",
+  "taskNoOutputsFailed": "本次没有产物——任务在写入前就失败了",
+  "noTaskLogCancelledHint": "任务在开始执行前被取消，所以没有留下日志。"
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
-import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
@@ -10,22 +9,29 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/file_transfer_service.dart';
 import '../../../state/file_staging_state.dart';
-import '../../workbench/directory_tree_item.dart' show kFolderAmber;
+import '../../../widgets/app_button.dart';
+import '../../../widgets/dashed_border.dart';
+import '../../../widgets/glass/glass_controls.dart';
+import 'transfer_dialog_parts.dart';
 
-/// Width the staging column takes when it is open.
+/// Width the staging column takes when its parent does not bound it (`B1b`:
+/// 320, the same as the narrow-window slide-out panel).
+const double kStagingPanelWidth = 320;
+
+/// The file browser's staging column — `B1b 1a`.
 ///
-/// `12a` draws 300 and states the cost outright: the grid goes from six
-/// columns to four. That is the trade the frame is recommending, so the number
-/// is fixed rather than resizable — a column the user can drag to 180 would
-/// truncate every file name in it, which is the one thing this list is for.
-const double kStagingPanelWidth = 300;
-
-/// The file browser's staging column — `B1 12a`.
+/// An opaque column, not a floating layer: staging only keeps marks, so it
+/// survives folder switches, filters and restarts, and the user keeps coming
+/// back to read it. Header, destination, the list, and a footer fixed to the
+/// bottom whose actions apply to the whole column.
 ///
 /// Reads [FileStagingState] and nothing else about the browser. The paste
 /// itself belongs to the caller: this panel reports which way the user pressed
 /// and against which destination, because the transfer needs a conflict pass
 /// and a progress surface that outlive the panel's own build.
+///
+/// Fills whatever width it is given; only an unbounded parent (a bare row)
+/// gets [kStagingPanelWidth].
 class BrowserStagingPanel extends StatelessWidget {
   /// Where a paste would land. Null until the user names one — see
   /// [FileStagingState] for why this screen cannot infer it.
@@ -43,108 +49,124 @@ class BrowserStagingPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final staging = context.watch<FileStagingState>();
+    final target = destination;
 
-    return Container(
-      width: kStagingPanelWidth,
+    // Staged files already sitting in the destination: a move there is a
+    // no-op, so they are called out per row and left out of the commit.
+    final Set<String> atTarget = target == null
+        ? const <String>{}
+        : {
+            for (final f in staging.items)
+              if (p.equals(p.dirname(f.path), target)) f.path,
+          };
+
+    final panel = DecoratedBox(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         border: Border(left: BorderSide(color: colorScheme.outlineVariant)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _Header(staging: staging),
-          // `12c` keeps the destination card and the footer on an empty panel,
-          // with the buttons disabled. They are what the panel *is*; hiding
-          // them until something is staged would make the empty state a
-          // different, smaller feature.
-          _DestinationCard(destination: destination),
-          Expanded(
-            child: staging.isEmpty
-                ? const _EmptyState()
-                : _ItemList(staging: staging, destination: destination),
-          ),
-          _Footer(staging: staging, destination: destination, onPaste: onPaste),
+          _Header(staging: staging, atTargetCount: atTarget.length),
+          // The destination and the footer stay on an empty panel, the
+          // buttons disabled: they are what the panel *is*, and hiding them
+          // until something is staged would make the empty state a smaller,
+          // different feature. Empty, the destination drops to the bottom
+          // under the explanation, as `1a`'s empty frame draws it.
+          if (staging.isEmpty) ...[
+            const Expanded(child: _EmptyState()),
+            _DestinationSection(destination: target, restoredCount: 0, ruleOnTop: true),
+          ] else ...[
+            _DestinationSection(destination: target, restoredCount: staging.restoredCount, ruleOnTop: false),
+            Expanded(child: _ItemList(staging: staging, atTarget: atTarget)),
+          ],
+          _Footer(staging: staging, destination: target, atTargetCount: atTarget.length, onPaste: onPaste),
         ],
       ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          constraints.hasBoundedWidth ? panel : SizedBox(width: kStagingPanelWidth, child: panel),
     );
   }
 }
 
+/// `1a` 头 72: title, a single mono summary line, and Clear.
 class _Header extends StatelessWidget {
   final FileStagingState staging;
+  final int atTargetCount;
 
-  const _Header({required this.staging});
+  const _Header({required this.staging, required this.atTargetCount});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final summary = _summary(l10n);
 
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      height: 72,
+      padding: const EdgeInsets.only(left: 16, right: 12),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
       ),
       child: Row(
         children: [
-          Icon(Icons.inbox_outlined, size: 17, color: colorScheme.onSurfaceVariant),
-          const SizedBox(width: 9),
-          Text(l10n.stagingArea, style: textTheme.titleSmall),
-          if (staging.isNotEmpty) ...[
-            const SizedBox(width: 9),
-            _CountBadge(count: staging.count),
-          ],
-          const Spacer(),
-          // A text button in the error colour, not an outlined destructive
-          // one: `12a` keeps it at the weight of a link because emptying the
-          // list costs nothing on disk — the marks are only marks. `12c`
-          // keeps it in place on an empty panel, disabled: the header does
-          // not change shape with the list.
-          TextButton(
-            onPressed: staging.isEmpty ? null : staging.clear,
-            style: TextButton.styleFrom(
-              foregroundColor: colorScheme.error,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: const Size(0, 30),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.stagingArea,
+                  style: textTheme.titleLarge,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                // One line, never wrapped: the header does not change height
+                // with the list. The whole line is a hover away.
+                Tooltip(
+                  message: summary,
+                  child: Text(
+                    summary,
+                    style: textTheme.bodySmall!.mono.copyWith(color: colorScheme.onSurfaceVariant),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
-            child: Text(l10n.clearStaging, style: textTheme.bodySmall),
+          ),
+          const SizedBox(width: 8),
+          // The error colour at the weight of a link: emptying the list costs
+          // nothing on disk — the marks are only marks. Kept in place on an
+          // empty panel, disabled, so the header does not change shape.
+          AppButton(
+            label: l10n.clearStaging,
+            variant: AppButtonVariant.destructiveText,
+            size: AppButtonSize.compact,
+            onPressed: staging.isEmpty ? null : staging.clear,
           ),
         ],
       ),
     );
   }
-}
 
-/// The accent pill carrying the staged count, in the panel header and on the
-/// toolbar button that opens it.
-class _CountBadge extends StatelessWidget {
-  final int count;
-
-  const _CountBadge({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      constraints: const BoxConstraints(minWidth: 19),
-      height: 19,
-      padding: const EdgeInsets.symmetric(horizontal: 5),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: colorScheme.primary,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Text(
-        '$count',
-        style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
+  /// Assembled from parts rather than one plural string so the clauses that
+  /// do not apply are absent, not zeroed.
+  String _summary(AppLocalizations l10n) {
+    if (staging.isEmpty) return l10n.stagingItemsCount(0);
+    return <String>[
+      l10n.stagingItemsCount(staging.count),
+      AppConstants.formatFileSize(staging.totalBytes),
+      if (staging.hasMissing) l10n.stagingMissingCount(staging.missingPaths.length),
+      if (atTargetCount > 0) l10n.stagingAtTargetCount(atTargetCount),
+    ].join(' · ');
   }
 }
 
@@ -157,40 +179,60 @@ class _EmptyState extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.inbox_outlined, size: 34, color: colorScheme.outlineVariant),
-          const SizedBox(height: 12),
-          Text(
-            l10n.stagingEmptyTitle,
-            style: textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-            textAlign: TextAlign.center,
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.s22, vertical: AppSpace.s16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.inbox_outlined, size: 28, color: colorScheme.outline),
+                  const SizedBox(height: AppSpace.s10),
+                  Text(
+                    l10n.stagingEmptyTitle,
+                    style: textTheme.titleMedium!.copyWith(fontWeight: FontWeight.w600),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpace.s6),
+                  Text(
+                    l10n.stagingEmptyDesc,
+                    style: textTheme.bodySmall!.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: AppType.proseHeight,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.stagingEmptyDesc,
-            style: textTheme.labelMedium?.copyWith(color: colorScheme.outline, height: 1.5),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// Where a paste lands, echoed back permanently.
+/// Where a paste lands, echoed back permanently — `1a` DESTINATION.
 ///
 /// The one control this feature cannot do without. The browser lists several
 /// active directories merged, so there is no "current folder" to paste into —
 /// the destination has to be named, and named visibly, or the user is
 /// guessing where their files went.
-class _DestinationCard extends StatelessWidget {
+class _DestinationSection extends StatelessWidget {
   final String? destination;
+  final int restoredCount;
 
-  const _DestinationCard({required this.destination});
+  /// Drawn under the empty state, so the rule is above it; otherwise below.
+  final bool ruleOnTop;
+
+  const _DestinationSection({
+    required this.destination,
+    required this.restoredCount,
+    required this.ruleOnTop,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -198,368 +240,292 @@ class _DestinationCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final target = destination;
+    final hair = BorderSide(color: colorScheme.outlineVariant);
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.stagingTarget,
-            style: textTheme.labelSmall?.copyWith(
-              color: colorScheme.outline,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Row(
+    final Widget card;
+    if (target == null) {
+      card = DashedBorder(
+        color: colorScheme.outline,
+        radius: AppRadius.control,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.folder_rounded,
-                size: 16,
-                color: target == null ? colorScheme.outlineVariant : kFolderAmber,
-              ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  target == null ? l10n.stagingNoTarget : _shortPath(target),
-                  style: textTheme.labelMedium?.mono.copyWith(
-                    color: target == null ? colorScheme.outline : colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
+              Row(
+                children: [
+                  Icon(Icons.folder_outlined, size: 18, color: colorScheme.outline),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.stagingNoTarget,
+                      style: textTheme.bodyMedium!.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                  maxLines: 1,
-                  // Truncates at the *front*: the tail of a path is the part
-                  // that identifies the folder, and it is the half a
-                  // left-truncating ellipsis would eat.
-                  overflow: TextOverflow.ellipsis,
-                  textDirection: TextDirection.rtl,
+                ],
+              ),
+              const SizedBox(height: AppSpace.s4),
+              Text(
+                l10n.stagingTargetHint,
+                style: textTheme.bodySmall!.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: AppType.proseHeight,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            l10n.stagingTargetHint,
-            style: textTheme.labelSmall?.copyWith(color: colorScheme.outline, height: 1.5),
+        ),
+      );
+    } else {
+      card = Tooltip(
+        message: target,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: 8),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border.all(color: colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(AppRadius.control),
           ),
+          child: Row(
+            children: [
+              Icon(Icons.folder_open, size: AppSize.iconLg, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.basename(target).isEmpty ? target : p.basename(target),
+                      style: textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      target,
+                      style: textTheme.labelSmall!.mono.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: AppSpace.s10),
+      decoration: BoxDecoration(
+        border: Border(top: ruleOnTop ? hair : BorderSide.none, bottom: ruleOnTop ? BorderSide.none : hair),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.stagingTarget.toUpperCase(),
+            style: textTheme.labelSmall!.copyWith(
+              color: colorScheme.onAccentTint,
+              letterSpacing: AppType.trackedLabelSpacing,
+            ),
+          ),
+          const SizedBox(height: AppSpace.s6),
+          card,
+          if (restoredCount > 0) ...[
+            const SizedBox(height: AppSpace.s6),
+            TransferNote(
+              text: l10n.stagingRestored(restoredCount),
+              tone: TransferTone.ok,
+              icon: Icons.restore,
+              compact: true,
+            ),
+          ],
         ],
       ),
     );
   }
-}
-
-/// Last two segments — a full path does not fit in 300px and the leading half
-/// is the same for every entry anyway.
-String _shortPath(String path) {
-  final parts = p.split(path).where((s) => s.isNotEmpty).toList();
-  if (parts.length <= 2) return path;
-  return parts.sublist(parts.length - 2).join(' / ');
 }
 
 class _ItemList extends StatelessWidget {
   final FileStagingState staging;
-  final String? destination;
+  final Set<String> atTarget;
 
-  const _ItemList({required this.staging, required this.destination});
+  const _ItemList({required this.staging, required this.atTarget});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    // Grouped by source folder, which is also the shape that makes the
-    // "already at the destination" case legible: it lands on a whole group at
-    // once rather than being scattered down the list.
-    final groups = <String, List<BrowserFile>>{};
-    for (final file in staging.items) {
-      groups.putIfAbsent(p.dirname(file.path), () => []).add(file);
-    }
-
-    final children = <Widget>[
-      if (staging.restoredCount > 0)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 9, 8, 0),
-          child: Row(
-            children: [
-              Icon(Icons.history, size: 12, color: colorScheme.outline),
-              const SizedBox(width: 7),
-              Flexible(
-                child: Text(
-                  l10n.stagingRestored(staging.restoredCount),
-                  style: textTheme.labelSmall?.copyWith(color: colorScheme.outline),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-    ];
-
-    for (final entry in groups.entries) {
-      final atDestination = destination != null && p.equals(entry.key, destination!);
-      children.add(_GroupHeader(
-        label: p.basename(entry.key),
-        fullPath: entry.key,
-        count: entry.value.length,
-        atDestination: atDestination,
-      ));
-      for (final file in entry.value) {
-        children.add(_StagedRow(
+    final items = staging.items;
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      // One past the rows: the list-end note on how else files get here.
+      itemCount: items.length + 1,
+      itemBuilder: (context, index) {
+        if (index == items.length) {
+          final colorScheme = Theme.of(context).colorScheme;
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(12, AppSpace.s10, 12, AppSpace.s16),
+            child: Text(
+              AppLocalizations.of(context)!.stagingDropHint,
+              style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
+                    color: colorScheme.outline,
+                    fontWeight: FontWeight.w400,
+                  ),
+            ),
+          );
+        }
+        final file = items[index];
+        return _StagedRow(
+          key: ValueKey(file.path),
           file: file,
           missing: staging.isMissing(file.path),
+          atTarget: atTarget.contains(file.path),
           onRemove: () => staging.remove(file.path),
-        ));
-      }
-    }
-
-    if (staging.hasMissing) {
-      children.add(Padding(
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton(
-            onPressed: staging.removeMissing,
-            style: TextButton.styleFrom(
-              foregroundColor: colorScheme.onSurfaceVariant,
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              minimumSize: const Size(0, 28),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              l10n.stagingClearMissing(staging.missingPaths.length),
-              style: textTheme.bodySmall,
-            ),
-          ),
-        ),
-      ));
-    }
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
-      children: children,
+        );
+      },
     );
   }
 }
 
-class _GroupHeader extends StatelessWidget {
-  /// The folder's own name, not its path.
-  ///
-  /// A 300px column cannot hold a path, and the half an ellipsis would take is
-  /// the half that says which folder this is — `12a` labels these groups
-  /// `ai_res`, `下载`, and so on for the same reason. The path is still one
-  /// hover away.
-  final String label;
-
-  final String fullPath;
-  final int count;
-  final bool atDestination;
-
-  const _GroupHeader({
-    required this.label,
-    required this.fullPath,
-    required this.count,
-    required this.atDestination,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 10, 8, 4),
-      child: Row(
-        children: [
-          Flexible(
-            child: Tooltip(
-              message: fullPath,
-              child: Text(
-              label,
-              style: textTheme.labelSmall?.copyWith(
-                color: colorScheme.outline,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.6,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            ),
-          ),
-          const SizedBox(width: 7),
-          Text(
-            '$count',
-            style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
-          ),
-          if (atDestination) ...[
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-              child: Text(
-                l10n.stagingSameAsTarget,
-                style: textTheme.labelSmall?.copyWith(color: colorScheme.outline),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _StagedRow extends StatefulWidget {
+/// `1a` 条目行 56: thumbnail, mono name, and a second line that is either the
+/// size and date, *Missing*, or *Already here*.
+class _StagedRow extends StatelessWidget {
   final BrowserFile file;
   final bool missing;
+  final bool atTarget;
   final VoidCallback onRemove;
 
   const _StagedRow({
+    super.key,
     required this.file,
     required this.missing,
+    required this.atTarget,
     required this.onRemove,
   });
 
   @override
-  State<_StagedRow> createState() => _StagedRowState();
-}
-
-class _StagedRowState extends State<_StagedRow> {
-  bool _hovered = false;
-
-  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final semantic = AppSemanticColors.of(context);
+    final mono11 = textTheme.labelSmall!.mono.copyWith(fontWeight: FontWeight.w400);
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: Container(
-        height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          // Hover is greyscale, never the accent — the accent in this panel
-          // means the count and the commit button, and a hovered row is
-          // neither.
-          color: _hovered ? colorScheme.surfaceContainerHigh : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.control),
-        ),
-        child: Row(
-          children: [
-            _Thumb(file: widget.file, missing: widget.missing),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Text(
-                widget.file.name,
-                style: textTheme.labelMedium?.mono.copyWith(
-                  color: widget.missing ? colorScheme.outline : colorScheme.onSurfaceVariant,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+    final Widget detail;
+    if (missing) {
+      detail = Row(
+        children: [
+          Icon(Icons.link_off, size: 12, color: colorScheme.error),
+          const SizedBox(width: AppSpace.s4),
+          Flexible(
+            child: Text(
+              l10n.stagingMissing,
+              style: mono11.copyWith(color: colorScheme.onErrorContainer),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            if (widget.missing) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: semantic.warningContainer,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                child: Text(
-                  l10n.stagingMissing,
-                  style: textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
-                ),
-              ),
-            ],
-            const SizedBox(width: 4),
-            // Shown on hover only. Twelve rows each carrying a permanent ✕
-            // reads as a list of delete buttons that happen to have file names
-            // beside them; the reserved width keeps the names from reflowing
-            // as the pointer moves down the list.
-            SizedBox(
-              width: 20,
-              height: 20,
-              child: _hovered
-                  ? Tooltip(
-                      message: l10n.removeFromStaging,
-                      child: InkWell(
-                        onTap: widget.onRemove,
-                        borderRadius: BorderRadius.circular(AppRadius.xs),
-                        child: Icon(
-                          Icons.close,
-                          size: 12,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    )
-                  : null,
+          ),
+        ],
+      );
+    } else if (atTarget) {
+      detail = Align(
+        alignment: Alignment.centerLeft,
+        child: TransferBadge(label: l10n.stagingSameAsTarget, tone: TransferTone.track, icon: Icons.block),
+      );
+    } else {
+      detail = Text(
+        '${AppConstants.formatFileSize(file.size)} · ${_date(file.modified)}',
+        style: mono11.copyWith(color: colorScheme.onSurfaceVariant),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.only(left: 12, right: 6),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+      ),
+      child: Row(
+        children: [
+          Opacity(
+            opacity: missing ? 0.45 : 1,
+            child: TransferThumb(
+              path: file.path,
+              size: 36,
+              // A missing file has nothing to decode; its glyph stands in.
+              imageProvider: missing ? null : file.imageProvider,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: AppSpace.s10),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // The full path is a hover away: rows carry the name only, and
+                // two staged files of one name from two folders are told apart
+                // here.
+                Tooltip(
+                  message: file.path,
+                  waitDuration: const Duration(milliseconds: 500),
+                  child: Text(
+                    file.name,
+                    style: textTheme.bodySmall!.mono.copyWith(
+                      color: missing ? colorScheme.outline : colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                detail,
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpace.s4),
+          IconButton(
+            icon: const Icon(Icons.close, size: AppSize.iconMd),
+            tooltip: l10n.removeFromStaging,
+            onPressed: onRemove,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: AppSize.compact, height: AppSize.compact),
+            style: IconButton.styleFrom(
+              foregroundColor: colorScheme.outline,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+            ),
+          ),
+        ],
       ),
     );
   }
-}
 
-class _Thumb extends StatelessWidget {
-  final BrowserFile file;
-  final bool missing;
-
-  const _Thumb({required this.file, required this.missing});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isImage = file.category == FileCategory.image && !missing;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.xs),
-      child: Container(
-        width: 26,
-        height: 26,
-        color: colorScheme.surfaceContainerHighest,
-        child: isImage
-            // 26px on screen, so decoded at 52 for a 2x display and no more —
-            // the grid's own cache entries are far larger and a second full
-            // decode per staged file would be paid for nothing.
-            ? Image(
-                image: ResizeImage(file.imageProvider, width: 52),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stack) => Icon(file.icon, size: 13, color: colorScheme.outline),
-              )
-            : Icon(
-                file.icon,
-                size: 13,
-                color: missing ? colorScheme.outlineVariant : file.color.withAlpha(180),
-              ),
-      ),
-    );
+  static String _date(DateTime when) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${when.year}-${two(when.month)}-${two(when.day)}';
   }
 }
 
+/// `1a` 底部固定区: Remove missing (an action on the whole column, so it does
+/// not scroll with the list), then Move here and Copy here side by side.
 class _Footer extends StatelessWidget {
   final FileStagingState staging;
   final String? destination;
+  final int atTargetCount;
   final void Function(FileTransferMode mode) onPaste;
 
   const _Footer({
     required this.staging,
     required this.destination,
+    required this.atTargetCount,
     required this.onPaste,
   });
 
@@ -569,68 +535,117 @@ class _Footer extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final atTarget = destination == null
-        ? 0
-        : staging.items.where((f) => p.equals(p.dirname(f.path), destination!)).length;
-    final enabled = destination != null && staging.count > atTarget + staging.missingPaths.length;
+    final enabled = destination != null && staging.count > atTargetCount + staging.missingPaths.length;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: AppSpace.s10),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (staging.hasMissing) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: staging.removeMissing,
+                icon: const Icon(Icons.delete_sweep_outlined, size: AppSize.iconSm),
+                label: Text(
+                  l10n.stagingClearMissing(staging.missingPaths.length),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colorScheme.error,
+                  backgroundColor: colorScheme.surface,
+                  side: BorderSide(color: colorScheme.outlineVariant),
+                  minimumSize: const Size(0, AppSize.compact),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+                  textStyle: textTheme.labelMedium,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           Row(
             children: [
               Expanded(
-                child: FilledButton.icon(
+                child: _PasteButton(
+                  label: l10n.moveHere,
+                  icon: Icons.drive_file_move_outlined,
+                  primary: true,
                   onPressed: enabled ? () => onPaste(FileTransferMode.move) : null,
-                  icon: const Icon(Icons.arrow_forward, size: 14),
-                  label: Text(l10n.moveHere, style: textTheme.bodySmall?.metricsOnly),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, AppSize.control),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton(
+                child: _PasteButton(
+                  label: l10n.copyHere,
+                  icon: Icons.content_copy_outlined,
+                  primary: false,
                   onPressed: enabled ? () => onPaste(FileTransferMode.copy) : null,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, AppSize.control),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                  ),
-                  child: Text(l10n.copyHere, style: textTheme.bodySmall?.metricsOnly),
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _summary(l10n, atTarget),
-            style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
           ),
         ],
       ),
     );
   }
+}
 
-  /// The one line that says what pressing either button will actually do.
-  /// Assembled from parts rather than one plural string so the clauses that
-  /// do not apply are absent, not zeroed.
-  String _summary(AppLocalizations l10n, int atTarget) {
-    if (staging.isEmpty) return l10n.stagingItemsCount(0);
+/// A 40px half-width paste button. Drops its glyph — measured, not guessed —
+/// when the label and the glyph no longer fit the half it is given.
+class _PasteButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool primary;
+  final VoidCallback? onPressed;
 
-    final parts = <String>[
-      l10n.stagingItemsCount(staging.count),
-      AppConstants.formatFileSize(staging.totalBytes),
-      if (staging.hasMissing) l10n.stagingMissingCount(staging.missingPaths.length),
-      if (atTarget > 0) l10n.stagingAtTargetCount(atTarget),
-    ];
-    return parts.join(' · ');
+  const _PasteButton({
+    required this.label,
+    required this.icon,
+    required this.primary,
+    required this.onPressed,
+  });
+
+  /// `AppButtonSize.large`'s horizontal padding, twice, plus Material's gap
+  /// between a button's glyph and its label.
+  static const double _chrome = 40;
+  static const double _glyphGap = 8;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textWidth = measureGlassText(context, label, textTheme.titleMedium!);
+        final fits = textWidth + AppSize.iconLg + _glyphGap + _chrome <= constraints.maxWidth;
+
+        final button = AppButton(
+          label: label,
+          icon: fits ? icon : null,
+          variant: primary ? AppButtonVariant.primary : AppButtonVariant.secondary,
+          size: AppButtonSize.large,
+          fullWidth: true,
+          onPressed: onPressed,
+        );
+        if (!primary || onPressed == null) return button;
+
+        // `0 4 12 ring`: the commit button carries a glow in its own hue.
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            boxShadow: [BoxShadow(color: colorScheme.accentRing, blurRadius: 12, offset: const Offset(0, 4))],
+          ),
+          child: button,
+        );
+      },
+    );
   }
 }

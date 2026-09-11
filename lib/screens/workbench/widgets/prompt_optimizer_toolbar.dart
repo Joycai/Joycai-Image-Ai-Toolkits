@@ -1,29 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_icon_button.dart';
-import 'workbench_tool_header.dart';
+import '../../../widgets/app_breathing_dot.dart';
+import '../../../widgets/glass/app_glass.dart';
+import '../../../widgets/glass/glass_controls.dart';
 
-/// Panel width below which this header drops to its compact form.
+/// The prompt assistant's controls in the workbench's floating glass toolbar
+/// (`A3a · 1a`, `A3b · 1a`): what this is, which brain is answering, whether
+/// it is running, the session actions, and the one thing the screen builds
+/// towards.
 ///
-/// Measured against the header, not against the app's mobile breakpoint: the
-/// full form spends ~320px on chrome that cannot shrink (back button, two
-/// session icons, the divider and the "apply to workbench" button) and needs
-/// another ~200 before the title and mode badge are worth reading. Note this
-/// is *below* the workbench's own centre panel at the default desktop layout —
-/// 1440 minus the rail, both side panels and two gutters leaves it 568 — so
-/// the number has to sit between that and [kMinCenterWidth], not at 600.
-const double _kCompactHeaderWidth = 520;
-
-/// The prompt assistant's header: leave, see which brain is answering, reach
-/// the session controls, and apply the result.
-///
-/// Built on [WorkbenchToolHeader] like the comparator, mask and crop tools.
-/// It is the reason that widget exists: this header had no back button at all,
-/// so the one screen the user is most likely to arrive at from a card action
-/// was also the only one with no way back to the gallery except the tab strip.
+/// It fills the slot the toolbar gives it after the back button and the tool
+/// switch, and degrades inside that slot by measurement, in this order: the
+/// session actions lose their labels, the mode badge goes, the primary action
+/// takes its short label, the session actions fold into a menu, the running
+/// pill keeps only its dot, the title goes.
 class PromptOptimizerToolbar extends StatelessWidget {
   final VoidCallback onNewSession;
   final VoidCallback onHistory;
@@ -31,21 +24,20 @@ class PromptOptimizerToolbar extends StatelessWidget {
   final bool isRefining;
   final bool canApply;
 
-  /// Localised name of the session's mode, shown as a badge beside the title.
+  /// Localised name of the session's mode, shown in the badge beside the title.
   /// Null hides the badge.
   final String? modeLabel;
 
-  /// Glyph for that badge — one per mode, so the three read apart at a glance
-  /// rather than only by their words.
+  /// Kept for callers; the badge is text on glass and carries no glyph now.
   final IconData modeIcon;
 
   /// Tool steps the running turn has taken so far. Null while nothing is
   /// running; zero while the agent is thinking but has called nothing yet.
   final int? runningSteps;
 
-  /// Knowledge edits staged and waiting on the user. `10h` gives them the
-  /// header's primary slot while there are any: in library-edit mode the
-  /// session's product is the changes, not a prompt to apply.
+  /// Knowledge edits staged and waiting on the user. While there are any they
+  /// take the primary slot (`A3b · 1a`): in library-edit mode the session's
+  /// product is the changes, and applying a prompt would not resolve them.
   final int pendingKbEdits;
   final VoidCallback? onWriteAllKbEdits;
   final VoidCallback? onDiscardAllKbEdits;
@@ -65,241 +57,298 @@ class PromptOptimizerToolbar extends StatelessWidget {
     this.onDiscardAllKbEdits,
   });
 
+  static const double _gap = 4;
+  static const double _leading = 6;
+
+  static TextStyle _titleStyle(BuildContext context) =>
+      Theme.of(context).textTheme.titleMedium!.metricsOnly.copyWith(fontWeight: FontWeight.w600);
+
+  static TextStyle _chipStyle(BuildContext context) =>
+      Theme.of(context).textTheme.labelSmall!.metricsOnly.copyWith(fontWeight: FontWeight.w500);
+
+  static double _tintedWidth(BuildContext context, String label) =>
+      12 + AppSize.iconMd + 6 + measureGlassText(context, label, _TintedAction.labelStyle(context)) + 12;
+
+  static double _chipWidth(BuildContext context, String label, {bool dot = false}) =>
+      8 + (dot ? 6 + 4 : 0) + measureGlassText(context, label, _chipStyle(context)) + 8;
+
+  /// The width these controls take with everything labelled — what the
+  /// toolbar weighs its tool switch against.
+  static double preferredWidth(
+    BuildContext context, {
+    String? modeLabel,
+    int pendingKbEdits = 0,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
+    final title = measureGlassText(context, l10n.promptOptimizer, _titleStyle(context));
+    final badge = modeLabel == null ? 0.0 : 8 + _chipWidth(context, l10n.optModeBadgeAgent(modeLabel));
+    final session = GlassIconButton.widthFor(context, label: l10n.optHistory) +
+        _gap +
+        GlassIconButton.widthFor(context, label: l10n.optNewSession);
+    final primary = pendingKbEdits > 0
+        ? GlassIconButton.widthFor(context, label: l10n.kbEditDiscardAll, hasIcon: false) +
+            _gap +
+            _tintedWidth(context, l10n.kbEditConfirmAll(pendingKbEdits))
+        : _tintedWidth(context, l10n.applyToWorkbench);
+    return (_leading + title + badge + AppSpace.s16 + session + _gap + primary).ceilToDouble();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Compact form is decided by the panel this header was handed, not by the
-    // screen. Of the four tools this is the only one whose tab keeps both side
-    // panels, so it is the only header that can find itself in a column far
-    // narrower than the window — where `Responsive.isMobile` still answers
-    // "desktop" and lays out ~290px of chrome that does not fit.
-    return LayoutBuilder(
-      builder: (context, constraints) =>
-          _build(context, constraints.maxWidth < _kCompactHeaderWidth),
-    );
+    return LayoutBuilder(builder: (context, constraints) => _build(context, constraints.maxWidth));
   }
 
-  Widget _build(BuildContext context, bool compact) {
+  Widget _build(BuildContext context, double width) {
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return WorkbenchToolHeader(
-      children: [
-        const SizedBox(width: 10),
-
-        // Title and badge fill the leading space, pushing the actions right.
-        Expanded(
-          child: compact
-              ? const SizedBox.shrink()
-              : Row(
-                  children: [
-                    // Given a third of the space, against the badge's two:
-                    // equal [Flexible]s split the row evenly and the title's
-                    // unused half is not handed back, which is what cut the
-                    // badge to "知识库 · Ag…" while the title sat in space it
-                    // wasn't using. The badge is the longer string in all four
-                    // languages, so it gets the larger share; the title still
-                    // has to be able to ellipsise, because "プロンプトアシス
-                    // タント" beside a Japanese badge does not fit a squeezed
-                    // panel at any share.
-                    Flexible(
-                      child: Text(
-                        l10n.promptOptimizer,
-                        overflow: TextOverflow.ellipsis,
-                        softWrap: false,
-                        style: textTheme.titleMedium,
-                      ),
-                    ),
-                    if (modeLabel != null) ...[
-                      const SizedBox(width: 10),
-                      // Which brain is answering. The three modes behave very
-                      // differently and the setting that picks them lives in a
-                      // panel that can be closed, so the header has to say it.
-                      //
-                      // The spec draws this as an accent-tinted capsule — one
-                      // of the three places accent is allowed (selection, main
-                      // CTA, badge). It was a grey `surfaceContainerHighest`
-                      // box, which read as a disabled control rather than as a
-                      // statement about the session.
-                      Flexible(flex: 2, child: _modeBadge(colorScheme, textTheme, l10n)),
-                    ],
-                    if (runningSteps != null) ...[
-                      const SizedBox(width: 8),
-                      // `10i` states the run in the header, beside the mode it
-                      // is running in: the transcript can be scrolled away
-                      // from the card that is moving, and a disabled composer
-                      // says only that typing is blocked, not that anything is
-                      // happening.
-                      //
-                      // Flexible like its two neighbours. Three loose children
-                      // share the row's free space and each sizes to its own
-                      // content within its share, so a squeezed header
-                      // ellipsizes rather than overflowing — which a fixed
-                      // third pill on a 520px panel would.
-                      Flexible(flex: 2, child: _runningPill(colorScheme, textTheme, l10n)),
-                    ],
-                  ],
-                ),
-        ),
-
-        // Only in the compact header, where the running pill above is not
-        // drawn at all: at full width the pill *is* the progress report, and a
-        // spinner beside it said the same thing twice.
-        if (isRefining && compact)
-          const Padding(
-            padding: EdgeInsets.only(right: 8),
-            child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-          ),
-
-        if (!compact) ...[
-          AppIconButton(
-            icon: Icons.history,
-            tooltip: l10n.optHistory,
-            // Off during a turn: restoring another conversation mid-run swaps
-            // the session out from under the agent, and starting a new one
-            // leaves the running turn writing into a transcript nobody is
-            // looking at. `10i` dims both.
-            onPressed: isRefining ? null : onHistory,
-          ),
-          const SizedBox(width: 6),
-          AppIconButton(
-            icon: Icons.add_comment_outlined,
-            tooltip: l10n.optNewSession,
-            onPressed: isRefining ? null : onNewSession,
-          ),
-          const ToolHeaderDivider(),
-        ],
-
-        // The one action the whole screen builds towards, and the only solid
-        // accent on it. Disabled is an outline rather than a grey slab: there
-        // is nothing to apply until the agent has produced a prompt, and a
-        // filled grey button looks broken where an empty one reads as "not
-        // yet".
-        //
-        // Staged knowledge edits outrank it, per `10h`. Nothing is on disk
-        // until they are answered, so leaving the header pointing at the
-        // workbench while three files wait for a decision aims the user at the
-        // wrong screen — and applying a prompt does not resolve them.
-        if (pendingKbEdits > 0) ...[
-          if (!compact) ...[
-            AppButton(
-              label: l10n.kbEditDiscardAll,
-              variant: AppButtonVariant.secondary,
-              onPressed: onDiscardAllKbEdits,
-            ),
-            const SizedBox(width: 6),
-          ],
-          AppButton(
-            label: compact
-                ? l10n.kbEditApply
-                : l10n.kbEditConfirmAll(pendingKbEdits),
-            icon: Icons.save_outlined,
-            onPressed: onWriteAllKbEdits,
-          ),
-        ] else
-          AppButton(
-            label: compact ? l10n.apply : l10n.applyToWorkbench,
-            icon: Icons.check,
-            variant: canApply ? AppButtonVariant.primary : AppButtonVariant.secondary,
-            onPressed: canApply ? onApply : null,
-          ),
-
-        if (compact) ...[
-          const SizedBox(width: 4),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_horiz),
-            onSelected: (value) {
-              if (value == 'new_session') onNewSession();
-              if (value == 'history') onHistory();
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'history',
-                child: ListTile(
-                  leading: const Icon(Icons.history),
-                  title: Text(l10n.optHistory),
-                  dense: true,
-                ),
-              ),
-              PopupMenuItem(
-                value: 'new_session',
-                child: ListTile(
-                  leading: const Icon(Icons.add_comment_outlined),
-                  title: Text(l10n.optNewSession),
-                  dense: true,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-
-  /// "Running · step 8", with the pulsing dot `10i` draws.
-  ///
-  /// Same capsule as the mode badge beside it, deliberately: they are two
-  /// facts about one session, and giving the live one its own shape made the
-  /// header read as two unrelated widgets. The dot is what separates them.
-  Widget _runningPill(ColorScheme colorScheme, TextTheme textTheme, AppLocalizations l10n) {
+    final scheme = Theme.of(context).colorScheme;
+    final glass = GlassInk.maybeOf(context);
+    final ink = glass?.ink ?? scheme.onSurface;
+    final running = isRefining || runningSteps != null;
     final steps = runningSteps ?? 0;
-    return Container(
-      height: AppSize.compact,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+    final runningText = steps == 0 ? l10n.optRunning : l10n.optRunningStep(steps);
+    final hasPending = pendingKbEdits > 0;
+
+    bool showTitle = true;
+    bool showBadge = modeLabel != null;
+    bool sessionLabels = true;
+    bool sessionInMenu = false;
+    bool shortPrimary = false;
+    bool runningLabel = true;
+
+    String primaryLabel() => hasPending
+        ? (shortPrimary ? l10n.kbEditApply : l10n.kbEditConfirmAll(pendingKbEdits))
+        : (shortPrimary ? l10n.apply : l10n.applyToWorkbench);
+
+    double measure() {
+      double w = _leading;
+      if (showTitle) w += measureGlassText(context, l10n.promptOptimizer, _titleStyle(context));
+      if (showBadge) w += 8 + _chipWidth(context, l10n.optModeBadgeAgent(modeLabel!));
+      if (running) w += 8 + (runningLabel ? _chipWidth(context, runningText, dot: true) : 22);
+      w += AppSpace.s16;
+      if (sessionInMenu) {
+        w += AppSize.control;
+      } else {
+        w += GlassIconButton.widthFor(context, label: sessionLabels ? l10n.optHistory : null) +
+            _gap +
+            GlassIconButton.widthFor(context, label: sessionLabels ? l10n.optNewSession : null);
+      }
+      w += _gap;
+      if (hasPending && !shortPrimary) {
+        w += GlassIconButton.widthFor(context, label: l10n.kbEditDiscardAll, hasIcon: false) + _gap;
+      }
+      w += _tintedWidth(context, primaryLabel());
+      return w;
+    }
+
+    if (measure() > width) sessionLabels = false;
+    if (measure() > width) showBadge = false;
+    if (measure() > width) shortPrimary = true;
+    if (measure() > width) sessionInMenu = true;
+    if (measure() > width) runningLabel = false;
+    if (measure() > width) showTitle = false;
+
+    final children = <Widget>[
+      const SizedBox(width: _leading),
+      if (showTitle)
+        Flexible(
+          child: Text(
+            l10n.promptOptimizer,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+            style: _titleStyle(context),
+          ),
+        ),
+      // Which brain is answering: a fact about the session, not a state, so
+      // it is mono on a faint wash of the glass ink rather than the accent.
+      if (showBadge) ...[
+        const SizedBox(width: 8),
+        Flexible(
+          child: _Chip(
+            label: l10n.optModeBadgeAgent(modeLabel!),
+            background: ink.withValues(alpha: 0.10),
+            foreground: ink,
+            mono: true,
+          ),
+        ),
+      ],
+      if (running) ...[
+        const SizedBox(width: 8),
+        Flexible(
+          child: _Chip(
+            label: runningLabel ? runningText : null,
+            tooltip: runningText,
+            background: scheme.accentTint,
+            foreground: scheme.onAccentTint,
+            dot: scheme.primary,
+          ),
+        ),
+      ],
+      const Expanded(child: SizedBox()),
+      if (sessionInMenu)
+        MenuAnchor(
+          menuChildren: [
+            MenuItemButton(
+              leadingIcon: const Icon(Icons.history, size: AppSize.iconLg),
+              // Off during a turn: restoring another conversation mid-run
+              // swaps the session out from under the agent.
+              onPressed: isRefining ? null : onHistory,
+              child: Text(l10n.optHistory),
+            ),
+            MenuItemButton(
+              leadingIcon: const Icon(Icons.add_comment_outlined, size: AppSize.iconLg),
+              onPressed: isRefining ? null : onNewSession,
+              child: Text(l10n.optNewSession),
+            ),
+          ],
+          builder: (context, controller, _) => GlassIconButton(
+            icon: Icons.more_vert,
+            tooltip: l10n.more,
+            active: controller.isOpen,
+            onPressed: () => controller.isOpen ? controller.close() : controller.open(),
+          ),
+        )
+      else ...[
+        GlassIconButton(
+          icon: Icons.history,
+          label: sessionLabels ? l10n.optHistory : null,
+          tooltip: sessionLabels ? null : l10n.optHistory,
+          onPressed: isRefining ? null : onHistory,
+        ),
+        const SizedBox(width: _gap),
+        GlassIconButton(
+          icon: Icons.add_comment_outlined,
+          label: sessionLabels ? l10n.optNewSession : null,
+          tooltip: sessionLabels ? null : l10n.optNewSession,
+          onPressed: isRefining ? null : onNewSession,
+        ),
+      ],
+      const SizedBox(width: _gap),
+      if (hasPending) ...[
+        if (!shortPrimary) ...[
+          GlassIconButton(
+            label: l10n.kbEditDiscardAll,
+            danger: true,
+            onPressed: onDiscardAllKbEdits,
+          ),
+          const SizedBox(width: _gap),
+        ],
+        _TintedAction(
+          icon: Icons.save_outlined,
+          label: primaryLabel(),
+          tooltip: shortPrimary ? l10n.kbEditConfirmAll(pendingKbEdits) : null,
+          onPressed: onWriteAllKbEdits,
+        ),
+      ] else
+        // The one solid accent on the screen, as tinted glass because it
+        // stands on a glass bar. Disabled until there is a prompt to apply.
+        _TintedAction(
+          icon: Icons.login,
+          label: primaryLabel(),
+          tooltip: shortPrimary ? l10n.applyToWorkbench : null,
+          onPressed: canApply ? onApply : null,
+        ),
+    ];
+
+    return Row(children: children);
+  }
+}
+
+/// A small r4 chip on the bar: the mode badge and the running pill.
+class _Chip extends StatelessWidget {
+  const _Chip({
+    required this.label,
+    required this.background,
+    required this.foreground,
+    this.tooltip,
+    this.dot,
+    this.mono = false,
+  });
+
+  final String? label;
+  final String? tooltip;
+  final Color background;
+  final Color foreground;
+  final Color? dot;
+  final bool mono;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = PromptOptimizerToolbar._chipStyle(context);
+    final style = (mono ? base.mono.copyWith(fontWeight: FontWeight.w400) : base).copyWith(color: foreground);
+    Widget chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: colorScheme.accentTint,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
+        color: background,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Static, though `10i` pulses it — for the reason recorded on
-          // [AppStatusBadge]: a repeating animation makes `pumpAndSettle`
-          // never return and the screenshot harness capture a different frame
-          // each run. The dot's presence is what carries the state.
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(color: colorScheme.onAccentTint, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              steps == 0 ? l10n.optRunning : l10n.optRunningStep(steps),
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.labelMedium?.copyWith(color: colorScheme.onAccentTint),
+          if (dot != null) AppBreathingDot(color: dot!, size: 6),
+          if (dot != null && label != null) const SizedBox(width: 4),
+          if (label != null)
+            Flexible(
+              child: Text(
+                label!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+                style: style,
+              ),
             ),
-          ),
         ],
       ),
     );
+    if (tooltip != null && label == null) chip = Tooltip(message: tooltip!, child: chip);
+    return chip;
   }
+}
 
-  Widget _modeBadge(ColorScheme colorScheme, TextTheme textTheme, AppLocalizations l10n) {
-    return Container(
-      height: AppSize.compact,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: colorScheme.accentTint,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(modeIcon, size: 13, color: colorScheme.onAccentTint),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              l10n.optModeBadgeAgent(modeLabel!),
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.labelMedium?.copyWith(
-                color: colorScheme.onAccentTint,
-                fontWeight: FontWeight.w600,
+/// The accent's solid form on glass: a 32px tinted-glass button.
+class _TintedAction extends StatelessWidget {
+  const _TintedAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.tooltip,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? tooltip;
+  final VoidCallback? onPressed;
+
+  static TextStyle labelStyle(BuildContext context) =>
+      Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(fontWeight: FontWeight.w600);
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    Widget button = MouseRegion(
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: onPressed,
+        child: AppTintedGlass(
+          enabled: enabled,
+          child: SizedBox(
+            height: AppSize.control,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: AppSize.iconMd),
+                  const SizedBox(width: 6),
+                  Text(label, maxLines: 1, style: labelStyle(context)),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
+    if (tooltip != null) button = Tooltip(message: tooltip!, child: button);
+    return Semantics(button: true, enabled: enabled, label: tooltip ?? label, child: button);
   }
 }

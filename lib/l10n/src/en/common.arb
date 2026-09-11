@@ -74,5 +74,27 @@
     }
   },
   "more": "More",
-  "confirm": "Confirm"
+  "confirm": "Confirm",
+  "moreSheetDesktopOnlyNote": "File Browser and Image Downloader are available on desktop and tablet only.",
+  "consoleIdle": "Idle",
+  "consoleFailedCount": "{count} failed",
+  "@consoleFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logSearchHint": "Filter logs…",
+  "logLevelError": "Error",
+  "logLevelRunning": "Running",
+  "logLevelSuccess": "Success",
+  "goToSettings": "Go to Settings",
+  "actionImport": "Import",
+  "actionExport": "Export",
+  "actionOpen": "Open",
+  "actionClear": "Clear",
+  "actionRun": "Run",
+  "actionChange": "Change",
+  "experimental": "Experimental"
 }

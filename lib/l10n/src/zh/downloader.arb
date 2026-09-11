@@ -70,5 +70,13 @@
   "guideStep2Desc": "告诉 AI 要寻找的图像",
   "guideStep3Title": "3 · 挑选下载",
   "guideStep3Desc": "批量选择并加入任务队列",
-  "copyLogs": "复制日志"
+  "copyLogs": "复制日志",
+  "downloaderFoundCount": "找到 {count} 张",
+  "downloaderAdvancedSubtitle": "只对这一屏的下载生效",
+  "copyImageUrl": "复制图片地址",
+  "manualHtmlEmptyTitle": "还没有粘贴 HTML",
+  "manualHtmlEmptyDesc": "在浏览器里「查看源代码」全选复制，然后点上面的粘贴。",
+  "cookieHistoryUse": "使用",
+  "cookieHistoryPairs": "{count} 对",
+  "cookieHistoryEmptyDesc": "粘贴过的 Cookie 会记在这里，方便下次同一站点复用。"
 }

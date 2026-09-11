@@ -75,5 +75,15 @@
   "reorderDisabledWhileFiltered": "筛选或搜索时无法拖动排序",
   "matchModeLabel": "匹配",
   "matchAny": "任一",
-  "matchAllTags": "全部"
+  "matchAllTags": "全部",
+  "promptFilterSummary": "{count} 个分类筛选中 · 匹配 {matches} 条",
+  "promptEditorSubtitle": "保存后可在工作台右栏一键应用",
+  "categoryColorHint": "颜色只用来区分类别",
+  "promptCount": "{count} 条提示词",
+  "categoryDeleteNote": "删除分类时，它下面的提示词会落回 General，不会被删除。",
+  "importFileSummary": "{file} · {count} 条",
+  "importMergeDetail": "保留现有 {current} 条，追加不重复的",
+  "importReplaceDetail": "删除现有 {current} 条，只保留文件里的 {count} 条",
+  "promptLibraryEmptyHint": "把工作台里用顺手的提示词存下来，下次一键套用。",
+  "colorPresets": "预设"
 }

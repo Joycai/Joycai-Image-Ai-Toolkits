@@ -200,9 +200,14 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
     // right-hand inset itself (below), so the content stops at zero there.
     final themeInset = theme.inputDecorationTheme.contentPadding?.resolve(Directionality.of(context)) ??
         const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
-    final contentPadding = widget.decoration.contentPadding ??
-        EdgeInsetsDirectional.fromSTEB(size.inset, themeInset.top, 0, themeInset.bottom);
     final pinned = size.height;
+    // A pinned box centres its content (below), so it takes no vertical inset
+    // of its own. The theme's 10/10 inside a 32px box left a 12px band, and
+    // both the value line and the tag chip were clipped at the bottom.
+    final contentPadding = widget.decoration.contentPadding ??
+        (pinned != null
+            ? EdgeInsetsDirectional.fromSTEB(size.inset, 0, 0, 0)
+            : EdgeInsetsDirectional.fromSTEB(size.inset, themeInset.top, 0, themeInset.bottom));
     // Disabled *and* empty is the common state of these fields — they are
     // empty precisely when there is nothing to choose from — so the hint has
     // to dim with the border and the glyph instead of keeping its enabled tone.

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../core/settings_category_palette.dart';
+import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
-import '../../../core/responsive.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../widgets/panel_resizer.dart';
+import '../../core/responsive.dart';
+import '../../l10n/app_localizations.dart';
+import '../../widgets/glass/app_glass.dart';
+import '../../widgets/glass/glass_controls.dart';
+import 'settings_identity.dart';
 import 'widgets/about_section.dart';
 import 'widgets/appearance_section.dart';
 import 'widgets/application_section.dart';
@@ -13,297 +16,202 @@ import 'widgets/data_section.dart';
 
 enum SettingsCategory { appearance, connectivity, application, data, about }
 
+/// Settings — design `E1`.
+///
+/// Desktop and tablet: two opaque cards on the aurora, a category card (232,
+/// tablet 200) and a content card with a 56px header and the content centred
+/// at up to 720. Phone: a large-title category list that pushes a page per
+/// category. The only glass is the phone's header; the shell's own title bar
+/// is the desktop's.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return ResponsiveBuilder(
-      mobile: _SettingsMobileView(l10n: l10n),
-      tablet: _SettingsTwoPaneView(l10n: l10n),
-      desktop: _SettingsTwoPaneView(l10n: l10n),
+    return const ResponsiveBuilder(
+      mobile: _PhoneCategoryList(),
+      tablet: _TwoPaneView(),
+      desktop: _TwoPaneView(),
     );
   }
 }
 
-// ── Shared category metadata (icons/colors match the mobile list) ──────────
+// ── Category metadata ──────────────────────────────────────────────────────
 
-IconData _categoryIcon(SettingsCategory category) {
-  switch (category) {
-    case SettingsCategory.appearance:
-      return Icons.palette_outlined;
-    case SettingsCategory.connectivity:
-      return Icons.lan_outlined;
-    case SettingsCategory.application:
-      return Icons.settings_applications_outlined;
-    case SettingsCategory.data:
-      return Icons.storage_outlined;
-    case SettingsCategory.about:
-      return Icons.info_outline;
-  }
+String _categoryLabel(SettingsCategory category, AppLocalizations l10n) => switch (category) {
+      SettingsCategory.appearance => l10n.appearance,
+      SettingsCategory.connectivity => l10n.connectivity,
+      SettingsCategory.application => l10n.application,
+      SettingsCategory.data => l10n.dataManagement,
+      SettingsCategory.about => l10n.about,
+    };
+
+/// The second line under a category's name — what is inside it, composed from
+/// the names of the settings themselves so it is translated wherever they are.
+String _categoryNote(SettingsCategory category, AppLocalizations l10n) => switch (category) {
+      SettingsCategory.appearance => '${l10n.themeColor} · ${l10n.font} · ${l10n.language}',
+      SettingsCategory.connectivity => '${l10n.proxySettings} · ${l10n.mcpServerSettings}',
+      SettingsCategory.application => '${l10n.outputDirectory} · ${l10n.knowledgeBaseFolder}',
+      SettingsCategory.data => '${l10n.exportSettings} · ${l10n.importSettings} · ${l10n.resetAllSettings}',
+      SettingsCategory.about => '${l10n.aboutGithubRepo} · ${l10n.aboutLicense}',
+    };
+
+Widget _categoryContent(SettingsCategory category, {required bool phone}) => switch (category) {
+      SettingsCategory.appearance => const AppearanceSection(),
+      SettingsCategory.connectivity => ConnectivitySection(isMobile: phone),
+      SettingsCategory.application => const ApplicationSection(),
+      SettingsCategory.data => DataSection(isMobile: phone),
+      SettingsCategory.about => const AboutSection(),
+    };
+
+/// The app's version, once the platform reports it, handed to [builder].
+class _VersionText extends StatefulWidget {
+  const _VersionText({required this.builder, this.textAlign});
+
+  final String Function(String version) builder;
+  final TextAlign? textAlign;
+
+  @override
+  State<_VersionText> createState() => _VersionTextState();
 }
 
-/// See [settingsCategoryColor]. These were Material's stock `Colors.blue` /
-/// `green` / `orange` / `purple` / `teal` — five hues from a palette the app
-/// uses nowhere else, next to `D1`'s five, which are the spec's own.
-Color _categoryColor(SettingsCategory category) => settingsCategoryColor(category);
+class _VersionTextState extends State<_VersionText> {
+  String _version = '';
 
-String _categoryLabel(SettingsCategory category, AppLocalizations l10n) {
-  switch (category) {
-    case SettingsCategory.appearance:
-      return l10n.appearance;
-    case SettingsCategory.connectivity:
-      return l10n.connectivity;
-    case SettingsCategory.application:
-      return l10n.application;
-    case SettingsCategory.data:
-      return l10n.dataManagement;
-    case SettingsCategory.about:
-      return l10n.about;
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      if (mounted) setState(() => _version = info.version);
+    });
   }
-}
-
-// ── Mobile: list → push to detail ──────────────────────────────────────────
-
-class _SettingsMobileView extends StatelessWidget {
-  final AppLocalizations l10n;
-  const _SettingsMobileView({required this.l10n});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar.large(title: Text(l10n.settings)),
-          SliverList(
-            delegate: SliverChildListDelegate([
-              // Colours come from _categoryColor, not repeated here: this list
-              // used to restate all five inline, so the desktop rail and the
-              // mobile list were two independent copies of the same mapping.
-              _buildCategoryTile(context, SettingsCategory.appearance, Icons.palette_outlined, l10n.appearance),
-              _buildCategoryTile(context, SettingsCategory.connectivity, Icons.lan_outlined, l10n.connectivity),
-              _buildCategoryTile(context, SettingsCategory.application, Icons.settings_applications_outlined, l10n.application),
-              _buildCategoryTile(context, SettingsCategory.data, Icons.storage_outlined, l10n.dataManagement),
-              _buildCategoryTile(context, SettingsCategory.about, Icons.info_outline, l10n.about),
-            ]),
+    final colorScheme = Theme.of(context).colorScheme;
+    return Text(
+      _version.isEmpty ? '' : widget.builder(_version),
+      textAlign: widget.textAlign,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+            fontWeight: FontWeight.w400,
+            color: colorScheme.outline,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryTile(BuildContext context, SettingsCategory category, IconData icon, String label) {
-    final color = _categoryColor(category);
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: color.withAlpha(30),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, color: color, size: 20),
-      ),
-      title: Text(label),
-      trailing: const Icon(Icons.chevron_right, size: 16),
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => _SettingsDetailPage(category: category, label: label, l10n: l10n),
-          ),
-        );
-      },
     );
   }
 }
 
-class _SettingsDetailPage extends StatelessWidget {
-  final SettingsCategory category;
-  final String label;
-  final AppLocalizations l10n;
+// ── Desktop / tablet: category card + content card ─────────────────────────
 
-  const _SettingsDetailPage({required this.category, required this.label, required this.l10n});
+class _TwoPaneView extends StatefulWidget {
+  const _TwoPaneView();
 
   @override
-  Widget build(BuildContext context) {
-    Widget content;
-    switch (category) {
-      case SettingsCategory.appearance:
-        content = const AppearanceSection();
-      case SettingsCategory.connectivity:
-        content = const ConnectivitySection(isMobile: true);
-      case SettingsCategory.application:
-        content = const ApplicationSection();
-      case SettingsCategory.data:
-        content = const DataSection(isMobile: true);
-      case SettingsCategory.about:
-        content = const AboutSection();
-    }
-
-    return Scaffold(
-      appBar: AppBar(title: Text(label)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: content,
-      ),
-    );
-  }
+  State<_TwoPaneView> createState() => _TwoPaneViewState();
 }
 
-// ── Desktop / Tablet: inset-panel canvas with nav card + content card ───────
-
-class _SettingsTwoPaneView extends StatefulWidget {
-  final AppLocalizations l10n;
-  const _SettingsTwoPaneView({required this.l10n});
-
-  @override
-  State<_SettingsTwoPaneView> createState() => _SettingsTwoPaneViewState();
-}
-
-class _SettingsTwoPaneViewState extends State<_SettingsTwoPaneView> {
+class _TwoPaneViewState extends State<_TwoPaneView> {
   // Transient UI state: which category is shown in the content card.
   SettingsCategory _selected = SettingsCategory.appearance;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final navWidth = Responsive.isNarrow(context) ? 200.0 : 232.0;
+    final bool desktop = Responsive.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: colorScheme.surfaceContainer,
+      backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(8),
+        // `E1` 「尺寸」: 16/20 around the cards on a desktop, 12/14 on a tablet.
+        padding: desktop
+            ? const EdgeInsets.symmetric(horizontal: 20, vertical: AppSpace.s16)
+            : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            PanelCard(
-              width: navWidth,
-              child: _buildNavPane(colorScheme),
+            SizedBox(
+              width: desktop ? 232 : 200,
+              child: _Card(child: _buildNav(context, desktop: desktop)),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: PanelCard(
-                child: _buildContentPane(colorScheme),
-              ),
-            ),
+            SizedBox(width: desktop ? AppSpace.s16 : 12),
+            Expanded(child: _Card(child: _buildContent(context, desktop: desktop))),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNavPane(ColorScheme colorScheme) {
+  Widget _buildNav(BuildContext context, {required bool desktop}) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Screen title header, aligned with the content card's header row.
         Container(
           height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          alignment: Alignment.centerLeft,
+          padding: EdgeInsets.symmetric(horizontal: desktop ? AppSpace.s16 : 14),
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
           ),
-          child: Row(
-            children: [
-              Icon(Icons.settings_outlined, size: 22, color: colorScheme.primary),
-              const SizedBox(width: 10),
-              Text(
-                widget.l10n.settings,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
+          child: Text(
+            l10n.settings,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.all(8),
-            children: SettingsCategory.values
-                .map((category) => _buildNavTile(category, colorScheme))
-                .toList(),
+            children: [
+              for (final category in SettingsCategory.values)
+                _NavRow(
+                  category: category,
+                  selected: category == _selected,
+                  compact: !desktop,
+                  onTap: () => setState(() => _selected = category),
+                ),
+            ],
           ),
         ),
+        if (desktop)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16, vertical: AppSpace.s10),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+            ),
+            child: _VersionText(builder: (v) => 'v$v · MIT'),
+          ),
       ],
     );
   }
 
-  Widget _buildNavTile(SettingsCategory category, ColorScheme colorScheme) {
-    final isSelected = category == _selected;
-    final color = _categoryColor(category);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: ListTile(
-        dense: true,
-        selected: isSelected,
-        // `accentTint`, not `primaryContainer`: the container role is a muted
-        // derivative of the seed that comes out grey-with-a-tint at several of
-        // them, where the tint ladder is the pairing every other selected thing
-        // in the app uses. `D1` draws this row at the accent's 10%.
-        selectedTileColor: colorScheme.accentTint,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          // The ring `D1` draws inside the selected row. Without it the tint
-          // alone is a faint wash that, at the pale end of the seed range, is
-          // hard to tell from a hover.
-          side: isSelected ? BorderSide(color: colorScheme.accentRing) : BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-        leading: Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: color.withAlpha(30),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(_categoryIcon(category), color: color, size: 18),
-        ),
-        title: Text(
-          _categoryLabel(category, widget.l10n),
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            // `onAccentTint` — this label sits *on* the tint above, and
-            // `primary` on its own tint is one tone reading against itself:
-            // legible in light by luck, washed out in dark where primary is
-            // already a pale tone 80.
-            color: isSelected ? colorScheme.onAccentTint : null,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-        onTap: () => setState(() => _selected = category),
-      ),
-    );
-  }
-
-  Widget _buildContentPane(ColorScheme colorScheme) {
-    Widget content;
-    switch (_selected) {
-      case SettingsCategory.appearance:
-        content = const AppearanceSection();
-      case SettingsCategory.connectivity:
-        content = const ConnectivitySection();
-      case SettingsCategory.application:
-        content = const ApplicationSection();
-      case SettingsCategory.data:
-        content = const DataSection();
-      case SettingsCategory.about:
-        content = const AboutSection();
-    }
+  Widget _buildContent(BuildContext context, {required bool desktop}) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Category title as an in-card header row.
         Container(
           height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: EdgeInsets.symmetric(horizontal: desktop ? 24 : 20),
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
           ),
           child: Row(
             children: [
-              Icon(_categoryIcon(_selected), size: 22, color: _categoryColor(_selected)),
-              const SizedBox(width: 10),
-              Text(
-                _categoryLabel(_selected, widget.l10n),
-                style: Theme.of(context).textTheme.titleMedium,
+              SettingsIdentityPlate(category: _selected, size: 28, radius: AppRadius.sm),
+              const SizedBox(width: AppSpace.s10),
+              Expanded(
+                child: Text(
+                  _categoryLabel(_selected, l10n),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
               ),
             ],
           ),
@@ -311,17 +219,345 @@ class _SettingsTwoPaneViewState extends State<_SettingsTwoPaneView> {
         Expanded(
           child: SingleChildScrollView(
             key: ValueKey(_selected),
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            padding: desktop
+                ? const EdgeInsets.symmetric(horizontal: 28, vertical: 24)
+                : const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             child: Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 720),
-                child: content,
+                child: _categoryContent(_selected, phone: false),
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// An opaque panel card at r16 with a hairline — both cards of the two-pane
+/// layout.
+class _Card extends StatelessWidget {
+  const _Card({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Material(
+      color: colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: child,
+    );
+  }
+}
+
+/// A category in the nav card — `1a`: 52 tall with a 32px plate and the note
+/// under the name; `1c` (tablet): 48 with a 28px plate and the name alone.
+/// Selected: the accent wash, a 1px accent edge, the name in the deep accent.
+class _NavRow extends StatefulWidget {
+  const _NavRow({
+    required this.category,
+    required this.selected,
+    required this.compact,
+    required this.onTap,
+  });
+
+  final SettingsCategory category;
+  final bool selected;
+  final bool compact;
+  final VoidCallback onTap;
+
+  @override
+  State<_NavRow> createState() => _NavRowState();
+}
+
+class _NavRowState extends State<_NavRow> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final bool selected = widget.selected;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Semantics(
+        selected: selected,
+        button: true,
+        child: InkWell(
+          onTap: widget.onTap,
+          onHover: (v) => setState(() => _hovered = v),
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          child: AnimatedContainer(
+            duration: AppMotion.durationOf(context, AppMotion.hover),
+            curve: AppMotion.quick,
+            height: widget.compact ? 48 : 52,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+            decoration: BoxDecoration(
+              color: selected
+                  ? colorScheme.accentTint
+                  : _hovered
+                      ? colorScheme.surfaceContainerLow
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppRadius.control),
+              border: Border.all(color: selected ? colorScheme.primary : Colors.transparent),
+            ),
+            child: Row(
+              children: [
+                SettingsIdentityPlate(
+                  category: widget.category,
+                  size: widget.compact ? 28 : 32,
+                  radius: AppRadius.sm,
+                ),
+                const SizedBox(width: AppSpace.s10),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _categoryLabel(widget.category, l10n),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                          color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
+                        ),
+                      ),
+                      if (!widget.compact)
+                        Text(
+                          _categoryNote(widget.category, l10n),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w400,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Phone: large-title list → detail page ──────────────────────────────────
+
+/// The height of the phone headers' own band, under whatever the status bar
+/// takes — `1e`: 76 for the large title, 56 for a detail page.
+const double _largeTitleBand = 76;
+const double _detailBand = 56;
+
+class _PhoneCategoryList extends StatelessWidget {
+  const _PhoneCategoryList();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final padding = MediaQuery.paddingOf(context);
+    final double header = padding.top + _largeTitleBand;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: ListView(
+              // The dock's clearance arrives as the bottom padding.
+              padding: EdgeInsets.fromLTRB(12, header + 12, 12, padding.bottom + 12),
+              children: [
+                for (final category in SettingsCategory.values)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _PhoneCategoryRow(
+                      category: category,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => _PhoneDetailPage(category: category)),
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: _VersionText(
+                    textAlign: TextAlign.center,
+                    builder: (v) => '${l10n.appTitle} · v$v',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 玻璃一: the screen's one full-width glass, over the list.
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: AppGlass(
+              grade: GlassGrade.bar,
+              edges: GlassEdges.bottom,
+              shadow: false,
+              child: SizedBox(
+                height: header,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(AppSpace.s16, padding.top, AppSpace.s16, 14),
+                  child: Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      l10n.settings,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.headlineLarge?.metricsOnly,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// `1e` left: a 64px panel row — a 36px plate, the name and what is inside it,
+/// and a chevron.
+class _PhoneCategoryRow extends StatelessWidget {
+  const _PhoneCategoryRow({required this.category, required this.onTap});
+
+  final SettingsCategory category;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: 64,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              children: [
+                SettingsIdentityPlate(
+                  category: category,
+                  size: 36,
+                  radius: AppRadius.control,
+                  iconSize: AppSize.iconLg,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _categoryLabel(category, l10n),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleMedium,
+                      ),
+                      Text(
+                        _categoryNote(category, l10n),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, size: AppSize.iconMd, color: colorScheme.outline),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// `1e` middle: a category's page, under a glass header with back and the
+/// category's name.
+class _PhoneDetailPage extends StatelessWidget {
+  const _PhoneDetailPage({required this.category});
+
+  final SettingsCategory category;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final padding = MediaQuery.paddingOf(context);
+    final double header = padding.top + _detailBand;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(12, header + 14, 12, padding.bottom + 24),
+              child: _categoryContent(category, phone: true),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: AppGlass(
+              grade: GlassGrade.bar,
+              edges: GlassEdges.bottom,
+              shadow: false,
+              child: SizedBox(
+                height: header,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(6, padding.top, AppSpace.s16, 0),
+                  child: Row(
+                    children: [
+                      GlassIconButton(
+                        icon: Icons.arrow_back,
+                        tooltip: l10n.back,
+                        size: AppSize.large,
+                        onPressed: () => Navigator.of(context).maybePop(),
+                      ),
+                      const SizedBox(width: AppSpace.s6),
+                      Expanded(
+                        child: Text(
+                          _categoryLabel(category, l10n),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge?.metricsOnly,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

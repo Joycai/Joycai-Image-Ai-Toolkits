@@ -49,5 +49,13 @@
   "guideStep2Desc": "探したい画像をAIに伝える",
   "guideStep3Title": "3 · 選んでダウンロード",
   "guideStep3Desc": "まとめて選択してキューに追加",
-  "copyLogs": "ログをコピー"
+  "copyLogs": "ログをコピー",
+  "downloaderFoundCount": "{count} 件見つかりました",
+  "downloaderAdvancedSubtitle": "この画面からのダウンロードにのみ適用",
+  "copyImageUrl": "画像の URL をコピー",
+  "manualHtmlEmptyTitle": "HTML がまだ貼り付けられていません",
+  "manualHtmlEmptyDesc": "ブラウザーでページのソースを表示して全選択・コピーし、上の貼り付けを押してください。",
+  "cookieHistoryUse": "使用",
+  "cookieHistoryPairs": "{count} 組",
+  "cookieHistoryEmptyDesc": "貼り付けた Cookie はここに記録され、同じサイトで再利用できます。"
 }

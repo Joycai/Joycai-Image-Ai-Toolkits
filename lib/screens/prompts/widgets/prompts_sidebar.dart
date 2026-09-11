@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/tag.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_segmented_control.dart';
-import '../../../core/design_tokens.dart';
+import '../../../widgets/scroll_edge_fade.dart';
+import 'prompt_library_parts.dart';
 
+/// The category filter in the library's left column (`C1 · 1a`).
+///
+/// "All" with the library's total, then one 32px row per category with its
+/// 8px identity dot and count. A filtering row takes the accent wash and deep
+/// ink — the category colour stays in the dot, so "this is Portrait" and
+/// "Portrait is on" never compete for the same paint.
+///
+/// While any category filters, a footer pinned under the list (it does not
+/// scroll away) holds the Any / All match mode and Clear.
 class PromptsSidebar extends StatelessWidget {
   final List<PromptTag> tags;
   final Set<int> selectedFilterTagIds;
@@ -22,6 +34,9 @@ class PromptsSidebar extends StatelessWidget {
   final bool matchAll;
   final ValueChanged<bool>? onMatchModeChanged;
 
+  /// How many prompts the active filter matches, for the footer's summary.
+  final int? matchCount;
+
   const PromptsSidebar({
     super.key,
     required this.tags,
@@ -32,161 +47,226 @@ class PromptsSidebar extends StatelessWidget {
     this.totalCount = 0,
     this.matchAll = false,
     this.onMatchModeChanged,
+    this.matchCount,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final scheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     final allSelected = selectedFilterTagIds.isEmpty;
 
-    // Transparent: the hosting column's surface is the background.
-    return Container(
-      color: Colors.transparent,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            // A quiet label over the list, not a heading competing with the
-            // panel's own title two rows above it.
-            child: Text(
-              l10n.categoriesTab,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Expanded(
+    return Column(
+      children: [
+        Expanded(
+          child: ScrollEdgeFade(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(vertical: AppSpace.s6),
               children: [
-                _SidebarTile(
+                _SidebarRow(
                   leading: Icon(
-                    Icons.layers_outlined,
-                    color: allSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                    size: 18,
+                    Icons.apps,
+                    size: AppSize.iconMd,
+                    color: allSelected ? scheme.primary : scheme.onSurfaceVariant,
                   ),
                   label: l10n.filterAll,
                   count: totalCount,
                   selected: allSelected,
                   onTap: onClear,
+                  bottomGap: 2,
                 ),
-                Divider(height: 12, color: colorScheme.outlineVariant.withAlpha(80)),
-                ...tags.map((tag) {
-                  final isSelected = selectedFilterTagIds.contains(tag.id);
-                  return _SidebarTile(
-                    leading: Icon(
-                      isSelected ? Icons.label : Icons.label_outline,
-                      color: Color(tag.color),
-                      size: 18,
-                    ),
+                for (final tag in tags)
+                  _SidebarRow(
+                    leading: PromptCategoryDot(color: Color(tag.color)),
                     label: tag.name,
                     count: tagCounts[tag.id] ?? 0,
-                    selected: isSelected,
+                    selected: selectedFilterTagIds.contains(tag.id),
                     onTap: () => onTagToggle(tag.id!),
-                  );
-                }),
+                  ),
               ],
             ),
           ),
-          // Match mode toggle — only relevant when filtering by 2+ categories.
-          if (selectedFilterTagIds.length >= 2 && onMatchModeChanged != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-              child: Row(
-                children: [
-                  Text(
-                    '${l10n.matchModeLabel}:',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+        ClipRect(
+          child: AnimatedSize(
+            duration: AppMotion.durationOf(context, AppMotion.state),
+            curve: AppMotion.enter,
+            alignment: Alignment.topCenter,
+            child: allSelected
+                ? const SizedBox(width: double.infinity)
+                : _FilterFooter(
+                    count: selectedFilterTagIds.length,
+                    matchCount: matchCount,
+                    matchAll: matchAll,
+                    onMatchModeChanged: onMatchModeChanged,
+                    onClear: onClear,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: AppSegmentedControl<bool>(
-                      segments: [
-                        AppSegment(value: false, label: l10n.matchAny),
-                        AppSegment(value: true, label: l10n.matchAllTags),
-                      ],
-                      value: matchAll,
-                      onChanged: onMatchModeChanged!,
-                      expand: true,
-                      compact: true,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          if (selectedFilterTagIds.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: AppButton(
-                label: l10n.clear,
-                icon: Icons.clear_all,
-                variant: AppButtonVariant.text,
-                onPressed: onClear,
-              ),
-            ),
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _SidebarTile extends StatelessWidget {
-  final Widget leading;
-  final String label;
-  final int count;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _SidebarTile({
+class _SidebarRow extends StatelessWidget {
+  const _SidebarRow({
     required this.leading,
     required this.label,
     required this.count,
     required this.selected,
     required this.onTap,
+    this.bottomGap = 1,
   });
+
+  final Widget leading;
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+  final double bottomGap;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            color: selected ? colorScheme.accentTint : null,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-          margin: const EdgeInsets.symmetric(vertical: 1),
-          child: Row(
-            children: [
-              leading,
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                    color: selected ? colorScheme.primary : colorScheme.onSurface,
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final radius = BorderRadius.circular(AppRadius.sm);
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(AppSpace.s6, 0, AppSpace.s6, bottomGap),
+      child: AnimatedContainer(
+        duration: AppMotion.durationOf(context, AppMotion.hover),
+        curve: AppMotion.quick,
+        decoration: BoxDecoration(
+          color: selected ? scheme.accentTint : Colors.transparent,
+          borderRadius: radius,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onTap,
+            child: Semantics(
+              selected: selected,
+              button: true,
+              child: SizedBox(
+                height: AppSize.control,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+                  child: Row(
+                    children: [
+                      // One column for the glyph and the dots, so the labels
+                      // line up under "All".
+                      SizedBox(width: AppSize.iconMd, child: Center(child: leading)),
+                      const SizedBox(width: AppSpace.s10),
+                      Expanded(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.bodyMedium?.copyWith(
+                            fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
+                            color: selected ? scheme.onAccentTint : scheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '$count',
+                        style: textTheme.labelSmall!.mono.copyWith(
+                          fontWeight: FontWeight.w400,
+                          color: selected ? scheme.onAccentTint : scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                '$count',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterFooter extends StatelessWidget {
+  const _FilterFooter({
+    required this.count,
+    required this.matchCount,
+    required this.matchAll,
+    required this.onMatchModeChanged,
+    required this.onClear,
+  });
+
+  final int count;
+  final int? matchCount;
+  final bool matchAll;
+  final ValueChanged<bool>? onMatchModeChanged;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpace.s10),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: scheme.outlineVariant)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (onMatchModeChanged != null) ...[
+            Row(
+              children: [
+                Text(
+                  l10n.matchModeLabel,
+                  style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                 ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: AppSegmentedControl<bool>(
+                    segments: [
+                      AppSegment(value: false, label: l10n.matchAny),
+                      AppSegment(value: true, label: l10n.matchAllTags),
+                    ],
+                    value: matchAll,
+                    onChanged: onMatchModeChanged!,
+                    expand: true,
+                    compact: true,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpace.s6),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  matchCount == null
+                      ? l10n.selectedCount(count)
+                      : l10n.promptFilterSummary(count, matchCount!),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w400,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              AppButton(
+                label: l10n.clear,
+                variant: AppButtonVariant.destructiveText,
+                size: AppButtonSize.compact,
+                onPressed: onClear,
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

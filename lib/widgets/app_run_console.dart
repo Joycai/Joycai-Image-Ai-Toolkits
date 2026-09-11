@@ -5,18 +5,23 @@ import '../core/app_theme.dart';
 import '../core/design_tokens.dart';
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
+import '../models/log_entry.dart';
 import '../services/task_queue_service.dart';
 import '../state/app_state.dart';
 import '../state/log_state.dart';
+import 'app_breathing_dot.dart';
 import 'log_console.dart';
-import 'panel_resizer.dart';
-import 'smooth_progress.dart';
 import '../screens/batch/task_queue_screen.dart';
 
-/// Shared run-status console: pulsing status dot, running/pending task
-/// summary, and an expandable execution log. Reads entirely from app-wide
-/// providers (`AppState`, `TaskQueueService`), so it can be dropped onto any
-/// screen's `Scaffold.bottomNavigationBar` unchanged.
+/// Shared run-status console: status dot, running/planned task summary, the
+/// last log line, and an expandable execution log. Reads entirely from
+/// app-wide providers (`AppState`, `LogState`, `TaskQueueService`), so it can
+/// be dropped onto any screen's `Scaffold.bottomNavigationBar` unchanged.
+///
+/// `A1 · 1a / 1c / 1d`: a 32px column-coloured strip (40 on a phone) under a
+/// hairline — dot, tracked `EXECUTION LOGS` caption, summary, the mono tail
+/// line pushed right, and a chevron. Expanded, the log panel below it is the
+/// same opaque column ground, with its height dragged from the top edge.
 class AppRunConsole extends StatefulWidget {
   const AppRunConsole({super.key});
 
@@ -29,6 +34,14 @@ class _AppRunConsoleState extends State<AppRunConsole> {
   /// handle re-engages where the pointer actually is instead of the moment it
   /// reverses. Same value and reasoning as the workbench's panel slack.
   static const double _kDragSlack = 24;
+
+  /// The gap between every item on the strip (`gap:10px`).
+  static const double _kGap = AppSpace.s10;
+
+  /// The longest stretch of a message the tail line lays out. The strip shows
+  /// one ellipsised line, and a streamed reply can be thousands of characters
+  /// long; measuring all of it on every chunk buys nothing that is visible.
+  static const int _kTailRunes = 240;
 
   double _height = 200;
   bool _heightInitialized = false;
@@ -47,8 +60,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
     // Log-derived values come off LogState, which notifies on its own coalesced
     // schedule rather than through AppState. See LogState.
     final hasErrors = context.select<LogState, bool>((s) => s.hasErrors);
-    final lastLogMessage =
-        context.select<LogState, String?>((s) => s.logs.isEmpty ? null : s.logs.last.message);
+    final lastLog = context.select<LogState, LogEntry?>((s) => s.logs.isEmpty ? null : s.logs.last);
     final queue = context.watch<TaskQueueService>();
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
@@ -56,6 +68,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
 
     final pendingCount = queue.queue.where((t) => t.status == TaskStatus.pending).length;
     final runningCount = queue.runningCount;
+    final failedCount = queue.queue.where((t) => t.status == TaskStatus.failed).length;
     // Read off the queue rather than a mirrored flag on AppState. The mirror
     // existed only so this one line could be a selector, and keeping it in sync
     // is what made AppState notify on every queue tick.
@@ -63,7 +76,21 @@ class _AppRunConsoleState extends State<AppRunConsole> {
     final hasTasks = pendingCount > 0 || runningCount > 0;
     final avgProgress = _avgProgress(queue);
 
-    final statusBar = InkWell(
+    // While tasks run, suppress the single-line log preview: with parallel
+    // tasks it flickers between interleaved messages. Phones have no room
+    // for it beside the summary.
+    final tail = (!hasTasks && !isMobile) ? lastLog : null;
+
+    Widget statusBar({required bool topRule}) => _StatusBar(
+          height: isMobile ? AppSize.large : AppSize.control,
+          topRule: topRule,
+          hasErrors: hasErrors,
+          isProcessing: isProcessing,
+          summary: _summary(runningCount, pendingCount, avgProgress, hasErrors ? failedCount : 0, l10n),
+          tail: tail,
+          // On a phone the strip opens the queue sheet, which rises; on a
+          // desktop it discloses the log panel above-and-below it.
+          chevron: (!isMobile && isConsoleExpanded) ? Icons.expand_more : Icons.expand_less,
           onTap: () {
             if (isMobile) {
               _showTaskQueueSheet(context);
@@ -71,120 +98,26 @@ class _AppRunConsoleState extends State<AppRunConsole> {
               context.read<AppState>().setConsoleExpanded(!isConsoleExpanded);
             }
           },
-          child: Stack(
-            children: [
-              Container(
-                // `A1 16a` draws the strip at 32 (§1 「状态栏 30px」 agrees to
-                // within a rounding). It shipped at 40, which is eight pixels
-                // of window spent on a bar that carries one line of 11.5px
-                // text and a 23px pill.
-                height: isMobile ? 40 : 32,
-                decoration: isMobile
-                    ? BoxDecoration(
-                        color: colorScheme.surface,
-                        border: Border(top: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
-                      )
-                    : null,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    _buildStatusIndicator(isProcessing, hasErrors, colorScheme),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: Text(
-                        l10n.executionLogs,
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-
-                    // Task summary — shown on every breakpoint so the count /
-                    // running / progress info isn't lost now that the floating
-                    // capsule is hidden on the workbench.
-                    if (hasTasks) ...[
-                      const SizedBox(width: 12),
-                      Container(width: 1, height: 16, color: colorScheme.outlineVariant.withAlpha(120)),
-                      const SizedBox(width: 12),
-                      Flexible(
-                        child: _buildTaskSummary(runningCount, pendingCount, avgProgress, l10n, colorScheme),
-                      ),
-                    ],
-
-                    // While tasks run, suppress the single-line log preview: with
-                    // parallel tasks it flickers between interleaved messages.
-                    Expanded(
-                      child: (!hasTasks && !isMobile && lastLogMessage != null)
-                          ? Align(
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                lastLogMessage,
-                                style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
-                                  color: colorScheme.onSurfaceVariant.withAlpha(160),
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-
-                    const SizedBox(width: 8),
-                    Icon(
-                      isMobile
-                          ? Icons.assignment_outlined
-                          : (isConsoleExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up),
-                      size: 16,
-                      color: isMobile ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                    ),
-                  ],
-                ),
-              ),
-              if (isProcessing)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: SmoothProgress(
-                    value: avgProgress > 0 ? avgProgress : null,
-                    builder: (context, v) => LinearProgressIndicator(
-                      value: v,
-                      minHeight: 2,
-                      backgroundColor: Colors.transparent,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                ),
-            ],
-          ),
         );
 
     if (isMobile) {
-      return Column(mainAxisSize: MainAxisSize.min, children: [statusBar]);
+      return Material(
+        color: colorScheme.surfaceContainerLow,
+        child: statusBar(topRule: true),
+      );
     }
 
     // Desktop: a strip across the bottom of the window, flush with the
-    // columns above it. It was an inset card with an 8px margin, which stopped
-    // making sense the moment those columns stopped being cards — a rounded
-    // slab under three square-cornered columns reads as a different screen.
-    //
-    // Every screen that hosts a console is on the column language or headed
-    // there, so this changes with the machinery rather than per screen.
+    // columns above it. Every screen that hosts a console is on the column
+    // language, so this changes with the machinery rather than per screen.
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Expanded, the top hairline moves onto the drag handle — the
+        // strip's own rule would otherwise sit a handle's height below the
+        // edge the pointer is dragging.
         if (isConsoleExpanded)
-          PanelResizer(
-            axis: Axis.vertical,
-            shape: PanelShape.column,
-            // The strip belongs to the console below it — the spec's
-            // `border-top` on that strip — so the rule goes at the top and the
-            // console's own ground fills the rest. Anything above meets the
-            // rule directly, whatever colour that column happens to be.
-            ruleSide: PanelRuleSide.leading,
+          _ConsoleResizeHandle(
             // The accumulator, not the height, absorbs the drag: clamping the
             // accumulator itself meant that after dragging 200px past a limit
             // the panel started moving the instant the pointer reversed, with
@@ -198,21 +131,15 @@ class _AppRunConsoleState extends State<AppRunConsole> {
               setState(() => _dragHeight = null);
               Provider.of<AppState>(context, listen: false).setConsoleHeight(_height);
             },
-          )
-        else
-          // Collapsed there is no gutter to drag, so the hairline is drawn
-          // rather than dragged — without it the status bar and the column
-          // above it run together into one field of the same colour.
-          Container(height: 1, color: colorScheme.surfaceContainerHigh),
+          ),
         Material(
+          // `展开面板 = 不透明 col`: the panel is opaque, never the aurora.
           color: colorScheme.surfaceContainerLow,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              statusBar,
-              // The console used to hard-insert its full height between two
-              // frames; AppMotion.reveal exists for exactly this disclosure.
-              // Duration collapses to zero while the resizer is dragging so
+              statusBar(topRule: !isConsoleExpanded),
+              // Duration collapses to zero while the handle is dragging so
               // the height tracks the pointer 1:1 — the animation is for the
               // expand/collapse toggle, never for the drag.
               ClipRect(
@@ -243,14 +170,6 @@ class _AppRunConsoleState extends State<AppRunConsole> {
     );
   }
 
-  Widget _buildStatusIndicator(bool isProcessing, bool hasErrors, ColorScheme colorScheme) {
-    Color color = colorScheme.outline;
-    if (isProcessing) color = colorScheme.primary;
-    if (hasErrors) color = colorScheme.error;
-
-    return _StatusDot(color: color, pulsing: isProcessing);
-  }
-
   double _avgProgress(TaskQueueService queue) {
     final active = queue.queue.where((t) => t.status == TaskStatus.processing).toList();
     if (active.isEmpty) return 0;
@@ -265,82 +184,29 @@ class _AppRunConsoleState extends State<AppRunConsole> {
     return count > 0 ? total / count : 0;
   }
 
-  Widget _buildTaskSummary(
+  /// `2 running · 1 planned · 64%`, `1 failed · Idle` (`A1 · 1a / 1c / 1d`).
+  ///
+  /// The percentage appears only once a running task has reported progress,
+  /// so a queue that has started but not measured itself does not read as
+  /// stalled at 0%. Failures are counted only while the log still carries an
+  /// error, so a failure the user has already dealt with does not linger.
+  String? _summary(
     int runningCount,
     int pendingCount,
     double avgProgress,
+    int failedCount,
     AppLocalizations l10n,
-    ColorScheme colorScheme,
   ) {
-    final pct = (avgProgress * 100).round();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        color: colorScheme.accentTint,
-        // A pill, per `16a` — and per §1, where every badge that states a
-        // count or a state is one. At radius 8 this was the only rounded
-        // rectangle in a status bar of round things.
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (runningCount > 0) ...[
-            Text(
-              l10n.runningCount(runningCount),
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onAccentTint),
-            ),
-            const SizedBox(width: 7),
-            // A bar rather than the 11px ring this replaced: at that size a
-            // ring shows roughly "some" progress, while a track the eye can
-            // read left-to-right shows how far along the batch actually is.
-            // Indeterminate until the first task reports, so a queue that has
-            // started but not measured itself does not read as stalled at 0%.
-            SizedBox(
-              width: 44,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: SmoothProgress(
-                  value: avgProgress > 0 ? avgProgress : null,
-                  builder: (context, v) => LinearProgressIndicator(
-                    value: v,
-                    minHeight: 4,
-                    backgroundColor: colorScheme.accentTint,
-                    color: colorScheme.primary,
-                  ),
-                ),
-              ),
-            ),
-            if (avgProgress > 0) ...[
-              const SizedBox(width: 7),
-              Text(
-                '$pct%',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onAccentTint),
-              ),
-            ],
-          ],
-          if (runningCount > 0 && pendingCount > 0) _dotSeparator(colorScheme),
-          if (pendingCount > 0) ...[
-            Icon(Icons.schedule, size: 13, color: colorScheme.onSurfaceVariant),
-            const SizedBox(width: 4),
-            Text(
-              l10n.plannedCount(pendingCount),
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ],
-      ),
-    );
+    final idle = runningCount == 0 && pendingCount == 0;
+    final parts = <String>[
+      if (failedCount > 0) l10n.consoleFailedCount(failedCount),
+      if (runningCount > 0) l10n.runningCount(runningCount),
+      if (pendingCount > 0) l10n.plannedCount(pendingCount),
+      if (runningCount > 0 && avgProgress > 0) '${(avgProgress * 100).round()}%',
+      if (idle) l10n.consoleIdle,
+    ];
+    return parts.join(' · ');
   }
-
-  Widget _dotSeparator(ColorScheme colorScheme) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Container(
-          width: 3,
-          height: 3,
-          decoration: BoxDecoration(color: colorScheme.onSurfaceVariant.withAlpha(120), shape: BoxShape.circle),
-        ),
-      );
 
   void _showTaskQueueSheet(BuildContext context) {
     showModalBottomSheet(
@@ -363,101 +229,195 @@ class _AppRunConsoleState extends State<AppRunConsole> {
   }
 }
 
-/// The run console's status light, which breathes while work is in flight.
-///
-/// Its own widget so the ticker's lifetime matches the thing it is animating.
-/// The controller used to live on the console and `repeat()` unconditionally
-/// from `initState`, which kept a ticker running — and therefore the engine
-/// waking for every vsync — for the entire life of the app, including the vast
-/// majority of the time when `isProcessing` was false and the pulse was not
-/// even mounted. It also localises the 60fps rebuild to this 8px dot rather
-/// than the console row around it.
-class _StatusDot extends StatefulWidget {
-  final Color color;
-  final bool pulsing;
+/// The collapsed strip itself. Paints no ground of its own — the [Material]
+/// around it does, so the tap's ink lands on the column colour.
+class _StatusBar extends StatelessWidget {
+  const _StatusBar({
+    required this.height,
+    required this.topRule,
+    required this.hasErrors,
+    required this.isProcessing,
+    required this.summary,
+    required this.tail,
+    required this.chevron,
+    required this.onTap,
+  });
 
-  const _StatusDot({required this.color, required this.pulsing});
-
-  @override
-  State<_StatusDot> createState() => _StatusDotState();
-}
-
-class _StatusDotState extends State<_StatusDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1400),
-  );
-  late final Animation<double> _opacity = Tween<double>(begin: 1.0, end: 0.4)
-      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  late final Animation<double> _scale = Tween<double>(begin: 1.0, end: 0.85)
-      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-
-  /// Read in [didChangeDependencies] — initState cannot see MediaQuery.
-  bool _reduced = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final reduced = AppMotion.prefersReduced(context);
-    if (reduced != _reduced) {
-      _reduced = reduced;
-      _syncTicker();
-    } else if (!_controller.isAnimating) {
-      // First build lands here (initState defers to us); later calls with an
-      // unchanged flag are no-ops either way.
-      _syncTicker();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _StatusDot oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.pulsing != widget.pulsing) _syncTicker();
-  }
-
-  void _syncTicker() {
-    // Reduce-motion counts as not pulsing: this loop is the one motion in the
-    // app that never ends, which makes it the strongest case that setting
-    // has. The colour and the glow still say "working" without movement.
-    if (widget.pulsing && !_reduced) {
-      _controller.repeat(reverse: true);
-    } else {
-      // `stop` rather than `reset`: nothing reads the value while idle, and
-      // leaving it where it was avoids a visible jump if work resumes.
-      _controller.stop();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  final double height;
+  final bool topRule;
+  final bool hasErrors;
+  final bool isProcessing;
+  final String? summary;
+  final LogEntry? tail;
+  final IconData chevron;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final dot = Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(
-        color: widget.color,
-        shape: BoxShape.circle,
-        boxShadow: widget.pulsing
-            ? [BoxShadow(color: widget.color.withAlpha(100), blurRadius: 4, spreadRadius: 1)]
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    // `A1 spec` 「状态点：运行 --p 呼吸 / 失败 --err / 空闲 ink3」. A failure
+    // outranks a run in progress: the red is the thing to notice, and it
+    // stops being true the moment a task next succeeds (LogState).
+    final Color dotColor;
+    final bool breathing;
+    if (hasErrors) {
+      dotColor = colorScheme.error;
+      breathing = false;
+    } else if (isProcessing) {
+      dotColor = colorScheme.primary;
+      breathing = true;
+    } else {
+      dotColor = colorScheme.outline;
+      breathing = false;
+    }
+
+    final tail = this.tail;
+
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: height,
+        decoration: topRule
+            ? BoxDecoration(border: Border(top: BorderSide(color: colorScheme.outlineVariant)))
             : null,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            AppBreathingDot(color: dotColor, breathing: breathing),
+            const SizedBox(width: _AppRunConsoleState._kGap),
+            Text(
+              AppLocalizations.of(context)!.executionLogs,
+              maxLines: 1,
+              style: textTheme.labelSmall?.copyWith(
+                letterSpacing: AppType.trackedLabelSpacing,
+                color: colorScheme.onAccentTint,
+              ),
+            ),
+            const SizedBox(width: _AppRunConsoleState._kGap),
+            // One flexible region for summary and tail, so whichever is
+            // showing gets all the room the caption and chevron leave.
+            Expanded(
+              child: Row(
+                children: [
+                  if (summary != null)
+                    Flexible(
+                      child: Text(
+                        summary!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          // The percentage ticks while it runs; proportional
+                          // figures would make the whole summary shimmy.
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                  if (summary != null && tail != null) const SizedBox(width: _AppRunConsoleState._kGap),
+                  if (tail != null)
+                    Expanded(
+                      child: Text(
+                        _tailText(tail),
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: textTheme.labelSmall?.mono.copyWith(
+                          fontWeight: FontWeight.w400,
+                          color: tail.level == 'ERROR' ? colorScheme.error : colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: _AppRunConsoleState._kGap),
+            Icon(chevron, size: AppSize.iconMd, color: colorScheme.onSurfaceVariant),
+          ],
+        ),
       ),
     );
+  }
 
-    if (!widget.pulsing || _reduced) return dot;
+  /// `14:02:11 [info] gemini-2.5-flash-image · streaming chunk 12`, flattened
+  /// onto one line.
+  static String _tailText(LogEntry log) {
+    final head = String.fromCharCodes(log.message.runes.take(_AppRunConsoleState._kTailRunes));
+    final message = head.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return '${logClockOf(log.timestamp)} [${log.level.toLowerCase()}] $message';
+  }
+}
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) => Transform.scale(
-        scale: _scale.value,
-        child: Opacity(opacity: _opacity.value, child: child),
+/// The top edge of the expanded console: its hairline, and the strip the
+/// pointer drags to set the panel's height.
+///
+/// Drawn here rather than by `PanelResizer`, whose column boundary is a
+/// softer rule than the strip's own `border-top`: collapsing and expanding
+/// would otherwise change the line's colour. The grip is the hairline at rest
+/// and the accent while it is under the pointer or being dragged.
+class _ConsoleResizeHandle extends StatefulWidget {
+  const _ConsoleResizeHandle({required this.onDrag, required this.onDragEnd});
+
+  /// The vertical drag delta; positive is the pointer moving down.
+  final ValueChanged<double> onDrag;
+
+  /// The drag ended — the moment to persist the height.
+  final VoidCallback onDragEnd;
+
+  /// A hit target, not a gap: the rule is one pixel, the grip three.
+  static const double _kHeight = 9;
+
+  @override
+  State<_ConsoleResizeHandle> createState() => _ConsoleResizeHandleState();
+}
+
+class _ConsoleResizeHandleState extends State<_ConsoleResizeHandle> {
+  bool _hovering = false;
+  bool _dragging = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final active = _hovering || _dragging;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeRow,
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragStart: (_) => setState(() => _dragging = true),
+        onVerticalDragUpdate: (d) => widget.onDrag(d.delta.dy),
+        onVerticalDragEnd: (_) {
+          setState(() => _dragging = false);
+          widget.onDragEnd();
+        },
+        onVerticalDragCancel: () => setState(() => _dragging = false),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+          ),
+          child: SizedBox(
+            height: _ConsoleResizeHandle._kHeight,
+            width: double.infinity,
+            child: Center(
+              child: AnimatedContainer(
+                duration: AppMotion.durationOf(context, AppMotion.hover),
+                curve: AppMotion.quick,
+                width: 32,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: active ? colorScheme.primary : colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
-      child: dot,
     );
   }
 }

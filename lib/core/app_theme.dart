@@ -4,57 +4,43 @@ import 'app_semantic_colors.dart';
 import 'design_tokens.dart';
 import 'theme_accent.dart';
 
-/// Corner radius shared by buttons and the boxed controls beside them, so a
-/// header of mixed shapes still reads as one row.
-///
-/// Kept well under half a button's height on purpose: at half, a rounded rect
-/// becomes a capsule, and 12 on the ~30px buttons this app renders was close
-/// enough to read as one. The design spec draws 8, which at the heights below
-/// is squarer still — so the reasoning holds, only the number moved. Aliased
-/// rather than replaced: 35 call sites already import this name.
+/// Corner radius shared by buttons and the boxed controls beside them.
 const double appButtonRadius = AppRadius.control;
 
-/// Height of a filled button, matching the boxed icon actions it sits next to.
+/// Height of a standard button, matching the icon actions it sits next to.
 ///
 /// Held by pinning visual density as well as the minimum size: on desktop
-/// Material defaults to compact, which quietly subtracts 8px from a button's
-/// minimum height. That left these ~30px tall, and at 30 a 10px corner is two
-/// thirds of the way to a capsule — which is exactly what they looked like.
-///
-/// The spec's icon buttons are two pixels shorter than its labelled ones, so
-/// [AppIconButton] no longer defaults to this; see [AppSize.iconButton].
+/// Material defaults to compact, which quietly subtracts 8px.
 const double appButtonMinHeight = AppSize.control;
 
-/// The neutral ramp the whole app sits on — one set per brightness, shared
-/// by every seed.
+/// The neutral ramp the whole app sits on — one table per brightness, shared
+/// by every accent (`00 设计系统 · 1b`, 「暖石灰」).
 ///
-/// Until the restyle these came from a *monochrome* [ColorScheme.fromSeed]:
-/// true greys, zero chroma. That rule was really two rules stacked, and only
-/// one of them was load-bearing. The one that was: the ramp must not move
-/// when the seed does, or every surface tuned against one seed is wrong at
-/// the next, and an element that is *actually* the accent has nothing left to
-/// say. The one that wasn't: that the greys be neutral. The new spec's are
-/// deliberately cool — its canvas is `#ECEFF8` and its body text `#171C3B`,
-/// both several points of blue off grey — and that tint is the look. It is
-/// fixed here, so it stays exactly the same blue when the user picks orange;
-/// it is not the seed hue leaking into the background, which is the failure
-/// the monochrome scheme was guarding against.
+/// The load-bearing rule is unchanged from every previous system: **the ramp
+/// does not move when the accent does.** A surface tuned against one accent
+/// must still be right at the next, and an element that actually *is* the
+/// accent — selected, focused, pressed — must be the only accent-coloured
+/// thing in view. The ramp itself is now a warm stone rather than a cool
+/// blue-grey; that warmth is the look, and it is the ramp's, not the seed's.
 ///
-/// The roles are named for the job this app gives them, not for Material's
-/// ordering:
+/// Roles are named for the job this app gives them:
 ///
-/// - [surfaceContainer] is the **canvas** a screen paints behind everything.
-/// - [surface] is a **panel** floating on that canvas — one step *up* in
-///   both brightnesses, so a panel is lighter than the canvas in light and
-///   also lighter than it in dark. Material's dark scheme has these the other
-///   way round; the spec's `10b` frame draws 背景 `#0E131F` under 表面
-///   `#192132`, and the design wins here.
-/// - [surfaceContainerHigh] is a **card sitting on a panel** (see [AppCard]),
-///   one more step away from the panel — which means darker in light and
-///   lighter in dark. That is the reason this is a hand-written table and not
-///   a monotonic ladder.
-/// - [surfaceContainerHighest] is a **filled control track**: a text field's
-///   fill, a switch's off state.
+/// | role | job | light | dark |
+/// |---|---|---|---|
+/// | `surfaceContainer` | **canvas** — the window ground under the aurora | `#EBEAE6` | `#121210` |
+/// | `surfaceContainerLow` | **column** — edge-to-edge bars, headers, log strip, dialog footer | `#F6F5F2` | `#191917` |
+/// | `surface` | **panel** — cards and dialogs floating on the canvas | `#FCFBF9` | `#1F1F1C` |
+/// | `surfaceContainerHigh` | **card on a panel** | `#F0EFEB` | `#292926` |
+/// | `surfaceContainerHighest` | **track** — segmented track, switch off, slider rail, disabled fill | `#E3E1DC` | `#33322E` |
+/// | `outlineVariant` | **hairline** — dividers, input strokes | `#D8D6D0` | `#33322E` |
+/// | `onSurface` / `onSurfaceVariant` / `outline` | ink / secondary / muted | `#1C1B18` `#625F58` `#8F8C84` | `#ECEAE4` `#A9A69E` `#79766E` |
+///
+/// ⚠️ A panel is lighter than the canvas in **both** brightnesses — the
+/// opposite of Material's dark ordering. `app_color_scheme_test` holds it.
+///
+/// ⚠️ Column and panel are not one monotonic ladder in light: the column
+/// (`#F6F5F2`) sits *under* the panel (`#FCFBF9`) while the card on a panel
+/// (`#F0EFEB`) is darker than both. Pick the role by job, not by lightness.
 class _Neutrals {
   const _Neutrals({
     required this.surface,
@@ -72,6 +58,7 @@ class _Neutrals {
     required this.inverseSurface,
     required this.onInverseSurface,
     required this.surfaceTint,
+    required this.scrim,
   });
 
   final Color surface;
@@ -89,144 +76,108 @@ class _Neutrals {
   final Color inverseSurface;
   final Color onInverseSurface;
   final Color surfaceTint;
+  final Color scrim;
 
-  /// Spec `10a`, and the values the page mockups actually paint.
-  ///
-  /// `outlineVariant` is the sheet's `#DBE0EF` input border rather than the
-  /// paler `#E4E8F4` it uses for an icon button's edge, because this role is
-  /// also every hairline divider in the app — at `#E4E8F4` a divider is a
-  /// point and a half off the panel it sits on and simply disappears.
   static const light = _Neutrals(
-    surface: Color(0xFFF5F7FD),
-    surfaceDim: Color(0xFFE6EAF5),
-    surfaceBright: Color(0xFFFAFBFF),
+    surface: Color(0xFFFCFBF9),
+    surfaceDim: Color(0xFFE4E2DD),
+    surfaceBright: Color(0xFFFCFBF9),
     surfaceContainerLowest: Color(0xFFFFFFFF),
-    surfaceContainerLow: Color(0xFFFAFBFF),
-    surfaceContainer: Color(0xFFECEFF8),
-    surfaceContainerHigh: Color(0xFFE6EAF5),
-    surfaceContainerHighest: Color(0xFFDFE5F4),
-    onSurface: Color(0xFF171C3B),
-    onSurfaceVariant: Color(0xFF4D5470),
-    outline: Color(0xFFC0C6D8),
-    outlineVariant: Color(0xFFDBE0EF),
-    inverseSurface: Color(0xFF232B4A),
-    onInverseSurface: Color(0xFFECEFF8),
-    surfaceTint: Color(0xFF868DA8),
+    surfaceContainerLow: Color(0xFFF6F5F2),
+    surfaceContainer: Color(0xFFEBEAE6),
+    surfaceContainerHigh: Color(0xFFF0EFEB),
+    surfaceContainerHighest: Color(0xFFE3E1DC),
+    onSurface: Color(0xFF1C1B18),
+    onSurfaceVariant: Color(0xFF625F58),
+    outline: Color(0xFF8F8C84),
+    outlineVariant: Color(0xFFD8D6D0),
+    inverseSurface: Color(0xFF1C1B18),
+    onInverseSurface: Color(0xFFF2F0EA),
+    surfaceTint: Color(0xFF8F8C84),
+    // `ink @ .36`.
+    scrim: Color(0x5C1C1B18),
   );
 
-  /// Derived from [light], not copied from the sheet.
-  ///
-  /// The spec's `10b` frame was never restyled — its accent is still the old
-  /// teal and its greys are still tinted green — so the only part of it worth
-  /// taking is the surface ladder `#0E131F` / `#192132` / `#28354C`, which
-  /// *is* already the new blue. Everything else here is [light]'s structure
-  /// mapped onto that ladder: the same steps, the same hue, inverted. Replace
-  /// this wholesale if `10b` is ever redrawn.
   static const dark = _Neutrals(
-    surface: Color(0xFF192132),
-    surfaceDim: Color(0xFF0B0F1A),
-    surfaceBright: Color(0xFF2A354B),
-    surfaceContainerLowest: Color(0xFF090D16),
-    surfaceContainerLow: Color(0xFF131A28),
-    surfaceContainer: Color(0xFF0E131F),
-    surfaceContainerHigh: Color(0xFF212B3F),
-    surfaceContainerHighest: Color(0xFF28334A),
-    onSurface: Color(0xFFE6EAF5),
-    onSurfaceVariant: Color(0xFFA3ABC2),
-    outline: Color(0xFF5C6784),
-    outlineVariant: Color(0xFF28354C),
-    inverseSurface: Color(0xFFE6EAF5),
-    onInverseSurface: Color(0xFF171C3B),
-    surfaceTint: Color(0xFF79809A),
+    surface: Color(0xFF1F1F1C),
+    surfaceDim: Color(0xFF0E0E0C),
+    surfaceBright: Color(0xFF292926),
+    surfaceContainerLowest: Color(0xFF0E0E0C),
+    surfaceContainerLow: Color(0xFF191917),
+    surfaceContainer: Color(0xFF121210),
+    surfaceContainerHigh: Color(0xFF292926),
+    surfaceContainerHighest: Color(0xFF33322E),
+    onSurface: Color(0xFFECEAE4),
+    onSurfaceVariant: Color(0xFFA9A69E),
+    outline: Color(0xFF79766E),
+    outlineVariant: Color(0xFF33322E),
+    inverseSurface: Color(0xFFECEAE4),
+    onInverseSurface: Color(0xFF1C1B18),
+    surfaceTint: Color(0xFF79766E),
+    // `#000 @ .52`.
+    scrim: Color(0x85000000),
   );
 }
 
-/// The app's palette: accents from the user's seed, greys from [_Neutrals].
-///
-/// [ColorScheme.fromSeed] tints *every* role with the seed's hue, greys
-/// included — pick teal and every panel, border and body line comes out
-/// faintly teal. Two things go wrong with that. The greys shift underneath
-/// the whole app each time the seed changes, so any surface tuned to look
-/// right against one seed is wrong at the next; and with the accent hue
-/// already in the background, an element that is *actually* the accent
-/// colour — selected, focused, pressed — has less left to say.
-///
-/// So the neutral roles are overwritten with the fixed ramp instead. The
-/// seeded scheme still supplies primary/secondary/tertiary/error and their
-/// containers, so the accent survives exactly where it should: on things the
-/// user acts on.
+/// The status red, per brightness (`--err`, `--err-bg`, `--err-ink`). Like
+/// the other status colours it ignores the accent.
+class _ErrorRoles {
+  const _ErrorRoles(this.error, this.onError, this.container, this.onContainer);
+  final Color error;
+  final Color onError;
+  final Color container;
+  final Color onContainer;
+
+  static const light = _ErrorRoles(
+    Color(0xFFC2312F), Color(0xFFFFFFFF), Color(0xFFFBE0DF), Color(0xFF8C1F1E));
+  static const dark = _ErrorRoles(
+    Color(0xFFF0655F), Color(0xFF2A0B0A), Color(0xFF4A1E1C), Color(0xFFFFC2BE));
+}
+
+/// The app's palette: accents from the pair, greys from [_Neutrals], status
+/// from the fixed tables.
 ///
 /// The accent is a [ThemeAccent] — a light/dark *pair* of finished colours.
 /// Each brightness grows a scheme from its half for the palette roles, then
-/// draws `primary` **as the half itself**: that hex was tuned on its own
-/// canvas, and what `fromSeed` would put there instead — a tone-80 pastel in
-/// dark, a maximum-chroma tone 40 in light — is the thing [ThemeAccent]
-/// exists to replace. See it for the rest.
+/// draws `primary` **as the half itself**, with its ink and deep ink beside
+/// it at the half's own chroma:
+///
+/// - `onPrimary`: white where white reads, else the hue's tone-10 ink
+///   (Orange in light; every dark half).
+/// - `onPrimaryFixedVariant` (light) / `primaryFixedDim` (dark): `--p-deep`,
+///   tone 30 / tone 80 — see [AppAccent.onAccentTint].
 ColorScheme buildAppColorScheme({
   required ThemeAccent accent,
   required Brightness brightness,
 }) {
-  // Memoised: the theme-colour picker builds both schemes of all eight
-  // presets on every rebuild (and again per swatch on hover), and each
-  // `fromSeed` is ~50 HCT solves. `ThemeAccent` is equal by value, so the
-  // key is the pair itself. Bounded so a stream of custom colours in tests
-  // cannot grow it without limit.
+  // Memoised: the theme-colour picker builds both schemes of every preset on
+  // each rebuild, and each `fromSeed` is ~50 HCT solves.
   final cached = _schemeCache[(accent, brightness)];
   if (cached != null) return cached;
 
   final bool isDark = brightness == Brightness.dark;
-  // The half is both the seed the palette roles grow from and, below,
-  // `primary` itself — one colour, drawn verbatim.
   final Color half = accent.forBrightness(brightness);
   final seeded = ColorScheme.fromSeed(
     seedColor: half,
     brightness: brightness,
-    // `vibrant`, not the default `tonalSpot`. `tonalSpot` caps the primary
-    // palette's chroma, and at the spec's own seed — `#4A72E8`, a vivid blue —
-    // it returned `primary` = `#4C5C92`, a slate grey-blue. Everything the
-    // design draws in the accent (a selected row, a badge, a checkbox, a
-    // toggle) came out a tone that changed with the seed but never looked like
-    // it: the user picked a colour and the app rendered its shadow.
-    //
-    // The codebase had already found this once and patched around it for the
-    // one loudest case — a separate light `vibrant` scheme built solely so
-    // the primary button would not be the greyest thing on screen. Which left
-    // the CTA as the only vivid accent in the window and every other accent a
-    // step duller than it. This moves the fix to where the problem was; the
-    // CTA now fills with `primary` like everything else.
-    //
-    // Only the accent roles survive: the neutrals are overwritten below, so
-    // vibrant's own greys — which are *more* seed-tinted than tonalSpot's —
-    // never reach the app.
+    // `vibrant`: `tonalSpot` caps chroma and turns a vivid accent into its
+    // slate shadow. Only accent roles survive — neutrals are overwritten.
     dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
   );
   final neutral = isDark ? _Neutrals.dark : _Neutrals.light;
+  final err = isDark ? _ErrorRoles.dark : _ErrorRoles.light;
 
   final scheme = seeded.copyWith(
-    // The pair's half for this brightness, verbatim, with what goes *on* it
-    // and on a wash of it moving with it. `fromSeed` would put a tone-80
-    // pastel here in dark and the vibrant palette's maximum-chroma tone 40
-    // in light — a neon of the picked colour either way.
-    //
-    // Every other accent role the app reads is rewritten to the *same hue
-    // and chroma* at its own tone, because the vibrant palette grows them
-    // at maximum chroma — at teal and green that is `#00FDE7`-class neon
-    // beside an accent that is not. Which role carries what:
-    //   · onPrimaryFixedVariant (light) / primaryFixedDim (dark): the wash
-    //     label, [AppAccent.onAccentTint];
-    //   · primaryFixedDim (both): the toast action, [AppAccent.accentOnOverlay]
-    //     — in light this was left at the palette's tone 80 once, and a
-    //     slate theme got a cyan "undo";
-    //   · primaryContainer / onPrimaryContainer: not read by app code (a
-    //     source scan in design_tokens_test keeps it so) but read by
-    //     Material's own defaults — the FAB, date pickers — so they are made
-    //     safe here rather than trusted never to appear.
     primary: half,
     onPrimary: isDark ? accent.onDark : accent.onLight,
     onPrimaryFixedVariant: isDark ? null : accent.lightOnTint,
     primaryFixedDim: isDark ? accent.darkOnTint : accent.lightTone(80),
     primaryContainer: isDark ? accent.darkTone(30) : accent.lightTone(90),
     onPrimaryContainer: isDark ? accent.darkTone(90) : accent.lightOnTint,
+    error: err.error,
+    onError: err.onError,
+    errorContainer: err.container,
+    onErrorContainer: err.onContainer,
     surface: neutral.surface,
     surfaceDim: neutral.surfaceDim,
     surfaceBright: neutral.surfaceBright,
@@ -241,9 +192,8 @@ ColorScheme buildAppColorScheme({
     outlineVariant: neutral.outlineVariant,
     inverseSurface: neutral.inverseSurface,
     onInverseSurface: neutral.onInverseSurface,
-    // Material paints this over any elevated surface. Left seeded it would
-    // put the hue back into the very greys this function just took it out of.
     surfaceTint: neutral.surfaceTint,
+    scrim: neutral.scrim,
   );
   if (_schemeCache.length >= _schemeCacheCap) _schemeCache.clear();
   return _schemeCache[(accent, brightness)] = scheme;
@@ -253,10 +203,6 @@ final Map<(ThemeAccent, Brightness), ColorScheme> _schemeCache = {};
 const int _schemeCacheCap = 64;
 
 /// The app's theme, built from the theme colour the user picked in settings.
-///
-/// Accents are derived from that pair rather than hard-coded, so a button
-/// stays the user's colour and not a designer's. Greys deliberately are not —
-/// see [buildAppColorScheme].
 ThemeData buildAppTheme({
   required ThemeAccent accent,
   required Brightness brightness,
@@ -270,315 +216,252 @@ ThemeData buildAppTheme({
     colorScheme: colorScheme,
     fontFamily: fontFamily,
     textTheme: textTheme,
+    // The scaffold never paints: the window ground is the aurora backdrop
+    // behind every screen (`00` 「aurora」). A screen that wants an opaque
+    // ground asks for its role explicitly.
+    scaffoldBackgroundColor: Colors.transparent,
+    canvasColor: colorScheme.surface,
     extensions: [
       brightness == Brightness.dark ? AppSemanticColors.dark : AppSemanticColors.light,
     ],
-    // The sub-themes below exist because of where the app's controls actually
-    // come from. There are ~40 bare `TextField`s and ~24 bare `Switch`/
-    // `Checkbox`es scattered across the screens, none of them routed through a
-    // shared widget — so a component is the wrong lever for those and the
-    // theme is the right one. Styling them here reaches every call site
-    // without touching any of them.
     inputDecorationTheme: _buildInputDecorationTheme(colorScheme),
     switchTheme: _buildSwitchTheme(colorScheme),
     checkboxTheme: _buildCheckboxTheme(colorScheme),
-    // Both values here were previously reached by omission, not choice:
-    // showDialog bottoms out at Colors.black54 and showGeneralDialog at 50%
-    // black, so the app's modal question (a dialog) and its parallel place (a
-    // side panel) drew the same scrim for two presentations that mean
-    // different things. black54 is now *chosen* for dialogs — a modal question
-    // wants the world dimmed — and AppSidePanel declares its own lighter
-    // barrier, because its docstring promises the work stays visible beside
-    // it. The shape reaches the raw `Dialog`s that don't route through
-    // AppDialog (which already draws 16 itself).
-    dialogTheme: DialogThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.dialog)),
-      barrierColor: Colors.black54,
+    radioTheme: RadioThemeData(
+      fillColor: WidgetStateProperty.resolveWith((states) =>
+          states.contains(WidgetState.selected) ? colorScheme.primary : colorScheme.outline),
+      visualDensity: VisualDensity.compact,
     ),
-    // The one family of floating surface that never got a calibration pass:
-    // all ~11 context menus rendered at Material's stock corner and lift.
-    // md, not dialog — a menu is a container holding controls, one step out
-    // from the items it wraps, the same rung as a segmented track.
-    // `10e` 「下拉菜单 · 展开态」: radius 10, 4px of padding around the items,
-    // an opaque ground (a floating layer does not frost), 12.5/500 labels.
-    //
-    // The item *geometry* — 30 tall, radius 7, hover and selected skins — is
-    // not reachable from here: a [PopupMenuItem]'s height comes from its own
-    // `height`, defaulting to `kMinInteractiveDimension`, and there is no
-    // theme slot for it. Those live at the call sites, and the app's ~10 menus
-    // still draw them at Material's 48.
+    // `01 · 1h`: an opaque panel at r22 over the scheme's scrim.
+    dialogTheme: DialogThemeData(
+      backgroundColor: colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.dialog)),
+      barrierColor: colorScheme.scrim,
+      elevation: 0,
+    ),
+    // Menus are glass in the design (玻璃二). Material's popup route cannot
+    // host a backdrop filter behind its own clip, so the theme gives the
+    // reduced-effects form — an opaque panel at the same radius — and the app's
+    // own menus (`AppGlassMenu`) draw the glass.
     popupMenuTheme: PopupMenuThemeData(
       color: colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
-      menuPadding: const EdgeInsets.all(4),
-      elevation: 4,
-      shadowColor: colorScheme.shadow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      menuPadding: const EdgeInsets.all(AppSpace.s6),
+      elevation: 6,
+      shadowColor: colorScheme.shadow.withValues(alpha: 0.4),
       iconColor: colorScheme.onSurfaceVariant,
-      iconSize: AppSize.iconSm,
+      iconSize: AppSize.iconMd,
+      textStyle: textTheme.bodyMedium,
+    ),
+    menuTheme: MenuThemeData(
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(colorScheme.surface),
+        shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: BorderSide(color: colorScheme.outlineVariant),
+        )),
+        padding: const WidgetStatePropertyAll(EdgeInsets.all(AppSpace.s6)),
+      ),
     ),
     dividerTheme: DividerThemeData(
       color: colorScheme.outlineVariant,
       thickness: 1,
       space: 1,
     ),
-    // §1 「列表行 40–48 px」. Material's own is 56 with a subtitle and 48
-    // without, so the spec's *ceiling* is where Material starts — every list
-    // in the app was a row too tall. `VisualDensity.compact` takes 8 off both,
-    // which lands on 40 and 48 exactly; the figure is Material's, the choice
-    // of density is the spec's.
-    //
-    // The gutters go with it. Material budgets 16px each side, a 40px leading
-    // slot and 16 between that and the title; the frames draw 8–10 (§1 「控件
-    // 内边距 8 / 10 / 12」) and let the row's own leading widget decide its
-    // width. At `A1 16a`'s 236px folder column that reserved-but-unused space
-    // was the difference between a six-letter folder name and an ellipsis —
-    // `directory_tree_item` had already fixed it by hand, for itself alone.
-    //
-    // 72 call sites across 23 files, none of them touched. Anything that
-    // states its own padding still wins: a theme is the floor here, not a cap.
+    // `00 · 1f` 「列表行」: 40 tall, r10, a 12% wash under the deep ink when
+    // selected.
     listTileTheme: ListTileThemeData(
       visualDensity: VisualDensity.compact,
       minLeadingWidth: 0,
-      horizontalTitleGap: 10,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+      horizontalTitleGap: AppSpace.s10,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
-      // `16a` draws the browsed folder as an accent wash, which is the same
-      // selection skin every other list in the app draws by hand. Named here,
-      // a `selected: true` tile gets it without each list restating it.
-      //
-      // The label is 主色深, not 主色实底 — `10e` 「列表行」 spells the pair out:
-      // a 12% wash with the *darker* accent on it. `primary` is tuned to be
-      // read as a fill, and on its own tint it is one tone against itself.
       selectedColor: colorScheme.onAccentTint,
       selectedTileColor: colorScheme.accentTint,
+      iconColor: colorScheme.onSurfaceVariant,
     ),
-    // No tick marks, and a thumb small enough to sit in a toolbar. Material
-    // dots every division of a divided slider, which on the gallery's zoom
-    // control and the model editor's context slider read as a ruler drawn
-    // under a control that is not being measured against one. The editor had
-    // already turned them off in a local [SliderTheme]; this is that override,
-    // stated once.
+    // `00 · 1f` 「滑杆」: a 4px rail on the track colour, the accent to the
+    // thumb, a 16px thumb.
     sliderTheme: SliderThemeData(
       trackHeight: 4,
-      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+      activeTrackColor: colorScheme.primary,
+      inactiveTrackColor: colorScheme.surfaceContainerHighest,
+      thumbColor: colorScheme.primary,
+      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
       overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
       tickMarkShape: SliderTickMarkShape.noTickMark,
-      // `#dbe0ef` in `10e` 「滑杆」, which is `outlineVariant` to the digit —
-      // the unfilled track is a rule, not a surface. It was one step down the
-      // ramp at `surfaceContainerHighest`, which reads as a groove.
-      inactiveTrackColor: colorScheme.outlineVariant,
     ),
-    // `A1 16a`'s run console draws its progress as a 4px bar with 2px ends.
-    // Material's is 4px square-ended, which beside the pill-shaped everything
-    // else in that status bar reads as a different family of object.
+    // `00 · 1f`: 3px, rounded ends, on the track colour.
     progressIndicatorTheme: ProgressIndicatorThemeData(
-      linearMinHeight: 4,
+      color: colorScheme.primary,
+      linearMinHeight: 3,
       borderRadius: BorderRadius.circular(2),
-      // `10e` 「进度条」 gives the track as `#dbe0ef`, the same hairline grey
-      // the slider's unfilled track takes and for the same reason.
-      linearTrackColor: colorScheme.outlineVariant,
+      linearTrackColor: colorScheme.surfaceContainerHighest,
+      circularTrackColor: colorScheme.surfaceContainerHighest,
     ),
-    // `10a` 「分段控件与页签」 draws a tool tab as a tinted pill — padding
-    // 7×12, radius 8, accent wash under an accent label — not as a label with
-    // a rule under it. Material's underline indicator plus its full-width
-    // divider is a different navigation idiom, and the app has three
-    // [TabBar]s wearing it.
+    // A tab is a segment: the wash under the deep ink, r6.
     tabBarTheme: TabBarThemeData(
       indicator: BoxDecoration(
         color: colorScheme.accentTint,
-        borderRadius: BorderRadius.circular(AppRadius.control),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       indicatorSize: TabBarIndicatorSize.tab,
       dividerColor: Colors.transparent,
       labelColor: colorScheme.onAccentTint,
       unselectedLabelColor: colorScheme.onSurfaceVariant,
+      labelStyle: textTheme.labelLarge,
+      unselectedLabelStyle: textTheme.labelLarge,
       overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
     ),
-    // `10e` 「工具提示」. The app had none, so all ~16 tooltips plus every one
-    // an [IconButton] carries rendered at Material's stock grey slab.
-    //
-    // The ink is a literal, and deliberately: the spec says light and dark
-    // take the *same* ground ("light / dark 同一个"), which no scheme role can
-    // do — `inverseSurface` is the idiomatic choice and it flips with the
-    // brightness. A tooltip is a label pinned over the app rather than a
-    // surface within it, so it keeps one colour throughout.
+    // `00 · 1f` 「刷新 · Ctrl+R」: the fixed ink in both brightnesses, r6.
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(
-        color: _tooltipInk,
-        // The spec draws 7. The app's radius ladder has no 7, and the same
-        // reconciliation was already made for the segmented chip: take
-        // `control`. See docs/architecture/design-tokens.md.
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-            spreadRadius: -8,
-          ),
-        ],
+        color: AppOverlay.ink,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      verticalOffset: 18,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      verticalOffset: 20,
       textStyle: TextStyle(
         color: AppOverlay.onInk,
-        fontSize: 11.5,
+        fontSize: 11,
         fontWeight: FontWeight.w500,
         fontFamily: fontFamily,
       ),
       waitDuration: const Duration(milliseconds: 400),
       exitDuration: const Duration(milliseconds: 80),
     ),
-    // `10e` 「筛选 chip」. Distinct from a status badge, which is read-only and
-    // is a pill: a chip is a target, so it takes an edge and the radius the
-    // buttons beside it take.
+    // `00 · 1f` 「芯片」: r4, 11/500, a hairline at rest, the wash when chosen.
     chipTheme: ChipThemeData(
-      backgroundColor: colorScheme.surfaceContainerLowest,
+      backgroundColor: colorScheme.surface,
       selectedColor: colorScheme.accentTint,
-      // `#eef0f6` in the spec, which is this rung. `surface` was invisible —
-      // a disabled chip on a white card has to differ from the card.
-      disabledColor: colorScheme.surfaceContainer,
+      disabledColor: colorScheme.surfaceContainerHighest,
       side: WidgetStateBorderSide.resolveWith((states) {
-        if (states.contains(WidgetState.disabled)) {
-          return BorderSide(color: colorScheme.outlineVariant.withValues(alpha: AppAlpha.edge));
-        }
         if (states.contains(WidgetState.selected)) {
           return BorderSide(color: colorScheme.accentRing);
         }
         return BorderSide(color: colorScheme.outlineVariant);
       }),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xs)),
       labelStyle: TextStyle(
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: FontWeight.w500,
         color: colorScheme.onSurfaceVariant,
         fontFamily: fontFamily,
       ),
       secondaryLabelStyle: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
         color: colorScheme.onAccentTint,
         fontFamily: fontFamily,
       ),
       labelPadding: EdgeInsets.zero,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      // The spec's 26px height is *not* set here, because [ChipThemeData]
-      // cannot: the padded touch target comes from the widget's own
-      // `materialTapTargetSize`, which falls back to [ThemeData]'s global one
-      // — and turning that down would shrink every button and checkbox in the
-      // app to reach one chip. A call site that needs the tight height passes
-      // `materialTapTargetSize: MaterialTapTargetSize.shrinkWrap` itself.
-      //
-      // The spec marks the chosen chip with weight and the accent, not with a
-      // tick — a row of filters is scanned, and a checkmark in each selected
-      // one shifts every label beside it.
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       showCheckmark: false,
     ),
-    // The phone's bottom bar, on the same selected-state pair as the desktop
-    // rail and the drawer ([AppAccent.navBackground] / [AppAccent.navForeground]).
-    // Left to Material the indicator is `secondaryContainer` — tone 90 of a
-    // hue-rotated, low-chroma palette, which comes out grey-with-a-tint —
-    // and the one selected thing in the app not on the tint ladder. Naming a
-    // colour here replaces Material's whole state machine, so the disabled
-    // tone has to be spelled out too.
     navigationBarTheme: NavigationBarThemeData(
       indicatorColor: colorScheme.navBackground(selected: true),
       iconTheme: WidgetStateProperty.resolveWith(
         (states) => IconThemeData(color: _navInk(colorScheme, states)),
       ),
       labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => textTheme.labelMedium!.copyWith(color: _navInk(colorScheme, states)),
+        (states) => textTheme.labelSmall!.copyWith(color: _navInk(colorScheme, states)),
       ),
     ),
-    // The FAB is a CTA and fills like one. Material's default is
-    // `primaryContainer` / `onPrimaryContainer`, which the scheme above makes
-    // safe but which is still a tone-90 pastel under tone-30 ink in light —
-    // a lighter, quieter thing than the one button on a phone screen that
-    // opens the work.
+    // `A1 · 1e`: 56 at r22.
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: colorScheme.primary,
       foregroundColor: colorScheme.onPrimary,
+      elevation: 0,
+      focusElevation: 0,
+      hoverElevation: 0,
+      highlightElevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.dialog)),
     ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      modalBarrierColor: colorScheme.scrim,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+      ),
+    ),
+    drawerTheme: DrawerThemeData(
+      backgroundColor: colorScheme.surfaceContainerLow,
+      scrimColor: colorScheme.scrim,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+    ),
+    scrollbarTheme: ScrollbarThemeData(
+      thickness: const WidgetStatePropertyAll(6),
+      radius: const Radius.circular(3),
+      thumbColor: WidgetStatePropertyAll(colorScheme.onSurface.withValues(alpha: 0.22)),
+    ),
+    // `00 · 1f` 「主按钮」: solid accent, no lift. Disabled is the track under
+    // muted ink — a disabled CTA must not glow.
     filledButtonTheme: FilledButtonThemeData(
-      // `.copyWith` on top of `styleFrom`, because `styleFrom` has no
-      // `disabledElevation`: it lifts the button in *every* state, disabled
-      // included. Paired with the accent `shadowColor` below, a disabled
-      // button was casting a full-strength glow in the user's own theme
-      // colour — on a dark canvas it read as a ring around the button, making
-      // the one control that does nothing the loudest thing in the row.
-      // `primary` / `onPrimary` in both brightnesses: both halves of the
-      // theme pair are tuned to be fills. (This once took a separate light
-      // scheme in dark — design-tokens.md §1 has the history.)
       style: FilledButton.styleFrom(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
-        // Material's own disabled tones. They have to be spelled out: naming a
-        // background in a theme replaces the default's whole state machine, and
-        // a disabled button with no colour of its own paints nothing at all.
-        disabledBackgroundColor: colorScheme.onSurface.withValues(alpha: 0.12),
-        disabledForegroundColor: colorScheme.onSurface.withValues(alpha: 0.38),
-        // A shadow in the button's own hue: on a near-black canvas a grey
-        // shadow is invisible, and the lift is what separates the one button
-        // that commits from the text beside it that cancels.
-        elevation: 2,
-        shadowColor: colorScheme.primary,
+        disabledBackgroundColor: colorScheme.surfaceContainerHighest,
+        disabledForegroundColor: colorScheme.outline,
+        elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appButtonRadius)),
         minimumSize: const Size(0, appButtonMinHeight),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        // `inherit: false` to match the merged theme slots `AppButton` hands
+        // its compact and large sizes: a button animates between its old and
+        // new label style, and TextStyle.lerp asserts across a change of
+        // `inherit`.
+        textStyle: textTheme.labelLarge?.copyWith(inherit: false, fontWeight: FontWeight.w600),
         visualDensity: VisualDensity.standard,
-      ).copyWith(
-        elevation: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.disabled) ? 0 : 2,
-        ),
       ),
     ),
-    // The other two button types need the same shape, or the library's own
-    // abstraction leaks: AppButton's `text` and `destructiveOutline` variants
-    // are built on TextButton and OutlinedButton, and with no theme of their
-    // own they keep Material 3's StadiumBorder. A row of Reset / Overwrite /
-    // Save then renders as two pills beside a rounded rectangle — the shared
-    // component is being used, but the theme never reaches through it.
-    //
-    // Only geometry is set here. Foreground colour is deliberately left to
-    // Material, so a dialog's "Cancel" keeps the accent tint it is supposed
-    // to have; a button that wants to be quiet says so at its call site.
+    // 「添加文件夹」: a panel with a hairline and body ink.
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        disabledForegroundColor: colorScheme.outline,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appButtonRadius)),
         minimumSize: const Size(0, appButtonMinHeight),
-        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.6)),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        side: BorderSide(color: colorScheme.outlineVariant),
+        textStyle: textTheme.labelLarge?.copyWith(inherit: false),
         visualDensity: VisualDensity.standard,
       ),
     ),
+    // 「提示词历史」: the deep ink, no ground.
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        // The accent as *text*, which is `primary` wherever primary reads
-        // on the panel and canvas, and the wash label where it does not
-        // (Orange in light). Material's default is bare `primary`.
         foregroundColor: colorScheme.accentText,
+        disabledForegroundColor: colorScheme.outline,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appButtonRadius)),
         minimumSize: const Size(0, appButtonMinHeight),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        textStyle: textTheme.labelLarge?.copyWith(inherit: false),
+        visualDensity: VisualDensity.standard,
+      ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        foregroundColor: colorScheme.onSurfaceVariant,
+        iconSize: AppSize.iconLg,
+        minimumSize: const Size(AppSize.iconButton, AppSize.iconButton),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
         visualDensity: VisualDensity.standard,
       ),
     ),
   );
 }
 
-/// The spec's input: a hairline box on the surface, not a grey slab.
+/// `00 · 1f` 「输入」: a hairline box at r10, the accent stroke when focused,
+/// the error stroke when invalid.
 ///
-/// This reverses a decision [AppTextField] documents — it fills with
-/// `surfaceContainerHighest` so inputs and the segmented control's track read
-/// as one system. Worth recording why the reversal is right rather than just
-/// deferential to the spec: that pairing only ever governed two call sites,
-/// because `AppTextField` was never adopted (`api_key_field.dart` is its only
-/// user). The other ~40 inputs in the app are bare `TextField`s rendering
-/// Material's stock outlined default. So the app already ships an outlined
-/// input almost everywhere, and adopting the spec here makes it *more*
-/// internally consistent, not less.
-///
-/// The focus glow the spec draws around a focused field — a 3px accent ring
-/// outside the border — is not expressible through [InputDecoration], which
-/// owns only the border itself. [AppTextField] draws it; a bare `TextField`
-/// gets the 1.5px accent border below and no halo.
+/// The 3px focus ring the design draws outside the border is not
+/// expressible through [InputDecoration]; `AppTextField` draws it.
 InputDecorationTheme _buildInputDecorationTheme(ColorScheme colorScheme) {
   OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
@@ -586,68 +469,46 @@ InputDecorationTheme _buildInputDecorationTheme(ColorScheme colorScheme) {
       );
 
   return InputDecorationTheme(
-    // Outlined, app-wide. `D2` draws its field boxes with a fill a step off
-    // the panel, but that is a D2 reading: the screens the spec has not been
-    // redrawn for put inputs on toolbars and canvases where the outline is
-    // right. `FilledFieldScope` carries the filled skin into the subtrees
-    // that have been aligned to a frame — see `app_text_field.dart`.
     filled: false,
     isDense: true,
-    // Tighter than Material's default, which budgets for a floating label on
-    // every field. Most of this app's inputs sit in dense config panels and
-    // carry a separate label above them instead.
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    hintStyle: TextStyle(color: colorScheme.outline),
     border: border(colorScheme.outlineVariant, 1),
     enabledBorder: border(colorScheme.outlineVariant, 1),
-    // A disabled field keeps its box — without one it reads as a gap in the
-    // form rather than as a control that is temporarily unavailable.
     disabledBorder: border(colorScheme.outlineVariant.withValues(alpha: AppAlpha.disabled), 1),
-    focusedBorder: border(colorScheme.primary, 1.5),
+    focusedBorder: border(colorScheme.primary, 1),
     errorBorder: border(colorScheme.error, 1),
     focusedErrorBorder: border(colorScheme.error, 1.5),
   );
 }
 
-/// The spec's switch: a 36×20 track with a 16px thumb.
-///
-/// Only the colours are set. Material 3's switch geometry — a 52×32 track and
-/// a thumb that grows on selection — is baked into `Switch`'s own painting and
-/// is not reachable from [SwitchThemeData]; the spec's proportions would need
-/// a `Transform.scale` per call site or a replacement widget. That is a
-/// separate change from this one, and doing half of it here (colours at spec,
-/// geometry at Material's) is the honest stopping point: every switch in the
-/// app becomes the user's accent colour, and none of them changes size.
+/// `00 · 1f` 「开关」: on = the accent under a white thumb; off = the track
+/// with a hairline under a panel-coloured thumb.
 SwitchThemeData _buildSwitchTheme(ColorScheme colorScheme) {
   return SwitchThemeData(
     thumbColor: WidgetStateProperty.resolveWith((states) {
       if (states.contains(WidgetState.disabled)) {
         return colorScheme.onSurface.withValues(alpha: AppAlpha.disabled);
       }
-      // White on the accent when on, matching the spec's floating thumb; the
-      // scheme's own `onPrimary` would be dark under a pale seed.
-      return states.contains(WidgetState.selected) ? Colors.white : colorScheme.outline;
+      return states.contains(WidgetState.selected) ? Colors.white : colorScheme.surface;
     }),
     trackColor: WidgetStateProperty.resolveWith((states) {
       if (states.contains(WidgetState.disabled)) {
-        return colorScheme.onSurface.withValues(alpha: 0.12);
+        return colorScheme.surfaceContainerHighest.withValues(alpha: 0.6);
       }
       return states.contains(WidgetState.selected)
           ? colorScheme.primary
           : colorScheme.surfaceContainerHighest;
     }),
     trackOutlineColor: WidgetStateProperty.resolveWith((states) {
-      // The spec's "off" track is a flat grey pill with no edge. Material
-      // draws one by default, which at this size reads as a second border
-      // around the thumb.
       return states.contains(WidgetState.selected) ? Colors.transparent : colorScheme.outlineVariant;
     }),
+    thumbIcon: const WidgetStatePropertyAll(null),
   );
 }
 
-/// The spec's checkbox: 18px, 6px corners, 1.5px edge when unchecked.
-///
-/// Unlike the switch, all of this *is* reachable from the theme — `Checkbox`
-/// takes its shape and side from here — so this one lands on spec exactly.
+/// `00 · 1f` 「复选框」: 18px at r4, a 1.5px muted edge when unchecked, the
+/// accent under its own ink when checked.
 CheckboxThemeData _buildCheckboxTheme(ColorScheme colorScheme) {
   return CheckboxThemeData(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xs)),
@@ -662,127 +523,67 @@ CheckboxThemeData _buildCheckboxTheme(ColorScheme colorScheme) {
     }),
     fillColor: WidgetStateProperty.resolveWith((states) {
       if (states.contains(WidgetState.disabled)) {
-        return colorScheme.onSurface.withValues(alpha: 0.12);
+        return colorScheme.surfaceContainerHighest;
       }
-      // Unselected must be transparent, not a fill: the `side` above is what
-      // draws an unchecked box, and a fill would paint over it.
       return states.contains(WidgetState.selected) ? colorScheme.primary : Colors.transparent;
     }),
-    // `onPrimary`, not white. In light it *is* white (tone 100 on tone 40).
-    // In dark the fill is the accent at tone ~62, and a white tick on that is
-    // ~3:1 — the non-text floor exactly, at the smallest glyph in the app.
-    // The accent's own tone-10 ink is what reads there, at 5.4:1 or better.
     checkColor: WidgetStatePropertyAll(colorScheme.onPrimary),
-    // Material reserves a 48px tap target around a 40px checkbox by default,
-    // which in a dense settings list leaves the box marooned in whitespace.
     visualDensity: VisualDensity.compact,
   );
 }
 
-/// The type scale the rest of the widget library reads instead of a literal
-/// `TextStyle(fontSize: N)`.
+/// The type scale (`00 · 1d`): seven sizes and no others.
 ///
-/// Sizes/weights collapse the app's ad hoc call sites (13, 14, 18... each
-/// picked per screen) onto Material's named [TextTheme] slots. Colour is left
-/// to [base] — merging keeps a slot's colour whenever this override doesn't
-/// set one, so text stays tied to [colorScheme] the way Material's own
-/// default theme is, and only size/weight are opinionated here.
+/// | size/weight | job | slots |
+/// |---|---|---|
+/// | 28/600 | headline figure | `headlineLarge` |
+/// | 20/600 | screen title | `headlineMedium`, `headlineSmall` |
+/// | 16/600 | page / dialog title | `titleLarge` |
+/// | 14/500 | emphasised body, card title | `titleMedium`, `bodyLarge` (400) |
+/// | 13/400 | body, control labels, list rows | `bodyMedium`, `titleSmall` (500), `labelLarge` (500) |
+/// | 12/400 | secondary, sub-rows, help text | `bodySmall`, `labelMedium` (500) |
+/// | 11/500 | group caption (tracked), badges | `labelSmall` |
+///
+/// Mono 12 / 11 is a role, not a slot: `style.mono`.
 TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
-  /// Size, weight, and the tracking that size implies — as one decision.
-  ///
-  /// Tracking used to be omitted here and left to Material, which meant every
-  /// slot carried spacing tuned for *Material's* size rather than the one this
-  /// app renders it at. Because those values are attached per slot, two slots
-  /// at the same size disagreed: 16px came out at 0.0 as `titleLarge` and 0.5
-  /// as `bodyLarge`, 13px at 0.1 as a title and 0.25 as body. Letter spacing
-  /// is a property of the size, so it is derived from it — see
-  /// [AppType.trackingFor] for the ladder and what shipped before it.
-  ///
-  /// Line height is deliberately still Material's. Its ratios already run the
-  /// right way against size (1.27 on the largest slot, ~1.45 on the smallest)
-  /// and they survive the app's smaller sizes intact, being ratios; restating
-  /// them here would be churn dressed as a decision. The place leading *was*
-  /// drifting is call sites, and those now take [AppType.proseHeight] and its
-  /// two neighbours.
   TextStyle slot(double size, FontWeight weight) => TextStyle(
         fontSize: size,
         fontWeight: weight,
         letterSpacing: AppType.trackingFor(size),
       );
 
-  // No `ThemeData(...).textTheme` to merge onto: that getter returns an empty
-  // TextTheme here, so the old `base.merge(...)` was a no-op and the colours it
-  // was documented as preserving in fact come from ThemeData's own Typography
-  // merge, downstream of this function. Same pixels, one less thing to believe.
   final merged = TextTheme(
-    // The display band. Nothing on the spec's sheets is set this large — these
-    // exist for the usage screen's headline figures and the wizard's welcome
-    // line, which had been falling through to Material's slots *by omission*:
-    // Material's sizes at Material's w400, with call sites stapling w700 back
-    // on. Declared now so the sizes are owned and the weight is the scale's
-    // single heading weight; tracking lands on [AppType.trackingFor]'s 0.0
-    // floor for everything ≥16, which is also what Material happened to give
-    // them — same pixels, no longer a coincidence.
-    headlineLarge: slot(32, FontWeight.w600),
-    headlineMedium: slot(28, FontWeight.w600),
-    headlineSmall: slot(24, FontWeight.w600),
-    // 16, not Material's 22 and not the 18 this app shipped before the
-    // restyle: the spec's 页面标题 row reads 16/600, and every page mockup
-    // draws its heading at that size. It is the only slot the restyle moved.
-    //
-    // w600 is the ruling for every heading slot, adjudicated 2026-08-23: the
-    // spec says 600, the theme said 600, and 47 call sites said w700/bold —
-    // none of which was a decision anyone had made. The call-site overrides
-    // are gone; a heading that wants to be heavier than its slot is now a
-    // change to *this file*, not a copyWith.
+    headlineLarge: slot(28, FontWeight.w600),
+    headlineMedium: slot(20, FontWeight.w600),
+    headlineSmall: slot(20, FontWeight.w600),
     titleLarge: slot(16, FontWeight.w600),
-    titleMedium: slot(14, FontWeight.w600),
-    titleSmall: slot(13, FontWeight.w600),
-    // Named even though nothing in the app sets it deliberately: left unset it
-    // is the one slot that keeps Material's own 16px, and it kept Material's
-    // 0.5 tracking with it — so the app rendered 16px at two different
-    // spacings depending on whether a caller reached for a title or a body.
-    bodyLarge: slot(16, FontWeight.w400),
+    titleMedium: slot(14, FontWeight.w500),
+    titleSmall: slot(13, FontWeight.w500),
+    bodyLarge: slot(14, FontWeight.w400),
     bodyMedium: slot(13, FontWeight.w400),
     bodySmall: slot(12, FontWeight.w400),
     labelLarge: slot(13, FontWeight.w500),
-    labelMedium: slot(11.5, FontWeight.w500),
-    labelSmall: slot(10, FontWeight.w500),
+    labelMedium: slot(12, FontWeight.w500),
+    labelSmall: slot(11, FontWeight.w500),
   );
 
-  // Applied here rather than left to ThemeData's own `fontFamily` parameter:
-  // that parameter does not reliably reach every slot of a caller-supplied
-  // `textTheme`, so a font switch could silently miss anything styled from
-  // this scale. Doing it explicitly means every slot always carries it.
   return fontFamily == null ? merged : merged.apply(fontFamily: fontFamily);
 }
 
-/// The ink of a phone bottom-bar item in [states]: Material's disabled tone,
-/// else the shared navigation pair.
 Color _navInk(ColorScheme colorScheme, Set<WidgetState> states) =>
     states.contains(WidgetState.disabled)
         ? colorScheme.onSurface.withValues(alpha: AppAlpha.disabled)
         : colorScheme.navForeground(selected: states.contains(WidgetState.selected));
 
-/// The skin a slider wears when it is not editing a value.
-///
-/// `10e` 「滑杆」 splits the family in two, and the split is about meaning
-/// rather than taste. A *parameter* slider changes the work — it takes the
-/// accent, a 4px track and a 14px thumb, and that one is the app-wide
-/// [SliderThemeData] in [buildAppTheme]. A *neutral* slider changes how you
-/// are looking at the work — a thumbnail size, a viewport zoom — and stays
-/// greyscale at 3 and 12, because spending the accent there puts the
-/// brightest thing on screen on the one control that alters nothing.
-///
-/// Wrap the second kind in a [SliderTheme] carrying this. Named here rather
-/// than written out at the call site so the component gallery can photograph
-/// both variants from one source, and so a second neutral slider does not
-/// become a third set of numbers.
+/// The skin a slider wears when it changes how you *look* at the work — a
+/// thumbnail size, a viewport zoom — rather than the work itself. Greyscale,
+/// so the brightest thing on screen is not the one control that alters
+/// nothing.
 SliderThemeData neutralSliderTheme(ColorScheme colorScheme) {
   return SliderThemeData(
     trackHeight: 3,
     activeTrackColor: colorScheme.onSurfaceVariant,
-    inactiveTrackColor: colorScheme.outlineVariant,
+    inactiveTrackColor: colorScheme.surfaceContainerHighest,
     thumbColor: colorScheme.onSurfaceVariant,
     overlayColor: colorScheme.onSurface.withValues(alpha: 0.08),
     thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
@@ -791,72 +592,38 @@ SliderThemeData neutralSliderTheme(ColorScheme colorScheme) {
   );
 }
 
-/// The ground a tooltip is drawn on, in both brightnesses.
+/// The scheme a destructive *fill* takes its colours from.
 ///
-/// `10e` 「工具提示」 pins it at `rgba(23,28,59,.94)` and says light and dark
-/// share it. It moved to [AppOverlay] once `E1 12i` gave toasts the same
-/// ground: two components pinned to one colour is a token, not a local
-/// literal.
-const Color _tooltipInk = AppOverlay.ink;
-
-/// The source red every destructive *fill* is derived from.
-///
-/// Material's own error source. Named rather than inlined because it is the
-/// one hex left in this file that is neither a neutral nor the user's seed,
-/// and a reader has to be able to tell it isn't a hand-picked red.
-const Color _errorSource = Color(0xFFB3261E);
-
-/// The scheme a destructive button takes its fill and label from.
-///
-/// A filled button needs a *dark, saturated* ground under a light label;
-/// [ColorScheme.error] is not that. It is tone 40 in light and tone 80 in
-/// dark, because its job is to be legible *as a foreground* — which is right
-/// for [AppButtonVariant.destructiveOutline] and `destructiveText`, and wrong
-/// for a fill. Used as one it produced a pale pink slab with dark text in dark
-/// mode: the app's only irreversible action rendering *lighter* than the
-/// ordinary primary beside it, inverting the emphasis on the one button where
-/// emphasis matters most. At the Rose and Orange seeds the two were also the
-/// same hue family, so colour told the user nothing at all.
-///
-/// Always light + vibrant, so the fill is the same committed red under both
-/// brightnesses, which is why this takes no [Brightness]. The primary CTA
-/// used to be built the same way, until the theme colour became a pair with a
-/// dark half tuned to be a fill; the error colour has no such pair, so this
-/// stays.
+/// `00 · 1f` 「删除」 draws `--err` under white in both brightnesses. The
+/// dark `--err` (`#F0655F`) is tuned to be read as a foreground and carries
+/// white at only ~3:1, so the fill keeps the light red in both — the same
+/// committed weight as the primary CTA, differing only in hue.
 ColorScheme errorFillScheme() {
-  return ColorScheme.fromSeed(
-    seedColor: _errorSource,
-    brightness: Brightness.light,
-    dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+  return ColorScheme.fromSeed(seedColor: _ErrorRoles.light.error).copyWith(
+    primary: _ErrorRoles.light.error,
+    onPrimary: _ErrorRoles.light.onError,
   );
 }
 
-/// The colours [FilledButton.tonal] is supposed to have.
+/// The tonal form (`A3a` 「版本角标 / Apply / 保存到库」): the 12% wash under the
+/// deep ink, ringed. Spent only on "put the model's output to use".
 ///
-/// Pass this to every tonal button: the app-wide [FilledButtonTheme] above
-/// names a background for *all* filled buttons, and a theme's background
-/// outranks the tonal variant's own default. Without this a tonal button comes
-/// out fully primary-filled — no error, just a secondary action shouting.
+/// Pass it to every tonal button — the app-wide filled theme names a
+/// background for all filled buttons and would otherwise win.
 ButtonStyle tonalButtonStyle(ColorScheme colorScheme) {
   return FilledButton.styleFrom(
-    backgroundColor: colorScheme.secondaryContainer,
-    foregroundColor: colorScheme.onSecondaryContainer,
-    disabledBackgroundColor: colorScheme.onSurface.withValues(alpha: 0.12),
-    disabledForegroundColor: colorScheme.onSurface.withValues(alpha: 0.38),
+    backgroundColor: colorScheme.accentTint,
+    foregroundColor: colorScheme.onAccentTint,
+    disabledBackgroundColor: colorScheme.surfaceContainerHighest,
+    disabledForegroundColor: colorScheme.outline,
     elevation: 0,
+    side: BorderSide(color: colorScheme.accentRing),
   );
 }
 
-/// The monospaced faces to ask for, best first.
-///
-/// The spec sets every number, path, timestamp and log line in IBM Plex Mono,
-/// and the app takes the role without taking the font: a bundled face would be
-/// megabytes for text that is nowhere near a headline, and the point of a
-/// monospace here is that digits line up in a column, which any of these do.
-///
-/// Ordered so each desktop platform finds its own system face before the
-/// generic fallback. `monospace` last is what stops this degrading to the UI
-/// font on a machine that has none of them.
+/// The monospaced faces to ask for, best first. The design sets numbers,
+/// logs, filenames and model ids in the system mono stack; nothing is
+/// bundled.
 const List<String> kMonoFontFamilyFallback = <String>[
   'Cascadia Mono', // Windows 11
   'Consolas', // Windows
@@ -867,28 +634,14 @@ const List<String> kMonoFontFamilyFallback = <String>[
 ];
 
 /// Numbers, code, paths and log lines set in a monospaced face.
-///
-/// A role rather than a size: take whichever scale slot the surrounding text
-/// uses and pass it through here, so a measurement beside a label stays the
-/// same size as the label and only changes shape.
-///
-/// Worth having beyond looks. A column of file sizes or dimensions in a
-/// proportional face has its digits at different widths, so the numbers do not
-/// line up and the eye cannot compare them down the column — which is the one
-/// thing a metadata panel exists for.
 extension AppMonoText on TextStyle {
-  /// This style, set in a monospaced face.
+  /// This style in a monospaced face with tabular figures.
   ///
-  /// Sets `fontFamily` to null on purpose. A [TextStyle] carrying an explicit
-  /// family would win over the fallback list, and the app sets one on every
-  /// slot — see [_buildTextTheme]'s `apply`. Leaving it null lets the fallback
-  /// chain decide, which is the whole mechanism.
+  /// `fontFamily` is nulled on purpose: an explicit family would beat the
+  /// fallback list, and the app stamps one on every slot.
   TextStyle get mono => copyWith(
         fontFamily: null,
         fontFamilyFallback: kMonoFontFamilyFallback,
-        // Digits at a uniform width even in a face that would otherwise
-        // proportion them. Free where the face is already monospaced, and a
-        // rescue where the fallback landed somewhere unexpected.
         fontFeatures: const [FontFeature.tabularFigures()],
       );
 }
@@ -897,32 +650,11 @@ extension AppMonoText on TextStyle {
 extension AppTextScaleMetrics on TextStyle {
   /// This slot's metrics, carrying no colour of its own.
   ///
-  /// Every slot of a Material 3 [TextTheme] arrives stamped with `onSurface`
-  /// — `Typography.material2021` puts it there — and an explicit colour on a
-  /// [Text] beats the ambient [DefaultTextStyle]. So handing a raw slot to a
-  /// label whose colour belongs to the widget *around* it paints `onSurface`
-  /// over that widget's own choice: near-invisible on a filled button, and
-  /// dead to the selected/unselected switch on a chip or list tile.
-  ///
-  /// The cases, all of which came up migrating the app onto the scale:
-  ///
-  /// - a [FilledButton]/[TextButton] label, whose colour is the button's
-  ///   resolved foreground;
-  /// - a [ChoiceChip]/[FilterChip] label, `onSecondaryContainer` when
-  ///   selected and `onSurfaceVariant` when not;
-  /// - a [ListTile] title or subtitle under `selected: true`, which tints to
-  ///   `primary`;
-  /// - an [ExpansionTile] header, whose colour is an animated tween between
-  ///   two of those.
-  ///
-  /// `copyWith(color: null)` cannot express this — null there means "leave it
-  /// alone" — so the metrics are restated explicitly.
-  /// `inherit: true` is forced, not copied. It is the switch that decides
-  /// whether [Text] merges this over the ambient [DefaultTextStyle] or
-  /// replaces it outright — `TextStyle.merge` returns the incoming style
-  /// wholesale when it is false, which would drop the very colour this is
-  /// trying to inherit. A `TextTheme` slot's own value for it is an
-  /// implementation detail of whoever built the theme.
+  /// A Material 3 slot arrives stamped with `onSurface`, and an explicit
+  /// colour on a [Text] beats the ambient [DefaultTextStyle] — so a raw slot
+  /// on a filled button, a selected chip or a glass bar paints the wrong ink.
+  /// `inherit: true` is forced: `TextStyle.merge` returns the incoming style
+  /// wholesale when it is false, dropping the colour this exists to inherit.
   TextStyle get metricsOnly => const TextStyle().copyWith(
         inherit: true,
         fontFamily: fontFamily,

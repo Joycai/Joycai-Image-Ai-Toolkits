@@ -45,5 +45,20 @@
   "filterPrompts": "プロンプトをフィルター...",
   "shareFailed": "共有に失敗しました: {error}",
   "more": "もっと見る",
-  "confirm": "確認"
+  "confirm": "確認",
+  "moreSheetDesktopOnlyNote": "ファイルブラウザと画像ダウンローダーはデスクトップ／タブレットでのみ利用できます。",
+  "consoleIdle": "アイドル",
+  "consoleFailedCount": "{count} 件失敗",
+  "logSearchHint": "ログを絞り込む…",
+  "logLevelError": "エラー",
+  "logLevelRunning": "実行",
+  "logLevelSuccess": "成功",
+  "goToSettings": "設定へ",
+  "actionImport": "インポート",
+  "actionExport": "エクスポート",
+  "actionOpen": "開く",
+  "actionClear": "クリア",
+  "actionRun": "実行",
+  "actionChange": "変更",
+  "experimental": "試験的"
 }

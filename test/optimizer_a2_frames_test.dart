@@ -195,7 +195,7 @@ void main() {
       await pumpChat(tester, busy: true, onAbort: null);
       final l10n = await en();
       expect(find.text(l10n.optAbort), findsNothing);
-      expect(find.byIcon(Icons.send_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_upward_rounded), findsOneWidget);
     });
 
     testWidgets('Esc in the composer stops the turn', (tester) async {

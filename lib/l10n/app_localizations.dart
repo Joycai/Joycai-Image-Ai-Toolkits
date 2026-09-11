@@ -1336,6 +1336,78 @@ abstract class AppLocalizations {
   /// **'Operation failed: {error}'**
   String folderOpFailed(String error);
 
+  /// No description provided for @browserViewGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid'**
+  String get browserViewGrid;
+
+  /// No description provided for @browserViewList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get browserViewList;
+
+  /// No description provided for @browserSearchEscHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Esc to clear'**
+  String get browserSearchEscHint;
+
+  /// No description provided for @browserNoFilesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another filter, or clear the search'**
+  String get browserNoFilesHint;
+
+  /// No description provided for @browserFoldersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} folders'**
+  String browserFoldersCount(int count);
+
+  /// No description provided for @browserScanningCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning {count} files…'**
+  String browserScanningCount(int count);
+
+  /// No description provided for @browserDragFootnote.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag onto a folder to move · hold Ctrl to copy'**
+  String get browserDragFootnote;
+
+  /// No description provided for @stagingDropHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop files on a folder in the left column to stage them'**
+  String get stagingDropHint;
+
+  /// No description provided for @renameBatchFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch {batch} failed'**
+  String renameBatchFailedTitle(int batch);
+
+  /// No description provided for @conflictIncoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming'**
+  String get conflictIncoming;
+
+  /// No description provided for @conflictAlreadyThere.
+  ///
+  /// In en, this message translates to:
+  /// **'Already there'**
+  String get conflictAlreadyThere;
+
+  /// No description provided for @conflictUndecidedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} undecided'**
+  String conflictUndecidedCount(int count);
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
@@ -1624,6 +1696,96 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get confirm;
 
+  /// No description provided for @moreSheetDesktopOnlyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'File Browser and Image Downloader are available on desktop and tablet only.'**
+  String get moreSheetDesktopOnlyNote;
+
+  /// No description provided for @consoleIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get consoleIdle;
+
+  /// No description provided for @consoleFailedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} failed'**
+  String consoleFailedCount(int count);
+
+  /// No description provided for @logSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter logs…'**
+  String get logSearchHint;
+
+  /// No description provided for @logLevelError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get logLevelError;
+
+  /// No description provided for @logLevelRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get logLevelRunning;
+
+  /// No description provided for @logLevelSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get logLevelSuccess;
+
+  /// No description provided for @goToSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Settings'**
+  String get goToSettings;
+
+  /// No description provided for @actionImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get actionImport;
+
+  /// No description provided for @actionExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get actionExport;
+
+  /// No description provided for @actionOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get actionOpen;
+
+  /// No description provided for @actionClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get actionClear;
+
+  /// No description provided for @actionRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run'**
+  String get actionRun;
+
+  /// No description provided for @actionChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get actionChange;
+
+  /// No description provided for @experimental.
+  ///
+  /// In en, this message translates to:
+  /// **'Experimental'**
+  String get experimental;
+
   /// No description provided for @downloader.
   ///
   /// In en, this message translates to:
@@ -1870,6 +2032,54 @@ abstract class AppLocalizations {
   /// **'Copy logs'**
   String get copyLogs;
 
+  /// No description provided for @downloaderFoundCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} found'**
+  String downloaderFoundCount(int count);
+
+  /// No description provided for @downloaderAdvancedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Only applies to downloads from this screen'**
+  String get downloaderAdvancedSubtitle;
+
+  /// No description provided for @copyImageUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Image URL'**
+  String get copyImageUrl;
+
+  /// No description provided for @manualHtmlEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No HTML pasted yet'**
+  String get manualHtmlEmptyTitle;
+
+  /// No description provided for @manualHtmlEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'View the page source in your browser, select all and copy, then click Paste above.'**
+  String get manualHtmlEmptyDesc;
+
+  /// No description provided for @cookieHistoryUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use'**
+  String get cookieHistoryUse;
+
+  /// No description provided for @cookieHistoryPairs.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} pairs'**
+  String cookieHistoryPairs(int count);
+
+  /// No description provided for @cookieHistoryEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookies you paste are remembered here for the same site next time.'**
+  String get cookieHistoryEmptyDesc;
+
   /// No description provided for @usage.
   ///
   /// In en, this message translates to:
@@ -2043,6 +2253,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a valid non-negative number'**
   String get invalidPriceValue;
+
+  /// No description provided for @usageLoadingRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Totalling usage records…'**
+  String get usageLoadingRecords;
+
+  /// No description provided for @noUsageInRangeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another range, or run a task first.'**
+  String get noUsageInRangeHint;
+
+  /// No description provided for @usageLoadMoreStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'{pageSize} per page · {shown} / {total} shown'**
+  String usageLoadMoreStatus(int pageSize, int shown, int total);
 
   /// No description provided for @models.
   ///
@@ -3832,6 +4060,264 @@ abstract class AppLocalizations {
   /// **'Could not save the order; the previous one is back.'**
   String get channelOrderSaveFailed;
 
+  /// No description provided for @wizardStepCounter.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} / {total}'**
+  String wizardStepCounter(int current, int total);
+
+  /// No description provided for @wizardStepsAdaptNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps adjust to the provider\'s access method'**
+  String get wizardStepsAdaptNote;
+
+  /// No description provided for @providerNoMatchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{query}\" isn\'t in the list. Use the Custom group and choose OpenAI compatible.'**
+  String providerNoMatchHint(String query);
+
+  /// No description provided for @providerUseCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Add as custom'**
+  String get providerUseCustom;
+
+  /// No description provided for @probeSkippableNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional; you can still set the name and tag next'**
+  String get probeSkippableNote;
+
+  /// No description provided for @endpointPresetValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset value: {endpoint}'**
+  String endpointPresetValue(String endpoint);
+
+  /// No description provided for @variantResultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Result'**
+  String get variantResultLabel;
+
+  /// No description provided for @probeOkNext.
+  ///
+  /// In en, this message translates to:
+  /// **'You can turn on model discovery right away'**
+  String get probeOkNext;
+
+  /// No description provided for @probeNoModelsNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Endpoint and key work, but the model list is empty. Add a Model ID by hand.'**
+  String get probeNoModelsNext;
+
+  /// No description provided for @probeAuthFailedNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the key was copied in full and hasn\'t expired.'**
+  String get probeAuthFailedNext;
+
+  /// No description provided for @probeNotAnApiNext.
+  ///
+  /// In en, this message translates to:
+  /// **'An HTML page came back, probably a console URL. API endpoints usually end in /v1 or /v1beta.'**
+  String get probeNotAnApiNext;
+
+  /// No description provided for @probeUnreachableNext.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS failed or timed out. Check the URL, proxy and network.'**
+  String get probeUnreachableNext;
+
+  /// No description provided for @probeNotSupportedNext.
+  ///
+  /// In en, this message translates to:
+  /// **'This protocol has no model list; it can only be verified by submitting a task.'**
+  String get probeNotSupportedNext;
+
+  /// No description provided for @previewEmptyKeyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'No key yet. You can add it later in Edit Channel.'**
+  String get previewEmptyKeyNote;
+
+  /// No description provided for @presetShortHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fills endpoint and protocol in one tap'**
+  String get presetShortHint;
+
+  /// No description provided for @deleteChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete channel'**
+  String get deleteChannel;
+
+  /// No description provided for @discoveryOffEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, Fetch Models is disabled for this channel'**
+  String get discoveryOffEffect;
+
+  /// No description provided for @protocolUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get protocolUnavailable;
+
+  /// No description provided for @reasoningEffortUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This model takes no reasoning parameters. The section stays greyed out and lights up when you switch to a chat model.'**
+  String get reasoningEffortUnsupported;
+
+  /// No description provided for @modelIdRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Model ID can\'t be empty'**
+  String get modelIdRequiredTitle;
+
+  /// No description provided for @modelIdRequiredDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s the only required field; a blank name uses the ID as the display name.'**
+  String get modelIdRequiredDesc;
+
+  /// No description provided for @contextSpecifyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive whole number; blank or 0 can\'t be saved.'**
+  String get contextSpecifyInvalid;
+
+  /// No description provided for @addModelSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When adding by hand, only the ID is required'**
+  String get addModelSubtitle;
+
+  /// No description provided for @addModelIdHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving this blank blocks saving; a blank name uses the ID.'**
+  String get addModelIdHelper;
+
+  /// No description provided for @addModelDefaultsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Protocol, context window and capability switches stay on Auto or their defaults. Add it first, run it once, then pin what needs pinning.'**
+  String get addModelDefaultsNote;
+
+  /// No description provided for @modelNameOptionalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Can be left blank'**
+  String get modelNameOptionalHint;
+
+  /// No description provided for @moveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move Up'**
+  String get moveUp;
+
+  /// No description provided for @moveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move Down'**
+  String get moveDown;
+
+  /// No description provided for @channelReorderFootnote.
+  ///
+  /// In en, this message translates to:
+  /// **'Hover for the handle · drag to reorder · right-click or Alt+↑/↓ does the same'**
+  String get channelReorderFootnote;
+
+  /// No description provided for @channelReorderLockedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Reordering is off while searching: only part of the list is shown, so a drop position would be wrong. Clear the search to restore it.'**
+  String get channelReorderLockedNote;
+
+  /// No description provided for @noModelsConfiguredHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Fetch Models to discover them, or add one by hand.'**
+  String get noModelsConfiguredHint;
+
+  /// No description provided for @addModelManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Add manually'**
+  String get addModelManually;
+
+  /// No description provided for @selectAChannelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a channel on the left to see its models here.'**
+  String get selectAChannelHint;
+
+  /// No description provided for @noModelsMatchQuery.
+  ///
+  /// In en, this message translates to:
+  /// **'No models match \"{query}\"'**
+  String noModelsMatchQuery(String query);
+
+  /// No description provided for @noFeeGroupsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a group, then point models at it.'**
+  String get noFeeGroupsHint;
+
+  /// No description provided for @noNewModelsFoundHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Every model this channel returned is already in the list.'**
+  String get noNewModelsFoundHint;
+
+  /// No description provided for @discoveryCapabilitiesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovered models carry only an ID and a type; capabilities, context window and fee group are set per model.'**
+  String get discoveryCapabilitiesNote;
+
+  /// No description provided for @deleteChannelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete channel \"{name}\"?'**
+  String deleteChannelTitle(String name);
+
+  /// No description provided for @deleteChannelModelsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes {count} models'**
+  String deleteChannelModelsNote(int count);
+
+  /// No description provided for @deleteChannelBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Workbench settings using these models become \"No model selected\"; submitted tasks are unaffected. Usage records are kept by model name.'**
+  String get deleteChannelBody;
+
+  /// No description provided for @newFeeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'New Group'**
+  String get newFeeGroup;
+
+  /// No description provided for @cachePriceBlankPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Blank = input price'**
+  String get cachePriceBlankPlaceholder;
+
+  /// No description provided for @fetchFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed'**
+  String get fetchFailedTitle;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:
@@ -4101,6 +4587,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All'**
   String get matchAllTags;
+
+  /// No description provided for @promptFilterSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} categories · {matches} matching'**
+  String promptFilterSummary(int count, int matches);
+
+  /// No description provided for @promptEditorSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Once saved, apply it from the workbench in one click'**
+  String get promptEditorSubtitle;
+
+  /// No description provided for @categoryColorHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour only tells categories apart'**
+  String get categoryColorHint;
+
+  /// No description provided for @promptCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} prompts'**
+  String promptCount(int count);
+
+  /// No description provided for @categoryDeleteNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting a category moves its prompts to General; they are not deleted.'**
+  String get categoryDeleteNote;
+
+  /// No description provided for @importFileSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{file} · {count} items'**
+  String importFileSummary(String file, int count);
+
+  /// No description provided for @importMergeDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the existing {current}, add the new ones'**
+  String importMergeDetail(int current);
+
+  /// No description provided for @importReplaceDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the existing {current}, keep only the {count} in the file'**
+  String importReplaceDetail(int current, int count);
+
+  /// No description provided for @promptLibraryEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the prompts you use most in the workbench and apply them in one click next time.'**
+  String get promptLibraryEmptyHint;
+
+  /// No description provided for @colorPresets.
+  ///
+  /// In en, this message translates to:
+  /// **'Presets'**
+  String get colorPresets;
 
   /// No description provided for @settings.
   ///
@@ -4738,6 +5284,144 @@ abstract class AppLocalizations {
   /// **'Copyright © {year} {holder}. Released under the MIT License.'**
   String aboutCopyright(Object year, Object holder);
 
+  /// No description provided for @themeMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme mode'**
+  String get themeMode;
+
+  /// No description provided for @visualEffects.
+  ///
+  /// In en, this message translates to:
+  /// **'Effects'**
+  String get visualEffects;
+
+  /// No description provided for @settingsGroupNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications & logging'**
+  String get settingsGroupNotifications;
+
+  /// No description provided for @settingsGroupDirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'Directories'**
+  String get settingsGroupDirectories;
+
+  /// No description provided for @settingsGroupAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get settingsGroupAssistant;
+
+  /// No description provided for @customAccentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom theme color'**
+  String get customAccentTitle;
+
+  /// No description provided for @customAccentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the ring or paste a hex value'**
+  String get customAccentHint;
+
+  /// No description provided for @customAccentDerived.
+  ///
+  /// In en, this message translates to:
+  /// **'Derived pair'**
+  String get customAccentDerived;
+
+  /// No description provided for @customAccentPassed.
+  ///
+  /// In en, this message translates to:
+  /// **'White labels hold; the button keeps white text.'**
+  String get customAccentPassed;
+
+  /// No description provided for @customAccentInkFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'White can\'t hold on this shade, so the button uses a deep ink of the same hue.'**
+  String get customAccentInkFallback;
+
+  /// No description provided for @customAccentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This colour can\'t meet the contrast floor.'**
+  String get customAccentFailed;
+
+  /// No description provided for @fontFollowSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Follows the operating system'**
+  String get fontFollowSystem;
+
+  /// No description provided for @fontNotDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not downloaded'**
+  String get fontNotDownloaded;
+
+  /// No description provided for @fontDownloadedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded · available offline'**
+  String get fontDownloadedOffline;
+
+  /// No description provided for @languageFollowSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Follows the system language'**
+  String get languageFollowSystem;
+
+  /// No description provided for @exportSettingsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Directories, prompts and usage are optional; API keys are never included'**
+  String get exportSettingsNote;
+
+  /// No description provided for @clearTempFilesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Masks · crop copies · downloader cache · video thumbnails'**
+  String get clearTempFilesNote;
+
+  /// No description provided for @resetAllSettingsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to the first-run state'**
+  String get resetAllSettingsNote;
+
+  /// No description provided for @resetIrreversible.
+  ///
+  /// In en, this message translates to:
+  /// **'This can\'t be undone'**
+  String get resetIrreversible;
+
+  /// No description provided for @proxyAppliesToAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to all channel requests'**
+  String get proxyAppliesToAll;
+
+  /// No description provided for @notificationsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify when a task finishes or fails'**
+  String get notificationsDesc;
+
+  /// No description provided for @mcpServerDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Lets external tools call this app over MCP'**
+  String get mcpServerDesc;
+
+  /// No description provided for @mcpComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon (not in this version)'**
+  String get mcpComingSoon;
+
   /// No description provided for @tasks.
   ///
   /// In en, this message translates to:
@@ -5139,6 +5823,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Elapsed'**
   String get durationLabel;
+
+  /// No description provided for @clearAllTasksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all tasks?'**
+  String get clearAllTasksTitle;
+
+  /// No description provided for @clearAllRunningNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes {count} running tasks'**
+  String clearAllRunningNote(int count);
+
+  /// No description provided for @clearAllKeepsFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Running tasks are left alone. Generated files stay in the output folder; only the queue\'s records are cleared.'**
+  String get clearAllKeepsFiles;
+
+  /// No description provided for @taskNoOutputsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'No outputs. The task failed before writing any.'**
+  String get taskNoOutputsFailed;
+
+  /// No description provided for @noTaskLogCancelledHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The task was cancelled before it started, so it left no log.'**
+  String get noTaskLogCancelledHint;
 
   /// No description provided for @setupWizardTitle.
   ///
@@ -6276,7 +6990,7 @@ abstract class AppLocalizations {
   /// No description provided for @optSend.
   ///
   /// In en, this message translates to:
-  /// **'Send (Ctrl+Enter)'**
+  /// **'Send'**
   String get optSend;
 
   /// No description provided for @optNewSession.
@@ -7400,6 +8114,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'With confirmation off, what the agent drafts is written to your files without you reading it first.'**
   String get kbWriteNoConfirmWarning;
+
+  /// No description provided for @wbToolComparatorShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare'**
+  String get wbToolComparatorShort;
+
+  /// No description provided for @wbToolMaskShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Mask'**
+  String get wbToolMaskShort;
+
+  /// No description provided for @wbToolCropShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop'**
+  String get wbToolCropShort;
+
+  /// No description provided for @wbToolAssistantShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get wbToolAssistantShort;
+
+  /// No description provided for @galleryViewWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get galleryViewWorkspace;
+
+  /// No description provided for @galleryViewSourcesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get galleryViewSourcesShort;
+
+  /// No description provided for @galleryViewResultsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Results'**
+  String get galleryViewResultsShort;
+
+  /// No description provided for @galleryDropTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop images here…'**
+  String get galleryDropTitle;
+
+  /// No description provided for @galleryDropHint.
+  ///
+  /// In en, this message translates to:
+  /// **'They join the temporary workspace, and the view switches to it'**
+  String get galleryDropHint;
+
+  /// No description provided for @galleryEmptyWorkspaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop files here'**
+  String get galleryEmptyWorkspaceTitle;
+
+  /// No description provided for @galleryEmptyWorkspaceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag images or videos in to add them to the temporary workspace'**
+  String get galleryEmptyWorkspaceDesc;
+
+  /// No description provided for @galleryEmptySourceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This source has no supported images'**
+  String get galleryEmptySourceDesc;
+
+  /// No description provided for @galleryScanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning files…'**
+  String get galleryScanning;
+
+  /// No description provided for @wbGenerationConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Generation settings'**
+  String get wbGenerationConfig;
+
+  /// No description provided for @selectionSendToAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to assistant'**
+  String get selectionSendToAssistant;
+
+  /// No description provided for @shareCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Share ({count})'**
+  String shareCount(int count);
+
+  /// No description provided for @selectionReorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder · the number is the order sent to the model'**
+  String get selectionReorderHint;
+
+  /// No description provided for @videoPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get videoPlay;
+
+  /// No description provided for @videoPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get videoPause;
+
+  /// No description provided for @videoMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get videoMute;
+
+  /// No description provided for @videoUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get videoUnmute;
+
+  /// No description provided for @videoRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get videoRetry;
+
+  /// No description provided for @videoPlaybackFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t play'**
+  String get videoPlaybackFailed;
+
+  /// No description provided for @videoPlaybackFailedReason.
+  ///
+  /// In en, this message translates to:
+  /// **'File missing or encoding not supported: {name}'**
+  String videoPlaybackFailedReason(String name);
+
+  /// No description provided for @videoFrameOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get videoFrameOptional;
+
+  /// No description provided for @videoDropOrPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop or click to pick'**
+  String get videoDropOrPick;
+
+  /// No description provided for @videoDropRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Release to add'**
+  String get videoDropRelease;
+
+  /// No description provided for @videoReferenceDropMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop reference images (max {count})'**
+  String videoReferenceDropMax(int count);
+
+  /// No description provided for @optErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The request failed'**
+  String get optErrorTitle;
+
+  /// No description provided for @optNotViewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not viewed yet'**
+  String get optNotViewed;
+
+  /// No description provided for @optTimelineCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'current'**
+  String get optTimelineCurrent;
+
+  /// No description provided for @optKbPathInvalidDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The path is no longer valid or can\'t be accessed'**
+  String get optKbPathInvalidDesc;
+
+  /// No description provided for @optKbEntryMissingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing {file}'**
+  String optKbEntryMissingShort(String file);
+
+  /// No description provided for @optKbNotConfiguredShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Not configured'**
+  String get optKbNotConfiguredShort;
+
+  /// No description provided for @cropEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an image in the gallery first'**
+  String get cropEmptyDesc;
+
+  /// No description provided for @maskEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A mask is painted over an image'**
+  String get maskEmptyDesc;
+
+  /// No description provided for @maskLoadFailedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The file may have been moved or deleted'**
+  String get maskLoadFailedDesc;
 }
 
 class _AppLocalizationsDelegate

@@ -75,5 +75,59 @@
   "reorderDisabledWhileFiltered": "Reordering is unavailable while a filter or search is active",
   "matchModeLabel": "Match",
   "matchAny": "Any",
-  "matchAllTags": "All"
+  "matchAllTags": "All",
+  "promptFilterSummary": "{count} categories · {matches} matching",
+  "@promptFilterSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "matches": {
+        "type": "int"
+      }
+    }
+  },
+  "promptEditorSubtitle": "Once saved, apply it from the workbench in one click",
+  "categoryColorHint": "Colour only tells categories apart",
+  "promptCount": "{count} prompts",
+  "@promptCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryDeleteNote": "Deleting a category moves its prompts to General; they are not deleted.",
+  "importFileSummary": "{file} · {count} items",
+  "@importFileSummary": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importMergeDetail": "Keep the existing {current}, add the new ones",
+  "@importMergeDetail": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      }
+    }
+  },
+  "importReplaceDetail": "Delete the existing {current}, keep only the {count} in the file",
+  "@importReplaceDetail": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "promptLibraryEmptyHint": "Save the prompts you use most in the workbench and apply them in one click next time.",
+  "colorPresets": "Presets"
 }

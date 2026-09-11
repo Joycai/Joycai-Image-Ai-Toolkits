@@ -47,7 +47,9 @@ class SafetySettingsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final thresholds = context
         .select<AppState, Map<String, String>>((s) => s.safetyThresholds);
 
@@ -55,25 +57,30 @@ class SafetySettingsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(l10n.safetySettings,
-            style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: 2),
+        // `A1 · 1a` marks this group with a shield in the deep ink.
+        Row(
+          children: [
+            Icon(Icons.shield_outlined, size: AppSize.iconSm, color: colorScheme.accentText),
+            const SizedBox(width: AppSpace.s4),
+            Expanded(child: Text(l10n.safetySettings, style: textTheme.titleSmall)),
+          ],
+        ),
+        const SizedBox(height: AppSpace.s4),
         Text(
           l10n.safetySettingsDesc,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
+          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
         for (final category in SafetySettings.categories) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpace.s10),
           Row(
             children: [
               Expanded(
-                child: Text(_categoryLabel(l10n, category),
-                    style: Theme.of(context).textTheme.bodySmall),
+                child: Text(_categoryLabel(l10n, category), style: textTheme.bodySmall),
               ),
               Text(
                 _thresholdLabel(
                     l10n, thresholds[category] ?? SafetySettings.defaultThreshold),
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                style: textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: colorScheme.accentText,
                 ),
@@ -81,7 +88,7 @@ class SafetySettingsSection extends StatelessWidget {
             ],
           ),
           SizedBox(
-            height: 28,
+            height: AppSize.compact,
             child: Slider(
               value: SafetySettings.thresholds
                   .indexOf(

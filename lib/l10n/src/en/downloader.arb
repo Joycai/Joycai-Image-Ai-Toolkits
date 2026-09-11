@@ -70,5 +70,27 @@
   "guideStep2Desc": "Tell the AI which images you need",
   "guideStep3Title": "3 · Pick & download",
   "guideStep3Desc": "Select results and queue the downloads",
-  "copyLogs": "Copy logs"
+  "copyLogs": "Copy logs",
+  "downloaderFoundCount": "{count} found",
+  "@downloaderFoundCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloaderAdvancedSubtitle": "Only applies to downloads from this screen",
+  "copyImageUrl": "Copy Image URL",
+  "manualHtmlEmptyTitle": "No HTML pasted yet",
+  "manualHtmlEmptyDesc": "View the page source in your browser, select all and copy, then click Paste above.",
+  "cookieHistoryUse": "Use",
+  "cookieHistoryPairs": "{count} pairs",
+  "@cookieHistoryPairs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cookieHistoryEmptyDesc": "Cookies you paste are remembered here for the same site next time."
 }
