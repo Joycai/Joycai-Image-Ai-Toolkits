@@ -72,19 +72,27 @@ class _AppWindowFrameState extends State<AppWindowFrame> {
   }
 
   Widget _buildFrame(BuildContext context) {
-    return Stack(
-      children: [
-        const Positioned.fill(child: AuroraBackdrop()),
-        if (usesCustomWindowChrome)
-          Column(
-            children: [
-              const AppTitleBar(),
-              Expanded(child: widget.child),
-            ],
-          )
-        else
-          widget.child,
-      ],
+    // A transparent Material under everything: the title bar, the phone dock
+    // and the task capsule sit outside any route's Scaffold, and a Text with
+    // no Material above it inherits MaterialApp's error style — the yellow
+    // double underline — wherever its own style leaves decoration unset. This
+    // paints nothing; it only puts the theme's text style in scope.
+    return Material(
+      type: MaterialType.transparency,
+      child: Stack(
+        children: [
+          const Positioned.fill(child: AuroraBackdrop()),
+          if (usesCustomWindowChrome)
+            Column(
+              children: [
+                const AppTitleBar(),
+                Expanded(child: widget.child),
+              ],
+            )
+          else
+            widget.child,
+        ],
+      ),
     );
   }
 
