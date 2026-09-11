@@ -919,6 +919,26 @@ class AppLocalizationsEn extends AppLocalizations {
       'File Browser and Image Downloader are available on desktop and tablet only.';
 
   @override
+  String get consoleIdle => 'Idle';
+
+  @override
+  String consoleFailedCount(int count) {
+    return '$count failed';
+  }
+
+  @override
+  String get logSearchHint => 'Filter logs…';
+
+  @override
+  String get logLevelError => 'Error';
+
+  @override
+  String get logLevelRunning => 'Running';
+
+  @override
+  String get logLevelSuccess => 'Success';
+
+  @override
   String get downloader => 'Downloader';
 
   @override
@@ -3523,7 +3543,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optChatHint => 'Describe your idea or paste a rough prompt...';
 
   @override
-  String get optSend => 'Send (Ctrl+Enter)';
+  String get optSend => 'Send';
 
   @override
   String get optNewSession => 'New Conversation';
@@ -4227,4 +4247,75 @@ class AppLocalizationsEn extends AppLocalizations {
   String shareCount(int count) {
     return 'Share ($count)';
   }
+
+  @override
+  String get selectionReorderHint =>
+      'Drag to reorder · the number is the order sent to the model';
+
+  @override
+  String get videoPlay => 'Play';
+
+  @override
+  String get videoPause => 'Pause';
+
+  @override
+  String get videoMute => 'Mute';
+
+  @override
+  String get videoUnmute => 'Unmute';
+
+  @override
+  String get videoRetry => 'Retry';
+
+  @override
+  String get videoPlaybackFailed => 'Can\'t play';
+
+  @override
+  String videoPlaybackFailedReason(String name) {
+    return 'File missing or encoding not supported: $name';
+  }
+
+  @override
+  String get videoFrameOptional => 'Optional';
+
+  @override
+  String get videoDropOrPick => 'Drop or click to pick';
+
+  @override
+  String get videoDropRelease => 'Release to add';
+
+  @override
+  String videoReferenceDropMax(int count) {
+    return 'Drop reference images (max $count)';
+  }
+
+  @override
+  String get optErrorTitle => 'The request failed';
+
+  @override
+  String get optNotViewed => 'Not viewed yet';
+
+  @override
+  String get optTimelineCurrent => 'current';
+
+  @override
+  String get optKbPathInvalidDesc =>
+      'The path is no longer valid or can\'t be accessed';
+
+  @override
+  String optKbEntryMissingShort(String file) {
+    return 'Missing $file';
+  }
+
+  @override
+  String get optKbNotConfiguredShort => 'Not configured';
+
+  @override
+  String get cropEmptyDesc => 'Pick an image in the gallery first';
+
+  @override
+  String get maskEmptyDesc => 'A mask is painted over an image';
+
+  @override
+  String get maskLoadFailedDesc => 'The file may have been moved or deleted';
 }

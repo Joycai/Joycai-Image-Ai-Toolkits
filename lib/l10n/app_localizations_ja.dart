@@ -911,6 +911,26 @@ class AppLocalizationsJa extends AppLocalizations {
       'ファイルブラウザと画像ダウンローダーはデスクトップ／タブレットでのみ利用できます。';
 
   @override
+  String get consoleIdle => 'アイドル';
+
+  @override
+  String consoleFailedCount(int count) {
+    return '$count 件失敗';
+  }
+
+  @override
+  String get logSearchHint => 'ログを絞り込む…';
+
+  @override
+  String get logLevelError => 'エラー';
+
+  @override
+  String get logLevelRunning => '実行';
+
+  @override
+  String get logLevelSuccess => '成功';
+
+  @override
   String get downloader => 'ダウンローダー';
 
   @override
@@ -3448,7 +3468,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optChatHint => 'アイデアやラフなプロンプトを入力...';
 
   @override
-  String get optSend => '送信 (Ctrl+Enter)';
+  String get optSend => '送信';
 
   @override
   String get optNewSession => '新しい会話';
@@ -4138,4 +4158,73 @@ class AppLocalizationsJa extends AppLocalizations {
   String shareCount(int count) {
     return '共有 ($count)';
   }
+
+  @override
+  String get selectionReorderHint => 'ドラッグで並べ替え · 番号がモデルに送る順番です';
+
+  @override
+  String get videoPlay => '再生';
+
+  @override
+  String get videoPause => '一時停止';
+
+  @override
+  String get videoMute => 'ミュート';
+
+  @override
+  String get videoUnmute => 'ミュート解除';
+
+  @override
+  String get videoRetry => '再試行';
+
+  @override
+  String get videoPlaybackFailed => '再生できません';
+
+  @override
+  String videoPlaybackFailedReason(String name) {
+    return 'ファイルがないか、エンコードに対応していません：$name';
+  }
+
+  @override
+  String get videoFrameOptional => '任意';
+
+  @override
+  String get videoDropOrPick => 'ドロップまたはクリックで選択';
+
+  @override
+  String get videoDropRelease => '離して追加';
+
+  @override
+  String videoReferenceDropMax(int count) {
+    return '参照画像をドロップ（最大 $count 枚）';
+  }
+
+  @override
+  String get optErrorTitle => 'リクエストに失敗しました';
+
+  @override
+  String get optNotViewed => 'まだ見ていません';
+
+  @override
+  String get optTimelineCurrent => '現在';
+
+  @override
+  String get optKbPathInvalidDesc => 'パスが無効か、アクセスできません';
+
+  @override
+  String optKbEntryMissingShort(String file) {
+    return '$file がありません';
+  }
+
+  @override
+  String get optKbNotConfiguredShort => '未設定';
+
+  @override
+  String get cropEmptyDesc => '先にギャラリーで画像を選んでください';
+
+  @override
+  String get maskEmptyDesc => 'マスクは画像の上に描きます';
+
+  @override
+  String get maskLoadFailedDesc => 'ファイルが移動または削除された可能性があります';
 }

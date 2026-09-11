@@ -908,6 +908,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String get moreSheetDesktopOnlyNote => '文件浏览器与图片下载器仅在桌面 / 平板提供。';
 
   @override
+  String get consoleIdle => '空闲';
+
+  @override
+  String consoleFailedCount(int count) {
+    return '$count 个失败';
+  }
+
+  @override
+  String get logSearchHint => '筛选日志…';
+
+  @override
+  String get logLevelError => '错误';
+
+  @override
+  String get logLevelRunning => '运行';
+
+  @override
+  String get logLevelSuccess => '成功';
+
+  @override
   String get downloader => '下载器';
 
   @override
@@ -3419,7 +3439,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optChatHint => '描述你的想法或粘贴粗略提示词...';
 
   @override
-  String get optSend => '发送 (Ctrl+Enter)';
+  String get optSend => '发送';
 
   @override
   String get optNewSession => '新会话';
@@ -4102,6 +4122,75 @@ class AppLocalizationsZh extends AppLocalizations {
   String shareCount(int count) {
     return '分享 ($count)';
   }
+
+  @override
+  String get selectionReorderHint => '拖动重排 · 序号即送入模型的顺序';
+
+  @override
+  String get videoPlay => '播放';
+
+  @override
+  String get videoPause => '暂停';
+
+  @override
+  String get videoMute => '静音';
+
+  @override
+  String get videoUnmute => '取消静音';
+
+  @override
+  String get videoRetry => '重试';
+
+  @override
+  String get videoPlaybackFailed => '解码失败';
+
+  @override
+  String videoPlaybackFailedReason(String name) {
+    return '文件不存在或编码不受支持：$name';
+  }
+
+  @override
+  String get videoFrameOptional => '可选';
+
+  @override
+  String get videoDropOrPick => '拖入或点击选择';
+
+  @override
+  String get videoDropRelease => '松手放入';
+
+  @override
+  String videoReferenceDropMax(int count) {
+    return '拖入参考图（最多 $count 张）';
+  }
+
+  @override
+  String get optErrorTitle => '请求失败';
+
+  @override
+  String get optNotViewed => '尚未查看';
+
+  @override
+  String get optTimelineCurrent => '当前';
+
+  @override
+  String get optKbPathInvalidDesc => '路径已失效或无访问权限';
+
+  @override
+  String optKbEntryMissingShort(String file) {
+    return '缺少 $file';
+  }
+
+  @override
+  String get optKbNotConfiguredShort => '未配置';
+
+  @override
+  String get cropEmptyDesc => '请先在画廊中选择一张图片';
+
+  @override
+  String get maskEmptyDesc => '蒙版要画在一张图上';
+
+  @override
+  String get maskLoadFailedDesc => '文件可能已被移动或删除';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -5003,6 +5092,26 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get moreSheetDesktopOnlyNote => '檔案瀏覽器與圖片下載器僅在桌面 / 平板提供。';
+
+  @override
+  String get consoleIdle => '閒置';
+
+  @override
+  String consoleFailedCount(int count) {
+    return '$count 個失敗';
+  }
+
+  @override
+  String get logSearchHint => '篩選日誌…';
+
+  @override
+  String get logLevelError => '錯誤';
+
+  @override
+  String get logLevelRunning => '執行';
+
+  @override
+  String get logLevelSuccess => '成功';
 
   @override
   String get downloader => '下載器';
@@ -7516,7 +7625,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optChatHint => '描述你的想法或貼上粗略提示詞...';
 
   @override
-  String get optSend => '傳送 (Ctrl+Enter)';
+  String get optSend => '傳送';
 
   @override
   String get optNewSession => '新對話';
@@ -8199,4 +8308,73 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String shareCount(int count) {
     return '分享 ($count)';
   }
+
+  @override
+  String get selectionReorderHint => '拖動重排 · 序號即送入模型的順序';
+
+  @override
+  String get videoPlay => '播放';
+
+  @override
+  String get videoPause => '暫停';
+
+  @override
+  String get videoMute => '靜音';
+
+  @override
+  String get videoUnmute => '取消靜音';
+
+  @override
+  String get videoRetry => '重試';
+
+  @override
+  String get videoPlaybackFailed => '解碼失敗';
+
+  @override
+  String videoPlaybackFailedReason(String name) {
+    return '檔案不存在或編碼不受支援：$name';
+  }
+
+  @override
+  String get videoFrameOptional => '可選';
+
+  @override
+  String get videoDropOrPick => '拖入或點擊選擇';
+
+  @override
+  String get videoDropRelease => '放開以放入';
+
+  @override
+  String videoReferenceDropMax(int count) {
+    return '拖入參考圖（最多 $count 張）';
+  }
+
+  @override
+  String get optErrorTitle => '請求失敗';
+
+  @override
+  String get optNotViewed => '尚未檢視';
+
+  @override
+  String get optTimelineCurrent => '目前';
+
+  @override
+  String get optKbPathInvalidDesc => '路徑已失效或無存取權限';
+
+  @override
+  String optKbEntryMissingShort(String file) {
+    return '缺少 $file';
+  }
+
+  @override
+  String get optKbNotConfiguredShort => '未設定';
+
+  @override
+  String get cropEmptyDesc => '請先在圖庫中選擇一張圖片';
+
+  @override
+  String get maskEmptyDesc => '遮罩要畫在一張圖上';
+
+  @override
+  String get maskLoadFailedDesc => '檔案可能已被移動或刪除';
 }

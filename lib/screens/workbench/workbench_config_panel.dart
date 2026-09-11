@@ -764,6 +764,25 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               },
             ),
           ),
+          if (selectedImages.length > 1) ...[
+            const SizedBox(height: _kCardInnerGap),
+            // `1a`: the strip's order is the order the model receives.
+            Row(
+              children: [
+                Icon(Icons.drag_indicator, size: AppSize.iconSm, color: theme.colorScheme.onSurfaceVariant),
+                const SizedBox(width: AppSpace.s4),
+                Expanded(
+                  child: Text(
+                    l10n.selectionReorderHint,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (notice != null) ...[
             const SizedBox(height: _kCardInnerGap),
             notice,

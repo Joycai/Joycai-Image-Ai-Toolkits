@@ -68,6 +68,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
 
     final pendingCount = queue.queue.where((t) => t.status == TaskStatus.pending).length;
     final runningCount = queue.runningCount;
+    final failedCount = queue.queue.where((t) => t.status == TaskStatus.failed).length;
     // Read off the queue rather than a mirrored flag on AppState. The mirror
     // existed only so this one line could be a selector, and keeping it in sync
     // is what made AppState notify on every queue tick.
@@ -85,7 +86,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
           topRule: topRule,
           hasErrors: hasErrors,
           isProcessing: isProcessing,
-          summary: _summary(runningCount, pendingCount, avgProgress, l10n),
+          summary: _summary(runningCount, pendingCount, avgProgress, hasErrors ? failedCount : 0, l10n),
           tail: tail,
           // On a phone the strip opens the queue sheet, which rises; on a
           // desktop it discloses the log panel above-and-below it.
@@ -183,18 +184,28 @@ class _AppRunConsoleState extends State<AppRunConsole> {
     return count > 0 ? total / count : 0;
   }
 
-  /// `2 running · 1 planned · 64%`, or null when nothing is queued.
+  /// `2 running · 1 planned · 64%`, `1 failed · Idle` (`A1 · 1a / 1c / 1d`).
   ///
   /// The percentage appears only once a running task has reported progress,
   /// so a queue that has started but not measured itself does not read as
-  /// stalled at 0%.
-  String? _summary(int runningCount, int pendingCount, double avgProgress, AppLocalizations l10n) {
+  /// stalled at 0%. Failures are counted only while the log still carries an
+  /// error, so a failure the user has already dealt with does not linger.
+  String? _summary(
+    int runningCount,
+    int pendingCount,
+    double avgProgress,
+    int failedCount,
+    AppLocalizations l10n,
+  ) {
+    final idle = runningCount == 0 && pendingCount == 0;
     final parts = <String>[
+      if (failedCount > 0) l10n.consoleFailedCount(failedCount),
       if (runningCount > 0) l10n.runningCount(runningCount),
       if (pendingCount > 0) l10n.plannedCount(pendingCount),
       if (runningCount > 0 && avgProgress > 0) '${(avgProgress * 100).round()}%',
+      if (idle) l10n.consoleIdle,
     ];
-    return parts.isEmpty ? null : parts.join(' · ');
+    return parts.join(' · ');
   }
 
   void _showTaskQueueSheet(BuildContext context) {

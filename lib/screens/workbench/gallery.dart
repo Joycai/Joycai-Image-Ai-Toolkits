@@ -62,7 +62,12 @@ _GridInputs _gridInputs(GalleryState s) {
 class Gallery extends StatefulWidget {
   const Gallery({
     super.key,
+    this.extraBottomInset = 0,
   });
+
+  /// Space below the grid that something other than the layout's chrome
+  /// covers — the video tab's player panel (`A2 · 1a`).
+  final double extraBottomInset;
 
   @override
   State<Gallery> createState() => _GalleryState();
@@ -89,7 +94,8 @@ class _GalleryState extends State<Gallery> {
   Widget build(BuildContext context) {
     final galleryState = context.read<GalleryState>();
     final grid = context.select<GalleryState, _GridInputs>(_gridInputs);
-    final insets = _chromeInsets(context);
+    final chrome = _chromeInsets(context);
+    final insets = chrome.copyWith(bottom: chrome.bottom + widget.extraBottomInset);
 
     return DropTarget(
       onDragDone: (details) {

@@ -137,7 +137,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
                         height: AppSize.control,
                         child: AppSearchField(
                           controller: _searchController,
-                          hint: materialL10n.searchFieldLabel,
+                          hint: l10n.logSearchHint,
                           compact: true,
                           autofocus: true,
                           onChanged: (v) => setState(() => _searchQuery = v),
@@ -177,21 +177,21 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
               // Level filter
               _buildLevelChip(
                 context,
-                label: l10n.failedTasks,
+                label: l10n.logLevelError,
                 level: 'ERROR',
                 mark: colorScheme.error,
                 ink: colorScheme.error,
               ),
               _buildLevelChip(
                 context,
-                label: l10n.processingTasks,
+                label: l10n.logLevelRunning,
                 level: 'RUNNING',
                 mark: semantic.info,
                 ink: semantic.onInfoContainer,
               ),
               _buildLevelChip(
                 context,
-                label: l10n.completedTasks,
+                label: l10n.logLevelSuccess,
                 level: 'SUCCESS',
                 mark: semantic.success,
                 ink: semantic.onSuccessContainer,

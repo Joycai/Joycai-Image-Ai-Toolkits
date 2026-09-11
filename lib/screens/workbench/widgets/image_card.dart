@@ -250,7 +250,10 @@ class _ImageCardState extends State<ImageCard> {
     final selected = widget.isSelected;
     // On touch layouts there is no hover, so the strip is permanent there —
     // unchanged from before the restyle.
-    final showActions = !isVideo && (_isHovering || isMobile);
+    // Under a pointer the strip follows hover. A phone has no hover, and a
+    // strip on every card buries the badges, so there it belongs to the
+    // cards you have selected — tap selects, and the actions appear.
+    final showActions = !isVideo && (_isHovering || (isMobile && widget.selectionNumber > 0));
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,

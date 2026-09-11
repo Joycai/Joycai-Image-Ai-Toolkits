@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
+import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
@@ -14,11 +16,23 @@ import '../../../widgets/app_button.dart';
 import '../../../widgets/drawing_canvas.dart';
 import 'canvas_overlays.dart';
 
-/// Radius of the image plate on the canvas — the same smallest step the
-/// comparator's panes take, so a picture sitting on a workbench canvas has one
-/// shape across the tools.
-const double _kCanvasImageRadius = AppRadius.xs;
+/// Space the picture keeps from the canvas' edges, and its corner radius
+/// (`A4A6` spec: 画布 r10，居中，四周留 10).
+const double _kCanvasPadding = AppSpace.s10;
+const double _kCanvasImageRadius = AppRadius.control;
 
+/// Where the corner badge sits inside the picture.
+const double _kBadgeInset = 8;
+
+/// The output card's width and its distance from the canvas corner.
+const double _kOutputCardWidth = 300;
+const double _kOutputCardInset = 20;
+
+/// The mask editor's canvas (`A4A6 · 1e`, `1f`).
+///
+/// A content layer, not glass: the canvas has no ground of its own — the
+/// aurora shows through around the picture — and the output card is an
+/// opaque panel, because what it carries is numbers to be read.
 class MaskEditorView extends StatefulWidget {
   final List<DrawingPath> paths;
 
@@ -122,14 +136,22 @@ class _MaskEditorViewState extends State<MaskEditorView> {
       final bytes = await File(path).readAsBytes();
       final codec = await ui.instantiateImageCodec(bytes);
       final frame = await codec.getNextFrame();
-      if (mounted) {
+      // A load that finishes after the source moved on is not this image.
+      if (mounted && _lastPath == path) {
         setState(() {
           _imageInfo = frame.image;
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      // Cleared, not kept: a failed load must not go on showing — and
+      // exporting against — the previous picture's dimensions.
+      if (mounted && _lastPath == path) {
+        setState(() {
+          _imageInfo = null;
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -157,73 +179,71 @@ class _MaskEditorViewState extends State<MaskEditorView> {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context);
     final sourceImage = workbenchUIState.maskEditorSourceImage;
 
-    // The output strip stays whatever the canvas is showing: it is the
-    // screen's chrome, not a result panel, and a bar that appears only once an
-    // image arrives makes the whole layout jump under the user.
-    return Column(
-      children: [
-        Expanded(
-          child: Container(
-            color: colorScheme.surfaceContainerHigh,
-            child: sourceImage == null
-                ? _buildEmptyState(l10n, colorScheme)
-                : _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _imageInfo == null
-                        ? Center(
-                            child: Text(
-                              l10n.imageLoadFailed,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                            ),
-                          )
-                        : _buildCanvas(sourceImage.path, l10n, colorScheme),
-          ),
-        ),
-        _MaskOutputBar(
-          image: _imageInfo,
-          isBinaryMode: widget.isBinaryMode,
-          l10n: l10n,
-          colorScheme: colorScheme,
-        ),
-      ],
-    );
+    if (sourceImage == null) {
+      return _CanvasMessage(
+        icon: Icons.brush_outlined,
+        iconColor: colorScheme.outline,
+        title: l10n.noImagesSelected,
+        body: l10n.maskEmptyDesc,
+        actionLabel: l10n.goToGallery,
+        onAction: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
+      );
+    }
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_imageInfo == null) {
+      final path = sourceImage.path;
+      return _CanvasMessage(
+        icon: Icons.broken_image_outlined,
+        iconColor: colorScheme.error,
+        title: l10n.imageLoadFailed,
+        body: l10n.maskLoadFailedDesc,
+        actionLabel: l10n.refresh,
+        onAction: () => _loadImage(path),
+      );
+    }
+    return _buildCanvas(sourceImage.path, l10n, colorScheme);
   }
 
-  Widget _buildEmptyState(AppLocalizations l10n, ColorScheme colorScheme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(AppRadius.dialog),
-              border: Border.all(color: colorScheme.outlineVariant),
-            ),
-            child: Icon(Icons.brush_outlined, size: 28, color: colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 22),
-          Text(l10n.noImagesSelected, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 16),
-          AppButton(
-            label: l10n.goToGallery,
-            icon: Icons.photo_library_outlined,
-            variant: AppButtonVariant.secondary,
-            onPressed: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
-          ),
-        ],
-      ),
-    );
+  /// Where the picture is on screen right now: the fitted rect the layout
+  /// gives it, carried through the viewer's pan and zoom.
+  Rect _imageRectOnScreen(Size viewport) {
+    final image = _imageInfo!;
+    final availW = math.max(0.0, viewport.width - 2 * _kCanvasPadding);
+    final availH = math.max(0.0, viewport.height - 2 * _kCanvasPadding);
+    final aspect = image.width / image.height;
+    var w = availW;
+    var h = aspect > 0 ? w / aspect : 0.0;
+    if (h > availH) {
+      h = availH;
+      w = h * aspect;
+    }
+    final fitted = Rect.fromLTWH((viewport.width - w) / 2, (viewport.height - h) / 2, w, h);
+    return MatrixUtils.transformRect(_controller.value, fitted);
   }
 
   Widget _buildCanvas(String path, AppLocalizations l10n, ColorScheme colorScheme) {
+    final isPhone = Responsive.isMobile(context);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewport = Size(constraints.maxWidth, constraints.maxHeight);
+
+        final zoomPill = AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) => CanvasZoomPill(
+            percent: _controller.value.getMaxScaleOnAxis() * 100,
+            onZoomIn: () => _setScale(_controller.value.getMaxScaleOnAxis() * 1.25, viewport),
+            onZoomOut: () => _setScale(_controller.value.getMaxScaleOnAxis() / 1.25, viewport),
+            onFit: () => _controller.value = Matrix4.identity(),
+          ),
+        );
+        final outputCard = _MaskOutputCard(
+          image: _imageInfo!,
+          isBinaryMode: widget.isBinaryMode,
+          fullWidth: isPhone,
+        );
 
         return Stack(
           children: [
@@ -234,64 +254,59 @@ class _MaskEditorViewState extends State<MaskEditorView> {
                 minScale: 0.1,
                 child: Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(_kCanvasPadding),
                     child: AspectRatio(
                       aspectRatio: _imageInfo!.width / _imageInfo!.height,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(_kCanvasImageRadius),
-                          boxShadow: colorScheme.shadowPanel,
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(_kCanvasImageRadius),
-                          // The boundary is inside the clip and outside the
-                          // shadow: the export is the picture and the strokes,
-                          // never the canvas dressing around them.
-                          child: RepaintBoundary(
-                            key: widget.repaintKey,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                if (widget.isBinaryMode)
-                                  const ColoredBox(color: Colors.black)
-                                else
-                                  Image.file(File(path), fit: BoxFit.fill),
-                                MouseRegion(
-                                  cursor: SystemMouseCursors.none,
-                                  onHover: (event) => widget.onHover(event.localPosition),
-                                  onExit: (event) => widget.onHover(null),
-                                  child: GestureDetector(
-                                    onPanStart: (details) => widget.onPanStart(details.localPosition),
-                                    onPanUpdate: (details) => widget.onPanUpdate(details.localPosition),
-                                    // Its own boundary inside the export one:
-                                    // strokes and the brush preview repaint
-                                    // without dragging the picture underneath
-                                    // through the rasteriser with them. The
-                                    // export still captures both — a nested
-                                    // boundary is part of the subtree
-                                    // `toImage` composites.
-                                    child: RepaintBoundary(
-                                      child: ListenableBuilder(
-                                        listenable: _canvasRepaint,
-                                        builder: (context, _) {
-                                          final mouse = widget.mousePosition.value;
-                                          return CustomPaint(
-                                            painter: MaskPainter(paths: widget.paths),
-                                            foregroundPainter: mouse != null
-                                                ? BrushPreviewPainter(
-                                                    position: mouse,
-                                                    size: widget.brushSize,
-                                                    color: widget.selectedColor,
-                                                  )
-                                                : null,
-                                          );
-                                        },
-                                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(_kCanvasImageRadius),
+                        // The boundary is inside the clip: the export is the
+                        // picture and the strokes, never the canvas around
+                        // them — and never the badge, which is drawn outside
+                        // the viewer for that reason.
+                        child: RepaintBoundary(
+                          key: widget.repaintKey,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (widget.isBinaryMode)
+                                const ColoredBox(color: Colors.black)
+                              else
+                                Image.file(File(path), fit: BoxFit.fill),
+                              MouseRegion(
+                                cursor: SystemMouseCursors.none,
+                                onHover: (event) => widget.onHover(event.localPosition),
+                                onExit: (event) => widget.onHover(null),
+                                child: GestureDetector(
+                                  onPanStart: (details) => widget.onPanStart(details.localPosition),
+                                  onPanUpdate: (details) => widget.onPanUpdate(details.localPosition),
+                                  // Its own boundary inside the export one:
+                                  // strokes and the brush preview repaint
+                                  // without dragging the picture underneath
+                                  // through the rasteriser with them. The
+                                  // export still captures both — a nested
+                                  // boundary is part of the subtree `toImage`
+                                  // composites.
+                                  //
+                                  // Driven by the notifiers, never setState:
+                                  // this is the part that changes at pointer
+                                  // rate for the length of a stroke.
+                                  child: RepaintBoundary(
+                                    child: ListenableBuilder(
+                                      listenable: _canvasRepaint,
+                                      builder: (context, _) {
+                                        final mouse = widget.mousePosition.value;
+                                        return CustomPaint(
+                                          painter: MaskPainter(paths: widget.paths),
+                                          foregroundPainter: mouse != null
+                                              ? _BrushRingPainter(position: mouse, diameter: widget.brushSize)
+                                              : null,
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -301,32 +316,75 @@ class _MaskEditorViewState extends State<MaskEditorView> {
               ),
             ),
 
-            // What the brush will lay down, over the canvas' top-left — the
-            // same place the crop editor names its source.
-            Positioned(
-              left: 16,
-              top: 14,
-              child: IgnorePointer(child: _BrushBadge(
-                color: widget.selectedColor,
-                size: widget.brushSize,
-                isBinaryMode: widget.isBinaryMode,
-                l10n: l10n,
-              )),
+            // What the brush will lay down, at the picture's top-left. Placed
+            // over the viewer rather than inside it so it neither scales with
+            // the zoom nor lands in the export; clamped to the canvas when
+            // the picture is zoomed past its edges. Rebuilds on pan and zoom
+            // only — the pointer never reaches it.
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                final visible = _imageRectOnScreen(viewport).intersect(Offset.zero & viewport);
+                if (visible.width < 64 || visible.height < 32) {
+                  return const Positioned(left: 0, top: 0, child: SizedBox.shrink());
+                }
+                return Positioned(
+                  left: visible.left + _kBadgeInset,
+                  top: visible.top + _kBadgeInset,
+                  child: IgnorePointer(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: visible.width - 2 * _kBadgeInset),
+                      child: _BrushBadge(
+                        color: widget.selectedColor,
+                        size: widget.brushSize,
+                        isBinaryMode: widget.isBinaryMode,
+                        l10n: l10n,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
 
-            Positioned(
-              right: 16,
-              bottom: 14,
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) => CanvasZoomPill(
-                  percent: _controller.value.getMaxScaleOnAxis() * 100,
-                  onZoomIn: () => _setScale(_controller.value.getMaxScaleOnAxis() * 1.25, viewport),
-                  onZoomOut: () => _setScale(_controller.value.getMaxScaleOnAxis() / 1.25, viewport),
-                  onFit: () => _controller.value = Matrix4.identity(),
+            // The output card bottom-right, the zoom pill bottom-left. A phone
+            // lays the card across the bottom with the pill above it; a
+            // canvas too narrow for both side by side stacks the pill over the
+            // card on the right rather than letting them overlap.
+            if (isPhone)
+              Positioned(
+                left: _kCanvasPadding,
+                right: _kCanvasPadding,
+                bottom: _kCanvasPadding,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    zoomPill,
+                    const SizedBox(height: AppSpace.s6),
+                    outputCard,
+                  ],
+                ),
+              )
+            else
+              Positioned(
+                left: _kOutputCardInset,
+                right: _kOutputCardInset,
+                bottom: _kOutputCardInset,
+                child: Wrap(
+                  // Right-to-left with runs stacking upward: on one line the
+                  // card is at the right and the pill at the left; wrapped,
+                  // the card keeps the corner and the pill sits above it.
+                  textDirection: TextDirection.rtl,
+                  verticalDirection: VerticalDirection.up,
+                  alignment: WrapAlignment.spaceBetween,
+                  // `start`, not `end`: an upward wrap flips the cross axis,
+                  // so start is the bottom — the pill sits on the card's
+                  // baseline rather than at the top of its run.
+                  crossAxisAlignment: WrapCrossAlignment.start,
+                  runSpacing: AppSpace.s6,
+                  children: [outputCard, zoomPill],
                 ),
               ),
-            ),
           ],
         );
       },
@@ -334,11 +392,46 @@ class _MaskEditorViewState extends State<MaskEditorView> {
   }
 }
 
+/// The brush's footprint under the pointer (`1e`): a 1.5px white ring with a
+/// dark line outside it, so it reads on any picture and on the binary
+/// canvas. No fill — the colour is named in the badge.
+class _BrushRingPainter extends CustomPainter {
+  _BrushRingPainter({required this.position, required this.diameter});
+
+  final Offset position;
+  final double diameter;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final radius = diameter / 2;
+    canvas.drawCircle(
+      position,
+      radius + 0.5,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = Colors.black.withValues(alpha: 0.35),
+    );
+    canvas.drawCircle(
+      position,
+      math.max(0.0, radius - 0.75),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = Colors.white,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _BrushRingPainter oldDelegate) =>
+      oldDelegate.position != position || oldDelegate.diameter != diameter;
+}
+
 /// "White brush · 48 px", or the binary-mode notice that replaces it.
 ///
 /// Replaces the full-width banner binary mode used to push the canvas down
 /// with: the state belongs where the strokes land, and the toolbar's own
-/// button already carries the accent that says the mode is on.
+/// button already carries the lens that says the mode is on.
 class _BrushBadge extends StatelessWidget {
   final Color color;
   final double size;
@@ -372,8 +465,10 @@ class _BrushBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = _colorName();
 
-    return CanvasBadge(
-      icon: isBinaryMode ? Icons.contrast : null,
+    return _ImageBadge(
+      // Inverted in binary mode (`1f`): the dark plate would vanish into the
+      // black canvas, so the notice takes the light plate and dark ink.
+      inverted: isBinaryMode,
       label: isBinaryMode
           ? l10n.binaryModeActive
           : name == null
@@ -383,83 +478,173 @@ class _BrushBadge extends StatelessWidget {
   }
 }
 
-/// Summary strip below the canvas: what a save writes, at what size, and
-/// where it lands — the same numbers the save is about to use, stated before
-/// the user commits. Mirrors the crop editor's output preview.
-class _MaskOutputBar extends StatelessWidget {
-  final ui.Image? image;
-  final bool isBinaryMode;
-  final AppLocalizations l10n;
-  final ColorScheme colorScheme;
+/// A corner label on the picture: mono 11 on the fixed image plate, r4.
+/// Never themed — what sits under it is a photograph, not the app.
+class _ImageBadge extends StatelessWidget {
+  const _ImageBadge({required this.label, this.inverted = false});
 
-  const _MaskOutputBar({
+  final String label;
+  final bool inverted;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: inverted ? AppOverlay.onImagePlate.withValues(alpha: 0.9) : AppOverlay.imagePlate,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          // Mono, because what this says is a measurement: a brush width
+          // that changes under the slider should not reflow the label around
+          // it every time a digit does.
+          style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+                fontWeight: FontWeight.w400,
+                color: inverted ? AppOverlay.ink : AppOverlay.onImagePlate,
+              ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A canvas with nothing to draw on (`1f` right): the 28px glyph, a 12/600
+/// line, and a text button that does something about it.
+class _CanvasMessage extends StatelessWidget {
+  const _CanvasMessage({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    this.body,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+
+  /// One quiet line under the title saying why, or what to do (`1f`).
+  final String? body;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final body = this.body;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpace.s16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 28, color: iconColor),
+            const SizedBox(height: AppSpace.s6),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+            ),
+            if (body != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                body,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
+            ],
+            const SizedBox(height: AppSpace.s10),
+            AppButton(
+              label: actionLabel,
+              variant: AppButtonVariant.text,
+              onPressed: onAction,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// What a save writes, at what size, and where it lands (`1e` 「输出预览卡」)
+/// — the same numbers the save is about to use, stated before the user
+/// commits. Mirrors the crop editor's output preview.
+class _MaskOutputCard extends StatelessWidget {
+  final ui.Image image;
+  final bool isBinaryMode;
+
+  /// A phone lays the card across the bottom of the canvas.
+  final bool fullWidth;
+
+  const _MaskOutputCard({
     required this.image,
     required this.isBinaryMode,
-    required this.l10n,
-    required this.colorScheme,
+    required this.fullWidth,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    // The tracked caption the app names a group of controls with, which is
-    // what `10o` draws here: 输出 is a heading over the line beside it, not a
-    // field label sharing its weight.
-    final labelStyle = textTheme.labelMedium?.copyWith(
-      color: colorScheme.onSurfaceVariant,
-      letterSpacing: AppType.trackedLabelSpacing,
-    );
 
-    final summary = image == null
-        ? '—'
-        : isBinaryMode
-            ? l10n.maskOutputSummary(image!.width, image!.height)
-            : l10n.maskCompositeOutputSummary(image!.width, image!.height);
+    final summary = isBinaryMode
+        ? l10n.maskOutputSummary(image.width, image.height)
+        : l10n.maskCompositeOutputSummary(image.width, image.height);
 
     return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      width: fullWidth ? double.infinity : _kOutputCardWidth,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        // The column tone and the panel-edge hairline, like the toolbar above
-        // it and the console below. This was `surface` over a `surface` panel
-        // — a bar with no edge of its own on a ground it matched.
-        color: colorScheme.surfaceContainerLow,
-        border: Border(top: BorderSide(color: colorScheme.surfaceContainerHigh)),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colorScheme.outlineVariant),
+        boxShadow: colorScheme.shadowOverlay,
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.maskOutputLabel.toUpperCase(), style: labelStyle),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              summary,
-              // Mono: this is dimensions and a format, and it sits directly
-              // above a console of monospaced log lines.
-              style: textTheme.bodySmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
-              overflow: TextOverflow.ellipsis,
+          // The tracked group caption, in the deep ink.
+          Text(
+            l10n.maskOutputLabel.toUpperCase(),
+            style: textTheme.labelSmall?.copyWith(
+              color: colorScheme.onAccentTint,
+              letterSpacing: AppType.trackedLabelSpacing,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(height: AppSpace.s6),
+          Text(
+            summary,
+            style: textTheme.bodySmall?.mono.copyWith(color: colorScheme.onSurface, height: 1.6),
+          ),
+          const SizedBox(height: AppSpace.s6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            width: double.infinity,
+            padding: const EdgeInsets.only(top: AppSpace.s6),
             decoration: BoxDecoration(
-              color: colorScheme.accentTint,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.subdirectory_arrow_right, size: 12, color: colorScheme.onAccentTint),
-                const SizedBox(width: 6),
-                Text(
-                  // The workspace, not a filename: the name a save picks
-                  // carries a timestamp minted at save time, and printing a
-                  // guess at it is how the crop bar's destination line was
-                  // wrong three ways at once.
-                  l10n.maskWillSaveTo(l10n.cropResizeTempWorkspaceLabel),
-                  style: textTheme.labelSmall?.copyWith(color: colorScheme.onAccentTint),
-                ),
-              ],
+            child: Text(
+              // The workspace, not a filename: the name a save picks carries a
+              // timestamp minted at save time, and printing a guess at it is
+              // how the crop bar's destination line was wrong three ways at
+              // once.
+              l10n.maskWillSaveTo(l10n.cropResizeTempWorkspaceLabel),
+              style: textTheme.labelSmall?.mono.copyWith(
+                fontWeight: FontWeight.w400,
+                color: colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
             ),
           ),
         ],

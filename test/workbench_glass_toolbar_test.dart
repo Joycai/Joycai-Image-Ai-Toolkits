@@ -7,6 +7,7 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
+import 'package:joycai_image_ai_toolkits/widgets/glass/glass_controls.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -46,6 +47,8 @@ void main() {
     int workspaceCount = 0,
     bool phone = false,
     int tab = WorkbenchTab.image,
+    Widget? controls,
+    double controlsWidth = 0,
   }) async {
     tester.view.physicalSize = const Size(1800, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -88,7 +91,12 @@ void main() {
               child: SizedBox(
                 key: barKey,
                 width: barWidth,
-                child: WorkbenchGlassToolbar(tabController: tabController, phone: phone),
+                child: WorkbenchGlassToolbar(
+                  tabController: tabController,
+                  phone: phone,
+                  toolControls: controls,
+                  toolControlsWidth: controlsWidth,
+                ),
               ),
             ),
           ),
@@ -231,5 +239,63 @@ void main() {
       expect(tester.takeException(), isNull, reason: 'Overflow at ${width}px');
       expect(find.byTooltip('Back'), findsOneWidget);
     }
+  });
+
+  group('the tool-controls slot', () {
+    // `A4–A6`: the tools share the header's place and height and only swap
+    // what is in it. The bar keeps back and the tool switch; the rest belongs
+    // to the tool.
+    testWidgets('a tool tab hands the rest of the bar to its controls', (tester) async {
+      await pumpAtWidth(
+        tester,
+        1600,
+        tab: WorkbenchTab.crop,
+        controls: const Text('TOOL CONTROLS'),
+        controlsWidth: 200,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('TOOL CONTROLS'), findsOneWidget);
+      expect(find.text('Crop'), findsOneWidget, reason: 'room for both, so the switch keeps its labels');
+    });
+
+    testWidgets('the tool switch gives up its labels before the controls must', (tester) async {
+      // Stated as "never this combination", so it holds wherever the test
+      // font puts the steps: the switch keeps its labels only while the
+      // controls still get every pixel of the width they asked for. (A fixed
+      // pair of widths broke once the switch, squeezed further, folded into
+      // the Tools menu, whose button names the active tool.)
+      const controlsKey = Key('controls');
+      var sawIconOnlySwitch = false;
+      for (var asked = 0.0; asked <= 1000; asked += 25) {
+        await pumpAtWidth(
+          tester,
+          1000,
+          tab: WorkbenchTab.crop,
+          controls: const SizedBox.expand(key: controlsKey),
+          controlsWidth: asked,
+        );
+
+        expect(tester.takeException(), isNull, reason: 'controls asked for ${asked}px');
+        expect(find.byTooltip('Back'), findsOneWidget);
+
+        final switches = find.byType(GlassSegmented<int>);
+        if (switches.evaluate().isEmpty) continue; // folded into the Tools menu
+        if (tester.widget<GlassSegmented<int>>(switches).showLabels) {
+          expect(tester.getSize(find.byKey(controlsKey)).width, greaterThanOrEqualTo(asked - 0.01),
+              reason: 'the switch kept its labels while the controls got less than ${asked}px');
+        } else {
+          sawIconOnlySwitch = true;
+        }
+      }
+      expect(sawIconOnlySwitch, isTrue,
+          reason: 'no width left the switch inline without its labels — the step was skipped');
+    });
+
+    testWidgets('the controls are not offered on the gallery tabs', (tester) async {
+      await pumpAtWidth(tester, 1600, controls: const Text('TOOL CONTROLS'), controlsWidth: 200);
+
+      expect(find.text('TOOL CONTROLS'), findsNothing);
+    });
   });
 }

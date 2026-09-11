@@ -380,7 +380,7 @@
     }
   },
   "optChatHint": "Describe your idea or paste a rough prompt...",
-  "optSend": "Send (Ctrl+Enter)",
+  "optSend": "Send",
   "optNewSession": "New Conversation",
   "optToolListImages": "Checked the reference image list",
   "optToolViewImage": "Viewed reference image: {name}",
@@ -840,5 +840,47 @@
         "type": "int"
       }
     }
-  }
+  },
+  "selectionReorderHint": "Drag to reorder · the number is the order sent to the model",
+  "videoPlay": "Play",
+  "videoPause": "Pause",
+  "videoMute": "Mute",
+  "videoUnmute": "Unmute",
+  "videoRetry": "Retry",
+  "videoPlaybackFailed": "Can't play",
+  "videoPlaybackFailedReason": "File missing or encoding not supported: {name}",
+  "@videoPlaybackFailedReason": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "videoFrameOptional": "Optional",
+  "videoDropOrPick": "Drop or click to pick",
+  "videoDropRelease": "Release to add",
+  "videoReferenceDropMax": "Drop reference images (max {count})",
+  "@videoReferenceDropMax": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optErrorTitle": "The request failed",
+  "optNotViewed": "Not viewed yet",
+  "optTimelineCurrent": "current",
+  "optKbPathInvalidDesc": "The path is no longer valid or can't be accessed",
+  "optKbEntryMissingShort": "Missing {file}",
+  "@optKbEntryMissingShort": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "optKbNotConfiguredShort": "Not configured",
+  "cropEmptyDesc": "Pick an image in the gallery first",
+  "maskEmptyDesc": "A mask is painted over an image",
+  "maskLoadFailedDesc": "The file may have been moved or deleted"
 }

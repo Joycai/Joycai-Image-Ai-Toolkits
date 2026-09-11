@@ -46,5 +46,11 @@
   "shareFailed": "共有に失敗しました: {error}",
   "more": "もっと見る",
   "confirm": "確認",
-  "moreSheetDesktopOnlyNote": "ファイルブラウザと画像ダウンローダーはデスクトップ／タブレットでのみ利用できます。"
+  "moreSheetDesktopOnlyNote": "ファイルブラウザと画像ダウンローダーはデスクトップ／タブレットでのみ利用できます。",
+  "consoleIdle": "アイドル",
+  "consoleFailedCount": "{count} 件失敗",
+  "logSearchHint": "ログを絞り込む…",
+  "logLevelError": "エラー",
+  "logLevelRunning": "実行",
+  "logLevelSuccess": "成功"
 }

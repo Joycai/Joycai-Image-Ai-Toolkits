@@ -95,12 +95,24 @@ class WorkbenchGlassToolbar extends StatefulWidget {
     super.key,
     required this.tabController,
     this.phone = false,
+    this.toolControls,
+    this.toolControlsWidth = 0,
   });
 
   final TabController tabController;
 
   /// The phone's full-width bar instead of the floating one.
   final bool phone;
+
+  /// A tool tab's own controls, laid out in the rest of the bar after the
+  /// back button and the tool switch (`A4-A6`: the three tools share the
+  /// header's place and height and only swap its contents). They fill the
+  /// slot they are given and degrade inside it.
+  final Widget? toolControls;
+
+  /// The width [toolControls] would take with everything labelled. The tool
+  /// switch gives up its labels before the controls have to give up theirs.
+  final double toolControlsWidth;
 
   static const double height = 44;
   static const double inset = AppSpace.s10;
@@ -147,6 +159,8 @@ class _WorkbenchGlassToolbarState extends State<WorkbenchGlassToolbar> {
                     width: width,
                     phone: widget.phone,
                     backTo: _lastGalleryTab,
+                    controls: widget.toolControls,
+                    controlsWidth: widget.toolControlsWidth,
                   );
           },
         );
@@ -258,7 +272,6 @@ class _GalleryRow extends StatelessWidget {
           for (final t in tools) GlassIconButton.widthFor(context, label: labels ? t.shortLabel : null),
         ] else
           toolsMenuWidth(),
-        AppSpace.s16, // the flexible gap's floor
         viewNatural,
         if (inlineIcons > 0) GlassDivider.extent,
         for (int i = 0; i < inlineIcons; i++) AppSize.control,
@@ -381,6 +394,8 @@ class _ToolRow extends StatelessWidget {
     required this.width,
     required this.phone,
     required this.backTo,
+    required this.controls,
+    required this.controlsWidth,
   });
 
   final TabController tabController;
@@ -388,6 +403,8 @@ class _ToolRow extends StatelessWidget {
   final double width;
   final bool phone;
   final int backTo;
+  final Widget? controls;
+  final double controlsWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -410,7 +427,7 @@ class _ToolRow extends StatelessWidget {
               : compact
                   ? 10 + AppSize.iconLg + 4 + AppSize.iconMd + 10
                   : GlassIconButton.widthFor(context, label: l10n.wbTools, hasIcon: false) + 4 + AppSize.iconMd,
-          AppSpace.s16,
+          if (controls != null) ...[GlassDivider.extent, controlsWidth],
           if (showTune) AppSize.control,
         ]);
     if (measure() > width) labels = false;
@@ -440,7 +457,11 @@ class _ToolRow extends StatelessWidget {
           includeCapture: false,
           compact: compact,
         ),
-      const Expanded(child: SizedBox()),
+      if (controls != null) ...[
+        const GlassDivider(),
+        Expanded(child: controls!),
+      ] else
+        const Expanded(child: SizedBox()),
       if (showTune)
         GlassIconButton(
           icon: Icons.tune,

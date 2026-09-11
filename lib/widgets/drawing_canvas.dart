@@ -49,30 +49,3 @@ class MaskPainter extends CustomPainter {
   bool shouldRepaint(covariant MaskPainter oldDelegate) => true;
 }
 
-class BrushPreviewPainter extends CustomPainter {
-  final Offset position;
-  final double size;
-  final Color color;
-
-  BrushPreviewPainter({required this.position, required this.size, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.5)
-      ..style = PaintingStyle.fill;
-    
-    final borderPaint = Paint()
-      ..color = color == Colors.black ? Colors.white : Colors.black
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    canvas.drawCircle(position, this.size / 2, paint);
-    canvas.drawCircle(position, this.size / 2, borderPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant BrushPreviewPainter oldDelegate) {
-    return oldDelegate.position != position || oldDelegate.size != size || oldDelegate.color != color;
-  }
-}

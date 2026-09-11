@@ -47,6 +47,13 @@ class WorkbenchLayoutState {
   final double topClearance;
   final double bottomClearance;
 
+  /// Opens the right panel as the phone's bottom sheet (`01 · 1h`). Null
+  /// wherever the panel is inline or in a drawer instead.
+  ///
+  /// A method tear-off of the layout's state, so it compares equal from one
+  /// build to the next and leaves [operator ==] meaningful.
+  final VoidCallback? rightSheetOpener;
+
   WorkbenchLayoutState(
     this.scaffoldKey, {
     required this.contentWidth,
@@ -54,13 +61,26 @@ class WorkbenchLayoutState {
     required this.rightInDrawer,
     this.topClearance = 0,
     this.bottomClearance = 0,
+    this.rightSheetOpener,
   });
 
   bool get isMobile => contentWidth < Responsive.mobileBreakpoint;
   bool get isNarrow => contentWidth < Responsive.tabletBreakpoint;
 
   void openLeftPanel() => scaffoldKey.currentState?.openDrawer();
-  void openRightPanel() => scaffoldKey.currentState?.openEndDrawer();
+  /// Whether the right panel is off screen until something opens it — a
+  /// drawer on a tablet, a sheet on a phone. A control that shows or hides
+  /// the panel inline has to open it instead here.
+  bool get rightPanelDetached => rightInDrawer || rightSheetOpener != null;
+
+  void openRightPanel() {
+    final opener = rightSheetOpener;
+    if (opener != null) {
+      opener();
+    } else {
+      scaffoldKey.currentState?.openEndDrawer();
+    }
+  }
 
   // Value equality: this is handed to `Provider.value` from a build method,
   // and the layout rebuilds on every frame of a panel drag, where none of
@@ -74,11 +94,12 @@ class WorkbenchLayoutState {
           leftInDrawer == other.leftInDrawer &&
           rightInDrawer == other.rightInDrawer &&
           topClearance == other.topClearance &&
-          bottomClearance == other.bottomClearance;
+          bottomClearance == other.bottomClearance &&
+          rightSheetOpener == other.rightSheetOpener;
 
   @override
   int get hashCode => Object.hash(
-      scaffoldKey, contentWidth, leftInDrawer, rightInDrawer, topClearance, bottomClearance);
+      scaffoldKey, contentWidth, leftInDrawer, rightInDrawer, topClearance, bottomClearance, rightSheetOpener);
 }
 
 typedef WorkbenchRightPanelBuilder = Widget Function(ScrollController? scrollController);
@@ -408,7 +429,9 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
       rightInDrawer: false,
       topClearance: widget.toolbarBuilder != null ? WorkbenchGlassToolbar.phoneHeight : 0,
       bottomClearance: widget.centerOverlay != null ? _overlayClearance : 0,
+      rightSheetOpener: _hasRight ? _openRightSheet : null,
     );
+    _phoneLayoutState = layoutState;
 
     final showFab = _hasRight && widget.fabIcon != null;
 
@@ -481,6 +504,18 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
   /// `01 · 1h` phone sheet: a G2 glass shell (top corners 28, grab handle)
   /// holding an opaque panel at r22.
+  /// The phone layout's state as of its last build, for [_openRightSheet].
+  WorkbenchLayoutState? _phoneLayoutState;
+
+  /// Opens the phone sheet from a control inside the layout — the same sheet
+  /// the FAB opens.
+  void _openRightSheet() {
+    final sheetHost = _scaffoldKey.currentContext;
+    final layoutState = _phoneLayoutState;
+    if (sheetHost == null || layoutState == null) return;
+    _showPhoneSheet(sheetHost, layoutState);
+  }
+
   void _showPhoneSheet(BuildContext context, WorkbenchLayoutState layoutState) {
     final scheme = Theme.of(context).colorScheme;
     showModalBottomSheet<void>(

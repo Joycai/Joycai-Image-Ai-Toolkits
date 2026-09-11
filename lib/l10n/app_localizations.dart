@@ -1630,6 +1630,42 @@ abstract class AppLocalizations {
   /// **'File Browser and Image Downloader are available on desktop and tablet only.'**
   String get moreSheetDesktopOnlyNote;
 
+  /// No description provided for @consoleIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get consoleIdle;
+
+  /// No description provided for @consoleFailedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} failed'**
+  String consoleFailedCount(int count);
+
+  /// No description provided for @logSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter logs…'**
+  String get logSearchHint;
+
+  /// No description provided for @logLevelError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get logLevelError;
+
+  /// No description provided for @logLevelRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get logLevelRunning;
+
+  /// No description provided for @logLevelSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get logLevelSuccess;
+
   /// No description provided for @downloader.
   ///
   /// In en, this message translates to:
@@ -6282,7 +6318,7 @@ abstract class AppLocalizations {
   /// No description provided for @optSend.
   ///
   /// In en, this message translates to:
-  /// **'Send (Ctrl+Enter)'**
+  /// **'Send'**
   String get optSend;
 
   /// No description provided for @optNewSession.
@@ -7502,6 +7538,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share ({count})'**
   String shareCount(int count);
+
+  /// No description provided for @selectionReorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder · the number is the order sent to the model'**
+  String get selectionReorderHint;
+
+  /// No description provided for @videoPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get videoPlay;
+
+  /// No description provided for @videoPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get videoPause;
+
+  /// No description provided for @videoMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get videoMute;
+
+  /// No description provided for @videoUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get videoUnmute;
+
+  /// No description provided for @videoRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get videoRetry;
+
+  /// No description provided for @videoPlaybackFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t play'**
+  String get videoPlaybackFailed;
+
+  /// No description provided for @videoPlaybackFailedReason.
+  ///
+  /// In en, this message translates to:
+  /// **'File missing or encoding not supported: {name}'**
+  String videoPlaybackFailedReason(String name);
+
+  /// No description provided for @videoFrameOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get videoFrameOptional;
+
+  /// No description provided for @videoDropOrPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop or click to pick'**
+  String get videoDropOrPick;
+
+  /// No description provided for @videoDropRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Release to add'**
+  String get videoDropRelease;
+
+  /// No description provided for @videoReferenceDropMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop reference images (max {count})'**
+  String videoReferenceDropMax(int count);
+
+  /// No description provided for @optErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The request failed'**
+  String get optErrorTitle;
+
+  /// No description provided for @optNotViewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not viewed yet'**
+  String get optNotViewed;
+
+  /// No description provided for @optTimelineCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'current'**
+  String get optTimelineCurrent;
+
+  /// No description provided for @optKbPathInvalidDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The path is no longer valid or can\'t be accessed'**
+  String get optKbPathInvalidDesc;
+
+  /// No description provided for @optKbEntryMissingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing {file}'**
+  String optKbEntryMissingShort(String file);
+
+  /// No description provided for @optKbNotConfiguredShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Not configured'**
+  String get optKbNotConfiguredShort;
+
+  /// No description provided for @cropEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an image in the gallery first'**
+  String get cropEmptyDesc;
+
+  /// No description provided for @maskEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A mask is painted over an image'**
+  String get maskEmptyDesc;
+
+  /// No description provided for @maskLoadFailedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The file may have been moved or deleted'**
+  String get maskLoadFailedDesc;
 }
 
 class _AppLocalizationsDelegate
