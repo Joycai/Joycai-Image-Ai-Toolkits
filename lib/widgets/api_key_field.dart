@@ -65,12 +65,19 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
       suffixIcon: canObscure
           ? IconButton(
               icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
-              // Sized to the field, not Material's 48: an IconButton's own
-              // minimum would otherwise hold this one input taller than the
-              // form around it.
-              iconSize: AppSize.iconLg,
+              // Sized inside the 32px field, not Material's 48: an
+              // IconButton's own minimum — or the padded tap target touch
+              // platforms give it — would otherwise hold this one input
+              // taller than the form around it. The channel editor's reveal
+              // toggle is the same 28 box and 16 glyph.
+              iconSize: AppSize.iconMd,
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+              constraints: const BoxConstraints.tightFor(
+                  width: AppSize.compact, height: AppSize.compact),
+              style: IconButton.styleFrom(
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               onPressed: () => setState(() => _obscureText = !_obscureText),
             )
           : null,

@@ -14,6 +14,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/app_paths.dart';
 import '../../core/app_theme.dart';
 import '../../core/constants.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
@@ -30,6 +31,7 @@ import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
+import '../../widgets/app_field_size.dart';
 import '../../widgets/app_run_console.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/drawing_canvas.dart';
@@ -548,7 +550,24 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                         final newTitle = await AppDialog.show<String>(
                           sheetContext,
                           title: l10n.rename,
-                          content: TextField(controller: ctrl, autofocus: true),
+                          content: TextField(
+                            controller: ctrl,
+                            autofocus: true,
+                            style: Theme.of(sheetContext).textTheme.bodyMedium,
+                            textAlignVertical: TextAlignVertical.center,
+                            decoration: InputDecoration(
+                              isDense: true,
+                              constraints: const BoxConstraints.tightFor(height: AppSize.control),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: AppSpace.s10,
+                                vertical: pinnedFieldInset(
+                                  sheetContext,
+                                  Theme.of(sheetContext).textTheme.bodyMedium,
+                                  AppSize.control,
+                                ),
+                              ),
+                            ),
+                          ),
                           actions: [
                             AppButton(
                               label: l10n.cancel,

@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../core/design_tokens.dart';
+import 'app_field_size.dart';
 
 /// A "type to narrow this list" field: search glyph, hint, and a clear button
 /// that appears once there is something to clear.
@@ -17,9 +20,11 @@ import '../core/design_tokens.dart';
 /// field and inherits everything else, so it cannot drift from the inputs
 /// beside it again.
 ///
-/// Takes no height. The four call sites sit in toolbars of 44, 40, 36 and 32
-/// pixels and each has a real reason for its own; this fills whatever it is
-/// given, which is why [compact] governs only the glyph and the type.
+/// **Pinned to [height].** It used to take no height and fill its slot, but a
+/// decorator draws its outline around its content, not around the slot: the
+/// outline came out 32 under a scope whose icon constraints happened to be 32
+/// and 19 under one whose were not. [compact] governs only the glyph and the
+/// type.
 class AppSearchField extends StatefulWidget {
   const AppSearchField({
     super.key,
@@ -31,6 +36,7 @@ class AppSearchField extends StatefulWidget {
     this.focusNode,
     this.autofocus = false,
     this.compact = false,
+    this.height = AppSize.control,
   });
 
   final TextEditingController controller;
@@ -52,6 +58,10 @@ class AppSearchField extends StatefulWidget {
   /// Tighter glyph and type, for a field sharing a strip with icon buttons —
   /// the log console's filter, which lives in a 40px bar.
   final bool compact;
+
+  /// The box's height, outline included. [AppSize.control] on every pointer
+  /// surface; a touch-only slot that is deliberately taller passes its own.
+  final double height;
 
   @override
   State<AppSearchField> createState() => _AppSearchFieldState();
@@ -100,6 +110,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
     final textTheme = Theme.of(context).textTheme;
     final style = widget.compact ? textTheme.bodySmall : textTheme.bodyMedium;
     final glyph = widget.compact ? 14.0 : AppSize.iconMd;
+    final clearBox = math.min(AppSize.compact, widget.height);
 
     return TextField(
       controller: widget.controller,
@@ -112,20 +123,32 @@ class _AppSearchFieldState extends State<AppSearchField> {
       decoration: InputDecoration(
         hintText: widget.hint,
         hintStyle: style?.copyWith(color: colorScheme.outline),
+        isDense: true,
+        constraints: BoxConstraints.tightFor(height: widget.height),
+        // Vertical only: the glyph boxes are the horizontal inset. Border,
+        // radius, fill and focus treatment all come from the theme.
+        contentPadding: EdgeInsets.symmetric(
+          vertical: pinnedFieldInset(context, style, widget.height),
+        ),
         prefixIcon: Icon(Icons.search, size: glyph, color: colorScheme.outline),
+        // Zero minimum heights, so no icon box can set the field's height.
+        prefixIconConstraints: const BoxConstraints(minWidth: AppSize.control, minHeight: 0),
         suffixIcon: widget.controller.text.isEmpty
             ? null
             : IconButton(
                 icon: Icon(Icons.close, size: glyph, color: colorScheme.onSurfaceVariant),
                 onPressed: _clear,
-                visualDensity: VisualDensity.compact,
                 tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
+                padding: EdgeInsets.zero,
+                // No taller than the field, and without the padded 48px tap
+                // target touch platforms would otherwise wrap it in.
+                constraints: BoxConstraints.tightFor(width: clearBox, height: clearBox),
+                style: IconButton.styleFrom(
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
-        // Zero, not the theme's: this field is sized by the toolbar around it
-        // and centres itself in whatever height that is. Everything else —
-        // border, radius, focus treatment — comes from the theme.
-        contentPadding: EdgeInsets.zero,
-        isDense: true,
+        suffixIconConstraints: const BoxConstraints(minWidth: AppSize.control, minHeight: 0),
       ),
     );
   }

@@ -700,21 +700,29 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       size: size,
       // The channel's tag colour as a dot beside its name (`1a`), in the
       // picker every other channel choice in the app uses.
-      child: SearchablePickerField<int>(
-        selected: channel == null ? null : channelPickerOption(channel),
-        optionsBuilder: () => appState.allChannels.map(channelPickerOption).toList(),
-        onChanged: (v) => setState(() {
-          channelId = v;
-          if (widget.model == null && !_feeGroupTouched) {
-            feeGroupId = widget.appState.defaultFeeGroupFor(v);
-          }
-        }),
-        hint: l10n.selectAChannel,
-        searchHint: l10n.searchChannels,
-        dialogIcon: Icons.hub_outlined,
-        enabled: appState.allChannels.isNotEmpty,
-        badgeStyle: PickerBadge.dot,
-        size: size,
+      child: Builder(
+        // Its own context: the metrics scope sits below the dialog
+        // state's, which would read the desktop height on a phone.
+        builder: (context) => SearchablePickerField<int>(
+          selected: channel == null ? null : channelPickerOption(channel),
+          optionsBuilder: () => appState.allChannels.map(channelPickerOption).toList(),
+          onChanged: (v) => setState(() {
+            channelId = v;
+            if (widget.model == null && !_feeGroupTouched) {
+              feeGroupId = widget.appState.defaultFeeGroupFor(v);
+            }
+          }),
+          hint: l10n.selectAChannel,
+          searchHint: l10n.searchChannels,
+          dialogIcon: Icons.hub_outlined,
+          enabled: appState.allChannels.isNotEmpty,
+          badgeStyle: PickerBadge.dot,
+          size: size,
+          // The form's one field height (`1a` 32, `1e` 44). Left to the
+          // large size's own height, the phone's selects came out 37
+          // beside its 44px text fields.
+          height: ModelEditMetrics.of(context).fieldHeight,
+        ),
       ),
     );
   }
@@ -750,19 +758,24 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     return AppLabelledField(
       label: l10n.feeGroup,
       size: size,
-      child: AppDropdown<int?>(
-        value: feeGroupId,
-        items: [
-          // A real answer — no group — drawn as the absence it is.
-          AppDropdownItem(value: null, label: l10n.noFeeGroup, muted: true),
-          for (final g in widget.appState.allPricingGroups) AppDropdownItem(value: g.id!, label: g.name),
-        ],
-        onChanged: (v) => setState(() {
-          feeGroupId = v;
-          _feeGroupTouched = true;
-        }),
-        prefixIcon: Icons.payments_outlined,
-        size: size,
+      child: Builder(
+        // Its own context: the metrics scope sits below the dialog
+        // state's, which would read the desktop height on a phone.
+        builder: (context) => AppDropdown<int?>(
+          value: feeGroupId,
+          items: [
+            // A real answer — no group — drawn as the absence it is.
+            AppDropdownItem(value: null, label: l10n.noFeeGroup, muted: true),
+            for (final g in widget.appState.allPricingGroups) AppDropdownItem(value: g.id!, label: g.name),
+          ],
+          onChanged: (v) => setState(() {
+            feeGroupId = v;
+            _feeGroupTouched = true;
+          }),
+          prefixIcon: Icons.payments_outlined,
+          size: size,
+          height: ModelEditMetrics.of(context).fieldHeight,
+        ),
       ),
     );
   }

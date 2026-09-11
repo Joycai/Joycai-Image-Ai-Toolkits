@@ -1188,11 +1188,17 @@ class _ResultRow extends StatelessWidget {
               controller: editController,
               autofocus: true,
               style: mono12,
+              textAlignVertical: TextAlignVertical.center,
               decoration: InputDecoration(
                 isDense: true,
                 filled: true,
                 fillColor: colorScheme.surface,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                // 28, not the 32 control: an editor inside a table row.
+                constraints: const BoxConstraints.tightFor(height: AppSize.compact),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: pinnedFieldInset(context, mono12, AppSize.compact),
+                ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.control),
                   borderSide: BorderSide(color: colorScheme.primary),

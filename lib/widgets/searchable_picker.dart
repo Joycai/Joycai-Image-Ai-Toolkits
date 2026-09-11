@@ -96,6 +96,7 @@ class SearchablePickerField<T> extends StatefulWidget {
     this.enabled = true,
     this.badgeStyle = PickerBadge.chip,
     this.size = AppFieldSize.large,
+    this.height,
   });
 
   /// The current selection, already resolved by the caller. `null` draws
@@ -149,6 +150,10 @@ class SearchablePickerField<T> extends StatefulWidget {
   /// the box to 32 and centres the value in it.
   final AppFieldSize size;
 
+  /// Pin the box to this height instead of the size's — a phone form whose
+  /// fields are all touch height. The content is centred in it either way.
+  final double? height;
+
   @override
   State<SearchablePickerField<T>> createState() => _SearchablePickerFieldState<T>();
 }
@@ -200,7 +205,7 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
     // right-hand inset itself (below), so the content stops at zero there.
     final themeInset = theme.inputDecorationTheme.contentPadding?.resolve(Directionality.of(context)) ??
         const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
-    final pinned = size.height;
+    final pinned = widget.height ?? size.height;
     // A pinned box centres its content (below), so it takes no vertical inset
     // of its own. The theme's 10/10 inside a 32px box left a 12px band, and
     // both the value line and the tag chip were clipped at the bottom.

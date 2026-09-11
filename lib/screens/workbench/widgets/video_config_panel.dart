@@ -51,8 +51,10 @@ const double _kCardInnerGap = 8;
 /// Gap between the cells of the parameter grid (`gap:6`).
 const double _kParamGap = AppSpace.s6;
 
-/// A parameter cell's control (`A2 · 1a`: `height:30`).
-const double _kParamControlHeight = 30;
+/// A parameter cell's control. `A2 · 1a`'s frame draws these at 30, but its
+/// size table says 「其余同 A1」 and A1's says 「输入 32」; the image panel's
+/// grid is 32, and 30 put these a step shorter than the pickers above them.
+const double _kParamControlHeight = AppSize.control;
 
 /// The prompt card's header row: its caption and the two 28px icon actions.
 const double _kPromptHeaderRow = AppSize.compact;
@@ -837,7 +839,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
               Expanded(
                 child: SliderTheme(
                   // Material's 24px overlay would otherwise decide the row's
-                  // height instead of the grid's 30.
+                  // height instead of the grid's control height.
                   data: SliderTheme.of(context).copyWith(
                     overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
                   ),

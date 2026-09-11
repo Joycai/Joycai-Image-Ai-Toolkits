@@ -32,18 +32,20 @@ import 'prompt_library_parts.dart';
 /// A 32px single-line field on the column fill, as dialog forms draw it.
 Widget _dialogField(BuildContext context, TextEditingController controller, {bool autofocus = false}) {
   final scheme = Theme.of(context).colorScheme;
-  return SizedBox(
-    height: AppSize.control,
-    child: TextField(
-      controller: controller,
-      autofocus: autofocus,
-      style: Theme.of(context).textTheme.bodyMedium,
-      textAlignVertical: TextAlignVertical.center,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: scheme.surfaceContainerLow,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+  final style = Theme.of(context).textTheme.bodyMedium;
+  return TextField(
+    controller: controller,
+    autofocus: autofocus,
+    style: style,
+    textAlignVertical: TextAlignVertical.center,
+    decoration: InputDecoration(
+      filled: true,
+      fillColor: scheme.surfaceContainerLow,
+      isDense: true,
+      constraints: const BoxConstraints.tightFor(height: AppSize.control),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: AppSpace.s10,
+        vertical: pinnedFieldInset(context, style, AppSize.control),
       ),
     ),
   );

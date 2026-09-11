@@ -6,6 +6,7 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_switch.dart';
+import '../app_field_size.dart';
 
 /// The pieces the model editor (design D1c) is built from.
 ///
@@ -178,6 +179,7 @@ class ModelEditTextField extends StatelessWidget {
     final scheme = theme.colorScheme;
     final metrics = ModelEditMetrics.of(context);
     final base = theme.textTheme.bodyMedium;
+    final style = mono ? base?.mono : base;
     final errorBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppRadius.control),
       borderSide: BorderSide(color: scheme.error),
@@ -189,13 +191,16 @@ class ModelEditTextField extends StatelessWidget {
       autofocus: autofocus,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
-      style: mono ? base?.mono : base,
+      style: style,
       textAlignVertical: TextAlignVertical.center,
       decoration: InputDecoration(
         isDense: true,
         hintText: hint,
         constraints: BoxConstraints.tightFor(height: metrics.fieldHeight),
-        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: AppSpace.s10,
+          vertical: pinnedFieldInset(context, style, metrics.fieldHeight),
+        ),
         prefixIcon: icon == null
             ? null
             : Icon(icon, size: AppSize.iconMd, color: scheme.onSurfaceVariant),
@@ -845,9 +850,12 @@ class _ModelEditMenuFieldState<T> extends State<ModelEditMenuField<T>> {
           child: InkWell(
             onTap: onTap,
             child: ConstrainedBox(
+              // The stroke is the shape's side, painted inside the box rather
+              // than added to it, so the face takes the whole field height.
+              // Taking 2 off for it left the menu 30 beside 32px fields.
               constraints: widget.autoHeight
                   ? BoxConstraints(minHeight: metrics.fieldHeight)
-                  : BoxConstraints.tightFor(height: metrics.fieldHeight - 2),
+                  : BoxConstraints.tightFor(height: metrics.fieldHeight),
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: metrics.phone ? 12 : AppSpace.s10,

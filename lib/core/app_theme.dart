@@ -471,6 +471,12 @@ InputDecorationTheme _buildInputDecorationTheme(ColorScheme colorScheme) {
   return InputDecorationTheme(
     filled: false,
     isDense: true,
+    // Pinned, not left to the platform. Flutter's default density is compact
+    // on Windows, macOS and Linux and standard on Android and iOS, and compact
+    // takes 8px off every field's content height. So a field sized to 32 on
+    // one platform drew 24 on the other, and the screenshot harness, which
+    // runs as Android, never showed what a desktop user saw.
+    visualDensity: VisualDensity.standard,
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     hintStyle: TextStyle(color: colorScheme.outline),
     border: border(colorScheme.outlineVariant, 1),
