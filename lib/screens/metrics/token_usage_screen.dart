@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../widgets/panel_resizer.dart';
+import '../../state/app_state.dart';
+import '../../widgets/glass/app_glass.dart';
+import '../../widgets/glass/glass_controls.dart';
 import '../../widgets/pricing_group_manager.dart';
+import 'widgets/usage_chrome.dart';
+import 'widgets/usage_controller.dart';
 import 'widgets/usage_view_desktop.dart';
 import 'widgets/usage_view_mobile.dart';
 
-/// Token-usage metrics screen. On mobile it keeps the classic full-bleed
-/// AppBar + tabs shell; on tablet/desktop it uses the inset-panel design:
-/// cards on a `surfaceContainer` canvas with the header inside the main card
-/// and a segmented switcher toggling between usage and fee groups.
+/// Token-usage metrics (`D2`).
+///
+/// On a phone: a glass header with the title, refresh, Clear All and the two
+/// tabs, over a scroll of cards. On tablet and desktop: underlined tabs on the
+/// canvas above a scrolling flow of opaque cards.
 class TokenUsageScreen extends StatefulWidget {
   const TokenUsageScreen({super.key});
 
@@ -18,143 +25,281 @@ class TokenUsageScreen extends StatefulWidget {
   State<TokenUsageScreen> createState() => _TokenUsageScreenState();
 }
 
-/// Height of the canvas tab bar above the view's cards.
-const double _tabBarHeight = 44;
-
 class _TokenUsageScreenState extends State<TokenUsageScreen> {
   int _viewIndex = 0;
 
+  /// The phone header and the phone usage tab act on the same data. Created
+  /// on first phone layout; the view loads it when it mounts.
+  UsageController? _phoneController;
+
+  static const double _desktopTabRowHeight = 52;
+  static const double _tabletTabRowHeight = 48;
+  static const double _phoneTitleHeight = 52;
+  static const double _phoneTabBarHeight = AppSize.touch;
+
+  @override
+  void dispose() {
+    _phoneController?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final isMobile = Responsive.isMobile(context);
-    final isNarrow = Responsive.isNarrow(context);
+    if (Responsive.isMobile(context)) return _buildPhone(context);
 
-    if (isMobile) {
-      return DefaultTabController(
-        length: 2,
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text(l10n.tokenUsageMetrics),
-            bottom: TabBar(
-              tabs: [Tab(text: l10n.usage), Tab(text: l10n.feeGroups)],
-            ),
-          ),
-          body: TabBarView(
-            children: const [
-              UsageViewMobile(),
-              SingleChildScrollView(
-                padding: EdgeInsets.all(16),
-                child: PricingGroupManager(mode: PricingGroupManagerMode.section),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final desktop = Responsive.isDesktop(context);
+    final inset = desktop ? AppSpace.s28 : AppSpace.s16;
 
     return Scaffold(
-      backgroundColor: colorScheme.surfaceContainer,
-      body: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.transparent,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: inset),
+            child: _ViewTabs(
+              height: desktop ? _desktopTabRowHeight : _tabletTabRowHeight,
+              index: _viewIndex,
+              onSelect: (index) => setState(() => _viewIndex = index),
+            ),
+          ),
+          Expanded(
+            child: _viewIndex == 0
+                ? const UsageViewDesktop()
+                : _buildFeeGroups(context, inset: inset, top: 12, cardPadding: desktop ? AppSpace.s22 : AppSpace.s16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The fee-group editor, embedded in a card — the same component the fee
+  /// management dialog hosts.
+  Widget _buildFeeGroups(
+    BuildContext context, {
+    required double inset,
+    required double top,
+    required double cardPadding,
+  }) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(inset, top, inset, MediaQuery.paddingOf(context).bottom + inset),
+      child: UsagePanel(
+        padding: EdgeInsets.all(cardPadding),
+        child: const PricingGroupManager(mode: PricingGroupManagerMode.section),
+      ),
+    );
+  }
+
+  Widget _buildPhone(BuildContext context) {
+    final controller = _phoneController ??= UsageController(
+      models: () => Provider.of<AppState>(context, listen: false).allModels,
+      pageSize: 50,
+    );
+    final top = MediaQuery.paddingOf(context).top;
+    final headerHeight = top + _phoneTitleHeight + _phoneTabBarHeight;
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
           children: [
-            _buildViewTabs(l10n, colorScheme),
-            const SizedBox(height: 8),
-            Expanded(
-              child: _viewIndex == 0
-                  ? (isNarrow ? _buildNarrowUsageCard() : const UsageViewDesktop())
-                  : _buildFeeGroupsCard(),
+            Positioned.fill(
+              child: TabBarView(
+                children: [
+                  UsageViewMobile(controller: controller, topInset: headerHeight),
+                  _buildFeeGroups(
+                    context,
+                    inset: AppSpace.s16,
+                    top: headerHeight + 12,
+                    cardPadding: AppSpace.s16,
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 0,
+              top: 0,
+              right: 0,
+              child: _PhoneHeader(controller: controller, topPadding: top),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  /// Tabs naming the view, floating on the canvas above everything the view
-  /// owns — the same transparent-on-canvas treatment as the nav rail.
-  ///
-  /// They sit outside the cards on purpose. Inside a card header they moved:
-  /// the usage view stacks summary cards above its card and the fee-group view
-  /// does not, so switching tabs slid the tabs themselves ~150px down the
-  /// screen. Navigation cannot move under the pointer that is aiming at it, so
-  /// it cannot live inside content that changes around it.
-  ///
-  /// The underline shape is still doing its other job: the range filter these
-  /// used to sit beside is a pill segmented control, and only filters the page
-  /// you are already on.
-  Widget _buildViewTabs(AppLocalizations l10n, ColorScheme colorScheme) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildTab(l10n.usage, Icons.analytics_outlined, 0, colorScheme),
-        _buildTab(l10n.feeGroups, Icons.sell_outlined, 1, colorScheme),
-      ],
+/// The tabs naming the view, floating on the canvas above everything the view
+/// owns.
+///
+/// They sit outside the cards on purpose. Inside a card header they moved: the
+/// usage view stacks a hero above its cards and the fee-group view does not,
+/// so switching slid the tabs down the screen. Navigation cannot move under
+/// the pointer that is aiming at it, so it cannot live inside content that
+/// changes around it. The underline also keeps them from reading as a second
+/// copy of the range filter, which is a segmented track.
+class _ViewTabs extends StatelessWidget {
+  const _ViewTabs({required this.height, required this.index, required this.onSelect});
+
+  final double height;
+  final int index;
+  final ValueChanged<int> onSelect;
+
+  /// Between the two tabs, as drawn.
+  static const double _gap = 20;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final labels = [l10n.usage, l10n.feeGroups];
+
+    return SizedBox(
+      height: height,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (final (i, label) in labels.indexed) ...[
+            if (i > 0) const SizedBox(width: _gap),
+            _ViewTab(label: label, selected: i == index, onTap: () => onSelect(i)),
+          ],
+        ],
+      ),
     );
   }
+}
 
-  Widget _buildTab(String label, IconData icon, int index, ColorScheme colorScheme) {
-    final selected = _viewIndex == index;
-    final color = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+class _ViewTab extends StatelessWidget {
+  const _ViewTab({required this.label, required this.selected, required this.onTap});
 
-    return InkWell(
-      onTap: selected ? null : () => setState(() => _viewIndex = index),
-      borderRadius: BorderRadius.circular(8),
-      child: SizedBox(
-        height: _tabBarHeight,
-        child: IntrinsicWidth(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: Padding(
-                  // Lines the first tab's icon up with the card content below.
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(icon, size: 18, color: color),
-                      const SizedBox(width: 8),
-                      Text(
-                        label,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                          color: color,
-                        ),
-                      ),
-                    ],
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  static const double _height = 40;
+  static const double _underline = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final base = Theme.of(context).textTheme.titleMedium!;
+    final selectedStyle = base.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onAccentTint);
+    final style = selected
+        ? selectedStyle
+        : base.copyWith(fontWeight: FontWeight.w500, color: colorScheme.onSurfaceVariant);
+
+    // Every tab is at least as wide as its label in the selected weight, so
+    // selecting one never nudges the tab beside it.
+    final minWidth = measureGlassText(context, label, selectedStyle).ceilToDouble();
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: InkWell(
+        onTap: selected ? null : onTap,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: SizedBox(
+          height: _height,
+          child: IntrinsicWidth(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: minWidth),
+                      child: Text(label, style: style, maxLines: 1),
+                    ),
                   ),
                 ),
-              ),
-              Container(
-                height: 3,
-                decoration: BoxDecoration(
+                ColoredBox(
                   color: selected ? colorScheme.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(2),
+                  child: const SizedBox(height: _underline),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  /// Tablet-width usage view: the compact usage layout hosted in a panel card.
-  Widget _buildNarrowUsageCard() {
-    return const PanelCard(child: UsageViewMobile());
-  }
+/// The phone's one full-width glass layer: title, refresh and Clear All over
+/// the two tabs.
+class _PhoneHeader extends StatelessWidget {
+  const _PhoneHeader({required this.controller, required this.topPadding});
 
-  /// The groups fill the card rather than sitting in a centred column: they
-  /// are a grid now, and it is the grid that decides how many fit across.
-  Widget _buildFeeGroupsCard() {
-    return const PanelCard(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(24),
-        child: PricingGroupManager(mode: PricingGroupManagerMode.section),
+  final UsageController controller;
+  final double topPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return AppGlass(
+      grade: GlassGrade.bar,
+      edges: GlassEdges.bottom,
+      shadow: false,
+      child: Padding(
+        padding: EdgeInsets.only(top: topPadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: _TokenUsageScreenState._phoneTitleHeight,
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(start: AppSpace.s16, end: AppSpace.s6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Builder(
+                        builder: (context) => Text(
+                          l10n.tokenUsageMetrics,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                color: GlassInk.maybeOf(context)?.ink,
+                              ),
+                        ),
+                      ),
+                    ),
+                    ListenableBuilder(
+                      listenable: controller,
+                      builder: (context, _) => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GlassIconButton(
+                            icon: Icons.refresh,
+                            tooltip: l10n.refresh,
+                            onPressed: controller.isLoading ? null : () => controller.load(reset: true),
+                          ),
+                          GlassIconButton(
+                            icon: Icons.delete_sweep_outlined,
+                            tooltip: l10n.clearAll,
+                            danger: true,
+                            onPressed: () => showClearAllUsageDialog(context, controller),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(
+              height: _TokenUsageScreenState._phoneTabBarHeight,
+              child: TabBar(
+                padding: const EdgeInsets.fromLTRB(AppSpace.s16, 0, AppSpace.s16, AppSpace.s6),
+                tabs: [
+                  Tab(height: _TokenUsageScreenState._phoneTabBarHeight - AppSpace.s6, text: l10n.usage),
+                  Tab(height: _TokenUsageScreenState._phoneTabBarHeight - AppSpace.s6, text: l10n.feeGroups),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

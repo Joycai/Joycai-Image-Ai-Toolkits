@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../services/database_service.dart';
-import '../../../widgets/app_button.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/prompt_card.dart';
+import '../prompt_reorder.dart';
+import 'prompt_library_parts.dart';
+import 'prompt_selection_capsule.dart';
+
+const double _kCardGap = 8;
 
 class SystemTemplateList extends StatefulWidget {
   final List<SystemPrompt> prompts;
@@ -21,6 +26,11 @@ class SystemTemplateList extends StatefulWidget {
   final Function(int) onToggleSelection;
   final Function(int) onEnterSelectionMode;
 
+  /// Every template in its stored order. [prompts] is narrowed by template
+  /// type; a drag inside that view is folded back into this order before it
+  /// is written, so the other type's templates keep their places.
+  final List<SystemPrompt>? allPrompts;
+
   const SystemTemplateList({
     super.key,
     required this.prompts,
@@ -33,66 +43,87 @@ class SystemTemplateList extends StatefulWidget {
     required this.isSelectionMode,
     required this.onToggleSelection,
     required this.onEnterSelectionMode,
+    this.allPrompts,
   });
 
   @override
-  State<SystemTemplateList> createState() => _SystemTemplateListState();        
+  State<SystemTemplateList> createState() => _SystemTemplateListState();
 }
 
 class _SystemTemplateListState extends State<SystemTemplateList> {
   final DatabaseService _db = DatabaseService();
   final Set<int> _expandedSysPromptIds = {};
+  List<SystemPrompt>? _optimistic;
+
+  @override
+  void didUpdateWidget(SystemTemplateList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final pending = _optimistic;
+    if (pending == null) return;
+    if (!_sameIdSet(pending, widget.prompts) || _sameOrder(pending, widget.prompts)) {
+      _optimistic = null;
+    }
+  }
+
+  static bool _sameIdSet(List<SystemPrompt> a, List<SystemPrompt> b) =>
+      a.length == b.length && a.map((p) => p.id).toSet().containsAll(b.map((p) => p.id));
+
+  static bool _sameOrder(List<SystemPrompt> a, List<SystemPrompt> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
+  }
+
+  void _showBlocked() {
+    AppSnackBar.info(context, AppLocalizations.of(context)!.reorderDisabledWhileFiltered);
+  }
+
+  Future<void> _reorder(List<SystemPrompt> prompts, int oldIndex, int newIndex) async {
+    if (widget.searchQuery.isNotEmpty) {
+      _showBlocked();
+      return;
+    }
+    final next = reorderedCopy(prompts, oldIndex, newIndex);
+    setState(() => _optimistic = next);
+    final nextIds = next.map((p) => p.id!).toList();
+    final all = widget.allPrompts;
+    await _db.updateSystemPromptOrder(
+      all == null ? nextIds : mergeSubsetOrder(all.map((p) => p.id!).toList(), nextIds),
+    );
+    widget.onRefresh();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final prompts = widget.prompts;
+    final phone = Responsive.isMobile(context);
+    final pending = _optimistic;
+    final prompts = pending != null && _sameIdSet(pending, widget.prompts) ? pending : widget.prompts;
 
     Widget content;
     if (prompts.isEmpty && widget.searchQuery.isEmpty) {
-      content = Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.auto_fix_high, size: 64, color: Theme.of(context).colorScheme.outlineVariant),
-            const SizedBox(height: 16),
-            Text(
-              l10n.noPromptsSaved,
-              style: Theme.of(context).textTheme.titleLarge
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.addSystemTemplateHint,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).colorScheme.outline),
-            ),
-            const SizedBox(height: 24),
-            AppButton(
-              label: l10n.newPrompt,
-              icon: Icons.add,
-              onPressed: () => widget.onShowEditDialog(l10n),
-            ),
-          ],
-        ),
+      content = PromptLibraryEmptyState(
+        title: l10n.noPromptsSaved,
+        description: l10n.addSystemTemplateHint,
+        actionLabel: l10n.newTemplate,
+        onAction: () => widget.onShowEditDialog(l10n),
       );
     } else {
+      final canDrag = widget.searchQuery.isEmpty && !widget.isSelectionMode;
+      final horizontal = phone ? 12.0 : 20.0;
+      final bottom = 12 +
+          MediaQuery.paddingOf(context).bottom +
+          (phone && widget.isSelectionMode ? PromptSelectionCapsule.height + 28 : 0);
+
       content = ReorderableListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, bottom),
         itemCount: prompts.length,
-        // ignore: deprecated_member_use
-        onReorder: (oldIndex, newIndex) async {
-          if (widget.searchQuery.isNotEmpty) {
-            AppSnackBar.info(context, l10n.reorderDisabledWhileFiltered);
-            return;
-          }
-          setState(() {
-            if (newIndex > oldIndex) newIndex -= 1;
-            final item = prompts.removeAt(oldIndex);
-            prompts.insert(newIndex, item);
-          });
-          await _db.updateSystemPromptOrder(prompts.map((p) => p.id!).toList());
-          widget.onRefresh();
-        },
+        buildDefaultDragHandles: false,
+        onReorderItem: (oldIndex, newIndex) => _reorder(prompts, oldIndex, newIndex),
+        proxyDecorator: (child, index, animation) =>
+            promptDragProxyDecorator(child, index, animation, gap: _kCardGap),
         itemBuilder: (context, index) {
           final systemPrompt = prompts[index];
           final id = systemPrompt.id!;
@@ -110,46 +141,47 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
 
           return Padding(
             key: ValueKey('sys_$id'),
-            padding: const EdgeInsets.only(bottom: 12),
-            child: GestureDetector(
+            padding: const EdgeInsets.only(bottom: _kCardGap),
+            child: PromptCard(
+              prompt: promptForCard,
+              isExpanded: isExpanded,
+              selectionMode: widget.isSelectionMode,
+              selected: isSelected,
               onLongPress: () => widget.onEnterSelectionMode(id),
-              child: PromptCard(
-                prompt: promptForCard,
-                isExpanded: isExpanded,
-                onToggle: widget.isSelectionMode
+              onToggle: widget.isSelectionMode
                   ? () => widget.onToggleSelection(id)
                   : () => setState(() {
-                    if (isExpanded) {
-                      _expandedSysPromptIds.remove(id);
-                    } else {
-                      _expandedSysPromptIds.add(id);
-                    }
-                  }),
-                leading: widget.isSelectionMode
-                  ? Checkbox(
-                      value: isSelected,
-                      onChanged: (_) => widget.onToggleSelection(id),
-                    )
-                  : Icon(systemPrompt.type == 'refiner' ? Icons.auto_fix_high : Icons.drive_file_rename_outline, color: Colors.purple, size: 20),
-                showCategory: true,
-                actions: widget.isSelectionMode ? [] : [
-                  IconButton(
-                    icon: const Icon(Icons.copy_all, size: 18),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: systemPrompt.content));
-                      AppSnackBar.info(context, l10n.copiedToClipboard(systemPrompt.title));
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    onPressed: () => widget.onShowEditDialog(l10n, prompt: systemPrompt),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.delete_outline, size: 18, color: Theme.of(context).colorScheme.error),
-                    onPressed: () => widget.onConfirmDelete(l10n, systemPrompt, isSystem: true),
-                  ),
-                ],
-              ),
+                        if (isExpanded) {
+                          _expandedSysPromptIds.remove(id);
+                        } else {
+                          _expandedSysPromptIds.add(id);
+                        }
+                      }),
+              dragHandle: PromptDragHandle(index: index, enabled: canDrag, onBlockedTap: _showBlocked),
+              leading: PromptTemplateTypeIcon(type: systemPrompt.type),
+              badge: PromptTemplateTypeBadge(type: systemPrompt.type),
+              showCategory: true,
+              menuActions: [
+                PromptCardAction(
+                  icon: Icons.copy_all,
+                  label: l10n.copyPrompt,
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: systemPrompt.content));
+                    AppSnackBar.info(context, l10n.copiedToClipboard(systemPrompt.title));
+                  },
+                ),
+                PromptCardAction(
+                  icon: Icons.edit_outlined,
+                  label: l10n.edit,
+                  onPressed: () => widget.onShowEditDialog(l10n, prompt: systemPrompt),
+                ),
+                PromptCardAction(
+                  icon: Icons.delete_outline,
+                  label: l10n.delete,
+                  danger: true,
+                  onPressed: () => widget.onConfirmDelete(l10n, systemPrompt, isSystem: true),
+                ),
+              ],
             ),
           );
         },

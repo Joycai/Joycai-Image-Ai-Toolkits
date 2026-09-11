@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -19,14 +20,31 @@ import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
-import '../../widgets/app_snackbar.dart';
+import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_field_size.dart';
+import '../../widgets/app_segmented_control.dart';
+import '../../widgets/app_snackbar.dart';
 import '../../widgets/chat_model_selector.dart';
+import '../../widgets/glass/glass_controls.dart';
+import 'widgets/transfer_dialog_parts.dart';
 
-/// Below this the two-column shell stops working and the dialog folds into
-/// `13e`: the config column becomes a summary row, and the old and new names
-/// stack instead of sitting in two columns.
+/// Below this window width the two-column shell stops working and the dialog
+/// folds: the config column becomes a summary row with a sheet behind it, and
+/// the old and new names stack instead of sitting in two columns. A layout
+/// form switch, not a text fit — text fits are measured below.
 const double _kNarrowBreakpoint = 700;
+
+/// The config column's width (`1e` 左列 300).
+const double _kConfigWidth = 300;
+
+/// The old name's column on a wide row (`1e` 150 宽).
+const double _kOldNameWidth = 150;
+
+/// The narrowest the new name may get before the row actions fold to glyphs.
+const double _kMinNewNameWidth = 120;
+
+/// The narrowest the footer summary may get before Apply takes its short label.
+const double _kMinFooterSummaryWidth = 160;
 
 /// Which rows the result list is showing.
 enum _RowFilter { all, conflicts, skipped }
@@ -47,9 +65,9 @@ enum _ConflictChoice { rename, skip, overwrite }
 
 /// One line of the review list.
 ///
-/// Mutable on purpose: the whole point of the redraw is that a row is a thing
-/// the user edits — accepted, skipped, renamed in place — rather than a cell
-/// in a take-it-or-leave-it table.
+/// Mutable on purpose: the whole point of the review list is that a row is a
+/// thing the user edits — skipped, renamed in place, a clash answered — rather
+/// than a cell in a take-it-or-leave-it table.
 class _RenameRow {
   _RenameRow(this.proposal) : newName = proposal.newName;
 
@@ -68,19 +86,18 @@ class _RenameRow {
   bool get hasConflict => conflict != _RowConflict.none;
 
   /// A conflict the user has not answered. These are subtracted from the apply
-  /// count one by one — the old dialog disabled the whole button for any
-  /// conflict at all, which made one bad name block thirty-five good ones.
+  /// count one by one — one bad name must not block thirty-five good ones.
   bool get unresolved => hasConflict && choice == null;
 
   bool get willApply => !skipped && !unresolved && newName.isNotEmpty && newName != oldName;
 }
 
-/// AI batch rename — `B4 13a`–`13f`.
+/// AI batch rename — `B1b 1e` / `1f`.
 ///
-/// Config on the left, results on the right, each scrolling on its own. The
-/// dialog this replaced ran both down one column, so finishing a generation
-/// meant scrolling past a config panel that had already done its job to reach
-/// the answers.
+/// The one large dialog on this screen: 920 wide, config on the left and the
+/// review list on the right, each scrolling on its own. Suggestions land a
+/// batch at a time and are reviewable as they arrive; they are applied only
+/// once generation has finished.
 class AiRenameDialog extends StatefulWidget {
   const AiRenameDialog({super.key});
 
@@ -112,12 +129,15 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   /// every row would be a form, and this list is meant to be read.
   String? _editingPath;
 
-  /// The last batch that failed, kept as a banner rather than an error that
-  /// wipes the run — `13f`'s whole point is that the rows already produced
-  /// survive it.
+  /// The last batch that failed, kept as a card rather than an error that
+  /// wipes the run — the rows already produced survive it.
   String? _failedReason;
   int _failedBatch = 0;
   List<String> _failedPaths = const [];
+
+  /// Rebuilds the narrow-window config sheet while it is open. The sheet is
+  /// its own route, so this state's `setState` does not reach it.
+  StateSetter? _sheetSetState;
 
   List<BrowserFile> get _files =>
       Provider.of<AppState>(context, listen: false).fileBrowserState.selectedFiles.toList();
@@ -136,6 +156,12 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     super.dispose();
   }
 
+  /// `setState`, plus the config sheet when one is open.
+  void _update(VoidCallback fn) {
+    setState(fn);
+    _sheetSetState?.call(() {});
+  }
+
   Future<void> _loadLastSettings() async {
     final appState = Provider.of<AppState>(context, listen: false);
     final lastModelId = await appState.getSetting('last_ai_rename_model_id');
@@ -151,7 +177,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     initial ??= templates.isNotEmpty ? templates.first : null;
 
     if (!mounted) return;
-    setState(() {
+    _update(() {
       _templates = templates;
       _selectedTemplate = initial;
       _selectedModelDbId =
@@ -179,7 +205,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     _db.saveSetting('last_ai_rename_system_prompt_id', _selectedTemplate?.id?.toString() ?? '');
     _db.saveSetting('last_ai_rename_instructions', _instructionController.text);
 
-    setState(() {
+    _update(() {
       _isGenerating = true;
       _cancelRequested = false;
       _failedReason = null;
@@ -205,7 +231,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
         systemPrompt: _selectedTemplate!.content,
         instructions: _instructionController.text.trim(),
         onBatchProgress: (current, total) {
-          if (mounted) setState(() => _batchIndex = current);
+          if (mounted) _update(() => _batchIndex = current);
         },
         // Rows land as each batch comes back, so a 4-batch run is reviewable
         // from the first one rather than after the last.
@@ -215,7 +241,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
         },
         onBatchFailed: (batch, total, error, paths) {
           if (!mounted) return;
-          setState(() {
+          _update(() {
             _failedBatch = batch;
             _failedReason = error.toString();
             _failedPaths = paths.where((path) => path.isNotEmpty).toList();
@@ -225,31 +251,27 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       );
     } catch (e) {
       if (mounted) {
-        setState(() {
+        _update(() {
           _failedBatch = 1;
           _failedReason = e.toString();
           _failedPaths = targets.map((f) => f.path).toList();
         });
       }
     } finally {
-      if (mounted) setState(() => _isGenerating = false);
+      if (mounted) _update(() => _isGenerating = false);
     }
   }
+
+  void _stop() => _update(() => _cancelRequested = true);
 
   /// Folds a batch's output into the rows, keeping any decision the user has
   /// already made about a row that came back again.
   void _mergeProposals(List<RenameProposal> collected) {
     final existing = {for (final row in _rows) row.path: row};
-    final merged = <_RenameRow>[];
-    for (final proposal in collected) {
-      final prior = existing[proposal.path];
-      if (prior != null) {
-        merged.add(prior);
-      } else {
-        merged.add(_RenameRow(proposal));
-      }
-    }
-    setState(() => _rows = merged);
+    final merged = <_RenameRow>[
+      for (final proposal in collected) existing[proposal.path] ?? _RenameRow(proposal),
+    ];
+    _update(() => _rows = merged);
     _recomputeConflicts();
   }
 
@@ -288,21 +310,19 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
         row.choice = null;
       }
     }
-    if (mounted) setState(() {});
+    if (mounted) _update(() {});
   }
 
   void _resolve(_RenameRow row, _ConflictChoice choice) {
-    setState(() {
+    _update(() {
       row.choice = choice;
       switch (choice) {
         case _ConflictChoice.rename:
           final unique = FileTransferService.uniqueTargetPath(row.directory, row.newName);
           row.newName = p.basename(unique);
           row.autoRenamed = true;
-          break;
         case _ConflictChoice.skip:
           row.skipped = true;
-          break;
         case _ConflictChoice.overwrite:
           break;
       }
@@ -310,13 +330,16 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     _recomputeConflicts();
   }
 
+  double _rowHeight(bool narrow) => narrow ? 64 : 52;
+
   void _jumpToNextConflict() {
     final index = _visibleRows.indexWhere((row) => row.unresolved);
     if (index < 0 || !_resultScroll.hasClients) return;
+    final narrow = MediaQuery.sizeOf(context).width < _kNarrowBreakpoint;
     _resultScroll.animateTo(
-      (index * 52.0).clamp(0.0, _resultScroll.position.maxScrollExtent),
+      (index * _rowHeight(narrow)).clamp(0.0, _resultScroll.position.maxScrollExtent),
       duration: AppMotion.durationOf(context, AppMotion.state),
-      curve: AppMotion.enter,
+      curve: AppMotion.move,
     );
   }
 
@@ -390,22 +413,31 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     // Watched separately: AppState stopped forwarding its sub-states, so the
     // count would otherwise freeze at whatever it was when the dialog opened.
     final files = context.watch<FileBrowserState>().selectedFiles;
-    final isNarrow = MediaQuery.sizeOf(context).width < _kNarrowBreakpoint;
+    final screen = MediaQuery.sizeOf(context);
+    final isNarrow = screen.width < _kNarrowBreakpoint;
 
     final dirCount = files.map((f) => p.dirname(f.path)).toSet().length;
     final hasModels = appState.chatModels.isNotEmpty;
+    // What the window leaves once the heading, footer and dialog insets are
+    // taken, up to the height the review list is drawn at.
+    final bodyHeight = math.max(240.0, math.min(520.0, screen.height - 220));
 
     return AppDialog(
-      icon: Icons.auto_fix_high,
-      title: l10n.aiBatchRename,
-      subtitle: l10n.renameSubtitleFiles(files.length, dirCount),
+      titleWidget: TransferDialogHeading(
+        icon: Icons.auto_awesome,
+        tone: TransferTone.accent,
+        title: l10n.aiBatchRename,
+        subtitle: l10n.renameSubtitleFiles(files.length, dirCount),
+        trailing: TransferDialogCloseButton(onPressed: () => Navigator.pop(context)),
+      ),
       maxWidth: isNarrow ? 640 : 920,
-      onClose: () => Navigator.pop(context),
       contentPadding: EdgeInsets.zero,
+      dividedHeading: true,
       content: SizedBox(
-        height: 470,
+        height: bodyHeight,
         child: isNarrow
             ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _NarrowConfigSummary(
                     modelId: _selectedModelDbId,
@@ -413,149 +445,197 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                     generating: _isGenerating,
                     onEdit: _showNarrowConfigSheet,
                     onGenerate: hasModels ? () => _generate() : null,
-                    onStop: () => setState(() => _cancelRequested = true),
+                    onStop: _stop,
                   ),
                   Expanded(child: _buildResults(l10n, hasModels, isNarrow)),
                 ],
               )
             : Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildConfigColumn(l10n, hasModels),
+                  _buildConfigColumn(l10n, hasModels, width: _kConfigWidth),
                   Expanded(child: _buildResults(l10n, hasModels, isNarrow)),
                 ],
               ),
       ),
-      actionsOverride: _buildFooter(l10n),
+      actionsOverride: _buildFooter(l10n, isNarrow),
     );
   }
 
   // ------------------------------------------------------------ config panel
 
-  Widget _buildConfigColumn(AppLocalizations l10n, bool hasModels) {
+  /// `1e` 左列: model, naming template, extra instructions, the batch card,
+  /// and Generate / Stop pinned to the bottom of whatever height it is given.
+  Widget _buildConfigColumn(AppLocalizations l10n, bool hasModels, {double? width}) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final fileCount = _files.length;
     final batches = (fileCount / AiRenameAgent.defaultBatchSize).ceil();
+    final mono11 = textTheme.labelSmall!.mono.copyWith(fontWeight: FontWeight.w400);
 
-    return Container(
-      width: 280,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(right: BorderSide(color: colorScheme.outlineVariant)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // `13a` heads the column with a section label and draws the boxes
-          // under it as every other select in the design: the outline, the
-          // control radius, one chevron. One combined picker rather than the
-          // frame's separate channel and model boxes: this is the app's shared
-          // chat-model control and it already names both, so splitting it
-          // here would make this the one screen that picks a model
-          // differently.
-          _SectionLabel(l10n.model),
-          const SizedBox(height: 8),
-          ChatModelSelector(
-            selectedModelId: _selectedModelDbId,
-            onChanged: (v) => setState(() => _selectedModelDbId = v),
-            // A dialog's compact form is the 32px size (`13a`).
-            size: AppFieldSize.regular,
-          ),
-          const SizedBox(height: 14),
-          _SectionLabel(l10n.renameSectionTemplate),
-          const SizedBox(height: 8),
-          Expanded(
-            child: _templates.isEmpty
-                ? Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      l10n.noPromptsSaved,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelMedium
-                          ?.copyWith(color: colorScheme.outline),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: _templates.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 6),
-                    itemBuilder: (context, index) => _TemplateCard(
-                      template: _templates[index],
-                      selected: _templates[index].id == _selectedTemplate?.id,
-                      onTap: () => setState(() => _selectedTemplate = _templates[index]),
-                    ),
-                  ),
-          ),
-          const SizedBox(height: 14),
-          _SectionLabel(l10n.renameSectionInstructions),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 64,
-            child: TextField(
-              controller: _instructionController,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              style: Theme.of(context).textTheme.bodySmall,
-              decoration: InputDecoration(
-                hintText: l10n.aiRenameInstructionsHint,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
-              ),
+    final top = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _Caption(l10n.renameSectionModel),
+        const SizedBox(height: AppSpace.s6),
+        // The app's shared chat-model control: it already names channel and
+        // model, and this should not be the one screen that picks differently.
+        ChatModelSelector(
+          selectedModelId: _selectedModelDbId,
+          onChanged: (v) => _update(() => _selectedModelDbId = v),
+          size: AppFieldSize.regular,
+        ),
+        const SizedBox(height: 12),
+        _Caption(l10n.renameSectionTemplate),
+        const SizedBox(height: AppSpace.s6),
+        AppDropdown<int>(
+          value: _selectedTemplate?.id,
+          items: [
+            for (final template in _templates)
+              if (template.id != null)
+                AppDropdownItem<int>(
+                  value: template.id!,
+                  label: template.title,
+                  description: _oneLine(template.content),
+                ),
+          ],
+          onChanged: _templates.isEmpty
+              ? null
+              : (id) => _update(() {
+                    for (final template in _templates) {
+                      if (template.id == id) _selectedTemplate = template;
+                    }
+                  }),
+          hint: _templates.isEmpty ? l10n.noPromptsSaved : l10n.noTemplateSelected,
+          size: AppFieldSize.regular,
+          enabled: _templates.isNotEmpty,
+        ),
+        const SizedBox(height: 12),
+        _Caption(l10n.renameSectionInstructions),
+        const SizedBox(height: AppSpace.s6),
+        SizedBox(
+          height: 88,
+          child: TextField(
+            controller: _instructionController,
+            maxLines: null,
+            expands: true,
+            textAlignVertical: TextAlignVertical.top,
+            style: textTheme.bodySmall,
+            decoration: InputDecoration(
+              hintText: l10n.aiRenameInstructionsHint,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: 8),
             ),
           ),
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 40,
-            child: _isGenerating
-                ? OutlinedButton.icon(
-                    onPressed: () => setState(() => _cancelRequested = true),
-                    icon: const Icon(Icons.stop_circle_outlined, size: AppSize.iconMd),
-                    label: Text(l10n.renameStopGenerating),
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.md)),
-                    ),
-                  )
-                : FilledButton.icon(
-                    onPressed: hasModels ? () => _generate() : null,
-                    icon: const Icon(Icons.bolt, size: AppSize.iconMd),
-                    label: Text(_rows.isEmpty ? l10n.generateSuggestions : l10n.renameRegenerate),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.md)),
-                    ),
-                  ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(AppSpace.s10),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border.all(color: colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(AppRadius.control),
           ),
-          const SizedBox(height: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.renameBatchEstimate(fileCount, AiRenameAgent.defaultBatchSize, batches),
+                style: mono11.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
+              if (_isGenerating) ...[
+                const SizedBox(height: AppSpace.s4),
+                Text(
+                  l10n.renameBatchProgress(_batchIndex, _batchTotal, _rows.length, fileCount),
+                  style: mono11.copyWith(color: colorScheme.onAccentTint, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+
+    final bottom = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 12),
+        _isGenerating
+            ? AppButton(
+                label: l10n.renameStopGenerating,
+                icon: Icons.stop_circle_outlined,
+                variant: AppButtonVariant.destructiveOutline,
+                size: AppButtonSize.large,
+                fullWidth: true,
+                onPressed: _stop,
+              )
+            : AppButton(
+                label: _rows.isEmpty ? l10n.generateSuggestions : l10n.renameRegenerate,
+                icon: Icons.auto_awesome,
+                size: AppButtonSize.large,
+                fullWidth: true,
+                onPressed: hasModels ? () => _generate() : null,
+              ),
+        if (_isGenerating) ...[
+          const SizedBox(height: AppSpace.s6),
           Text(
-            l10n.renameBatchEstimate(fileCount, AiRenameAgent.defaultBatchSize, batches),
+            l10n.renameProducedHint(_rows.length),
             textAlign: TextAlign.center,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.mono
-                .copyWith(color: colorScheme.outline),
+            style: textTheme.labelSmall!.copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ],
+      ],
+    );
+
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        border: width == null ? null : Border(right: BorderSide(color: colorScheme.outlineVariant)),
+      ),
+      child: LayoutBuilder(
+        // Top group up, the button down, and a scroll only when the height
+        // runs out — no Spacer, so nothing here needs intrinsic sizing.
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: const EdgeInsets.all(14),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: math.max(0, constraints.maxHeight - 28)),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [top, bottom],
+            ),
+          ),
+        ),
       ),
     );
   }
 
   Future<void> _showNarrowConfigSheet() async {
     final l10n = AppLocalizations.of(context)!;
+    final hasModels = context.read<AppState>().chatModels.isNotEmpty;
     await AppDialog.show<void>(
       context,
       title: l10n.renameEditConfig,
       maxWidth: 460,
-      maxHeight: MediaQuery.sizeOf(context).height * 0.8,
-      content: SizedBox(height: 420, child: _buildConfigColumn(l10n, true)),
+      maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+      contentPadding: EdgeInsets.zero,
+      content: SizedBox(
+        height: 480,
+        child: StatefulBuilder(
+          builder: (sheetContext, setSheet) {
+            _sheetSetState = setSheet;
+            return _buildConfigColumn(l10n, hasModels);
+          },
+        ),
+      ),
       actions: [
         AppButton(label: l10n.close, onPressed: () => Navigator.pop(context)),
       ],
     );
+    _sheetSetState = null;
     if (mounted) setState(() {});
   }
 
@@ -564,201 +644,175 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   Widget _buildResults(AppLocalizations l10n, bool hasModels, bool isNarrow) {
     if (!hasModels) return _buildNoModels(l10n);
 
-    // The brighter column tone, so the config panel beside it reads as a panel
-    // rather than as more of the same surface. `13a` draws the shell near-white
-    // with the config column a step down; the app's ramp expresses that
-    // relationship the same way round with `surfaceContainerLow` over
-    // `surface`.
-    return ColoredBox(
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
-      child: Column(
-        children: [
-          _buildResultToolbar(l10n),
-          if (_failedReason != null) _buildFailureBanner(l10n),
-          Expanded(
-            child: _rows.isEmpty
-                ? (_isGenerating ? const _SkeletonList() : _buildEmptyState(l10n))
-                : _buildRowList(isNarrow),
+    final showEmpty = _rows.isEmpty && !_isGenerating && _failedReason == null;
+    final showFilters = _rows.isNotEmpty || _isGenerating;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showFilters) _buildFilterRow(l10n),
+        if (_failedReason != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, AppSpace.s10, 14, AppSpace.s4),
+            child: _buildFailureCard(l10n),
           ),
+        Expanded(child: showEmpty ? _buildEmptyState(l10n, hasModels) : _buildRowList(isNarrow)),
+      ],
+    );
+  }
+
+  /// `1e` 过滤行 48: All / Conflicts / Skipped with counts, and Next conflict.
+  Widget _buildFilterRow(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: AppSegmentedControl<_RowFilter>(
+                  compact: true,
+                  value: _filter,
+                  onChanged: (value) => setState(() => _filter = value),
+                  segments: [
+                    AppSegment(value: _RowFilter.all, label: '${l10n.renameFilterAll} ${_rows.length}'),
+                    AppSegment(
+                      value: _RowFilter.conflicts,
+                      label: '${l10n.renameFilterConflicts} $_conflictCount',
+                    ),
+                    AppSegment(
+                      value: _RowFilter.skipped,
+                      label: '${l10n.renameFilterSkipped} $_skippedCount',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (_unresolvedCount > 0) ...[
+            const SizedBox(width: 8),
+            AppButton(
+              label: l10n.renameNextConflict,
+              icon: Icons.keyboard_arrow_down,
+              variant: AppButtonVariant.secondary,
+              size: AppButtonSize.compact,
+              onPressed: _jumpToNextConflict,
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildResultToolbar(AppLocalizations l10n) {
+  /// `1f` 批次失败卡: the batch that gave up, what the rest kept, and a retry
+  /// over only the files that batch covered.
+  Widget _buildFailureCard(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final reason = _failedReason!;
 
     return Container(
-      height: 46,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(AppSpace.s10),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+        color: colorScheme.errorContainer,
+        border: Border.all(color: colorScheme.error.withValues(alpha: AppAlpha.edge)),
+        borderRadius: BorderRadius.circular(AppRadius.control),
       ),
-      child: _isGenerating
-          // The toolbar becomes the progress readout while a run is going: a
-          // real position in the run, not a spinner in a placeholder box.
-          ? Row(
-              children: [
-                SizedBox(
-                  width: 15,
-                  height: 15,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    backgroundColor: colorScheme.surfaceContainerHighest,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(l10n.renameGenerating, style: textTheme.titleSmall),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 260),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                      child: LinearProgressIndicator(
-                        value: _batchTotal == 0 ? null : _batchIndex / _batchTotal,
-                        minHeight: 4,
-                        backgroundColor: colorScheme.surfaceContainerHighest,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  l10n.renameBatchProgress(_batchIndex, _batchTotal, _rows.length, _files.length),
-                  style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.onSurfaceVariant),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () => setState(() => _cancelRequested = true),
-                  style: TextButton.styleFrom(foregroundColor: colorScheme.error),
-                  child: Text(l10n.renameStop, style: textTheme.bodySmall),
-                ),
-              ],
-            )
-          : Row(
-              children: [
-                _FilterChip(
-                  label: l10n.renameFilterAll,
-                  count: _rows.length,
-                  selected: _filter == _RowFilter.all,
-                  onTap: () => setState(() => _filter = _RowFilter.all),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: l10n.renameFilterConflicts,
-                  count: _conflictCount,
-                  selected: _filter == _RowFilter.conflicts,
-                  onTap: () => setState(() => _filter = _RowFilter.conflicts),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: l10n.renameFilterSkipped,
-                  count: _skippedCount,
-                  selected: _filter == _RowFilter.skipped,
-                  onTap: () => setState(() => _filter = _RowFilter.skipped),
-                ),
-                const Spacer(),
-                if (_unresolvedCount > 0)
-                  OutlinedButton.icon(
-                    onPressed: _jumpToNextConflict,
-                    icon: const Icon(Icons.arrow_downward, size: 14),
-                    label: Text(l10n.renameNextConflict, style: textTheme.bodySmall),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.error,
-                      side: BorderSide(color: colorScheme.error.withValues(alpha: AppAlpha.ring)),
-                      minimumSize: const Size(0, AppSize.compact),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      shape:
-                          RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
-                    ),
-                  ),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildFailureBanner(AppLocalizations l10n) {
-    final semantic = AppSemanticColors.of(context);
-    final textTheme = Theme.of(context).textTheme;
-    final missing = _failedPaths.length;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: semantic.warningContainer,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.warning_amber_rounded, size: AppSize.iconMd, color: semantic.onWarningContainer),
-          const SizedBox(width: 10),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(Icons.error_outline, size: AppSize.iconMd, color: colorScheme.error),
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  l10n.renameBatchFailed(_failedBatch, _shortReason(_failedReason!)),
-                  style: textTheme.labelMedium?.copyWith(
-                    color: semantic.onWarningContainer,
+                  l10n.renameBatchFailedTitle(_failedBatch),
+                  style: textTheme.titleSmall!.copyWith(
+                    color: colorScheme.onErrorContainer,
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
+                // The raw reason in mono, shortened to a line or two; the
+                // whole thing is a hover away.
+                Tooltip(
+                  message: reason,
+                  child: Text(
+                    _shortReason(reason),
+                    style: textTheme.labelSmall!.mono.copyWith(
+                      color: colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: AppSpace.s4),
                 Text(
-                  l10n.renameBatchFailedDesc(_rows.length, missing),
-                  style: textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  l10n.renameBatchFailedDesc(_rows.length, _failedPaths.length),
+                  style: textTheme.bodySmall!.copyWith(color: colorScheme.onErrorContainer),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          OutlinedButton(
+          const SizedBox(width: AppSpace.s10),
+          AppButton(
+            label: l10n.renameRetryBatch,
+            icon: Icons.refresh,
+            variant: AppButtonVariant.destructive,
+            size: AppButtonSize.compact,
             onPressed: _isGenerating ? null : () => _generate(onlyPaths: _failedPaths),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: semantic.onWarningContainer,
-              side: BorderSide(color: semantic.onWarningContainer.withValues(alpha: AppAlpha.ring)),
-              minimumSize: const Size(0, AppSize.compact),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-            ),
-            child: Text(l10n.renameRetryBatch, style: textTheme.bodySmall),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState(AppLocalizations l10n) {
+  /// `1f` 空态.
+  Widget _buildEmptyState(AppLocalizations l10n, bool hasModels) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final fileCount = _files.length;
     final batches = (fileCount / AiRenameAgent.defaultBatchSize).ceil();
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 60),
+    return _CenteredScroll(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 380),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(color: colorScheme.surface, shape: BoxShape.circle),
-              child: Icon(Icons.drive_file_rename_outline,
-                  size: 26, color: colorScheme.outlineVariant),
-            ),
-            const SizedBox(height: 12),
-            Text(l10n.renameEmptyTitle, style: textTheme.titleSmall),
-            const SizedBox(height: 12),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 340),
-              child: Text(
-                l10n.renameEmptyDesc(fileCount, batches, AiRenameAgent.defaultBatchSize),
-                textAlign: TextAlign.center,
-                style: textTheme.bodySmall?.copyWith(color: colorScheme.outline, height: 1.7),
+            Icon(Icons.auto_awesome, size: 28, color: colorScheme.outline),
+            const SizedBox(height: AppSpace.s10),
+            Text(l10n.renameEmptyTitle, style: textTheme.titleLarge, textAlign: TextAlign.center),
+            const SizedBox(height: AppSpace.s6),
+            Text(
+              l10n.renameEmptyDesc(fileCount, batches, AiRenameAgent.defaultBatchSize),
+              textAlign: TextAlign.center,
+              style: textTheme.bodySmall!.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: AppType.proseHeight,
               ),
+            ),
+            const SizedBox(height: AppSpace.s16),
+            AppButton(
+              label: l10n.generateSuggestions,
+              icon: Icons.auto_awesome,
+              onPressed: hasModels ? () => _generate() : null,
             ),
           ],
         ),
@@ -766,38 +820,59 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     );
   }
 
+  /// `1f` 无模型卡.
   Widget _buildNoModels(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 48),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.psychology_alt_outlined, size: 40, color: colorScheme.outlineVariant),
-            const SizedBox(height: 14),
-            Text(l10n.renameNoModelsTitle, style: textTheme.titleSmall),
-            const SizedBox(height: 10),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 380),
-              child: Text(
-                l10n.renameNoModelsDesc,
-                textAlign: TextAlign.center,
-                style: textTheme.bodySmall?.copyWith(color: colorScheme.outline, height: 1.7),
+    return _CenteredScroll(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpace.s16),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            border: Border.all(color: colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, size: AppSize.iconLg, color: context.semantic.warning),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.renameNoModelsTitle,
+                      style: textTheme.titleMedium!.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 18),
-            AppButton(
-              label: l10n.renameGoToSettings,
-              icon: Icons.tune,
-              onPressed: () {
-                Navigator.pop(context);
-                Provider.of<AppState>(context, listen: false).navigateToScreen(6);
-              },
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                l10n.renameNoModelsDesc,
+                style: textTheme.bodySmall!.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: AppType.proseHeight,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Align(
+                alignment: Alignment.centerRight,
+                child: AppButton(
+                  label: l10n.renameGoToSettings,
+                  icon: Icons.tune,
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Provider.of<AppState>(context, listen: false).navigateToScreen(6);
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -806,100 +881,157 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   Widget _buildRowList(bool isNarrow) {
     final l10n = AppLocalizations.of(context)!;
     final rows = _visibleRows;
-    return ListView.builder(
-      controller: _resultScroll,
-      padding: EdgeInsets.zero,
-      itemCount: rows.length,
-      itemBuilder: (context, index) {
-        final row = rows[index];
-        return _ResultRow(
-          row: row,
-          narrow: isNarrow,
-          editing: _editingPath == row.path,
-          editController: _editController,
-          onAccept: () => setState(() {
-            row.skipped = false;
-            if (row.choice == _ConflictChoice.skip) row.choice = null;
-            _recomputeConflicts();
-          }),
-          onSkip: () => setState(() {
-            row.skipped = true;
-            _recomputeConflicts();
-          }),
-          onEdit: () => setState(() {
-            _editingPath = row.path;
-            _editController.text = row.newName;
-          }),
-          onCommitEdit: (value) {
-            final trimmed = value.trim();
-            if (trimmed.isNotEmpty && !AiRenameAgent.isSafeFileName(trimmed)) {
-              AppSnackBar.warning(
-                context,
-                l10n.folderNameIllegalChars(r'/ \\ ..'),
-              );
-              return;
-            }
-            setState(() {
-              if (trimmed.isNotEmpty) {
-                row.newName = trimmed;
-                row.autoRenamed = false;
-                row.choice = null;
-              }
-              _editingPath = null;
-            });
-            _recomputeConflicts();
+    final trailing = _isGenerating ? 1 : 0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final iconOnly = _actionsMustFold(context, l10n, constraints.maxWidth, isNarrow);
+        return ListView.builder(
+          controller: _resultScroll,
+          padding: EdgeInsets.zero,
+          itemExtent: _rowHeight(isNarrow),
+          itemCount: rows.length + trailing,
+          itemBuilder: (context, index) {
+            if (index >= rows.length) return _GeneratingRow(label: l10n.renameGenerating);
+            final row = rows[index];
+            return _ResultRow(
+              row: row,
+              narrow: isNarrow,
+              iconOnly: iconOnly,
+              editing: _editingPath == row.path,
+              editController: _editController,
+              onUndoSkip: () {
+                _update(() {
+                  row.skipped = false;
+                  if (row.choice == _ConflictChoice.skip) row.choice = null;
+                });
+                _recomputeConflicts();
+              },
+              onSkip: () {
+                _update(() => row.skipped = true);
+                _recomputeConflicts();
+              },
+              onEdit: () => setState(() {
+                _editingPath = row.path;
+                _editController.text = row.newName;
+              }),
+              onCommitEdit: (value) {
+                final trimmed = value.trim();
+                if (trimmed.isNotEmpty && !AiRenameAgent.isSafeFileName(trimmed)) {
+                  AppSnackBar.warning(
+                    context,
+                    l10n.folderNameIllegalChars(r'/ \\ ..'),
+                  );
+                  return;
+                }
+                _update(() {
+                  if (trimmed.isNotEmpty) {
+                    row.newName = trimmed;
+                    row.autoRenamed = false;
+                    row.choice = null;
+                  }
+                  _editingPath = null;
+                });
+                _recomputeConflicts();
+              },
+              onResolve: (choice) => _resolve(row, choice),
+            );
           },
-          onResolve: (choice) => _resolve(row, choice),
         );
       },
     );
   }
 
+  /// Whether the row actions have to drop their labels, measured against the
+  /// widest action set any row can carry and the badge beside it.
+  bool _actionsMustFold(BuildContext context, AppLocalizations l10n, double width, bool narrow) {
+    final textTheme = Theme.of(context).textTheme;
+    double action(String label) => measureGlassText(context, label, textTheme.labelMedium!) + _RowAction.chrome;
+    double badge(String label) => measureGlassText(context, label, textTheme.labelSmall!) + 16;
+
+    final actions = [
+      action(l10n.renameConflictAutoRename) + action(l10n.conflictOverwrite) + AppSize.compact,
+      action(l10n.renameActionEdit) + action(l10n.renameActionSkip),
+      action(l10n.renameActionUndo),
+    ].reduce(math.max);
+    final badges = [
+      badge(l10n.renameDuplicateBadge),
+      badge(l10n.renameSkippedBadge),
+      badge(l10n.renameRenamedBadge),
+      badge(l10n.conflictOverwrite),
+    ].reduce(math.max);
+
+    final fixed = 28 + 32 + AppSpace.s10 + (narrow ? 0 : _kOldNameWidth + 8 + AppSize.iconSm + 8) + 8 + badges + 8 + actions;
+    return width - fixed < _kMinNewNameWidth;
+  }
+
   // ------------------------------------------------------------------ footer
 
-  Widget _buildFooter(AppLocalizations l10n) {
+  Widget _buildFooter(AppLocalizations l10n, bool isNarrow) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final isNarrow = MediaQuery.sizeOf(context).width < _kNarrowBreakpoint;
+    final mono11 = textTheme.labelSmall!.mono.copyWith(
+      color: colorScheme.onSurfaceVariant,
+      fontWeight: FontWeight.w400,
+    );
 
-    final summary = <String>[
-      if (_isGenerating)
+    // The produced-so-far hint lives under Stop in the config column; with
+    // that column folded away, the footer carries it.
+    final lead = <String>[
+      if (_isGenerating && isNarrow)
         l10n.renameProducedHint(_rows.length)
       else
         l10n.renameSuggestionsCount(_rows.length),
-      if (!_isGenerating && _skippedCount > 0) l10n.renameSkippedCount(_skippedCount),
-      if (!_isGenerating && _unresolvedCount > 0) l10n.renameConflictsPending(_unresolvedCount),
+      if (_skippedCount > 0) l10n.renameSkippedCount(_skippedCount),
     ].join(' · ');
+    final unresolved = _unresolvedCount > 0 ? l10n.renameConflictsPending(_unresolvedCount) : null;
 
-    // No height or side insets of its own: AppDialog pads the footer band, and
-    // adding a second set turns the strip above the buttons into dead space.
-    return Row(
-      children: [
-          Expanded(
-            child: Text(
-              summary,
-              style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.outline),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Buttons draw their labels at 13/600 inside 14px of padding a side
+        // (text buttons 10): measured, so the short label is chosen only when
+        // the long one would squeeze the summary out.
+        final buttonText = textTheme.labelLarge!.copyWith(fontWeight: FontWeight.w600);
+        final cancelWidth = measureGlassText(context, l10n.cancel, buttonText) + 20;
+        final applyWidth = measureGlassText(context, l10n.renameApplyCount(_applyCount), buttonText) + 28;
+        final useShort =
+            constraints.maxWidth - cancelWidth - applyWidth - AppSpace.s6 - 12 < _kMinFooterSummaryWidth;
+
+        return Row(
+          children: [
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: lead),
+                    if (unresolved != null) ...[
+                      const TextSpan(text: ' · '),
+                      TextSpan(text: unresolved, style: TextStyle(color: colorScheme.onErrorContainer)),
+                    ],
+                  ],
+                ),
+                style: mono11,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-          const SizedBox(width: 14),
-          AppButton(
-            label: l10n.cancel,
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.pop(context),
-          ),
-          const SizedBox(width: 8),
-          AppButton(
-            // Counts only the rows that will actually move. An unresolved
-            // conflict subtracts itself and nothing else — the old dialog
-            // disabled the button outright, so one bad name held the other
-            // thirty-five hostage.
-            label: isNarrow ? l10n.renameApplyShort(_applyCount) : l10n.renameApplyCount(_applyCount),
-            loading: _isSubmitting,
-            onPressed: (_applyCount == 0 || _isGenerating || _isSubmitting) ? null : _apply,
-          ),
-      ],
+            const SizedBox(width: 12),
+            AppButton(
+              label: l10n.cancel,
+              variant: AppButtonVariant.text,
+              onPressed: () => Navigator.pop(context),
+            ),
+            const SizedBox(width: AppSpace.s6),
+            AppButton(
+              // Counts only the rows that will actually move. An unresolved
+              // conflict subtracts itself and nothing else.
+              label: useShort ? l10n.renameApplyShort(_applyCount) : l10n.renameApplyCount(_applyCount),
+              loading: _isSubmitting,
+              onPressed: (_applyCount == 0 || _isGenerating || _isSubmitting) ? null : _apply,
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -909,86 +1041,46 @@ String _shortReason(String raw) {
   return oneLine.length <= 80 ? oneLine : '${oneLine.substring(0, 80)}…';
 }
 
-class _SectionLabel extends StatelessWidget {
+/// A template's rule on one line, for the dropdown's second line.
+String _oneLine(String content) {
+  final flat = content.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return flat.length <= 60 ? flat : '${flat.substring(0, 60)}…';
+}
+
+/// The 11/500 tracked caption in the deep accent that heads a config group.
+class _Caption extends StatelessWidget {
   final String text;
 
-  const _SectionLabel(this.text);
+  const _Caption(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Text(
-      text,
-      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).colorScheme.outline,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.8,
+      text.toUpperCase(),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.labelSmall!.copyWith(
+            color: Theme.of(context).colorScheme.onAccentTint,
+            letterSpacing: AppType.trackedLabelSpacing,
           ),
     );
   }
 }
 
-class _TemplateCard extends StatelessWidget {
-  final SystemPrompt template;
-  final bool selected;
-  final VoidCallback onTap;
+/// Centres [child] in the space given, scrolling when the space is shorter.
+class _CenteredScroll extends StatelessWidget {
+  final Widget child;
 
-  const _TemplateCard({
-    required this.template,
-    required this.selected,
-    required this.onTap,
-  });
+  const _CenteredScroll({required this.child});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Material(
-      color: selected ? colorScheme.accentTint : colorScheme.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: selected ? colorScheme.primary : colorScheme.outlineVariant,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      template.title,
-                      style: textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (selected)
-                    Icon(Icons.check, size: 14, color: colorScheme.onAccentTint),
-                ],
-              ),
-              const SizedBox(height: 3),
-              // The frame shows an example output filename here. Templates
-              // carry no example field, so this is the rule itself, in mono —
-              // the nearest true thing the data actually holds.
-              Text(
-                template.content.replaceAll('\n', ' '),
-                style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
+            child: Padding(padding: const EdgeInsets.all(AppSpace.s22), child: child),
           ),
         ),
       ),
@@ -996,107 +1088,54 @@ class _TemplateCard extends StatelessWidget {
   }
 }
 
-class _FilterChip extends StatelessWidget {
+/// `1e` 列表末: the list is still growing.
+class _GeneratingRow extends StatelessWidget {
   final String label;
-  final int count;
-  final bool selected;
-  final VoidCallback onTap;
 
-  const _FilterChip({
-    required this.label,
-    required this.count,
-    required this.selected,
-    required this.onTap,
-  });
+  const _GeneratingRow({required this.label});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final color = selected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant;
-
-    return Material(
-      color: selected ? colorScheme.accentTint : Colors.transparent,
-      borderRadius: BorderRadius.circular(AppRadius.pill),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: Container(
-          height: 28,
-          padding: const EdgeInsets.symmetric(horizontal: 11),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            border: Border.all(
-              color: selected ? Colors.transparent : colorScheme.outlineVariant,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: colorScheme.primary,
+              backgroundColor: colorScheme.surfaceContainerHighest,
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text('$count', style: textTheme.labelSmall?.mono.copyWith(color: color)),
-            ],
+          const SizedBox(width: AppSpace.s10),
+          Flexible(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(color: colorScheme.onSurfaceVariant),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-/// Rows still on their way. Grey blocks in the shape of the real thing, not a
-/// spinner in a box — the list is already the right length in the user's head
-/// by the time the first batch lands.
-class _SkeletonList extends StatelessWidget {
-  const _SkeletonList();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return ListView.builder(
-      padding: EdgeInsets.zero,
-      itemCount: 6,
-      itemBuilder: (context, index) => Container(
-        height: 52,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: colorScheme.outlineVariant.withAlpha(120))),
-        ),
-        child: Row(
-          children: [
-            _bar(colorScheme, 36, 36, AppRadius.xs),
-            const SizedBox(width: 12),
-            Expanded(child: _bar(colorScheme, double.infinity, 10, AppRadius.xs)),
-            const SizedBox(width: 24),
-            Expanded(flex: 2, child: _bar(colorScheme, double.infinity, 10, AppRadius.xs)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _bar(ColorScheme colorScheme, double width, double height, double radius) => Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withAlpha(140),
-          borderRadius: BorderRadius.circular(radius),
-        ),
-      );
-}
-
+/// `1e` 行 52: thumbnail · old name → new name · badge · inline actions.
 class _ResultRow extends StatelessWidget {
   final _RenameRow row;
   final bool narrow;
+
+  /// Actions as glyphs with tooltips, for a list too narrow for their labels.
+  final bool iconOnly;
+
   final bool editing;
   final TextEditingController editController;
-  final VoidCallback onAccept;
+  final VoidCallback onUndoSkip;
   final VoidCallback onSkip;
   final VoidCallback onEdit;
   final ValueChanged<String> onCommitEdit;
@@ -1105,9 +1144,10 @@ class _ResultRow extends StatelessWidget {
   const _ResultRow({
     required this.row,
     required this.narrow,
+    required this.iconOnly,
     required this.editing,
     required this.editController,
-    required this.onAccept,
+    required this.onUndoSkip,
     required this.onSkip,
     required this.onEdit,
     required this.onCommitEdit,
@@ -1119,281 +1159,245 @@ class _ResultRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final mono12 = textTheme.bodySmall!.mono;
+    final unresolved = row.unresolved;
 
-    final oldName = Text(
-      row.oldName,
-      style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.outline),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+    final Color ground = unresolved
+        ? colorScheme.errorContainer
+        : (row.skipped ? colorScheme.surfaceContainer : colorScheme.surface);
+    final Color newInk = unresolved
+        ? colorScheme.onErrorContainer
+        : (row.skipped ? colorScheme.outline : colorScheme.onSurface);
+
+    final oldName = Tooltip(
+      message: row.path,
+      waitDuration: const Duration(milliseconds: 500),
+      child: Text(
+        row.oldName,
+        style: mono12.copyWith(color: colorScheme.onSurfaceVariant),
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
 
-    final newName = editing
+    final Widget newName = editing
         ? SizedBox(
-            height: 28,
+            height: AppSize.compact,
             child: TextField(
               controller: editController,
               autofocus: true,
-              style: textTheme.labelMedium?.mono,
+              style: mono12,
               decoration: InputDecoration(
                 isDense: true,
+                filled: true,
+                fillColor: colorScheme.surface,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.control),
-                  borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+                  borderSide: BorderSide(color: colorScheme.primary),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.control),
-                  borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+                  borderSide: BorderSide(color: colorScheme.primary),
                 ),
               ),
               onSubmitted: onCommitEdit,
               onTapOutside: (_) => onCommitEdit(editController.text),
             ),
           )
-        : Row(
-            children: [
-              Flexible(
-                child: Text(
-                  row.newName,
-                  style: textTheme.labelMedium?.mono.copyWith(
-                    color: row.unresolved ? colorScheme.error : colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (row.unresolved) ...[
-                const SizedBox(width: 7),
-                _Badge(label: l10n.renameDuplicateBadge, color: colorScheme.error),
-              ] else if (row.autoRenamed) ...[
-                const SizedBox(width: 7),
-                _Badge(label: l10n.renameRenamedBadge, color: colorScheme.onSurfaceVariant),
-              ],
-            ],
+        : Text(
+            row.newName,
+            style: mono12.copyWith(color: newInk, fontWeight: FontWeight.w500),
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
           );
 
-    return Opacity(
-      // A skipped row stays legible but stops competing: it is still there to
-      // be undone, and dropping it out of the list would lose that.
-      opacity: row.skipped ? 0.5 : 1,
-      child: Container(
-        height: narrow ? 64 : 52,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: colorScheme.outlineVariant.withAlpha(120))),
+    final Widget? badge;
+    if (row.skipped) {
+      badge = TransferBadge(label: l10n.renameSkippedBadge, tone: TransferTone.track);
+    } else if (unresolved) {
+      badge = TransferBadge(label: l10n.renameDuplicateBadge, tone: TransferTone.err, outlined: true);
+    } else if (row.choice == _ConflictChoice.overwrite) {
+      badge = TransferBadge(label: l10n.conflictOverwrite, tone: TransferTone.err);
+    } else if (row.autoRenamed) {
+      badge = TransferBadge(label: l10n.renameRenamedBadge, tone: TransferTone.ok);
+    } else {
+      badge = null;
+    }
+
+    final List<Widget> actions;
+    if (row.skipped) {
+      actions = [
+        _RowAction(
+          icon: Icons.undo,
+          label: l10n.renameActionUndo,
+          color: colorScheme.onAccentTint,
+          iconOnly: iconOnly,
+          onTap: onUndoSkip,
         ),
-        child: Row(
-          children: [
-            _Thumb(path: row.path),
-            const SizedBox(width: 12),
-            if (narrow)
-              // Two lines instead of two columns: at 640 the columns are too
-              // narrow for either name to survive its own ellipsis.
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    oldName,
-                    const SizedBox(height: 2),
-                    Row(children: [
-                      Icon(Icons.subdirectory_arrow_right, size: 12, color: colorScheme.outline),
-                      const SizedBox(width: 4),
-                      Expanded(child: newName),
-                    ]),
-                  ],
-                ),
-              )
-            else ...[
-              // 1 : 1.15 — the new name is the one being judged, so it gets the
-              // extra room, and the two columns stay aligned down the list.
-              Expanded(flex: 100, child: oldName),
-              const SizedBox(width: 8),
-              Icon(Icons.arrow_forward, size: 13, color: colorScheme.outlineVariant),
-              const SizedBox(width: 8),
-              Expanded(flex: 115, child: newName),
-            ],
-            if (row.skipped) ...[
-              const SizedBox(width: 8),
-              _Badge(label: l10n.renameSkippedBadge, color: colorScheme.onSurfaceVariant),
-            ] else if (row.unresolved) ...[
-              const SizedBox(width: 8),
-              _ConflictSegments(onResolve: onResolve),
-            ],
-            const SizedBox(width: 8),
-            _RowAction(
-              icon: Icons.check,
-              tooltip: row.skipped ? l10n.renameActionUndo : l10n.renameActionAccept,
-              active: !row.skipped,
-              onTap: onAccept,
-            ),
-            _RowAction(
-              icon: Icons.block,
-              tooltip: l10n.renameActionSkip,
-              active: false,
-              onTap: onSkip,
-            ),
-            _RowAction(
-              icon: Icons.edit_outlined,
-              tooltip: l10n.renameActionEdit,
-              active: editing,
-              onTap: onEdit,
-            ),
-          ],
+      ];
+    } else if (unresolved) {
+      actions = [
+        _RowAction(
+          icon: Icons.auto_fix_high,
+          label: l10n.renameConflictAutoRename,
+          color: colorScheme.onAccentTint,
+          iconOnly: iconOnly,
+          onTap: () => onResolve(_ConflictChoice.rename),
         ),
-      ),
-    );
-  }
-}
+        // Overwrite is the only answer that destroys a file, so it is the
+        // only one in the error colour.
+        _RowAction(
+          icon: Icons.swap_horiz,
+          label: l10n.conflictOverwrite,
+          color: colorScheme.error,
+          iconOnly: iconOnly,
+          onTap: () => onResolve(_ConflictChoice.overwrite),
+        ),
+        _RowAction(
+          icon: Icons.block,
+          label: l10n.renameActionSkip,
+          color: colorScheme.onSurfaceVariant,
+          iconOnly: true,
+          onTap: () => onResolve(_ConflictChoice.skip),
+        ),
+      ];
+    } else {
+      actions = [
+        _RowAction(
+          icon: Icons.edit_outlined,
+          label: l10n.renameActionEdit,
+          color: colorScheme.onSurfaceVariant,
+          iconOnly: iconOnly,
+          active: editing,
+          onTap: onEdit,
+        ),
+        _RowAction(
+          icon: Icons.block,
+          label: l10n.renameActionSkip,
+          color: colorScheme.onSurfaceVariant,
+          iconOnly: iconOnly,
+          onTap: onSkip,
+        ),
+      ];
+    }
 
-class _Thumb extends StatelessWidget {
-  final String path;
-
-  const _Thumb({required this.path});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final category = BrowserFile.categoryOf(path);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(7),
-      child: Container(
-        width: 36,
-        height: 36,
-        color: colorScheme.surfaceContainerHighest,
-        child: category == FileCategory.image
-            ? Image(
-                image: ResizeImage(FileImage(File(path)), width: 72),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stack) =>
-                    Icon(category.icon, size: 16, color: colorScheme.outline),
-              )
-            : Icon(category.icon, size: 16, color: category.color.withAlpha(180)),
-      ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _Badge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+    return AnimatedContainer(
+      duration: AppMotion.durationOf(context, AppMotion.hover),
+      curve: AppMotion.quick,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
-  }
-}
-
-/// The three answers to a clash, inline on the row that has it.
-///
-/// Inline rather than in a dialog of its own: `13d` resolves conflicts without
-/// leaving the list, so the user can see what else is affected while deciding.
-class _ConflictSegments extends StatelessWidget {
-  final ValueChanged<_ConflictChoice> onResolve;
-
-  const _ConflictSegments({required this.onResolve});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(7),
+        color: ground,
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          _segment(context, l10n.renameConflictAutoRename, _ConflictChoice.rename, false),
-          _segment(context, l10n.renameActionSkip, _ConflictChoice.skip, false),
-          // Overwrite is the only one that destroys a file, so it is the only
-          // one that carries the error colour.
-          _segment(context, l10n.conflictOverwrite, _ConflictChoice.overwrite, true),
+          TransferThumb(path: row.path, size: 32),
+          const SizedBox(width: AppSpace.s10),
+          if (narrow)
+            // Two lines instead of two columns: at this width the columns are
+            // too narrow for either name to survive its own ellipsis.
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  oldName,
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(Icons.subdirectory_arrow_right, size: 12, color: colorScheme.outline),
+                      const SizedBox(width: AppSpace.s4),
+                      Expanded(child: newName),
+                    ],
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            SizedBox(width: _kOldNameWidth, child: oldName),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_forward, size: AppSize.iconSm, color: colorScheme.outline),
+            const SizedBox(width: 8),
+            Expanded(child: newName),
+          ],
+          if (badge != null) ...[const SizedBox(width: 8), badge],
+          const SizedBox(width: 8),
+          for (final (index, action) in actions.indexed) ...[
+            if (index > 0) const SizedBox(width: 2),
+            action,
+          ],
         ],
       ),
     );
   }
-
-  Widget _segment(BuildContext context, String label, _ConflictChoice choice, bool destructive) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: () => onResolve(choice),
-      borderRadius: BorderRadius.circular(5),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: destructive ? colorScheme.error : colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-      ),
-    );
-  }
 }
 
+/// A 28px inline row action: a text button with its glyph, or the glyph alone
+/// with the label as its tooltip.
 class _RowAction extends StatelessWidget {
   final IconData icon;
-  final String tooltip;
+  final String label;
+  final Color color;
+  final bool iconOnly;
   final bool active;
   final VoidCallback onTap;
 
   const _RowAction({
     required this.icon,
-    required this.tooltip,
-    required this.active,
+    required this.label,
+    required this.color,
+    required this.iconOnly,
     required this.onTap,
+    this.active = false,
   });
+
+  /// Everything a labelled action takes besides its label: 8px of padding a
+  /// side, the glyph, and Material's gap after it.
+  static const double chrome = 16 + AppSize.iconSm + 8;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: active ? colorScheme.accentTint : Colors.transparent,
-        borderRadius: BorderRadius.circular(7),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(7),
-          child: SizedBox(
-            width: 26,
-            height: 26,
-            child: Icon(
-              icon,
-              size: 14,
-              color: active ? colorScheme.onAccentTint : colorScheme.outline,
-            ),
-          ),
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm));
+
+    if (iconOnly) {
+      return IconButton(
+        icon: Icon(icon, size: AppSize.iconSm),
+        tooltip: label,
+        onPressed: onTap,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints.tightFor(width: AppSize.compact, height: AppSize.compact),
+        style: IconButton.styleFrom(
+          foregroundColor: color,
+          backgroundColor: active ? colorScheme.accentTint : null,
+          shape: shape,
         ),
+      );
+    }
+
+    return TextButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: AppSize.iconSm),
+      label: Text(label, maxLines: 1),
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        backgroundColor: active ? colorScheme.accentTint : null,
+        minimumSize: const Size(0, AppSize.compact),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        textStyle: Theme.of(context).textTheme.labelMedium,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        shape: shape,
       ),
     );
   }
 }
 
-/// `13e`'s collapsed config: the four controls become one summary row with a
-/// way back to them, so the narrow dialog spends its width on the results.
+/// The folded config: one summary row with a way back to the controls, so the
+/// narrow dialog spends its width on the results.
 class _NarrowConfigSummary extends StatelessWidget {
   final int? modelId;
   final SystemPrompt? template;
@@ -1419,53 +1423,81 @@ class _NarrowConfigSummary extends StatelessWidget {
     final appState = context.watch<AppState>();
     final model = appState.chatModels.where((m) => m.id == modelId).firstOrNull;
 
+    final action = generating
+        ? AppButton(
+            label: l10n.renameStop,
+            icon: Icons.stop_circle_outlined,
+            variant: AppButtonVariant.destructiveText,
+            size: AppButtonSize.compact,
+            onPressed: onStop,
+          )
+        : AppButton(
+            label: l10n.generateSuggestions,
+            icon: Icons.auto_awesome,
+            size: AppButtonSize.compact,
+            onPressed: onGenerate,
+          );
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: AppSpace.s10),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: colorScheme.surfaceContainerLow,
         border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  model?.modelName ?? l10n.noModelsConfigured,
-                  style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.onSurface),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Edit config folds to its glyph when both labelled buttons would
+          // leave the summary less room than a model name needs.
+          final label = textTheme.labelMedium!;
+          double buttonWidth(String text) => measureGlassText(context, text, label) + 20 + AppSize.iconSm + 8;
+          final actionWidth = buttonWidth(generating ? l10n.renameStop : l10n.generateSuggestions);
+          final editWidth = measureGlassText(context, l10n.renameEditConfig, label) + 20;
+          final foldEdit = constraints.maxWidth - actionWidth - editWidth - 20 < 96;
+
+          return Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      model?.modelName ?? l10n.noModelsConfigured,
+                      style: textTheme.bodySmall!.mono.copyWith(color: colorScheme.onSurface),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${l10n.renameTemplateLabel} · ${template?.title ?? l10n.noTemplateSelected}',
+                      style: textTheme.labelSmall!.copyWith(color: colorScheme.onSurfaceVariant),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${l10n.renameTemplateLabel} · ${template?.title ?? l10n.noTemplateSelected}',
-                  style: textTheme.labelSmall?.copyWith(color: colorScheme.outline),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          AppButton(
-            label: l10n.renameEditConfig,
-            variant: AppButtonVariant.text,
-            onPressed: onEdit,
-          ),
-          const SizedBox(width: 6),
-          generating
-              ? AppButton(
-                  label: l10n.renameStop,
-                  variant: AppButtonVariant.destructiveText,
-                  onPressed: onStop,
+              ),
+              const SizedBox(width: 8),
+              if (foldEdit)
+                IconButton(
+                  icon: const Icon(Icons.tune, size: AppSize.iconMd),
+                  tooltip: l10n.renameEditConfig,
+                  onPressed: onEdit,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(width: AppSize.compact, height: AppSize.compact),
+                  style: IconButton.styleFrom(foregroundColor: colorScheme.onAccentTint),
                 )
-              : AppButton(
-                  label: l10n.generateSuggestions,
-                  icon: Icons.bolt,
-                  onPressed: onGenerate,
+              else
+                AppButton(
+                  label: l10n.renameEditConfig,
+                  variant: AppButtonVariant.text,
+                  size: AppButtonSize.compact,
+                  onPressed: onEdit,
                 ),
-        ],
+              const SizedBox(width: AppSpace.s4),
+              action,
+            ],
+          );
+        },
       ),
     );
   }

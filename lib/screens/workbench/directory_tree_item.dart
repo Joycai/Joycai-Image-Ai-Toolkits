@@ -21,7 +21,7 @@ import '../../state/file_browser_state.dart';
 import '../../state/file_staging_state.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/app_snackbar.dart';
-import '../../widgets/dashed_border.dart';
+import '../../widgets/glass/app_glass.dart';
 import '../browser/folder_move_flow.dart';
 import '../browser/staging_paste_flow.dart';
 import '../browser/widgets/folder_context_menu.dart';
@@ -710,8 +710,30 @@ class FolderTreeMetrics {
     headerInset: 18,
   );
 
-  static FolderTreeMetrics of(BuildContext context) =>
-      Responsive.isMobile(context) ? _touch : _pointer;
+  /// A touch tablet keeps the pointer geometry at a finger's 40
+  /// (`B1a · 1c`: drawer rows 40).
+  static const FolderTreeMetrics _tablet = FolderTreeMetrics._(
+    touch: false,
+    height: AppSize.large,
+    margin: AppSpace.s6,
+    padding: AppSpace.s10,
+    gap: AppSpace.s6,
+    fixedGap: 8,
+    icon: AppSize.iconMd,
+    markerBox: 24,
+    markerGap: 2,
+    markerDensity: VisualDensity(
+      horizontal: VisualDensity.minimumDensity,
+      vertical: VisualDensity.minimumDensity,
+    ),
+    headerInset: AppSpace.s16,
+  );
+
+  static FolderTreeMetrics of(BuildContext context) {
+    if (Responsive.isMobile(context)) return _touch;
+    if (Platform.isAndroid || Platform.isIOS) return _tablet;
+    return _pointer;
+  }
 
   /// The row's name: 13, or the drawer's 14.
   TextStyle labelStyle(TextTheme textTheme) =>
@@ -1057,41 +1079,40 @@ class _FolderDragChip extends StatelessWidget {
 
   const _FolderDragChip({required this.name, required this.copying});
 
+  /// `B1a · 1b`: the same small G2 glass piece the file drag uses, 32 tall at
+  /// r10, with the move or copy wording following the Ctrl key.
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        margin: const EdgeInsets.only(left: 12, top: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppOverlay.ink,
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, top: 12),
+      child: Material(
+        type: MaterialType.transparency,
+        child: SizedBox(
+          height: AppSize.control,
+          child: AppGlass(
+            grade: GlassGrade.float,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.drive_file_move_outline, size: AppSize.iconMd, color: scheme.primary),
+                const SizedBox(width: AppSpace.s6),
+                ValueListenableBuilder<bool>(
+                  valueListenable: copying,
+                  builder: (context, copy, _) => Text(
+                    copy ? l10n.dragCopyFolderHint(name) : l10n.dragMoveFolderHint(name),
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.folder, size: 14, color: kFolderAmber),
-            const SizedBox(width: 6),
-            ValueListenableBuilder<bool>(
-              valueListenable: copying,
-              builder: (context, copy, _) => Text(
-                copy ? l10n.dragCopyFolderHint(name) : l10n.dragMoveFolderHint(name),
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: AppOverlay.onInk, fontWeight: FontWeight.w500),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1204,20 +1225,15 @@ class _MaybeDropTargetState extends State<_MaybeDropTarget> {
         children: [
           widget.builder(context, candidate.isNotEmpty),
           if (candidate.isNotEmpty)
-            // Inset inside the solid edge (`13e`: inset 2). Drawn on the same
-            // line as the solid rule the two merged into one thick stroke and
-            // the dash was lost. Radius 4 keeps it concentric with the row's
-            // 6 at a 2px inset.
+            // `B1a · 1b`: the target folder takes a solid 2px accent ring over
+            // its tint ground, at the row's own r6.
             Positioned.fill(
-              left: 2,
-              top: 2,
-              right: 2,
-              bottom: 2,
               child: IgnorePointer(
-                child: DashedBorder(
-                  color: Theme.of(context).colorScheme.primary,
-                  radius: AppRadius.xs,
-                  strokeWidth: 1.5,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
+                  ),
                 ),
               ),
             ),

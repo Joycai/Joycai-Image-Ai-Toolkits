@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
+import '../core/custom_accent.dart';
 import '../core/safety_settings.dart';
 import '../core/theme_accent.dart';
 import '../core/thumbnail_fit.dart';
@@ -159,6 +160,10 @@ class AppState extends ChangeNotifier {
   // pre-pair setting (`theme_seed_color`, one ARGB int) was rewritten to a
   // key by the v40 database migration.
   ThemeAccent themeAccent = AppConstants.presetThemes[AppConstants.defaultThemeAccentKey]!;
+  // The seed of a custom theme colour, or null while a preset is in use. A
+  // custom colour is stored as `custom:#RRGGBB` under the same `theme_accent`
+  // key and re-derived on load (see `CustomAccent`).
+  Color? customThemeSeed;
   // Font family key. Defaults to the bundled NotoSansSC to preserve the
   // existing look. The sentinel [AppConstants.systemFontKey] means "use the
   // platform default", which maps to a null [ThemeData.fontFamily].
@@ -452,8 +457,15 @@ class AppState extends ChangeNotifier {
     // Stored by preset key. The pre-pair `theme_seed_color` row is rewritten
     // to this key by the v40 migration, so there is no fallback to read.
     final savedAccentKey = await _db.getSetting('theme_accent');
+    final savedCustomSeed = CustomAccent.parseStorageValue(savedAccentKey);
     final savedAccent = savedAccentKey == null ? null : AppConstants.presetThemes[savedAccentKey];
-    if (savedAccent != null) themeAccent = savedAccent;
+    if (savedCustomSeed != null) {
+      customThemeSeed = savedCustomSeed;
+      themeAccent = CustomAccent.derive(savedCustomSeed).accent;
+    } else if (savedAccent != null) {
+      customThemeSeed = null;
+      themeAccent = savedAccent;
+    }
 
     fontFamily = await _db.getSetting('font_family') ?? 'NotoSansSC';
     // Register an on-demand font up front if it was previously downloaded, so
@@ -557,7 +569,18 @@ class AppState extends ChangeNotifier {
     final ThemeAccent? accent = AppConstants.presetThemes[presetKey];
     if (accent == null) return;
     themeAccent = accent;
+    customThemeSeed = null;
     await _db.saveSetting('theme_accent', presetKey);
+    notifyListeners();
+  }
+
+  /// Picks a custom theme colour: the pair is derived from [seed] by
+  /// `CustomAccent.derive`, and the seed (not the pair) is what is stored.
+  Future<void> setCustomThemeAccent(Color seed) async {
+    final derived = CustomAccent.derive(seed);
+    themeAccent = derived.accent;
+    customThemeSeed = derived.seed;
+    await _db.saveSetting('theme_accent', CustomAccent.storageValue(derived.seed));
     notifyListeners();
   }
 

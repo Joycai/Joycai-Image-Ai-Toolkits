@@ -139,5 +139,28 @@
       "year": {},
       "holder": {}
     }
-  }
+  },
+  "themeMode": "主题模式",
+  "visualEffects": "效果",
+  "settingsGroupNotifications": "通知与日志",
+  "settingsGroupDirectories": "目录",
+  "settingsGroupAssistant": "助手",
+  "customAccentTitle": "自定义主题色",
+  "customAccentHint": "拖动色环或粘贴 hex 值",
+  "customAccentDerived": "推出的一对",
+  "customAccentPassed": "白字可用，主按钮保持白字。",
+  "customAccentInkFallback": "白字压不住，主按钮改用同色相深墨字。",
+  "customAccentFailed": "该颜色无法满足对比度要求。",
+  "fontFollowSystem": "跟随操作系统",
+  "fontNotDownloaded": "未下载",
+  "fontDownloadedOffline": "已下载 · 可离线使用",
+  "languageFollowSystem": "跟随系统语言",
+  "exportSettingsNote": "可选目录配置 / 提示词 / 用量记录；不含 API 密钥",
+  "clearTempFilesNote": "蒙版 · 裁剪副本 · 下载器缓存 · 视频缩略图",
+  "resetAllSettingsNote": "回到首次运行状态",
+  "resetIrreversible": "这一步不可撤销",
+  "proxyAppliesToAll": "对所有渠道请求生效",
+  "notificationsDesc": "任务完成或失败时弹出系统通知",
+  "mcpServerDesc": "让外部工具通过 MCP 调用本机能力",
+  "mcpComingSoon": "即将推出（当前版本未实现）"
 }

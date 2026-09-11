@@ -688,5 +688,17 @@
         "type": "String"
       }
     }
-  }
+  },
+  "browserViewGrid": "网格",
+  "browserViewList": "列表",
+  "browserSearchEscHint": "Esc 清空",
+  "browserNoFilesHint": "换一个筛选或清空搜索",
+  "browserFoldersCount": "{count} 个文件夹",
+  "browserScanningCount": "正在扫描 {count} 个文件…",
+  "browserDragFootnote": "拖到文件夹上 = 移动 · 按住 Ctrl 改为复制",
+  "stagingDropHint": "拖文件到左列文件夹 = 加入暂存",
+  "renameBatchFailedTitle": "第 {batch} 批失败",
+  "conflictIncoming": "写入",
+  "conflictAlreadyThere": "已存在",
+  "conflictUndecidedCount": "{count} 项未决定"
 }

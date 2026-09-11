@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
+import 'package:joycai_image_ai_toolkits/screens/batch/task_queue_card.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dashed_border.dart';
 import 'package:joycai_image_ai_toolkits/services/task_queue_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
@@ -67,7 +68,8 @@ void main() {
 
     // 全部 is the tab the screen opens on.
     final Finder selected = pill('全部');
-    expect((outlineOf(tester, selected).border as Border).top.color, scheme.accentRing);
+    // `B2`: selected is the accent's 12% form with no edge of its own.
+    expect(outlineOf(tester, selected).border, isNull);
     expect(fillOf(tester, selected), scheme.accentTint);
 
     final Text label = tester.widget<Text>(find.text('全部'));
@@ -90,26 +92,22 @@ void main() {
     expect(fillOf(tester, unselected), isNot(scheme.surfaceContainerHighest));
   });
 
-  testWidgets('a zero count is drawn quieter than a figure', (WidgetTester tester) async {
+  testWidgets('a count follows its label, quieter than the label', (WidgetTester tester) async {
     await open(tester);
     final ColorScheme scheme = Theme.of(tester.element(find.byType(Scaffold).first)).colorScheme;
 
-    /// The fill behind the number on the pill labelled [label].
-    Color? chipFill(String label) {
-      final Iterable<BoxDecoration> boxes = tester
-          .widgetList<Container>(find.descendant(of: pill(label), matching: find.byType(Container)))
-          .map((Container c) => c.decoration)
-          .whereType<BoxDecoration>();
-      // The pill's own outline comes first; the chip is the one after it.
-      return boxes.length < 2 ? null : boxes.elementAt(1).color;
-    }
-
-    // 执行中 is empty here (see setUpAll); 已完成 is not.
-    expect(find.text('0'), findsWidgets, reason: 'no tab is empty — the fixture changed');
-    expect(chipFill('执行中'), scheme.surfaceContainerHigh);
-    expect(chipFill('已完成'), scheme.surfaceContainerHighest);
+    // `B2`: the count sits after the label in mono at .8, in the label's own
+    // ink. A figure beside a word, not a second badge competing with it.
+    // 执行中 is empty here (see setUpAll).
+    final Finder zero = find.descendant(of: pill('执行中'), matching: find.text('0'));
+    expect(zero, findsOneWidget, reason: 'no tab is empty — the fixture changed');
+    final Opacity quiet = tester.widget<Opacity>(
+      find.ancestor(of: zero, matching: find.byType(Opacity)).first,
+    );
+    expect(quiet.opacity, 0.8);
+    expect(tester.widget<Text>(zero).style?.color, scheme.onSurfaceVariant);
     // Tone, not hue: nothing here is a state to act on.
-    expect(chipFill('执行中'), isNot(scheme.errorContainer));
+    expect(tester.widget<Text>(zero).style?.color, isNot(scheme.error));
   });
 
   testWidgets('the outputs column stays a column of outputs', (WidgetTester tester) async {
@@ -154,7 +152,10 @@ void main() {
 
     // Filled with a mark rather than dashed: this task *should* have produced
     // something, and the difference from "not yet" is worth a pixel of weight.
-    expect(find.byIcon(Icons.image_not_supported_outlined), findsWidgets);
+    expect(
+      find.descendant(of: find.byType(TaskOutputs), matching: find.byIcon(Icons.close)),
+      findsWidgets,
+    );
   });
 
   testWidgets('a running row does not grow taller than a settled one',
@@ -166,13 +167,13 @@ void main() {
     markOneTaskRunning(AppState());
     await tester.pump();
 
-    final Iterable<double> heights =
-        tester.widgetList<Material>(find.byType(Material)).isEmpty
-            ? const <double>[]
-            : tester
-                .renderObjectList<RenderBox>(find.byType(InkWell))
-                .map((RenderBox b) => b.size.height)
-                .where((double h) => h > 60 && h < 140);
+    // Each card's row head is 56px (`B2`), its progress edge drawn inside.
+    final Iterable<double> heights = tester
+        .renderObjectList<RenderBox>(
+          find.descendant(of: find.byType(TaskQueueCard), matching: find.byType(InkWell)),
+        )
+        .map((RenderBox b) => b.size.height)
+        .where((double h) => h >= 50 && h < 140);
     expect(heights, isNotEmpty);
     // Every row in the list is the same height, running or not.
     expect(heights.toSet(), hasLength(1), reason: 'rows: $heights');

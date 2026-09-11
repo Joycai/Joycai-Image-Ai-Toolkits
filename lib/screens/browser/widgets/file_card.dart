@@ -9,10 +9,29 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
 import '../../workbench/widgets/preview/media_preview_dialog.dart' show previewHeroTag;
 import '../../workbench/widgets/preview/video_thumbnail.dart';
+import 'browser_drag_chip.dart';
+import 'browser_file_list_row.dart' show browserFileTypeColors;
 
+/// The play glyph laid straight on a video frame (`rgba(255,255,255,.85)`) —
+/// the same literal the workbench card uses, for the same reason: there is no
+/// plate under it.
+const Color _playGlyphInk = Color(0xD9FFFFFF);
 
+/// The selection check's drop shadow, lifting it off a photograph.
+const Color _checkShadow = Color(0x4D000000);
+
+/// Inset of the badges from the thumbnail's edge.
+const double _badgeInset = AppSpace.s6;
+
+/// One tile of the file grid — `B1a · 1a`.
+///
+/// A panel card (r10, 1px hairline, 6 of padding) over the transparent grid:
+/// the thumbnail at r6 and the file name in mono 11 under it. Selected, the
+/// hairline goes and a 2px accent ring with the 4px `--ring` halo sits outside
+/// the card, with a solid accent check at the thumbnail's top-left.
 class FileCard extends StatefulWidget {
   final BrowserFile file;
   final bool isSelected;
@@ -20,9 +39,7 @@ class FileCard extends StatefulWidget {
   /// Whether this file is in the staging area.
   ///
   /// Orthogonal to [isSelected] and drawn in a different register — a corner
-  /// badge rather than the edge — because both can be true at once and `11b`
-  /// draws exactly that case. Selection is what the next action applies to;
-  /// staging is a mark that outlives the selection entirely.
+  /// plate rather than the edge — because both can be true at once.
   final bool isStaged;
 
   final double thumbnailSize;
@@ -52,12 +69,19 @@ class FileCard extends StatefulWidget {
     this.dragPayload = const [],
   });
 
+  /// The card's height for a column [width]: the thumbnail keeps `1a`'s
+  /// 150-in-180 proportion, plus the frame, the gap and one mono line.
+  static double mainAxisExtentFor(BuildContext context, double width) {
+    final nameLine = MediaQuery.textScalerOf(context).scale(16);
+    return (width * 5 / 6) + 2 + AppSpace.s6 * 3 + nameLine;
+  }
+
   @override
   State<FileCard> createState() => _FileCardState();
 }
 
 class _FileCardState extends State<FileCard> {
-  String _dimensions = "";
+  String _dimensions = '';
   bool _isPressed = false;
   bool _isHovered = false;
 
@@ -72,17 +96,17 @@ class _FileCardState extends State<FileCard> {
   @override
   void didUpdateWidget(FileCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.file.path != oldWidget.file.path && widget.file.category == FileCategory.image) {
-      _getImageDimensions();
+    if (widget.file.path != oldWidget.file.path) {
+      _dimensions = '';
+      if (widget.file.category == FileCategory.image) _getImageDimensions();
     }
   }
 
   Future<void> _getImageDimensions() async {
-    final metadata = await ImageMetadataService().getMetadata(widget.file.path);
-    if (metadata != null && mounted) {
-      setState(() {
-        _dimensions = metadata.displayString;
-      });
+    final path = widget.file.path;
+    final metadata = await ImageMetadataService().getMetadata(path);
+    if (metadata != null && mounted && widget.file.path == path) {
+      setState(() => _dimensions = metadata.displayString);
     }
   }
 
@@ -98,20 +122,142 @@ class _FileCardState extends State<FileCard> {
     );
   }
 
+  Widget _buildPicture(BuildContext context, ThumbnailFit thumbFit) {
+    switch (widget.file.category) {
+      case FileCategory.image:
+        return Image(
+          image: ResizeImage(
+            widget.file.imageProvider,
+            // Snapped to a ladder, not taken at the painted size — see
+            // [thumbnailDecodeWidth].
+            width: thumbnailDecodeWidth(context, widget.thumbnailSize),
+          ),
+          fit: thumbFit.boxFit,
+        );
+      case FileCategory.video:
+        return VideoThumbnail(videoPath: widget.file.path, fit: thumbFit.boxFit);
+      default:
+        // `1a` draws text and audio as a centred glyph; it takes the type's
+        // plate from the list view so the two views name a type alike.
+        final plate = browserFileTypeColors(context, widget.file.category);
+        return Center(
+          child: Container(
+            width: AppSize.touch,
+            height: AppSize.touch,
+            decoration: BoxDecoration(
+              color: plate.background,
+              borderRadius: BorderRadius.circular(AppRadius.control),
+            ),
+            child: Icon(widget.file.icon, size: 24, color: plate.foreground),
+          ),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
+    final selected = widget.isSelected;
     // Shared with the gallery and the assistant panel — see [ThumbnailFit].
     // `select` keeps a grid of these out of AppState's general traffic.
     final thumbFit = context.select<AppState, ThumbnailFit>((s) => s.thumbnailFit);
+    final hoverDuration = AppMotion.durationOf(context, AppMotion.hover);
 
-    // Glass, not opaque. `B1` answers the open question about the file area by
-    // following `A1`: the grid is transparent and the window's backdrop shows
-    // through it, so each card is a translucent panel over that rather than a
-    // solid tile on a solid column. The two alphas are the frame's own — dark
-    // needs the extra 7 points or the cards dissolve into the backdrop.
-    final cardGround = colorScheme.surface.withValues(alpha: isDark ? 0.62 : 0.55);
+    final plateStyle = textTheme.labelSmall!.mono.copyWith(
+      color: AppOverlay.onImagePlate,
+      fontWeight: FontWeight.w400,
+      height: AppType.tightHeight,
+    );
+
+    final thumbnail = ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: ColoredBox(
+        color: scheme.surfaceContainerHighest,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // The staged plate keeps its word only while the word fits beside
+            // the check; past that it is the glyph alone, named in a tooltip.
+            final labelWidth = measureGlassText(context, l10n.stagedBadge, plateStyle);
+            final stagedWithLabel =
+                _badgeInset + 20 + _badgeInset + 5 + 12 + 4 + labelWidth + 5 + _badgeInset <=
+                    constraints.maxWidth;
+
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                _maybeHero(_buildPicture(context, thumbFit)),
+                if (widget.file.category == FileCategory.video)
+                  const Center(
+                    child: Icon(Icons.play_circle_outline, size: 28, color: _playGlyphInk),
+                  ),
+                // Dimensions on hover only: `1a` keeps the resting card to the
+                // picture and its name, and the list view carries them always.
+                if (_dimensions.isNotEmpty)
+                  Positioned(
+                    left: _badgeInset,
+                    right: _badgeInset,
+                    bottom: _badgeInset,
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: AnimatedOpacity(
+                        opacity: _isHovered ? 1 : 0,
+                        duration: hoverDuration,
+                        curve: AppMotion.quick,
+                        child: _PlateBadge(child: Text(
+                          _dimensions,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.ellipsis,
+                          style: plateStyle,
+                        )),
+                      ),
+                    ),
+                  ),
+                if (selected)
+                  Positioned(
+                    top: _badgeInset,
+                    left: _badgeInset,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: scheme.primary,
+                        shape: BoxShape.circle,
+                        boxShadow: const [
+                          BoxShadow(color: _checkShadow, blurRadius: 3, offset: Offset(0, 1)),
+                        ],
+                      ),
+                      child: Icon(Icons.check, size: AppSize.iconSm, color: scheme.onPrimary),
+                    ),
+                  ),
+                if (widget.isStaged)
+                  Positioned(
+                    top: _badgeInset,
+                    right: _badgeInset,
+                    child: Tooltip(
+                      message: l10n.stagedBadge,
+                      child: _PlateBadge(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.inbox_outlined, size: 12, color: AppOverlay.onImagePlate),
+                            if (stagedWithLabel) ...[
+                              const SizedBox(width: AppSpace.s4),
+                              Text(l10n.stagedBadge, maxLines: 1, style: plateStyle),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
 
     // Same shape as ImageCard's press: a Listener, not onTapDown, because the
     // double-tap recognizer defers a quick click's onTapDown past the 300ms
@@ -122,168 +268,68 @@ class _FileCardState extends State<FileCard> {
       onPointerUp: (_) => setState(() => _isPressed = false),
       onPointerCancel: (_) => setState(() => _isPressed = false),
       child: GestureDetector(
-      onTap: widget.onTap,
-      onDoubleTap: widget.onDoubleTap,
-      onSecondaryTapDown: (details) => widget.onSecondaryTap(details.globalPosition),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedScale(
-          scale: _isPressed ? 0.97 : 1.0,
-          duration: AppMotion.durationOf(context, AppMotion.hover),
-          curve: AppMotion.enter,
-          child: AnimatedContainer(
-          duration: AppMotion.durationOf(context, AppMotion.state),
-          curve: AppMotion.enter,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            color: widget.isSelected
-                ? colorScheme.accentTint
-                // Hover is greyscale. The accent on this screen means selected,
-                // and a card that tints on the way past says the pointer
-                // selected it.
-                : (_isHovered ? colorScheme.surfaceContainerHigh.withValues(alpha: 0.7) : cardGround),
-            border: Border.all(
-              // Only a selected card is outlined. The thumbnails supply their
-              // own edges; a border on every one turns the grid into a mesh and
-              // leaves the selected card with nothing of its own to say.
-              color: widget.isSelected ? colorScheme.primary : Colors.transparent,
-              width: 2,
-            ),
-            boxShadow: widget.isSelected
-                ? null
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.05),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Column(
+        onTap: widget.onTap,
+        onDoubleTap: widget.onDoubleTap,
+        onSecondaryTapDown: (details) => widget.onSecondaryTap(details.globalPosition),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: AnimatedScale(
+            scale: _isPressed ? 0.97 : 1.0,
+            duration: hoverDuration,
+            curve: AppMotion.quick,
+            child: AnimatedContainer(
+              duration: hoverDuration,
+              curve: AppMotion.quick,
+              padding: const EdgeInsets.all(AppSpace.s6),
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: BorderRadius.circular(AppRadius.control),
+                border: Border.all(
+                  color: selected
+                      ? Colors.transparent
+                      : (_isHovered ? scheme.outline : scheme.outlineVariant),
+                ),
+                // Outside the card (`0 0 0 2px --p, 0 0 0 4px --ring`), halo
+                // first and the solid ring over it; the card's own opaque
+                // ground hides the part of each shadow under it.
+                boxShadow: selected
+                    ? [
+                        BoxShadow(color: scheme.accentRing, spreadRadius: 4),
+                        BoxShadow(color: scheme.primary, spreadRadius: 2),
+                      ]
+                    : null,
+              ),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                                Expanded(
-                                  child: _maybeHero(
-                                    widget.file.category == FileCategory.image
-                                        ? Image(
-                                            image: ResizeImage(
-                                              widget.file.imageProvider,
-                                              // Snapped to a ladder, not taken
-                                              // at the painted size — see
-                                              // [thumbnailDecodeWidth].
-                                              width: thumbnailDecodeWidth(context, widget.thumbnailSize),
-                                            ),
-                                            fit: thumbFit.boxFit,
-                                          )
-                                        : widget.file.category == FileCategory.video
-                                            ? VideoThumbnail(videoPath: widget.file.path, fit: thumbFit.boxFit)
-                                            : Center(child: Icon(widget.file.icon, size: 48, color: widget.file.color.withAlpha(150))),
-                                  ),
-                                ),
-
-                  // A footer strip on the card, not a scrim on the picture.
-                  // `B1` draws it the way the workbench's gallery card already
-                  // does — the name below the image with a hairline between,
-                  // rather than a black band covering whatever the thumbnail
-                  // had along its bottom edge. Left-aligned for the same
-                  // reason a filename is: the end is what gets truncated, so
-                  // the beginning has to start in a predictable place.
-                  //
-                  // Unfilled since the redraw: the card's own glass is the
-                  // ground, and a second opaque tone under the name would put
-                  // a solid block back on a surface the frame wants
-                  // translucent. The rule is `surfaceContainer` rather than
-                  // the app's usual hairline — one step subtler, because at
-                  // `outlineVariant` every card in the grid reads as boxed.
-                  Container(
-                    height: 30,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    alignment: Alignment.centerLeft,
-                    decoration: BoxDecoration(
-                      border: Border(
-                        top: BorderSide(color: colorScheme.surfaceContainer),
-                      ),
-                    ),
-                    child: Text(
-                      widget.file.name,
-                      style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                            color: widget.isSelected
-                                ? colorScheme.onAccentTint
-                                : colorScheme.onSurfaceVariant,
-                          ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Expanded(child: thumbnail),
+                  const SizedBox(height: AppSpace.s6),
+                  Text(
+                    widget.file.name,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelSmall!.mono.copyWith(
+                      color: selected ? scheme.onAccentTint : scheme.onSurface,
+                      fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
                     ),
                   ),
                 ],
               ),
-              // A pill that wraps the figures, not a band across the card's full
-              // width: the band reads as a caption the image happens to start
-              // under, and it dims the top of every thumbnail to say it.
-              if (_dimensions.isNotEmpty)
-                Positioned(
-                  top: 8,
-                  left: 6,
-                  right: 6,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: AppOverlay.ink.withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      child: Text(
-                        _dimensions,
-                        style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                          color: AppOverlay.onInk,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ),
-              // The staging mark. On the overlay ink rather than the accent,
-              // so it stays legible over any thumbnail and cannot be confused
-              // with the selection edge it may be sitting inside.
-              if (widget.isStaged)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: AppOverlay.ink.withValues(alpha: 0.72),
-                      borderRadius: BorderRadius.circular(AppRadius.xs),
-                    ),
-                    child: const Icon(Icons.inbox_rounded, size: 11, color: Colors.white),
-                  ),
-                ),
-            ],
-          ),
+            ),
           ),
         ),
-      ),
       ),
     );
 
     if (widget.dragPayload.isEmpty) return card;
 
-    // `12d`'s second entry point. The drag carries files rather than paths so
-    // the drop target can label itself with a count without going back to the
-    // browser state for it.
     return Draggable<List<BrowserFile>>(
       data: widget.dragPayload,
       dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: _DragChip(count: widget.dragPayload.length),
+      feedback: BrowserFileDragChip(count: widget.dragPayload.length),
       // The card stays put and dims: a grid that reflows mid-drag loses the
       // drop target the user was aiming at.
       childWhenDragging: Opacity(opacity: 0.4, child: card),
@@ -292,38 +338,23 @@ class _FileCardState extends State<FileCard> {
   }
 }
 
-/// What follows the pointer during a drag onto a folder.
-class _DragChip extends StatelessWidget {
-  final int count;
+/// A label on the fixed dark plate laid over a thumbnail: r4, 1×5 padding.
+/// Never themed and never frosted — see [AppOverlay.imagePlate].
+class _PlateBadge extends StatelessWidget {
+  const _PlateBadge({required this.child});
 
-  const _DragChip({required this.count});
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        margin: const EdgeInsets.only(left: 12, top: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppOverlay.ink,
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Text(
-          l10n.dragMoveHint(count),
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: AppOverlay.onInk, fontWeight: FontWeight.w500),
-        ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppOverlay.imagePlate,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        child: child,
       ),
     );
   }

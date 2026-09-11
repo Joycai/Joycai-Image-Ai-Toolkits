@@ -763,6 +763,52 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get browserViewGrid => 'Grid';
+
+  @override
+  String get browserViewList => 'List';
+
+  @override
+  String get browserSearchEscHint => 'Esc to clear';
+
+  @override
+  String get browserNoFilesHint => 'Try another filter, or clear the search';
+
+  @override
+  String browserFoldersCount(int count) {
+    return '$count folders';
+  }
+
+  @override
+  String browserScanningCount(int count) {
+    return 'Scanning $count files…';
+  }
+
+  @override
+  String get browserDragFootnote =>
+      'Drag onto a folder to move · hold Ctrl to copy';
+
+  @override
+  String get stagingDropHint =>
+      'Drop files on a folder in the left column to stage them';
+
+  @override
+  String renameBatchFailedTitle(int batch) {
+    return 'Batch $batch failed';
+  }
+
+  @override
+  String get conflictIncoming => 'Incoming';
+
+  @override
+  String get conflictAlreadyThere => 'Already there';
+
+  @override
+  String conflictUndecidedCount(int count) {
+    return '$count undecided';
+  }
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override
@@ -939,6 +985,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logLevelSuccess => 'Success';
 
   @override
+  String get goToSettings => 'Go to Settings';
+
+  @override
+  String get actionImport => 'Import';
+
+  @override
+  String get actionExport => 'Export';
+
+  @override
+  String get actionOpen => 'Open';
+
+  @override
+  String get actionClear => 'Clear';
+
+  @override
+  String get actionRun => 'Run';
+
+  @override
+  String get actionChange => 'Change';
+
+  @override
+  String get experimental => 'Experimental';
+
+  @override
   String get downloader => 'Downloader';
 
   @override
@@ -1075,6 +1145,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get copyLogs => 'Copy logs';
 
   @override
+  String downloaderFoundCount(int count) {
+    return '$count found';
+  }
+
+  @override
+  String get downloaderAdvancedSubtitle =>
+      'Only applies to downloads from this screen';
+
+  @override
+  String get copyImageUrl => 'Copy Image URL';
+
+  @override
+  String get manualHtmlEmptyTitle => 'No HTML pasted yet';
+
+  @override
+  String get manualHtmlEmptyDesc =>
+      'View the page source in your browser, select all and copy, then click Paste above.';
+
+  @override
+  String get cookieHistoryUse => 'Use';
+
+  @override
+  String cookieHistoryPairs(int count) {
+    return '$count pairs';
+  }
+
+  @override
+  String get cookieHistoryEmptyDesc =>
+      'Cookies you paste are remembered here for the same site next time.';
+
+  @override
   String get usage => 'Usage';
 
   @override
@@ -1170,6 +1271,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invalidPriceValue => 'Enter a valid non-negative number';
+
+  @override
+  String get usageLoadingRecords => 'Totalling usage records…';
+
+  @override
+  String get noUsageInRangeHint => 'Try another range, or run a task first.';
+
+  @override
+  String usageLoadMoreStatus(int pageSize, int shown, int total) {
+    return '$pageSize per page · $shown / $total shown';
+  }
 
   @override
   String get models => 'Models';
@@ -2177,6 +2289,168 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not save the order; the previous one is back.';
 
   @override
+  String wizardStepCounter(int current, int total) {
+    return 'Step $current / $total';
+  }
+
+  @override
+  String get wizardStepsAdaptNote =>
+      'Steps adjust to the provider\'s access method';
+
+  @override
+  String providerNoMatchHint(String query) {
+    return '\"$query\" isn\'t in the list. Use the Custom group and choose OpenAI compatible.';
+  }
+
+  @override
+  String get providerUseCustom => 'Add as custom';
+
+  @override
+  String get probeSkippableNote =>
+      'Optional; you can still set the name and tag next';
+
+  @override
+  String endpointPresetValue(String endpoint) {
+    return 'Preset value: $endpoint';
+  }
+
+  @override
+  String get variantResultLabel => 'Result';
+
+  @override
+  String get probeOkNext => 'You can turn on model discovery right away';
+
+  @override
+  String get probeNoModelsNext =>
+      'Endpoint and key work, but the model list is empty. Add a Model ID by hand.';
+
+  @override
+  String get probeAuthFailedNext =>
+      'Check the key was copied in full and hasn\'t expired.';
+
+  @override
+  String get probeNotAnApiNext =>
+      'An HTML page came back, probably a console URL. API endpoints usually end in /v1 or /v1beta.';
+
+  @override
+  String get probeUnreachableNext =>
+      'DNS failed or timed out. Check the URL, proxy and network.';
+
+  @override
+  String get probeNotSupportedNext =>
+      'This protocol has no model list; it can only be verified by submitting a task.';
+
+  @override
+  String get previewEmptyKeyNote =>
+      'No key yet. You can add it later in Edit Channel.';
+
+  @override
+  String get presetShortHint => 'Fills endpoint and protocol in one tap';
+
+  @override
+  String get deleteChannel => 'Delete channel';
+
+  @override
+  String get discoveryOffEffect =>
+      'When off, Fetch Models is disabled for this channel';
+
+  @override
+  String get protocolUnavailable => 'Unavailable';
+
+  @override
+  String get reasoningEffortUnsupported =>
+      'This model takes no reasoning parameters. The section stays greyed out and lights up when you switch to a chat model.';
+
+  @override
+  String get modelIdRequiredTitle => 'Model ID can\'t be empty';
+
+  @override
+  String get modelIdRequiredDesc =>
+      'It\'s the only required field; a blank name uses the ID as the display name.';
+
+  @override
+  String get contextSpecifyInvalid =>
+      'Enter a positive whole number; blank or 0 can\'t be saved.';
+
+  @override
+  String get addModelSubtitle => 'When adding by hand, only the ID is required';
+
+  @override
+  String get addModelIdHelper =>
+      'Leaving this blank blocks saving; a blank name uses the ID.';
+
+  @override
+  String get addModelDefaultsNote =>
+      'Protocol, context window and capability switches stay on Auto or their defaults. Add it first, run it once, then pin what needs pinning.';
+
+  @override
+  String get modelNameOptionalHint => 'Can be left blank';
+
+  @override
+  String get moveUp => 'Move Up';
+
+  @override
+  String get moveDown => 'Move Down';
+
+  @override
+  String get channelReorderFootnote =>
+      'Hover for the handle · drag to reorder · right-click or Alt+↑/↓ does the same';
+
+  @override
+  String get channelReorderLockedNote =>
+      'Reordering is off while searching: only part of the list is shown, so a drop position would be wrong. Clear the search to restore it.';
+
+  @override
+  String get noModelsConfiguredHint =>
+      'Use Fetch Models to discover them, or add one by hand.';
+
+  @override
+  String get addModelManually => 'Add manually';
+
+  @override
+  String get selectAChannelHint =>
+      'Pick a channel on the left to see its models here.';
+
+  @override
+  String noModelsMatchQuery(String query) {
+    return 'No models match \"$query\"';
+  }
+
+  @override
+  String get noFeeGroupsHint => 'Create a group, then point models at it.';
+
+  @override
+  String get noNewModelsFoundHint =>
+      'Every model this channel returned is already in the list.';
+
+  @override
+  String get discoveryCapabilitiesNote =>
+      'Discovered models carry only an ID and a type; capabilities, context window and fee group are set per model.';
+
+  @override
+  String deleteChannelTitle(String name) {
+    return 'Delete channel \"$name\"?';
+  }
+
+  @override
+  String deleteChannelModelsNote(int count) {
+    return 'Includes $count models';
+  }
+
+  @override
+  String get deleteChannelBody =>
+      'Workbench settings using these models become \"No model selected\"; submitted tasks are unaffected. Usage records are kept by model name.';
+
+  @override
+  String get newFeeGroup => 'New Group';
+
+  @override
+  String get cachePriceBlankPlaceholder => 'Blank = input price';
+
+  @override
+  String get fetchFailedTitle => 'Connection failed';
+
+  @override
   String get prompts => 'Prompts';
 
   @override
@@ -2326,6 +2600,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get matchAllTags => 'All';
+
+  @override
+  String promptFilterSummary(int count, int matches) {
+    return '$count categories · $matches matching';
+  }
+
+  @override
+  String get promptEditorSubtitle =>
+      'Once saved, apply it from the workbench in one click';
+
+  @override
+  String get categoryColorHint => 'Colour only tells categories apart';
+
+  @override
+  String promptCount(int count) {
+    return '$count prompts';
+  }
+
+  @override
+  String get categoryDeleteNote =>
+      'Deleting a category moves its prompts to General; they are not deleted.';
+
+  @override
+  String importFileSummary(String file, int count) {
+    return '$file · $count items';
+  }
+
+  @override
+  String importMergeDetail(int current) {
+    return 'Keep the existing $current, add the new ones';
+  }
+
+  @override
+  String importReplaceDetail(int current, int count) {
+    return 'Delete the existing $current, keep only the $count in the file';
+  }
+
+  @override
+  String get promptLibraryEmptyHint =>
+      'Save the prompts you use most in the workbench and apply them in one click next time.';
+
+  @override
+  String get colorPresets => 'Presets';
 
   @override
   String get settings => 'Settings';
@@ -2676,6 +2993,80 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get themeMode => 'Theme mode';
+
+  @override
+  String get visualEffects => 'Effects';
+
+  @override
+  String get settingsGroupNotifications => 'Notifications & logging';
+
+  @override
+  String get settingsGroupDirectories => 'Directories';
+
+  @override
+  String get settingsGroupAssistant => 'Assistant';
+
+  @override
+  String get customAccentTitle => 'Custom theme color';
+
+  @override
+  String get customAccentHint => 'Drag the ring or paste a hex value';
+
+  @override
+  String get customAccentDerived => 'Derived pair';
+
+  @override
+  String get customAccentPassed =>
+      'White labels hold; the button keeps white text.';
+
+  @override
+  String get customAccentInkFallback =>
+      'White can\'t hold on this shade, so the button uses a deep ink of the same hue.';
+
+  @override
+  String get customAccentFailed =>
+      'This colour can\'t meet the contrast floor.';
+
+  @override
+  String get fontFollowSystem => 'Follows the operating system';
+
+  @override
+  String get fontNotDownloaded => 'Not downloaded';
+
+  @override
+  String get fontDownloadedOffline => 'Downloaded · available offline';
+
+  @override
+  String get languageFollowSystem => 'Follows the system language';
+
+  @override
+  String get exportSettingsNote =>
+      'Directories, prompts and usage are optional; API keys are never included';
+
+  @override
+  String get clearTempFilesNote =>
+      'Masks · crop copies · downloader cache · video thumbnails';
+
+  @override
+  String get resetAllSettingsNote => 'Back to the first-run state';
+
+  @override
+  String get resetIrreversible => 'This can\'t be undone';
+
+  @override
+  String get proxyAppliesToAll => 'Applies to all channel requests';
+
+  @override
+  String get notificationsDesc => 'Notify when a task finishes or fails';
+
+  @override
+  String get mcpServerDesc => 'Lets external tools call this app over MCP';
+
+  @override
+  String get mcpComingSoon => 'Coming soon (not in this version)';
+
+  @override
   String get tasks => 'Tasks';
 
   @override
@@ -2906,6 +3297,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get durationLabel => 'Elapsed';
+
+  @override
+  String get clearAllTasksTitle => 'Clear all tasks?';
+
+  @override
+  String clearAllRunningNote(int count) {
+    return 'Includes $count running tasks';
+  }
+
+  @override
+  String get clearAllKeepsFiles =>
+      'Running tasks are left alone. Generated files stay in the output folder; only the queue\'s records are cleared.';
+
+  @override
+  String get taskNoOutputsFailed =>
+      'No outputs. The task failed before writing any.';
+
+  @override
+  String get noTaskLogCancelledHint =>
+      'The task was cancelled before it started, so it left no log.';
 
   @override
   String get setupWizardTitle => 'Welcome Setup';

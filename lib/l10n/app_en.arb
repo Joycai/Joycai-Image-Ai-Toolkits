@@ -689,6 +689,46 @@
       }
     }
   },
+  "browserViewGrid": "Grid",
+  "browserViewList": "List",
+  "browserSearchEscHint": "Esc to clear",
+  "browserNoFilesHint": "Try another filter, or clear the search",
+  "browserFoldersCount": "{count} folders",
+  "@browserFoldersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "browserScanningCount": "Scanning {count} files…",
+  "@browserScanningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "browserDragFootnote": "Drag onto a folder to move · hold Ctrl to copy",
+  "stagingDropHint": "Drop files on a folder in the left column to stage them",
+  "renameBatchFailedTitle": "Batch {batch} failed",
+  "@renameBatchFailedTitle": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictIncoming": "Incoming",
+  "conflictAlreadyThere": "Already there",
+  "conflictUndecidedCount": "{count} undecided",
+  "@conflictUndecidedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "appTitle": "Joycai Image AI Toolkits",
   "save": "Save",
   "update": "Update",
@@ -779,6 +819,14 @@
   "logLevelError": "Error",
   "logLevelRunning": "Running",
   "logLevelSuccess": "Success",
+  "goToSettings": "Go to Settings",
+  "actionImport": "Import",
+  "actionExport": "Export",
+  "actionOpen": "Open",
+  "actionClear": "Clear",
+  "actionRun": "Run",
+  "actionChange": "Change",
+  "experimental": "Experimental",
   "downloader": "Downloader",
   "imageDownloader": "Image Downloader",
   "url": "URL",
@@ -851,6 +899,28 @@
   "guideStep3Title": "3 · Pick & download",
   "guideStep3Desc": "Select results and queue the downloads",
   "copyLogs": "Copy logs",
+  "downloaderFoundCount": "{count} found",
+  "@downloaderFoundCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloaderAdvancedSubtitle": "Only applies to downloads from this screen",
+  "copyImageUrl": "Copy Image URL",
+  "manualHtmlEmptyTitle": "No HTML pasted yet",
+  "manualHtmlEmptyDesc": "View the page source in your browser, select all and copy, then click Paste above.",
+  "cookieHistoryUse": "Use",
+  "cookieHistoryPairs": "{count} pairs",
+  "@cookieHistoryPairs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cookieHistoryEmptyDesc": "Cookies you paste are remembered here for the same site next time.",
   "usage": "Usage",
   "tokenUsageMetrics": "Token Usage Metrics",
   "clearAllUsage": "Clear All Usage Data?",
@@ -908,6 +978,22 @@
   "noUsageInRange": "No usage data in the selected range.",
   "loadMore": "Load More",
   "invalidPriceValue": "Enter a valid non-negative number",
+  "usageLoadingRecords": "Totalling usage records…",
+  "noUsageInRangeHint": "Try another range, or run a task first.",
+  "usageLoadMoreStatus": "{pageSize} per page · {shown} / {total} shown",
+  "@usageLoadMoreStatus": {
+    "placeholders": {
+      "pageSize": {
+        "type": "int"
+      },
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "models": "Models",
   "modelManagement": "Model Management",
   "feeManagement": "Fee Management",
@@ -1410,6 +1496,94 @@
   },
   "channelReorderHandleTooltip": "Drag to reorder",
   "channelOrderSaveFailed": "Could not save the order; the previous one is back.",
+  "wizardStepCounter": "Step {current} / {total}",
+  "@wizardStepCounter": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "wizardStepsAdaptNote": "Steps adjust to the provider's access method",
+  "providerNoMatchHint": "\"{query}\" isn't in the list. Use the Custom group and choose OpenAI compatible.",
+  "@providerNoMatchHint": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "providerUseCustom": "Add as custom",
+  "probeSkippableNote": "Optional; you can still set the name and tag next",
+  "endpointPresetValue": "Preset value: {endpoint}",
+  "@endpointPresetValue": {
+    "placeholders": {
+      "endpoint": {
+        "type": "String"
+      }
+    }
+  },
+  "variantResultLabel": "Result",
+  "probeOkNext": "You can turn on model discovery right away",
+  "probeNoModelsNext": "Endpoint and key work, but the model list is empty. Add a Model ID by hand.",
+  "probeAuthFailedNext": "Check the key was copied in full and hasn't expired.",
+  "probeNotAnApiNext": "An HTML page came back, probably a console URL. API endpoints usually end in /v1 or /v1beta.",
+  "probeUnreachableNext": "DNS failed or timed out. Check the URL, proxy and network.",
+  "probeNotSupportedNext": "This protocol has no model list; it can only be verified by submitting a task.",
+  "previewEmptyKeyNote": "No key yet. You can add it later in Edit Channel.",
+  "presetShortHint": "Fills endpoint and protocol in one tap",
+  "deleteChannel": "Delete channel",
+  "discoveryOffEffect": "When off, Fetch Models is disabled for this channel",
+  "protocolUnavailable": "Unavailable",
+  "reasoningEffortUnsupported": "This model takes no reasoning parameters. The section stays greyed out and lights up when you switch to a chat model.",
+  "modelIdRequiredTitle": "Model ID can't be empty",
+  "modelIdRequiredDesc": "It's the only required field; a blank name uses the ID as the display name.",
+  "contextSpecifyInvalid": "Enter a positive whole number; blank or 0 can't be saved.",
+  "addModelSubtitle": "When adding by hand, only the ID is required",
+  "addModelIdHelper": "Leaving this blank blocks saving; a blank name uses the ID.",
+  "addModelDefaultsNote": "Protocol, context window and capability switches stay on Auto or their defaults. Add it first, run it once, then pin what needs pinning.",
+  "modelNameOptionalHint": "Can be left blank",
+  "moveUp": "Move Up",
+  "moveDown": "Move Down",
+  "channelReorderFootnote": "Hover for the handle · drag to reorder · right-click or Alt+↑/↓ does the same",
+  "channelReorderLockedNote": "Reordering is off while searching: only part of the list is shown, so a drop position would be wrong. Clear the search to restore it.",
+  "noModelsConfiguredHint": "Use Fetch Models to discover them, or add one by hand.",
+  "addModelManually": "Add manually",
+  "selectAChannelHint": "Pick a channel on the left to see its models here.",
+  "noModelsMatchQuery": "No models match \"{query}\"",
+  "@noModelsMatchQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noFeeGroupsHint": "Create a group, then point models at it.",
+  "noNewModelsFoundHint": "Every model this channel returned is already in the list.",
+  "discoveryCapabilitiesNote": "Discovered models carry only an ID and a type; capabilities, context window and fee group are set per model.",
+  "deleteChannelTitle": "Delete channel \"{name}\"?",
+  "@deleteChannelTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteChannelModelsNote": "Includes {count} models",
+  "@deleteChannelModelsNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteChannelBody": "Workbench settings using these models become \"No model selected\"; submitted tasks are unaffected. Usage records are kept by model name.",
+  "newFeeGroup": "New Group",
+  "cachePriceBlankPlaceholder": "Blank = input price",
+  "fetchFailedTitle": "Connection failed",
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",
@@ -1497,6 +1671,60 @@
   "matchModeLabel": "Match",
   "matchAny": "Any",
   "matchAllTags": "All",
+  "promptFilterSummary": "{count} categories · {matches} matching",
+  "@promptFilterSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "matches": {
+        "type": "int"
+      }
+    }
+  },
+  "promptEditorSubtitle": "Once saved, apply it from the workbench in one click",
+  "categoryColorHint": "Colour only tells categories apart",
+  "promptCount": "{count} prompts",
+  "@promptCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryDeleteNote": "Deleting a category moves its prompts to General; they are not deleted.",
+  "importFileSummary": "{file} · {count} items",
+  "@importFileSummary": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importMergeDetail": "Keep the existing {current}, add the new ones",
+  "@importMergeDetail": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      }
+    }
+  },
+  "importReplaceDetail": "Delete the existing {current}, keep only the {count} in the file",
+  "@importReplaceDetail": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "promptLibraryEmptyHint": "Save the prompts you use most in the workbench and apply them in one click next time.",
+  "colorPresets": "Presets",
   "settings": "Settings",
   "appearance": "Appearance",
   "connectivity": "Connectivity",
@@ -1638,6 +1866,29 @@
       "holder": {}
     }
   },
+  "themeMode": "Theme mode",
+  "visualEffects": "Effects",
+  "settingsGroupNotifications": "Notifications & logging",
+  "settingsGroupDirectories": "Directories",
+  "settingsGroupAssistant": "Assistant",
+  "customAccentTitle": "Custom theme color",
+  "customAccentHint": "Drag the ring or paste a hex value",
+  "customAccentDerived": "Derived pair",
+  "customAccentPassed": "White labels hold; the button keeps white text.",
+  "customAccentInkFallback": "White can't hold on this shade, so the button uses a deep ink of the same hue.",
+  "customAccentFailed": "This colour can't meet the contrast floor.",
+  "fontFollowSystem": "Follows the operating system",
+  "fontNotDownloaded": "Not downloaded",
+  "fontDownloadedOffline": "Downloaded · available offline",
+  "languageFollowSystem": "Follows the system language",
+  "exportSettingsNote": "Directories, prompts and usage are optional; API keys are never included",
+  "clearTempFilesNote": "Masks · crop copies · downloader cache · video thumbnails",
+  "resetAllSettingsNote": "Back to the first-run state",
+  "resetIrreversible": "This can't be undone",
+  "proxyAppliesToAll": "Applies to all channel requests",
+  "notificationsDesc": "Notify when a task finishes or fails",
+  "mcpServerDesc": "Lets external tools call this app over MCP",
+  "mcpComingSoon": "Coming soon (not in this version)",
   "tasks": "Tasks",
   "taskQueueManager": "Task Queue Manager",
   "noTasksInQueue": "No tasks in queue",
@@ -1803,6 +2054,18 @@
   },
   "viewAllTasks": "View all",
   "durationLabel": "Elapsed",
+  "clearAllTasksTitle": "Clear all tasks?",
+  "clearAllRunningNote": "Includes {count} running tasks",
+  "@clearAllRunningNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearAllKeepsFiles": "Running tasks are left alone. Generated files stay in the output folder; only the queue's records are cleared.",
+  "taskNoOutputsFailed": "No outputs. The task failed before writing any.",
+  "noTaskLogCancelledHint": "The task was cancelled before it started, so it left no log.",
   "setupWizardTitle": "Welcome Setup",
   "welcomeMessage": "Welcome to Joycai Image AI Toolkits! Let's get you set up.",
   "getStarted": "Get Started",

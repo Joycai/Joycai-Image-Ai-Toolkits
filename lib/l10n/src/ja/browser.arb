@@ -674,5 +674,17 @@
         "type": "String"
       }
     }
-  }
+  },
+  "browserViewGrid": "グリッド",
+  "browserViewList": "リスト",
+  "browserSearchEscHint": "Esc でクリア",
+  "browserNoFilesHint": "別のフィルターを試すか、検索をクリアしてください",
+  "browserFoldersCount": "{count} 個のフォルダー",
+  "browserScanningCount": "{count} 個のファイルをスキャン中…",
+  "browserDragFootnote": "フォルダーへドラッグで移動 · Ctrl を押しながらでコピー",
+  "stagingDropHint": "左列のフォルダーにドロップしてステージに追加",
+  "renameBatchFailedTitle": "バッチ {batch} が失敗しました",
+  "conflictIncoming": "移動元",
+  "conflictAlreadyThere": "既存",
+  "conflictUndecidedCount": "未決定 {count} 件"
 }

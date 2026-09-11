@@ -68,7 +68,7 @@ Color get onAccentTint =>
 
 `buildAppColorScheme` 用 `vibrant` 变体长出调色板（`tonalSpot` 会把鲜色压成影子），但**只有主色角色活下来**：灰阶被上面那张表覆盖，容器角色（`primaryContainer` / `onPrimaryContainer`）被改写成主色自己彩度的对应 tone，界面代码不读它们——`design_tokens_test`「the container roles stay out of the UI」扫源码钉住，同时拦截手搓的 `primary.withValues(alpha: …)`：需要一个新的主色透明度，就在 `AppAccent` 上加一个有名字的派生（`accentGlassFill` / `accentGlow` / `accentEcho` 就是这么来的）。
 
-**自定义主题色**（`00 · 1g`）将来走同一条路：取色相与彩度，按上表推出一对，校验描边压画布 ≥ 3:1、主色深压列到卡 ≥ 4.5:1，存种子 hex 与派生对。设置页那格目前仍是占位。
+**自定义主题色**（`00 · 1g`，设置页 `E1 · 1b`）走同一条路，派生在 `lib/core/custom_accent.dart`（纯函数，无状态）：亮色半取种子色相与彩度在 tone 44，琥珀到黄绿（HCT 48°–112°）与 Orange 预设同一例外改 tone 55；暗色半从 tone 62 起逐档上抬（至多 80），直到压暗色卡与自带暗墨都 ≥ 4.5:1。白字压不住时不单独特判——`ThemeAccent.onLight` 本来就会换成同色相深墨字。结果分通过 / 改深墨字 / 失败三态，附六项对比度。存储：`theme_accent` 写 `custom:#RRGGBB`，只存种子，加载时重新派生（`AppState.setCustomThemeAccent`）。
 
 **门槛**（`design_tokens_test` 逐预设量）：暗色主色压 `surface`…`surfaceContainerHigh` ≥ 4.5:1；暗色 `onPrimary` 压主色 ≥ 4.5:1 且不是白；亮色 `onPrimary` 压主色 ≥ 4.5:1，白字的另要 ≥ 5.5；主色深压亮色每一档 ≥ 4.5:1；亮色主色当描边压画布以上每一档 ≥ 3:1；色相与种子差 < 4°、彩度不高于种子；两半色相差 < 30°。
 
@@ -142,7 +142,7 @@ Color get onAccentTint =>
 | 玻璃色调 | 按背后内容亮度自动切换 | 声明式，默认随主题 | 见 §5 |
 | 折射 | 真实折射 | 渐变描边 + 内高光近似 | Flutter 没有折射；配方写死在 `_GlassEdgePainter` |
 | 危险填充的暗色 | `--err` 暗色 `#F0655F` 压白字 | 明暗都用亮色 `#C2312F` 压白字 | 暗色那支压白字只有 ~3:1 |
-| 弹出菜单 | 玻璃二 | 不透明面板 r16 + 发丝线 | Material 的菜单路由在自己的裁剪后面挂不上背景滤镜；这是玻璃菜单的退化形态，工作台自己的 `MenuAnchor` 也还用它 |
+| 弹出菜单 | 玻璃二 | 部分已是玻璃，部分仍是不透明面板 r16 + 发丝线 | Material 的菜单路由在自己的裁剪后面挂不上背景滤镜，所以玻璃菜单都是自建路由：文件浏览器的文件菜单（`browser_glass_menu.dart`）与文件夹菜单（`folder_glass_menu.dart`）、下载器结果卡菜单、模型页渠道菜单（`glass_context_menu.dart`）。工作台的 `MenuAnchor` 与任务队列的 ⋮ 菜单仍是不透明退化形态。四份自建路由应合并成 `lib/widgets/glass/` 下的一个 `AppGlassMenu`（`app_theme.dart` 的注释已按这个名字写） |
 | 工作台卡片的文件名 | 只显示尺寸角标 | 另有一枚文件名角标，尺寸角标带文件大小 | 这两项在卡片上别无出处；网格包在 `ExcludeSemantics` 里、没有 tooltip |
 | 视频卡时长角标 | 右上 mono 时长 | 无 | `AppImage` 与缩略图服务都不提供时长 |
 | 手机上缩略图操作条 | 不画 | 选中的卡上显示，且不模糊 | 「回馈助手」只在这条上；满屏卡片各开一次模糊是每帧的代价 |

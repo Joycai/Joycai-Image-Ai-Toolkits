@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_semantic_colors.dart';
 import '../../core/app_theme.dart';
-import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
@@ -10,32 +9,36 @@ import '../../services/llm/channel_probe_service.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
-import '../api_key_field.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
-import '../app_segmented_control.dart';
-import '../app_text_field.dart';
 import 'channel_form_sections.dart';
+import 'channel_probe_result_card.dart';
 import 'channel_provider_presets.dart';
-import '../app_switch.dart';
+import 'channel_provider_row.dart';
 
-/// Adding a channel, in one page where there is room and in two steps where
-/// there is not.
+/// The steps the wizard can show. [variant] exists only for a provider with
+/// more than one way in, which is why the rail's length follows the choice
+/// made on [provider].
+enum _WizardStep { provider, variant, connection, appearance }
+
+/// Adding a channel as a stepped dialog (design `D1b`): a 760 panel with a
+/// 200px step rail on the left and the current step's form on the right.
 ///
-/// **One page is the real design.** Choosing a provider and filling in its
-/// endpoint and key is a single decision — the provider *is* the endpoint and
-/// the key's shape — and a wizard that hid the form behind a Next button made
-/// the user commit to a provider before seeing what it would ask for. The
-/// two-column layout puts the picker on the left and its configuration on the
-/// right, so switching providers rewrites the form in place and the whole
-/// thing commits from one footer.
+/// **Step names over a progress bar.** Someone halfway through wants to know
+/// what is left, not how far along a line they are, so the rail names every
+/// step and marks each done / current / to do. Its length is the provider's:
+/// Google, MiniMax and NewAPI insert a "way in" step between choosing the
+/// provider and filling in its endpoint, because that choice decides both the
+/// stored type and the address.
 ///
-/// **Two steps is the fallback, not a second design.** Below
-/// [Responsive.tabletBreakpoint] the two columns cannot both be usable: the
-/// rail alone wants ~288px and the form wants ~420px before its labels start
-/// wrapping. Rather than squeeze them, the same state is shown as pick-then-
-/// configure — step 2 carries every field the right column has, so nothing is
-/// reachable only on a wide window.
+/// Every rule the one-page layout had survives: switching provider replaces
+/// the endpoint, a relay host survives a format switch, the key is optional
+/// only for the local runtimes, and nothing is committed until the endpoint
+/// and key checks pass — here at the connection step's Next, and again at
+/// the final Add, which lands back on that step when they fail.
+///
+/// On a phone the same steps are a full-screen page with the footer pinned
+/// to the bottom.
 class ChannelWizardDialog extends StatefulWidget {
   final AppLocalizations l10n;
   final AppState appState;
@@ -51,14 +54,12 @@ class ChannelWizardDialog extends StatefulWidget {
 }
 
 class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
-  /// Steps in the narrow fallback only; the wide layout has no steps at all.
-  static const int _totalSteps = 2;
-  int _currentStep = 0;
+  int _stepIndex = 0;
 
   String _selectedProviderId = 'openai-official';
 
   /// Which of a multi-face preset's [ChannelProviderVariant]s is selected;
-  /// null for the eleven presets that have exactly one way in. Reset on every
+  /// null for the presets that have exactly one way in. Reset on every
   /// provider change — a variant id is scoped to its preset.
   String? _variantId;
 
@@ -69,23 +70,29 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   final TextEditingController _searchCtrl = TextEditingController();
 
   bool _enableDiscovery = true;
-  int _tagColor = AppConstants.tagColors.first.toARGB32();
+  late int _tagColor;
 
-  /// Errors stay hidden until the user tries to commit. A required-field
-  /// message shown on an untouched form reads as "you did something wrong"
-  /// before they have done anything at all.
+  /// Whether the user picked a tag colour themselves. Until they do, the
+  /// colour follows the provider's avatar, so the list preview and the rows
+  /// they just chose from agree.
+  bool _tagColorChosen = false;
+
+  /// Errors stay hidden until the user tries to move past the connection
+  /// step. A required-field message on an untouched form reads as "you did
+  /// something wrong" before they have done anything at all.
   bool _submitAttempted = false;
 
+  bool _submitting = false;
+
   bool _probing = false;
-  ChannelProbeStatus? _probeStatus;
-  String? _probeDetail;
+  ChannelProbeResult? _probe;
 
   ChannelProviderPreset get _preset =>
       kChannelProviderPresets.firstWhere((p) => p.id == _selectedProviderId);
 
   /// The selected variant, or the preset's first when it has any. A preset
-  /// with variants always has one active: there is no "no face chosen" state
-  /// to represent, and the endpoint has to come from somewhere.
+  /// with variants always has one active: the endpoint has to come from
+  /// somewhere.
   ChannelProviderVariant? get _variant {
     final preset = _preset;
     if (!preset.hasVariants) return null;
@@ -95,9 +102,24 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     );
   }
 
+  List<_WizardStep> get _steps => [
+        _WizardStep.provider,
+        if (_preset.hasVariants) _WizardStep.variant,
+        _WizardStep.connection,
+        _WizardStep.appearance,
+      ];
+
+  _WizardStep get _step {
+    final steps = _steps;
+    return steps[_stepIndex.clamp(0, steps.length - 1)];
+  }
+
+  bool get _isLastStep => _stepIndex >= _steps.length - 1;
+
   @override
   void initState() {
     super.initState();
+    _tagColor = channelPresetIdentityColor(_preset).toARGB32();
     _applyPresetEndpoint();
   }
 
@@ -120,24 +142,31 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   /// replaces it rather than leaving the previous provider's host behind,
   /// which would otherwise ship a channel pointed at the wrong company.
   void _applyPresetEndpoint() {
-    _endpointCtrl.text = _variant?.defaultEndpoint ?? _preset.defaultEndpoint ?? '';
+    _endpointCtrl.text =
+        _variant?.defaultEndpoint ?? _preset.defaultEndpoint ?? '';
   }
 
   void _selectProvider(String id) {
     setState(() {
       _selectedProviderId = id;
-      // A variant id means nothing outside its own preset, so switching
-      // provider drops it and the new preset falls back to its first face.
       _variantId = null;
       _applyPresetEndpoint();
       _clearProbe();
+      if (!_tagColorChosen) {
+        _tagColor = channelPresetIdentityColor(_preset).toARGB32();
+      }
     });
   }
 
-  /// Switching face rewrites the endpoint, which is the entire reason the
-  /// control sits directly above that field (spec D2 `16b`): a relay host the
-  /// user typed is kept — only its version suffix follows the format — while
-  /// a preset-supplied host is replaced outright.
+  /// A search that found nothing offers the custom group instead.
+  void _useCustomProvider() {
+    _searchCtrl.clear();
+    _selectProvider(channelFallbackCustomPreset().id);
+  }
+
+  /// Switching face rewrites the endpoint: a relay host the user typed is
+  /// kept — only its version suffix follows the format — while a
+  /// preset-supplied host is replaced outright.
   void _selectVariant(String variantId) {
     setState(() {
       _variantId = variantId;
@@ -173,19 +202,17 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   /// the previous verdict stale, and a stale green tick is worse than none —
   /// it is the one thing that would let a broken channel through.
   void _clearProbe() {
-    _probeStatus = null;
-    _probeDetail = null;
+    _probe = null;
   }
 
   bool get _endpointMissing => _endpointCtrl.text.trim().isEmpty;
 
   /// Whether this provider can be saved without a key. True for the local
   /// runtimes, which have no auth to give: requiring one there left the user
-  /// typing a junk character to get past the check (spec D2 `16f`).
+  /// typing a junk character to get past the check.
   bool get _keyOptional => Vendors.byId(_resolvedChannelType()).keyOptional;
 
-  bool get _apiKeyMissing =>
-      !_keyOptional && _apiKeyCtrl.text.trim().isEmpty;
+  bool get _apiKeyMissing => !_keyOptional && _apiKeyCtrl.text.trim().isEmpty;
 
   String? _endpointError(AppLocalizations l10n) =>
       _submitAttempted && _endpointMissing ? l10n.endpointRequired : null;
@@ -205,9 +232,11 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     return '$base$suffix';
   }
 
+  String get _endpointSuffix =>
+      _variant?.endpointSuffix ?? _preset.endpointSuffix;
+
   String _resolvedEndpoint() {
-    final preset = _preset;
-    final suffix = _variant?.endpointSuffix ?? preset.endpointSuffix;
+    final suffix = _endpointSuffix;
     if (suffix.isNotEmpty) {
       return _resolveNewApiEndpoint(_endpointCtrl.text, suffix);
     }
@@ -224,28 +253,57 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       ? _selectedProviderId
       : _nameCtrl.text.trim();
 
-  Future<void> _submit() async {
-    setState(() => _submitAttempted = true);
-    if (_endpointMissing || _apiKeyMissing) {
-      // On the narrow layout the offending fields live on step 2; land there
-      // rather than flagging fields the user cannot see.
-      if (_currentStep != _totalSteps - 1) {
-        setState(() => _currentStep = _totalSteps - 1);
-      }
+  String _resolvedTag() => _tagCtrl.text.trim().isEmpty
+      ? _selectedProviderId.split('-').first
+      : _tagCtrl.text.trim();
+
+  // --- Flow ------------------------------------------------------------------
+
+  void _next() {
+    if (_step == _WizardStep.connection) {
+      setState(() => _submitAttempted = true);
+      if (_endpointMissing || _apiKeyMissing) return;
+    }
+    if (_isLastStep) {
+      _requestSubmit();
       return;
     }
+    setState(() => _stepIndex++);
+  }
 
-    await widget.appState.addChannel({
-      'display_name': _resolvedName(),
-      'endpoint': _resolvedEndpoint(),
-      'api_key': _apiKeyCtrl.text.trim(),
-      'type': _resolvedChannelType(),
-      'enable_discovery': _enableDiscovery ? 1 : 0,
-      'tag': _tagCtrl.text.trim().isEmpty
-          ? _selectedProviderId.split('-').first
-          : _tagCtrl.text.trim(),
-      'tag_color': _tagColor,
-    });
+  void _back() {
+    if (_stepIndex > 0) setState(() => _stepIndex--);
+  }
+
+  /// Validates, shows the preview, and adds on confirm. A failed check lands
+  /// on the connection step rather than flagging fields the user cannot see.
+  Future<void> _requestSubmit() async {
+    setState(() => _submitAttempted = true);
+    if (_endpointMissing || _apiKeyMissing) {
+      setState(() => _stepIndex = _steps.indexOf(_WizardStep.connection));
+      return;
+    }
+    final confirmed = await _showPreview();
+    if (confirmed != true || !mounted) return;
+    await _submit();
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) return;
+    setState(() => _submitting = true);
+    try {
+      await widget.appState.addChannel({
+        'display_name': _resolvedName(),
+        'endpoint': _resolvedEndpoint(),
+        'api_key': _apiKeyCtrl.text.trim(),
+        'type': _resolvedChannelType(),
+        'enable_discovery': _enableDiscovery ? 1 : 0,
+        'tag': _resolvedTag(),
+        'tag_color': _tagColor,
+      });
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
     if (mounted) Navigator.pop(context);
   }
 
@@ -267,170 +325,324 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     if (!mounted) return;
     setState(() {
       _probing = false;
-      _probeStatus = result.status;
-      _probeDetail = result.status == ChannelProbeStatus.ok
-          ? '${result.modelCount}'
-          : result.detail;
+      _probe = result;
     });
+  }
+
+  // --- Labels ----------------------------------------------------------------
+
+  String _stepName(AppLocalizations l10n, _WizardStep step) => switch (step) {
+        _WizardStep.provider => l10n.stepProvider,
+        _WizardStep.variant => channelProviderVariantTitle(l10n, _preset.id),
+        _WizardStep.connection => l10n.stepConnection,
+        _WizardStep.appearance => l10n.tagAndAppearance,
+      };
+
+  String _nextLabel(AppLocalizations l10n) {
+    if (_isLastStep) return l10n.addChannel;
+    // A local runtime's key is optional: moving on with the box empty is
+    // skipping it, and the button says so.
+    if (_step == _WizardStep.connection &&
+        _keyOptional &&
+        _apiKeyCtrl.text.trim().isEmpty) {
+      return l10n.skip;
+    }
+    return l10n.next;
   }
 
   // --- Build -----------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
-    if (Responsive.isDesktop(context)) return _buildOnePageDialog(widget.l10n);
-    if (Responsive.isMobile(context)) return _buildSteppedPage(widget.l10n);
-    return _buildSteppedDialog(widget.l10n);
+    final l10n = widget.l10n;
+    if (Responsive.isMobile(context)) return _buildPage(l10n);
+    return _buildDialog(l10n);
   }
 
-  // --- Layout A: one page, two columns ---------------------------------------
-
-  Widget _buildOnePageDialog(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Widget _buildDialog(AppLocalizations l10n) {
     // The body claims what the window can spare, between a floor that keeps
-    // the rail scrollable and a ceiling that stops the dialog from stretching
-    // edge to edge on a tall display. Heading, footer and the dialog's own
+    // the provider list scrollable and a ceiling that stops the dialog
+    // stretching on a tall display. Heading, footer and the dialog's own
     // vertical inset account for the subtracted band.
-    //
-    // The ceiling is sized for the catalogue rather than picked round: all
-    // fourteen rows in four groups have to be visible at once for the
-    // grouping to do its job (spec D2 `16a` note ⑧), and a rail that scrolls
-    // by two rows is the version of this screen that sent people to the
-    // search box for providers that were right there.
     final bodyHeight =
-        (MediaQuery.sizeOf(context).height - 210).clamp(340.0, 700.0);
+        (MediaQuery.sizeOf(context).height - 230).clamp(320.0, 580.0);
 
     return AppDialog(
-      title: l10n.addChannel,
-      subtitle: l10n.addChannelSubtitle,
-      maxWidth: 960,
-      clipBehavior: Clip.antiAlias,
-      // The columns carry their own padding and the rail reaches the edges.
+      titleWidget: _buildHeader(l10n),
+      maxWidth: 760,
+      dividedHeading: true,
       contentPadding: EdgeInsets.zero,
-      onClose: () => Navigator.pop(context),
-      content: FilledFieldScope(
-        child: SizedBox(
+      content: SizedBox(
         height: bodyHeight,
-        child: Row(
-          // Stretch, so the rule between the columns is full height. A
-          // VerticalDivider would collapse to nothing here — a Row hands its
-          // children loose vertical constraints and the divider has no
-          // intrinsic height of its own.
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(width: 288, child: _buildProviderRail(l10n)),
-            Container(width: 1, color: colorScheme.outlineVariant),
-            Expanded(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // The rail is 200 and the form needs ~320 before its two-column
+            // rows stop being usable; below that the footer's counter still
+            // says where the user is.
+            final showRail = constraints.maxWidth >= 520;
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (showRail) SizedBox(width: 200, child: _buildStepRail(l10n)),
+                Expanded(child: _buildStepBody(l10n)),
+              ],
+            );
+          },
+        ),
+      ),
+      actionsOverride: _buildFooter(l10n),
+    );
+  }
+
+  Widget _buildPage(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final steps = _steps;
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        title: Text(l10n.addChannel),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          tooltip: l10n.close,
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpace.s16, AppSpace.s4, AppSpace.s16, AppSpace.s10),
+            child: Row(
+              children: [
+                for (final (i, step) in steps.indexed) ...[
+                  if (i > 0) const SizedBox(width: AppSpace.s4),
+                  _StepDot(
+                    number: i + 1,
+                    done: i < _stepIndex,
+                    current: step == _step,
+                  ),
+                ],
+                const SizedBox(width: AppSpace.s10),
+                Expanded(
+                  child: Text(
+                    _stepName(l10n, _step),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.titleSmall
+                        ?.copyWith(color: colorScheme.onSurface),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(child: _buildStepBody(l10n)),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerLow,
+              border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.s16, vertical: AppSpace.s10),
+                child: _buildFooter(l10n),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The heading follows the step: the add-channel plate and catalogue count
+  /// while choosing, then the chosen provider's own avatar and what this step
+  /// is about.
+  Widget _buildHeader(AppLocalizations l10n) {
+    final preset = _preset;
+    final title = channelProviderTitle(l10n, preset.id);
+    final avatar = ChannelIdentityAvatar(
+      label: title,
+      color: channelPresetIdentityColor(preset),
+      size: AppSize.touch,
+      radius: AppRadius.control,
+    );
+
+    return switch (_step) {
+      _WizardStep.provider => ChannelDialogHeader(
+          leading: const ChannelIconPlate(Icons.add_link),
+          title: l10n.addChannel,
+          subtitle: l10n.providerCountSummary(
+            kChannelProviderPresets.length,
+            ChannelProviderGroup.values.length,
+          ),
+          monoSubtitle: true,
+          onClose: () => Navigator.pop(context),
+        ),
+      _WizardStep.variant => ChannelDialogHeader(
+          leading: avatar,
+          title: '$title · ${_stepName(l10n, _WizardStep.variant)}',
+          subtitle: channelProviderVariantHint(l10n, preset.id),
+          onClose: () => Navigator.pop(context),
+        ),
+      final step => ChannelDialogHeader(
+          leading: avatar,
+          title: '$title · ${_stepName(l10n, step)}',
+          subtitle: '${channelProviderGroupHint(l10n, preset.group)}'
+              ' · ${channelProviderNeedLabel(l10n, preset.need)}',
+          onClose: () => Navigator.pop(context),
+        ),
+    };
+  }
+
+  Widget _buildStepRail(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final steps = _steps;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        border: Border(right: BorderSide(color: colorScheme.outlineVariant)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, AppSpace.s10),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-                      child: _buildConfigColumn(l10n, pinnedDiscovery: true),
-                    ),
-                  ),
-                  // Pinned to the foot of the column rather than trailing the
-                  // form: it is a property of the channel as a whole, not the
-                  // next field after the tag, and leaving it in the flow left
-                  // the pane's spare height dangling below everything.
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 18),
-                    child: _buildDiscoveryCard(l10n),
-                  ),
+                  for (final (i, step) in steps.indexed) ...[
+                    if (i > 0) const SizedBox(height: 2),
+                    _buildStepRow(l10n, i, step),
+                  ],
                 ],
               ),
             ),
-          ],
-        ),
-        ),
-      ),
-      actionsOverride: Row(
-        children: [
-          AppButton(
-            label: l10n.probeChannel,
-            icon: Icons.network_check,
-            variant: AppButtonVariant.secondary,
-            size: AppButtonSize.compact,
-            loading: _probing,
-            onPressed: _endpointMissing ? null : _runProbe,
           ),
-          const SizedBox(width: 10),
-          Expanded(child: _buildProbeStatus(l10n)),
-          const SizedBox(width: 10),
-          AppButton(
-            label: l10n.cancel,
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.pop(context),
-          ),
-          const SizedBox(width: 8),
-          AppButton(label: l10n.addChannel, onPressed: _submit),
-        ],
-      ),
-    );
-  }
-
-  /// The left column: a search box over every preset, grouped by protocol.
-  Widget _buildProviderRail(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final matches = _filteredPresets(l10n);
-
-    return Container(
-      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-      child: Column(
-        children: [
+          // Why the rail just grew or shrank: the provider decides whether a
+          // "way in" step exists.
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
-            child: AppTextField(
-              controller: _searchCtrl,
-              hint: l10n.searchProvidersAlias,
-              prefixIcon: const Icon(Icons.search, size: AppSize.iconMd),
-              onChanged: (_) => setState(() {}),
+            padding: const EdgeInsets.fromLTRB(AppSpace.s22, 0, 14, 14),
+            child: Text(
+              l10n.wizardStepsAdaptNote,
+              style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+                    fontWeight: FontWeight.w400,
+                    color: colorScheme.outline,
+                  ),
             ),
           ),
-          Expanded(
-            child: matches.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text(
-                        l10n.noProviderMatch,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                      ),
-                    ),
-                  )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-                    children: [
-                      ...() {
-                        final widgets = <Widget>[];
-                        for (final group in ChannelProviderGroup.values) {
-                          final inGroup =
-                              matches.where((p) => p.group == group).toList();
-                          if (inGroup.isEmpty) continue;
-                          // "First" is the first group *rendered*, not the
-                          // first declared: filtering the list must not leave
-                          // the heaviest heading attached to whatever group
-                          // happens to have survived the search.
-                          widgets.add(_buildRailHeading(l10n, group,
-                              isFirst: widgets.isEmpty));
-                          for (final preset in inGroup) {
-                            widgets.add(_buildRailRow(l10n, preset));
-                          }
-                        }
-                        return widgets;
-                      }(),
-                      _buildRailFooter(l10n, matches),
-                    ],
-                  ),
-          ),
         ],
       ),
     );
   }
+
+  Widget _buildStepRow(AppLocalizations l10n, int index, _WizardStep step) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final done = index < _stepIndex;
+    final current = index == _stepIndex;
+
+    return Material(
+      color: current ? colorScheme.accentTint : Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.control),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        // A finished step can be revisited; a future one has to be reached
+        // through Next, which is where its checks run.
+        onTap: done ? () => setState(() => _stepIndex = index) : null,
+        child: SizedBox(
+          height: AppSize.large,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+            child: Row(
+              children: [
+                _StepDot(number: index + 1, done: done, current: current),
+                const SizedBox(width: AppSpace.s10),
+                Expanded(
+                  child: Text(
+                    _stepName(l10n, step),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelLarge?.metricsOnly.copyWith(
+                      fontWeight: current ? FontWeight.w600 : FontWeight.w500,
+                      color: current
+                          ? colorScheme.onAccentTint
+                          : done
+                              ? colorScheme.onSurface
+                              : colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter(AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Text(
+          l10n.wizardStepCounter(_stepIndex + 1, _steps.length),
+          style: theme.textTheme.labelSmall?.mono
+              .copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+        const Spacer(),
+        AppButton(
+          label: l10n.back,
+          variant: AppButtonVariant.text,
+          onPressed: _stepIndex == 0 ? null : _back,
+        ),
+        const SizedBox(width: AppSpace.s6),
+        AppButton(
+          label: _nextLabel(l10n),
+          loading: _submitting,
+          onPressed: _next,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepBody(AppLocalizations l10n) {
+    final step = _step;
+    const formPadding = EdgeInsets.fromLTRB(16, 14, 16, 16);
+
+    final Widget body = switch (step) {
+      _WizardStep.provider => _buildProviderStep(l10n),
+      _WizardStep.variant => SingleChildScrollView(
+          padding: formPadding,
+          child: _buildVariantStep(l10n),
+        ),
+      _WizardStep.connection => SingleChildScrollView(
+          padding: formPadding,
+          child: _buildConnectionStep(l10n),
+        ),
+      _WizardStep.appearance => SingleChildScrollView(
+          padding: formPadding,
+          child: _buildAppearanceStep(l10n),
+        ),
+    };
+
+    return AnimatedSwitcher(
+      duration: AppMotion.durationOf(context, AppMotion.state),
+      switchInCurve: AppMotion.enter,
+      switchOutCurve: AppMotion.enter,
+      transitionBuilder: (child, animation) =>
+          FadeTransition(opacity: animation, child: child),
+      child: KeyedSubtree(key: ValueKey(step), child: body),
+    );
+  }
+
+  // --- Step 1: provider ------------------------------------------------------
 
   /// Presets matching the search box, in declaration order. An empty query
   /// matches everything, which is what keeps every preset reachable — the
@@ -455,423 +667,254 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     }).toList();
   }
 
-  /// A group heading and the one line saying what the whole group will ask
-  /// for. The first group — 厂商, the path most people are on — carries more
-  /// weight than the other three, which sit under a hairline rule instead of
-  /// competing with it (spec D2 `16a` notes ② and ③).
-  Widget _buildRailHeading(
-    AppLocalizations l10n,
-    ChannelProviderGroup group, {
-    required bool isFirst,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  Widget _buildProviderStep(AppLocalizations l10n) {
+    final matches = _filteredPresets(l10n);
 
-    return Container(
-      margin: EdgeInsets.only(top: isFirst ? 0 : 4),
-      padding: EdgeInsets.fromLTRB(10, 7, 10, 4),
-      decoration: isFirst
-          ? null
-          : BoxDecoration(
-              border: Border(
-                top: BorderSide(color: colorScheme.outlineVariant),
-              ),
-            ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          Flexible(
-            child: Text(
-              channelProviderGroupLabel(l10n, group),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: (isFirst ? theme.textTheme.labelLarge : theme.textTheme.labelMedium)
-                  ?.copyWith(
-                fontWeight: isFirst ? FontWeight.w700 : FontWeight.w600,
-                color: isFirst ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              channelProviderGroupHint(l10n, group),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// The count at the foot of the rail. Fourteen rows in four groups fit
-  /// without scrolling, which is the point of folding the duplicates in — the
-  /// search box went back to being an accelerator rather than a necessity.
-  Widget _buildRailFooter(
-    AppLocalizations l10n,
-    List<ChannelProviderPreset> matches,
-  ) {
-    final theme = Theme.of(context);
-    final groups =
-        matches.map((p) => p.group).toSet().length;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 5, 10, 0),
-      child: Text(
-        l10n.providerCountSummary(matches.length, groups),
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-        ),
-      ),
-    );
-  }
-
-  /// The trailing note on a row: a badge counting the faces a provider has,
-  /// or the one-word promise of what it will ask for next.
-  Widget _buildRowTrailing(
-    AppLocalizations l10n,
-    ChannelProviderPreset preset, {
-    required bool isSelected,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    if (preset.hasVariants) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.xs),
-          color: isSelected
-              ? colorScheme.onAccentTint.withValues(alpha: 0.14)
-              : colorScheme.surfaceContainerHighest,
-        ),
-        child: Text(
-          l10n.providerVariantCount(preset.variants.length),
-          style: theme.textTheme.labelSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: isSelected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
-          ),
-        ),
-      );
+    final rows = <Widget>[];
+    for (final group in ChannelProviderGroup.values) {
+      final inGroup = matches.where((p) => p.group == group).toList();
+      if (inGroup.isEmpty) continue;
+      rows.add(ChannelProviderGroupCaption(
+        l10n: l10n,
+        group: group,
+        count: inGroup.length,
+        first: rows.isEmpty,
+      ));
+      for (final preset in inGroup) {
+        rows.add(ChannelProviderRow(
+          l10n: l10n,
+          preset: preset,
+          selected: preset.id == _selectedProviderId,
+          onTap: () => _selectProvider(preset.id),
+        ));
+      }
     }
 
-    final isKeyless = preset.need == ChannelProviderNeed.keyless;
-    return Text(
-      channelProviderNeedLabel(l10n, preset.need),
-      style: theme.textTheme.labelSmall?.copyWith(
-        fontWeight: FontWeight.w500,
-        color: isSelected
-            ? colorScheme.onAccentTint
-            : isKeyless
-                // The one row-trailing note that is good news rather than a
-                // requirement, so it is the one that gets a colour.
-                ? context.semantic.onSuccessContainer
-                : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-      ),
-    );
-  }
-
-  Widget _buildRailRow(AppLocalizations l10n, ChannelProviderPreset preset) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final isSelected = _selectedProviderId == preset.id;
-
-    return Padding(
-      padding: EdgeInsets.zero,
-      child: InkWell(
-        onTap: () => _selectProvider(preset.id),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Container(
-          // Fixed heights, per spec D2 `16a` note ②: 厂商 rows are a step
-          // taller than the rest, and all fourteen have to fit the rail
-          // without scrolling for the grouping to be scannable at a glance.
-          height: preset.group == ChannelProviderGroup.vendor ? 34 : 30,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            color: isSelected ? colorScheme.accentTint : null,
-            border: Border.all(
-              color: isSelected ? colorScheme.accentRing : Colors.transparent,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, AppSpace.s10),
+          child: ChannelField(
+            controller: _searchCtrl,
+            hint: l10n.searchProvidersAlias,
+            prefixIcon: Icons.search,
+            onChanged: (_) => setState(() {}),
           ),
-          child: Row(
-            children: [
-              Icon(
-                preset.icon,
-                size: preset.group == ChannelProviderGroup.vendor
-                    ? AppSize.iconMd
-                    : AppSize.iconSm,
-                color: isSelected
-                    ? colorScheme.onAccentTint
-                    : colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  channelProviderTitle(l10n, preset.id),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  // The label's colour belongs to the row it sits in, not to
-                  // the slot it borrows its metrics from.
-                  style: textTheme.bodyMedium?.metricsOnly.copyWith(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected
-                        ? colorScheme.onAccentTint
-                        : colorScheme.onSurface,
+        ),
+        Expanded(
+          child: matches.isEmpty
+              ? ChannelProviderNoMatch(
+                  l10n: l10n,
+                  query: _searchCtrl.text.trim(),
+                  onUseCustom: _useCustomProvider,
+                )
+              // Built eagerly: sixteen rows is nothing, and a lazy list leaves
+              // the rows past the fold unbuilt — which is how a preset goes
+              // missing from anything that looks for it without scrolling.
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: rows,
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _buildRowTrailing(l10n, preset, isSelected: isSelected),
-            ],
-          ),
         ),
-      ),
-    );
-  }
-
-  /// The right column, and the whole of step 2 on the narrow layout.
-  ///
-  /// [showPreview] swaps the provider header — which restates a choice still
-  /// visible in the rail beside it — for a preview of the channel as the list
-  /// will draw it, which is what the narrow layout needs instead: there the
-  /// provider was picked on a step the user has left.
-  ///
-  /// [pinnedDiscovery] drops the discovery card, for a caller that draws it
-  /// at the foot of its own column.
-  Widget _buildConfigColumn(
-    AppLocalizations l10n, {
-    bool showPreview = false,
-    bool pinnedDiscovery = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (showPreview) ...[
-          _buildChannelPreview(l10n),
-          const SizedBox(height: 16),
-        ] else ...[
-          _buildProviderHeader(l10n),
-          const SizedBox(height: 16),
-        ],
-        if (_preset.hasVariants) ...[
-          _buildVariantPicker(l10n),
-          const SizedBox(height: 16),
-        ],
-        _buildEndpointField(l10n),
-        const SizedBox(height: 16),
-        ApiKeyField(
-          controller: _apiKeyCtrl,
-          // The field stays for the local runtimes rather than disappearing:
-          // vanishing would leave someone who *has* put reverse-proxy auth in
-          // front with nowhere to put the key, and everyone else wondering
-          // where the key box went (spec D2 `16f`, note ②).
-          label: _keyOptional
-              ? '${l10n.enterApiKey} · ${l10n.apiKeyOptional}'
-              : l10n.enterApiKey,
-          hint: _keyOptional ? l10n.apiKeyLocalPlaceholder : null,
-          errorText: _apiKeyError(l10n),
-          onChanged: (_) => setState(_clearProbe),
-        ),
-        const SizedBox(height: 6),
-        _buildHelperText(
-            _keyOptional ? l10n.apiKeyLocalNote : l10n.apiKeyStorageNotice),
-        const SizedBox(height: 16),
-        _buildAppearanceRow(l10n),
-        const SizedBox(height: 14),
-        _buildColorRow(l10n),
-        if (!pinnedDiscovery) ...[
-          const SizedBox(height: 16),
-          _buildDiscoveryCard(l10n),
-        ],
       ],
     );
   }
 
-  Widget _buildProviderHeader(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final preset = _preset;
+  // --- Step 2: way in (variant presets only) ---------------------------------
 
-    return Row(
+  Widget _buildVariantStep(AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final preset = _preset;
+    final selected = _variant;
+    if (selected == null) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: colorScheme.accentTint,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
+        ChannelSectionLabel(channelProviderVariantTitle(l10n, preset.id)),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (i, variant) in preset.variants.indexed) ...[
+                if (i > 0) const SizedBox(width: AppSpace.s6 + 2),
+                Expanded(
+                  child: _buildVariantCard(
+                    l10n,
+                    variant,
+                    selected: variant.id == selected.id,
+                  ),
+                ),
+              ],
+            ],
           ),
-          child: Icon(preset.icon,
-              size: AppSize.iconLg, color: colorScheme.onAccentTint),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
+        const SizedBox(height: AppSpace.s16),
+        // What the choice resolves to: the stored protocol and the address
+        // it will be sent to, before the next step asks for the key.
+        Container(
+          padding: const EdgeInsets.all(AppSpace.s10),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                channelProviderTitle(l10n, preset.id),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.titleMedium,
+                l10n.variantResultLabel,
+                style: theme.textTheme.labelSmall?.mono
+                    .copyWith(color: colorScheme.outline),
               ),
-              Text(
-                // What this provider is and what it will ask for, rather
-                // than its hostname — the host is already in the field two
-                // rows below, and repeating it says nothing new.
-                '${channelProviderGroupHint(l10n, preset.group)}'
-                ' · ${channelProviderNeedLabel(l10n, preset.need)}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.bodySmall
-                    ?.copyWith(color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: AppSpace.s10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      channelTypeLabel(l10n, _resolvedChannelType()),
+                      style: theme.textTheme.labelSmall?.mono
+                          .copyWith(color: colorScheme.onSurface),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _endpointPreview(),
+                      style: theme.textTheme.labelSmall?.mono
+                          .copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 10),
-        _buildTypeBadge(_resolvedChannelType()),
       ],
     );
   }
 
-  /// The vendor id the channel will be stored under. Shown because it is what
-  /// every later screen — the channel list, the debug log, a support thread —
-  /// calls this channel, and it is not derivable from the provider's name.
-  Widget _buildTypeBadge(String type) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppRadius.xs),
-      ),
-      child: Text(
-        type,
-        style: Theme.of(context)
-            .textTheme
-            .labelMedium
-            ?.copyWith(color: colorScheme.onSurfaceVariant),
-      ),
-    );
+  /// The address the current face resolves to, or the version path a relay
+  /// will append to a host not typed yet.
+  String _endpointPreview() {
+    if (_endpointCtrl.text.trim().isNotEmpty) return _resolvedEndpoint();
+    final suffix = _endpointSuffix;
+    return suffix.isEmpty ? '—' : 'https://…$suffix';
   }
 
-  /// How the channel will read in the list once added — the narrow layout's
-  /// answer to the wide one's provider header, which the user has just left
-  /// behind on step 1.
-  Widget _buildChannelPreview(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final name = _resolvedName();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: colorScheme.accentTint,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: colorScheme.accentRing),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Color(_tagColor),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(_preset.icon, size: AppSize.iconSm, color: Colors.white),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.titleSmall?.metricsOnly.copyWith(
-                    color: colorScheme.onAccentTint,
-                  ),
-                ),
-                Text(
-                  '${l10n.countModels(0)} · ${_resolvedChannelType()}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.bodySmall
-                      ?.copyWith(color: colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            l10n.channelListPreview,
-            style: textTheme.labelMedium?.copyWith(color: colorScheme.onAccentTint),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// The face/format switch, for the three presets that have one.
-  ///
-  /// It sits here — one gap above the endpoint field — rather than as sub-rows
-  /// in the rail, because the choice *rewrites that field*. Expanded in the
-  /// rail, the switch would be on the left and its consequence on the right,
-  /// and the user would be picking blind (spec D2 `16b`).
-  Widget _buildVariantPicker(AppLocalizations l10n) {
+  Widget _buildVariantCard(
+    AppLocalizations l10n,
+    ChannelProviderVariant variant, {
+    required bool selected,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final preset = _preset;
-    final selected = _variant!;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: colorScheme.outlineVariant),
+    return Material(
+      color: selected ? colorScheme.accentTint : colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        side: BorderSide(
+          color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            channelProviderVariantTitle(l10n, preset.id),
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            channelProviderVariantHint(l10n, preset.id),
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 10),
-          AppSegmentedControl<String>(
-            segments: [
-              for (final variant in preset.variants)
-                AppSegment(
-                  value: variant.id,
-                  label: channelProviderVariantLabel(
-                      l10n, preset.id, variant.id),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _selectVariant(variant.id),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.s10, vertical: AppSpace.s6 + 2),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                channelProviderVariantLabel(l10n, preset.id, variant.id),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: selected
+                      ? colorScheme.onAccentTint
+                      : colorScheme.onSurface,
                 ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                protocolFamilyLabel(
+                    l10n, Vendors.byId(variant.channelType).family),
+                style: theme.textTheme.labelSmall?.mono.copyWith(
+                  fontWeight: FontWeight.w400,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
-            value: selected.id,
-            onChanged: _selectVariant,
-            expand: true,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- Step 3: endpoint & key ------------------------------------------------
+
+  Widget _buildConnectionStep(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildEndpointField(l10n),
+        const SizedBox(height: AppSpace.s16),
+        ChannelLabelledField(
+          // The field stays for the local runtimes rather than disappearing:
+          // vanishing would leave someone who *has* put reverse-proxy auth in
+          // front with nowhere to put the key.
+          label: _keyOptional
+              ? '${l10n.apiKey} · ${l10n.apiKeyOptional}'
+              : l10n.apiKey,
+          helper: _keyOptional ? l10n.apiKeyLocalNote : l10n.apiKeyStorageNotice,
+          child: ChannelField(
+            controller: _apiKeyCtrl,
+            mono: true,
+            obscurable: true,
+            hint: _keyOptional ? l10n.apiKeyLocalPlaceholder : null,
+            errorText: _apiKeyError(l10n),
+            onChanged: (_) => setState(_clearProbe),
+          ),
+        ),
+        const SizedBox(height: AppSpace.s16),
+        Row(
+          children: [
+            AppButton(
+              label: l10n.probeChannel,
+              icon: Icons.network_check,
+              variant: AppButtonVariant.secondary,
+              accentLabel: true,
+              loading: _probing,
+              onPressed: _endpointMissing ? null : _runProbe,
+            ),
+            const SizedBox(width: AppSpace.s10),
+            Expanded(
+              child: Text(
+                l10n.probeSkippableNote,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
+          ],
+        ),
+        if (_probe != null) ...[
+          const SizedBox(height: AppSpace.s10),
+          ChannelProbeResultCard(
+            l10n: l10n,
+            result: _probe!,
+            onRetry: _probing ? null : _runProbe,
           ),
         ],
-      ),
+      ],
     );
   }
 
@@ -880,10 +923,11 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     final variant = _variant;
     // A relay is one whose *resolved* face appends a version path — which for
     // NewAPI is decided by the format, not by the preset.
-    final isRelay = (variant?.endpointSuffix ?? preset.endpointSuffix).isNotEmpty;
-    final isMidjourney = preset.id == 'midjourney-proxy';
+    final isRelay = _endpointSuffix.isNotEmpty;
+    final family = Vendors.byId(_resolvedChannelType()).family;
+    final isMidjourney = family == ProtocolFamily.midjourney;
     final presetEndpoint = variant?.defaultEndpoint ?? preset.defaultEndpoint;
-    final canReset = presetEndpoint != null &&
+    final edited = presetEndpoint != null &&
         _endpointCtrl.text.trim() != presetEndpoint;
 
     final helper = isRelay
@@ -891,497 +935,281 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         : isMidjourney
             ? l10n.midjourneyEndpointHint
             : presetEndpoint != null
-                ? l10n.endpointOverrideHint
-                : switch (Vendors.byId(_resolvedChannelType()).family) {
+                ? l10n.endpointPresetValue(presetEndpoint)
+                : switch (family) {
                     ProtocolFamily.gemini => l10n.googleV1BetaHint,
                     ProtocolFamily.anthropic => l10n.anthropicV1Hint,
                     ProtocolFamily.dashscope => l10n.dashscopeApiV1Hint,
                     _ => l10n.openaiV1Hint,
                   };
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppTextField(
-          controller: _endpointCtrl,
-          label: isRelay ? l10n.newApiBaseUrl : l10n.endpointUrl,
-          hint: isRelay || isMidjourney
-              ? 'https://your-newapi-host.com'
-              : 'https://your-api.com/v1',
-          errorText: _endpointError(l10n),
-          prefixIcon: const Icon(Icons.link, size: AppSize.iconMd),
-          // Reset lives in the field rather than as a link beside its label:
-          // the label is the floating one every other input in the app uses,
-          // and a second label above it to hang the link off would read as
-          // two names for one field.
-          suffixIcon: canReset
-              ? IconButton(
-                  icon: const Icon(Icons.restart_alt, size: AppSize.iconMd),
-                  tooltip: l10n.resetToDefault,
-                  onPressed: () => setState(() {
-                    _applyPresetEndpoint();
-                    _clearProbe();
-                  }),
-                )
-              : null,
-          onChanged: (_) => setState(_clearProbe),
-        ),
-        const SizedBox(height: 6),
-        _buildHelperText(helper),
-      ],
-    );
-  }
-
-  Widget _buildHelperText(String text) {
-    final theme = Theme.of(context);
-    return Text(
-      text,
-      style: theme.textTheme.bodySmall
-          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-    );
-  }
-
-  Widget _buildAppearanceRow(AppLocalizations l10n) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 3,
-          child: AppTextField(
-            controller: _nameCtrl,
-            label: l10n.displayName,
-            hint: l10n.nameHint,
-            prefixIcon: const Icon(Icons.label_outline, size: AppSize.iconMd),
-            onChanged: (_) => setState(() {}),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          flex: 2,
-          child: AppTextField(
-            controller: _tagCtrl,
-            label: l10n.tag,
-            hint: l10n.tagHint,
-            prefixIcon: const Icon(Icons.tag, size: AppSize.iconMd),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildColorRow(AppLocalizations l10n) {
-    final theme = Theme.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          l10n.tagColor,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ChannelColorStrip(
-            l10n: l10n,
-            selectedColor: _tagColor,
-            onColorChanged: (color) => setState(() => _tagColor = color),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDiscoveryCard(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.enableDiscovery,
-                  style: textTheme.titleSmall,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  l10n.enableDiscoveryDesc,
-                  style: textTheme.bodySmall
-                      ?.copyWith(color: colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          AppSwitch(
-            value: _enableDiscovery,
-            onChanged: (v) => setState(() => _enableDiscovery = v),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// The connection verdict, as a coloured dot plus one line of text. Empty
-  /// until a probe has run, so the footer stays quiet on an untouched form.
-  Widget _buildProbeStatus(AppLocalizations l10n) {
-    final status = _probeStatus;
-    if (status == null) return const SizedBox.shrink();
-
-    final colorScheme = Theme.of(context).colorScheme;
-    final semantic = context.semantic;
-
-    final (Color color, String message) = switch (status) {
-      ChannelProbeStatus.ok => (
-          semantic.onSuccessContainer,
-          '${l10n.probeOk} · ${_probeDetail ?? '0'} ${l10n.probeModels}',
-        ),
-      ChannelProbeStatus.connectedNoModels => (
-          semantic.onSuccessContainer,
-          l10n.probeConnectedNoModels,
-        ),
-      ChannelProbeStatus.authFailed => (colorScheme.error, l10n.probeAuthFailed),
-      ChannelProbeStatus.notAnApi => (colorScheme.error, l10n.probeNotAnApi),
-      ChannelProbeStatus.unreachable => (
-          colorScheme.error,
-          _probeDetail == null
-              ? l10n.probeUnreachable
-              : '${l10n.probeUnreachable} — ${_clip(_probeDetail!)}',
-        ),
-      ChannelProbeStatus.notSupported => (
-          colorScheme.onSurfaceVariant,
-          l10n.probeNotSupported,
-        ),
-    };
-
-    final failed = status == ChannelProbeStatus.authFailed ||
-        status == ChannelProbeStatus.notAnApi ||
-        status == ChannelProbeStatus.unreachable;
-
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            message,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
-          ),
-        ),
-        if (failed)
-          AppButton(
-            label: l10n.probeRetry,
-            variant: AppButtonVariant.text,
-            size: AppButtonSize.compact,
-            onPressed: _probing ? null : _runProbe,
-          ),
-      ],
-    );
-  }
-
-  static String _clip(String s) => s.length > 120 ? '${s.substring(0, 120)}…' : s;
-
-  // --- Layout B: two steps (tablet dialog and phone page) --------------------
-
-  Widget _buildSteppedDialog(AppLocalizations l10n) {
-    return AppDialog(
-      title: l10n.addChannel,
-      subtitle: _stepCaption(l10n),
-      maxWidth: 560,
-      clipBehavior: Clip.antiAlias,
-      contentPadding: EdgeInsets.zero,
-      // Fixed height so the dialog doesn't resize between steps; the shorter
-      // step simply leaves whitespace below.
-      content: SizedBox(height: 520, child: _buildStepBody(l10n)),
-      // Not `actions`: the step dots are pinned opposite the buttons, and the
-      // shell's right-aligned row would shove the whole thing to one side.
-      actionsOverride: Row(
-        children: [
-          _buildStepDots(),
-          const Spacer(),
-          if (_currentStep > 0)
-            AppButton(
-              label: l10n.back,
-              variant: AppButtonVariant.text,
-              onPressed: _back,
+    return ChannelLabelledField(
+      label: isRelay ? l10n.newApiBaseUrl : l10n.endpointUrl,
+      badge: edited
+          ? ChannelBadge(
+              l10n.presetEndpointModified,
+              tone: ChannelBadgeTone.warning,
             )
-          else
-            AppButton(
-              label: l10n.cancel,
+          : null,
+      trailing: edited
+          ? AppButton(
+              label: l10n.restorePresetEndpoint,
               variant: AppButtonVariant.text,
-              onPressed: () => Navigator.pop(context),
-            ),
-          const SizedBox(width: 8),
-          AppButton(
-            label: _currentStep == _totalSteps - 1 ? l10n.addChannel : l10n.next,
-            onPressed: _currentStep == _totalSteps - 1
-                ? _submit
-                : () => setState(() => _currentStep++),
-          ),
-        ],
+              size: AppButtonSize.compact,
+              onPressed: () => setState(() {
+                _applyPresetEndpoint();
+                _clearProbe();
+              }),
+            )
+          : null,
+      helper: helper,
+      child: ChannelField(
+        controller: _endpointCtrl,
+        mono: true,
+        hint: isRelay || isMidjourney
+            ? 'https://your-newapi-host.com'
+            : 'https://your-api.com/v1',
+        errorText: _endpointError(l10n),
+        onChanged: (_) => setState(_clearProbe),
       ),
     );
   }
 
-  Widget _buildSteppedPage(AppLocalizations l10n) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.addChannel),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              // Same treatment AppDialog gives the desktop dialog's subtitle,
-              // so the step caption reads the same on both.
-              child: Text(
-                _stepCaption(l10n),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-            ),
-          ),
-          Expanded(child: _buildStepBody(l10n)),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  _buildStepDots(),
-                  const Spacer(),
-                  if (_currentStep > 0) ...[
-                    AppButton(
-                      label: l10n.back,
-                      variant: AppButtonVariant.secondary,
-                      onPressed: _back,
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  AppButton(
-                    label: _currentStep == _totalSteps - 1
-                        ? l10n.addChannel
-                        : l10n.next,
-                    onPressed: _currentStep == _totalSteps - 1
-                        ? _submit
-                        : () => setState(() => _currentStep++),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // --- Step 4: tag & appearance ----------------------------------------------
 
-  void _back() {
-    if (_currentStep > 0) setState(() => _currentStep--);
-  }
-
-  String _stepCaption(AppLocalizations l10n) {
-    final name = _currentStep == 0
-        ? l10n.stepProvider
-        : l10n.stepConnectionAppearance;
-    return '${_currentStep + 1}/$_totalSteps · $name';
-  }
-
-  Widget _buildStepBody(AppLocalizations l10n) {
-    return AnimatedSwitcher(
-      duration: AppMotion.durationOf(context, AppMotion.reveal),
-      switchInCurve: AppMotion.enter,
-      switchOutCurve: AppMotion.enter,
-      transitionBuilder: (child, animation) =>
-          FadeTransition(opacity: animation, child: child),
-      child: KeyedSubtree(
-        key: ValueKey(_currentStep),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-          child: _currentStep == 0
-              ? _buildProviderStep(l10n)
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildConfigColumn(l10n, showPreview: true),
-                    const SizedBox(height: 14),
-                    // Test connection has no footer to live in here — the
-                    // footer belongs to the step dots — so it sits at the end
-                    // of the form it tests.
-                    Row(
-                      children: [
-                        AppButton(
-                          label: l10n.probeChannel,
-                          icon: Icons.network_check,
-                          variant: AppButtonVariant.secondary,
-                          size: AppButtonSize.compact,
-                          loading: _probing,
-                          onPressed: _endpointMissing ? null : _runProbe,
-                        ),
-                      ],
-                    ),
-                    if (_probeStatus != null) ...[
-                      const SizedBox(height: 8),
-                      _buildProbeStatus(l10n),
-                    ],
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-
-  /// Step 1 of the fallback: the same catalogue as the rail, as cards.
-  Widget _buildProviderStep(AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final group in ChannelProviderGroup.values) ...[
-          if (group != ChannelProviderGroup.values.first)
-            const SizedBox(height: 14),
-          _buildRailHeading(l10n, group,
-              isFirst: group == ChannelProviderGroup.values.first),
-          _buildProviderGrid(
-            l10n,
-            kChannelProviderPresets.where((p) => p.group == group).toList(),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildProviderGrid(
-    AppLocalizations l10n,
-    List<ChannelProviderPreset> presets,
-  ) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final twoColumns = constraints.maxWidth >= 440;
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: twoColumns ? 2 : 1,
-            mainAxisExtent: 64,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-          ),
-          itemCount: presets.length,
-          itemBuilder: (context, index) =>
-              _buildProviderCard(l10n, presets[index]),
-        );
-      },
-    );
-  }
-
-  Widget _buildProviderCard(AppLocalizations l10n, ChannelProviderPreset preset) {
+  Widget _buildAppearanceStep(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final isSelected = _selectedProviderId == preset.id;
 
-    return InkWell(
-      onTap: () => _selectProvider(preset.id),
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: AnimatedContainer(
-        duration: AppMotion.durationOf(context, AppMotion.state),
-        curve: AppMotion.enter,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(
-            color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,
-            width: isSelected ? 2 : 1,
-          ),
-          color: isSelected ? colorScheme.accentTint : null,
-        ),
-        child: Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              preset.icon,
-              size: AppSize.iconLg,
-              color: isSelected
-                  ? colorScheme.onAccentTint
-                  : colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 10),
             Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    channelProviderTitle(l10n, preset.id),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.titleSmall?.metricsOnly.copyWith(
-                      color: isSelected
-                          ? colorScheme.onAccentTint
-                          : colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    channelProviderSubtitle(l10n, preset),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelMedium
-                        ?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                ],
+              flex: 3,
+              child: ChannelLabelledField(
+                label: l10n.displayName,
+                child: ChannelField(
+                  controller: _nameCtrl,
+                  hint: l10n.nameHint,
+                  onChanged: (_) => setState(() {}),
+                ),
               ),
             ),
-            if (isSelected) ...[
-              const SizedBox(width: 6),
-              Icon(Icons.check_circle,
-                  color: colorScheme.onAccentTint, size: AppSize.iconMd),
-            ],
+            const SizedBox(width: AppSpace.s10),
+            Expanded(
+              flex: 2,
+              child: ChannelLabelledField(
+                label: l10n.tag,
+                child: ChannelField(
+                  controller: _tagCtrl,
+                  mono: true,
+                  hint: l10n.tagHint,
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+            ),
           ],
         ),
+        const SizedBox(height: AppSpace.s16),
+        ChannelFieldLabel(l10n.tagColor),
+        const SizedBox(height: AppSpace.s4),
+        ChannelTagColorPicker(
+          l10n: l10n,
+          selectedColor: _tagColor,
+          onColorChanged: (color) => setState(() {
+            _tagColor = color;
+            _tagColorChosen = true;
+          }),
+        ),
+        const SizedBox(height: AppSpace.s16),
+        ChannelFieldLabel(l10n.channelListPreview),
+        const SizedBox(height: AppSpace.s4),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+          ),
+          // What will actually be stored: an empty name or tag falls back to
+          // the provider's, and the preview says so rather than going blank.
+          child: ChannelListRowPreview(
+            name: _resolvedName(),
+            tag: _resolvedTag(),
+            color: Color(_tagColor),
+            subline: l10n.countModels(0),
+          ),
+        ),
+        const SizedBox(height: AppSpace.s16),
+        ChannelToggleCard(
+          title: l10n.enableDiscovery,
+          description: l10n.enableDiscoveryDesc,
+          value: _enableDiscovery,
+          onChanged: (v) => setState(() => _enableDiscovery = v),
+        ),
+      ],
+    );
+  }
+
+  // --- Preview ---------------------------------------------------------------
+
+  /// `Ready to add this channel?` — every value that will be stored, as it
+  /// will be stored, before anything is written.
+  Future<bool?> _showPreview() {
+    final l10n = widget.l10n;
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AppDialog(
+        icon: Icons.fact_check_outlined,
+        title: l10n.previewReady,
+        subtitle: channelProviderTitle(l10n, _preset.id),
+        maxWidth: 420,
+        content: _buildPreviewSummary(dialogContext, l10n),
+        actions: [
+          AppButton(
+            label: l10n.back,
+            variant: AppButtonVariant.text,
+            onPressed: () => Navigator.pop(dialogContext, false),
+          ),
+          AppButton(
+            label: l10n.addChannel,
+            autofocus: true,
+            onPressed: () => Navigator.pop(dialogContext, true),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildStepDots() {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (int i = 0; i < _totalSteps; i++) ...[
-          AnimatedContainer(
-            duration: AppMotion.durationOf(context, AppMotion.reveal),
-            curve: AppMotion.move,
-            width: i == _currentStep ? 18 : 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: i == _currentStep
-                  ? colorScheme.primary
-                  : colorScheme.outlineVariant,
-              borderRadius: BorderRadius.circular(3),
-            ),
+  Widget _buildPreviewSummary(BuildContext context, AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final keyStyle = theme.textTheme.labelSmall?.mono
+        .copyWith(color: colorScheme.onSurfaceVariant);
+    final valueStyle = theme.textTheme.labelSmall?.mono
+        .copyWith(fontWeight: FontWeight.w400, color: colorScheme.onSurface);
+    final key = _apiKeyCtrl.text.trim();
+
+    Widget row(String label, Widget value) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 84,
+                child: Text(label,
+                    maxLines: 1, overflow: TextOverflow.ellipsis, style: keyStyle),
+              ),
+              const SizedBox(width: AppSpace.s10),
+              Expanded(child: value),
+            ],
           ),
-          if (i < _totalSteps - 1) const SizedBox(width: 5),
+        );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppSpace.s10),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: Column(
+            children: [
+              row(l10n.displayName, Text(_resolvedName(), style: valueStyle)),
+              row(l10n.tag, Text(_resolvedTag(), style: valueStyle)),
+              row(
+                l10n.protocolField,
+                Text(channelTypeLabel(l10n, _resolvedChannelType()),
+                    style: valueStyle),
+              ),
+              row(l10n.endpointUrl, Text(_resolvedEndpoint(), style: valueStyle)),
+              row(
+                l10n.apiKey,
+                Text(
+                  key.isEmpty ? '—' : '••••••••',
+                  style: valueStyle?.copyWith(
+                    color: key.isEmpty
+                        ? colorScheme.outline
+                        : context.semantic.onSuccessContainer,
+                  ),
+                ),
+              ),
+              row(
+                l10n.enableDiscovery,
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Icon(
+                    _enableDiscovery ? Icons.check : Icons.remove,
+                    size: AppSize.iconSm,
+                    color: _enableDiscovery
+                        ? context.semantic.onSuccessContainer
+                        : colorScheme.outline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (key.isEmpty) ...[
+          const SizedBox(height: AppSpace.s10),
+          ChannelNoteStrip(l10n.previewEmptyKeyNote),
         ],
       ],
+    );
+  }
+}
+
+/// A step's 20px marker: a filled check once done, an accent ring on the
+/// current step, a hairline ring with the step's number ahead.
+class _StepDot extends StatelessWidget {
+  const _StepDot({
+    required this.number,
+    required this.done,
+    required this.current,
+  });
+
+  final int number;
+  final bool done;
+  final bool current;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return AnimatedContainer(
+      duration: AppMotion.durationOf(context, AppMotion.state),
+      curve: AppMotion.enter,
+      width: 20,
+      height: 20,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: done ? colorScheme.primary : Colors.transparent,
+        border: done
+            ? null
+            : Border.all(
+                color: current ? colorScheme.primary : colorScheme.outlineVariant,
+                width: current ? 2 : 1.5,
+              ),
+      ),
+      child: done
+          ? Icon(Icons.check, size: AppSize.iconSm, color: colorScheme.onPrimary)
+          : Text(
+              '$number',
+              style: theme.textTheme.labelSmall?.mono.copyWith(
+                fontWeight: FontWeight.w600,
+                height: 1,
+                color: current
+                    ? colorScheme.onAccentTint
+                    : colorScheme.onSurfaceVariant,
+              ),
+            ),
     );
   }
 }

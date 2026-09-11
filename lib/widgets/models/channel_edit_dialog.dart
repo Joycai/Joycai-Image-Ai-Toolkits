@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/app_semantic_colors.dart';
-import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
@@ -11,23 +9,27 @@ import '../../services/llm/channel_probe_service.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
-import '../api_key_field.dart';
-import '../app_labelled_field.dart';
-import '../app_dropdown.dart';
 import '../app_button.dart';
-import '../app_setting_row.dart';
 import '../app_dialog.dart';
-import '../app_text_field.dart';
-import 'channel_avatar.dart';
-import 'channel_preset_picker.dart';
+import '../app_dropdown.dart';
+import '../app_field_size.dart';
 import 'channel_form_sections.dart';
+import 'channel_preset_picker.dart';
+import 'channel_probe_result_card.dart';
 import 'channel_provider_presets.dart';
-import 'model_tag_chip.dart';
+import 'channel_provider_row.dart';
 
-/// Edit-channel dialog. Desktop: a fixed-width two-column layout —
-/// connection (protocol, endpoint, key, discovery) on the left, appearance
-/// (name, tag, color) on the right — so everything fits without scrolling.
-/// Mobile: the same sections stacked in a fullscreen page.
+/// Edit-channel dialog (design `D1b 1e`): the wizard's fields laid flat in
+/// four sections — provider preset, basic info, configuration, tag and
+/// appearance beside the list preview — in a 760 panel, with Delete at the
+/// footer's left and Cancel / Save at its right.
+///
+/// The preset card is a shortcut, not the way in: the fields below stay
+/// visible and editable, so a channel pointed at an international host or a
+/// corporate gateway is edited by changing the address, not by hunting for a
+/// preset that happens to be "right".
+///
+/// On a phone the same sections stack in a full-screen page.
 class ChannelEditDialog extends StatefulWidget {
   final AppLocalizations l10n;
   final AppState appState;
@@ -55,8 +57,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   late int tagColor;
 
   bool _probing = false;
-  String? _probeMessage;
-  bool? _probeOk;
+  ChannelProbeResult? _probe;
 
   /// Which catalogue preset this channel matches, or null for a type no
   /// preset covers. Presentation only — [type] remains the stored truth.
@@ -72,13 +73,11 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     tagCtrl = TextEditingController(text: channel?.tag ?? '');
 
     type = channel?.type ?? Vendors.googleRest;
-    // The preset a stored channel came from, so the shortcut bar can say what
-    // it is sitting on. Null is a real answer, not a failure: a channel
-    // created by an older build can carry a type no preset offers.
-    //
-    // The endpoint goes along because the type alone is ambiguous — the
-    // official supplier and the "compatible host of your own" preset store
-    // the same one, and only the address separates them.
+    // The preset a stored channel came from. Null is a real answer, not a
+    // failure: a channel created by an older build can carry a type no preset
+    // offers. The endpoint goes along because the type alone is ambiguous —
+    // the official supplier and the "compatible host of your own" preset
+    // store the same one, and only the address separates them.
     _presetId = presetForChannelType(type, endpoint: epCtrl.text)?.id;
     discovery = channel?.enableDiscovery ?? true;
     tagColor = channel?.tagColor ?? AppConstants.tagColors.first.toARGB32();
@@ -114,10 +113,20 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     return presetEndpoint != null && epCtrl.text.trim() != presetEndpoint;
   }
 
-  /// Opens the same catalogue the add-channel dialog uses and applies what
-  /// the user picks. One list, two dialogs: the editor used to keep its own
-  /// hand-written list of types, which is how DashScope came to be offered
-  /// in one and missing from the other (spec D2 `16d` note A).
+  /// True when the stored type *is* one of the generic family profiles,
+  /// so the protocol dropdown already lists it and needs no extra entry.
+  bool get _typeIsGenericFamily =>
+      ProtocolFamily.values.any((f) => genericVendorForFamily(f) == type);
+
+  /// Whether this channel's vendor can be saved without a key — the local
+  /// runtimes, which have no auth to give.
+  bool get _keyOptional => Vendors.byId(type).keyOptional;
+
+  int get _modelCount =>
+      widget.appState.getModelsForChannel(widget.channel?.id).length;
+
+  /// Opens the same catalogue the add-channel wizard uses and applies what
+  /// the user picks. One list, two dialogs.
   Future<void> _changePreset(AppLocalizations l10n) async {
     final picked = await showChannelPresetPicker(context, l10n: l10n);
     if (picked == null || !mounted) return;
@@ -128,8 +137,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           picked.variant?.defaultEndpoint ?? picked.preset.defaultEndpoint;
       // Key, name and tag are the user's, not the preset's, and survive.
       if (endpoint != null) epCtrl.text = endpoint;
-      _probeMessage = null;
-      _probeOk = null;
+      _probe = null;
     });
   }
 
@@ -150,22 +158,79 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       await widget.appState.updateChannel(widget.channel!.id!, data);
     }
 
-    if (mounted) {
-      Navigator.pop(context);
-    }
+    if (mounted) Navigator.pop(context);
   }
+
+  /// Delete, confirmed first. Cancel holds focus so Enter never deletes.
+  Future<void> _confirmDelete(AppLocalizations l10n) async {
+    final channel = widget.channel;
+    if (channel?.id == null) return;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final confirmed = await AppDialog.show<bool>(
+      context,
+      icon: Icons.delete_outline,
+      iconColor: colorScheme.error,
+      title: l10n.deleteChannel,
+      subtitle: channel!.displayName,
+      maxWidth: 440,
+      content: Text(l10n.deleteChannelConfirm(channel.displayName)),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          autofocus: true,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        AppButton(
+          label: l10n.deleteChannel,
+          variant: AppButtonVariant.destructive,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+    if (confirmed != true || !mounted) return;
+    await widget.appState.deleteChannel(channel.id!);
+    if (mounted) Navigator.pop(context);
+  }
+
+  /// Probes with the *form's current values* — the whole point is testing
+  /// what the user is about to save, not what is already stored.
+  Future<void> _runProbe() async {
+    setState(() {
+      _probing = true;
+      _probe = null;
+    });
+    final result = await ChannelProbeService().probe(
+      LLMModelConfig(
+        modelId: ChannelProbeService.probeModelId,
+        channelType: type,
+        endpoint: epCtrl.text.trim(),
+        apiKey: keyCtrl.text.trim(),
+      ),
+    );
+    if (!mounted) return;
+    setState(() {
+      _probing = false;
+      _probe = result;
+    });
+  }
+
+  // --- Build -----------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     final l10n = widget.l10n;
-    final isMobile = Responsive.isMobile(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
-    if (isMobile) {
+    if (Responsive.isMobile(context)) {
       return Scaffold(
+        backgroundColor: colorScheme.surface,
         appBar: AppBar(
           title: Text(l10n.editChannel),
           leading: IconButton(
             icon: const Icon(Icons.close),
+            tooltip: l10n.close,
             onPressed: () => Navigator.pop(context),
           ),
           actions: [
@@ -176,252 +241,276 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             ),
           ],
         ),
-        body: FilledFieldScope(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Above the sections on the phone too (spec D2 `16e`): the
-                // preset describes the whole channel, not its connection half.
-                _buildPresetBar(l10n),
-                const SizedBox(height: 16),
-                ChannelSectionLabel(l10n.stepConnection),
-                _buildConnectionFields(l10n),
-                const Divider(height: 32),
-                ChannelSectionLabel(l10n.sectionAppearance),
-                ChannelAppearanceSection(
-                  l10n: l10n,
-                  nameCtrl: nameCtrl,
-                  tagCtrl: tagCtrl,
-                  tagColor: tagColor,
-                  onColorChanged: (c) => setState(() => tagColor = c),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpace.s16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ..._buildSections(l10n, stacked: true),
+              if (widget.channel?.id != null) ...[
+                const SizedBox(height: AppSpace.s22),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: AppButton(
+                    label: l10n.deleteChannel,
+                    icon: Icons.delete_outline,
+                    variant: AppButtonVariant.destructiveText,
+                    onPressed: () => _confirmDelete(l10n),
+                  ),
                 ),
               ],
-            ),
+            ],
           ),
         ),
       );
     }
 
-    final colorScheme = Theme.of(context).colorScheme;
     return AppDialog(
-      icon: Icons.edit_note,
-      title: l10n.editChannel,
-      // Which channel is being edited belongs under the heading, not trailing
-      // it: as a Spacer'd tail it collided with a long title at narrow widths.
-      subtitle: widget.channel?.displayName,
-      onClose: () => Navigator.pop(context),
-      // `15a` separates the heading from the form by spacing alone, same as
-      // the model editor's narrow layout; the footer keeps its rule.
-      dividedHeading: false,
-      maxWidth: 680,
-      clipBehavior: Clip.antiAlias,
-      // The body brings its own padding so its two columns can carry the
-      // divider between them right to the edges.
+      titleWidget: _buildHeader(l10n),
+      maxWidth: 760,
+      dividedHeading: true,
       contentPadding: EdgeInsets.zero,
-      content: FilledFieldScope(
-        child: SingleChildScrollView(
-          // 20 horizontal, matching the shell's own inset so the section
-          // labels share the heading's left edge — it was 24, and the 4px
-          // stagger read as sloppiness, same as the model editor's had.
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildPresetBar(l10n),
-              const SizedBox(height: 16),
-              // No IntrinsicHeight here: the appearance column contains a
-              // Wrap, whose intrinsic height is computed as a single run —
-              // under a tight intrinsic-derived height it overflows once it
-              // actually wraps. The divider is drawn as the left column's
-              // right border instead of a VerticalDivider (which needs a
-              // bounded height).
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.only(right: 20),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          right: BorderSide(
-                            color: colorScheme.outlineVariant.withAlpha(120),
-                          ),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ChannelSectionLabel(l10n.stepConnection),
-                          _buildConnectionFields(l10n),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ChannelSectionLabel(l10n.sectionAppearance),
-                        ChannelAppearanceSection(
-                          l10n: l10n,
-                          nameCtrl: nameCtrl,
-                          tagCtrl: tagCtrl,
-                          tagColor: tagColor,
-                          onColorChanged: (c) => setState(() => tagColor = c),
-                          onChanged: () => setState(() {}),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildListPreview(l10n),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+      content: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpace.s22, AppSpace.s16, AppSpace.s22, AppSpace.s22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: _buildSections(l10n, stacked: false),
         ),
       ),
-      actions: [
-        AppButton(
-          label: l10n.cancel,
-          variant: AppButtonVariant.text,
-          onPressed: () => Navigator.pop(context),
-        ),
-        AppButton(label: l10n.save, icon: Icons.save, onPressed: _save),
-      ],
-    );
-  }
-
-  /// True when the stored type *is* one of the generic family profiles,
-  /// so the protocol dropdown already lists it and needs no extra entry.
-  bool get _typeIsGenericFamily =>
-      ProtocolFamily.values.any((f) => genericVendorForFamily(f) == type);
-
-  /// Whether this channel's vendor can be saved without a key — the local
-  /// runtimes, which have no auth to give.
-  bool get _keyOptional => Vendors.byId(type).keyOptional;
-
-  /// The shortcut bar above the connection fields: which preset this channel
-  /// matches, whether it has drifted from that preset's address, and a way to
-  /// swap presets.
-  ///
-  /// A shortcut, deliberately not the way in. The fields below stay visible
-  /// and editable at all times, so a channel pointed at an international
-  /// host or a corporate gateway is edited by changing the address — not by
-  /// hunting for a preset that happens to be "right" (spec D2 `16d`).
-  Widget _buildPresetBar(AppLocalizations l10n) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final preset = _preset;
-    final variant = preset == null ? null : variantForChannelType(preset, type);
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      actionsOverride: Row(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      l10n.channelPresetLabel,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (preset == null)
-                      _buildPresetChip(l10n.presetUnmatched, muted: true)
-                    else
-                      _buildPresetChip(
-                        variant == null
-                            ? channelProviderTitle(l10n, preset.id)
-                            : '${channelProviderTitle(l10n, preset.id)}'
-                                  ' · ${channelProviderVariantLabel(l10n, preset.id, variant.id)}',
-                      ),
-                    if (_endpointDivergesFromPreset)
-                      _buildPresetChip(
-                        l10n.presetEndpointModified,
-                        warning: true,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  preset == null
-                      ? l10n.presetUnmatchedHint
-                      : l10n.channelPresetHint,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+          if (widget.channel?.id != null)
+            AppButton(
+              label: l10n.deleteChannel,
+              icon: Icons.delete_outline,
+              variant: AppButtonVariant.destructiveText,
+              onPressed: () => _confirmDelete(l10n),
             ),
-          ),
-          const SizedBox(width: 10),
+          const Spacer(),
           AppButton(
-            label: l10n.changePreset,
-            icon: Icons.swap_horiz,
-            variant: AppButtonVariant.secondary,
-            size: AppButtonSize.compact,
-            onPressed: () => _changePreset(l10n),
+            label: l10n.cancel,
+            variant: AppButtonVariant.text,
+            onPressed: () => Navigator.pop(context),
           ),
+          const SizedBox(width: AppSpace.s6),
+          AppButton(label: l10n.save, onPressed: _save),
         ],
       ),
     );
   }
 
-  Widget _buildPresetChip(
-    String label, {
-    bool muted = false,
-    bool warning = false,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final Color background;
-    final Color foreground;
-    if (warning) {
-      background = context.semantic.warningContainer;
-      foreground = context.semantic.onWarningContainer;
-    } else if (muted) {
-      background = colorScheme.surfaceContainerHighest;
-      foreground = colorScheme.onSurfaceVariant;
-    } else {
-      background = colorScheme.accentTint;
-      foreground = colorScheme.onAccentTint;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadius.control),
+  Widget _buildHeader(AppLocalizations l10n) {
+    final tag = tagCtrl.text.trim();
+    final name = nameCtrl.text.trim();
+    return ChannelDialogHeader(
+      leading: ChannelIdentityAvatar(
+        label: tag.isNotEmpty ? tag : name,
+        color: Color(tagColor),
+        size: AppSize.touch,
+        radius: AppRadius.control,
       ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: foreground,
-        ),
-      ),
+      title: l10n.editChannel,
+      // Which channel is being edited, under the heading: its stored name and
+      // how many models hang off it — what a delete would also take.
+      subtitle: widget.channel == null
+          ? null
+          : '${widget.channel!.displayName} · ${l10n.countModels(_modelCount)}',
+      monoSubtitle: true,
+      onClose: () => Navigator.pop(context),
     );
   }
 
-  Widget _buildConnectionFields(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
+  List<Widget> _buildSections(AppLocalizations l10n, {required bool stacked}) {
+    return [
+      _buildPresetSection(l10n),
+      const SizedBox(height: AppSpace.s16),
+      _buildBasicSection(l10n, stacked: stacked),
+      const SizedBox(height: AppSpace.s16),
+      _buildConfigSection(l10n, stacked: stacked),
+      const SizedBox(height: AppSpace.s16),
+      _pair(
+        _buildAppearanceSection(l10n, stacked: stacked),
+        _buildPreviewSection(l10n),
+        stacked: stacked,
+        gap: AppSpace.s22,
+      ),
+    ];
+  }
+
+  /// Two blocks side by side on the dialog, one over the other on a phone.
+  Widget _pair(
+    Widget first,
+    Widget second, {
+    required bool stacked,
+    double gap = AppSpace.s10,
+  }) {
+    if (stacked) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [first, SizedBox(height: gap), second],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: first),
+        SizedBox(width: gap),
+        Expanded(child: second),
+      ],
+    );
+  }
+
+  // --- Provider preset -------------------------------------------------------
+
+  /// Which preset this channel sits on, whether its address has drifted from
+  /// that preset's, and a way to swap presets — with the warning that swapping
+  /// overwrites the protocol and address.
+  Widget _buildPresetSection(AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final preset = _preset;
+    final variant = preset == null ? null : variantForChannelType(preset, type);
+
+    final String title = preset == null
+        ? l10n.presetUnmatched
+        : variant == null
+            ? channelProviderTitle(l10n, preset.id)
+            : '${channelProviderTitle(l10n, preset.id)}'
+                ' · ${channelProviderVariantLabel(l10n, preset.id, variant.id)}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ChannelSectionLabel(l10n.channelPresetLabel),
+        Container(
+          padding: const EdgeInsets.all(AppSpace.s10),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: Row(
+            children: [
+              if (preset == null)
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Icon(Icons.hexagon_outlined,
+                      size: AppSize.iconMd, color: colorScheme.onSurfaceVariant),
+                )
+              else
+                ChannelIdentityAvatar(
+                  label: channelProviderTitle(l10n, preset.id),
+                  color: channelPresetIdentityColor(preset),
+                ),
+              const SizedBox(width: AppSpace.s10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: AppSpace.s6,
+                      runSpacing: 2,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          title,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: preset == null
+                                ? colorScheme.onSurfaceVariant
+                                : colorScheme.onSurface,
+                          ),
+                        ),
+                        if (_endpointDivergesFromPreset)
+                          ChannelBadge(
+                            l10n.presetEndpointModified,
+                            tone: ChannelBadgeTone.warning,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      preset == null
+                          ? l10n.presetUnmatchedHint
+                          : l10n.presetShortHint,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w400,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpace.s10),
+              AppButton(
+                label: l10n.changePreset,
+                icon: Icons.swap_horiz,
+                variant: AppButtonVariant.secondary,
+                accentLabel: true,
+                size: AppButtonSize.compact,
+                onPressed: () => _changePreset(l10n),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpace.s6),
+        ChannelNoteStrip(l10n.changePresetOverlayHint,
+            icon: Icons.warning_amber_rounded),
+      ],
+    );
+  }
+
+  // --- Basic info ------------------------------------------------------------
+
+  Widget _buildBasicSection(AppLocalizations l10n, {required bool stacked}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ChannelSectionLabel(l10n.basicInfo),
+        _pair(
+          ChannelLabelledField(
+            label: l10n.displayName,
+            child: ChannelField(
+              controller: nameCtrl,
+              hint: l10n.nameHint,
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+          ChannelLabelledField(
+            label: l10n.tag,
+            child: ChannelField(
+              controller: tagCtrl,
+              mono: true,
+              hint: l10n.tagHint,
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+          stacked: stacked,
+        ),
+      ],
+    );
+  }
+
+  // --- Configuration ---------------------------------------------------------
+
+  String _familyDescription(AppLocalizations l10n, ProtocolFamily family) =>
+      switch (family) {
+        ProtocolFamily.openai => l10n.protocolOpenAIDesc,
+        ProtocolFamily.gemini => l10n.protocolGoogleDesc,
+        ProtocolFamily.anthropic => l10n.protocolAnthropicDesc,
+        ProtocolFamily.midjourney => l10n.protocolMidjourneyDesc,
+        ProtocolFamily.dashscope => l10n.protocolDashScopeNativeDesc,
+      };
+
+  Widget _buildConfigSection(AppLocalizations l10n, {required bool stacked}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     // Reads the vendor registry rather than re-listing channel-type strings:
     // the literals here silently stopped covering new types every time one
@@ -433,258 +522,180 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       ProtocolFamily.openai || ProtocolFamily.midjourney => l10n.openaiV1Hint,
     };
 
+    final protocolField = Theme(
+      // The dropdown takes the same column-coloured fill as the fields beside
+      // it; its geometry is AppDropdown's own 32 size.
+      data: theme.copyWith(
+        inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+          filled: true,
+          fillColor: colorScheme.surfaceContainerLow,
+        ),
+      ),
+      child: AppDropdown<String>(
+        value: type,
+        size: AppFieldSize.regular,
+        // The protocol families, plus this channel's own stored type when it
+        // is not one of them. The supplier lives in the preset card above;
+        // this field names only the wire format.
+        items: [
+          for (final family in ProtocolFamily.values)
+            AppDropdownItem(
+              value: genericVendorForFamily(family),
+              label: protocolFamilyLabel(l10n, family),
+              description: _familyDescription(l10n, family),
+            ),
+          // A stored type that is a *specific* supplier — dashscope-api,
+          // newapi-gemini, the deprecated official-google-genai-api — has to
+          // be representable or the dropdown asserts and the channel cannot
+          // be opened at all. It is listed as itself, last.
+          if (!_typeIsGenericFamily)
+            AppDropdownItem(
+              value: type,
+              // Named by family *and* supplier: the family alone would read
+              // identically to the generic item above it.
+              label: [
+                protocolFamilyLabel(l10n, Vendors.byId(type).family),
+                channelTypeLabel(l10n, type),
+                if (isDeprecatedChannelType(type)) l10n.deprecatedLabel,
+              ].join(' · '),
+              muted: isDeprecatedChannelType(type),
+            ),
+        ],
+        onChanged: (v) => setState(() {
+          type = v!;
+          // Choosing a wire format by hand means this channel is no longer
+          // the supplier the preset named, unless the address still says so.
+          _presetId = presetForChannelType(type, endpoint: epCtrl.text)?.id;
+          _probe = null;
+        }),
+      ),
+    );
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppLabelledField(
-          label: l10n.protocolField,
-          child: AppDropdown<String>(
-            value: type,
-            // The four protocol families, plus this channel's own stored type
-            // when it is not one of them. The old field mixed protocol and
-            // supplier into one list and went stale every time a vendor was
-            // added; the supplier now lives in the preset bar above, and this
-            // half names only the wire format (spec D2 `16d` note B).
-            items: [
-              for (final family in ProtocolFamily.values)
-                AppDropdownItem(
-                  value: genericVendorForFamily(family),
-                  label: protocolFamilyLabel(l10n, family),
-                ),
-              // A stored type that is a *specific* supplier — dashscope-api,
-              // newapi-gemini, the deprecated official-google-genai-api — has
-              // to be representable or the dropdown asserts and the channel
-              // cannot be opened at all. It is listed as itself, last.
-              if (!_typeIsGenericFamily)
-                AppDropdownItem(
-                  value: type,
-                  // Named by family *and* supplier: the family alone would read
-                  // identically to the generic item above it, and the supplier
-                  // alone would hide which wire format this channel speaks.
-                  label: [
-                    protocolFamilyLabel(l10n, Vendors.byId(type).family),
-                    channelTypeLabel(l10n, type),
-                    if (isDeprecatedChannelType(type)) l10n.deprecatedLabel,
-                  ].join(' · '),
-                ),
-            ],
-            onChanged: (v) => setState(() {
-              type = v!;
-              // Choosing a wire format by hand means this channel is no longer
-              // the supplier the preset named, so the bar stops claiming it is
-              // unless the address still says otherwise.
-              _presetId = presetForChannelType(type, endpoint: epCtrl.text)?.id;
-            }),
-            // The spec's glyph is a hexagon — a wire format as a package
-            // shape — not Material's circle-square-triangle "category".
-            prefixIcon: Icons.hexagon_outlined,
+        ChannelSectionLabel(l10n.configuration),
+        ChannelLabelledField(
+          label: l10n.endpointUrl,
+          // Only offered once the address actually differs from the preset's
+          // — a restore on a field already holding the value is noise.
+          trailing: _endpointDivergesFromPreset
+              ? AppButton(
+                  label: l10n.restorePresetEndpoint,
+                  variant: AppButtonVariant.text,
+                  size: AppButtonSize.compact,
+                  onPressed: () => setState(() {
+                    epCtrl.text = _presetEndpoint!;
+                    _probe = null;
+                  }),
+                )
+              : null,
+          // The preset's own address when there is one — what Restore would
+          // put back — and the family's path convention otherwise.
+          helper: _presetEndpoint != null
+              ? l10n.endpointPresetValue(_presetEndpoint!)
+              : endpointHint,
+          child: ChannelField(
+            controller: epCtrl,
+            mono: true,
+            onChanged: (_) => setState(() => _probe = null),
           ),
         ),
-        const SizedBox(height: 12),
-        AppLabelledField(
-          label: l10n.endpointUrl,
-          child: TextField(
-            controller: epCtrl,
-            // Mono: an endpoint is a URL the wire sees verbatim, and `15a`
-            // sets it apart from prose the same way the model id is.
-            style: Theme.of(context).textTheme.bodyMedium?.mono,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.link, size: 20),
-              helperText: endpointHint,
-              helperMaxLines: 3,
-              helperStyle: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
-              // Only offered once the address actually differs from the
-              // preset's — an always-present "restore" on a field already
-              // holding the value it would restore is noise.
-              suffixIcon: _endpointDivergesFromPreset
-                  ? IconButton(
-                      icon: const Icon(Icons.restart_alt, size: 20),
-                      tooltip: l10n.restorePresetEndpoint,
-                      onPressed: () => setState(() {
-                        epCtrl.text = _presetEndpoint!;
-                        _probeMessage = null;
-                        _probeOk = null;
-                      }),
-                    )
-                  : null,
+        const SizedBox(height: AppSpace.s10),
+        _pair(
+          ChannelLabelledField(
+            label: _keyOptional
+                ? '${l10n.apiKey} · ${l10n.apiKeyOptional}'
+                : l10n.apiKey,
+            child: ChannelField(
+              controller: keyCtrl,
+              mono: true,
+              obscurable: true,
+              hint: _keyOptional ? l10n.apiKeyLocalPlaceholder : null,
+              onChanged: (_) => setState(() => _probe = null),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        AppLabelledField(
-          label: _keyOptional
-              ? '${l10n.apiKey} · ${l10n.apiKeyOptional}'
-              : l10n.apiKey,
-          child: ApiKeyField(
-            controller: keyCtrl,
-            hint: _keyOptional ? l10n.apiKeyLocalPlaceholder : null,
-            onChanged: (v) {},
+          ChannelLabelledField(
+            label: l10n.protocolField,
+            child: protocolField,
           ),
+          stacked: stacked,
         ),
-        const SizedBox(height: 4),
-        AppToggleRow(
+        const SizedBox(height: AppSpace.s10),
+        ChannelToggleCard(
           title: l10n.enableDiscovery,
-          description: l10n.enableDiscoveryDesc,
+          description: l10n.discoveryOffEffect,
           value: discovery,
           onChanged: (v) => setState(() => discovery = v),
         ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            AppButton(
-              // The gauge, not the generic network glyph: `15a`/`15b` draw the
-              // probe as a speedometer — a measurement, not a status.
-              label: l10n.probeChannel,
-              icon: Icons.speed,
-              variant: AppButtonVariant.text,
-              onPressed: _probing ? null : _runProbe,
-            ),
-            if (_probing) ...[
-              const SizedBox(width: 8),
-              const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ],
-          ],
+        const SizedBox(height: AppSpace.s10),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: AppButton(
+            label: l10n.probeChannel,
+            icon: Icons.network_check,
+            variant: AppButtonVariant.secondary,
+            accentLabel: true,
+            loading: _probing,
+            onPressed: _runProbe,
+          ),
         ),
-        if (_probeMessage != null) _buildProbeReceipt(context),
+        if (_probe != null) ...[
+          const SizedBox(height: AppSpace.s10),
+          ChannelProbeResultCard(
+            l10n: l10n,
+            result: _probe!,
+            onRetry: _probing ? null : _runProbe,
+          ),
+        ],
       ],
     );
   }
 
-  /// The probe's receipt line: a leading verdict glyph and the message in the
-  /// verdict's colour — success green (the semantic role, not the accent),
-  /// error red, or muted for "this type has no probe".
-  Widget _buildProbeReceipt(BuildContext context) {
+  // --- Tag & appearance, list preview ----------------------------------------
+
+  Widget _buildAppearanceSection(AppLocalizations l10n, {required bool stacked}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ChannelSectionLabel(l10n.tagAndAppearance),
+        ChannelFieldLabel(l10n.tagColor),
+        const SizedBox(height: AppSpace.s4),
+        ChannelTagColorPicker(
+          l10n: l10n,
+          selectedColor: tagColor,
+          inlineCount: 8,
+          swatchSize: 24,
+          onColorChanged: (c) => setState(() => tagColor = c),
+        ),
+      ],
+    );
+  }
+
+  /// The channel exactly as its row will render in the models screen's
+  /// channel column, so the name, tag and colour above are previewed as the
+  /// one thing they actually produce.
+  Widget _buildPreviewSection(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
-    final Color color = _probeOk == true
-        ? context.semantic.success
-        : (_probeOk == false ? colorScheme.error : colorScheme.outline);
-    final IconData icon = _probeOk == true
-        ? Icons.check
-        : (_probeOk == false ? Icons.close : Icons.info_outline);
-
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, top: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(icon, size: 13, color: color),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ChannelSectionLabel(l10n.previewInList),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppRadius.control),
           ),
-          const SizedBox(width: 7),
-          Expanded(
-            child: Text(
-              _probeMessage!,
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(color: color),
-            ),
+          child: ChannelListRowPreview(
+            name: nameCtrl.text.trim(),
+            namePlaceholder: l10n.displayName,
+            tag: tagCtrl.text.trim(),
+            color: Color(tagColor),
+            subline: l10n.countModels(_modelCount),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
-
-  /// `15a`'s closing element: the channel exactly as its row will render in
-  /// the models screen's list — disc, name, tag chip — so the three fields
-  /// above it are previewed as the one thing they actually produce.
-  Widget _buildListPreview(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final name = nameCtrl.text.trim();
-    final tag = tagCtrl.text.trim();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: colorScheme.surfaceContainerHigh),
-      ),
-      child: Row(
-        children: [
-          if (tag.isNotEmpty)
-            TagAvatar(tag, color: Color(tagColor), size: 28)
-          else
-            Icon(Icons.cloud_queue, size: 22, color: colorScheme.outline),
-          const SizedBox(width: 9),
-          Flexible(
-            child: Text(
-              name.isEmpty ? l10n.displayName : name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.titleSmall?.copyWith(
-                color: name.isEmpty ? colorScheme.outline : null,
-              ),
-            ),
-          ),
-          if (tag.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            ModelTagChip(tag, color: Color(tagColor), uppercase: false),
-          ],
-          const Spacer(),
-          Text(
-            l10n.previewInList,
-            style: textTheme.labelSmall?.mono.copyWith(
-              color: colorScheme.outline,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Probes with the *form's current values* — the whole point is testing
-  /// what the user is about to save, not what is already stored.
-  Future<void> _runProbe() async {
-    final l10n = widget.l10n;
-    setState(() {
-      _probing = true;
-      _probeMessage = null;
-      _probeOk = null;
-    });
-    final config = LLMModelConfig(
-      modelId: ChannelProbeService.probeModelId,
-      channelType: type,
-      endpoint: epCtrl.text.trim(),
-      apiKey: keyCtrl.text.trim(),
-    );
-    final result = await ChannelProbeService().probe(config);
-    if (!mounted) return;
-    setState(() {
-      _probing = false;
-      switch (result.status) {
-        case ChannelProbeStatus.ok:
-          _probeOk = true;
-          _probeMessage =
-              '${l10n.probeOk} (${result.modelCount} ${l10n.probeModels})';
-        case ChannelProbeStatus.connectedNoModels:
-          _probeOk = true;
-          _probeMessage = l10n.probeConnectedNoModels;
-        case ChannelProbeStatus.authFailed:
-          _probeOk = false;
-          _probeMessage = l10n.probeAuthFailed;
-        case ChannelProbeStatus.notAnApi:
-          _probeOk = false;
-          _probeMessage = l10n.probeNotAnApi;
-        case ChannelProbeStatus.unreachable:
-          _probeOk = false;
-          _probeMessage =
-              '${l10n.probeUnreachable}${result.detail == null ? '' : ' — ${_clip(result.detail!)}'}';
-        case ChannelProbeStatus.notSupported:
-          _probeOk = null;
-          _probeMessage = l10n.probeNotSupported;
-      }
-    });
-  }
-
-  static String _clip(String s) =>
-      s.length > 160 ? '${s.substring(0, 160)}…' : s;
 }

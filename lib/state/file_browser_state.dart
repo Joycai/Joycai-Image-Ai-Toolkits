@@ -250,8 +250,14 @@ class FileBrowserState extends ChangeNotifier {
     refresh();
   }
 
+  /// Whether a folder scan is running. Set by every [refresh], whoever asked
+  /// for it — the tree, the header, a transfer, startup — so the file area
+  /// can show `B1a · 1d` 「扫描中」 instead of an empty state.
+  bool isScanning = false;
+
   Future<void> refresh() async {
     _refreshCounter++;
+    final scan = _refreshCounter;
     
     // Check for unreachable directories
     final newUnreachable = <String>{};
@@ -263,12 +269,18 @@ class FileBrowserState extends ChangeNotifier {
     unreachableDirectories = newUnreachable;
 
     if (activeDirectories.isEmpty) {
+      isScanning = false;
       allFiles = [];
       _applyFilterAndSort();
       return;
     }
 
+    isScanning = true;
+    notifyListeners();
     final List<Map<String, dynamic>> rawFiles = await compute(_scanFilesIsolate, activeDirectories);
+    // Only the newest scan ends the scanning state; an older one landing
+    // late must not clear it while the newer is still out.
+    if (scan == _refreshCounter) isScanning = false;
     
     final newAllFiles = rawFiles.map((m) => BrowserFile.fromMap(m)).toList();
 

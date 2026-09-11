@@ -1,29 +1,27 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../state/app_state.dart';
 import '../../../state/downloader_state.dart';
-import '../../../widgets/api_key_field.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_search_field.dart';
-import '../../../widgets/app_dialog.dart';
-import '../../../widgets/app_icon_button.dart';
-import '../../../widgets/app_labelled_field.dart';
-import '../../../widgets/chat_model_selector.dart';
+import '../../../widgets/app_field_size.dart';
 import '../../../widgets/app_switch.dart';
+import '../../../widgets/chat_model_selector.dart';
+import '../../../widgets/glass/glass_controls.dart';
+import 'downloader_inputs.dart';
 
-/// Height of the toolbar's inputs and the controls that line up with them:
-/// `10f` draws the whole query bar at the spec's large field, 40.
-const double _controlHeight = 40;
+export 'downloader_advanced_dialog.dart' show showDownloaderAdvancedDialog;
 
-/// Top toolbar of the image downloader.
+/// The downloader's input bar (`B3 · 1a`, `1c`).
 ///
-/// Two rows: the address on its own, then what to look for in it and the model
-/// that will do the looking. The URL earns the full width — it is the longest
-/// value on the screen and the one you paste rather than type, so a field that
-/// scrolls its own text hides the end of the thing you just pasted.
+/// The fields sit in the order the user acts — address, what to look for, the
+/// model — with the primary action at the end of the row. One 88px row when
+/// everything fits at its measured minimum; otherwise it folds (`1c`) into a
+/// title row carrying the actions over uncaptioned field rows, which fold again
+/// one field at a time if a row still does not fit.
 class DownloaderToolbar extends StatelessWidget {
   final TextEditingController urlController;
   final TextEditingController requirementController;
@@ -40,129 +38,229 @@ class DownloaderToolbar extends StatelessWidget {
     required this.onOpenAdvanced,
   });
 
+  static const double _height = 88;
+  static const double _plate = 44;
+  static const double _titleMinWidth = 140;
+  static const double _modelWidth = 200;
+  static const double _foldedModelWidth = 220;
+
+  /// The line under the title: what the screen is doing right now.
+  String? _subtitle(AppLocalizations l10n, DownloaderState state) {
+    if (isAnalyzing) return l10n.analyzing;
+    if (state.isManualHtml) {
+      if (state.manualHtml.isEmpty) return l10n.manualHtmlMode;
+      return '${l10n.manualHtmlMode} · ${(state.manualHtml.length / 1024).toStringAsFixed(1)} KB';
+    }
+    final found = state.discoveredImages.length;
+    if (found == 0) return null;
+    return l10n.downloaderFoundCount(found);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final state = context.watch<DownloaderState>();
-    final colorScheme = Theme.of(context).colorScheme;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
-    final urlField = SizedBox(
-      height: _controlHeight,
-      child: TextField(
-        controller: urlController,
-        // Monospace: this is an address, not prose. Fixed widths make a typo in
-        // a long path something you can see rather than something you re-read.
-        style: Theme.of(context).textTheme.bodyMedium?.mono,
-        decoration: _fieldDecoration(context, colorScheme, l10n.websiteUrl, Icons.link),
+    final subtitle = _subtitle(l10n, state);
+    final titleStyle = textTheme.titleLarge!;
+    final subtitleStyle = textTheme.bodySmall!.mono.copyWith(
+      color: isAnalyzing ? scheme.accentText : scheme.onSurfaceVariant,
+      fontWeight: isAnalyzing ? FontWeight.w600 : FontWeight.w400,
+    );
+    // Monospace: an address, not prose — a typo in a long path is something
+    // you can see in fixed widths.
+    final urlStyle = textTheme.bodySmall!.mono;
+    final bodyStyle = textTheme.bodySmall!;
+
+    final urlField = TextField(
+      controller: urlController,
+      style: urlStyle,
+      keyboardType: TextInputType.url,
+      textAlignVertical: TextAlignVertical.center,
+      decoration: downloaderFieldDecoration(
+        context,
+        style: urlStyle,
+        hint: l10n.websiteUrlHint,
+        icon: Icons.link,
       ),
     );
 
-    final requirementField = SizedBox(
-      height: _controlHeight,
-      child: AppSearchField(
-        controller: requirementController,
-        hint: l10n.whatToFind,
-        onSubmitted: (_) => isAnalyzing ? null : onAnalyze(),
-      ),
+    final requirementField = TextField(
+      controller: requirementController,
+      style: bodyStyle,
+      textAlignVertical: TextAlignVertical.center,
+      onSubmitted: (_) {
+        if (!isAnalyzing) onAnalyze();
+      },
+      decoration: downloaderFieldDecoration(context, style: bodyStyle, hint: l10n.whatToFindHint),
     );
 
-    // The large select with its caption above, as `10f` draws it: the box
-    // is the theme's 40, the same as the two fields beside it, and the row
-    // aligns everything to the bottom so the box lines up with them under
-    // its own caption. A notched caption on the field was tried and is what
-    // the spec now rules out for every select.
-    final modelSelector = SizedBox(
-      width: 250,
-      child: AppLabelledField(
-        label: l10n.analysisModel,
-        child: ChatModelSelector(
-          selectedModelId: state.selectedModelDbId,
-          label: l10n.analysisModel,
-          onChanged: (v) => state.setState(selectedModelDbId: v),
-        ),
-      ),
+    final modelSelector = ChatModelSelector(
+      selectedModelId: state.selectedModelDbId,
+      label: l10n.analysisModel,
+      size: AppFieldSize.regular,
+      decoration: InputDecoration(filled: true, fillColor: scheme.surface),
+      onChanged: (v) => state.setState(selectedModelDbId: v),
     );
 
-    final findButton = SizedBox(
-      height: _controlHeight,
-      child: AppButton(
-        label: isAnalyzing ? l10n.analyzing : l10n.findImages,
-        icon: Icons.image_search,
-        loading: isAnalyzing,
-        onPressed: onAnalyze,
-      ),
-    );
-
-    final advancedButton = AppIconButton(
-      icon: Icons.tune,
+    final gear = DownloaderActionButton(
+      icon: Icons.settings_outlined,
       tooltip: l10n.advancedOptions,
-      size: _controlHeight,
+      height: AppSize.large,
+      iconSize: AppSize.iconLg,
+      foreground: scheme.onSurfaceVariant,
       onPressed: onOpenAdvanced,
     );
 
-    final title = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.cloud_download_outlined, size: 24, color: colorScheme.primary),
-        const SizedBox(width: 10),
-        Text(
-          l10n.imageDownloader,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-      ],
+    final title = _TitleBlock(
+      title: l10n.imageDownloader,
+      subtitle: subtitle,
+      titleStyle: titleStyle,
+      subtitleStyle: subtitleStyle,
     );
 
-    // Header row of the downloader column: no fill of its own — the panel
-    // surface shows through; the bottom border is the internal divider.
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+    return DecoratedBox(
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
-        ),
+        color: scheme.surfaceContainerLow,
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final actions = [
-            modelSelector,
-            const SizedBox(width: 8),
-            findButton,
-            const SizedBox(width: 8),
-            advancedButton,
-          ];
+          final available = constraints.maxWidth - 2 * kDownloaderGutter;
+          double measure(String text, TextStyle style) => measureGlassText(context, text, style);
 
-          return Column(
-            children: [
-              Row(
+          final titleWidth = math
+              .max(
+                _titleMinWidth,
+                math.max(
+                  measure(l10n.imageDownloader, titleStyle),
+                  subtitle == null ? 0.0 : measure(subtitle, subtitleStyle),
+                ),
+              )
+              .ceilToDouble();
+          final findWidth = _FindImagesButton.widthFor(context);
+          // A field is squeezed past use once its own hint no longer fits.
+          final urlMin = AppSize.control + measure(l10n.websiteUrlHint, urlStyle) + AppSpace.s10;
+          final whatMin = AppSpace.s10 + measure(l10n.whatToFindHint, bodyStyle) + AppSpace.s10;
+
+          final oneRow = _plate +
+              titleWidth +
+              urlMin +
+              whatMin +
+              _modelWidth +
+              findWidth +
+              AppSize.large +
+              kDownloaderGap * 6;
+
+          if (oneRow <= available) {
+            // The buttons drop by the caption's height so their centres meet
+            // the input boxes' centres (`margin-top 14`), measured rather than
+            // pinned so a larger text scale keeps them aligned.
+            final captionBlock = downloaderLineHeight(context, downloaderCaptionStyle(context)) + AppSpace.s4;
+            return Container(
+              constraints: const BoxConstraints(minHeight: _height),
+              padding: const EdgeInsets.symmetric(horizontal: kDownloaderGutter, vertical: AppSpace.s10),
+              alignment: Alignment.center,
+              child: Row(
                 children: [
-                  title,
-                  const SizedBox(width: 16),
-                  Expanded(child: urlField),
+                  const _TitlePlate(size: _plate, glyph: 24),
+                  const SizedBox(width: kDownloaderGap),
+                  SizedBox(width: titleWidth, child: title),
+                  const SizedBox(width: kDownloaderGap),
+                  Expanded(flex: 7, child: _CaptionedField(caption: l10n.websiteUrl, child: urlField)),
+                  const SizedBox(width: kDownloaderGap),
+                  Expanded(flex: 5, child: _CaptionedField(caption: l10n.whatToFind, child: requirementField)),
+                  const SizedBox(width: kDownloaderGap),
+                  SizedBox(
+                    width: _modelWidth,
+                    child: _CaptionedField(caption: l10n.analysisModel, child: modelSelector),
+                  ),
+                  const SizedBox(width: kDownloaderGap),
+                  Padding(
+                    padding: EdgeInsets.only(top: captionBlock),
+                    child: _FindImagesButton(analyzing: isAnalyzing, onPressed: onAnalyze),
+                  ),
+                  const SizedBox(width: kDownloaderGap),
+                  Padding(padding: EdgeInsets.only(top: captionBlock), child: gear),
                 ],
               ),
-              const SizedBox(height: 10),
-              // Below ~820 the requirement field is squeezed to a few
-              // characters by the controls beside it, so it takes its own row.
-              if (constraints.maxWidth >= 820)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [Expanded(child: requirementField), const SizedBox(width: 8), ...actions],
-                )
-              else ...[
-                requirementField,
-                const SizedBox(height: 10),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(child: modelSelector),
-                    const SizedBox(width: 8),
-                    findButton,
-                    const SizedBox(width: 8),
-                    advancedButton,
-                  ],
-                ),
+            );
+          }
+
+          // Folded (`1c`): 12 + 40 + 10 + 32 + 12.
+          final labelledFind = AppSize.large +
+                  AppSpace.s10 +
+                  measure(l10n.imageDownloader, titleStyle) +
+                  kDownloaderGap +
+                  findWidth +
+                  AppSpace.s6 +
+                  AppSize.large <=
+              available;
+
+          Widget sized(Widget child) => SizedBox(height: AppSize.control, child: child);
+          const gap = SizedBox(width: kDownloaderGap);
+          final rows = <Widget>[];
+          if (urlMin + whatMin + _foldedModelWidth + 2 * kDownloaderGap <= available) {
+            rows.add(sized(Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(flex: 7, child: urlField),
+                gap,
+                Expanded(flex: 5, child: requirementField),
+                gap,
+                SizedBox(width: _foldedModelWidth, child: modelSelector),
               ],
-            ],
+            )));
+          } else if (whatMin + _foldedModelWidth + kDownloaderGap <= available) {
+            rows
+              ..add(sized(urlField))
+              ..add(sized(Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: requirementField),
+                  gap,
+                  SizedBox(width: _foldedModelWidth, child: modelSelector),
+                ],
+              )));
+          } else {
+            rows
+              ..add(sized(urlField))
+              ..add(sized(requirementField))
+              ..add(sized(modelSelector));
+          }
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: kDownloaderGutter, vertical: kDownloaderGap),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(
+                  height: AppSize.large,
+                  child: Row(
+                    children: [
+                      const _TitlePlate(size: AppSize.large, glyph: AppSize.iconLg),
+                      const SizedBox(width: AppSpace.s10),
+                      Expanded(child: title),
+                      const SizedBox(width: kDownloaderGap),
+                      _FindImagesButton(
+                        analyzing: isAnalyzing,
+                        onPressed: onAnalyze,
+                        iconOnly: !labelledFind,
+                      ),
+                      const SizedBox(width: AppSpace.s6),
+                      gear,
+                    ],
+                  ),
+                ),
+                for (final row in rows) ...[
+                  const SizedBox(height: AppSpace.s10),
+                  row,
+                ],
+              ],
+            ),
           );
         },
       ),
@@ -170,31 +268,208 @@ class DownloaderToolbar extends StatelessWidget {
   }
 }
 
-/// The address bar's own decoration.
-///
-/// Was shared with the requirement field beside it, which is now an
-/// [AppSearchField]; this is the only caller left. It keeps its fill rather
-/// than following the theme's outlined input because the URL bar is the one
-/// field that spans the toolbar and reads as a surface of its own, not as a
-/// control in a row of controls.
-/// The URL field's decoration: the theme's outlined box — `10f` draws the
-/// query bar's fields with the same hairline as every other input — with a
-/// glyph ahead of the address. Zero inset because the field is sized by the
-/// toolbar and centres itself in it, as `AppSearchField` beside it does.
-///
-/// This used to be a soft fill with no outline, which made the bar the one
-/// place in the app whose inputs were drawn differently from the theme's.
-InputDecoration _fieldDecoration(BuildContext context, ColorScheme colorScheme, String hint, IconData icon) {
-  return InputDecoration(
-    hintText: hint,
-    hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
-    prefixIcon: Icon(icon, size: 18, color: colorScheme.outline),
-    contentPadding: EdgeInsets.zero,
-  );
+/// The screen's glyph on the accent wash (`44 r10 tint cloud_download`).
+class _TitlePlate extends StatelessWidget {
+  const _TitlePlate({required this.size, required this.glyph});
+
+  final double size;
+  final double glyph;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: scheme.accentTint,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+      ),
+      child: Icon(Icons.cloud_download_outlined, size: glyph, color: scheme.primary),
+    );
+  }
 }
 
-/// Slim strip under the toolbar: manual-HTML mode, save-HTML shortcut, log
-/// toggle on the left; discovery counters on the right.
+class _TitleBlock extends StatelessWidget {
+  const _TitleBlock({
+    required this.title,
+    required this.subtitle,
+    required this.titleStyle,
+    required this.subtitleStyle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final TextStyle titleStyle;
+  final TextStyle subtitleStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: titleStyle),
+        if (subtitle != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            subtitle!,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: subtitleStyle,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// An 11px caption over a 32px box.
+class _CaptionedField extends StatelessWidget {
+  const _CaptionedField({required this.caption, required this.child});
+
+  final String caption;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          caption,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          style: downloaderCaptionStyle(context),
+        ),
+        const SizedBox(height: AppSpace.s4),
+        SizedBox(height: AppSize.control, child: child),
+      ],
+    );
+  }
+}
+
+/// `查找图片`: the screen's one solid accent, 40 at r10 with a ring-coloured
+/// drop. While analyzing it is the track under secondary ink with a 14px
+/// spinner, and does nothing.
+///
+/// Sized to the wider of its two labels so the row does not reflow when an
+/// analysis starts.
+class _FindImagesButton extends StatelessWidget {
+  const _FindImagesButton({
+    required this.analyzing,
+    required this.onPressed,
+    this.iconOnly = false,
+  });
+
+  final bool analyzing;
+  final VoidCallback onPressed;
+  final bool iconOnly;
+
+  static const double _pad = AppSpace.s16;
+  static const double _glyph = 18;
+  static const double _glyphGap = 8;
+
+  static TextStyle _labelStyle(BuildContext context) =>
+      Theme.of(context).textTheme.labelLarge!.metricsOnly.copyWith(fontWeight: FontWeight.w600);
+
+  static double widthFor(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final style = _labelStyle(context);
+    final text = math.max(
+      measureGlassText(context, l10n.findImages, style),
+      measureGlassText(context, l10n.analyzing, style),
+    );
+    return (_pad + _glyph + _glyphGap + text + _pad).ceilToDouble();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+    final enabled = !analyzing;
+    final Color ground = enabled ? scheme.primary : scheme.surfaceContainerHighest;
+    final Color ink = enabled ? scheme.onPrimary : scheme.onSurfaceVariant;
+    final label = analyzing ? l10n.analyzing : l10n.findImages;
+    final radius = BorderRadius.circular(AppRadius.control);
+
+    final glyph = SizedBox.square(
+      dimension: _glyph,
+      child: analyzing
+          ? Center(
+              child: SizedBox.square(
+                dimension: AppSize.iconSm,
+                child: CircularProgressIndicator(strokeWidth: 2, color: ink),
+              ),
+            )
+          : Icon(Icons.travel_explore, size: _glyph, color: ink),
+    );
+
+    final Widget content = iconOnly
+        ? SizedBox.square(dimension: AppSize.large, child: Center(child: glyph))
+        : SizedBox(
+            width: widthFor(context),
+            height: AppSize.large,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: _pad),
+              child: Row(
+                children: [
+                  glyph,
+                  const SizedBox(width: _glyphGap),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      style: _labelStyle(context).copyWith(color: ink),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+    Widget button = AnimatedContainer(
+      duration: AppMotion.durationOf(context, AppMotion.state),
+      curve: AppMotion.enter,
+      decoration: BoxDecoration(
+        color: ground,
+        borderRadius: radius,
+        boxShadow: enabled
+            ? [BoxShadow(color: scheme.accentRing, blurRadius: 12, offset: const Offset(0, 4))]
+            : const [],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: enabled ? onPressed : null,
+          borderRadius: radius,
+          hoverColor: ink.withValues(alpha: 0.08),
+          splashColor: ink.withValues(alpha: 0.12),
+          child: content,
+        ),
+      ),
+    );
+    if (iconOnly) button = Tooltip(message: label, child: button);
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: iconOnly ? label : null,
+      child: button,
+    );
+  }
+}
+
+/// The 40px strip under the toolbar (`B3 · 1a`, `1c`): manual-HTML mode with
+/// its paste and clear, save-origin-HTML, and the logs switch at the far end.
+///
+/// Paste and clear are always drawn and disabled while manual mode is off, so
+/// the strip does not reflow under the pointer when it is switched. The three
+/// actions give up their labels, by measurement, before anything else goes.
 class DownloaderOptionsStrip extends StatelessWidget {
   final bool isAnalyzing;
   final bool showLogs;
@@ -211,198 +486,113 @@ class DownloaderOptionsStrip extends StatelessWidget {
     required this.onPasteHtml,
   });
 
+  static const double height = AppSize.large;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final state = context.watch<DownloaderState>();
-    final colorScheme = Theme.of(context).colorScheme;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final manual = state.isManualHtml;
 
-    final discoveredCount = state.discoveredImages.length;
-    final selectedCount =
-        state.discoveredImages.where((i) => i.isSelected).length;
+    final manualStyle = textTheme.bodySmall!.copyWith(
+      color: manual ? scheme.accentText : scheme.onSurfaceVariant,
+      fontWeight: manual ? FontWeight.w500 : FontWeight.w400,
+    );
+    final logsStyle = textTheme.bodySmall!.copyWith(color: scheme.onSurfaceVariant);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: kDownloaderGutter),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
-        ),
+        color: scheme.surfaceContainerLow,
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
       ),
-      child: Row(
-        children: [
-          AppSwitch(
-            value: state.isManualHtml,
-            onChanged: (v) => state.setState(isManualHtml: v),
-          ),
-          Text(l10n.manualHtmlMode,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: colorScheme.onSurfaceVariant)),
-          if (state.isManualHtml) ...[
-            const SizedBox(width: 4),
-            AppButton(
-              label: l10n.pasteFromClipboard,
-              icon: Icons.paste,
-              variant: AppButtonVariant.text,
-              size: AppButtonSize.compact,
-              onPressed: onPasteHtml,
-            ),
-            if (state.manualHtml.isNotEmpty) ...[
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${(state.manualHtml.length / 1024).toStringAsFixed(1)} KB',
-                  style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                      color: colorScheme.onSurfaceVariant),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          double action(String label) =>
+              DownloaderActionButton.widthFor(context, label: label, height: AppSize.compact);
+          final fullWidth = measureGlassText(context, l10n.manualHtmlMode, manualStyle.copyWith(fontWeight: FontWeight.w500)) +
+              AppSpace.s6 +
+              AppSwitch.size.width +
+              kDownloaderGap +
+              action(l10n.pasteFromClipboard) +
+              AppSpace.s4 +
+              action(l10n.clear) +
+              AppSpace.s10 * 2 +
+              1 +
+              action(l10n.saveOriginHtml) +
+              AppSpace.s16 +
+              measureGlassText(context, l10n.logs, logsStyle) +
+              AppSpace.s6 +
+              AppSwitch.size.width;
+          final labels = fullWidth <= constraints.maxWidth;
+
+          return Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        l10n.manualHtmlMode,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: manualStyle,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpace.s6),
+                    AppSwitch(
+                      value: manual,
+                      onChanged: (v) => state.setState(isManualHtml: v),
+                    ),
+                    const SizedBox(width: kDownloaderGap),
+                    DownloaderActionButton(
+                      icon: Icons.content_paste,
+                      label: labels ? l10n.pasteFromClipboard : null,
+                      tooltip: labels ? null : l10n.pasteFromClipboard,
+                      height: AppSize.compact,
+                      onPressed: manual ? onPasteHtml : null,
+                    ),
+                    const SizedBox(width: AppSpace.s4),
+                    DownloaderActionButton(
+                      icon: Icons.clear,
+                      label: labels ? l10n.clear : null,
+                      tooltip: labels ? null : l10n.clear,
+                      height: AppSize.compact,
+                      outlined: false,
+                      foreground: scheme.error,
+                      onPressed: manual && state.manualHtml.isNotEmpty
+                          ? () => state.setState(manualHtml: '')
+                          : null,
+                    ),
+                    const SizedBox(width: AppSpace.s10),
+                    SizedBox(width: 1, height: 20, child: ColoredBox(color: scheme.outlineVariant)),
+                    const SizedBox(width: AppSpace.s10),
+                    DownloaderActionButton(
+                      icon: Icons.html,
+                      label: labels ? l10n.saveOriginHtml : null,
+                      tooltip: labels ? null : l10n.saveOriginHtml,
+                      height: AppSize.compact,
+                      onPressed: isAnalyzing ? null : onSaveHtml,
+                    ),
+                  ],
                 ),
               ),
-              IconButton(
-                onPressed: () => state.setState(manualHtml: ''),
-                icon: const Icon(Icons.clear, size: 14),
-                tooltip: l10n.clear,
-                visualDensity: VisualDensity.compact,
-                color: colorScheme.error,
+              const SizedBox(width: AppSpace.s16),
+              Text(l10n.logs, maxLines: 1, style: logsStyle),
+              const SizedBox(width: AppSpace.s6),
+              // Disabled until there is something to read.
+              AppSwitch(
+                value: showLogs && state.logs.isNotEmpty,
+                onChanged: state.logs.isEmpty ? null : (_) => onToggleLogs(),
               ),
             ],
-          ],
-          const SizedBox(width: 8),
-          Container(width: 1, height: 18, color: colorScheme.outlineVariant),
-          const SizedBox(width: 4),
-          AppButton(
-            label: l10n.saveOriginHtml,
-            icon: Icons.html,
-            variant: AppButtonVariant.text,
-            size: AppButtonSize.compact,
-            onPressed: isAnalyzing ? null : onSaveHtml,
-          ),
-          const SizedBox(width: 4),
-          // Always drawn, disabled until there is something to read. Appearing
-          // only once logs exist made the strip re-flow under the pointer.
-          AppIconButton(
-            icon: Icons.terminal,
-            tooltip: l10n.logs,
-            size: 30,
-            selected: showLogs,
-            onPressed: state.logs.isEmpty ? null : onToggleLogs,
-          ),
-          const Spacer(),
-          // Nothing found yet is not a result worth captioning: an empty strip
-          // says it, where the bare word "Results" reads as a heading for a
-          // section that is not there.
-          if (discoveredCount > 0)
-            Flexible(
-              child: Text(
-                l10n.downloaderFoundSelected(discoveredCount, selectedCount),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ),
-        ],
+          );
+        },
       ),
     );
   }
-}
-
-/// Advanced options (filename prefix + cookies) moved from the old left
-/// panel's expansion tile into a compact dialog behind the toolbar's tune
-/// button.
-Future<void> showDownloaderAdvancedDialog(
-  BuildContext context, {
-  required TextEditingController prefixController,
-  required TextEditingController cookieController,
-  required VoidCallback onImportCookie,
-}) {
-  final l10n = AppLocalizations.of(context)!;
-  final state = Provider.of<AppState>(context, listen: false).downloaderState;
-
-  return AppDialog.show<void>(
-    context,
-    icon: Icons.tune,
-    title: l10n.advancedOptions,
-    maxWidth: 440,
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: prefixController,
-          decoration: InputDecoration(
-            labelText: l10n.filenamePrefix,
-            prefixIcon: const Icon(Icons.drive_file_rename_outline, size: 20),
-          ),
-        ),
-        const SizedBox(height: 16),
-        ApiKeyField(
-          controller: cookieController,
-          label: l10n.cookiesHint,
-          maxLines: 3,
-          onChanged: (v) => state.setState(cookies: v),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            AppButton(
-              label: l10n.importCookieFile,
-              icon: Icons.upload_file,
-              variant: AppButtonVariant.text,
-              onPressed: () {
-                Navigator.pop(context);
-                onImportCookie();
-              },
-            ),
-            if (state.cookieHistory.isNotEmpty)
-              AppButton(
-                label: l10n.cookieHistory,
-                icon: Icons.history,
-                variant: AppButtonVariant.text,
-                onPressed: () {
-                  Navigator.pop(context);
-                  _showCookieHistory(context, state, cookieController);
-                },
-              ),
-          ],
-        ),
-      ],
-    ),
-    actions: [
-      AppButton(
-        label: l10n.finish,
-        onPressed: () => Navigator.pop(context),
-      ),
-    ],
-  );
-}
-
-void _showCookieHistory(
-  BuildContext context,
-  DownloaderState state,
-  TextEditingController cookieController,
-) {
-  showModalBottomSheet(
-    context: context,
-    builder: (context) => ListView(
-      shrinkWrap: true,
-      children: state.cookieHistory
-          .map<Widget>((h) => ListTile(
-                leading: const Icon(Icons.history),
-                title: Text(h['host']),
-                onTap: () {
-                  cookieController.text = h['cookies'];
-                  state.setState(cookies: h['cookies']);
-                  Navigator.pop(context);
-                },
-              ))
-          .toList(),
-    ),
-  );
 }

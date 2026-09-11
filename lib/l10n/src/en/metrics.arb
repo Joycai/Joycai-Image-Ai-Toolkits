@@ -55,5 +55,21 @@
   },
   "noUsageInRange": "No usage data in the selected range.",
   "loadMore": "Load More",
-  "invalidPriceValue": "Enter a valid non-negative number"
+  "invalidPriceValue": "Enter a valid non-negative number",
+  "usageLoadingRecords": "Totalling usage records…",
+  "noUsageInRangeHint": "Try another range, or run a task first.",
+  "usageLoadMoreStatus": "{pageSize} per page · {shown} / {total} shown",
+  "@usageLoadMoreStatus": {
+    "placeholders": {
+      "pageSize": {
+        "type": "int"
+      },
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }

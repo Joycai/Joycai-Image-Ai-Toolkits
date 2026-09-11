@@ -2,6 +2,102 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../core/design_tokens.dart';
+
+/// Saturation and value every picked hue is drawn at, shared by the bar and
+/// the wheel so a category keeps its colour whichever one chose it.
+const double _kPickSaturation = 0.8;
+const double _kPickValue = 0.9;
+
+/// A horizontal hue bar (`C1 · 1d` 新建分类): a 12px r6 rainbow track and a
+/// 20px handle filled with the current colour, ringed 3px in the panel colour.
+///
+/// Category colours are identity colours; nothing here reads the accent.
+class ColorHueBar extends StatelessWidget {
+  const ColorHueBar({
+    super.key,
+    required this.color,
+    required this.onColorChanged,
+  });
+
+  final Color color;
+  final ValueChanged<int> onColorChanged;
+
+  static const double _handle = 20;
+  static const double _track = 12;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final hue = HSVColor.fromColor(color).hue;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final usable = math.max(1.0, width - _handle);
+
+        void pick(double dx) {
+          final t = ((dx - _handle / 2) / usable).clamp(0.0, 1.0);
+          onColorChanged(HSVColor.fromAHSV(1, t * 360, _kPickSaturation, _kPickValue).toColor().toARGB32());
+        }
+
+        return Semantics(
+          slider: true,
+          value: '${hue.round()}',
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (d) => pick(d.localPosition.dx),
+              onHorizontalDragStart: (d) => pick(d.localPosition.dx),
+              onHorizontalDragUpdate: (d) => pick(d.localPosition.dx),
+              child: SizedBox(
+                width: width,
+                height: _handle,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: _handle / 2,
+                      right: _handle / 2,
+                      top: (_handle - _track) / 2,
+                      height: _track,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                          gradient: LinearGradient(
+                            colors: [
+                              for (int i = 0; i <= 6; i++)
+                                HSVColor.fromAHSV(1, i * 60.0, _kPickSaturation, _kPickValue).toColor(),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: usable * hue / 360,
+                      top: 0,
+                      child: Container(
+                        width: _handle,
+                        height: _handle,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: scheme.surface, width: 3),
+                          boxShadow: scheme.shadowRaised,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// A simple Hue color picker wheel implementation
 class ColorHuePicker extends StatefulWidget {
   final Color initialColor;

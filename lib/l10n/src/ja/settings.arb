@@ -139,5 +139,28 @@
       "year": {},
       "holder": {}
     }
-  }
+  },
+  "themeMode": "テーマモード",
+  "visualEffects": "エフェクト",
+  "settingsGroupNotifications": "通知とログ",
+  "settingsGroupDirectories": "ディレクトリ",
+  "settingsGroupAssistant": "アシスタント",
+  "customAccentTitle": "カスタムテーマカラー",
+  "customAccentHint": "リングをドラッグするか hex 値を貼り付け",
+  "customAccentDerived": "導出されたペア",
+  "customAccentPassed": "白文字で読めます。ボタンは白文字のままです。",
+  "customAccentInkFallback": "この色では白文字が読みにくいため、ボタンは同じ色相の濃いインクを使います。",
+  "customAccentFailed": "この色はコントラストの基準を満たせません。",
+  "fontFollowSystem": "OS に従う",
+  "fontNotDownloaded": "未ダウンロード",
+  "fontDownloadedOffline": "ダウンロード済み · オフラインで利用可",
+  "languageFollowSystem": "システムの言語に従う",
+  "exportSettingsNote": "ディレクトリ・プロンプト・使用記録は任意。API キーは含まれません",
+  "clearTempFilesNote": "マスク · 切り抜きのコピー · ダウンローダーのキャッシュ · 動画サムネイル",
+  "resetAllSettingsNote": "初回起動の状態に戻します",
+  "resetIrreversible": "元に戻せません",
+  "proxyAppliesToAll": "すべてのチャネルのリクエストに適用",
+  "notificationsDesc": "タスクの完了・失敗時に通知します",
+  "mcpServerDesc": "外部ツールから MCP 経由でこのアプリを呼び出せるようにします",
+  "mcpComingSoon": "近日公開（このバージョンでは未実装）"
 }

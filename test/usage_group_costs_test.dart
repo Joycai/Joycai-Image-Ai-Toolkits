@@ -81,9 +81,10 @@ void main() {
   testWidgets('orders groups by what they cost', (tester) async {
     await pumpCosts(tester, stats({1: 0.5, 2: 1.5}), const Size(1920, 1080));
 
+    // One card of rows now: the dearer group is the row above.
     expect(
-      tester.getRect(find.text('Expensive Group')).left,
-      lessThan(tester.getRect(find.text('Cheap Group')).left),
+      tester.getRect(find.text('Expensive Group')).top,
+      lessThan(tester.getRect(find.text('Cheap Group')).top),
     );
   });
 

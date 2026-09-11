@@ -68,5 +68,15 @@
   "reorderDisabledWhileFiltered": "篩選或搜尋時無法拖曳排序",
   "matchModeLabel": "符合",
   "matchAny": "任一",
-  "matchAllTags": "全部"
+  "matchAllTags": "全部",
+  "promptFilterSummary": "{count} 個分類篩選中 · 符合 {matches} 條",
+  "promptEditorSubtitle": "儲存後可在工作台右欄一鍵套用",
+  "categoryColorHint": "顏色只用來區分類別",
+  "promptCount": "{count} 條提示詞",
+  "categoryDeleteNote": "刪除分類時，它底下的提示詞會落回 General，不會被刪除。",
+  "importFileSummary": "{file} · {count} 條",
+  "importMergeDetail": "保留現有 {current} 條，追加不重複的",
+  "importReplaceDetail": "刪除現有 {current} 條，只保留檔案裡的 {count} 條",
+  "promptLibraryEmptyHint": "把工作台裡用順手的提示詞存下來，下次一鍵套用。",
+  "colorPresets": "預設"
 }

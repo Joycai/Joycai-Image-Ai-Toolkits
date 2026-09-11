@@ -88,5 +88,13 @@
   "logSearchHint": "Filter logs…",
   "logLevelError": "Error",
   "logLevelRunning": "Running",
-  "logLevelSuccess": "Success"
+  "logLevelSuccess": "Success",
+  "goToSettings": "Go to Settings",
+  "actionImport": "Import",
+  "actionExport": "Export",
+  "actionOpen": "Open",
+  "actionClear": "Clear",
+  "actionRun": "Run",
+  "actionChange": "Change",
+  "experimental": "Experimental"
 }

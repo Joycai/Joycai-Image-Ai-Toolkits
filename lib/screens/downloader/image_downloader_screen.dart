@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
-import '../../core/app_theme.dart';
+import '../../core/app_semantic_colors.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
@@ -16,13 +16,19 @@ import '../../state/app_state.dart';
 import '../../state/downloader_state.dart';
 import '../../widgets/app_run_console.dart';
 import '../../widgets/app_snackbar.dart';
-import '../../widgets/panel_resizer.dart';
+import '../../widgets/app_window_frame.dart';
+import '../../widgets/shell/app_destinations.dart';
+import 'widgets/downloader_inputs.dart';
+import 'widgets/downloader_log_panel.dart';
 import 'widgets/downloader_results_area.dart';
 import 'widgets/downloader_toolbar.dart';
 
-/// Image downloader. Toolbar layout: URL / requirement / model / action in a
-/// top bar, a slim options strip below it, and the full-width results grid —
-/// replacing the old fixed 350px left panel.
+/// Image downloader (`B3`).
+///
+/// One column, top to bottom: the input toolbar, the iOS output-folder note,
+/// the options strip, the log panel (animated open), the results, and the
+/// execution console. The strips are opaque; the grid is transparent over the
+/// window's backdrop.
 class ImageDownloaderScreen extends StatefulWidget {
   const ImageDownloaderScreen({super.key});
 
@@ -64,6 +70,16 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     super.dispose();
   }
 
+  void _openSettings() {
+    Provider.of<AppState>(context, listen: false).navigateToScreen(AppDestination.settings.index);
+  }
+
+  /// An address the scraper can fetch: an http(s) scheme and a host.
+  static bool _isFetchableUrl(String text) {
+    final uri = Uri.tryParse(text);
+    return uri != null && (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty;
+  }
+
   Future<void> _pasteHtml() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (!mounted) return;
@@ -80,8 +96,8 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final appState = Provider.of<AppState>(context, listen: false);
     final state = appState.downloaderState;
 
-    if (_urlController.text.isEmpty) {
-      AppSnackBar.warning(context, l10n.urlRequired);
+    if (!_isFetchableUrl(_urlController.text)) {
+      AppSnackBar.error(context, l10n.urlRequired);
       return;
     }
 
@@ -104,10 +120,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
         AppSnackBar.warning(
           context,
           l10n.noModelsConfigured,
-          action: AppSnackBarAction(
-            label: l10n.settings,
-            onPressed: () => appState.navigateToScreen(6),
-          ),
+          action: AppSnackBarAction(label: l10n.goToSettings, onPressed: _openSettings),
         );
       }
       return;
@@ -120,7 +133,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     try {
       await state.analyze();
       if (mounted && state.discoveredImages.isNotEmpty) {
-        // Collapse the log strip once results land so the grid gets space.
+        // Collapse the log panel once results land so the grid gets space.
         setState(() => _showLogs = false);
       }
     } catch (e) {
@@ -146,7 +159,11 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     if (!mounted) return;
 
     if (outputDir == null || outputDir.isEmpty) {
-      AppSnackBar.warning(context, l10n.setOutputDirFirst);
+      AppSnackBar.warning(
+        context,
+        l10n.setOutputDirFirst,
+        action: AppSnackBarAction(label: l10n.goToSettings, onPressed: _openSettings),
+      );
       return;
     }
 
@@ -190,7 +207,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       type: TaskType.imageDownload,
     );
 
-    AppSnackBar.info(context, l10n.addedToQueue(selected.length));
+    AppSnackBar.success(context, l10n.addedToQueue(selected.length));
   }
 
   Future<void> _importCookieFile() async {
@@ -249,9 +266,21 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     }
   }
 
+  Future<void> _openAdvancedOptions() async {
+    final state = Provider.of<AppState>(context, listen: false).downloaderState;
+    await showDownloaderAdvancedDialog(
+      context,
+      prefixController: _prefixController,
+      cookieController: _cookieController,
+      onImportCookie: _importCookieFile,
+    );
+    // The prefix field writes through without notifying, and the status row
+    // shows it.
+    state.notify();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     // Two subscriptions, deliberately: the downloader's own data comes from
     // DownloaderState, the model list from AppState. AppState no longer
     // forwards its sub-states' notifications, so watching it alone would leave
@@ -264,230 +293,101 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       state.selectedModelDbId = appState.chatModels.first.id;
     }
 
-    // One flush column: header toolbar, options strip, log console, results
-    // grid. `B2` draws it edge to edge like the other tool screens — this was
-    // a rounded card inset on the canvas, which is the language the restyle
-    // moved off for everything but 设置.
+    final logsOpen = _showLogs && state.logs.isNotEmpty;
+
     return Scaffold(
-      backgroundColor: colorScheme.surfaceContainer,
+      // Transparent over the window's backdrop: the strips paint their own
+      // column ground and the grid between them does not. The canvas colour
+      // where there is no custom window frame to show through to.
+      backgroundColor: usesCustomWindowChrome ? Colors.transparent : colorScheme.surfaceContainer,
       bottomNavigationBar: const AppRunConsole(),
-      body: PanelCard(
-          shape: PanelShape.column,
-          child: Column(
-            children: [
-              DownloaderToolbar(
-                urlController: _urlController,
-                requirementController: _requirementController,
-                isAnalyzing: state.isAnalyzing,
-                onAnalyze: _analyze,
-                onOpenAdvanced: () => showDownloaderAdvancedDialog(
-                  context,
-                  prefixController: _prefixController,
-                  cookieController: _cookieController,
-                  onImportCookie: _importCookieFile,
-                ),
-              ),
-              if (Platform.isIOS)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  // The accent wash, not `primaryContainer`: the container
-                  // role is the palette's tone 90 at maximum chroma, a neon
-                  // slab at the teal and green presets. The wash is the
-                  // pairing every other tinted surface in the app uses.
-                  color: colorScheme.accentTint,
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, size: 16, color: colorScheme.primary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          l10n.iosOutputRecommend,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onAccentTint),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              SizedBox(
-                height: 40,
-                child: DownloaderOptionsStrip(
-                  isAnalyzing: state.isAnalyzing,
-                  showLogs: _showLogs,
-                  onToggleLogs: () => setState(() => _showLogs = !_showLogs),
-                  onSaveHtml: _saveOriginHtml,
-                  onPasteHtml: _pasteHtml,
-                ),
-              ),
-              AnimatedContainer(
-                duration: AppMotion.durationOf(context, AppMotion.reveal),
-                curve: AppMotion.enter,
-                height: _showLogs && state.logs.isNotEmpty ? 196 : 0,
-                child: state.logs.isNotEmpty
-                    ? ClipRect(
-                        child: OverflowBox(
-                          minHeight: 196,
-                          maxHeight: 196,
-                          alignment: Alignment.topCenter,
-                          child: _DownloaderLogPanel(
-                            logs: state.logs,
-                            isAnalyzing: state.isAnalyzing,
-                            onClose: () => setState(() => _showLogs = false),
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-              Expanded(
-                child: DownloaderResultsArea(onAddToQueue: _addToQueue),
-              ),
-            ],
+      body: Column(
+        children: [
+          DownloaderToolbar(
+            urlController: _urlController,
+            requirementController: _requirementController,
+            isAnalyzing: state.isAnalyzing,
+            onAnalyze: _analyze,
+            onOpenAdvanced: _openAdvancedOptions,
           ),
+          if (Platform.isIOS) _IosOutputNote(onOpenSettings: _openSettings),
+          DownloaderOptionsStrip(
+            isAnalyzing: state.isAnalyzing,
+            showLogs: _showLogs,
+            onToggleLogs: () => setState(() => _showLogs = !_showLogs),
+            onSaveHtml: _saveOriginHtml,
+            onPasteHtml: _pasteHtml,
+          ),
+          // Laid out at its full height and revealed by the clip, so closing
+          // slides the panel away rather than emptying it first.
+          AnimatedContainer(
+            duration: AppMotion.durationOf(context, AppMotion.reveal),
+            curve: AppMotion.enter,
+            height: logsOpen ? DownloaderLogPanel.height : 0,
+            child: state.logs.isEmpty
+                ? null
+                : ClipRect(
+                    child: OverflowBox(
+                      minHeight: DownloaderLogPanel.height,
+                      maxHeight: DownloaderLogPanel.height,
+                      alignment: Alignment.topCenter,
+                      child: DownloaderLogPanel(
+                        logs: state.logs,
+                        isAnalyzing: state.isAnalyzing,
+                        onClose: () => setState(() => _showLogs = false),
+                      ),
+                    ),
+                  ),
+          ),
+          Expanded(
+            child: DownloaderResultsArea(onAddToQueue: _addToQueue),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Console-style log card: timestamps and messages split into muted / normal
-/// colors, error lines highlighted, a thin progress bar while analyzing, and
-/// copy / close actions in the header.
-class _DownloaderLogPanel extends StatelessWidget {
-  final List<String> logs;
-  final bool isAnalyzing;
-  final VoidCallback onClose;
+/// The iOS output-folder note (`B3 · 1c`): full width on the warning ground
+/// with a way to settings.
+class _IosOutputNote extends StatelessWidget {
+  const _IosOutputNote({required this.onOpenSettings});
 
-  const _DownloaderLogPanel({
-    required this.logs,
-    required this.isAnalyzing,
-    required this.onClose,
-  });
-
-  static final _lineRegex = RegExp(r'^\[(.+?)\]\s*(.*)$');
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
+    final semantic = context.semantic;
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh.withAlpha(150),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outlineVariant.withAlpha(120)),
-      ),
-      child: Column(
+      width: double.infinity,
+      color: semantic.warningContainer,
+      padding: const EdgeInsets.symmetric(horizontal: kDownloaderGutter, vertical: AppSpace.s10),
+      child: Row(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 6, 6),
-            child: Row(
-              children: [
-                Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: colorScheme.accentTint,
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Icon(Icons.terminal, size: 15, color: colorScheme.primary),
-                ),
-                const SizedBox(width: 9),
-                Text(
-                  l10n.logs,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: colorScheme.onSurface.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '${logs.length}',
-                    style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                if (isAnalyzing) ...[
-                  const SizedBox(width: 10),
-                  const SizedBox(
-                    width: 10,
-                    height: 10,
-                    child: CircularProgressIndicator(strokeWidth: 1.5),
-                  ),
-                ],
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Clipboard.setData(ClipboardData(text: logs.join('\n'))),
-                  icon: const Icon(Icons.copy, size: 14),
-                  tooltip: l10n.copyLogs,
-                  visualDensity: VisualDensity.compact,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                IconButton(
-                  onPressed: onClose,
-                  icon: const Icon(Icons.close, size: 15),
-                  tooltip: l10n.close,
-                  visualDensity: VisualDensity.compact,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ],
+          Icon(Icons.info_outline, size: AppSize.iconMd, color: semantic.warning),
+          const SizedBox(width: AppSpace.s10),
+          Expanded(
+            child: Text(
+              l10n.iosOutputRecommend,
+              style: textTheme.bodySmall!.copyWith(color: semantic.onWarningContainer),
             ),
           ),
-          if (isAnalyzing)
-            const LinearProgressIndicator(minHeight: 2)
-          else
-            Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(120)),
-          Expanded(
-            child: ListView.builder(
-              reverse: true,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              itemCount: logs.length,
-              itemBuilder: (context, i) {
-                final line = logs[logs.length - 1 - i];
-                final isNewest = i == 0;
-                final match = _lineRegex.firstMatch(line);
-                final time = match?.group(1);
-                final message = match?.group(2) ?? line;
-                final isError = message.startsWith('Error') ||
-                    message.startsWith('Failed') ||
-                    message.contains('failed:');
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (time != null) ...[
-                        Text(
-                          time,
-                          style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                            color: colorScheme.outline,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                      ],
-                      Expanded(
-                        child: Text(
-                          message,
-                          style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
-                            fontWeight: isNewest ? FontWeight.w600 : FontWeight.normal,
-                            color: isError
-                                ? colorScheme.error
-                                : isNewest
-                                    ? colorScheme.onSurface
-                                    : colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+          const SizedBox(width: AppSpace.s10),
+          InkWell(
+            onTap: onOpenSettings,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.s6, vertical: AppSpace.s4),
+              child: Text(
+                l10n.goToSettings,
+                style: textTheme.bodySmall!.copyWith(
+                  color: semantic.onWarningContainer,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],

@@ -139,5 +139,28 @@
       "year": {},
       "holder": {}
     }
-  }
+  },
+  "themeMode": "Theme mode",
+  "visualEffects": "Effects",
+  "settingsGroupNotifications": "Notifications & logging",
+  "settingsGroupDirectories": "Directories",
+  "settingsGroupAssistant": "Assistant",
+  "customAccentTitle": "Custom theme color",
+  "customAccentHint": "Drag the ring or paste a hex value",
+  "customAccentDerived": "Derived pair",
+  "customAccentPassed": "White labels hold; the button keeps white text.",
+  "customAccentInkFallback": "White can't hold on this shade, so the button uses a deep ink of the same hue.",
+  "customAccentFailed": "This colour can't meet the contrast floor.",
+  "fontFollowSystem": "Follows the operating system",
+  "fontNotDownloaded": "Not downloaded",
+  "fontDownloadedOffline": "Downloaded · available offline",
+  "languageFollowSystem": "Follows the system language",
+  "exportSettingsNote": "Directories, prompts and usage are optional; API keys are never included",
+  "clearTempFilesNote": "Masks · crop copies · downloader cache · video thumbnails",
+  "resetAllSettingsNote": "Back to the first-run state",
+  "resetIrreversible": "This can't be undone",
+  "proxyAppliesToAll": "Applies to all channel requests",
+  "notificationsDesc": "Notify when a task finishes or fails",
+  "mcpServerDesc": "Lets external tools call this app over MCP",
+  "mcpComingSoon": "Coming soon (not in this version)"
 }

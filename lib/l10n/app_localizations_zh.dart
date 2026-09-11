@@ -753,6 +753,50 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get browserViewGrid => '网格';
+
+  @override
+  String get browserViewList => '列表';
+
+  @override
+  String get browserSearchEscHint => 'Esc 清空';
+
+  @override
+  String get browserNoFilesHint => '换一个筛选或清空搜索';
+
+  @override
+  String browserFoldersCount(int count) {
+    return '$count 个文件夹';
+  }
+
+  @override
+  String browserScanningCount(int count) {
+    return '正在扫描 $count 个文件…';
+  }
+
+  @override
+  String get browserDragFootnote => '拖到文件夹上 = 移动 · 按住 Ctrl 改为复制';
+
+  @override
+  String get stagingDropHint => '拖文件到左列文件夹 = 加入暂存';
+
+  @override
+  String renameBatchFailedTitle(int batch) {
+    return '第 $batch 批失败';
+  }
+
+  @override
+  String get conflictIncoming => '写入';
+
+  @override
+  String get conflictAlreadyThere => '已存在';
+
+  @override
+  String conflictUndecidedCount(int count) {
+    return '$count 项未决定';
+  }
+
+  @override
   String get appTitle => 'Joycai Image AI 工具集';
 
   @override
@@ -928,6 +972,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logLevelSuccess => '成功';
 
   @override
+  String get goToSettings => '去设置';
+
+  @override
+  String get actionImport => '导入';
+
+  @override
+  String get actionExport => '导出';
+
+  @override
+  String get actionOpen => '打开';
+
+  @override
+  String get actionClear => '清理';
+
+  @override
+  String get actionRun => '运行';
+
+  @override
+  String get actionChange => '更改';
+
+  @override
+  String get experimental => '实验性';
+
+  @override
   String get downloader => '下载器';
 
   @override
@@ -1059,6 +1127,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get copyLogs => '复制日志';
 
   @override
+  String downloaderFoundCount(int count) {
+    return '找到 $count 张';
+  }
+
+  @override
+  String get downloaderAdvancedSubtitle => '只对这一屏的下载生效';
+
+  @override
+  String get copyImageUrl => '复制图片地址';
+
+  @override
+  String get manualHtmlEmptyTitle => '还没有粘贴 HTML';
+
+  @override
+  String get manualHtmlEmptyDesc => '在浏览器里「查看源代码」全选复制，然后点上面的粘贴。';
+
+  @override
+  String get cookieHistoryUse => '使用';
+
+  @override
+  String cookieHistoryPairs(int count) {
+    return '$count 对';
+  }
+
+  @override
+  String get cookieHistoryEmptyDesc => '粘贴过的 Cookie 会记在这里，方便下次同一站点复用。';
+
+  @override
   String get usage => '用量';
 
   @override
@@ -1152,6 +1248,17 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get invalidPriceValue => '请输入有效的非负数字';
+
+  @override
+  String get usageLoadingRecords => '正在汇总用量记录…';
+
+  @override
+  String get noUsageInRangeHint => '换一个区间，或先跑一个任务。';
+
+  @override
+  String usageLoadMoreStatus(int pageSize, int shown, int total) {
+    return '每页 $pageSize · 已显示 $shown / $total';
+  }
 
   @override
   String get models => '模型';
@@ -2108,6 +2215,150 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channelOrderSaveFailed => '顺序未能保存，已恢复原顺序';
 
   @override
+  String wizardStepCounter(int current, int total) {
+    return '步骤 $current / $total';
+  }
+
+  @override
+  String get wizardStepsAdaptNote => '选择供应商后，步骤会按它的接入方式增减';
+
+  @override
+  String providerNoMatchHint(String query) {
+    return '「$query」不在列表里。用「自定义」组手填端点即可，协议选 OpenAI 兼容。';
+  }
+
+  @override
+  String get providerUseCustom => '用自定义添加';
+
+  @override
+  String get probeSkippableNote => '可跳过；下一步仍可填名称与标签';
+
+  @override
+  String endpointPresetValue(String endpoint) {
+    return '预设值为 $endpoint';
+  }
+
+  @override
+  String get variantResultLabel => '结果';
+
+  @override
+  String get probeOkNext => '可以直接开启模型发现';
+
+  @override
+  String get probeNoModelsNext => '端点可用、密钥有效，但模型列表为空。手动添加一个 Model ID 即可用。';
+
+  @override
+  String get probeAuthFailedNext => '检查是否复制完整、是否过期。';
+
+  @override
+  String get probeNotAnApiNext =>
+      '返回了 HTML 页面。多半填了控制台地址，API 端点通常以 /v1 或 /v1beta 结尾。';
+
+  @override
+  String get probeUnreachableNext => 'DNS 解析失败或超时。检查网址、代理设置与网络。';
+
+  @override
+  String get probeNotSupportedNext => '该协议没有模型列表接口，只能提交任务后才知道是否可用。';
+
+  @override
+  String get previewEmptyKeyNote => '暂未填写密钥，之后可在编辑渠道里补。';
+
+  @override
+  String get presetShortHint => '一键填充端点与协议';
+
+  @override
+  String get deleteChannel => '删除渠道';
+
+  @override
+  String get discoveryOffEffect => '关掉后「获取模型」按钮在这个渠道上禁用';
+
+  @override
+  String get protocolUnavailable => '不可用';
+
+  @override
+  String get reasoningEffortUnsupported => '该模型不接受推理参数，整段置灰但保留——换成对话模型时它会亮起来。';
+
+  @override
+  String get modelIdRequiredTitle => 'Model ID 不能为空';
+
+  @override
+  String get modelIdRequiredDesc => '这是唯一的必填项；名称留空会用 ID 当显示名。';
+
+  @override
+  String get contextSpecifyInvalid => '请输入正整数；留空或 0 无法保存。';
+
+  @override
+  String get addModelSubtitle => '手动添加时只有 ID 是必填';
+
+  @override
+  String get addModelIdHelper => '留空会阻止保存；名称留空则用 ID 当显示名。';
+
+  @override
+  String get addModelDefaultsNote =>
+      '协议、上下文窗口、能力开关都保持 Auto / 默认；先添加，跑通一次再按需固定。';
+
+  @override
+  String get modelNameOptionalHint => '可留空';
+
+  @override
+  String get moveUp => '上移';
+
+  @override
+  String get moveDown => '下移';
+
+  @override
+  String get channelReorderFootnote => '悬停显示把手 · 拖动重排 · 右键或 Alt+↑/↓ 同效';
+
+  @override
+  String get channelReorderLockedNote => '搜索或筛选中不能重排——列表只显示了一部分，落点是假的。清除后恢复。';
+
+  @override
+  String get noModelsConfiguredHint => '用「获取模型」自动发现，或手动添加一个。';
+
+  @override
+  String get addModelManually => '手动添加';
+
+  @override
+  String get selectAChannelHint => '左侧选一个渠道，这里显示它的模型。';
+
+  @override
+  String noModelsMatchQuery(String query) {
+    return '「$query」没有匹配到模型';
+  }
+
+  @override
+  String get noFeeGroupsHint => '建一个组，再把模型指过去';
+
+  @override
+  String get noNewModelsFoundHint => '该渠道返回的模型都已在列表里';
+
+  @override
+  String get discoveryCapabilitiesNote => '发现的模型只带 ID 与类型；能力、上下文窗口与费用组需要逐个编辑。';
+
+  @override
+  String deleteChannelTitle(String name) {
+    return '删除渠道「$name」？';
+  }
+
+  @override
+  String deleteChannelModelsNote(int count) {
+    return '连带 $count 个模型';
+  }
+
+  @override
+  String get deleteChannelBody =>
+      '工作台里正在引用这些模型的配置会变成「未选择模型」，已提交的任务不受影响。用量记录按模型名保留。';
+
+  @override
+  String get newFeeGroup => '新建组';
+
+  @override
+  String get cachePriceBlankPlaceholder => '留空 = 同输入价';
+
+  @override
+  String get fetchFailedTitle => '连接失败';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -2253,6 +2504,46 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get matchAllTags => '全部';
+
+  @override
+  String promptFilterSummary(int count, int matches) {
+    return '$count 个分类筛选中 · 匹配 $matches 条';
+  }
+
+  @override
+  String get promptEditorSubtitle => '保存后可在工作台右栏一键应用';
+
+  @override
+  String get categoryColorHint => '颜色只用来区分类别';
+
+  @override
+  String promptCount(int count) {
+    return '$count 条提示词';
+  }
+
+  @override
+  String get categoryDeleteNote => '删除分类时，它下面的提示词会落回 General，不会被删除。';
+
+  @override
+  String importFileSummary(String file, int count) {
+    return '$file · $count 条';
+  }
+
+  @override
+  String importMergeDetail(int current) {
+    return '保留现有 $current 条，追加不重复的';
+  }
+
+  @override
+  String importReplaceDetail(int current, int count) {
+    return '删除现有 $current 条，只保留文件里的 $count 条';
+  }
+
+  @override
+  String get promptLibraryEmptyHint => '把工作台里用顺手的提示词存下来，下次一键套用。';
+
+  @override
+  String get colorPresets => '预设';
 
   @override
   String get settings => '设置';
@@ -2588,6 +2879,75 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get themeMode => '主题模式';
+
+  @override
+  String get visualEffects => '效果';
+
+  @override
+  String get settingsGroupNotifications => '通知与日志';
+
+  @override
+  String get settingsGroupDirectories => '目录';
+
+  @override
+  String get settingsGroupAssistant => '助手';
+
+  @override
+  String get customAccentTitle => '自定义主题色';
+
+  @override
+  String get customAccentHint => '拖动色环或粘贴 hex 值';
+
+  @override
+  String get customAccentDerived => '推出的一对';
+
+  @override
+  String get customAccentPassed => '白字可用，主按钮保持白字。';
+
+  @override
+  String get customAccentInkFallback => '白字压不住，主按钮改用同色相深墨字。';
+
+  @override
+  String get customAccentFailed => '该颜色无法满足对比度要求。';
+
+  @override
+  String get fontFollowSystem => '跟随操作系统';
+
+  @override
+  String get fontNotDownloaded => '未下载';
+
+  @override
+  String get fontDownloadedOffline => '已下载 · 可离线使用';
+
+  @override
+  String get languageFollowSystem => '跟随系统语言';
+
+  @override
+  String get exportSettingsNote => '可选目录配置 / 提示词 / 用量记录；不含 API 密钥';
+
+  @override
+  String get clearTempFilesNote => '蒙版 · 裁剪副本 · 下载器缓存 · 视频缩略图';
+
+  @override
+  String get resetAllSettingsNote => '回到首次运行状态';
+
+  @override
+  String get resetIrreversible => '这一步不可撤销';
+
+  @override
+  String get proxyAppliesToAll => '对所有渠道请求生效';
+
+  @override
+  String get notificationsDesc => '任务完成或失败时弹出系统通知';
+
+  @override
+  String get mcpServerDesc => '让外部工具通过 MCP 调用本机能力';
+
+  @override
+  String get mcpComingSoon => '即将推出（当前版本未实现）';
+
+  @override
   String get tasks => '任务';
 
   @override
@@ -2815,6 +3175,23 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get durationLabel => '用时';
+
+  @override
+  String get clearAllTasksTitle => '清除全部任务？';
+
+  @override
+  String clearAllRunningNote(int count) {
+    return '包含 $count 个正在运行的任务';
+  }
+
+  @override
+  String get clearAllKeepsFiles => '运行中的任务不受影响。已生成的文件保留在输出目录里，只是队列里的记录被清空。';
+
+  @override
+  String get taskNoOutputsFailed => '本次没有产物——任务在写入前就失败了';
+
+  @override
+  String get noTaskLogCancelledHint => '任务在开始执行前被取消，所以没有留下日志。';
 
   @override
   String get setupWizardTitle => '欢迎设置向导';
@@ -4942,6 +5319,50 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
+  String get browserViewGrid => '網格';
+
+  @override
+  String get browserViewList => '列表';
+
+  @override
+  String get browserSearchEscHint => 'Esc 清空';
+
+  @override
+  String get browserNoFilesHint => '換一個篩選或清空搜尋';
+
+  @override
+  String browserFoldersCount(int count) {
+    return '$count 個資料夾';
+  }
+
+  @override
+  String browserScanningCount(int count) {
+    return '正在掃描 $count 個檔案…';
+  }
+
+  @override
+  String get browserDragFootnote => '拖到資料夾上 = 移動 · 按住 Ctrl 改為複製';
+
+  @override
+  String get stagingDropHint => '拖檔案到左欄資料夾 = 加入暫存';
+
+  @override
+  String renameBatchFailedTitle(int batch) {
+    return '第 $batch 批失敗';
+  }
+
+  @override
+  String get conflictIncoming => '寫入';
+
+  @override
+  String get conflictAlreadyThere => '已存在';
+
+  @override
+  String conflictUndecidedCount(int count) {
+    return '$count 項未決定';
+  }
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override
@@ -5114,6 +5535,30 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get logLevelSuccess => '成功';
 
   @override
+  String get goToSettings => '前往設定';
+
+  @override
+  String get actionImport => '匯入';
+
+  @override
+  String get actionExport => '匯出';
+
+  @override
+  String get actionOpen => '開啟';
+
+  @override
+  String get actionClear => '清理';
+
+  @override
+  String get actionRun => '執行';
+
+  @override
+  String get actionChange => '變更';
+
+  @override
+  String get experimental => '實驗性';
+
+  @override
   String get downloader => '下載器';
 
   @override
@@ -5245,6 +5690,34 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get copyLogs => '複製日誌';
 
   @override
+  String downloaderFoundCount(int count) {
+    return '找到 $count 張';
+  }
+
+  @override
+  String get downloaderAdvancedSubtitle => '只對這個畫面的下載生效';
+
+  @override
+  String get copyImageUrl => '複製圖片網址';
+
+  @override
+  String get manualHtmlEmptyTitle => '尚未貼上 HTML';
+
+  @override
+  String get manualHtmlEmptyDesc => '在瀏覽器裡「檢視原始碼」全選複製，然後點上面的貼上。';
+
+  @override
+  String get cookieHistoryUse => '使用';
+
+  @override
+  String cookieHistoryPairs(int count) {
+    return '$count 組';
+  }
+
+  @override
+  String get cookieHistoryEmptyDesc => '貼上過的 Cookie 會記在這裡，方便下次同一網站重複使用。';
+
+  @override
   String get usage => '用量';
 
   @override
@@ -5338,6 +5811,17 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get invalidPriceValue => '請輸入有效的非負數字';
+
+  @override
+  String get usageLoadingRecords => '正在彙總用量紀錄…';
+
+  @override
+  String get noUsageInRangeHint => '換一個區間，或先跑一個任務。';
+
+  @override
+  String usageLoadMoreStatus(int pageSize, int shown, int total) {
+    return '每頁 $pageSize · 已顯示 $shown / $total';
+  }
 
   @override
   String get models => '模型';
@@ -6294,6 +6778,150 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get channelOrderSaveFailed => '順序未能儲存，已恢復原順序';
 
   @override
+  String wizardStepCounter(int current, int total) {
+    return '步驟 $current / $total';
+  }
+
+  @override
+  String get wizardStepsAdaptNote => '選擇供應商後，步驟會依它的接入方式增減';
+
+  @override
+  String providerNoMatchHint(String query) {
+    return '「$query」不在清單裡。用「自訂」組手填端點即可，協定選 OpenAI 相容。';
+  }
+
+  @override
+  String get providerUseCustom => '用自訂新增';
+
+  @override
+  String get probeSkippableNote => '可略過；下一步仍可填名稱與標籤';
+
+  @override
+  String endpointPresetValue(String endpoint) {
+    return '預設值為 $endpoint';
+  }
+
+  @override
+  String get variantResultLabel => '結果';
+
+  @override
+  String get probeOkNext => '可以直接開啟模型探索';
+
+  @override
+  String get probeNoModelsNext => '端點可用、金鑰有效，但模型清單為空。手動新增一個 Model ID 即可使用。';
+
+  @override
+  String get probeAuthFailedNext => '檢查是否複製完整、是否過期。';
+
+  @override
+  String get probeNotAnApiNext =>
+      '回傳了 HTML 頁面。多半填了主控台網址，API 端點通常以 /v1 或 /v1beta 結尾。';
+
+  @override
+  String get probeUnreachableNext => 'DNS 解析失敗或逾時。檢查網址、代理設定與網路。';
+
+  @override
+  String get probeNotSupportedNext => '該協定沒有模型清單介面，只能提交任務後才知道是否可用。';
+
+  @override
+  String get previewEmptyKeyNote => '暫未填寫金鑰，之後可在編輯渠道裡補上。';
+
+  @override
+  String get presetShortHint => '一鍵填入端點與協定';
+
+  @override
+  String get deleteChannel => '刪除渠道';
+
+  @override
+  String get discoveryOffEffect => '關閉後「取得模型」按鈕在這個渠道上停用';
+
+  @override
+  String get protocolUnavailable => '不可用';
+
+  @override
+  String get reasoningEffortUnsupported => '該模型不接受推理參數，整段置灰但保留——換成對話模型時它會亮起來。';
+
+  @override
+  String get modelIdRequiredTitle => 'Model ID 不能為空';
+
+  @override
+  String get modelIdRequiredDesc => '這是唯一的必填項；名稱留空會用 ID 當顯示名稱。';
+
+  @override
+  String get contextSpecifyInvalid => '請輸入正整數；留空或 0 無法儲存。';
+
+  @override
+  String get addModelSubtitle => '手動新增時只有 ID 是必填';
+
+  @override
+  String get addModelIdHelper => '留空會阻止儲存；名稱留空則用 ID 當顯示名稱。';
+
+  @override
+  String get addModelDefaultsNote =>
+      '協定、上下文視窗、能力開關都保持 Auto / 預設；先新增，跑通一次再按需固定。';
+
+  @override
+  String get modelNameOptionalHint => '可留空';
+
+  @override
+  String get moveUp => '上移';
+
+  @override
+  String get moveDown => '下移';
+
+  @override
+  String get channelReorderFootnote => '懸停顯示把手 · 拖動重排 · 右鍵或 Alt+↑/↓ 同效';
+
+  @override
+  String get channelReorderLockedNote => '搜尋或篩選中不能重排——清單只顯示了一部分，落點是假的。清除後恢復。';
+
+  @override
+  String get noModelsConfiguredHint => '用「取得模型」自動探索，或手動新增一個。';
+
+  @override
+  String get addModelManually => '手動新增';
+
+  @override
+  String get selectAChannelHint => '左側選一個渠道，這裡顯示它的模型。';
+
+  @override
+  String noModelsMatchQuery(String query) {
+    return '「$query」沒有符合的模型';
+  }
+
+  @override
+  String get noFeeGroupsHint => '建一個組，再把模型指過去';
+
+  @override
+  String get noNewModelsFoundHint => '該渠道回傳的模型都已在清單裡';
+
+  @override
+  String get discoveryCapabilitiesNote => '探索到的模型只帶 ID 與類型；能力、上下文視窗與費用組需要逐個編輯。';
+
+  @override
+  String deleteChannelTitle(String name) {
+    return '刪除渠道「$name」？';
+  }
+
+  @override
+  String deleteChannelModelsNote(int count) {
+    return '連帶 $count 個模型';
+  }
+
+  @override
+  String get deleteChannelBody =>
+      '工作台裡正在引用這些模型的設定會變成「未選擇模型」，已提交的任務不受影響。用量紀錄依模型名稱保留。';
+
+  @override
+  String get newFeeGroup => '新增組';
+
+  @override
+  String get cachePriceBlankPlaceholder => '留空 = 同輸入價';
+
+  @override
+  String get fetchFailedTitle => '連線失敗';
+
+  @override
   String get prompts => '提示';
 
   @override
@@ -6439,6 +7067,46 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get matchAllTags => '全部';
+
+  @override
+  String promptFilterSummary(int count, int matches) {
+    return '$count 個分類篩選中 · 符合 $matches 條';
+  }
+
+  @override
+  String get promptEditorSubtitle => '儲存後可在工作台右欄一鍵套用';
+
+  @override
+  String get categoryColorHint => '顏色只用來區分類別';
+
+  @override
+  String promptCount(int count) {
+    return '$count 條提示詞';
+  }
+
+  @override
+  String get categoryDeleteNote => '刪除分類時，它底下的提示詞會落回 General，不會被刪除。';
+
+  @override
+  String importFileSummary(String file, int count) {
+    return '$file · $count 條';
+  }
+
+  @override
+  String importMergeDetail(int current) {
+    return '保留現有 $current 條，追加不重複的';
+  }
+
+  @override
+  String importReplaceDetail(int current, int count) {
+    return '刪除現有 $current 條，只保留檔案裡的 $count 條';
+  }
+
+  @override
+  String get promptLibraryEmptyHint => '把工作台裡用順手的提示詞存下來，下次一鍵套用。';
+
+  @override
+  String get colorPresets => '預設';
 
   @override
   String get settings => '設定';
@@ -6775,6 +7443,75 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
+  String get themeMode => '主題模式';
+
+  @override
+  String get visualEffects => '效果';
+
+  @override
+  String get settingsGroupNotifications => '通知與日誌';
+
+  @override
+  String get settingsGroupDirectories => '目錄';
+
+  @override
+  String get settingsGroupAssistant => '助手';
+
+  @override
+  String get customAccentTitle => '自訂主題色';
+
+  @override
+  String get customAccentHint => '拖動色環或貼上 hex 值';
+
+  @override
+  String get customAccentDerived => '推導出的一對';
+
+  @override
+  String get customAccentPassed => '白字可用，主按鈕保持白字。';
+
+  @override
+  String get customAccentInkFallback => '白字壓不住，主按鈕改用同色相深墨字。';
+
+  @override
+  String get customAccentFailed => '該顏色無法滿足對比度要求。';
+
+  @override
+  String get fontFollowSystem => '跟隨作業系統';
+
+  @override
+  String get fontNotDownloaded => '未下載';
+
+  @override
+  String get fontDownloadedOffline => '已下載 · 可離線使用';
+
+  @override
+  String get languageFollowSystem => '跟隨系統語言';
+
+  @override
+  String get exportSettingsNote => '可選目錄設定 / 提示詞 / 用量紀錄；不含 API 金鑰';
+
+  @override
+  String get clearTempFilesNote => '遮罩 · 裁剪副本 · 下載器快取 · 影片縮圖';
+
+  @override
+  String get resetAllSettingsNote => '回到首次執行狀態';
+
+  @override
+  String get resetIrreversible => '這一步無法復原';
+
+  @override
+  String get proxyAppliesToAll => '對所有渠道請求生效';
+
+  @override
+  String get notificationsDesc => '任務完成或失敗時跳出系統通知';
+
+  @override
+  String get mcpServerDesc => '讓外部工具透過 MCP 呼叫本機能力';
+
+  @override
+  String get mcpComingSoon => '即將推出（目前版本未實作）';
+
+  @override
   String get tasks => '任務';
 
   @override
@@ -7002,6 +7739,23 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get durationLabel => '用時';
+
+  @override
+  String get clearAllTasksTitle => '清除全部任務？';
+
+  @override
+  String clearAllRunningNote(int count) {
+    return '包含 $count 個正在執行的任務';
+  }
+
+  @override
+  String get clearAllKeepsFiles => '執行中的任務不受影響。已產生的檔案保留在輸出目錄裡，只是佇列裡的紀錄被清空。';
+
+  @override
+  String get taskNoOutputsFailed => '本次沒有產物——任務在寫入前就失敗了';
+
+  @override
+  String get noTaskLogCancelledHint => '任務在開始執行前被取消，所以沒有留下日誌。';
 
   @override
   String get setupWizardTitle => '歡迎設定';

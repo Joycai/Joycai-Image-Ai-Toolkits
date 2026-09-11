@@ -81,5 +81,13 @@
   "logSearchHint": "筛选日志…",
   "logLevelError": "错误",
   "logLevelRunning": "运行",
-  "logLevelSuccess": "成功"
+  "logLevelSuccess": "成功",
+  "goToSettings": "去设置",
+  "actionImport": "导入",
+  "actionExport": "导出",
+  "actionOpen": "打开",
+  "actionClear": "清理",
+  "actionRun": "运行",
+  "actionChange": "更改",
+  "experimental": "实验性"
 }

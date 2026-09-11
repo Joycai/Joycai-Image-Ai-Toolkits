@@ -11,8 +11,8 @@ import '../services/task_queue_service.dart';
 /// exists to stop — the same argument as [AppStatusBadge] for the four
 /// conditions.
 ///
-/// Presentation rather than logic, so it lives beside
-/// `settings_category_palette.dart` rather than on [TaskType] itself.
+/// Presentation rather than logic, so it lives here as an extension rather
+/// than on [TaskType] itself.
 extension TaskTypeGlyph on TaskType {
   IconData get glyph => switch (this) {
         TaskType.imageProcess => Icons.image_outlined,

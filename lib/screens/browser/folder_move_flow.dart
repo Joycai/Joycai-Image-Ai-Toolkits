@@ -40,7 +40,7 @@ Future<void> applyFolderPathChange(
   await appState.fileBrowserState.refresh();
 }
 
-/// Moves or copies the folder at [source] into [destination] — `B1b 13e/13f`.
+/// Moves or copies the folder at [source] into [destination] — `B1b 1c`.
 ///
 /// Both entry points land here: a drop onto a tree row, and the menu's
 /// "Move to…" through the system picker. A same-volume move is one rename and
@@ -62,7 +62,7 @@ Future<void> runFolderTransfer(
   // Everything shown from here on is shown from the root navigator, not from
   // the row this was called on: the menu's "Move to…" arrives on the *source*
   // row, and a move rebuilds the tree without it — so the row's own context
-  // is unmounted exactly when `13f` has a summary or a snackbar to show.
+  // is unmounted exactly when there is a summary or a snackbar to show.
   final host = Navigator.of(context, rootNavigator: true).context;
 
   final rejection = FolderOperationsService.canTransfer(
@@ -72,7 +72,18 @@ Future<void> runFolderTransfer(
     mode: mode,
   );
   if (rejection != null) {
-    AppSnackBar.warning(host, _rejectionText(l10n, rejection));
+    final text = _rejectionText(l10n, rejection);
+    // A move into itself or onto an existing name is refused outright (`1a`
+    // lists it as an error); a root or a no-op move only needs a nudge.
+    switch (rejection) {
+      case FolderMoveRejection.intoSelf:
+      case FolderMoveRejection.intoDescendant:
+      case FolderMoveRejection.targetExists:
+        AppSnackBar.error(host, text);
+      case FolderMoveRejection.isRoot:
+      case FolderMoveRejection.sameParent:
+        AppSnackBar.warning(host, text);
+    }
     return;
   }
 
@@ -153,7 +164,7 @@ String _rejectionText(AppLocalizations l10n, FolderMoveRejection rejection) => s
       FolderMoveRejection.targetExists => l10n.moveFolderTargetExists,
     };
 
-// --------------------------------------------------------------- 13f dialogs
+// ---------------------------------------------------------------- 1c dialogs
 
 class _FolderProgressDialog extends StatelessWidget {
   final String name;
@@ -178,9 +189,12 @@ class _FolderProgressDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final semantic = AppSemanticColors.of(context);
     final textTheme = Theme.of(context).textTheme;
     final isMove = mode == FolderTransferMode.move;
+    final mono11 = textTheme.labelSmall!.mono.copyWith(
+      color: colorScheme.onSurfaceVariant,
+      fontWeight: FontWeight.w400,
+    );
 
     return PopScope(
       // Escape would leave the copy running with nothing reporting it.
@@ -197,60 +211,56 @@ class _FolderProgressDialog extends StatelessWidget {
           final fraction = bytesTotal == 0 ? (total == 0 ? 0.0 : done / total) : bytesDone / bytesTotal;
 
           return AppDialog(
-            icon: isMove ? Icons.drive_file_move_outlined : Icons.file_copy_outlined,
-            iconColor: semantic.info,
-            title: isMove ? l10n.folderMovingTitle(name) : l10n.folderCopyingTitle(name),
-            subtitle: <String>[
-              l10n.pasteRoute(source, target),
-              l10n.folderTransferItems(total),
-              if (crossVolume) l10n.pasteCrossVolumeTag,
-            ].join(' · '),
+            titleWidget: TransferDialogHeading(
+              icon: isMove ? Icons.drive_file_move_outlined : Icons.content_copy_outlined,
+              tone: TransferTone.accent,
+              title: isMove ? l10n.folderMovingTitle(name) : l10n.folderCopyingTitle(name),
+              subtitle: <String>[
+                l10n.pasteRoute(transferShortPath(source), transferShortPath(target)),
+                l10n.folderTransferItems(total),
+              ].join(' · '),
+              subtitleTooltip: l10n.pasteRoute(source, target),
+              badge: crossVolume
+                  ? TransferBadge(label: l10n.pasteCrossVolumeTag, tone: TransferTone.warn)
+                  : null,
+            ),
             maxWidth: 460,
             content: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.xs),
-                  child: LinearProgressIndicator(
-                    value: fraction,
-                    minHeight: 6,
-                    backgroundColor: colorScheme.surfaceContainerHighest,
+                if (crossVolume) ...[
+                  TransferNote(
+                    text: l10n.folderMoveCrossVolumeNote,
+                    tone: TransferTone.warn,
+                    icon: Icons.info_outline,
                   ),
-                ),
-                const SizedBox(height: 10),
+                  const SizedBox(height: 14),
+                ],
+                TransferProgressBar(fraction: fraction),
+                const SizedBox(height: 8),
                 Row(
                   children: [
+                    Text(l10n.pasteProgressCount(done, total), style: mono11),
+                    const SizedBox(width: AppSpace.s10),
                     Expanded(
                       child: Text(
-                        l10n.pasteProgressItems(
-                          done,
-                          total,
-                          AppConstants.formatFileSize(bytesDone),
-                          AppConstants.formatFileSize(bytesTotal),
-                        ),
-                        style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.onSurfaceVariant),
+                        '${AppConstants.formatFileSize(bytesDone)} / ${AppConstants.formatFileSize(bytesTotal)}',
+                        style: mono11,
+                        textAlign: TextAlign.end,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text(
-                      '${(fraction * 100).round()}%',
-                      style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.onSurfaceVariant),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpace.s4),
                 Text(
                   value == null || value.name.isEmpty ? '' : l10n.pasteCurrentFile(value.name),
-                  style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+                  style: mono11,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (crossVolume) ...[
-                  const SizedBox(height: 12),
-                  TransferInfoNote(text: l10n.folderMoveCrossVolumeNote),
-                ],
               ],
             ),
             actionsOverride: Row(
@@ -258,7 +268,7 @@ class _FolderProgressDialog extends StatelessWidget {
                 const Spacer(),
                 AppButton(
                   label: l10n.cancel,
-                  variant: AppButtonVariant.destructiveOutline,
+                  variant: AppButtonVariant.secondary,
                   onPressed: onCancel,
                 ),
               ],
@@ -270,9 +280,9 @@ class _FolderProgressDialog extends StatelessWidget {
   }
 }
 
-/// `13f`'s right half: what a cancelled copy left behind.
+/// `1c` 取消（文件夹移动）: what a cancelled copy left behind.
 ///
-/// Amber, not red — nothing was lost. The source is whole; the destination
+/// Neutral, not red — nothing was lost. The source is whole; the destination
 /// holds a partial copy the user may well want to keep, so it is not tidied
 /// away for them.
 Future<void> _showCancelled(
@@ -283,53 +293,58 @@ Future<void> _showCancelled(
 ) {
   final l10n = AppLocalizations.of(context)!;
   final colorScheme = Theme.of(context).colorScheme;
-  final semantic = AppSemanticColors.of(context);
+  final semantic = context.semantic;
   final textTheme = Theme.of(context).textTheme;
   final pending = outcome.filesTotal - outcome.filesDone;
 
   return AppDialog.show<void>(
     context,
-    icon: Icons.warning_amber_rounded,
-    iconColor: semantic.warning,
-    title: mode == FolderTransferMode.move ? l10n.folderMoveCancelledTitle : l10n.folderCopyCancelledTitle,
-    subtitle: '${l10n.pasteRoute(source, outcome.targetPath)} · '
-        '${l10n.folderTransferStoppedAt(outcome.filesDone, outcome.filesTotal)}',
+    titleWidget: TransferDialogHeading(
+      icon: Icons.cancel_outlined,
+      tone: TransferTone.neutral,
+      title: mode == FolderTransferMode.move ? l10n.folderMoveCancelledTitle : l10n.folderCopyCancelledTitle,
+      subtitle: l10n.folderTransferStoppedAt(outcome.filesDone, outcome.filesTotal),
+      subtitleTooltip: l10n.pasteRoute(source, outcome.targetPath),
+    ),
     maxWidth: 460,
     content: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: TransferStatCell(
-                value: outcome.filesDone,
-                label: l10n.folderMoveStatCopied,
-                color: semantic.warning,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TransferStatCell(
-                value: pending,
-                label: l10n.folderMoveStatPending,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TransferStatCell(
-                value: outcome.filesTotal,
-                label: l10n.folderMoveStatSourceKept,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: AppSpace.s4),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            border: Border.all(color: colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(AppRadius.control),
+          ),
+          child: Column(
+            children: [
+              _StatusRow(
+                icon: Icons.check_circle,
                 color: semantic.success,
+                label: l10n.folderMoveStatCopied,
+                value: outcome.filesDone,
               ),
-            ),
-          ],
+              _StatusRow(
+                icon: Icons.remove_circle_outline,
+                color: colorScheme.outline,
+                label: l10n.folderMoveStatPending,
+                value: pending,
+              ),
+              _StatusRow(
+                icon: Icons.folder,
+                color: semantic.info,
+                label: l10n.folderMoveStatSourceKept,
+                value: outcome.filesTotal,
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         Text(
           l10n.folderMoveCancelledDesc,
-          style: textTheme.bodySmall?.copyWith(
+          style: textTheme.bodySmall!.copyWith(
             color: colorScheme.onSurfaceVariant,
             height: AppType.proseHeight,
           ),
@@ -338,10 +353,13 @@ Future<void> _showCancelled(
     ),
     actionsOverride: Row(
       children: [
-        AppButton(
-          label: l10n.showDestinationInSystem,
-          variant: AppButtonVariant.text,
-          onPressed: () => FileUtils.openPath(outcome.targetPath),
+        Flexible(
+          child: AppButton(
+            label: l10n.showDestinationInSystem,
+            icon: Icons.folder_open,
+            variant: AppButtonVariant.text,
+            onPressed: () => FileUtils.openPath(outcome.targetPath),
+          ),
         ),
         const Spacer(),
         AppButton(
@@ -351,4 +369,40 @@ Future<void> _showCancelled(
       ],
     ),
   );
+}
+
+class _StatusRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final int value;
+
+  const _StatusRow({required this.icon, required this.color, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return SizedBox(
+      height: 32,
+      child: Row(
+        children: [
+          Icon(icon, size: AppSize.iconMd, color: color),
+          const SizedBox(width: AppSpace.s10),
+          Expanded(
+            child: Text(label, style: textTheme.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+          const SizedBox(width: AppSpace.s10),
+          Text(
+            '$value',
+            style: textTheme.bodySmall!.mono.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

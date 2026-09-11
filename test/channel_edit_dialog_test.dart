@@ -195,7 +195,8 @@ void main() {
 
       await _pumpDialog(tester, type: Vendors.dashscope);
 
-      expect(find.text('Provider preset'), findsOneWidget);
+      // The section caption is tracked upper case (`D1b · 1e`).
+      expect(find.text('PROVIDER PRESET'), findsOneWidget);
       // The chip names the supplier — and, since DashScope's two faces are
       // two presets, which face this channel is on comes with the name. The
       // protocol field below names the wire format that face speaks.

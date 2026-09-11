@@ -481,7 +481,8 @@ void main() {
         before: (_) async => AppState().isConsoleExpanded = false,
         after: (WidgetTester tester) async {
           // The failed row: the one whose detail panel has something to say.
-          await tester.tap(find.text('source_4.png'));
+          // Found by its model, the one only the failed fixture task uses.
+          await tester.tap(find.text('gemini-2.5-flash').first);
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 100));
           }

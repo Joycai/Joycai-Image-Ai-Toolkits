@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/backup_error_text.dart';
 import '../../../core/constants.dart';
+import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
@@ -13,12 +14,14 @@ import '../../../services/temp_storage_service.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
-import '../../../widgets/dialogs/import_options_dialog.dart';
-import '../../../widgets/app_section.dart';
-import '../../../widgets/app_switch.dart';
 import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/dialogs/import_options_dialog.dart';
 import '../../wizard/setup_wizard.dart';
+import 'settings_layout.dart';
 
+/// `E1 · 1d` 「数据管理」: one group of action rows — export, import, open the
+/// data folder, clear scratch files, run the wizard, reset — each row the
+/// target, ending in its action's glyph; reset in the error colour.
 class DataSection extends StatelessWidget {
   final bool isMobile;
   const DataSection({super.key, this.isMobile = false});
@@ -26,59 +29,52 @@ class DataSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    
+
     // No title — the pane header already says 「数据管理」.
-    return AppSection(
-      padding: const EdgeInsets.only(bottom: 64),
+    return SettingsSections(
       children: [
-        _buildAdaptiveDataActions(context, colorScheme, l10n),
+        SettingsGroup(
+          children: [
+            _DataActionRow(
+              title: l10n.exportSettings,
+              note: l10n.exportSettingsNote,
+              verb: l10n.actionExport,
+              icon: Icons.upload_outlined,
+              onPressed: () => _exportSettings(context, l10n),
+            ),
+            _DataActionRow(
+              title: l10n.importSettings,
+              verb: l10n.actionImport,
+              icon: Icons.download_outlined,
+              onPressed: () => _importSettings(context, l10n),
+            ),
+            _DataActionRow(
+              title: l10n.openAppDataDirectory,
+              verb: l10n.actionOpen,
+              icon: Icons.folder_open_outlined,
+              onPressed: () => _openAppDataDir(context),
+            ),
+            // Its own widget: it carries a measured size, which means state and
+            // a reload after the clear. Second to last, so the two actions that
+            // throw something away stay together at the end.
+            const _TempFilesRow(),
+            _DataActionRow(
+              title: l10n.runSetupWizard,
+              verb: l10n.actionRun,
+              icon: Icons.play_arrow_outlined,
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())),
+            ),
+            _DataActionRow(
+              title: l10n.resetAllSettings,
+              note: l10n.resetAllSettingsNote,
+              verb: l10n.reset,
+              icon: Icons.restart_alt,
+              danger: true,
+              onPressed: () => _resetSettings(context, l10n),
+            ),
+          ],
+        ),
       ],
-    );
-  }
-
-  Widget _buildAdaptiveDataActions(BuildContext context, ColorScheme colorScheme, AppLocalizations l10n) {
-    final actions = [
-      (onPressed: () => _exportSettings(context, l10n), icon: Icons.download, label: l10n.exportSettings, color: null),
-      (onPressed: () => _importSettings(context, l10n), icon: Icons.upload, label: l10n.importSettings, color: null),
-      (onPressed: () => _openAppDataDir(context), icon: Icons.folder_shared, label: l10n.openAppDataDirectory, color: null),
-      (onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())), icon: Icons.auto_fix_high, label: l10n.runSetupWizard, color: null),
-    ];
-    final reset = (onPressed: () => _resetSettings(context, l10n), icon: Icons.refresh, label: l10n.resetAllSettings, color: colorScheme.error);
-
-    // The scratch-file control is its own widget rather than another record:
-    // it carries a measured size in its label, which means state and a reload
-    // after the clear. It goes second to last, so the two actions that throw
-    // something away stay together at the end.
-    final buttons = <Widget>[
-      ...actions.map((a) => _buildActionBtn(context, a, isMobile)),
-      _TempFilesButton(fullWidth: isMobile),
-      _buildActionBtn(context, reset, isMobile),
-    ];
-
-    if (isMobile) {
-      return Column(
-        children: buttons
-            .map((b) => Padding(padding: const EdgeInsets.only(bottom: 12), child: b))
-            .toList(),
-      );
-    }
-
-    return Wrap(spacing: 16, runSpacing: 16, children: buttons);
-  }
-
-  Widget _buildActionBtn(BuildContext context, dynamic action, bool fullWidth) {
-    final bool isError = action.color != null;
-
-    return SizedBox(
-      width: fullWidth ? double.infinity : 220,
-      height: 50,
-      child: AppButton(
-        label: action.label,
-        icon: action.icon,
-        variant: isError ? AppButtonVariant.destructiveOutline : AppButtonVariant.secondary,
-        onPressed: action.onPressed,
-      ),
     );
   }
 
@@ -96,24 +92,22 @@ class DataSection extends StatelessWidget {
     bool includePrompts = true;
     bool includeUsage = false;
 
-    final bool? confirmed = await (isMobile 
-      ? _showMobileExportOptions(context, l10n, (d, p, u) {
-          includeDirs = d; includePrompts = p; includeUsage = u;
-        })
-      : _showDesktopExportOptions(context, l10n, (d, p, u) {
-          includeDirs = d; includePrompts = p; includeUsage = u;
-        }));
+    final bool? confirmed = await _showExportOptions(context, l10n, (d, p, u) {
+      includeDirs = d;
+      includePrompts = p;
+      includeUsage = u;
+    });
 
     if (confirmed != true || !context.mounted) return;
 
     final data = await DatabaseService().getAllDataRaw(
-      includePrompts: includePrompts, 
+      includePrompts: includePrompts,
       includeUsage: includeUsage,
       includeDirectories: includeDirs,
     );
     final json = jsonEncode(data);
     final bytes = utf8.encode(json);
-    
+
     // file_picker >= 12 writes `bytes` itself on every platform and returns the
     // destination as a Uri, so no follow-up write is needed here.
     final Uri? saved = await FilePicker.saveFile(
@@ -130,75 +124,88 @@ class DataSection extends StatelessWidget {
     }
   }
 
-  Future<bool?> _showMobileExportOptions(BuildContext context, AppLocalizations l10n, Function(bool, bool, bool) onUpdate) async {
+  /// The export question, in the same checkbox rows the import dialog uses: a
+  /// dialog on desktop, a sheet on a phone.
+  Future<bool?> _showExportOptions(
+    BuildContext context,
+    AppLocalizations l10n,
+    void Function(bool, bool, bool) onUpdate,
+  ) {
     bool d = true;
     bool p = true;
     bool u = false;
 
-    return await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.exportOptions, style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 24),
-              _buildExportOption(context, l10n.includeDirectories, l10n.includeDirectoriesDesc, d, (v) => setState(() => d = v)),
-              const Divider(height: 32),
-              _buildExportOption(context, l10n.includePrompts, l10n.includePromptsDesc, p, (v) => setState(() => p = v)),
-              const Divider(height: 32),
-              _buildExportOption(context, l10n.includeUsage, l10n.includeUsageDesc, u, (v) => setState(() => u = v)),
-              const SizedBox(height: 48),
-              AppButton(
-                label: l10n.exportNow,
-                size: AppButtonSize.large,
-                fullWidth: true,
-                onPressed: () {
-                  onUpdate(d, p, u);
-                  Navigator.pop(context, true);
-                },
-              ),
-              const SizedBox(height: 12),
-              AppButton(
-                label: l10n.cancel,
-                variant: AppButtonVariant.text,
-                size: AppButtonSize.large,
-                fullWidth: true,
-                onPressed: () => Navigator.pop(context, false),
-              ),
-            ],
+    Widget options(StateSetter setState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ImportOptionRow(
+              title: l10n.includeDirectories,
+              description: l10n.includeDirectoriesDesc,
+              value: d,
+              onChanged: (v) => setState(() => d = v),
+            ),
+            ImportOptionRow(
+              title: l10n.includePrompts,
+              description: l10n.includePromptsDesc,
+              value: p,
+              onChanged: (v) => setState(() => p = v),
+            ),
+            ImportOptionRow(
+              title: l10n.includeUsage,
+              description: l10n.includeUsageDesc,
+              value: u,
+              onChanged: (v) => setState(() => u = v),
+            ),
+          ],
+        );
+
+    if (isMobile) {
+      return showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (sheetContext, setState) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(AppSpace.s22, AppSpace.s22, AppSpace.s22, AppSpace.s28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(l10n.exportOptions, style: Theme.of(sheetContext).textTheme.titleLarge),
+                const SizedBox(height: AppSpace.s16),
+                options(setState),
+                const SizedBox(height: AppSpace.s22),
+                AppButton(
+                  label: l10n.exportNow,
+                  size: AppButtonSize.large,
+                  fullWidth: true,
+                  onPressed: () {
+                    onUpdate(d, p, u);
+                    Navigator.pop(sheetContext, true);
+                  },
+                ),
+                const SizedBox(height: AppSpace.s6),
+                AppButton(
+                  label: l10n.cancel,
+                  variant: AppButtonVariant.text,
+                  size: AppButtonSize.large,
+                  fullWidth: true,
+                  onPressed: () => Navigator.pop(sheetContext, false),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
-  Future<bool?> _showDesktopExportOptions(BuildContext context, AppLocalizations l10n, Function(bool, bool, bool) onUpdate) async {
-    bool d = true;
-    bool p = true;
-    bool u = false;
-
-    return await AppDialog.show<bool>(
+    return AppDialog.show<bool>(
       context,
+      icon: Icons.upload_outlined,
       title: l10n.exportOptions,
-      maxWidth: 450,
-      content: StatefulBuilder(
-        builder: (context, setState) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildExportOption(context, l10n.includeDirectories, l10n.includeDirectoriesDesc, d, (v) => setState(() => d = v)),
-            const SizedBox(height: 12),
-            _buildExportOption(context, l10n.includePrompts, l10n.includePromptsDesc, p, (v) => setState(() => p = v)),
-            const SizedBox(height: 12),
-            _buildExportOption(context, l10n.includeUsage, l10n.includeUsageDesc, u, (v) => setState(() => u = v)),
-          ],
-        ),
-      ),
+      maxWidth: 440,
+      content: StatefulBuilder(builder: (context, setState) => options(setState)),
       actions: [
         AppButton(
           label: l10n.cancel,
@@ -216,39 +223,6 @@ class DataSection extends StatelessWidget {
     );
   }
 
-  Widget _buildExportOption(
-      BuildContext context, String title, String desc, bool value, Function(bool) onChanged) {
-    final textTheme = Theme.of(context).textTheme;
-    // A dialog option, not a settings row, so it takes no box — but it takes
-    // the app's switch. [SwitchListTile] cannot be given one: the control is
-    // built inside it, at Material's 52×32.
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(title, style: textTheme.titleSmall),
-                const SizedBox(height: 1),
-                Text(
-                  desc,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          AppSwitch(value: value, onChanged: onChanged),
-        ],
-      ),
-    );
-  }
-
   Future<void> _importSettings(BuildContext context, AppLocalizations l10n) async {
     final appState = Provider.of<AppState>(context, listen: false);
     final importedMsg = l10n.settingsImported;
@@ -262,10 +236,10 @@ class DataSection extends StatelessWidget {
       final String fileContent = utf8.decode(bytes);
       if (!context.mounted) return;
       final Map<String, dynamic> data = jsonDecode(fileContent);
-      
+
       // Pre-check what's available in the file
-      final bool hasDirs = data.containsKey('source_directories') || 
-                          (data['settings'] as List?)?.any((s) => s['key'] == 'output_directory') == true;
+      final bool hasDirs = data.containsKey('source_directories') ||
+          (data['settings'] as List?)?.any((s) => s['key'] == 'output_directory') == true;
       final bool hasPrompts = data.containsKey('user_prompts') || data.containsKey('prompts') || data.containsKey('tags');
       final bool hasUsage = data.containsKey('token_usage');
 
@@ -280,15 +254,18 @@ class DataSection extends StatelessWidget {
         hasPrompts: hasPrompts,
         hasUsage: hasUsage,
         isMobile: isMobile,
+        fileName: picked.name,
         onUpdate: (d, p, u) {
-          includeDirs = d; includePrompts = p; includeUsage = u;
+          includeDirs = d;
+          includePrompts = p;
+          includeUsage = u;
         },
       );
 
       if (confirmed != true || !context.mounted) return;
 
       await DatabaseService().restoreBackup(
-        data, 
+        data,
         includePrompts: includePrompts,
         includeUsage: includeUsage,
         includeDirectories: includeDirs,
@@ -309,12 +286,17 @@ class DataSection extends StatelessWidget {
   void _resetSettings(BuildContext context, AppLocalizations l10n) {
     AppDialog.show<void>(
       context,
+      icon: Icons.restart_alt,
+      iconColor: Theme.of(context).colorScheme.error,
       title: l10n.confirmReset,
+      subtitle: l10n.resetIrreversible,
       content: Text(l10n.resetWarning),
       actions: [
         AppButton(
           label: l10n.cancel,
           variant: AppButtonVariant.text,
+          // Enter must never be the key that resets.
+          autofocus: true,
           onPressed: () => Navigator.pop(context),
         ),
         AppButton(
@@ -336,22 +318,130 @@ class DataSection extends StatelessWidget {
   }
 }
 
-/// "Clear Temporary Files", with what they currently cost on the label.
+/// One action row of the data group: the title (and an optional note),
+/// ending in the action's glyph and verb in `1d`'s compact button skin.
 ///
-/// The size is the point: without it this is a button whose effect the user
-/// cannot see either before or after pressing it, and there is no other place
-/// in the app that says how much scratch space is in use. It reloads after a
-/// clear, so the number is the answer as well as the prompt.
-class _TempFilesButton extends StatefulWidget {
-  final bool fullWidth;
+/// The whole row is the button — an [OutlinedButton] with its outline taken
+/// off, so it keeps the button's focus, hover and disabled behaviour and a
+/// screen reader announces it as one. A disabled row greys to the muted ink.
+class _DataActionRow extends StatelessWidget {
+  const _DataActionRow({
+    required this.title,
+    required this.verb,
+    required this.icon,
+    required this.onPressed,
+    this.note,
+    this.danger = false,
+  });
 
-  const _TempFilesButton({required this.fullWidth});
+  final String title;
+
+  /// The short verb on the trailing pill — 「导出」, 「清理」.
+  final String verb;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final String? note;
+  final bool danger;
 
   @override
-  State<_TempFilesButton> createState() => _TempFilesButtonState();
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final bool enabled = onPressed != null;
+
+    final Color titleInk = !enabled
+        ? colorScheme.outline
+        : danger
+            ? colorScheme.error
+            : colorScheme.onSurface;
+    final Color actionInk = !enabled
+        ? colorScheme.outline
+        : danger
+            ? colorScheme.error
+            : colorScheme.accentText;
+    final Color actionEdge = danger && enabled
+        ? colorScheme.error.withValues(alpha: AppAlpha.edge)
+        : colorScheme.outlineVariant;
+
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        side: BorderSide.none,
+        backgroundColor: Colors.transparent,
+        foregroundColor: titleInk,
+        disabledForegroundColor: colorScheme.outline,
+        shape: const RoundedRectangleBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        minimumSize: const Size(double.infinity, 48),
+        alignment: Alignment.centerLeft,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500, color: titleInk),
+                ),
+                if (note != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      note!,
+                      style: textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w400,
+                        color: colorScheme.onSurfaceVariant,
+                        height: AppType.proseHeight,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            height: AppSize.compact,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppRadius.control),
+              border: Border.all(color: actionEdge),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: AppSize.iconSm, color: actionInk),
+                const SizedBox(width: AppSpace.s6),
+                Text(
+                  verb,
+                  style: textTheme.labelMedium?.copyWith(color: actionInk),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _TempFilesButtonState extends State<_TempFilesButton> {
+/// "Clear Temporary Files", with what they currently cost under the title.
+///
+/// The size is the point: without it this is an action whose effect the user
+/// cannot see either before or after taking it, and there is no other place
+/// in the app that says how much scratch space is in use. It reloads after a
+/// clear, so the number is the answer as well as the prompt.
+class _TempFilesRow extends StatefulWidget {
+  const _TempFilesRow();
+
+  @override
+  State<_TempFilesRow> createState() => _TempFilesRowState();
+}
+
+class _TempFilesRowState extends State<_TempFilesRow> {
   int? _bytes;
 
   @override
@@ -368,14 +458,17 @@ class _TempFilesButtonState extends State<_TempFilesButton> {
   Future<void> _clear() async {
     final l10n = AppLocalizations.of(context)!;
     final bytes = _bytes ?? 0;
+    final size = AppConstants.formatFileSize(bytes);
 
-    // The size goes in the question, not just on the button: this is the one
+    // The size goes in the question, not just on the row: this is the one
     // action here that can take a mask or a crop the workspace is still
     // pointing at, so what it costs and what it touches are both spelled out.
     final confirmed = await AppDialog.show<bool>(
       context,
+      icon: Icons.cleaning_services_outlined,
       title: l10n.clearTempFilesConfirmTitle,
-      content: Text(l10n.clearTempFilesConfirmMessage(AppConstants.formatFileSize(bytes))),
+      subtitle: size,
+      content: Text(l10n.clearTempFilesConfirmMessage(size)),
       actions: [
         AppButton(
           label: l10n.cancel,
@@ -384,7 +477,6 @@ class _TempFilesButtonState extends State<_TempFilesButton> {
         ),
         AppButton(
           label: l10n.clearTempFiles,
-          variant: AppButtonVariant.destructive,
           onPressed: () => Navigator.pop(context, true),
         ),
       ],
@@ -407,21 +499,18 @@ class _TempFilesButtonState extends State<_TempFilesButton> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final bytes = _bytes;
-    // Bare label until the walk finishes, and again once there is nothing to
-    // clear -- "(0 B)" is noise, and the disabled button already says it.
-    final label = (bytes == null || bytes == 0)
-        ? l10n.clearTempFiles
-        : '${l10n.clearTempFiles} (${AppConstants.formatFileSize(bytes)})';
+    final bool empty = bytes == null || bytes == 0;
 
-    return SizedBox(
-      width: widget.fullWidth ? double.infinity : 220,
-      height: 50,
-      child: AppButton(
-        label: label,
-        icon: Icons.delete_sweep_outlined,
-        variant: AppButtonVariant.secondary,
-        onPressed: (bytes == null || bytes == 0) ? null : _clear,
-      ),
+    // No size until the walk finishes, and none once there is nothing to
+    // clear -- "0 B" is noise, and the greyed row already says it.
+    return _DataActionRow(
+      title: l10n.clearTempFiles,
+      verb: l10n.actionClear,
+      icon: Icons.cleaning_services_outlined,
+      note: empty
+          ? l10n.clearTempFilesNote
+          : '${AppConstants.formatFileSize(bytes)} · ${l10n.clearTempFilesNote}',
+      onPressed: empty ? null : _clear,
     );
   }
 }

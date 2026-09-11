@@ -11,8 +11,6 @@ import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/app_button.dart';
-import '../../widgets/app_icon_button.dart';
-import '../../widgets/panel_resizer.dart';
 import 'directory_tree_item.dart';
 import 'widgets/result_tree_item.dart';
 
@@ -105,44 +103,48 @@ class _FolderListState extends State<FolderList> {
         // compact header row hosting the add-folder / deselect-all actions.
         // Workbench gallery: grouped Sources / Results / Workspace.
         if (useFileBrowserState) ...[
+          // `B1a · 1a`: a compact 40px caption row. The tracked caption in the
+          // deep ink, the count on the track, two borderless 28px actions.
           Container(
-            height: kPanelHeaderHeight,
-            padding: const EdgeInsets.fromLTRB(14, 0, 10, 0),
+            height: 40,
+            padding: const EdgeInsets.fromLTRB(AppSpace.s16, 0, 8, 0),
             child: Row(
               children: [
                 Text(
-                  l10n.directories,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  l10n.directories.toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: AppType.trackedLabelSpacing,
+                        color: colorScheme.onAccentTint,
+                      ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpace.s6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
-                    color: colorScheme.onSurface.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                   ),
                   child: Text(
                     '${sourceDirectories.length}',
-                    style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+                          fontWeight: FontWeight.w400,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                   ),
                 ),
                 const Spacer(),
-                AppIconButton(
-                  icon: Icons.remove_done,
+                _HeaderAction(
+                  icon: Icons.deselect,
                   tooltip: l10n.deselectAllDirectories,
-                  size: 34,
                   onPressed: appState.fileBrowserState.activeDirectories.isEmpty
                       ? null
                       : () => appState.fileBrowserState.clearActiveDirectories(),
                 ),
-                const SizedBox(width: 6),
-                AppIconButton(
+                const SizedBox(width: 2),
+                _HeaderAction(
                   icon: Icons.create_new_folder_outlined,
                   tooltip: l10n.addFolder,
-                  size: 34,
                   onPressed: () => _pickDirectory(context, appState),
                 ),
               ],
@@ -167,6 +169,20 @@ class _FolderListState extends State<FolderList> {
                     },
                   ),
           ),
+          // `B1a · 1a`: how a drop onto a folder behaves, said once at the foot
+          // of the column. Pointer platforms only — a phone has no Ctrl.
+          if (sourceDirectories.isNotEmpty && !(Platform.isIOS || Platform.isAndroid))
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpace.s16, AppSpace.s10, AppSpace.s16, AppSpace.s10),
+              child: Text(
+                l10n.browserDragFootnote,
+                style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: colorScheme.outline,
+                      height: AppType.proseHeight,
+                    ),
+              ),
+            ),
         ] else
           Expanded(
             child: _buildGalleryGroups(context, galleryState, colorScheme, l10n, sourceDirectories),
@@ -402,17 +418,23 @@ class _FolderListState extends State<FolderList> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.folder_off_outlined, size: 48, color: colorScheme.outlineVariant),
-            const SizedBox(height: 16),
+            Icon(Icons.folder_off_outlined, size: 28, color: colorScheme.outline),
+            const SizedBox(height: AppSpace.s6),
             Text(
               l10n.noFolders,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.onSurface),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpace.s6),
             Text(
               l10n.clickAddFolder,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: AppType.proseHeight,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -491,6 +513,38 @@ class _RemoveFolderCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A borderless 28px action in the directory column's caption row
+/// (`B1a · 1a`): the deep ink, and the outline once there is nothing to do.
+class _HeaderAction extends StatelessWidget {
+  const _HeaderAction({required this.icon, required this.tooltip, required this.onPressed});
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return IconButton(
+      icon: Icon(icon),
+      tooltip: tooltip,
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        foregroundColor: colorScheme.onAccentTint,
+        disabledForegroundColor: colorScheme.outline,
+        iconSize: AppSize.iconMd,
+        fixedSize: const Size.square(AppSize.compact),
+        minimumSize: const Size.square(AppSize.compact),
+        maximumSize: const Size.square(AppSize.compact),
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.standard,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
       ),
     );
   }
