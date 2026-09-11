@@ -1906,6 +1906,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'リクエストごとの画像バッチ分割と、プロンプトアシスタントのナレッジベース読み取り・要約の予算に使われます。';
 
   @override
+  String get contextSliderHint =>
+      'スライダーは 8k〜1M を 1024 トークン単位で動きます。入力した値が優先され、プリセットの間の値ではスライダーが比例した位置に止まります。';
+
+  @override
   String get agentBehavior => 'エージェント動作';
 
   @override
@@ -1939,6 +1943,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reasoningEffortMax => '最高';
+
+  @override
+  String get reasoningEffortDefaultShort => 'デフォルト';
+
+  @override
+  String get reasoningEffortOn => 'オン';
+
+  @override
+  String get reasoningEffortUnavailable => '利用不可';
 
   @override
   String get enableThinking => '拡張思考';
@@ -2409,7 +2422,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reasoningEffortUnsupported =>
-      'このモデルは推論パラメーターを受け付けません。グレー表示のまま残り、チャットモデルに切り替えると有効になります。';
+      'このモデルは推論パラメーターを受け付けないため、スライダーは「オフ」のままです。対応するモデルに切り替えると有効になります。';
 
   @override
   String get modelIdRequiredTitle => 'Model ID は空にできません';

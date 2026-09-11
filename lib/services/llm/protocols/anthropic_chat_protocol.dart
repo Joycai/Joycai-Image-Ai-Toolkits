@@ -329,13 +329,22 @@ String _thinkingMemoKey(LLMTarget target) =>
 ThinkingDialect resolveAnthropicThinkingDialect(LLMTarget target) {
   final learned = _learnedThinkingDialects[_thinkingMemoKey(target)];
   if (learned != null) return learned;
-  final declared = target.vendor.thinking;
-  final isAnthropicSpelling = declared == ThinkingDialect.anthropicAdaptive ||
-      declared == ThinkingDialect.anthropicBudget;
-  if (isAnthropicSpelling && target.model.usesLegacyAnthropicThinking) {
-    return ThinkingDialect.anthropicBudget;
-  }
-  return declared;
+  return declaredAnthropicThinkingDialect(target.vendor.thinking,
+      legacyModel: target.model.usesLegacyAnthropicThinking);
+}
+
+/// The spelling a vendor's declared [dialect] takes for one model, before
+/// anything has been learned from a rejection: a model whose generation knows
+/// only the manual form gets the budget spelling on either Anthropic dialect.
+///
+/// Split out so the model editor's reasoning ladder
+/// (`LLMDispatcher.reasoningLadder`) reads the same decision the request does.
+ThinkingDialect declaredAnthropicThinkingDialect(ThinkingDialect dialect,
+    {required bool legacyModel}) {
+  final isAnthropicSpelling = dialect == ThinkingDialect.anthropicAdaptive ||
+      dialect == ThinkingDialect.anthropicBudget;
+  if (isAnthropicSpelling && legacyModel) return ThinkingDialect.anthropicBudget;
+  return dialect;
 }
 
 /// Records that [rejected] was refused for this endpoint + model and returns

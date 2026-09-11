@@ -768,6 +768,67 @@ class LLMDispatcher {
     }
   }
 
+  /// The reasoning rungs that each send a different request for [modelId] on
+  /// a [channelType] channel, in the order the editor offers them. `null` is
+  /// Default: send nothing. Empty when no rung reaches the wire at all — the
+  /// wire ignores reasoning, or the model's kind does not go down chat.
+  ///
+  /// A rung that sends exactly what its neighbour sends is a knob whose only
+  /// effect is nothing, so each wire offers only the rungs it tells apart:
+  ///
+  /// * ① sends every rung as its own `reasoning_effort` value. DeepSeek's off
+  ///   travels as the `thinking` object instead, but it is still its own
+  ///   request.
+  /// * ④'s current spelling withholds `thinking` for Off exactly as it does
+  ///   for Default, so there is no Off; the intensity rides in
+  ///   `output_config.effort`.
+  /// * ④'s budget spelling (Claude 4.5 and earlier, Bailian's ④ face) and
+  ///   MiniMax's bare adaptive object carry no intensity: thinking is on or
+  ///   it is not. Default and one "on" rung, stored as Medium.
+  /// * DashScope native sends `enable_thinking`: Default, an explicit Off
+  ///   (Qwen 3 thinks unless told), and on.
+  static List<ReasoningEffort?> reasoningLadder({
+    required String channelType,
+    required String modelId,
+    String? tag,
+  }) {
+    final vendor = Vendors.byId(channelType);
+    if (!chatConsumesReasoningEffort(vendor.family)) return const [];
+    if (surfaceForModel(modelId, tag: tag) != Surface.chat) return const [];
+    switch (vendor.family) {
+      case ProtocolFamily.openai:
+        return const [
+          null,
+          ReasoningEffort.off,
+          ReasoningEffort.low,
+          ReasoningEffort.medium,
+          ReasoningEffort.high,
+          ReasoningEffort.max,
+        ];
+      case ProtocolFamily.dashscope:
+        return const [null, ReasoningEffort.off, ReasoningEffort.medium];
+      case ProtocolFamily.anthropic:
+        final dialect = declaredAnthropicThinkingDialect(vendor.thinking,
+            legacyModel: ModelDescriptor.of(modelId).usesLegacyAnthropicThinking);
+        return switch (dialect) {
+          ThinkingDialect.anthropicAdaptive => const [
+              null,
+              ReasoningEffort.low,
+              ReasoningEffort.medium,
+              ReasoningEffort.high,
+              ReasoningEffort.max,
+            ],
+          ThinkingDialect.anthropicBudget ||
+          ThinkingDialect.adaptive =>
+            const [null, ReasoningEffort.medium],
+          ThinkingDialect.none || ThinkingDialect.openaiThinkingObject => const [],
+        };
+      case ProtocolFamily.gemini:
+      case ProtocolFamily.midjourney:
+        return const [];
+    }
+  }
+
   Stream<LLMResponseChunk> generateStream(
     LLMModelConfig config,
     List<LLMMessage> history, {

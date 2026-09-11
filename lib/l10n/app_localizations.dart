@@ -3442,6 +3442,12 @@ abstract class AppLocalizations {
   /// **'Used to batch images per request, and to budget the Prompt Assistant\'s knowledge-base reads and summarization.'**
   String get contextWindowHint;
 
+  /// No description provided for @contextSliderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The slider moves in 1,024-token steps from 8k to 1M. A typed value wins: the slider follows it, and rests between two presets in proportion.'**
+  String get contextSliderHint;
+
   /// No description provided for @agentBehavior.
   ///
   /// In en, this message translates to:
@@ -3507,6 +3513,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Max'**
   String get reasoningEffortMax;
+
+  /// No description provided for @reasoningEffortDefaultShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get reasoningEffortDefaultShort;
+
+  /// No description provided for @reasoningEffortOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get reasoningEffortOn;
+
+  /// No description provided for @reasoningEffortUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get reasoningEffortUnavailable;
 
   /// No description provided for @enableThinking.
   ///
@@ -4339,7 +4363,7 @@ abstract class AppLocalizations {
   /// No description provided for @reasoningEffortUnsupported.
   ///
   /// In en, this message translates to:
-  /// **'This model takes no reasoning parameters. The section stays greyed out and lights up when you switch to a chat model.'**
+  /// **'This model takes no reasoning parameters, so the slider stays at Off. It lights up when you switch to a model that does.'**
   String get reasoningEffortUnsupported;
 
   /// No description provided for @modelIdRequiredTitle.
