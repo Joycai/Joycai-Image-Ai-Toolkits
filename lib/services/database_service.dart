@@ -53,7 +53,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 40;
+  static const int dbVersion = 41;
 
   /// Settings holding absolute paths from the machine that made the backup.
   /// Excluded when the user opts out of directories.
@@ -506,8 +506,10 @@ class DatabaseService {
       includeDirectories: includeDirectories,
     );
 
-    final channelIdMap = await _importChannels(txn, data['llm_channels'], preservedKeys);
+    // Fee groups before channels: a channel's default group is a group id,
+    // renumbered on the way in like the models' own.
     final pricingGroupIdMap = await _importPricingGroups(txn, data['fee_groups']);
+    final channelIdMap = await _importChannels(txn, data['llm_channels'], preservedKeys, pricingGroupIdMap);
     final modelIdMap = await _importModels(txn, data['llm_models'], channelIdMap, pricingGroupIdMap);
 
     if (data['downloader_cookies'] != null) {
@@ -777,6 +779,7 @@ class DatabaseService {
     DatabaseExecutor txn,
     List<dynamic>? rows,
     Map<String, String> preservedKeys,
+    Map<int, int> pricingGroupIdMap,
   ) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
@@ -786,6 +789,10 @@ class DatabaseService {
       // Redacted export: fall back to the key this machine already had.
       if ((row['api_key'] as String? ?? '').isEmpty) {
         row['api_key'] = preservedKeys[_channelIdentity(row)] ?? '';
+      }
+      // A group the file does not carry is no default, not a dangling id.
+      if (row['default_fee_group_id'] != null) {
+        row['default_fee_group_id'] = pricingGroupIdMap[row['default_fee_group_id']];
       }
       final newId = await txn.insert('llm_channels', row);
       idMap[oldId] = newId;

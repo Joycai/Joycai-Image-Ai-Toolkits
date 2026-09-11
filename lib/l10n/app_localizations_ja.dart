@@ -2388,6 +2388,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fetchFailedTitle => '接続に失敗しました';
 
   @override
+  String get channelDefaultFeeGroup => '既定の料金グループ';
+
+  @override
+  String get channelDefaultFeeGroupHint => 'このチャンネルに追加したモデルは、最初にこのグループに入ります';
+
+  @override
+  String get modelIdTakenTitle => 'このチャンネルには同じ Model ID がすでにあります';
+
+  @override
+  String get modelIdTakenDesc =>
+      'Model ID はチャンネル内で一意である必要があります。ID を変えるか、すでにあるモデルを編集してください。';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

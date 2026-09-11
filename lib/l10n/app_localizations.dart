@@ -4318,6 +4318,30 @@ abstract class AppLocalizations {
   /// **'Connection failed'**
   String get fetchFailedTitle;
 
+  /// No description provided for @channelDefaultFeeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Default fee group'**
+  String get channelDefaultFeeGroup;
+
+  /// No description provided for @channelDefaultFeeGroupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Models added to this channel start in this group'**
+  String get channelDefaultFeeGroupHint;
+
+  /// No description provided for @modelIdTakenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This channel already has this Model ID'**
+  String get modelIdTakenTitle;
+
+  /// No description provided for @modelIdTakenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A Model ID must be unique within a channel. Change the ID, or edit the model that already has it.'**
+  String get modelIdTakenDesc;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

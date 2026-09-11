@@ -8,6 +8,12 @@ class LLMChannel {
   final String? tag;
   final int? tagColor;
 
+  /// The fee group a model added to this channel starts in (`D1b · 1e` 计费)
+  /// — by discovery, or by hand in the model editor, where it is only the
+  /// initial choice. Null is no default. Not a foreign key: deleting a group
+  /// clears it here in `ModelRepository.deletePricingGroup`.
+  final int? defaultFeeGroupId;
+
   /// Position in the channel rail, ascending. Rows are ordered by this and
   /// then by [id], so equal values (an old backup restored without the
   /// column) degrade to creation order — what the rail showed before it was
@@ -29,6 +35,7 @@ class LLMChannel {
     this.enableDiscovery = true,
     this.tag,
     this.tagColor,
+    this.defaultFeeGroupId,
     this.sortOrder = 0,
   });
 
@@ -42,6 +49,7 @@ class LLMChannel {
       enableDiscovery: (map['enable_discovery'] ?? 1) == 1,
       tag: map['tag'] as String?,
       tagColor: map['tag_color'] as int?,
+      defaultFeeGroupId: map['default_fee_group_id'] as int?,
       sortOrder: map['sort_order'] as int? ?? 0,
     );
   }
@@ -55,6 +63,7 @@ class LLMChannel {
       'enable_discovery': enableDiscovery ? 1 : 0,
       'tag': tag,
       'tag_color': tagColor,
+      'default_fee_group_id': defaultFeeGroupId,
     };
     if (includeId) {
       map['id'] = id;

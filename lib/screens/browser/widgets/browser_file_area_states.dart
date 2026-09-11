@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
@@ -66,11 +67,14 @@ class BrowserFilesEmptyState extends StatelessWidget {
 /// A scan in progress over an empty file area — `B1a · 1d`: a 28px ring on
 /// the track with the accent running on it, and the status in mono.
 class BrowserScanningState extends StatelessWidget {
-  const BrowserScanningState({super.key});
+  const BrowserScanningState({super.key, this.progress});
+
+  /// Files found so far (`FileBrowserState.scanProgress`). Until the scan
+  /// reports a figure, the line reads without one.
+  final ValueListenable<int>? progress;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
 
     return Center(
@@ -86,15 +90,25 @@ class BrowserScanningState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            l10n.galleryScanning,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall!.mono.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-          ),
+          if (progress == null)
+            _label(context, 0)
+          else
+            ValueListenableBuilder<int>(
+              valueListenable: progress!,
+              builder: (context, found, _) => _label(context, found),
+            ),
         ],
       ),
+    );
+  }
+
+  Widget _label(BuildContext context, int found) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Text(
+      found > 0 ? l10n.browserScanningCount(found) : l10n.galleryScanning,
+      textAlign: TextAlign.center,
+      style: theme.textTheme.bodySmall!.mono.copyWith(color: theme.colorScheme.onSurfaceVariant),
     );
   }
 }

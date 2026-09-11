@@ -65,6 +65,7 @@ class DatabaseMigration {
     if (oldVersion < 38) await _createV38Columns(db);
     if (oldVersion < 39) await _createV39Columns(db);
     if (oldVersion < 40) await _migrateV40ThemeSeed(db);
+    if (oldVersion < 41) await _createV41Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -104,6 +105,7 @@ class DatabaseMigration {
     await _createV37Columns(db);
     await _createV38Columns(db);
     await _createV39Columns(db);
+    await _createV41Columns(db);
     // Presets are synchronized in DatabaseService
   }
 
@@ -182,6 +184,17 @@ class DatabaseMigration {
       "strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime')) "
       "WHERE created_at IS NULL",
     );
+  }
+
+  /// A channel's default fee group (`llm_channels.default_fee_group_id`, NULL =
+  /// none): the group a model added to the channel starts in.
+  ///
+  /// The column and nothing else — no channel had a default before, so there
+  /// is nothing to carry over. Guarded like v37: `llm_channels` only appears
+  /// at v10.
+  static Future<void> _createV41Columns(Database db) async {
+    if (!await _tableExists(db, 'llm_channels')) return;
+    await _addColumnIfNotExists(db, 'llm_channels', 'default_fee_group_id', 'INTEGER');
   }
 
   /// The Material seeds the theme presets were named after, as the pre-pair

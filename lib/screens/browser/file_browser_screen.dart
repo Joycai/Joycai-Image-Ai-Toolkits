@@ -422,7 +422,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
   Widget _buildFileArea(BuildContext context, FileBrowserState state, FileStagingState staging) {
     if (state.filteredFiles.isEmpty) {
-      if (_pendingRefreshes > 0 || state.isScanning) return const BrowserScanningState();
+      if (_pendingRefreshes > 0 || state.isScanning) return BrowserScanningState(progress: state.scanProgress);
       return BrowserFilesEmptyState(noFolders: state.sourceDirectories.isEmpty);
     }
     return state.viewMode == BrowserViewMode.grid

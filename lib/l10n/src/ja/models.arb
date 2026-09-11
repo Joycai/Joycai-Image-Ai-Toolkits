@@ -401,5 +401,9 @@
   "deleteChannelBody": "これらのモデルを使うワークベンチの設定は「モデル未選択」になります。送信済みのタスクには影響しません。使用記録はモデル名で残ります。",
   "newFeeGroup": "新しいグループ",
   "cachePriceBlankPlaceholder": "空欄 = 入力価格と同じ",
-  "fetchFailedTitle": "接続に失敗しました"
+  "fetchFailedTitle": "接続に失敗しました",
+  "channelDefaultFeeGroup": "既定の料金グループ",
+  "channelDefaultFeeGroupHint": "このチャンネルに追加したモデルは、最初にこのグループに入ります",
+  "modelIdTakenTitle": "このチャンネルには同じ Model ID がすでにあります",
+  "modelIdTakenDesc": "Model ID はチャンネル内で一意である必要があります。ID を変えるか、すでにあるモデルを編集してください。"
 }

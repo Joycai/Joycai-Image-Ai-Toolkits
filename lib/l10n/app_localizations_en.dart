@@ -2451,6 +2451,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fetchFailedTitle => 'Connection failed';
 
   @override
+  String get channelDefaultFeeGroup => 'Default fee group';
+
+  @override
+  String get channelDefaultFeeGroupHint =>
+      'Models added to this channel start in this group';
+
+  @override
+  String get modelIdTakenTitle => 'This channel already has this Model ID';
+
+  @override
+  String get modelIdTakenDesc =>
+      'A Model ID must be unique within a channel. Change the ID, or edit the model that already has it.';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

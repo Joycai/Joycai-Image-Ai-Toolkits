@@ -122,6 +122,40 @@ void main() {
       await db.close();
     });
 
+    test("renumbers a channel's default fee group along with the groups", () async {
+      final db = await openTestDb();
+      // A group already here, so the restored one cannot keep the file's id.
+      await db.insert('fee_groups', {'name': 'Local'});
+      final file = backupFile();
+      file['fee_groups'] = [
+        {'id': 7, 'name': 'Pro', 'billing_mode': 'token'},
+      ];
+      (file['llm_channels'] as List).first['default_fee_group_id'] = 7;
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, file);
+      });
+
+      final group = (await db.query('fee_groups')).single;
+      final channel = (await db.query('llm_channels')).single;
+      expect(group['id'], isNot(7));
+      expect(channel['default_fee_group_id'], group['id']);
+      await db.close();
+    });
+
+    test('drops a default fee group the backup does not carry', () async {
+      final db = await openTestDb();
+      final file = backupFile();
+      (file['llm_channels'] as List).first['default_fee_group_id'] = 7;
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, file);
+      });
+
+      expect((await db.query('llm_channels')).single['default_fee_group_id'], isNull);
+      await db.close();
+    });
+
     test('keeps local task history and cookies', () async {
       final db = await openTestDb();
       await seedChannelWithModel(db);

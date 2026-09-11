@@ -588,5 +588,9 @@
   "deleteChannelBody": "Workbench settings using these models become \"No model selected\"; submitted tasks are unaffected. Usage records are kept by model name.",
   "newFeeGroup": "New Group",
   "cachePriceBlankPlaceholder": "Blank = input price",
-  "fetchFailedTitle": "Connection failed"
+  "fetchFailedTitle": "Connection failed",
+  "channelDefaultFeeGroup": "Default fee group",
+  "channelDefaultFeeGroupHint": "Models added to this channel start in this group",
+  "modelIdTakenTitle": "This channel already has this Model ID",
+  "modelIdTakenDesc": "A Model ID must be unique within a channel. Change the ID, or edit the model that already has it."
 }

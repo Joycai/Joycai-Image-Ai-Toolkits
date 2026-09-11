@@ -313,6 +313,60 @@ void main() {
     expect(await columnsOf(db, 'tasks'), contains('created_at'));
   });
 
+  group('v41 gives channels a default fee group', () {
+    /// `llm_channels` as it stood at v40.
+    Future<Database> v40ChannelsDb() async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      await db.execute('''
+        CREATE TABLE llm_channels (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          display_name TEXT NOT NULL,
+          endpoint TEXT NOT NULL,
+          api_key TEXT NOT NULL,
+          type TEXT NOT NULL,
+          enable_discovery INTEGER DEFAULT 1,
+          tag TEXT,
+          tag_color INTEGER,
+          sort_order INTEGER DEFAULT 0
+        )
+      ''');
+      return db;
+    }
+
+    test('an existing channel gains the column with no default, and keeps its row', () async {
+      final db = await v40ChannelsDb();
+      addTearDown(db.close);
+      await db.insert('llm_channels', {
+        'display_name': 'Mine',
+        'endpoint': 'https://example.com/v1',
+        'api_key': 'k',
+        'type': 'openai-api-rest',
+      });
+
+      await DatabaseMigration.migrate(db, 40, 41);
+
+      expect(await columnsOf(db, 'llm_channels'), contains('default_fee_group_id'));
+      final row = (await db.query('llm_channels')).single;
+      expect(row['display_name'], 'Mine');
+      expect(row['default_fee_group_id'], isNull);
+    });
+
+    test('the step is idempotent', () async {
+      final db = await v40ChannelsDb();
+      addTearDown(db.close);
+      await DatabaseMigration.migrate(db, 40, 41);
+      await DatabaseMigration.migrate(db, 40, 41);
+      expect(await columnsOf(db, 'llm_channels'), contains('default_fee_group_id'));
+    });
+
+    test('a fresh database is created with the column', () async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      addTearDown(db.close);
+      await DatabaseMigration.onCreate(db);
+      expect(await columnsOf(db, 'llm_channels'), contains('default_fee_group_id'));
+    });
+  });
+
   test('v31 adds the logs column to an existing database', () async {
     final db = await openV30TasksDb();
     addTearDown(db.close);

@@ -8,6 +8,7 @@ import '../../models/llm_channel.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../services/llm/model_family.dart';
+import '../../services/model_id_uniqueness.dart';
 import '../../state/app_state.dart';
 import 'model_tag_chip.dart';
 import '../app_button.dart';
@@ -103,7 +104,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
   }
 
   bool _isModelAdded(DiscoveredModel m) {
-    return widget.appState.allModels.any((em) => em.modelId == m.modelId && em.channelId == widget.channel.id);
+    return isModelIdTaken(widget.appState.allModels, channelId: widget.channel.id, modelId: m.modelId);
   }
 
   List<DiscoveredModel> get _available => _filtered.where((m) => !_isModelAdded(m)).toList();
@@ -440,6 +441,8 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
 
   Future<void> _handleAddSelected() async {
     setState(() => _adding = true);
+    // Every model picked here starts in the channel's default fee group.
+    final feeGroupId = widget.appState.defaultFeeGroupFor(widget.channel.id);
     for (var id in _selectedIds) {
       final m = _discovered.firstWhere((dm) => dm.modelId == id);
       await widget.appState.addModel({
@@ -451,6 +454,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         'supports_standard': 1,
         'sort_order': widget.appState.allModels.length,
         'channel_id': widget.channel.id,
+        'fee_group_id': feeGroupId,
       });
     }
     if (mounted) Navigator.pop(context);

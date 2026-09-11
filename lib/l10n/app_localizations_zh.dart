@@ -2359,6 +2359,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fetchFailedTitle => '连接失败';
 
   @override
+  String get channelDefaultFeeGroup => '默认费率组';
+
+  @override
+  String get channelDefaultFeeGroupHint => '这个渠道新加的模型默认归到这个组';
+
+  @override
+  String get modelIdTakenTitle => '该渠道下已有同名 Model ID';
+
+  @override
+  String get modelIdTakenDesc => '同一个渠道里 ID 必须唯一。改 ID，或去编辑已存在的那一条。';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -6920,6 +6932,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get fetchFailedTitle => '連線失敗';
+
+  @override
+  String get channelDefaultFeeGroup => '預設費用群組';
+
+  @override
+  String get channelDefaultFeeGroupHint => '這個通道新加的模型預設歸到這個群組';
+
+  @override
+  String get modelIdTakenTitle => '該通道下已有同名 Model ID';
+
+  @override
+  String get modelIdTakenDesc => '同一個通道裡 ID 必須唯一。改 ID，或去編輯已存在的那一筆。';
 
   @override
   String get prompts => '提示';
