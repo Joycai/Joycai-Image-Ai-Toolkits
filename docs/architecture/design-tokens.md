@@ -66,7 +66,7 @@ Color get onAccentTint =>
     brightness == Brightness.light ? onPrimaryFixedVariant : primaryFixedDim;
 ```
 
-`buildAppColorScheme` 用 `vibrant` 变体长出调色板（`tonalSpot` 会把鲜色压成影子），但**只有主色角色活下来**：灰阶被上面那张表覆盖，容器角色（`primaryContainer` / `onPrimaryContainer`）被改写成主色自己彩度的对应 tone，界面代码不读它们——`design_tokens_test`「the container roles stay out of the UI」扫源码钉住，同时拦截手搓的 `primary.withValues(alpha: …)`：需要一个新的主色透明度，就在 `AppAccent` 上加一个有名字的派生（`accentGlassFill` / `accentGlow` / `accentEcho` 就是这么来的）。
+`buildAppColorScheme` 用 `vibrant` 变体长出调色板（`tonalSpot` 会把鲜色压成影子），但**只有主色角色活下来**：灰阶被上面那张表覆盖，容器角色（`primaryContainer` / `onPrimaryContainer`）被改写成主色自己彩度的对应 tone，界面代码不读它们——`design_tokens_test`「the container roles stay out of the UI」扫源码钉住，同时拦截手搓的 `primary.withValues(alpha: …)`：需要一个新的主色透明度，就在 `AppAccent` 上加一个有名字的派生（`accentGlassFill` / `accentGlow` 就是这么来的）。
 
 **自定义主题色**（`00 · 1g`，设置页 `E1 · 1b`）走同一条路，派生在 `lib/core/custom_accent.dart`（纯函数，无状态）：亮色半取种子色相与彩度在 tone 44，琥珀到黄绿（HCT 48°–112°）与 Orange 预设同一例外改 tone 55；暗色半从 tone 62 起逐档上抬（至多 80），直到压暗色卡与自带暗墨都 ≥ 4.5:1。白字压不住时不单独特判——`ThemeAccent.onLight` 本来就会换成同色相深墨字。结果分通过 / 改深墨字 / 失败三态，附六项对比度。存储：`theme_accent` 写 `custom:#RRGGBB`，只存种子，加载时重新派生（`AppState.setCustomThemeAccent`）。
 
@@ -131,7 +131,7 @@ Color get onAccentTint =>
 
 **色调是声明的，不是采样的。** 设计要求玻璃按背后内容的明暗自动切换亮 / 暗玻璃。Flutter 里每帧回读背景像素的代价不可接受，所以 `GlassTone` 默认跟随主题明暗，已知压在深色内容上的层自己声明 `GlassTone.dark`（通知、缩略图操作条、媒体预览顶栏）。这是与设计的已知偏离。
 
-**窗口背景 aurora**（`AuroraBackdrop`）：画布色 + 28px 发丝线网格（@ .55）+ 左上一团 `accentTint` 径向渐变 + 右下一团 `accentEcho`（7%），衰减到 0。它不滚动不动画，重绘边界里画一次。
+**窗口背景 aurora**（`AuroraBackdrop`）：安静的材质墙，本身不带纹理。玻璃要折射的是内容（缩略图、视频帧、文件网格）；背景上的规则图案会和内容抢透出感，模糊之后网格线还会变成一团脏灰。深浅只来自极大半径的光晕，自下而上四层：画布色（`surfaceContainer`）→ 左上角外侧一团 `primary` 6% 径向光晕（衰减到 0.6）→ 右下角外侧一团 `primary` 4%（到 0.62）→ 顶部 `surface` 55% 提亮（到 0.42）。光晕取主色，换主题色时墙的冷暖跟着走，灰阶不动。两团光晕的透明度写在 `AuroraBackdrop` 里，不进 `AppAccent`：它们只属于这面墙，而且必须远低于 12%——到那个量级就和选中底一样深，选中态会读不出来。它不滚动不动画，重绘边界里画一次；减少视觉效果时只剩画布色。
 
 ## 6 · 与设计的已知偏离
 

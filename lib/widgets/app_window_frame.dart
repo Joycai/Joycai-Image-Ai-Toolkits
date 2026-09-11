@@ -92,20 +92,36 @@ class _AppWindowFrameState extends State<AppWindowFrame> {
   Widget build(BuildContext context) => Overlay(initialEntries: [_entry]);
 }
 
-/// The window ground (`00` 「aurora」): the canvas colour, a faint 28px grid in
-/// the hairline, and one wash of the accent — its 12% form, falling off to
-/// nothing — from the top-left, with a fainter 7% echo at the bottom-right.
+/// The window ground (`00` 「aurora」): a quiet material wall.
 ///
-/// Most screens cover it with opaque columns; the workbench gallery and the
-/// tool canvases sit straight on it, which is what gives the glass bars
-/// something to refract. Nothing here scrolls or animates, so it paints once
-/// behind a repaint boundary. With *reduce visual effects* on it is the canvas
-/// colour alone.
+/// Liquid Glass blurs what sits behind it, and what it should be refracting is
+/// content — gallery thumbnails, video frames, the file grid. So the wall has
+/// no texture of its own: a regular pattern competes with the content for what
+/// shows through, and blurred grid lines turn into a smear of dirty grey. Its
+/// depth comes only from very large, very faint glows. Four layers, bottom to
+/// top:
+///
+/// 1. the canvas colour;
+/// 2. an accent glow from beyond the top-left corner, 6% falling to nothing;
+/// 3. a fainter 4% glow from beyond the bottom-right;
+/// 4. a lift of the surface colour down from the top edge.
+///
+/// The glows take `primary`, so the wall warms or cools with the theme colour
+/// while the greys stay put. Their alphas stay far under 12%: at that weight
+/// they match the selected-state wash, and a selection stops reading against
+/// the wall.
+///
+/// Most screens cover it with opaque columns; the workbench gallery, the file
+/// browser grid and the downloader results sit straight on it. Nothing here
+/// scrolls or animates, so it paints once behind a repaint boundary. With
+/// *reduce visual effects* on it is the canvas colour alone — the switch that
+/// also turns glass opaque.
 class AuroraBackdrop extends StatelessWidget {
   const AuroraBackdrop({super.key});
 
-  /// The grid pitch, in logical pixels.
-  static const double gridPitch = 28;
+  static const double _glowAlpha = 0.06;
+  static const double _echoAlpha = 0.04;
+  static const double _liftAlpha = 0.55;
 
   @override
   Widget build(BuildContext context) {
@@ -113,84 +129,51 @@ class AuroraBackdrop extends StatelessWidget {
     if (AppEffects.reduced(context)) {
       return ColoredBox(color: scheme.surfaceContainer);
     }
+
+    final glow = scheme.primary.withValues(alpha: _glowAlpha);
+    final echo = scheme.primary.withValues(alpha: _echoAlpha);
+    final lift = scheme.surface.withValues(alpha: _liftAlpha);
+
+    // Each layer fades to its own colour at zero alpha rather than to
+    // `Colors.transparent`, which is transparent *black*: the gradient
+    // interpolates unpremultiplied and would grey the middle of the fade.
     return RepaintBoundary(
-      child: CustomPaint(
-        painter: _AuroraPainter(
-          canvas: scheme.surfaceContainer,
-          grid: scheme.outlineVariant.withValues(alpha: 0.55),
-          wash: scheme.accentTint,
-          echo: scheme.accentEcho,
+      child: ColoredBox(
+        color: scheme.surfaceContainer,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(-0.7, -1.2),
+              radius: 1.2,
+              colors: [glow, glow.withValues(alpha: 0)],
+              stops: const [0, 0.6],
+            ),
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(0.9, 1.1),
+                radius: 1.0,
+                colors: [echo, echo.withValues(alpha: 0)],
+                stops: const [0, 0.62],
+              ),
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [lift, lift.withValues(alpha: 0)],
+                  stops: const [0, 0.42],
+                ),
+              ),
+              child: const SizedBox.expand(),
+            ),
+          ),
         ),
-        size: Size.infinite,
       ),
     );
   }
-}
-
-class _AuroraPainter extends CustomPainter {
-  _AuroraPainter({
-    required this.canvas,
-    required this.grid,
-    required this.wash,
-    required this.echo,
-  });
-
-  final Color canvas;
-  final Color grid;
-  final Color wash;
-  final Color echo;
-
-  @override
-  void paint(Canvas c, Size size) {
-    c.drawRect(Offset.zero & size, Paint()..color = canvas);
-
-    final line = Paint()
-      ..color = grid
-      ..strokeWidth = 1;
-    for (double x = 0; x < size.width; x += AuroraBackdrop.gridPitch) {
-      c.drawLine(Offset(x + 0.5, 0), Offset(x + 0.5, size.height), line);
-    }
-    for (double y = 0; y < size.height; y += AuroraBackdrop.gridPitch) {
-      c.drawLine(Offset(0, y + 0.5), Offset(size.width, y + 0.5), line);
-    }
-
-    // CSS `radial-gradient(55% 45% at 88% 96%, …, transparent 70%)`, then
-    // `(70% 60% at 18% 8%)` on top — an ellipse is a circle scaled on one axis.
-    _ellipse(c, size, cx: 0.88, cy: 0.96, rx: 0.55, ry: 0.45, color: echo);
-    _ellipse(c, size, cx: 0.18, cy: 0.08, rx: 0.70, ry: 0.60, color: wash);
-  }
-
-  void _ellipse(
-    Canvas c,
-    Size size, {
-    required double cx,
-    required double cy,
-    required double rx,
-    required double ry,
-    required Color color,
-  }) {
-    final radiusX = size.width * rx;
-    final radiusY = size.height * ry;
-    if (radiusX <= 0 || radiusY <= 0) return;
-    c.save();
-    c.translate(size.width * cx, size.height * cy);
-    c.scale(1, radiusY / radiusX);
-    final rect = Rect.fromCircle(center: Offset.zero, radius: radiusX);
-    c.drawRect(
-      Rect.fromLTRB(-size.width * 2, -size.height * 2 * radiusX / radiusY,
-          size.width * 2, size.height * 2 * radiusX / radiusY),
-      Paint()
-        ..shader = RadialGradient(
-          colors: [color, color.withValues(alpha: 0)],
-          stops: const [0, 0.7],
-        ).createShader(rect),
-    );
-    c.restore();
-  }
-
-  @override
-  bool shouldRepaint(_AuroraPainter old) =>
-      old.canvas != canvas || old.grid != grid || old.wash != wash || old.echo != echo;
 }
 
 /// The app mark: a rounded square in the accent swept to its deep ink
