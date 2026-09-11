@@ -1972,6 +1972,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Used to batch images per request, and to budget the Prompt Assistant\'s knowledge-base reads and summarization.';
 
   @override
+  String get contextSliderHint =>
+      'The slider moves in 1,024-token steps from 8k to 1M. A typed value wins: the slider follows it, and rests between two presets in proportion.';
+
+  @override
   String get agentBehavior => 'Agent Behavior';
 
   @override
@@ -2005,6 +2009,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reasoningEffortMax => 'Max';
+
+  @override
+  String get reasoningEffortDefaultShort => 'Default';
+
+  @override
+  String get reasoningEffortOn => 'On';
+
+  @override
+  String get reasoningEffortUnavailable => 'Unavailable';
 
   @override
   String get enableThinking => 'Extended thinking';
@@ -2497,7 +2510,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reasoningEffortUnsupported =>
-      'This model takes no reasoning parameters. The section stays greyed out and lights up when you switch to a chat model.';
+      'This model takes no reasoning parameters, so the slider stays at Off. It lights up when you switch to a model that does.';
 
   @override
   String get modelIdRequiredTitle => 'Model ID can\'t be empty';

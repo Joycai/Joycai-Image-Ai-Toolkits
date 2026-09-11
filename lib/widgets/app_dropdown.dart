@@ -194,9 +194,10 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
     final pinned = widget.height ?? size.height;
     final double vertical;
     if (pinned != null) {
-      // The box's own 1px border top and bottom comes out of the pinned height
-      // before the button is centred in what is left.
-      vertical = math.max(0, (pinned - 2 - _buttonHeight(context, valueStyle, size.chevron)) / 2);
+      // The outline is painted over the box, not added to it, so the button
+      // is centred in the whole pinned height. Taking the border out first
+      // left every pinned dropdown 2px short of the fields beside it.
+      vertical = math.max(0, (pinned - _buttonHeight(context, valueStyle, size.chevron)) / 2);
     } else {
       vertical = _verticalInset(context, valueStyle, themeInset.top, size.chevron);
     }

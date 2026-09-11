@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/design_tokens.dart';
+import 'app_field_size.dart';
 
 /// A single-line or multi-line text input with the app's input styling: a
 /// hairline box on the surface, an accent border and glow ring when focused.
@@ -60,8 +61,7 @@ class AppTextField extends StatefulWidget {
   State<AppTextField> createState() => _AppTextFieldState();
 }
 
-/// Thickness of the focus ring, and so also the inset this widget always
-/// reserves for it.
+/// Thickness of the focus ring, which is drawn outside the field's box.
 const double _ringWidth = 3;
 
 class _AppTextFieldState extends State<AppTextField> {
@@ -69,22 +69,47 @@ class _AppTextFieldState extends State<AppTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final style = theme.textTheme.bodyMedium;
     // An obscured field showing more than one line makes no sense — an
     // obscured newline can't be told apart from an obscured character — so
     // this pins it to one regardless of what the caller passed.
     final effectiveMaxLines = widget.obscureText ? 1 : widget.maxLines;
 
+    // A single-line field with its caption outside it is the 32px control.
+    // A floating label or an error line lives inside the decorator's own box,
+    // and `constraints` bounds that whole box, so those fields keep the
+    // theme's height rather than being clipped.
+    final bool pinned = widget.label == null &&
+        widget.errorText == null &&
+        effectiveMaxLines == 1 &&
+        (widget.minLines ?? 1) <= 1;
+    EdgeInsets? padding;
+    if (pinned) {
+      final themed = (theme.inputDecorationTheme.contentPadding ?? EdgeInsets.zero)
+          .resolve(Directionality.of(context));
+      final vertical = pinnedFieldInset(context, style, AppSize.control);
+      padding = EdgeInsets.fromLTRB(themed.left, vertical, themed.right, vertical);
+    }
+    const iconBox = BoxConstraints(minWidth: AppSize.control, minHeight: 0);
+
     // Shape and borders come from the ambient inputDecorationTheme; only the
-    // content slots are named here, so this field and the bare TextFields
-    // around the app cannot drift apart again.
+    // content slots — and, when pinned, the height — are named here, so this
+    // field and the bare TextFields around the app cannot drift apart again.
     final decoration = InputDecoration(
       labelText: widget.label,
       hintText: widget.hint,
       errorText: widget.errorText,
       prefixIcon: widget.prefixIcon,
       suffixIcon: widget.suffixIcon,
+      isDense: pinned ? true : null,
+      constraints: pinned ? const BoxConstraints.tightFor(height: AppSize.control) : null,
+      contentPadding: padding,
+      prefixIconConstraints: pinned ? iconBox : null,
+      suffixIconConstraints: pinned ? iconBox : null,
     );
+    final TextAlignVertical? align = pinned ? TextAlignVertical.center : null;
 
     final Widget field = widget.validator != null
         ? TextFormField(
@@ -96,7 +121,8 @@ class _AppTextFieldState extends State<AppTextField> {
             keyboardType: widget.keyboardType,
             onChanged: widget.onChanged,
             validator: widget.validator,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: style,
+            textAlignVertical: align,
             decoration: decoration,
           )
         : TextField(
@@ -107,7 +133,8 @@ class _AppTextFieldState extends State<AppTextField> {
             enabled: widget.enabled,
             keyboardType: widget.keyboardType,
             onChanged: widget.onChanged,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: style,
+            textAlignVertical: align,
             decoration: decoration,
           );
 
@@ -126,10 +153,10 @@ class _AppTextFieldState extends State<AppTextField> {
     // and it is what every focused field in the component gallery was tinted
     // with. A border paints the edge only, which is all this ever wanted.
     //
-    // The side is always 3px and only its colour animates, so gaining focus
-    // does not nudge everything around the field by three pixels — a Container
-    // folds `decoration.padding` (the border's own dimensions) into its
-    // layout, and a transparent side still measures 3.
+    // The ring is laid over the field, 3px outside its box, and takes no
+    // layout. It used to be a Container around the field, which reserved the
+    // 3px on every side whether focused or not — so the field sat 3px inset
+    // from the caption above it and from every neighbour in its row.
     //
     // `Focus` here is an ancestor of the field's own focus node rather than a
     // replacement for it: `hasFocus` on a parent node is true whenever a
@@ -141,17 +168,30 @@ class _AppTextFieldState extends State<AppTextField> {
       onFocusChange: (value) {
         if (value != _focused) setState(() => _focused = value);
       },
-      child: AnimatedContainer(
-        duration: AppMotion.durationOf(context, AppMotion.hover),
-        curve: AppMotion.enter,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.control + _ringWidth),
-          border: Border.all(
-            color: _focused ? colorScheme.accentRing : Colors.transparent,
-            width: _ringWidth,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          field,
+          Positioned(
+            left: -_ringWidth,
+            top: -_ringWidth,
+            right: -_ringWidth,
+            bottom: -_ringWidth,
+            child: IgnorePointer(
+              child: AnimatedContainer(
+                duration: AppMotion.durationOf(context, AppMotion.hover),
+                curve: AppMotion.enter,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppRadius.control + _ringWidth),
+                  border: Border.all(
+                    color: _focused ? colorScheme.accentRing : Colors.transparent,
+                    width: _ringWidth,
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-        child: field,
+        ],
       ),
     );
   }

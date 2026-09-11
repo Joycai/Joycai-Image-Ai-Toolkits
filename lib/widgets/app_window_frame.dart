@@ -240,7 +240,10 @@ class AppTitleBar extends StatelessWidget {
     final showNav = !Responsive.isMobile(context);
     final current = AppDestination.values[
         context.select<AppState, int>((s) => s.activeScreenIndex)];
-    final (title, version) = windowTitleParts(context);
+    final (title, _) = windowTitleParts(context);
+    // `01b · 1b`: the current destination is named here, beside the app's
+    // name, rather than inside the navigation, whose width must not follow it.
+    final destination = current.label(AppLocalizations.of(context)!);
 
     return SizedBox(
       height: kTitleBarHeight,
@@ -256,7 +259,11 @@ class AppTitleBar extends StatelessWidget {
             final rightReserve = isMacOs ? AppSpace.s10 : _captionButtonsWidth;
 
             final titleStyle = theme.textTheme.bodySmall!.metricsOnly.copyWith(fontWeight: FontWeight.w500);
-            final versionStyle = theme.textTheme.labelSmall!.mono.copyWith(color: ink2, fontWeight: FontWeight.w400);
+            final separatorStyle = titleStyle.copyWith(color: ink2);
+            final destinationStyle = titleStyle.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onAccentTint,
+            );
             double measure(String text, TextStyle style) => (TextPainter(
                   text: TextSpan(text: text, style: style),
                   textDirection: TextDirection.ltr,
@@ -267,33 +274,38 @@ class AppTitleBar extends StatelessWidget {
 
             final markWidth = isMacOs ? 0.0 : 16 + AppSpace.s10;
             final titleWidth = measure(title, titleStyle);
-            final versionWidth = version == null ? 0.0 : measure('v$version', versionStyle) + AppSpace.s10;
+            final separatorWidth = AppSpace.s10 + measure('·', separatorStyle) + AppSpace.s10;
+            final destinationWidth = measure(destination, destinationStyle);
 
-            bool showLabel = true;
+            // The app's name folds first: the destination is the one place
+            // the current screen is named now.
             bool showTitle = true;
-            bool showVersion = version != null;
-            double navWidth() => showNav
-                ? NavLensGroup.widthFor(context,
-                    density: NavLensDensity.titleBar, current: current, showSelectedLabel: showLabel)
-                : 0;
+            bool showDestination = true;
+            final nav = showNav ? NavLensGroup.widthFor(density: NavLensDensity.titleBar) : 0.0;
             double leftWidth() =>
-                leftInset + markWidth + (showTitle ? titleWidth : 0) + (showVersion ? versionWidth : 0);
-            // The nav wants the window's centre; it may slide right of it, but
-            // never under the identity or the caption buttons. Without a nav
-            // (phone widths) the identity still has to clear the buttons.
+                leftInset +
+                markWidth +
+                (showTitle ? titleWidth : 0) +
+                (showTitle && showDestination ? separatorWidth : 0) +
+                (showDestination ? destinationWidth : 0);
+            // Without a nav (phone widths) the identity still has to clear the
+            // caption buttons.
             bool fits() {
-              final middle = showNav ? AppSpace.s16 + navWidth() + AppSpace.s16 : AppSpace.s16;
+              final middle = showNav ? AppSpace.s16 + nav + AppSpace.s16 : AppSpace.s16;
               return leftWidth() + middle + rightReserve <= width;
             }
 
-            if (!fits()) showVersion = false;
             if (!fits()) showTitle = false;
-            if (!fits()) showLabel = false;
+            if (!fits()) showDestination = false;
 
-            final nav = navWidth();
+            // `01b · 1e`: centred in the span between the leading inset and
+            // the caption buttons, not on the window — on the window, the
+            // buttons' 138 on one side pull the nav's optical centre off. It
+            // may slide right of centre, but never under the identity or the
+            // buttons.
             final minLeft = leftWidth() + AppSpace.s16;
             final maxLeft = width - rightReserve - AppSpace.s16 - nav;
-            final centred = (width - nav) / 2;
+            final centred = leftInset + (width - leftInset - rightReserve - nav) / 2;
             final navLeft = maxLeft < minLeft ? minLeft : centred.clamp(minLeft, maxLeft);
 
             return Stack(
@@ -318,10 +330,18 @@ class AppTitleBar extends StatelessWidget {
                                 style: titleStyle,
                               ),
                             ),
-                          if (showVersion) ...[
+                          if (showTitle && showDestination) ...[
                             const SizedBox(width: AppSpace.s10),
-                            Text('v$version', maxLines: 1, style: versionStyle),
+                            Text('·', style: separatorStyle),
+                            const SizedBox(width: AppSpace.s10),
                           ],
+                          if (showDestination)
+                            Text(
+                              destination,
+                              maxLines: 1,
+                              softWrap: false,
+                              style: destinationStyle,
+                            ),
                         ],
                       ),
                     ),
@@ -331,10 +351,7 @@ class AppTitleBar extends StatelessWidget {
                   Positioned(
                     left: navLeft,
                     top: (kTitleBarHeight - NavLensDensity.titleBar.itemHeight) / 2,
-                    child: NavLensGroup(
-                      density: NavLensDensity.titleBar,
-                      showSelectedLabel: showLabel,
-                    ),
+                    child: const NavLensGroup(density: NavLensDensity.titleBar),
                   ),
                 if (!isMacOs)
                   const Positioned(right: 0, top: 0, bottom: 0, child: _WindowButtons()),

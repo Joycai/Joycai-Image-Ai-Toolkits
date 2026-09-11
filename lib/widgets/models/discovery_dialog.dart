@@ -251,8 +251,6 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
                 inputDecorationTheme: theme.inputDecorationTheme.copyWith(
                   filled: true,
                   fillColor: theme.colorScheme.surfaceContainerLow,
-                  prefixIconConstraints: const BoxConstraints(minWidth: AppSize.control, minHeight: 0),
-                  suffixIconConstraints: const BoxConstraints(minWidth: AppSize.control, minHeight: 0),
                 ),
               ),
               child: AppSearchField(

@@ -191,6 +191,15 @@ surface 开关"表达不了它。绑定关系升级为：
   `AppState.descriptorForModel(model)`**。工作台的参数面板、参考图上限、参数记忆
   命名空间都从这里读；`ModelCapabilities.forModel(model.modelId)` 在
   `services/llm/` 之外出现，就是把点单绕过去了。
+- **推理强度的挡位只问 `LLMDispatcher.reasoningLadder(channelType:, modelId:, tag:)`**
+  （2026-09，模型编辑器的推理滑块）。每条 wire 只给它分得开的档，发出去一样的
+  两档就是一个没有效果的旋钮：① 六档全有（DeepSeek 的关闭走 `thinking` 对象，
+  仍是另一种请求）；④ adaptive 没有「关闭」——它和「默认」一样不发 `thinking`；
+  ④ budget（Claude 4.5 及更早、百炼 ④ 面）与 MiniMax 的裸 adaptive 没有强度，
+  只有「默认 / 开启」（开启存为 medium）；百炼原生是「默认 / 关闭 / 开启」；
+  Gemini、MJ 与非 chat surface 返回空。④ 的 dialect 判定与请求共用
+  `declaredAnthropicThinkingDialect`，编辑器看到的就是请求会用的。测试：
+  `test/reasoning_ladder_test.dart`。
 - **测试**：`test/model_kind_protocol_pin_test.dart` 钉住中转图像/视频、无通用面的
   渠道、一方厂商未收录的新 id、失效与缓存隔离，以及一条回归门 —— 对所有 vendor ×
   一组代表性 id，`tag = inferTag(id)` 时 descriptor 与 auto 必须和不带 tag 时

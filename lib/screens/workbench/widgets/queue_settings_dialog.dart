@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
+import '../../../widgets/app_field_size.dart';
 import 'safety_settings_section.dart';
 
 /// Queue/output settings dialog shared by the image and video workbenches:
@@ -59,8 +61,20 @@ Future<void> showQueueSettingsDialog(BuildContext context) {
               const SizedBox(height: 8),
               TextField(
                 controller: prefixController,
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlignVertical: TextAlignVertical.center,
                 decoration: InputDecoration(
                   hintText: l10n.prefixHint,
+                  isDense: true,
+                  constraints: const BoxConstraints.tightFor(height: AppSize.control),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: AppSpace.s10,
+                    vertical: pinnedFieldInset(
+                      context,
+                      Theme.of(context).textTheme.bodyMedium,
+                      AppSize.control,
+                    ),
+                  ),
                 ),
                 onChanged: (v) => appState.setImagePrefix(v),
               ),

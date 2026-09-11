@@ -1,8 +1,7 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../../core/design_tokens.dart';
+import '../../../widgets/app_field_size.dart';
 import '../../../widgets/glass/glass_controls.dart';
 
 /// Shared geometry and the small controls of the downloader column (`B3`).
@@ -53,6 +52,10 @@ double downloaderLineHeight(BuildContext context, TextStyle style) {
 /// left at zero: a dense decorator sizes itself to its content, so a zero
 /// inset drew a 16px border inside a 32px slot. [fill] defaults to the panel;
 /// the dialog passes the column colour.
+///
+/// A caller passing its own [contentPadding] sizes the box itself — the
+/// cookie well is 96 tall and multi-line — so only the default form is pinned
+/// to [height].
 InputDecoration downloaderFieldDecoration(
   BuildContext context, {
   required TextStyle style,
@@ -63,7 +66,7 @@ InputDecoration downloaderFieldDecoration(
   EdgeInsetsGeometry? contentPadding,
 }) {
   final scheme = Theme.of(context).colorScheme;
-  final vertical = math.max(0.0, (height - downloaderLineHeight(context, style)) / 2);
+  final vertical = pinnedFieldInset(context, style, height);
   return InputDecoration(
     hintText: hint,
     hintStyle: style.copyWith(color: scheme.outline),
@@ -71,6 +74,7 @@ InputDecoration downloaderFieldDecoration(
     isDense: true,
     filled: true,
     fillColor: fill ?? scheme.surface,
+    constraints: contentPadding == null ? BoxConstraints.tightFor(height: height) : null,
     contentPadding: contentPadding ??
         EdgeInsetsDirectional.fromSTEB(icon == null ? AppSpace.s10 : 0, vertical, AppSpace.s10, vertical),
     prefixIcon: icon == null ? null : Icon(icon, size: AppSize.iconMd, color: scheme.outline),

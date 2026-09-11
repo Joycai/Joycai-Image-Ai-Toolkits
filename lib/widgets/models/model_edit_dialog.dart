@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/pricing_group.dart';
+import '../../services/context_window_scale.dart';
 import '../../services/llm/context_budget.dart';
 import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/llm_types.dart';
@@ -111,18 +112,6 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   /// The narrowest a column may be before the dialog folds to one. A layout
   /// form decision, measured against the width the dialog actually got.
   static const double _minColumnWidth = 320;
-
-  /// The reasoning-effort ladder, in the order it is offered. `''` is the
-  /// default rung — "send no field at all" — spelled that way because a
-  /// nullable selection cannot tell "picked default" from "nothing picked".
-  List<(String, String)> get _effortOptions => [
-        ('', widget.l10n.reasoningEffortDefault),
-        ('off', widget.l10n.reasoningEffortOff),
-        ('low', widget.l10n.reasoningEffortLow),
-        ('medium', widget.l10n.reasoningEffortMedium),
-        ('high', widget.l10n.reasoningEffortHigh),
-        ('max', widget.l10n.reasoningEffortMax),
-      ];
 
   @override
   void initState() {
@@ -700,21 +689,29 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       size: size,
       // The channel's tag colour as a dot beside its name (`1a`), in the
       // picker every other channel choice in the app uses.
-      child: SearchablePickerField<int>(
-        selected: channel == null ? null : channelPickerOption(channel),
-        optionsBuilder: () => appState.allChannels.map(channelPickerOption).toList(),
-        onChanged: (v) => setState(() {
-          channelId = v;
-          if (widget.model == null && !_feeGroupTouched) {
-            feeGroupId = widget.appState.defaultFeeGroupFor(v);
-          }
-        }),
-        hint: l10n.selectAChannel,
-        searchHint: l10n.searchChannels,
-        dialogIcon: Icons.hub_outlined,
-        enabled: appState.allChannels.isNotEmpty,
-        badgeStyle: PickerBadge.dot,
-        size: size,
+      child: Builder(
+        // Its own context: the metrics scope sits below the dialog
+        // state's, which would read the desktop height on a phone.
+        builder: (context) => SearchablePickerField<int>(
+          selected: channel == null ? null : channelPickerOption(channel),
+          optionsBuilder: () => appState.allChannels.map(channelPickerOption).toList(),
+          onChanged: (v) => setState(() {
+            channelId = v;
+            if (widget.model == null && !_feeGroupTouched) {
+              feeGroupId = widget.appState.defaultFeeGroupFor(v);
+            }
+          }),
+          hint: l10n.selectAChannel,
+          searchHint: l10n.searchChannels,
+          dialogIcon: Icons.hub_outlined,
+          enabled: appState.allChannels.isNotEmpty,
+          badgeStyle: PickerBadge.dot,
+          size: size,
+          // The form's one field height (`1a` 32, `1e` 44). Left to the
+          // large size's own height, the phone's selects came out 37
+          // beside its 44px text fields.
+          height: ModelEditMetrics.of(context).fieldHeight,
+        ),
       ),
     );
   }
@@ -750,19 +747,24 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     return AppLabelledField(
       label: l10n.feeGroup,
       size: size,
-      child: AppDropdown<int?>(
-        value: feeGroupId,
-        items: [
-          // A real answer — no group — drawn as the absence it is.
-          AppDropdownItem(value: null, label: l10n.noFeeGroup, muted: true),
-          for (final g in widget.appState.allPricingGroups) AppDropdownItem(value: g.id!, label: g.name),
-        ],
-        onChanged: (v) => setState(() {
-          feeGroupId = v;
-          _feeGroupTouched = true;
-        }),
-        prefixIcon: Icons.payments_outlined,
-        size: size,
+      child: Builder(
+        // Its own context: the metrics scope sits below the dialog
+        // state's, which would read the desktop height on a phone.
+        builder: (context) => AppDropdown<int?>(
+          value: feeGroupId,
+          items: [
+            // A real answer — no group — drawn as the absence it is.
+            AppDropdownItem(value: null, label: l10n.noFeeGroup, muted: true),
+            for (final g in widget.appState.allPricingGroups) AppDropdownItem(value: g.id!, label: g.name),
+          ],
+          onChanged: (v) => setState(() {
+            feeGroupId = v;
+            _feeGroupTouched = true;
+          }),
+          prefixIcon: Icons.payments_outlined,
+          size: size,
+          height: ModelEditMetrics.of(context).fieldHeight,
+        ),
       ),
     );
   }
@@ -954,6 +956,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
                           ],
                         ),
                       ),
+                      const SizedBox(height: _fieldGap),
+                      _contextSlider(context),
                       // Shown whenever Specify holds nothing savable — the
                       // user chose Specify, and this is why Save is off. The
                       // stroke waits for typing.
@@ -968,6 +972,47 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         ),
         const SizedBox(height: AppSpace.s6),
         ModelEditHelperText(description),
+      ],
+    );
+  }
+
+  /// `1d`'s Specify slider: nine stops from 8k to 1M at equal distances,
+  /// 1024-token steps. The typed figure is the value: the thumb follows it,
+  /// between two stops in proportion, and dragging writes the field.
+  Widget _contextSlider(BuildContext context) {
+    final l10n = widget.l10n;
+    final tokens = _contextTokens;
+    final stops = ContextWindowScale.stops;
+    final hasValue = tokens != null && tokens > 0;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ModelEditTrackSlider(
+          stopCount: stops.length,
+          value: hasValue ? ContextWindowScale.positionOf(tokens) : 0,
+          // Every other stop is labelled: nine labels do not fit a column.
+          labels: [
+            for (var i = 0; i < stops.length; i++) i.isEven ? ContextWindowScale.label(stops[i]) : null,
+          ],
+          inset: 16,
+          semanticLabel: l10n.contextMax,
+          // The typed figure where the thumb rests on it; the track's own
+          // value anywhere else.
+          semanticValueOf: (p) => l10n.contextTokens(formatGroupedTokens(
+              hasValue && p == ContextWindowScale.positionOf(tokens) ? tokens : ContextWindowScale.tokensAt(p))),
+          onChanged: (position) {
+            final next = ContextWindowScale.tokensAt(position);
+            if (next == tokens) return;
+            setState(() {
+              contextCtrl.text = '$next';
+              _contextTouched = true;
+            });
+          },
+        ),
+        const SizedBox(height: AppSpace.s4),
+        ModelEditHelperText(l10n.contextSliderHint),
       ],
     );
   }
@@ -993,28 +1038,92 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     );
   }
 
-  /// Always present. Greyed but kept — value included — where the request
-  /// would not carry it, so switching the kind back lights it up again.
+  /// Every rung, in the order a greyed slider shows them.
+  static const List<ReasoningEffort?> _allRungs = [
+    null,
+    ReasoningEffort.off,
+    ReasoningEffort.low,
+    ReasoningEffort.medium,
+    ReasoningEffort.high,
+    ReasoningEffort.max,
+  ];
+
+  /// A rung's name. On a ladder with no intensity the one rung above Default
+  /// is simply on, whatever level it is stored as.
+  String _rungLabel(ReasoningEffort? rung, {required bool short, required bool onOff}) {
+    final l10n = widget.l10n;
+    return switch (rung) {
+      null => short ? l10n.reasoningEffortDefaultShort : l10n.reasoningEffortDefault,
+      ReasoningEffort.off => l10n.reasoningEffortOff,
+      ReasoningEffort.low => l10n.reasoningEffortLow,
+      ReasoningEffort.medium => onOff ? l10n.reasoningEffortOn : l10n.reasoningEffortMedium,
+      ReasoningEffort.high => l10n.reasoningEffortHigh,
+      ReasoningEffort.max => l10n.reasoningEffortMax,
+    };
+  }
+
+  /// Where the stored level sits on [ladder]. A level this wire does not tell
+  /// apart shows as the rung that sends the same request: Off where Off is
+  /// withheld like Default, any intensity where thinking is only on or off.
+  /// The stored value itself is left alone until the slider is moved.
+  int _rungIndex(List<ReasoningEffort?> ladder) {
+    final current = ReasoningEffort.tryParse(reasoningEffort);
+    final exact = ladder.indexOf(current);
+    if (exact >= 0) return exact;
+    if (current == ReasoningEffort.off) return 0;
+    final on = ladder.indexOf(ReasoningEffort.medium);
+    return on >= 0 ? on : 0;
+  }
+
+  /// Always present (`1a`). The stops are the model's: only the rungs its
+  /// wire tells apart. Where no rung reaches the request the slider greys out
+  /// with its thumb held at Off, and lights up again when the channel or the
+  /// kind changes to one that takes reasoning.
   Widget _reasoningSection(BuildContext context) {
     final l10n = widget.l10n;
-    final supported = _reasoningSupported;
+    final theme = Theme.of(context);
+    final ladder = _reasoningLadder;
+    final supported = ladder.isNotEmpty;
+    final rungs = supported ? ladder : _allRungs;
+    final onOff = supported && !ladder.contains(ReasoningEffort.low);
+    final index = supported ? _rungIndex(ladder) : _allRungs.indexOf(ReasoningEffort.off);
+    final current = _rungLabel(rungs[index], short: false, onOff: onOff);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _caption(
-          l10n.reasoningEffort,
-          tone: supported ? AppSectionTone.accent : AppSectionTone.neutral,
+        Row(
+          children: [
+            Expanded(
+              child: _caption(
+                l10n.reasoningEffort,
+                tone: supported ? AppSectionTone.accent : AppSectionTone.neutral,
+              ),
+            ),
+            const SizedBox(width: AppSpace.s10),
+            Text(
+              supported ? current : l10n.reasoningEffortUnavailable,
+              style: theme.textTheme.labelSmall?.mono.copyWith(
+                color: supported ? theme.colorScheme.onSurface : theme.colorScheme.outline,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: AppSpace.s6),
-        ModelEditPillChips<String>(
-          choices: [
-            for (final (value, label) in _effortOptions) ModelEditChoice(value: value, label: label),
-          ],
-          value: reasoningEffort ?? '',
-          enabled: supported,
-          onChanged: (v) => setState(() => reasoningEffort = v.isEmpty ? null : v),
+        ModelEditTrackSlider(
+          stopCount: rungs.length,
+          value: index.toDouble(),
+          snap: true,
+          highlight: supported ? index : null,
+          labels: [for (final rung in rungs) _rungLabel(rung, short: true, onOff: onOff)],
+          semanticLabel: l10n.reasoningEffort,
+          semanticValueOf: (v) => supported
+              ? _rungLabel(rungs[v.round()], short: false, onOff: onOff)
+              : l10n.reasoningEffortUnavailable,
+          onChanged: !supported
+              ? null
+              : (v) => setState(() => reasoningEffort = ladder[v.round()]?.name),
         ),
         const SizedBox(height: AppSpace.s6),
         ModelEditHelperText(
@@ -1126,10 +1235,18 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   /// Whether a reasoning level would reach the request: the channel's chat
   /// wire consumes it (the dispatcher's answer, not a copy), and the kind
   /// sends the model down that chat wire at all.
-  bool get _reasoningSupported {
-    final family = _channelFamily;
-    if (family == null || !LLMDispatcher.chatConsumesReasoningEffort(family)) return false;
-    return LLMDispatcher.surfaceForModel(idCtrl.text.trim(), tag: tag) == Surface.chat;
+  bool get _reasoningSupported => _reasoningLadder.isNotEmpty;
+
+  /// The rungs that each send a different request on this channel for this
+  /// id and kind: the dispatcher's answer, empty where none reaches the wire.
+  List<ReasoningEffort?> get _reasoningLadder {
+    final channel = _selectedChannel;
+    if (channel == null) return const [];
+    return LLMDispatcher.reasoningLadder(
+      channelType: channel.type,
+      modelId: idCtrl.text.trim(),
+      tag: tag,
+    );
   }
 
   /// Moves the kind.

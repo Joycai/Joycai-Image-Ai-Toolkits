@@ -11,6 +11,7 @@ import '../../screens/prompts/widgets/color_hue_picker.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
 import '../app_switch.dart';
+import '../app_field_size.dart';
 
 /// The shared vocabulary of the add-channel wizard and the channel editor
 /// (design `D1b`): one field, one label row, one badge, one note strip, one
@@ -194,21 +195,6 @@ class _ChannelFieldState extends State<ChannelField> {
   bool _focused = false;
   bool _obscured = true;
 
-  /// The inset that centres one line of [style] in [AppSize.control],
-  /// measured rather than assumed so a larger text scale grows the field
-  /// instead of clipping it.
-  double _verticalInset(BuildContext context, TextStyle style) {
-    final painter = TextPainter(
-      text: TextSpan(text: 'Ag', style: style),
-      textDirection: TextDirection.ltr,
-      textScaler: MediaQuery.textScalerOf(context),
-      maxLines: 1,
-    )..layout();
-    final lineHeight = painter.height;
-    painter.dispose();
-    return math.max(0.0, (AppSize.control - lineHeight) / 2);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -216,7 +202,7 @@ class _ChannelFieldState extends State<ChannelField> {
     final base = theme.textTheme.bodyMedium ?? const TextStyle();
     final style =
         (widget.mono ? base.mono : base).copyWith(color: colorScheme.onSurface);
-    final vertical = _verticalInset(context, style);
+    final vertical = pinnedFieldInset(context, style, AppSize.control);
     final hasError = widget.errorText != null;
 
     OutlineInputBorder stroke(Color color) => OutlineInputBorder(
@@ -235,6 +221,7 @@ class _ChannelFieldState extends State<ChannelField> {
         isDense: true,
         filled: true,
         fillColor: colorScheme.surfaceContainerLow,
+        constraints: const BoxConstraints.tightFor(height: AppSize.control),
         hintText: widget.hint,
         hintStyle: style.copyWith(color: colorScheme.outline),
         contentPadding: EdgeInsets.fromLTRB(

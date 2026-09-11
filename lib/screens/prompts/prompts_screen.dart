@@ -362,15 +362,13 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(AppSpace.s16, 0, AppSpace.s16, 8),
-                  child: SizedBox(
-                    height: 40,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: scheme.onSurface.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(AppRadius.control),
-                      ),
-                      child: AppSearchField(controller: _searchCtrl, hint: l10n.filterPrompts),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: scheme.onSurface.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(AppRadius.control),
                     ),
+                    // 40: a phone app bar's touch slot, not the pointer 32.
+                    child: AppSearchField(controller: _searchCtrl, hint: l10n.filterPrompts, height: 40),
                   ),
                 ),
                 SizedBox(

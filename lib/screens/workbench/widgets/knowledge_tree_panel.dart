@@ -17,6 +17,7 @@ import 'optimizer_context_card.dart';
 /// grow and their header becomes a title rather than a caption.
 typedef _TreeDensity = ({
   double row,
+  double field,
   double rowGap,
   double headerGap,
   EdgeInsets header,
@@ -29,6 +30,7 @@ _TreeDensity _densityOf(BuildContext context) {
   if (Responsive.isMobile(context)) {
     return (
       row: 40.0,
+      field: 40.0,
       rowGap: 8.0,
       headerGap: 8.0,
       header: const EdgeInsets.fromLTRB(14, 12, 14, 8),
@@ -40,6 +42,7 @@ _TreeDensity _densityOf(BuildContext context) {
   if (Responsive.isTablet(context)) {
     return (
       row: 36.0,
+      field: 36.0,
       rowGap: 6.0,
       headerGap: 8.0,
       header: const EdgeInsets.fromLTRB(14, 12, 14, 8),
@@ -50,6 +53,9 @@ _TreeDensity _densityOf(BuildContext context) {
   }
   return (
     row: 30.0,
+    // The pointer control height, two over the row: the search is an input
+    // beside the column's other 32px controls, not a tree row.
+    field: AppSize.control,
     rowGap: 6.0,
     headerGap: 6.0,
     header: const EdgeInsets.fromLTRB(12, 10, 12, 6),
@@ -372,14 +378,12 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(AppRadius.control),
                   ),
-                  child: SizedBox(
-                    height: density.row,
-                    child: AppSearchField(
-                      controller: _searchCtrl,
-                      hint: l10n.optKbSearchDocs,
-                      compact: !density.large,
-                      onChanged: (v) => setState(() => _query = v),
-                    ),
+                  child: AppSearchField(
+                    controller: _searchCtrl,
+                    hint: l10n.optKbSearchDocs,
+                    compact: !density.large,
+                    height: density.field,
+                    onChanged: (v) => setState(() => _query = v),
                   ),
                 ),
               ],

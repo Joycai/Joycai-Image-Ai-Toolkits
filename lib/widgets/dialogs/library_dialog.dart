@@ -111,7 +111,6 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
           ),
           SizedBox(
             width: isNarrow ? 120 : 180,
-            height: 36,
             child: AppSearchField(
               controller: _searchCtrl,
               hint: l10n.filterPrompts,

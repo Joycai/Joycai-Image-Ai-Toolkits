@@ -1892,6 +1892,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contextWindowHint => '用于每次请求的图片分批，以及提示词助手读取知识库与摘要的预算。';
 
   @override
+  String get contextSliderHint =>
+      '滑块按 1024 token 步进，档位 8k–1M；以手填为准，填了非整档的数时滑块按比例停在两档之间。';
+
+  @override
   String get agentBehavior => '代理行为';
 
   @override
@@ -1924,6 +1928,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reasoningEffortMax => '最高';
+
+  @override
+  String get reasoningEffortDefaultShort => '默认';
+
+  @override
+  String get reasoningEffortOn => '开启';
+
+  @override
+  String get reasoningEffortUnavailable => '不可用';
 
   @override
   String get enableThinking => '深度思考';
@@ -2382,7 +2395,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolUnavailable => '不可用';
 
   @override
-  String get reasoningEffortUnsupported => '该模型不接受推理参数，整段置灰但保留——换成对话模型时它会亮起来。';
+  String get reasoningEffortUnsupported =>
+      '该模型不接受推理参数，滑块固定在「关闭」——换成支持推理的模型时它会亮起来。';
 
   @override
   String get modelIdRequiredTitle => 'Model ID 不能为空';
@@ -6564,6 +6578,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get contextWindowHint => '用於每次請求的圖片分批，以及提示詞助手讀取知識庫與摘要的預算。';
 
   @override
+  String get contextSliderHint =>
+      '滑桿按 1024 token 步進，檔位 8k–1M；以手填為準，填了非整檔的數時滑桿按比例停在兩檔之間。';
+
+  @override
   String get agentBehavior => '代理行為';
 
   @override
@@ -6596,6 +6614,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get reasoningEffortMax => '最高';
+
+  @override
+  String get reasoningEffortDefaultShort => '預設';
+
+  @override
+  String get reasoningEffortOn => '開啟';
+
+  @override
+  String get reasoningEffortUnavailable => '不可用';
 
   @override
   String get enableThinking => '深度思考';
@@ -7054,7 +7081,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get protocolUnavailable => '不可用';
 
   @override
-  String get reasoningEffortUnsupported => '該模型不接受推理參數，整段置灰但保留——換成對話模型時它會亮起來。';
+  String get reasoningEffortUnsupported =>
+      '該模型不接受推理參數，滑桿固定在「關閉」——換成支援推理的模型時它會亮起來。';
 
   @override
   String get modelIdRequiredTitle => 'Model ID 不能為空';

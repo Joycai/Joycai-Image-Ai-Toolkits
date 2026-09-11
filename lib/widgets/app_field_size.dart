@@ -1,6 +1,33 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../core/design_tokens.dart';
+
+/// The vertical content inset that makes a dense single-line text field
+/// exactly [height] tall in [style].
+///
+/// An [InputDecorator] draws its outline around its *content*, not around the
+/// box it is given: a field pinned to 32 by a `SizedBox` or by
+/// `InputDecoration.constraints` with no vertical inset draws a 19px outline
+/// in the middle of a 32px slot. So the inset has to be derived from the
+/// line the field will lay out, measured from the actual font and text scale.
+///
+/// Pair it with `constraints: BoxConstraints.tightFor(height: height)` on the
+/// decoration: a run set in a fallback font with taller metrics than [style]'s
+/// then stays inside the pinned height instead of growing the field. A text
+/// scale too large for [height] gives an inset of zero, and the field grows.
+double pinnedFieldInset(BuildContext context, TextStyle? style, double height) {
+  final painter = TextPainter(
+    text: TextSpan(text: ' ', style: style),
+    textDirection: TextDirection.ltr,
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  );
+  final line = painter.preferredLineHeight;
+  painter.dispose();
+  return math.max(0, (height - line) / 2);
+}
 
 /// The two sizes the spec gives a select-like field, and the caption over it.
 ///
@@ -17,7 +44,7 @@ enum AppFieldSize {
   /// 32 high · inset 10 · value 12/500 · chevron 14 · caption 11.5/600, 4 below.
   regular,
 
-  /// 40 high (the theme's) · inset 12 · value 13/500 · chevron 16 · caption
+  /// 40 high (the theme's) · inset 12 · value 13/500 · chevron 14 · caption
   /// 12/500, 6 below.
   large;
 

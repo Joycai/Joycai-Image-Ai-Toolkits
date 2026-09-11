@@ -13,6 +13,7 @@ import '../core/theme_accent.dart';
 import '../l10n/app_localizations.dart';
 import 'app_button.dart';
 import 'app_dialog.dart';
+import 'app_field_size.dart';
 import 'app_section_label.dart';
 import 'app_switch.dart';
 import 'dual_tone_swatch.dart';
@@ -679,6 +680,7 @@ class _CustomAccentDialogState extends State<_CustomAccentDialog> {
   Widget _buildPicker(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final hexStyle = textTheme.bodySmall?.mono;
 
     return Column(
       children: [
@@ -688,40 +690,43 @@ class _CustomAccentDialogState extends State<_CustomAccentDialog> {
           onChanged: (hue) => _setSeed(CustomAccent.seedForHue(hue)),
         ),
         const SizedBox(height: AppSpace.s10),
-        SizedBox(
-          height: AppSize.control,
-          child: TextField(
-            controller: _hexController,
-            style: textTheme.bodySmall?.mono,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp('[#0-9a-fA-F]')),
-              LengthLimitingTextInputFormatter(7),
-            ],
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: colorScheme.surfaceContainerLow,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
-              prefixIcon: Padding(
-                padding: const EdgeInsets.only(left: 8, right: 6),
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: _derived.seed,
-                    borderRadius: BorderRadius.circular(AppRadius.xs),
-                    border: Border.all(color: colorScheme.outlineVariant),
-                  ),
+        TextField(
+          controller: _hexController,
+          style: hexStyle,
+          textAlignVertical: TextAlignVertical.center,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp('[#0-9a-fA-F]')),
+            LengthLimitingTextInputFormatter(7),
+          ],
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: colorScheme.surfaceContainerLow,
+            isDense: true,
+            constraints: const BoxConstraints.tightFor(height: AppSize.control),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: pinnedFieldInset(context, hexStyle, AppSize.control),
+            ),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.only(left: 8, right: 6),
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: _derived.seed,
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
+                  border: Border.all(color: colorScheme.outlineVariant),
                 ),
               ),
-              prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
             ),
-            onChanged: (value) {
-              final Color? seed = CustomAccent.parseHex(value);
-              if (seed != null && value.replaceAll('#', '').length == 6) {
-                _setSeed(seed, fromField: true);
-              }
-            },
+            prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
           ),
+          onChanged: (value) {
+            final Color? seed = CustomAccent.parseHex(value);
+            if (seed != null && value.replaceAll('#', '').length == 6) {
+              _setSeed(seed, fromField: true);
+            }
+          },
         ),
         const SizedBox(height: AppSpace.s10),
         Text(

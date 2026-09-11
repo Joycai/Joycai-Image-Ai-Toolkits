@@ -5,6 +5,7 @@ import '../core/constants.dart';
 import '../core/design_tokens.dart';
 import '../l10n/app_localizations.dart';
 import '../screens/prompts/widgets/color_hue_picker.dart';
+import 'app_field_size.dart';
 
 /// Picks a category's identity colour (`C1 · 1d`): a hue bar, the preset
 /// swatches, and a hex field.
@@ -67,6 +68,7 @@ class _ColorPickerWidgetState extends State<ColorPickerWidget> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final hexStyle = Theme.of(context).textTheme.bodySmall!.mono;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -116,16 +118,19 @@ class _ColorPickerWidgetState extends State<ColorPickerWidget> {
           const SizedBox(height: 12),
           SizedBox(
             width: 120,
-            height: AppSize.control,
             child: TextField(
               controller: _hexCtrl,
-              style: Theme.of(context).textTheme.bodySmall!.mono,
+              style: hexStyle,
               textAlignVertical: TextAlignVertical.center,
               decoration: InputDecoration(
                 filled: true,
                 fillColor: scheme.surfaceContainerLow,
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+                constraints: const BoxConstraints.tightFor(height: AppSize.control),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: AppSpace.s10,
+                  vertical: pinnedFieldInset(context, hexStyle, AppSize.control),
+                ),
               ),
               onChanged: (v) {
                 final color = _parse(v);
