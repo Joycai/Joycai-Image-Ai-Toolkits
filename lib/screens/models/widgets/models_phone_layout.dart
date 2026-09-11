@@ -7,10 +7,10 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/glass/app_glass.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/models/channel_avatar.dart';
 import 'channel_row.dart';
-import 'glass_context_menu.dart';
 import 'model_card.dart';
 import 'models_actions.dart';
 import 'models_controls.dart';
@@ -312,10 +312,10 @@ class _PhoneChannelsTab extends StatelessWidget {
                 icon: const Icon(Icons.more_vert, size: AppSize.iconLg),
                 tooltip: l10n.more,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
-                onPressed: () => showGlassContextMenu(
+                onPressed: () => showAppGlassMenu(
                   anchor,
-                  position: menuPositionBelow(anchor),
-                  items: channelMenuItems(
+                  position: appGlassMenuPositionBelow(anchor),
+                  entries: channelMenuItems(
                     anchor,
                     actions: actions,
                     channel: channel,

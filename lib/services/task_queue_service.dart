@@ -184,8 +184,25 @@ class TaskQueueService extends ChangeNotifier {
     _attemptNextExecution();
   }
 
+  /// Removes a finished task — completed, failed or cancelled — from the
+  /// queue and deletes its row.
+  ///
+  /// A waiting or running task is left alone, row included. The row used to be
+  /// deleted unconditionally while the in-memory guard kept the task queued,
+  /// so "Clear All" on a queue with waiting tasks silently dropped their rows:
+  /// they vanished on the next launch, and every later save of their progress
+  /// wrote back into a table that no longer had them.
+  ///
+  /// An id that is not in the queue at all only has its row deleted — a stale
+  /// row is still worth clearing.
   Future<void> removeTask(String taskId) async {
-    _queue.removeWhere((t) => t.id == taskId && (t.status == TaskStatus.completed || t.status == TaskStatus.failed || t.status == TaskStatus.cancelled));
+    final index = _queue.indexWhere((t) => t.id == taskId);
+    if (index != -1) {
+      final status = _queue[index].status;
+      final finished = status == TaskStatus.completed || status == TaskStatus.failed || status == TaskStatus.cancelled;
+      if (!finished) return;
+      _queue.removeAt(index);
+    }
     await DatabaseService().deleteTask(taskId);
     notifyListeners();
   }

@@ -142,7 +142,7 @@ Color get onAccentTint =>
 | 玻璃色调 | 按背后内容亮度自动切换 | 声明式，默认随主题 | 见 §5 |
 | 折射 | 真实折射 | 渐变描边 + 内高光近似 | Flutter 没有折射；配方写死在 `_GlassEdgePainter` |
 | 危险填充的暗色 | `--err` 暗色 `#F0655F` 压白字 | 明暗都用亮色 `#C2312F` 压白字 | 暗色那支压白字只有 ~3:1 |
-| 弹出菜单 | 玻璃二 | 部分已是玻璃，部分仍是不透明面板 r16 + 发丝线 | Material 的菜单路由在自己的裁剪后面挂不上背景滤镜，所以玻璃菜单都是自建路由：文件浏览器的文件菜单（`browser_glass_menu.dart`）与文件夹菜单（`folder_glass_menu.dart`）、下载器结果卡菜单、模型页渠道菜单（`glass_context_menu.dart`）。工作台的 `MenuAnchor` 与任务队列的 ⋮ 菜单仍是不透明退化形态。四份自建路由应合并成 `lib/widgets/glass/` 下的一个 `AppGlassMenu`（`app_theme.dart` 的注释已按这个名字写） |
+| 弹出菜单 | 玻璃二 | 右键与 ⋮ 菜单统一走 `AppGlassMenu`（`lib/widgets/glass/app_glass_menu.dart`）；工作台工具条的 `MenuAnchor` 与任务队列手机顶栏的 ⋮ 菜单仍是不透明面板 r16 + 发丝线 | Material 的菜单路由在自己的裁剪后面挂不上背景滤镜，所以玻璃菜单是自建路由；`popupMenuTheme` 保留为退化形态。那两处留在 `MenuAnchor`，是因为里面有滑杆、单选行与开关，不是一列动作 |
 | 工作台卡片的文件名 | 只显示尺寸角标 | 另有一枚文件名角标，尺寸角标带文件大小 | 这两项在卡片上别无出处；网格包在 `ExcludeSemantics` 里、没有 tooltip |
 | 视频卡时长角标 | 右上 mono 时长 | 无 | `AppImage` 与缩略图服务都不提供时长 |
 | 手机上缩略图操作条 | 不画 | 选中的卡上显示，且不模糊 | 「回馈助手」只在这条上；满屏卡片各开一次模糊是每帧的代价 |

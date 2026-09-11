@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
-import 'glass_context_menu.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 
 /// Everything the models screen's pieces can ask the screen to do.
 ///
@@ -48,7 +48,7 @@ class ModelsActions {
 /// [index] is the channel's position in the full stored order; the move rows
 /// disable at the ends and all four while [reorderLocked] — a filtered rail
 /// shows only part of the list, so a position in it means nothing.
-List<GlassMenuItem> channelMenuItems(
+List<AppGlassMenuEntry> channelMenuItems(
   BuildContext context, {
   required ModelsActions actions,
   required LLMChannel channel,
@@ -63,45 +63,45 @@ List<GlassMenuItem> channelMenuItems(
   final canSink = canMove && index < count - 1;
 
   return [
-    GlassMenuItem(
+    AppGlassMenuItem(
       icon: Icons.vertical_align_top,
       label: l10n.moveToTop,
       enabled: canRise,
       onSelected: () => actions.moveChannel(index, 0),
     ),
-    GlassMenuItem(
+    AppGlassMenuItem(
       icon: Icons.keyboard_arrow_up,
       label: l10n.moveUp,
-      shortcut: mac ? '⌥↑' : 'Alt+↑',
+      trailing: mac ? '⌥↑' : 'Alt+↑',
       enabled: canRise,
       onSelected: () => actions.moveChannel(index, index - 1),
     ),
-    GlassMenuItem(
+    AppGlassMenuItem(
       icon: Icons.keyboard_arrow_down,
       label: l10n.moveDown,
-      shortcut: mac ? '⌥↓' : 'Alt+↓',
+      trailing: mac ? '⌥↓' : 'Alt+↓',
       enabled: canSink,
       onSelected: () => actions.moveChannel(index, index + 1),
     ),
-    GlassMenuItem(
+    AppGlassMenuItem(
       icon: Icons.vertical_align_bottom,
       label: l10n.moveToBottom,
       enabled: canSink,
       onSelected: () => actions.moveChannel(index, count - 1),
     ),
-    const GlassMenuItem.divider(),
+    const AppGlassMenuDivider(),
     if (channel.enableDiscovery)
-      GlassMenuItem(
+      AppGlassMenuItem(
         icon: Icons.cloud_sync_outlined,
         label: l10n.fetchModels,
         onSelected: () => actions.fetchModels(channel),
       ),
-    GlassMenuItem(
+    AppGlassMenuItem(
       icon: Icons.edit_outlined,
       label: l10n.editChannel,
       onSelected: () => actions.editChannel(channel),
     ),
-    GlassMenuItem(
+    AppGlassMenuItem(
       icon: Icons.delete_outline,
       label: l10n.delete,
       danger: true,
@@ -110,10 +110,3 @@ List<GlassMenuItem> channelMenuItems(
   ];
 }
 
-/// Where a menu anchored under a button at [anchor] should open: its right
-/// edge on the button's right edge, 4px below.
-Offset menuPositionBelow(BuildContext anchor) {
-  final box = anchor.findRenderObject() as RenderBox?;
-  if (box == null) return Offset.zero;
-  return box.localToGlobal(Offset(box.size.width - kGlassMenuWidth, box.size.height + 4));
-}

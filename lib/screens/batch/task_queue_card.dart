@@ -20,6 +20,7 @@ import '../../widgets/app_section_label.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/dashed_border.dart';
 import '../../widgets/dialogs/task_log_dialog.dart';
+import '../../widgets/glass/app_glass_menu.dart';
 import '../../widgets/glass/glass_controls.dart';
 import '../../widgets/scroll_edge_fade.dart';
 import '../../widgets/smooth_progress.dart';
@@ -524,15 +525,25 @@ class _RowIconButton extends StatelessWidget {
 
 /// A task's ⋮ (`B2 · 1b`): view log · retry · copy prompt, a hairline, then
 /// remove and cancel. Each entry appears only where it can act.
-class TaskMenuButton extends StatelessWidget {
+class TaskMenuButton extends StatefulWidget {
   const TaskMenuButton({super.key, required this.task});
 
   final TaskItem task;
 
   @override
-  Widget build(BuildContext context) {
+  State<TaskMenuButton> createState() => _TaskMenuButtonState();
+}
+
+/// `B2 · 1b` 任务 ⋮ 菜单: G2 glass, 210 wide, dropping from the button.
+class _TaskMenuButtonState extends State<TaskMenuButton> {
+  /// Open, so the button keeps its lens while the menu is up.
+  bool _open = false;
+
+  static const double _menuWidth = 210;
+
+  Future<void> _openMenu() async {
     final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
+    final task = widget.task;
     final queue = Provider.of<AppState>(context, listen: false).taskQueue;
 
     final canCancel = _isActive(task);
@@ -540,54 +551,68 @@ class TaskMenuButton extends StatelessWidget {
     final canRemove = _isTerminal(task);
     final hasPrompt = task.parameters.containsKey('prompt');
 
-    return MenuAnchor(
-      menuChildren: [
+    setState(() => _open = true);
+    await showAppGlassMenu(
+      context,
+      position: appGlassMenuPositionBelow(context, width: _menuWidth),
+      width: _menuWidth,
+      entries: [
         // First and unconditional: every status has a use for it, and a
         // running task's log tails live in the dialog.
-        MenuItemButton(
-          leadingIcon: const Icon(Icons.article_outlined, size: AppSize.iconLg),
-          onPressed: () => TaskLogDialog.show(context, task),
-          child: Text(l10n.viewTaskLog),
+        AppGlassMenuItem(
+          icon: Icons.article_outlined,
+          label: l10n.viewTaskLog,
+          onSelected: () {
+            if (mounted) TaskLogDialog.show(context, task);
+          },
         ),
         if (canRetry)
-          MenuItemButton(
-            leadingIcon: const Icon(Icons.refresh, size: AppSize.iconLg),
-            onPressed: () => queue.retryTask(task.id),
-            child: Text(l10n.retryTask),
+          AppGlassMenuItem(
+            icon: Icons.refresh,
+            label: l10n.retryTask,
+            onSelected: () => queue.retryTask(task.id),
           ),
         if (hasPrompt)
-          MenuItemButton(
-            leadingIcon: const Icon(Icons.content_copy, size: AppSize.iconLg),
-            onPressed: () {
+          AppGlassMenuItem(
+            icon: Icons.content_copy,
+            label: l10n.copyPrompt,
+            onSelected: () {
               final prompt = '${task.parameters['prompt'] ?? ''}';
               Clipboard.setData(ClipboardData(text: prompt));
+              if (!mounted) return;
               AppSnackBar.info(
                 context,
                 l10n.copiedToClipboard(prompt.length > 30 ? '${prompt.substring(0, 30)}…' : prompt),
               );
             },
-            child: Text(l10n.copyPrompt),
           ),
-        if (canRemove || canCancel) const Divider(height: 9),
+        if (canRemove || canCancel) const AppGlassMenuDivider(),
         if (canRemove)
-          MenuItemButton(
-            leadingIcon: const Icon(Icons.playlist_remove, size: AppSize.iconLg),
-            onPressed: () => queue.removeTask(task.id),
-            child: Text(l10n.removeFromList),
+          AppGlassMenuItem(
+            icon: Icons.playlist_remove,
+            label: l10n.removeFromList,
+            onSelected: () => queue.removeTask(task.id),
           ),
         if (canCancel)
-          MenuItemButton(
-            leadingIcon: Icon(Icons.cancel_outlined, size: AppSize.iconLg, color: scheme.error),
-            onPressed: () => queue.cancelTask(task.id),
-            child: Text(l10n.cancelTask, style: TextStyle(color: scheme.error)),
+          AppGlassMenuItem(
+            icon: Icons.cancel_outlined,
+            label: l10n.cancelTask,
+            danger: true,
+            onSelected: () => queue.cancelTask(task.id),
           ),
       ],
-      builder: (context, controller, _) => _RowIconButton(
-        icon: Icons.more_vert,
-        tooltip: l10n.more,
-        selected: controller.isOpen,
-        onPressed: () => controller.isOpen ? controller.close() : controller.open(),
-      ),
+    );
+    if (mounted) setState(() => _open = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return _RowIconButton(
+      icon: Icons.more_vert,
+      tooltip: l10n.more,
+      selected: _open,
+      onPressed: _openMenu,
     );
   }
 }

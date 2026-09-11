@@ -10,9 +10,9 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_search_field.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import 'channel_row.dart';
-import 'glass_context_menu.dart';
 import 'models_actions.dart';
 import 'models_controls.dart';
 
@@ -152,10 +152,10 @@ class ChannelColumn extends StatelessWidget {
             dense: dense,
             handle: handle,
             onTap: () => onSelect(channel),
-            onContextMenu: (position) => showGlassContextMenu(
+            onContextMenu: (position) => showAppGlassMenu(
               context,
               position: position,
-              items: channelMenuItems(
+              entries: channelMenuItems(
                 context,
                 actions: actions,
                 channel: channel,
