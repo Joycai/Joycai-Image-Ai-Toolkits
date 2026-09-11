@@ -45,5 +45,6 @@
   "filterPrompts": "篩選提示...",
   "shareFailed": "分享失敗: {error}",
   "more": "更多",
-  "confirm": "確認"
+  "confirm": "確認",
+  "moreSheetDesktopOnlyNote": "檔案瀏覽器與圖片下載器僅在桌面 / 平板提供。"
 }

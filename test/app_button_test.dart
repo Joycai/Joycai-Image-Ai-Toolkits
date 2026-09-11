@@ -222,7 +222,7 @@ void main() {
       final style = tester.widget<FilledButton>(find.byType(FilledButton)).style!;
 
       expect(style.backgroundColor?.resolve(const {}), errorFillScheme().primary);
-      expect(paintedSize(tester).height, 48);
+      expect(paintedSize(tester).height, AppSize.large);
     });
   });
 

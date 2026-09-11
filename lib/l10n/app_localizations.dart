@@ -1624,6 +1624,12 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get confirm;
 
+  /// No description provided for @moreSheetDesktopOnlyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'File Browser and Image Downloader are available on desktop and tablet only.'**
+  String get moreSheetDesktopOnlyNote;
+
   /// No description provided for @downloader.
   ///
   /// In en, this message translates to:

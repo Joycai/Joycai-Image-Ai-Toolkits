@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/main.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/shell/nav_lens_group.dart';
+import 'package:joycai_image_ai_toolkits/widgets/shell/phone_dock.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -51,23 +53,27 @@ void main() {
     expect(tester.takeException(), isNull, reason: 'Overflow or error detected at $description');
   }
 
+  // `01 全局壳层`: below 600 the destinations live in the floating phone dock;
+  // at and above it they live in the title bar (desktop) or the tablet top bar
+  // (touch OS), as a lens group. There is no Material navigation widget.
   group('Responsive Layout Tests', () {
     testWidgets('Verify Mobile Layout (390x844)', (tester) async {
       await testScreenAtSize(tester, const Size(390, 844), 'Mobile');
-      expect(find.byType(NavigationBar), findsOneWidget);
-      expect(find.byType(NavigationRail), findsNothing);
+      expect(find.byType(PhoneDock), findsOneWidget);
+      expect(find.byType(NavLensGroup), findsNothing);
+      expect(find.byType(NavigationBar), findsNothing);
     });
 
     testWidgets('Verify Tablet Layout (820x1180)', (tester) async {
       await testScreenAtSize(tester, const Size(820, 1180), 'Tablet');
-      // The app uses a custom nav rail (not NavigationRail); desktop/tablet
-      // layout has no bottom NavigationBar.
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(PhoneDock), findsNothing);
+      expect(find.byType(NavLensGroup), findsOneWidget);
     });
 
     testWidgets('Verify Desktop Layout (1920x1080)', (tester) async {
       await testScreenAtSize(tester, const Size(1920, 1080), 'Desktop');
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(PhoneDock), findsNothing);
+      expect(find.byType(NavLensGroup), findsOneWidget);
     });
   });
 }

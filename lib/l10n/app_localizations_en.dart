@@ -915,6 +915,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirm => 'Confirm';
 
   @override
+  String get moreSheetDesktopOnlyNote =>
+      'File Browser and Image Downloader are available on desktop and tablet only.';
+
+  @override
   String get downloader => 'Downloader';
 
   @override

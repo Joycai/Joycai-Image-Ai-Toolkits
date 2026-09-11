@@ -54,15 +54,28 @@ void main() {
     // can't silently drift away from the value every screen already uses.
     final textTheme = buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light).textTheme;
 
-    // 16 since the restyle — the spec's 页面标题 row. See _buildTextTheme.
+    // `00 设计系统 · 1d`: seven sizes and no others — 28 · 20 · 16 · 14 · 13 ·
+    // 12 · 11. See _buildTextTheme for which slot carries which job.
+    expect(textTheme.headlineLarge?.fontSize, 28);
+    expect(textTheme.headlineMedium?.fontSize, 20);
     expect(textTheme.titleLarge?.fontSize, 16);
     expect(textTheme.titleMedium?.fontSize, 14);
     expect(textTheme.titleSmall?.fontSize, 13);
+    expect(textTheme.bodyLarge?.fontSize, 14);
     expect(textTheme.bodyMedium?.fontSize, 13);
     expect(textTheme.bodySmall?.fontSize, 12);
     expect(textTheme.labelLarge?.fontSize, 13);
-    expect(textTheme.labelMedium?.fontSize, 11.5);
-    expect(textTheme.labelSmall?.fontSize, 10);
+    expect(textTheme.labelMedium?.fontSize, 12);
+    expect(textTheme.labelSmall?.fontSize, 11);
+    final ladder = <double>{28, 20, 16, 14, 13, 12, 11};
+    for (final style in [
+      textTheme.headlineLarge, textTheme.headlineMedium, textTheme.headlineSmall,
+      textTheme.titleLarge, textTheme.titleMedium, textTheme.titleSmall,
+      textTheme.bodyLarge, textTheme.bodyMedium, textTheme.bodySmall,
+      textTheme.labelLarge, textTheme.labelMedium, textTheme.labelSmall,
+    ]) {
+      expect(ladder, contains(style?.fontSize), reason: 'a slot left the seven-size ladder');
+    }
   });
 
   test('slots stay tied to the scheme, only weight/size are opinionated', () {
@@ -100,10 +113,10 @@ void main() {
     test('two slots at the same size are spaced the same', () {
       final t = scale();
 
-      // 16px: titleLarge shipped 0.0 and bodyLarge 0.5 — the same letters at
-      // the same size, half a pixel apart depending on the slot name.
-      expect(t.titleLarge?.fontSize, t.bodyLarge?.fontSize);
-      expect(t.titleLarge?.letterSpacing, t.bodyLarge?.letterSpacing);
+      // 14px: titleMedium and bodyLarge — the same letters at the same size
+      // must not sit half a pixel apart depending on the slot name.
+      expect(t.titleMedium?.fontSize, t.bodyLarge?.fontSize);
+      expect(t.titleMedium?.letterSpacing, t.bodyLarge?.letterSpacing);
 
       // 13px: titleSmall and labelLarge shipped 0.1, bodyMedium 0.25.
       expect(t.titleSmall?.fontSize, 13);
@@ -151,8 +164,10 @@ void main() {
       // would hand back at its size. That is a separate decision about a
       // separate kind of text, and collapsing the two would either flatten the
       // caption or blow every label in the app apart.
-      expect(AppType.trackedLabelSpacing,
-          greaterThan(AppType.trackingFor(11.5) * 2));
+      // `00`: the 11/500 group caption is tracked at .06em — wider than the
+      // ladder would give 11px text.
+      expect(AppType.trackedLabelSpacing, closeTo(11 * 0.06, 0.001));
+      expect(AppType.trackedLabelSpacing, greaterThan(AppType.trackingFor(11)));
     });
   });
 

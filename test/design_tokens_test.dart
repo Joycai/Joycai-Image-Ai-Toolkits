@@ -261,12 +261,16 @@ void main() {
         // ThemeAccent.derivedLightTone is justified by are asserted too, so
         // the doc cannot outrun the code: tone 44 measures 5.5 under white
         // and 4.8 on the canvas; 47 is where the canvas drops under AA.
+        // Since `00 设计系统` the accent is never *text* — text buttons, links
+        // and captions are the deep ink — so the old 4.8 canvas margin for
+        // primary-as-text is gone. What `00` asks instead: the deep ink reads
+        // at AA on column through card, and primary as a stroke clears 3:1.
         const double whiteMargin = 5.5;
-        const double canvasMargin = 4.8;
         final List<(String, Color)> textGrounds = [
           ('surfaceContainerLowest', light.surfaceContainerLowest),
           ('surface', light.surface),
           ('surfaceContainerLow', light.surfaceContainerLow),
+          ('surfaceContainerHigh (card)', light.surfaceContainerHigh),
           ('surfaceContainer', light.surfaceContainer),
           ('surfaceDim', light.surfaceDim),
         ];
@@ -275,13 +279,6 @@ void main() {
         if (light.onPrimary.toARGB32() == Colors.white.toARGB32()) {
           expect(contrast(light.onPrimary, light.primary), greaterThanOrEqualTo(whiteMargin),
               reason: '${preset.key}: the light half is too light for white text');
-          expectReadsOn(
-            light.primary,
-            [('surfaceContainer (the canvas)', light.surfaceContainer)],
-            preset: preset.key,
-            hint: 'the light half lost the canvas margin derivedLightTone promises',
-            floor: canvasMargin,
-          );
         }
         expectReadsOn(light.accentText, textGrounds,
             preset: preset.key, hint: 'the accent as text fails AA');
@@ -294,16 +291,12 @@ void main() {
         );
       });
 
-      test('accentText is primary where primary reads, else the wash label — ${preset.key}', () {
-        // The role that lets a hue leave tone 44. Decided from the scheme,
-        // so it is one rule for presets and custom colours alike.
-        final bool primaryReads = contrast(light.primary, light.surfaceContainer) >= 4.5 &&
-            contrast(light.primary, light.surface) >= 4.5;
-        expect(light.accentText, primaryReads ? light.primary : light.onAccentTint,
-            reason: '${preset.key}: accentText picked the wrong side of 4.5:1');
-        // Dark primary is tuned to read as text (the test above pins ≥ 4.5
-        // on every dark ground), so dark accentText is always primary.
-        expect(dark.accentText, dark.primary, reason: '${preset.key}: dark accentText left primary');
+      test('accentText is always the deep ink, in both brightnesses — ${preset.key}', () {
+        // `00`: 「文字按钮与链接也用主色深」. `primary` is tuned as a fill; the
+        // deep ink is tuned to be read, so no hue needs a special case —
+        // which is how Orange stopped being one.
+        expect(light.accentText, light.onAccentTint, reason: preset.key);
+        expect(dark.accentText, dark.onAccentTint, reason: preset.key);
       });
 
       test('the light overlay and container roles are the accent\'s own chroma too — ${preset.key}', () {
@@ -384,12 +377,12 @@ void main() {
       expect(light.onPrimary.toARGB32(), isNot(Colors.white.toARGB32()));
       expect(light.accentText, light.onAccentTint, reason: 'as text, tone 55 is 3.3:1 on the canvas');
       expect(light.accentText, isNot(light.primary));
-      // Every other preset keeps white ink and primary-as-text.
+      // Every other preset keeps white ink; text is the deep ink for all.
       for (final MapEntry<String, ThemeAccent> other in AppConstants.presetThemes.entries) {
         if (other.key == 'Orange') continue;
         final scheme = buildAppColorScheme(accent: other.value, brightness: Brightness.light);
         expect(scheme.onPrimary.toARGB32(), Colors.white.toARGB32(), reason: other.key);
-        expect(scheme.accentText, scheme.primary, reason: other.key);
+        expect(scheme.accentText, scheme.onAccentTint, reason: other.key);
       }
     });
 
@@ -530,8 +523,8 @@ void main() {
       // wearing it is the palest thing in the dialog.
       final dark = buildAppColorScheme(accent: ThemeAccent.fromSeed(Colors.blue), brightness: Brightness.dark);
       expect(errorFill.primary, isNot(dark.error));
-      expect(luminance(dark.error), greaterThan(0.4),
-          reason: 'if the role ever stops being a light tone in dark, revisit '
+      expect(luminance(dark.error), greaterThan(luminance(errorFill.primary)),
+          reason: 'if the dark role ever stops being lighter than the fill, revisit '
               'errorFillScheme — it exists because of this');
     });
 
@@ -586,16 +579,26 @@ void main() {
       expect(appButtonMinHeight, AppSize.control);
     });
 
-    test('radii ascend, so "one step out" is always meaningful', () {
-      expect(AppRadius.xs, lessThan(AppRadius.control));
-      expect(AppRadius.control, lessThan(AppRadius.md));
-      expect(AppRadius.md, lessThan(AppRadius.lg));
-      expect(AppRadius.lg, lessThan(AppRadius.dialog));
+    test('radii sit on the one ladder, 4 · 6 · 10 · 16 · 22 · 28', () {
+      // `00 · 1d`: one ladder for radius and spacing, concentric — outer =
+      // inner + 6. `md` is the segmented track, which lands on `control` by
+      // that rule, not by accident.
+      expect(
+        [AppRadius.xs, AppRadius.sm, AppRadius.control, AppRadius.lg, AppRadius.dialog, AppRadius.sheet],
+        [4.0, 6.0, 10.0, 16.0, 22.0, 28.0],
+      );
+      expect(AppRadius.md, AppRadius.control);
+      expect(AppRadius.control + AppSpace.s6, AppRadius.lg);
+      expect(AppRadius.lg + AppSpace.s6, AppRadius.dialog);
+      expect(AppRadius.dialog + AppSpace.s6, AppRadius.sheet);
     });
 
-    test('an icon button is shorter than a labelled one, per the spec', () {
-      expect(AppSize.iconButton, lessThan(AppSize.control));
-      expect(AppSize.compact, lessThan(AppSize.iconButton));
+    test('an icon button and a labelled one share a height, per the spec', () {
+      // `00` 「控件高 28 紧凑 · 32 标准 · 40 触摸 · 44 手机命中区下限」.
+      expect(AppSize.iconButton, AppSize.control);
+      expect(AppSize.compact, lessThan(AppSize.control));
+      expect(AppSize.control, lessThan(AppSize.large));
+      expect(AppSize.large, lessThan(AppSize.touch));
     });
   });
 }

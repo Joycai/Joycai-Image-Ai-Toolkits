@@ -45,5 +45,6 @@
   "filterPrompts": "プロンプトをフィルター...",
   "shareFailed": "共有に失敗しました: {error}",
   "more": "もっと見る",
-  "confirm": "確認"
+  "confirm": "確認",
+  "moreSheetDesktopOnlyNote": "ファイルブラウザと画像ダウンローダーはデスクトップ／タブレットでのみ利用できます。"
 }

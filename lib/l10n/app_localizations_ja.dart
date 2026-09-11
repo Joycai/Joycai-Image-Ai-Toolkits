@@ -907,6 +907,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get confirm => '確認';
 
   @override
+  String get moreSheetDesktopOnlyNote =>
+      'ファイルブラウザと画像ダウンローダーはデスクトップ／タブレットでのみ利用できます。';
+
+  @override
   String get downloader => 'ダウンローダー';
 
   @override

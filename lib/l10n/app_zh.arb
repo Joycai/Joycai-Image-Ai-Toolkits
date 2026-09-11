@@ -765,6 +765,7 @@
   },
   "more": "更多",
   "confirm": "确认",
+  "moreSheetDesktopOnlyNote": "文件浏览器与图片下载器仅在桌面 / 平板提供。",
   "downloader": "下载器",
   "imageDownloader": "图像下载器",
   "url": "地址",

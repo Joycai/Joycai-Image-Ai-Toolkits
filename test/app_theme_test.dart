@@ -32,8 +32,8 @@ void main() {
     for (final theme in [dark(), light()]) {
       expect(resolve(theme, {})!, theme.colorScheme.primary);
       expect(styleOf(theme).foregroundColor?.resolve({}), theme.colorScheme.onPrimary);
-      expect(styleOf(theme).shadowColor?.resolve({}), theme.colorScheme.primary,
-          reason: 'the coloured lift must follow the fill it lifts');
+      expect(styleOf(theme).elevation?.resolve({}), 0,
+          reason: '`00 · 1f` draws the CTA flat; a lifted fill glows under glass');
     }
   });
 
@@ -235,13 +235,14 @@ void main() {
   test('tonal buttons keep their own colours despite the filled theme', () {
     // FilledButton.tonal reads the same FilledButtonTheme, and a theme's
     // background outranks the tonal variant's default — so every tonal button
-    // has to pass this style back in to stay secondary.
+    // has to pass this style back in. The tonal form is the 12% wash under the
+    // deep ink (`A3a` 「Apply / 保存到库」), not Material's secondary container.
     for (final theme in [dark(), light()]) {
       final scheme = theme.colorScheme;
       final tonal = tonalButtonStyle(scheme);
 
-      expect(tonal.backgroundColor?.resolve({}), scheme.secondaryContainer);
-      expect(tonal.foregroundColor?.resolve({}), scheme.onSecondaryContainer);
+      expect(tonal.backgroundColor?.resolve({}), scheme.accentTint);
+      expect(tonal.foregroundColor?.resolve({}), scheme.onAccentTint);
       expect(tonal.backgroundColor?.resolve({WidgetState.disabled}), isNotNull);
     }
   });

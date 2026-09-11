@@ -905,6 +905,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get confirm => '确认';
 
   @override
+  String get moreSheetDesktopOnlyNote => '文件浏览器与图片下载器仅在桌面 / 平板提供。';
+
+  @override
   String get downloader => '下载器';
 
   @override
@@ -4947,6 +4950,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get confirm => '確認';
+
+  @override
+  String get moreSheetDesktopOnlyNote => '檔案瀏覽器與圖片下載器僅在桌面 / 平板提供。';
 
   @override
   String get downloader => '下載器';
