@@ -4052,6 +4052,56 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get kbWriteNoConfirmWarning => '关闭逐条确认后，agent 起草的内容会不经你过目直接写进文件。';
+
+  @override
+  String get wbToolComparatorShort => '对比器';
+
+  @override
+  String get wbToolMaskShort => '蒙版';
+
+  @override
+  String get wbToolCropShort => '裁剪';
+
+  @override
+  String get wbToolAssistantShort => '助手';
+
+  @override
+  String get galleryViewWorkspace => '工作区';
+
+  @override
+  String get galleryViewSourcesShort => '来源';
+
+  @override
+  String get galleryViewResultsShort => '结果';
+
+  @override
+  String get galleryDropTitle => '将图片拖放到此处…';
+
+  @override
+  String get galleryDropHint => '将加入临时工作区并切换到工作区视图';
+
+  @override
+  String get galleryEmptyWorkspaceTitle => '拖放文件到此处';
+
+  @override
+  String get galleryEmptyWorkspaceDesc => '拖入图片或视频，加入临时工作区';
+
+  @override
+  String get galleryEmptySourceDesc => '该来源下没有受支持的图片';
+
+  @override
+  String get galleryScanning => '正在扫描文件…';
+
+  @override
+  String get wbGenerationConfig => '生成配置';
+
+  @override
+  String get selectionSendToAssistant => '发送到助手';
+
+  @override
+  String shareCount(int count) {
+    return '分享 ($count)';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -8099,4 +8149,54 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get kbWriteNoConfirmWarning => '關閉逐條確認後，agent 起草的內容會不經你過目直接寫進檔案。';
+
+  @override
+  String get wbToolComparatorShort => '對比器';
+
+  @override
+  String get wbToolMaskShort => '遮罩';
+
+  @override
+  String get wbToolCropShort => '裁剪';
+
+  @override
+  String get wbToolAssistantShort => '助手';
+
+  @override
+  String get galleryViewWorkspace => '工作區';
+
+  @override
+  String get galleryViewSourcesShort => '來源';
+
+  @override
+  String get galleryViewResultsShort => '結果';
+
+  @override
+  String get galleryDropTitle => '將圖片拖放到此處…';
+
+  @override
+  String get galleryDropHint => '將加入臨時工作區並切換到工作區檢視';
+
+  @override
+  String get galleryEmptyWorkspaceTitle => '拖放檔案到此處';
+
+  @override
+  String get galleryEmptyWorkspaceDesc => '拖入圖片或影片，加入臨時工作區';
+
+  @override
+  String get galleryEmptySourceDesc => '此來源下沒有受支援的圖片';
+
+  @override
+  String get galleryScanning => '正在掃描檔案…';
+
+  @override
+  String get wbGenerationConfig => '生成設定';
+
+  @override
+  String get selectionSendToAssistant => '傳送到助手';
+
+  @override
+  String shareCount(int count) {
+    return '分享 ($count)';
+  }
 }

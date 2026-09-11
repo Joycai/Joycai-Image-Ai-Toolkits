@@ -817,5 +817,21 @@
   "kbWriteAllow": "允許 agent 寫入知識庫",
   "kbWriteConfirmEach": "寫入前逐條確認",
   "kbWriteBackup": "覆蓋前保留 .bak 副本",
-  "kbWriteNoConfirmWarning": "關閉逐條確認後，agent 起草的內容會不經你過目直接寫進檔案。"
+  "kbWriteNoConfirmWarning": "關閉逐條確認後，agent 起草的內容會不經你過目直接寫進檔案。",
+  "wbToolComparatorShort": "對比器",
+  "wbToolMaskShort": "遮罩",
+  "wbToolCropShort": "裁剪",
+  "wbToolAssistantShort": "助手",
+  "galleryViewWorkspace": "工作區",
+  "galleryViewSourcesShort": "來源",
+  "galleryViewResultsShort": "結果",
+  "galleryDropTitle": "將圖片拖放到此處…",
+  "galleryDropHint": "將加入臨時工作區並切換到工作區檢視",
+  "galleryEmptyWorkspaceTitle": "拖放檔案到此處",
+  "galleryEmptyWorkspaceDesc": "拖入圖片或影片，加入臨時工作區",
+  "galleryEmptySourceDesc": "此來源下沒有受支援的圖片",
+  "galleryScanning": "正在掃描檔案…",
+  "wbGenerationConfig": "生成設定",
+  "selectionSendToAssistant": "傳送到助手",
+  "shareCount": "分享 ({count})"
 }

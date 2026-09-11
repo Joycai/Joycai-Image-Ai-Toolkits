@@ -7406,6 +7406,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'With confirmation off, what the agent drafts is written to your files without you reading it first.'**
   String get kbWriteNoConfirmWarning;
+
+  /// No description provided for @wbToolComparatorShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare'**
+  String get wbToolComparatorShort;
+
+  /// No description provided for @wbToolMaskShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Mask'**
+  String get wbToolMaskShort;
+
+  /// No description provided for @wbToolCropShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop'**
+  String get wbToolCropShort;
+
+  /// No description provided for @wbToolAssistantShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get wbToolAssistantShort;
+
+  /// No description provided for @galleryViewWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get galleryViewWorkspace;
+
+  /// No description provided for @galleryViewSourcesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get galleryViewSourcesShort;
+
+  /// No description provided for @galleryViewResultsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Results'**
+  String get galleryViewResultsShort;
+
+  /// No description provided for @galleryDropTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop images here…'**
+  String get galleryDropTitle;
+
+  /// No description provided for @galleryDropHint.
+  ///
+  /// In en, this message translates to:
+  /// **'They join the temporary workspace, and the view switches to it'**
+  String get galleryDropHint;
+
+  /// No description provided for @galleryEmptyWorkspaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop files here'**
+  String get galleryEmptyWorkspaceTitle;
+
+  /// No description provided for @galleryEmptyWorkspaceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag images or videos in to add them to the temporary workspace'**
+  String get galleryEmptyWorkspaceDesc;
+
+  /// No description provided for @galleryEmptySourceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This source has no supported images'**
+  String get galleryEmptySourceDesc;
+
+  /// No description provided for @galleryScanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning files…'**
+  String get galleryScanning;
+
+  /// No description provided for @wbGenerationConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Generation settings'**
+  String get wbGenerationConfig;
+
+  /// No description provided for @selectionSendToAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to assistant'**
+  String get selectionSendToAssistant;
+
+  /// No description provided for @shareCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Share ({count})'**
+  String shareCount(int count);
 }
 
 class _AppLocalizationsDelegate

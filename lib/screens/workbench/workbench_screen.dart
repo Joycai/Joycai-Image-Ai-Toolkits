@@ -36,11 +36,12 @@ import '../../widgets/drawing_canvas.dart';
 import '../../widgets/unified_sidebar.dart';
 import '../prompts/widgets/prompt_dialogs.dart';
 import 'gallery.dart';
+import 'widgets/gallery_selection_bar.dart';
+import 'widgets/workbench_glass_toolbar.dart';
 import 'widgets/comparator_toolbar.dart';
 import 'widgets/comparator_view.dart';
 import 'widgets/crop_resize_toolbar.dart';
 import 'widgets/crop_resize_view.dart';
-import 'widgets/gallery_toolbar.dart';
 import 'widgets/mask_editor_toolbar.dart';
 import 'widgets/mask_editor_view.dart';
 import 'widgets/metadata_inspector.dart';
@@ -50,7 +51,6 @@ import 'widgets/prompt_optimizer_toolbar.dart';
 import 'widgets/prompt_optimizer_view.dart';
 import 'widgets/video_config_panel.dart';
 import 'widgets/video_workbench_view.dart';
-import 'widgets/workbench_top_bar.dart';
 import 'workbench_config_panel.dart';
 import 'workbench_layout.dart';
 
@@ -893,12 +893,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
     switch (appState.workbenchTabIndex) {
       case 0: // Image Processing
-        centerContent = const Column(
-          children: [
-            GalleryToolbar(),
-            Expanded(child: Gallery()),
-          ],
-        );
+        // The gallery scrolls under the floating toolbar and above the
+        // selection bar (`A1 · 1a`), so it takes the whole column.
+        centerContent = const Gallery();
         showRightPanel = !isNarrow; // Only show on desktop by default
         break;
       case 1: // Comparator
@@ -1087,17 +1084,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         centerGround = Theme.of(context).colorScheme.surface;
         break;
       case 5: // Video Generation
-        centerContent = const Column(
+        centerContent = const Stack(
           children: [
-            GalleryToolbar(),
-            Expanded(
-              child: Stack(
-                children: [
-                  Gallery(),
-                  VideoWorkbenchOverlay(),
-                ],
-              ),
-            ),
+            Gallery(),
+            VideoWorkbenchOverlay(),
           ],
         );
         showRightPanel = !isNarrow;
@@ -1109,17 +1099,28 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         showLeftPanel = false;
     }
 
+    final tab = appState.workbenchTabIndex;
+    final isGalleryTab = WorkbenchTab.isGallery(tab);
+    // `A1` spec: on a phone the FAB gives way to the selection bar.
+    final hasSelection = context.select<GalleryState, bool>((g) => g.selectedImages.isNotEmpty);
+
     // Context-aware FAB icon for mobile (null = no FAB for that tab)
-    final IconData? fabIcon = switch (appState.workbenchTabIndex) {
-      0 => Icons.tune,
-      1 => Icons.info_outline,
-      4 => Icons.auto_awesome_outlined,
-      5 => Icons.tune,
+    final IconData? fabIcon = switch (tab) {
+      WorkbenchTab.image || WorkbenchTab.video => hasSelection ? null : Icons.tune,
+      WorkbenchTab.comparator => Icons.info_outline,
+      WorkbenchTab.assistant => Icons.auto_awesome_outlined,
       _ => null,
     };
 
+    final l10n = AppLocalizations.of(context)!;
+
     return WorkbenchLayout(
-      topBar: WorkbenchTopBar(tabController: _tabController),
+      toolbarBuilder: (phone) => WorkbenchGlassToolbar(tabController: _tabController, phone: phone),
+      centerOverlay: isGalleryTab ? const GallerySelectionBar() : null,
+      centerScrollsUnderToolbar: isGalleryTab,
+      hasLeftPanel: tab == WorkbenchTab.image || tab == WorkbenchTab.video || tab == WorkbenchTab.assistant,
+      hasRightPanel: tab != WorkbenchTab.mask && tab != WorkbenchTab.crop,
+      rightPanelTitle: isGalleryTab ? l10n.wbGenerationConfig : null,
       leftPanel: leftPanel,
       centerContent: centerContent,
       centerGround: centerGround,

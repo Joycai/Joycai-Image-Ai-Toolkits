@@ -4088,4 +4088,54 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get kbWriteNoConfirmWarning =>
       '個別確認をオフにすると、agent が作成した内容が確認なしでファイルに書き込まれます。';
+
+  @override
+  String get wbToolComparatorShort => '比較';
+
+  @override
+  String get wbToolMaskShort => 'マスク';
+
+  @override
+  String get wbToolCropShort => 'クロップ';
+
+  @override
+  String get wbToolAssistantShort => 'アシスタント';
+
+  @override
+  String get galleryViewWorkspace => 'ワークスペース';
+
+  @override
+  String get galleryViewSourcesShort => 'ソース';
+
+  @override
+  String get galleryViewResultsShort => '結果';
+
+  @override
+  String get galleryDropTitle => 'ここに画像をドロップ…';
+
+  @override
+  String get galleryDropHint => '一時ワークスペースに追加され、表示が切り替わります';
+
+  @override
+  String get galleryEmptyWorkspaceTitle => 'ここにファイルをドロップ';
+
+  @override
+  String get galleryEmptyWorkspaceDesc => '画像や動画をドラッグして一時ワークスペースに追加';
+
+  @override
+  String get galleryEmptySourceDesc => 'このソースには対応する画像がありません';
+
+  @override
+  String get galleryScanning => 'ファイルをスキャン中…';
+
+  @override
+  String get wbGenerationConfig => '生成設定';
+
+  @override
+  String get selectionSendToAssistant => 'アシスタントへ送る';
+
+  @override
+  String shareCount(int count) {
+    return '共有 ($count)';
+  }
 }

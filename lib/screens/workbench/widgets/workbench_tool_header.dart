@@ -39,7 +39,7 @@ class WorkbenchToolHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         // #FAFBFF, the same ground as the two side columns and as
-        // [GalleryToolbar] on tab 0 — every centre-column header in the spec
+        // the gallery's floating glass toolbar on tab 0 — every centre-column header in the spec
         // is `background:#fafbff;border-bottom:1px solid #e8ecf7`, so the row
         // reads as one continuous band of chrome across the window.
         //

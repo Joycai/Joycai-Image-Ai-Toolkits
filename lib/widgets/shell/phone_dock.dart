@@ -143,16 +143,19 @@ class _DockCell extends StatelessWidget {
               alignment: Alignment.topCenter,
               child: Transform.translate(
                 offset: const Offset(14, 0),
+                // No `alignment` on the Container: an aligned Container grows
+                // to the width it is offered, and here that is the whole cell.
                 child: Container(
-                  constraints: const BoxConstraints(minWidth: 16),
-                  height: 16,
+                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16, maxHeight: 16),
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
                     color: scheme.primary,
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
-                  alignment: Alignment.center,
-                  child: Text(
+                  child: Center(
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    child: Text(
                     '$badge',
                     style: textTheme.labelSmall!.mono.copyWith(
                       color: scheme.onPrimary,
@@ -160,6 +163,7 @@ class _DockCell extends StatelessWidget {
                       height: 1,
                       letterSpacing: 0,
                     ),
+                  ),
                   ),
                 ),
               ),

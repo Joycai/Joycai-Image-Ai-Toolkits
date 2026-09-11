@@ -1,28 +1,31 @@
+import 'dart:ui' as ui;
+
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_theme.dart';
 import '../../core/constants.dart';
+import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../services/file_permission_service.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/placeholders/permission_placeholder.dart';
-import '../../core/design_tokens.dart';
 import 'widgets/image_card.dart';
 import 'widgets/preview/media_preview_dialog.dart';
+import 'widgets/workbench_glass_toolbar.dart';
+import 'workbench_layout.dart';
 
 /// Everything the grid reads out of [GalleryState], gathered so the selector
 /// in `build` can compare it in one go.
 ///
-/// Pointedly missing: the selection. It is the one thing a plain click
-/// changes, it is read per cell by the `Selector` inside the sliver delegate,
-/// and putting it here would rebuild every visible card for a change that
-/// concerns one of them.
+/// Pointedly missing: the selection. It is read per cell by the `Selector`
+/// inside the sliver delegate; putting it here would rebuild every visible
+/// card for a change that concerns one of them.
 ///
-/// [images] compares by identity, which is what [GalleryState] guarantees —
-/// it always assigns a fresh list before notifying rather than mutating one
-/// in place.
+/// [images] compares by identity, which [GalleryState] guarantees — it always
+/// assigns a fresh list before notifying.
 typedef _GridInputs = ({
   GalleryViewMode mode,
   List<AppImage> images,
@@ -54,6 +57,8 @@ _GridInputs _gridInputs(GalleryState s) {
   );
 }
 
+/// The workbench gallery (`A1 · 1a`): cards straight on the window's aurora,
+/// scrolling under the floating toolbar and above the selection bar.
 class Gallery extends StatefulWidget {
   const Gallery({
     super.key,
@@ -66,22 +71,25 @@ class Gallery extends StatefulWidget {
 class _GalleryState extends State<Gallery> {
   bool _isDragging = false;
 
+  /// Grid gutter and inset (`A1` spec: 卡 gap 10).
+  static const double _gap = AppSpace.s10;
+
+  /// How much of the column the floating chrome covers, from the layout that
+  /// hosts this gallery. Zero outside a workbench layout (tests, previews).
+  EdgeInsets _chromeInsets(BuildContext context) {
+    try {
+      final layout = Provider.of<WorkbenchLayoutState>(context);
+      return EdgeInsets.only(top: layout.topClearance, bottom: layout.bottomClearance);
+    } on ProviderNotFoundException {
+      return EdgeInsets.zero;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    // Straight to GalleryState. Everything this screen draws lives there, and
-    // AppState no longer re-broadcasts it — going through AppState would mean
-    // the grid rebuilt for every unrelated change in the app and, now that the
-    // forwarding is gone, would not rebuild for gallery changes at all.
-    //
-    // `select`, not `watch`: a bare watch rebuilt this widget for *every*
-    // GalleryState notification, which replaced the sliver delegate — and
-    // `SliverChildBuilderDelegate.shouldRebuild` is unconditionally true, so
-    // every visible card was rebuilt anyway and the per-cell `Selector` below
-    // absorbed nothing. Selection is the change that matters here: it fires on
-    // every click and it is exactly what those Selectors exist to scope.
     final galleryState = context.read<GalleryState>();
     final grid = context.select<GalleryState, _GridInputs>(_gridInputs);
+    final insets = _chromeInsets(context);
 
     return DropTarget(
       onDragDone: (details) {
@@ -100,26 +108,8 @@ class _GalleryState extends State<Gallery> {
       onDragExited: (details) => setState(() => _isDragging = false),
       child: Stack(
         children: [
-          _buildImageGrid(context, galleryState, grid),
-          if (_isDragging)
-            Container(
-              color: Theme.of(context).colorScheme.accentTint,       
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.file_upload_outlined, size: 64, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.dropFilesHere,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onAccentTint
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          Positioned.fill(child: _buildImageGrid(context, galleryState, grid, insets)),
+          if (_isDragging) const Positioned.fill(child: IgnorePointer(child: _DropOverlay())),
         ],
       ),
     );
@@ -141,56 +131,45 @@ class _GalleryState extends State<Gallery> {
     }
   }
 
-  Widget _buildImageGrid(BuildContext context, GalleryState state, _GridInputs grid) {
-    final l10n = AppLocalizations.of(context)!;
+  Widget _buildImageGrid(
+    BuildContext context,
+    GalleryState state,
+    _GridInputs grid,
+    EdgeInsets insets,
+  ) {
     final images = grid.images;
     final isResult = grid.isResult;
     final isTemp = grid.isTemp;
 
     if (images.isEmpty) {
-      // macOS permission trouble, as of the last scan — see
-      // [GalleryState.isPathUnreachable].
+      final Widget empty;
       if (grid.isUnreachable) {
-        return PermissionPlaceholder(
+        // macOS permission trouble, as of the last scan.
+        empty = PermissionPlaceholder(
           onReAuthorize: () => _reAuthorize(context, state, grid.permissionPath!, isResult),
         );
+      } else if (grid.isScanning) {
+        empty = const _ScanningState();
+      } else if (isTemp) {
+        empty = _WorkspaceEmptyState(gallery: state);
+      } else {
+        empty = _NothingHereState(isResult: isResult);
       }
-
-      if (grid.isScanning) {
-        return const Center(child: CircularProgressIndicator());
-      }
-
-      return Center(
-        // scaleDown lets the placeholder shrink as a whole when the host area
-        // is shorter than its natural size (e.g. the temp drop strip), which
-        // otherwise overflows and spams the debug console every frame.
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(isTemp ? Icons.move_to_inbox_outlined : Icons.image_not_supported_outlined, size: 64, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(
-                isTemp ? l10n.dropFilesHere : (isResult ? l10n.noResultsYet : l10n.noImagesFound),
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ),
+      return Padding(
+        padding: insets,
+        // scaleDown so a short host shrinks the placeholder instead of
+        // overflowing it.
+        child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: empty)),
       );
     }
 
     // Grouping is memoized in GalleryState — only recomputed when the list identity changes.
     final grouped = state.getGrouped(images);
     final globalIndexByPath = state.getGlobalIndex(images);
-    // processedImages is pre-sorted by modification date; use memoized paths for other views.
-    final sortedPaths = isResult
-        ? grouped.keys.toList()
-        : state.getSortedPaths(images);
+    final sortedPaths = isResult ? grouped.keys.toList() : state.getSortedPaths(images);
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -202,53 +181,56 @@ class _GalleryState extends State<Gallery> {
           child: CustomScrollView(
             primary: false,
             slivers: [
+              SliverToBoxAdapter(child: SizedBox(height: insets.top)),
               for (final path in sortedPaths) ...[
                 if (showHeaders)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                      padding: const EdgeInsets.fromLTRB(AppSpace.s16, AppSpace.s10, AppSpace.s16, 0),
                       child: Row(
                         children: [
-                          Icon(Icons.folder_open, size: 16, color: colorScheme.primary),
-                          const SizedBox(width: 8),
+                          Icon(Icons.folder_outlined, size: AppSize.iconSm, color: scheme.onSurfaceVariant),
+                          const SizedBox(width: AppSpace.s6),
                           Expanded(
                             child: Text(
                               path,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.secondary,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.labelSmall!.mono.copyWith(
+                                color: scheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ),
+                          const SizedBox(width: AppSpace.s6),
                           Text(
-                            "(${grouped[path]!.length})",
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
+                            '${grouped[path]!.length}',
+                            style: textTheme.labelSmall!.mono.copyWith(
+                              color: scheme.outline,
+                              fontWeight: FontWeight.w400,
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
                 SliverPadding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(_gap),
                   sliver: SliverGrid(
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                       maxCrossAxisExtent: grid.thumbnailSize,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
+                      mainAxisSpacing: _gap,
+                      crossAxisSpacing: _gap,
                       childAspectRatio: 1,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final imageGroup = grouped[path]!;
                         final imageFile = imageGroup[index];
-
-                        // Global index for preview paging (O(1) lookup)
                         final globalIndex = globalIndexByPath[imageFile.path] ?? 0;
 
                         // The ordinal, not a bool: a card also has to repaint
-                        // when its *place* in the selection shifts (something
-                        // earlier was removed, or the strip was reordered),
-                        // which a boolean cannot report.
+                        // when its *place* in the selection shifts.
                         return Selector<GalleryState, int>(
                           selector: (_, state) => state.selectionNumberOf(imageFile.path),
                           builder: (context, selectionNumber, _) {
@@ -279,13 +261,193 @@ class _GalleryState extends State<Gallery> {
                   ),
                 ),
               ],
-              // Bottom padding
-              const SliverToBoxAdapter(child: SizedBox(height: 80)),
+              SliverToBoxAdapter(child: SizedBox(height: insets.bottom + _gap)),
             ],
           ),
         );
-      }
+      },
     );
   }
+}
 
+/// `A1 · 1c`: the whole column washed in the accent's 12% form under a 2px
+/// dashed accent edge, with what will happen to the drop.
+class _DropOverlay extends StatelessWidget {
+  const _DropOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return CustomPaint(
+      foregroundPainter: _DashedRectPainter(color: scheme.primary, strokeWidth: 2, radius: 0),
+      child: ColoredBox(
+        color: scheme.accentTint,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.download, size: 28, color: scheme.primary),
+              const SizedBox(height: AppSpace.s6),
+              Text(
+                l10n.galleryDropTitle,
+                style: textTheme.titleLarge!.copyWith(color: scheme.onAccentTint),
+              ),
+              const SizedBox(height: AppSpace.s4),
+              Text(
+                l10n.galleryDropHint,
+                style: textTheme.bodySmall!.copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// `A1 · 1f` 扫描中.
+class _ScanningState extends StatelessWidget {
+  const _ScanningState();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(strokeWidth: 3),
+        ),
+        const SizedBox(height: AppSpace.s10),
+        Text(
+          AppLocalizations.of(context)!.galleryScanning,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(color: scheme.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+}
+
+/// `A1 · 1f` 工作区空: a dashed drop target that also offers the gallery
+/// import, so the empty workspace is itself the way to fill it.
+class _WorkspaceEmptyState extends StatelessWidget {
+  const _WorkspaceEmptyState({required this.gallery});
+
+  final GalleryState gallery;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return CustomPaint(
+      foregroundPainter: _DashedRectPainter(
+        color: scheme.outlineVariant,
+        strokeWidth: 1,
+        radius: AppRadius.lg,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: AppSpace.s22),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.download, size: 28, color: scheme.outline),
+            const SizedBox(height: AppSpace.s6),
+            Text(
+              l10n.galleryEmptyWorkspaceTitle,
+              style: textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              l10n.galleryEmptyWorkspaceDesc,
+              textAlign: TextAlign.center,
+              style: textTheme.bodySmall!.copyWith(color: scheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: AppSpace.s4),
+            TextButton(
+              onPressed: () => pickImagesIntoWorkspace(gallery),
+              child: Text(l10n.importFromGallery),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// `A1 · 1f` 来源 / 结果空.
+class _NothingHereState extends StatelessWidget {
+  const _NothingHereState({required this.isResult});
+
+  final bool isResult;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s22),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.image_search, size: 28, color: scheme.outline),
+          const SizedBox(height: AppSpace.s6),
+          Text(
+            isResult ? l10n.noResultsYet : l10n.noImagesFound,
+            style: textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w600),
+          ),
+          if (!isResult) ...[
+            const SizedBox(height: 2),
+            Text(
+              l10n.galleryEmptySourceDesc,
+              textAlign: TextAlign.center,
+              style: textTheme.bodySmall!.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// A dashed rounded-rectangle edge.
+class _DashedRectPainter extends CustomPainter {
+  _DashedRectPainter({required this.color, required this.strokeWidth, required this.radius});
+
+  final Color color;
+  final double strokeWidth;
+  final double radius;
+
+  static const double _dash = 6;
+  static const double _space = 4;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    final inset = strokeWidth / 2;
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(inset, inset, size.width - strokeWidth, size.height - strokeWidth),
+        Radius.circular(radius),
+      ));
+    for (final ui.PathMetric metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        canvas.drawPath(metric.extractPath(distance, distance + _dash), paint);
+        distance += _dash + _space;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedRectPainter old) =>
+      old.color != color || old.strokeWidth != strokeWidth || old.radius != radius;
 }

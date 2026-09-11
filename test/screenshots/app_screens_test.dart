@@ -285,7 +285,7 @@ void main() {
         await tester.runAsync(() async {
           await tester.tap(find.descendant(
             of: find.byType(DirectoryTreeItem),
-            matching: find.byIcon(Icons.expand_more),
+            matching: find.byIcon(Icons.chevron_right),
           ));
           await tester.pump();
           await Future<void>.delayed(const Duration(milliseconds: 400));

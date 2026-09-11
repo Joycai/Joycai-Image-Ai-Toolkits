@@ -248,15 +248,16 @@ class _NavBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      constraints: const BoxConstraints(minWidth: 14),
-      height: 14,
+      constraints: const BoxConstraints(minWidth: 14, minHeight: 14, maxHeight: 14),
       padding: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
         color: scheme.primary,
         borderRadius: BorderRadius.circular(7),
       ),
-      alignment: Alignment.center,
-      child: Text(
+      child: Center(
+        widthFactor: 1,
+        heightFactor: 1,
+        child: Text(
         '$count',
         style: Theme.of(context).textTheme.labelSmall!.mono.copyWith(
               color: scheme.onPrimary,
@@ -264,6 +265,7 @@ class _NavBadge extends StatelessWidget {
               height: 1,
               letterSpacing: 0,
             ),
+        ),
       ),
     );
   }

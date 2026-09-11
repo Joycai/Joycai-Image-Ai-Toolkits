@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_effects.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
@@ -15,31 +16,29 @@ import '../../../services/image_metadata_service.dart';
 import '../../../services/video_thumbnail_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/glass/app_glass.dart';
 import 'image_card_context_menu.dart';
 import 'preview/media_preview_dialog.dart' show previewHeroTag;
 import 'result_feedback_dialog.dart';
 
-/// Ink laid over a photograph, for the chips that have to stay readable on
-/// top of one.
+/// The play glyph laid straight on a video frame (`A1 · 1a`:
+/// `rgba(255,255,255,.85)`).
 ///
-/// Deliberately not from the [ColorScheme]: these sit on user pictures, not
-/// on the app's own surfaces, and a chip tinted to the theme is illegible the
-/// moment someone loads an image in that hue. Black and white carry no hue of
-/// their own, so they stay neutral under the app's grey scale too.
+/// Pure white rather than [AppOverlay.onImagePlate]: there is no plate under
+/// this one, and the warm off-white reads as a tint against a cool frame.
+const Color _playGlyphInk = Color(0xD9FFFFFF);
+
+/// The selection number's drop shadow (`0 1px 3px rgba(0,0,0,.3)`).
 ///
-/// [_chipScrim] and [_barScrim] are heavier than the values they replace,
-/// because there is no blur under them any more. The dimensions badge and the
-/// hover bar were both frosted — a [BackdropFilter] each — and the badge shows
-/// on every card that has finished reading its metadata, so a screen of
-/// thumbnails meant dozens of `saveLayer`-plus-blur passes per frame and the
-/// raster thread never finished one. Opacity alone separates a chip from the
-/// picture just as well at this size; the blur was only ever holding contrast
-/// that these values now hold directly.
-const Color _overlayScrim = Color(0x52000000);
-const Color _overlayScrimStrong = Color(0x73000000);
-const Color _chipScrim = Color(0x99000000);
-const Color _barScrim = Color(0xBF000000);
-const Color _overlayInk = Color(0xEBFFFFFF);
+/// Black, not `colorScheme.shadow`: it lifts the badge off a photograph, which
+/// has no brightness of its own for the scheme to follow.
+const Color _selectionBadgeShadow = Color(0x4D000000);
+
+/// The selected ring's outer halo (`--p` at 30%), outside the 2px solid ring.
+const double _ringHaloAlpha = 0.3;
+
+/// Inset of every badge and the hover strip from the card's edge (`A1 · 1a`).
+const double _badgeInset = AppSpace.s6;
 
 /// A single thumbnail tile in the gallery grid. Handles its own thumbnail
 /// loading and hover/selection chrome; all file actions are delegated to
@@ -140,6 +139,10 @@ class _ImageCardState extends State<ImageCard> {
     final isVideo = AppConstants.isVideoFile(widget.imageFile.path);
 
     if (isVideo) {
+      // `A1 · 1a` / `A2 · 1a`: the extracted frame and a play glyph, nothing
+      // else. No scrim over the frame and no "video" label — the glyph is the
+      // whole signal. The glyph stays inside the thumbnail (not on the card)
+      // so the drag proxy still says what is being dragged.
       return Container(
         width: width,
         height: height,
@@ -155,37 +158,10 @@ class _ImageCardState extends State<ImageCard> {
                   errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                 ),
               ),
-            Container(
-              color: _videoThumbnailPath != null ? _overlayScrim : Colors.transparent,
-            ),
             const Icon(
-              Icons.play_circle_filled_rounded,
-              size: 40,
-              color: _overlayInk,
-            ),
-            Positioned(
-              bottom: 4,
-              right: 6,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  color: _overlayScrimStrong,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.videocam, size: 10, color: _overlayInk),
-                    SizedBox(width: 2),
-                    // Left off the type scale on purpose: its smallest slot is
-                    // labelSmall at 10, and +25% does not fit this badge.
-                    Text(
-                      "VIDEO",
-                      style: TextStyle(color: _overlayInk, fontSize: 8, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
+              Icons.play_circle_outline,
+              size: 28,
+              color: _playGlyphInk,
             ),
           ],
         ),
@@ -223,7 +199,7 @@ class _ImageCardState extends State<ImageCard> {
       data: widget.imageFile,
       feedback: Material(
         elevation: 8,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.control),
         clipBehavior: Clip.antiAlias,
         child: SizedBox(
           width: 100,
@@ -259,7 +235,7 @@ class _ImageCardState extends State<ImageCard> {
             child: AnimatedScale(
               scale: _isPressed ? 0.97 : 1.0,
               duration: AppMotion.durationOf(context, AppMotion.hover),
-              curve: AppMotion.enter,
+              curve: AppMotion.quick,
               child: _buildCardContent(context, colorScheme, isMobile, thumbFit),
             ),
           ),
@@ -272,149 +248,165 @@ class _ImageCardState extends State<ImageCard> {
       BuildContext context, ColorScheme colorScheme, bool isMobile, ThumbnailFit thumbFit) {
     final isVideo = AppConstants.isVideoFile(widget.imageFile.path);
     final selected = widget.isSelected;
+    // On touch layouts there is no hover, so the strip is permanent there —
+    // unchanged from before the restyle.
+    final showActions = !isVideo && (_isHovering || isMobile);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: AnimatedContainer(
-        duration: AppMotion.durationOf(context, AppMotion.state),
-        curve: AppMotion.enter,
+        duration: AppMotion.durationOf(context, AppMotion.hover),
+        curve: AppMotion.quick,
         decoration: BoxDecoration(
-          // 10, not the 12 a panel gets. `10c` draws these one step tighter
-          // than a card, which is what keeps a grid of them from reading as
-          // rounder than the columns holding it.
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          color: colorScheme.surface,
-          border: Border.all(
-            color: selected ? colorScheme.primary : colorScheme.surfaceContainerHigh,
-            width: selected ? 2 : 1,
-          ),
+          // `A1 · 1a`: a thumbnail is a control-sized tile — r10, no border,
+          // no resting shadow. The picture is the card.
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          // The ground a contain-fit picture letterboxes onto.
+          color: colorScheme.surfaceContainerHighest,
+          // The selected ring sits *outside* the picture
+          // (`0 0 0 2px --p, 0 0 0 4px --p 30%`), so a selected photo is not
+          // washed or shrunk. Shadows paint outside the clip below, and in
+          // list order — the halo first, the solid ring over it.
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  )
+                    color: colorScheme.primary.withValues(alpha: _ringHaloAlpha),
+                    spreadRadius: 4,
+                  ),
+                  BoxShadow(
+                    color: colorScheme.primary,
+                    spreadRadius: 2,
+                  ),
                 ]
-              // A resting lift, which these did not have before. The gallery
-              // sits on the window backdrop rather than on a panel since the
-              // restyle, and without a shadow the cards read as holes punched
-              // in the mesh instead of as tiles laid on it.
-              : colorScheme.shadowResting,
+              : null,
         ),
         clipBehavior: Clip.antiAlias,
-        // A column, not a stack: the file name used to be burned onto the
-        // bottom of the picture under a gradient scrim, which covered whatever
-        // the picture had down there. It gets its own strip instead, so the
-        // image is never obscured by its own label.
-        child: Column(
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Expanded(
-              child: ColoredBox(
-                color: colorScheme.surfaceContainerHighest,
-                child: Stack(
-                  fit: StackFit.expand,
+            // During a flight the framework hides this child and flies the
+            // shuttle in the overlay, leaving the tile's ground and badges in
+            // place — which is exactly the hole a promoted photo should leave
+            // behind.
+            if (widget.heroScope == null)
+              _buildThumbnail(context, colorScheme, thumbFit)
+            else
+              Hero(
+                tag: previewHeroTag(widget.heroScope!, widget.imageFile.path),
+                child: _buildThumbnail(context, colorScheme, thumbFit),
+              ),
+            // Bottom-left: the file name, then the dimensions badge on the
+            // edge. `A1` draws only the dimensions; the name used to have a
+            // footer strip of its own and appears nowhere else on the card
+            // (the grid excludes semantics and has no tooltip), so it moved
+            // onto a plate above the dimensions rather than disappearing.
+            //
+            // Bounded on the right, not just placed on the left: the labels
+            // size to their text, and a dimension, aspect ratio and file size
+            // is routinely wider than a three-column card. Bounding them lets
+            // the text ellipsize instead of being cut mid-number by the clip.
+            Positioned(
+              left: _badgeInset,
+              right: _badgeInset,
+              bottom: _badgeInset,
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // During a flight the framework hides this child and flies
-                    // the shuttle in the overlay, leaving the tile's ground
-                    // and badges in place — which is exactly the hole a
-                    // promoted photo should leave behind.
-                    if (widget.heroScope == null)
-                      _buildThumbnail(context, colorScheme, thumbFit)
-                    else
-                      Hero(
-                        tag: previewHeroTag(widget.heroScope!, widget.imageFile.path),
-                        child: _buildThumbnail(context, colorScheme, thumbFit),
-                      ),
-                    if (_dimensions.isNotEmpty)
-                      // Bounded on the right, not just placed on the left.
-                      // The badge sizes to its text, and that text is a
-                      // dimension, an aspect ratio and a file size — on a
-                      // three-column grid it is routinely wider than the card,
-                      // and it was being cut off mid-number by the card's own
-                      // clip. Bounding it lets the label ellipsize instead,
-                      // which loses the file size rather than half of it.
-                      Positioned(
-                        top: 6,
-                        left: 6,
-                        right: 6,
-                        child: Align(
-                          alignment: Alignment.topLeft,
-                          child: _buildMetaBadge(),
-                        ),
-                      ),
-                    if ((_isHovering || isMobile) && !isVideo)
-                      Positioned(
-                        bottom: 8,
-                        left: 0,
-                        right: 0,
-                        child: Center(child: _buildHoverActions(context)),
-                      ),
-                    // The provenance badge (`20a`): which assistant prompt
-                    // version generated this picture. Derived from the tagged
-                    // task record via the session-scoped map on the state —
-                    // present only while that session is the live one. Sits
-                    // left of the selection badge so both stay readable when
-                    // the card is picked as a reference.
-                    Positioned(
-                      top: 6,
-                      right: 6,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Builder(builder: (context) {
-                            final version = context.select<WorkbenchUIState, int?>(
-                                (w) => w.resultVersionByPath[widget.imageFile.path]);
-                            if (version == null) return const SizedBox.shrink();
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: _chipScrim,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                'v$version',
-                                style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                                      color: _overlayInk,
-                                      fontWeight: FontWeight.w600,
-                                      height: AppType.tightHeight,
-                                    ),
-                              ),
-                            );
-                          }),
-                          if (selected) ...[
-                            const SizedBox(width: 5),
-                            _buildSelectionBadge(colorScheme),
-                          ],
-                        ],
-                      ),
-                    ),
+                    _buildPlateBadge(context, widget.imageFile.name, mono: false),
+                    if (_dimensions.isNotEmpty) ...[
+                      const SizedBox(height: AppSpace.s4),
+                      _buildPlateBadge(context, _dimensions),
+                    ],
                   ],
                 ),
               ),
             ),
-            _buildFooter(context, colorScheme),
+            if (selected)
+              Positioned(
+                top: _badgeInset,
+                left: _badgeInset,
+                child: _buildSelectionBadge(context, colorScheme),
+              ),
+            // The provenance badge (`20a`): which assistant prompt version
+            // generated this picture. Derived from the tagged task record via
+            // the session-scoped map on the state — present only while that
+            // session is the live one.
+            Positioned(
+              top: _badgeInset,
+              right: _badgeInset,
+              child: Builder(builder: (context) {
+                final version = context.select<WorkbenchUIState, int?>(
+                    (w) => w.resultVersionByPath[widget.imageFile.path]);
+                if (version == null) return const SizedBox.shrink();
+                return _buildPlateBadge(context, 'v$version', fontWeight: FontWeight.w500);
+              }),
+            ),
+            if (!isVideo)
+              Positioned(
+                left: _badgeInset,
+                right: _badgeInset,
+                bottom: _badgeInset,
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  // Mounted only while shown, so a screen of idle cards holds
+                  // no strip at all; the switcher still fades it both ways.
+                  child: AnimatedSwitcher(
+                    duration: AppMotion.durationOf(context, AppMotion.hover),
+                    switchInCurve: AppMotion.quick,
+                    switchOutCurve: AppMotion.quick,
+                    layoutBuilder: (current, previous) => Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [...previous, ?current],
+                    ),
+                    child: showActions
+                        ? KeyedSubtree(
+                            key: const ValueKey('image-card-actions'),
+                            child: _buildHoverActions(context, persistent: isMobile),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  /// Dimensions and file size, on a scrim dark enough to read against whatever
-  /// corner of the photo it lands on. See [_chipScrim] for why this is a flat
-  /// fill rather than the frosted panel it used to be.
-  Widget _buildMetaBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+  /// A label on the fixed dark plate (`A1 · 1a` 「尺寸角标」): r4, 1×5 padding,
+  /// 11px. [mono] for figures — dimensions, a version — and off for a name.
+  ///
+  /// Never themed and never frosted: see [AppOverlay.imagePlate]. A blur per
+  /// badge on every card of a grid was more `saveLayer` passes a frame than
+  /// the raster thread could finish.
+  Widget _buildPlateBadge(
+    BuildContext context,
+    String text, {
+    bool mono = true,
+    FontWeight fontWeight = FontWeight.w400,
+  }) {
+    final base = Theme.of(context).textTheme.labelSmall;
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: _chipScrim,
-        borderRadius: BorderRadius.circular(6),
+        color: AppOverlay.imagePlate,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
       ),
-      child: Text(
-        _dimensions,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _overlayInk, height: AppType.tightHeight),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        child: Text(
+          text,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          style: (mono ? base?.mono : base)?.copyWith(
+            color: AppOverlay.onImagePlate,
+            fontWeight: fontWeight,
+            height: AppType.tightHeight,
+          ),
+        ),
       ),
     );
   }
@@ -423,8 +415,8 @@ class _ImageCardState extends State<ImageCard> {
   ///
   /// A number rather than a tick: with several reference images the model is
   /// given them in this order, and the user has no other way to see it on the
-  /// grid.
-  Widget _buildSelectionBadge(ColorScheme colorScheme) {
+  /// grid. Deliberately not animated — the number is read, not watched.
+  Widget _buildSelectionBadge(BuildContext context, ColorScheme colorScheme) {
     return Container(
       width: 20,
       height: 20,
@@ -432,128 +424,103 @@ class _ImageCardState extends State<ImageCard> {
       decoration: BoxDecoration(
         color: colorScheme.primary,
         shape: BoxShape.circle,
-        boxShadow: [BoxShadow(color: _overlayScrim, blurRadius: 5, offset: const Offset(0, 1))],
+        boxShadow: const [
+          BoxShadow(color: _selectionBadgeShadow, blurRadius: 3, offset: Offset(0, 1)),
+        ],
       ),
       child: Text(
         '${widget.selectionNumber}',
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: colorScheme.onPrimary,
-          fontWeight: FontWeight.w600,
-          height: 1,
-        ),
+        maxLines: 1,
+        style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+              color: colorScheme.onPrimary,
+              fontWeight: FontWeight.w600,
+              height: 1,
+              // Tracking trails the last glyph and would push a lone digit
+              // off the circle's centre.
+              letterSpacing: 0,
+            ),
       ),
     );
   }
 
-  /// Compare / mask / crop, in one bar that appears only under the pointer —
-  /// except on touch layouts, where it is permanent, which is the other reason
-  /// it can no longer afford a blur.
+  /// Compare / mask / crop / feedback-to-assistant, on a dark lens of glass in
+  /// the bottom-right corner (`A1 · 1a` 悬停条: G3, tone dark, r6, h28).
   ///
-  /// One capsule rather than three chips inside a fourth container, which is
-  /// what this was: the nested fills read as buttons on top of a button.
-  Widget _buildHoverActions(BuildContext context) {
+  /// [persistent] is the touch layout, where the strip sits on every card at
+  /// once rather than on the one under the pointer. There it renders as the
+  /// glass's opaque fallback: a backdrop blur per visible card is exactly the
+  /// frame budget the glass grades exist to protect.
+  Widget _buildHoverActions(BuildContext context, {required bool persistent}) {
     final l10n = AppLocalizations.of(context)!;
     // The feedback action (`20a`) exists only once the assistant has staged a
     // prompt version — there is nothing to give feedback *on* before that —
     // and is withdrawn while a turn is running, so a click cannot land in the
     // middle of one. Both `promptVersions` and `isRunning` live on the
-    // session, so the pill is wrapped in a ListenableBuilder on it: reading
-    // once (as before) missed a version that staged while the cursor sat
-    // still, and offered feedback during a live turn.
+    // session, so the button is wrapped in a ListenableBuilder on it: reading
+    // once missed a version that staged while the cursor sat still, and
+    // offered feedback during a live turn.
     final session =
         Provider.of<WorkbenchUIState>(context, listen: false).optimizerSession;
 
-    return Container(
+    Widget strip = AppGlass(
+      grade: GlassGrade.lens,
+      tone: GlassTone.dark,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
       padding: const EdgeInsets.symmetric(horizontal: 2),
-      decoration: BoxDecoration(
-        color: _barScrim,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      // The bar sits over a grid cell whose width is the column count's to
-      // decide, and on a phone three columns leave less than the three
-      // buttons measure. Scaling the capsule down keeps all three reachable
-      // where a Row would put the third one past the edge of the picture.
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildOverlayButton(
-              icon: Icons.compare,
-              onPressed: () => _handleCompare(context),
-              tooltip: l10n.comparator,
-            ),
-            _buildOverlayButton(
-              icon: Icons.brush,
-              onPressed: () => _handleMask(context),
-              tooltip: l10n.maskEditor,
-            ),
-            _buildOverlayButton(
-              icon: Icons.crop,
-              onPressed: () => _handleCrop(context),
-              tooltip: l10n.cropAndResize,
-            ),
-            ListenableBuilder(
-              listenable: session,
-              builder: (context, _) {
-                if (session.promptVersions <= 0 || session.isRunning) {
-                  return const SizedBox.shrink();
-                }
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 1,
-                      height: 18,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      color: _overlayInk.withValues(alpha: 0.22),
-                    ),
-                    // `20a`: the fourth action, the only one with a label — it
-                    // is the odd one out (it talks to the assistant, not to a
-                    // tool) and the pill is what says so. Accent-on-overlay,
-                    // the one accent role that reads on a fixed dark scrim.
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(13),
-                        onTap: () => _handleFeedback(context),
-                        child: Container(
-                          height: 26,
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.accentOnOverlay,
-                            borderRadius: BorderRadius.circular(13),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_outline,
-                                size: 13,
-                                color: Theme.of(context).colorScheme.onPrimaryFixed,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                l10n.optResultFeedbackAction,
-                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                      color: Theme.of(context).colorScheme.onPrimaryFixed,
-                                      fontWeight: FontWeight.w600,
-                                      height: 1,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ],
+      // A Builder so the buttons read the ink this glass hands down.
+      child: Builder(
+        builder: (context) => SizedBox(
+          height: AppSize.compact,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildOverlayButton(
+                context,
+                icon: Icons.compare,
+                onPressed: () => _handleCompare(context),
+                tooltip: l10n.comparator,
+              ),
+              _buildOverlayButton(
+                context,
+                icon: Icons.brush,
+                onPressed: () => _handleMask(context),
+                tooltip: l10n.maskEditor,
+              ),
+              _buildOverlayButton(
+                context,
+                icon: Icons.crop,
+                onPressed: () => _handleCrop(context),
+                tooltip: l10n.cropAndResize,
+              ),
+              ListenableBuilder(
+                listenable: session,
+                builder: (context, _) {
+                  if (session.promptVersions <= 0 || session.isRunning) {
+                    return const SizedBox.shrink();
+                  }
+                  return _buildOverlayButton(
+                    context,
+                    icon: Icons.reply,
+                    onPressed: () => _handleFeedback(context),
+                    tooltip: l10n.optResultFeedbackAction,
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
+
+    if (persistent) {
+      strip = AppEffects(reduceVisualEffects: true, child: strip);
+    }
+
+    // The strip sits over a grid cell whose width is the column count's to
+    // decide, and on a phone three columns leave less than the four buttons
+    // measure. Scaling it down keeps every action reachable where a Row would
+    // put the last one past the edge of the picture.
+    return FittedBox(fit: BoxFit.scaleDown, child: strip);
   }
 
   /// Collects the critique, stages it on the session (which latches an
@@ -585,34 +552,35 @@ class _ImageCardState extends State<ImageCard> {
     appState.setWorkbenchTab(4); // Prompt assistant
   }
 
-  Widget _buildFooter(BuildContext context, ColorScheme colorScheme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      color: colorScheme.surface,
-      child: Text(
-        widget.imageFile.name,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-      ),
-    );
-  }
-
-  Widget _buildOverlayButton({
+  /// A 16px glyph in a 26×26 hit box (`ms s` in a 26px span).
+  ///
+  /// [context] must be below the strip's [AppGlass]: [IconButton] paints the
+  /// scheme's grey unless told otherwise, and the glass's ink is what reads on
+  /// it — `gink` with effects on, the overlay ink in the opaque fallback.
+  Widget _buildOverlayButton(
+    BuildContext context, {
     required IconData icon,
     required VoidCallback onPressed,
     required String tooltip,
   }) {
-    return IconButton(
-      icon: Icon(icon, size: 15, color: _overlayInk),
-      onPressed: onPressed,
-      tooltip: tooltip,
-      constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-      padding: EdgeInsets.zero,
-      visualDensity: VisualDensity.compact,
+    final ink = GlassInk.maybeOf(context)?.ink ?? AppOverlay.onImagePlate;
+    return SizedBox.square(
+      dimension: 26,
+      child: IconButton(
+        icon: Icon(icon, size: AppSize.iconMd),
+        color: ink,
+        onPressed: onPressed,
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+        style: IconButton.styleFrom(
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          // Concentric with the r6 strip across its 2px inset.
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.xs),
+          ),
+        ),
+      ),
     );
   }
 

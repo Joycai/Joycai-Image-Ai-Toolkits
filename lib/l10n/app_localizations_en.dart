@@ -4175,4 +4175,56 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get kbWriteNoConfirmWarning =>
       'With confirmation off, what the agent drafts is written to your files without you reading it first.';
+
+  @override
+  String get wbToolComparatorShort => 'Compare';
+
+  @override
+  String get wbToolMaskShort => 'Mask';
+
+  @override
+  String get wbToolCropShort => 'Crop';
+
+  @override
+  String get wbToolAssistantShort => 'Assistant';
+
+  @override
+  String get galleryViewWorkspace => 'Workspace';
+
+  @override
+  String get galleryViewSourcesShort => 'Sources';
+
+  @override
+  String get galleryViewResultsShort => 'Results';
+
+  @override
+  String get galleryDropTitle => 'Drop images here…';
+
+  @override
+  String get galleryDropHint =>
+      'They join the temporary workspace, and the view switches to it';
+
+  @override
+  String get galleryEmptyWorkspaceTitle => 'Drop files here';
+
+  @override
+  String get galleryEmptyWorkspaceDesc =>
+      'Drag images or videos in to add them to the temporary workspace';
+
+  @override
+  String get galleryEmptySourceDesc => 'This source has no supported images';
+
+  @override
+  String get galleryScanning => 'Scanning files…';
+
+  @override
+  String get wbGenerationConfig => 'Generation settings';
+
+  @override
+  String get selectionSendToAssistant => 'Send to assistant';
+
+  @override
+  String shareCount(int count) {
+    return 'Share ($count)';
+  }
 }

@@ -817,5 +817,21 @@
   "kbWriteAllow": "agent のナレッジベース書き込みを許可",
   "kbWriteConfirmEach": "書き込み前に個別確認",
   "kbWriteBackup": "上書き前に .bak を残す",
-  "kbWriteNoConfirmWarning": "個別確認をオフにすると、agent が作成した内容が確認なしでファイルに書き込まれます。"
+  "kbWriteNoConfirmWarning": "個別確認をオフにすると、agent が作成した内容が確認なしでファイルに書き込まれます。",
+  "wbToolComparatorShort": "比較",
+  "wbToolMaskShort": "マスク",
+  "wbToolCropShort": "クロップ",
+  "wbToolAssistantShort": "アシスタント",
+  "galleryViewWorkspace": "ワークスペース",
+  "galleryViewSourcesShort": "ソース",
+  "galleryViewResultsShort": "結果",
+  "galleryDropTitle": "ここに画像をドロップ…",
+  "galleryDropHint": "一時ワークスペースに追加され、表示が切り替わります",
+  "galleryEmptyWorkspaceTitle": "ここにファイルをドロップ",
+  "galleryEmptyWorkspaceDesc": "画像や動画をドラッグして一時ワークスペースに追加",
+  "galleryEmptySourceDesc": "このソースには対応する画像がありません",
+  "galleryScanning": "ファイルをスキャン中…",
+  "wbGenerationConfig": "生成設定",
+  "selectionSendToAssistant": "アシスタントへ送る",
+  "shareCount": "共有 ({count})"
 }

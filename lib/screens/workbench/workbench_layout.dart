@@ -1,78 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
-import '../../widgets/app_window_frame.dart';
+import '../../widgets/glass/app_glass.dart';
+import '../../widgets/glass/glass_controls.dart';
 import '../../widgets/panel_resizer.dart';
+import 'widgets/workbench_glass_toolbar.dart';
 
-/// Narrowest the centre panel is allowed to get.
-///
-/// Below this the tool headers stop fitting their own controls — the prompt
-/// assistant's header alone needs ~290px of non-shrinkable chrome — and the
-/// gallery cards stop being cards. The two side panels are what has to give.
+/// Narrowest the centre column is allowed to get. Below this the gallery
+/// cards stop being cards; the two side columns are what has to give.
 const double kMinCenterWidth = 400;
 
-/// Narrowest each side panel may be dragged to.
-///
-/// Hoisted out of `_resolvePanels`, where they were locals, because the two
-/// resizer drags have to clamp against the *same* numbers the layout does —
-/// they were repeated as literals at the drag sites, which is how a floor
-/// drifts.
+/// Narrowest each side column may be dragged to.
 const double kLeftPanelMin = 200;
 const double kRightPanelMin = 250;
 
-/// Widest the left panel may ever be, independent of the row.
+/// Widest the left column may ever be, independent of the row.
 const double kLeftPanelMax = 500;
 
-/// How far past a bound a resizer drag keeps accumulating before it stops.
-///
-/// A hard clamp on the stored width is what made the resizer let go of the
-/// pointer. Drag 200px past the ceiling and the width stops at the ceiling
-/// while the pointer keeps travelling — so the first 200px of the drag *back*
-/// moves nothing, and by the time the panel re-engages the grip is 200px away
-/// from the cursor. It is the most reliably noticeable thing about the old
-/// resizer, and it reads as the handle having come loose rather than as an
-/// edge.
-///
-/// Not fixed by leaving the width unclamped: the overshoot is then unbounded,
-/// and `_leftWidth` is also AppState's sidebar width, so an enthusiastic drag
-/// would persist 3000 to every other screen.
-///
-/// So the width keeps accumulating past the bound, but only this far, and the
-/// value is snapped back into range on release. The panel itself is still
-/// drawn clamped — `_resolvePanels` sees to that, and the centre column's
-/// floor is a hard layout constraint that cannot be rendered through, so the
-/// spring-past-the-edge that would be the fuller answer is deliberately not
-/// attempted here. What this buys is that the drag back re-engages within
-/// 24px whatever the overshoot, which at any real drag speed is under a
-/// frame's travel and reads as a firm stop.
+/// The right column's width before the user has dragged it (`A1 · 1a`: 300).
+const double kRightPanelDefault = 300;
+
+/// How far past a bound a resizer drag keeps accumulating before it stops, so
+/// the drag back re-engages within this distance instead of wherever the
+/// pointer wandered to. Snapped back into range on release.
 const double _kDragSlack = 24;
 
 class WorkbenchLayoutState {
   final GlobalKey<ScaffoldState> scaffoldKey;
 
-  /// Width the workbench actually got, which is the window minus the app's
-  /// navigation rail. Everything laid out inside has to measure against this
-  /// and not `MediaQuery.size.width`: the rail is 78px on desktop and 64 on
-  /// tablet, enough to put the real content box a whole breakpoint below what
-  /// the screen width claims.
+  /// Width the workbench actually got — measure against this, not the window.
   final double contentWidth;
 
-  /// Whether each side panel is reachable only through a drawer right now —
-  /// either because the layout is narrow or because it was squeezed out of the
-  /// row. Whoever draws the chrome owes the user a button that opens it, so
-  /// this is read by [WorkbenchTopBar] rather than re-derived from the screen
-  /// width: a panel in a drawer with no button is a panel the user has lost.
+  /// Whether each side panel is reachable only through a drawer right now.
+  /// Whoever draws the chrome owes the user a button that opens it.
   final bool leftInDrawer;
   final bool rightInDrawer;
+
+  /// How much of the centre column the toolbar covers from the top, and the
+  /// floating overlay from the bottom — content that scrolls under the chrome
+  /// pads itself by these.
+  final double topClearance;
+  final double bottomClearance;
 
   WorkbenchLayoutState(
     this.scaffoldKey, {
     required this.contentWidth,
     required this.leftInDrawer,
     required this.rightInDrawer,
+    this.topClearance = 0,
+    this.bottomClearance = 0,
   });
 
   bool get isMobile => contentWidth < Responsive.mobileBreakpoint;
@@ -81,15 +62,9 @@ class WorkbenchLayoutState {
   void openLeftPanel() => scaffoldKey.currentState?.openDrawer();
   void openRightPanel() => scaffoldKey.currentState?.openEndDrawer();
 
-  // Value equality, because this is handed to `Provider.value` from a build
-  // method — a fresh instance every time. Without it the default
-  // `updateShouldNotify` (`previous != value`) compares identity, so it was
-  // always true and every dependent was notified on every build of the
-  // layout. [WorkbenchTopBar] watches this, and the layout rebuilds on every
-  // frame of a panel drag, where none of these four values move: the drag
-  // changes the panel widths, not the row's width or which side is in a
-  // drawer. These four are the whole class — the getters and the two openers
-  // are derived from them — so equality here is equality of behaviour.
+  // Value equality: this is handed to `Provider.value` from a build method,
+  // and the layout rebuilds on every frame of a panel drag, where none of
+  // these move.
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -97,25 +72,27 @@ class WorkbenchLayoutState {
           scaffoldKey == other.scaffoldKey &&
           contentWidth == other.contentWidth &&
           leftInDrawer == other.leftInDrawer &&
-          rightInDrawer == other.rightInDrawer;
+          rightInDrawer == other.rightInDrawer &&
+          topClearance == other.topClearance &&
+          bottomClearance == other.bottomClearance;
 
   @override
-  int get hashCode =>
-      Object.hash(scaffoldKey, contentWidth, leftInDrawer, rightInDrawer);
+  int get hashCode => Object.hash(
+      scaffoldKey, contentWidth, leftInDrawer, rightInDrawer, topClearance, bottomClearance);
 }
 
 typedef WorkbenchRightPanelBuilder = Widget Function(ScrollController? scrollController);
 
+/// Builds the workbench toolbar; [phone] asks for the full-width phone bar.
+typedef WorkbenchToolbarBuilder = Widget Function(bool phone);
+
 /// One frame's answer to "how wide are the side panels, and are they even
-/// columns?" — see `_WorkbenchLayoutState._resolvePanels`.
+/// columns?".
 class _PanelWidths {
   final double left;
   final double right;
   final bool leftInline;
   final bool rightInline;
-
-  /// Ceilings for the resizer drags, so a drag stops at the same place the
-  /// layout would have clamped it to.
   final double leftMax;
   final double rightMax;
 
@@ -129,38 +106,60 @@ class _PanelWidths {
   });
 }
 
+/// The workbench's frame (`A1 · 1a / 1d / 1e`).
+///
+/// - **Desktop** — three columns edge to edge: the left and right columns are
+///   opaque column-coloured panels, the centre column is bare over the aurora
+///   (unless [centerGround] gives it one), the toolbar floats 10px inside the
+///   top of the centre column and [centerOverlay] floats at its bottom.
+/// - **Tablet** — the centre alone; both side panels live in drawers, and the
+///   toolbar carries the buttons that open them.
+/// - **Phone** — the toolbar becomes the screen's full-width glass bar, the
+///   right panel a glass sheet behind a tinted-glass FAB, the left a drawer.
 class WorkbenchLayout extends StatefulWidget {
   final Widget centerContent;
   final Widget? leftPanel;
   final WorkbenchRightPanelBuilder? rightPanelBuilder;
-  final Widget? topBar;
+  final WorkbenchToolbarBuilder? toolbarBuilder;
+
+  /// A floating control at the bottom centre of the centre column — the
+  /// gallery's selection bar.
+  final Widget? centerOverlay;
   final Widget? bottomPanel;
   final bool showLeftPanel;
   final bool showRightPanel;
-  final IconData? fabIcon;
 
-  /// Ground the centre column paints, or null for a bare column over the
-  /// window backdrop.
-  ///
-  /// Bare is the default because that is what most of the spec draws: `A1`'s
-  /// gallery column and `A4`'s comparator column both open
-  /// `<div style="flex:1;min-width:0;...">` with no background, and the cards
-  /// inside them sit straight on the mesh. `10g` is the exception — the prompt
-  /// assistant's chat column is `background:#F5F7FD`, a recess between the two
-  /// `#FAFBFF` panels — so that tab passes a colour.
+  /// Whether this tab has a left / right panel at all. A tab without one gets
+  /// no column, no drawer and no button for it.
+  final bool hasLeftPanel;
+  final bool hasRightPanel;
+
+  /// Title of the right panel when it is a drawer or a sheet.
+  final String? rightPanelTitle;
+  final IconData? fabIcon;
   final Color? centerGround;
+
+  /// Whether [centerContent] scrolls under the toolbar and pads itself by
+  /// [WorkbenchLayoutState.topClearance] (the gallery). Otherwise the layout
+  /// starts it below the toolbar.
+  final bool centerScrollsUnderToolbar;
 
   const WorkbenchLayout({
     super.key,
     required this.centerContent,
     this.leftPanel,
     this.rightPanelBuilder,
-    this.topBar,
+    this.toolbarBuilder,
+    this.centerOverlay,
     this.bottomPanel,
     this.showLeftPanel = true,
     this.showRightPanel = true,
+    this.hasLeftPanel = true,
+    this.hasRightPanel = true,
+    this.rightPanelTitle,
     this.fabIcon,
     this.centerGround,
+    this.centerScrollsUnderToolbar = false,
   });
 
   @override
@@ -170,13 +169,11 @@ class WorkbenchLayout extends StatefulWidget {
 class _WorkbenchLayoutState extends State<WorkbenchLayout> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late double _leftWidth;
-  /// `A1 16a`'s config column.
-  double _rightWidth = 340;
+  double _rightWidth = kRightPanelDefault;
 
   @override
   void initState() {
     super.initState();
-    // Restore persisted panel widths so the layout matches the last session.
     final appState = Provider.of<AppState>(context, listen: false);
     _leftWidth = appState.sidebarWidth.clamp(kLeftPanelMin, kLeftPanelMax);
     _loadRightWidth();
@@ -190,14 +187,11 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     }
   }
 
+  bool get _hasLeft => widget.hasLeftPanel && widget.leftPanel != null;
+  bool get _hasRight => widget.hasRightPanel && widget.rightPanelBuilder != null;
+
   @override
   Widget build(BuildContext context) {
-    // The width the workbench is handed, not the width of the window: the app
-    // draws a 64–78px navigation rail beside this, so `MediaQuery.size.width`
-    // overstates the content box by a whole breakpoint's worth on an iPad-class
-    // screen. Measuring the screen is what let a 1024pt window run the desktop
-    // three-column branch with only 946px to spend, and squeeze the centre to
-    // 152px.
     return LayoutBuilder(
       builder: (context, constraints) => _build(context, constraints.maxWidth),
     );
@@ -205,175 +199,157 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
   Widget _build(BuildContext context, double available) {
     if (available < Responsive.mobileBreakpoint) {
-      return _buildMobileLayout(context, available);
+      return _buildPhoneLayout(context, available);
     }
 
     final isTablet = available < Responsive.tabletBreakpoint;
-
-    // Width of the row inside the canvas inset.
-    final row = available - 16;
     final panels = _resolvePanels(
-      row,
-      wantsLeft: widget.leftPanel != null && widget.showLeftPanel && !isTablet,
-      wantsRight: widget.rightPanelBuilder != null && widget.showRightPanel && !isTablet,
+      available,
+      wantsLeft: _hasLeft && widget.showLeftPanel && !isTablet,
+      wantsRight: _hasRight && widget.showRightPanel && !isTablet,
     );
 
-    // A drawer for whichever panel is not a column. The tab's own `showXPanel`
-    // still decides whether the panel exists at all on this tab — a panel the
-    // tab switched off has no drawer and no button, same as before.
-    final leftInDrawer = widget.leftPanel != null &&
-        (isTablet || (widget.showLeftPanel && !panels.leftInline));
-    final rightInDrawer = widget.rightPanelBuilder != null &&
-        (isTablet || (widget.showRightPanel && !panels.rightInline));
+    final leftInDrawer = _hasLeft && (isTablet || (widget.showLeftPanel && !panels.leftInline));
+    final rightInDrawer = _hasRight && (isTablet || (widget.showRightPanel && !panels.rightInline));
+
+    final layoutState = WorkbenchLayoutState(
+      _scaffoldKey,
+      contentWidth: available,
+      leftInDrawer: leftInDrawer,
+      rightInDrawer: rightInDrawer,
+      topClearance: widget.toolbarBuilder != null ? WorkbenchGlassToolbar.clearance : 0,
+      bottomClearance: widget.centerOverlay != null ? _overlayClearance : 0,
+    );
+
+    final center = Stack(
+      children: [
+        Positioned.fill(
+          child: PanelCard(
+            shape: PanelShape.column,
+            ground: widget.centerGround ?? Colors.transparent,
+            child: widget.centerScrollsUnderToolbar || widget.toolbarBuilder == null
+                ? widget.centerContent
+                : Padding(
+                    padding: const EdgeInsets.only(top: WorkbenchGlassToolbar.clearance),
+                    child: widget.centerContent,
+                  ),
+          ),
+        ),
+        if (widget.toolbarBuilder != null)
+          Positioned(
+            left: WorkbenchGlassToolbar.inset,
+            right: WorkbenchGlassToolbar.inset,
+            top: WorkbenchGlassToolbar.inset,
+            child: widget.toolbarBuilder!(false),
+          ),
+        if (widget.centerOverlay != null)
+          Positioned(
+            left: AppSpace.s10,
+            right: AppSpace.s10,
+            bottom: 12,
+            child: Center(child: widget.centerOverlay),
+          ),
+      ],
+    );
 
     return Provider<WorkbenchLayoutState>.value(
-      value: WorkbenchLayoutState(
-        _scaffoldKey,
-        contentWidth: available,
-        leftInDrawer: leftInDrawer,
-        rightInDrawer: rightInDrawer,
-      ),
+      value: layoutState,
       child: Scaffold(
         key: _scaffoldKey,
-        // Transparent, so the centre column shows [AppWindowBackdrop]. This
-        // is the one screen the spec leaves bare: the two side columns are
-        // opaque and paint over the backdrop, the gallery between them does
-        // not, and the image cards sit straight on the mesh.
-        //
-        // Falls back to the canvas colour on mobile, where there is no window
-        // frame behind this to show.
-        backgroundColor: usesCustomWindowChrome
-            ? Colors.transparent
-            : Theme.of(context).colorScheme.surfaceContainer,
+        backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            if (widget.topBar != null) widget.topBar!,
             Expanded(
-              // No padding. `A1` runs the three columns edge to edge into the
-              // window; the 8px inset belonged to the card layout, where it was
-              // what let the canvas read as a ground the cards floated on.
               child: Row(
-                  // Stretch, not the default centre. PanelCard is a SizedBox
-                  // with a width and no height, so under the loose vertical
-                  // constraint a centred Row hands out, a panel whose body is
-                  // a bare SingleChildScrollView shrink-wraps to its content
-                  // and then floats in the middle of the canvas with bare
-                  // surface above and below it. Panels are columns of a
-                  // layout; they should always be the height of the row.
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Left Panel
-                    if (panels.leftInline) ...[
-                      PanelCard(
-                        width: panels.left,
-                        shape: PanelShape.column,
-                        child: widget.leftPanel!,
-                      ),
-                      PanelResizer(
-                        shape: PanelShape.column,
-                        // Defaults: the strip is the left panel's own ground
-                        // with the rule against the centre column, which is the
-                        // spec's `border-right` on that column.
-                        // Clamped to the layout's own ceiling plus [_kDragSlack],
-                        // not to the ceiling itself — see that constant for why
-                        // the exact clamp matters more than it looks.
-                        onDrag: (delta) {
-                          setState(() {
-                            _leftWidth = (_leftWidth + delta).clamp(
-                              kLeftPanelMin - _kDragSlack,
-                              panels.leftMax + _kDragSlack,
-                            );
-                          });
-                        },
-                        onDragEnd: () {
-                          // Settle out of the slack before anything persists it.
-                          setState(() {
-                            _leftWidth = _leftWidth.clamp(kLeftPanelMin, panels.leftMax);
-                          });
-                          Provider.of<AppState>(context, listen: false)
-                              .setSidebarWidth(_leftWidth);
-                        },
-                      ),
-                    ],
-
-                    // Center Content
-                    Expanded(
-                      // Transparent unless the tab asked for a ground. `A1`
-                      // gives the gallery area none of its own — the image
-                      // cards sit straight on the window's backdrop — while
-                      // the panels either side stay opaque; `10g`'s chat
-                      // column is the one that opts in. See [centerGround].
-                      child: PanelCard(
-                        shape: PanelShape.column,
-                        ground: widget.centerGround ?? Colors.transparent,
-                        child: widget.centerContent,
-                      ),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (panels.leftInline) ...[
+                    PanelCard(
+                      width: panels.left,
+                      shape: PanelShape.column,
+                      child: widget.leftPanel!,
                     ),
-
-                    // Right Panel
-                    if (panels.rightInline) ...[
-                      PanelResizer(
-                        shape: PanelShape.column,
-                        // Mirrored: this strip belongs to the right panel, so
-                        // its rule faces the centre column — the spec's
-                        // `border-left` on the settings column.
-                        ruleSide: PanelRuleSide.leading,
-                        onDrag: (delta) {
-                          setState(() {
-                            _rightWidth = (_rightWidth - delta).clamp(
-                              kRightPanelMin - _kDragSlack,
-                              panels.rightMax + _kDragSlack,
-                            );
-                          });
-                        },
-                        onDragEnd: () {
-                          setState(() {
-                            _rightWidth = _rightWidth.clamp(kRightPanelMin, panels.rightMax);
-                          });
-                          DatabaseService().saveSetting(
-                              'workbench_right_panel_width', _rightWidth.round().toString());
-                        },
-                      ),
-                      PanelCard(
-                        width: panels.right,
-                        shape: PanelShape.column,
-                        child: widget.rightPanelBuilder!(null),
-                      ),
-                    ],
+                    PanelResizer(
+                      shape: PanelShape.column,
+                      onDrag: (delta) {
+                        setState(() {
+                          _leftWidth = (_leftWidth + delta).clamp(
+                            kLeftPanelMin - _kDragSlack,
+                            panels.leftMax + _kDragSlack,
+                          );
+                        });
+                      },
+                      onDragEnd: () {
+                        setState(() {
+                          _leftWidth = _leftWidth.clamp(kLeftPanelMin, panels.leftMax);
+                        });
+                        Provider.of<AppState>(context, listen: false).setSidebarWidth(_leftWidth);
+                      },
+                    ),
                   ],
+                  Expanded(child: center),
+                  if (panels.rightInline) ...[
+                    PanelResizer(
+                      shape: PanelShape.column,
+                      ruleSide: PanelRuleSide.leading,
+                      onDrag: (delta) {
+                        setState(() {
+                          _rightWidth = (_rightWidth - delta).clamp(
+                            kRightPanelMin - _kDragSlack,
+                            panels.rightMax + _kDragSlack,
+                          );
+                        });
+                      },
+                      onDragEnd: () {
+                        setState(() {
+                          _rightWidth = _rightWidth.clamp(kRightPanelMin, panels.rightMax);
+                        });
+                        DatabaseService().saveSetting(
+                            'workbench_right_panel_width', _rightWidth.round().toString());
+                      },
+                    ),
+                    PanelCard(
+                      width: panels.right,
+                      shape: PanelShape.column,
+                      child: widget.rightPanelBuilder!(null),
+                    ),
+                  ],
+                ],
               ),
             ),
             if (widget.bottomPanel != null) widget.bottomPanel!,
           ],
         ),
         drawer: leftInDrawer
-            ? Drawer(width: (available * 0.75).clamp(200.0, 300.0), child: widget.leftPanel)
+            ? Drawer(
+                width: (available * 0.75).clamp(200.0, 300.0),
+                shape: const RoundedRectangleBorder(),
+                child: widget.leftPanel,
+              )
             : null,
         endDrawer: rightInDrawer
-            ? Drawer(width: (available * 0.80).clamp(280.0, 350.0), child: widget.rightPanelBuilder!(null))
+            ? Drawer(
+                width: (available * 0.9).clamp(280.0, 350.0),
+                shape: const RoundedRectangleBorder(),
+                child: _DrawerWithHeader(
+                  title: widget.rightPanelTitle,
+                  child: widget.rightPanelBuilder!(null),
+                ),
+              )
             : null,
       ),
     );
   }
 
-  /// Resolves what the two side panels are actually drawn at, given [row] px of
-  /// canvas to share with a centre that may not go below [kMinCenterWidth].
-  ///
-  /// Only the returned numbers are clamped: `_leftWidth` and `_rightWidth` stay
-  /// the width the user dragged to (and `_leftWidth` is also `AppState`'s
-  /// sidebar width, shared with the other screens), so both panels come back at
-  /// full size when the window grows again rather than being permanently
-  /// shrunk by having once been opened small.
+  /// The selection bar's height, its 12px lift and a gutter.
+  static const double _overlayClearance = 44 + 12 + AppSpace.s10;
+
   _PanelWidths _resolvePanels(
     double row, {
     required bool wantsLeft,
     required bool wantsRight,
   }) {
-    // Has to match what the resizers between these panels actually take, or
-    // the widths worked out here do not add up to the row.
     final double gutter = PanelResizer.thicknessOf(PanelShape.column);
-
-    // Unchanged from before: the right panel may not exceed 40% of the row.
     final double rightMax = (row * 0.40).clamp(kRightPanelMin, 600.0);
 
     bool leftInline = wantsLeft;
@@ -397,18 +373,11 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     if (leftInline && over() > 0) {
       left = (left - over()).clamp(kLeftPanelMin, kLeftPanelMax);
     }
-    // Both already at their minimums and the centre still cannot have its
-    // floor: the left panel falls back to the drawer it already uses on tablet.
-    // Unreachable at today's numbers — the narrowest row that gets here is 984,
-    // which fits 200 + 250 + 28 + 400 with room over — and kept as the floor's
-    // actual guarantee rather than something inferred from four constants that
-    // are free to move.
     if (leftInline && over() > 0) {
       leftInline = false;
       left = 0;
     }
 
-    // What a drag may reach, so the resizer cannot re-create the squeeze.
     final double leftCeiling = leftInline
         ? (row - right - (rightInline ? gutter : 0) - gutter - kMinCenterWidth)
             .clamp(kLeftPanelMin, kLeftPanelMax)
@@ -428,65 +397,192 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     );
   }
 
-  Widget _buildMobileLayout(BuildContext context, double screenWidth) {
-    final mobileDrawerWidth = (screenWidth * 0.80).clamp(200.0, 300.0);
+  Widget _buildPhoneLayout(BuildContext context, double screenWidth) {
+    // The shell reports the phone dock as bottom padding; the workbench sits
+    // above it rather than under it.
+    final dockClearance = MediaQuery.paddingOf(context).bottom;
     final layoutState = WorkbenchLayoutState(
       _scaffoldKey,
       contentWidth: screenWidth,
-      leftInDrawer: widget.leftPanel != null,
-      // The right panel is a bottom sheet behind the FAB here, not a drawer.
+      leftInDrawer: _hasLeft,
       rightInDrawer: false,
+      topClearance: widget.toolbarBuilder != null ? WorkbenchGlassToolbar.phoneHeight : 0,
+      bottomClearance: widget.centerOverlay != null ? _overlayClearance : 0,
     );
+
+    final showFab = _hasRight && widget.fabIcon != null;
+
     return Provider<WorkbenchLayoutState>.value(
       value: layoutState,
       child: Scaffold(
         key: _scaffoldKey,
-        appBar: widget.topBar != null ? PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight + 8),
-          child: Provider<WorkbenchLayoutState>.value(
-            value: layoutState,
-            child: widget.topBar!,
-          ),
-        ) : null,
-        body: Column(
-          children: [
-            // Same ground as the desktop centre column, so a tab the spec
-            // gives a recess to keeps it when the panels become drawers.
-            Expanded(
-              child: widget.centerGround == null
-                  ? widget.centerContent
-                  : Material(color: widget.centerGround, child: widget.centerContent),
-            ),
-            if (widget.bottomPanel != null) widget.bottomPanel!,
-          ],
-        ),
-        drawer: widget.leftPanel != null ? Drawer(width: mobileDrawerWidth, child: widget.leftPanel) : null,
-        floatingActionButton: (widget.rightPanelBuilder != null && widget.fabIcon != null)
-            ? FloatingActionButton(
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    useSafeArea: true,
-                    builder: (bottomSheetContext) => Provider<WorkbenchLayoutState>.value(
-                      value: layoutState,
-                      child: DraggableScrollableSheet(
-                        expand: false,
-                        initialChildSize: 0.6,
-                        minChildSize: 0.3,
-                        maxChildSize: 0.95,
-                        builder: (ctx, scrollController) {
-                          return widget.rightPanelBuilder!(scrollController);
-                        },
-                      ),
-                    ),
-                  );
-                },
-                child: Icon(widget.fabIcon),
+        backgroundColor: Colors.transparent,
+        drawer: _hasLeft
+            ? Drawer(
+                width: (screenWidth * 0.80).clamp(200.0, 300.0),
+                shape: const RoundedRectangleBorder(),
+                child: widget.leftPanel,
               )
             : null,
+        body: MediaQuery.removePadding(
+          context: context,
+          removeBottom: true,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: dockClearance),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: _grounded(
+                          widget.centerScrollsUnderToolbar || widget.toolbarBuilder == null
+                              ? widget.centerContent
+                              : Padding(
+                                  padding: const EdgeInsets.only(top: WorkbenchGlassToolbar.phoneHeight),
+                                  child: widget.centerContent,
+                                ),
+                        ),
+                      ),
+                      if (widget.toolbarBuilder != null)
+                        Positioned(left: 0, right: 0, top: 0, child: widget.toolbarBuilder!(true)),
+                      if (widget.centerOverlay != null)
+                        Positioned(
+                          left: AppSpace.s10,
+                          right: AppSpace.s10,
+                          bottom: 12,
+                          child: Center(child: widget.centerOverlay),
+                        ),
+                      if (showFab)
+                        Positioned(
+                          right: AppSpace.s16,
+                          bottom: AppSpace.s16,
+                          child: GlassFab(
+                            icon: widget.fabIcon!,
+                            tooltip: widget.rightPanelTitle,
+                            onPressed: () => _showPhoneSheet(context, layoutState),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (widget.bottomPanel != null) widget.bottomPanel!,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _grounded(Widget child) => widget.centerGround == null
+      ? child
+      : Material(color: widget.centerGround, child: child);
+
+  /// `01 · 1h` phone sheet: a G2 glass shell (top corners 28, grab handle)
+  /// holding an opaque panel at r22.
+  void _showPhoneSheet(BuildContext context, WorkbenchLayoutState layoutState) {
+    final scheme = Theme.of(context).colorScheme;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: scheme.scrim,
+      elevation: 0,
+      builder: (sheetContext) => Provider<WorkbenchLayoutState>.value(
+        value: layoutState,
+        child: DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.95,
+          builder: (ctx, scrollController) => AppGlass(
+            grade: GlassGrade.float,
+            edges: GlassEdges.top,
+            shadow: false,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+            child: Builder(builder: (ctx) {
+              final handle = GlassInk.maybeOf(ctx)?.ink2 ?? scheme.onSurfaceVariant;
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 6),
+                    child: Container(
+                      width: 36,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: handle,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s6),
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.dialog)),
+                        child: Material(
+                          color: scheme.surface,
+                          child: widget.rightPanelBuilder!(scrollController),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+        ),
       ),
     );
   }
 }
 
+/// The right panel as a drawer (`A1 · 1d`): a 48px header with its title and
+/// a close button over a hairline, then the panel.
+class _DrawerWithHeader extends StatelessWidget {
+  const _DrawerWithHeader({required this.title, required this.child});
+
+  final String? title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SafeArea(
+          bottom: false,
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.fromLTRB(AppSpace.s16, 0, AppSpace.s6, 0),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  tooltip: l10n.close,
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(child: child),
+      ],
+    );
+  }
+}
