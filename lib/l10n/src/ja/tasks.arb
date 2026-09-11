@@ -11,17 +11,12 @@
       }
     }
   },
-  "taskSummary": "タスクの概要",
   "pendingTasks": "保留中",
   "processingTasks": "処理中",
   "completedTasks": "完了",
   "failedTasks": "失敗",
-  "canceledTasks": "キャンセル済み",
   "clearCompleted": "完了済みをクリア",
-  "clearFailed": "失敗をクリア",
   "clearAll": "すべてクリア",
-  "clearAllConfirm": "実行中でないすべてのタスクを削除します。この操作は元に戻せません。",
-  "cancelAll": "すべてキャンセル",
   "cancelAllPending": "すべての保留中をキャンセル",
   "cancelTask": "タスクをキャンセル",
   "removeFromList": "リストから削除",
@@ -50,10 +45,8 @@
       }
     }
   },
-  "latestLog": "最新ログ:",
   "taskCompletedNotification": "タスク完了",
   "taskFailedNotification": "タスク失敗",
-  "taskCanceledNotification": "タスクキャンセル",
   "taskCompletedBody": "タスク {id} が正常に完了しました。",
   "@taskCompletedBody": {
     "placeholders": {
@@ -70,10 +63,6 @@
       }
     }
   },
-  "taskCanceledBody": "タスク {id} はユーザーによってキャンセルされました。",
-  "retryAllFailed": "失敗したものをすべて再試行",
-  "pauseQueue": "キューを一時停止",
-  "resumeQueue": "キューを再開",
   "queueSettings": "キュー設定",
   "concurrencyLimit": "並列処理制限: {limit}",
   "@concurrencyLimit": {
@@ -92,7 +81,6 @@
     }
   },
   "filterAll": "すべて",
-  "statusCancelled": "キャンセル済み",
   "retryTask": "再試行",
   "queuedPosition": "待機 {position} 番目",
   "@queuedPosition": {

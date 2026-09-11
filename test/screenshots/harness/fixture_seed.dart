@@ -606,7 +606,7 @@ void markOneTaskRunning(AppState appState) {
 
 /// Refills the execution-log console.
 ///
-/// Called per shot after `clearLogs()`: logs otherwise accumulate across shots,
+/// Called per shot after `logState.clear()`: logs otherwise accumulate across shots,
 /// so the console strip would differ run to run for reasons unrelated to layout.
 void seedLogs(AppState appState) {
   appState.addLog('Loading settings from database...');

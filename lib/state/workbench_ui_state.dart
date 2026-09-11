@@ -103,12 +103,6 @@ class WorkbenchUIState extends ChangeNotifier {
     }
   }
 
-  void clearAllPreviews() {
-    previewImages = [];
-    activePreviewIndex = 0;
-    notifyListeners();
-  }
-
   // Optimizer Methods
   /// Starts a fresh optimizer conversation. The old session is deliberately
   /// not disposed — chat widgets may still be unsubscribing from it — it is
@@ -390,13 +384,6 @@ class WorkbenchUIState extends ChangeNotifier {
 
   void setLastGeneratedVideoPath(String? path) {
     lastGeneratedVideoPath = path;
-    notifyListeners();
-  }
-
-  void clearVideoInputs() {
-    videoReferenceImages.clear();
-    videoFirstFrame = null;
-    videoLastFrame = null;
     notifyListeners();
   }
 

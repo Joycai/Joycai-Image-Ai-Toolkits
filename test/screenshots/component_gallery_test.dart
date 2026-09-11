@@ -45,7 +45,6 @@ import 'package:joycai_image_ai_toolkits/widgets/app_icon_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_search_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_section_label.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_status_badge.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_text_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dual_tone_swatch.dart';
 import 'package:joycai_image_ai_toolkits/widgets/theme_accent_picker.dart';
@@ -266,16 +265,6 @@ class _Gallery extends StatelessWidget {
                   onTap: () {},
                 ),
               ]),
-              const _Label('状态徽标'),
-              Wrap(spacing: 10, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: const [
-                AppStatusBadge(label: '执行中', kind: AppStatusKind.running),
-                AppStatusBadge(label: '待处理', kind: AppStatusKind.pending),
-                AppStatusBadge(label: '已完成', kind: AppStatusKind.done),
-                AppStatusBadge(label: '未保存', kind: AppStatusKind.warning),
-                AppStatusBadge(label: '失败', kind: AppStatusKind.failed),
-                AppCountBadge(count: 3),
-                AppCountBadge(count: 128),
-              ]),
               const _Label('分组小标题 · 两种语气'),
               // The accent tone is the one that has to be checked here: it is
               // small, semibold, and sits on `surface`, which is where an
@@ -297,7 +286,7 @@ class _Gallery extends StatelessWidget {
               const _SemanticRow(),
               const _Label('列表行 · 40 单行 / 48 双行'),
               const _ListRows(),
-              const _Label('滑杆 · 参数（主色）与中性（灰阶）'),
+              const _Label('滑杆 · 参数（主色）'),
               const _Sliders(),
               const _Label('筛选 chip'),
               Wrap(spacing: 8, runSpacing: 8, children: [
@@ -420,16 +409,7 @@ class _Sliders extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      Expanded(child: Slider(value: 0.62, onChanged: (_) {})),
-      const SizedBox(width: 16),
-      Expanded(
-        child: SliderTheme(
-          data: neutralSliderTheme(Theme.of(context).colorScheme),
-          child: Slider(value: 0.52, onChanged: (_) {}),
-        ),
-      ),
-    ]);
+    return Slider(value: 0.62, onChanged: (_) {});
   }
 }
 
@@ -584,8 +564,8 @@ class _SemanticRow extends StatelessWidget {
       chip('成功', semantic.successContainer, semantic.onSuccessContainer),
       chip('警告', semantic.warningContainer, semantic.onWarningContainer),
       chip('信息', semantic.infoContainer, semantic.onInfoContainer),
-      // Matches AppStatusBadge's failed pairing rather than Material's own
-      // container, so the four read as one family at the same weight.
+      // A wash of `error` rather than Material's own container, so the four
+      // read as one family at the same weight.
       chip('危险', colorScheme.error.withValues(alpha: AppAlpha.tint), colorScheme.error),
     ]);
   }

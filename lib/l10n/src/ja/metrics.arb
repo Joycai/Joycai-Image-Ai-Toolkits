@@ -3,7 +3,6 @@
   "tokenUsageMetrics": "トークン使用状況メトリクス",
   "clearAllUsage": "すべての使用状況データをクリアしますか？",
   "clearUsageWarning": "これにより、データベースからすべてのトークン使用状況レコードが完全に削除されます。",
-  "modelsLabel": "モデル：",
   "rangeLabel": "範囲：",
   "today": "今日",
   "lastWeek": "先週",

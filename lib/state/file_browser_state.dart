@@ -205,13 +205,6 @@ class FileBrowserState extends ChangeNotifier {
     });
   }
 
-  void updateDirectories(List<String> dirs) {
-    // This method was previously used for syncing, but we'll remove the sync in AppState.
-    // For now, we can keep it as a setter if needed, but the primary way will be toggleDirectory.
-    activeDirectories = dirs;
-    refresh();
-  }
-
   /// Whether a folder scan is running. Set by every [refresh], whoever asked
   /// for it — the tree, the header, a transfer, startup — so the file area
   /// can show `B1a · 1d` 「扫描中」 instead of an empty state.

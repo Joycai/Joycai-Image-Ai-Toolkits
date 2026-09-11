@@ -3,7 +3,6 @@
   "tokenUsageMetrics": "Token 用量指標",
   "clearAllUsage": "要清除所有用量資料嗎？",
   "clearUsageWarning": "這將永久刪除資料庫中的所有 Token 用量記錄。",
-  "modelsLabel": "模型：",
   "rangeLabel": "範圍：",
   "today": "今天",
   "lastWeek": "上週",

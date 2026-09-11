@@ -33,14 +33,6 @@ import '../browser/widgets/folder_context_menu.dart';
 import '../browser/widgets/folder_delete_dialog.dart';
 import '../browser/widgets/folder_name_editor.dart';
 
-/// The amber a folder takes where it stands for a *destination* — the staging
-/// panel's target, the drag chip.
-///
-/// The folder column itself no longer uses it: `A1 1a` draws the tree's
-/// folders in the quiet secondary ink, so the only colour in the column is
-/// the selection.
-const Color kFolderAmber = Color(0xFFE0A64B);
-
 /// What a folder row hands to a drop target when it is dragged — `B1b 13e`.
 ///
 /// Its own type rather than a path string, so a target can tell a folder from

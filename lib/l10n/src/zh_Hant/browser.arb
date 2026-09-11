@@ -7,7 +7,6 @@
   "renameFailed": "重新命名失敗: {error}",
   "fileAlreadyExists": "已存在同名檔案",
   "noFilesFound": "未找到任何檔案",
-  "switchViewMode": "切換視圖模式",
   "sortBy": "排序方式",
   "sortName": "名稱",
   "sortDate": "修改日期",
@@ -22,27 +21,12 @@
   "catOthers": "其他",
   "openWithSystemDefault": "使用系統預設值開啟",
   "aiBatchRename": "AI 批量重新命名",
-  "rulesInstructions": "重新命名規則/說明",
   "generateSuggestions": "產生建議",
-  "noSuggestions": "尚未產生建議",
   "searchFilesHint": "搜尋檔案名稱…",
   "deselectAllDirectories": "取消全部目錄選擇",
-  "applyRenames": "套用重新命名",
-  "additionalInstructions": "補充指令（可選）",
   "aiRenameInstructionsHint": "例如：保留原始副檔名、轉換為拼音…",
   "noTemplateSelected": "未選擇模板",
   "selectTemplateFirst": "請先選擇一個重新命名模板。",
-  "generatingSuggestions": "正在產生建議…",
-  "renamePreviewTitle": "重新命名預覽",
-  "conflictsFound": "{count} 個衝突",
-  "@conflictsFound": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "conflictDuplicateTarget": "目標檔名重複",
   "addToSelection": "新增至選取項目",
   "removeFromSelection": "從選取項目中移除",
   "imagesSelected": "已選取 {count} 個",
@@ -52,14 +36,6 @@
   "fileBrowserAndroidHint": "請使用裝置的檔案管理員來整理檔案。",
   "stagingArea": "暫存區",
   "addToStaging": "加入暫存區",
-  "addToStagingCount": "加入暫存區 · {count} 項",
-  "@addToStagingCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "removeFromStaging": "從暫存區移除",
   "stagedBadge": "已暫存",
   "clearStaging": "清空",
@@ -129,22 +105,6 @@
     }
   },
   "onlyThisDirectory": "僅看此目錄",
-  "pasteMoveTitle": "移動到 {folder}",
-  "@pasteMoveTitle": {
-    "placeholders": {
-      "folder": {
-        "type": "String"
-      }
-    }
-  },
-  "pasteCopyTitle": "複製到 {folder}",
-  "@pasteCopyTitle": {
-    "placeholders": {
-      "folder": {
-        "type": "String"
-      }
-    }
-  },
   "pasteNoDestination": "請先指定目標目錄",
   "pasteDestinationGone": "目標目錄已不存在",
   "pasteNothingToDo": "沒有可搬運的檔案",
@@ -152,14 +112,10 @@
   "conflictSkip": "跳過",
   "conflictOverwrite": "覆蓋",
   "conflictRename": "自動改名",
-  "conflictApplyToRest": "對全部剩餘項套用",
   "conflictReasonExists": "目標目錄中已存在",
   "conflictReasonDuplicate": "另一個暫存檔案同名",
   "conflictReasonSameLocation": "已在此目錄中",
   "conflictReasonMissing": "來源檔案已不存在",
-  "pasteCrossVolumeWarning": "跨磁碟搬運：先複製再刪除，耗時更久，且可能中途停下。",
-  "pasteRunningMove": "正在移動…",
-  "pasteRunningCopy": "正在複製…",
   "pasteProgressCount": "{done} / {total}",
   "@pasteProgressCount": {
     "placeholders": {
@@ -171,7 +127,6 @@
       }
     }
   },
-  "pasteDoneTitle": "搬運完成",
   "pasteCancelledTitle": "搬運已取消",
   "pasteSucceededCount": "成功 {count} 項",
   "@pasteSucceededCount": {
@@ -289,14 +244,6 @@
       }
     }
   },
-  "renameEditingHint": "第 {row} 行正在就地改名",
-  "@renameEditingHint": {
-    "placeholders": {
-      "row": {
-        "type": "int"
-      }
-    }
-  },
   "renameConflictsPending": "{count} 個衝突待處理 · 未決衝突不會被套用",
   "@renameConflictsPending": {
     "placeholders": {
@@ -324,7 +271,6 @@
   "renameDuplicateBadge": "重名",
   "renameSkippedBadge": "已跳過",
   "renameRenamedBadge": "已改名",
-  "renameActionAccept": "接受",
   "renameActionSkip": "跳過",
   "renameActionEdit": "就地改名",
   "renameActionUndo": "撤銷跳過",
@@ -332,17 +278,6 @@
   "renameNoModelsTitle": "沒有可用的語言模型",
   "renameNoModelsDesc": "批次重新命名需要一個對話模型來閱讀圖片並產生名字。請先在「模型與通道」裡設定至少一個可用通道。",
   "renameGoToSettings": "前往設定",
-  "renameBatchFailed": "第 {batch} 批請求失敗 · {reason}",
-  "@renameBatchFailed": {
-    "placeholders": {
-      "batch": {
-        "type": "int"
-      },
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
   "renameBatchFailedDesc": "已產出的 {kept} 條建議已保留，未生成的 {missing} 個檔案可單獨重試",
   "@renameBatchFailedDesc": {
     "placeholders": {
@@ -385,23 +320,6 @@
     }
   },
   "pasteCrossVolumeTag": "跨磁碟",
-  "pasteProgressItems": "{done} / {total} 項 · {doneSize} / {totalSize}",
-  "@pasteProgressItems": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "doneSize": {
-        "type": "String"
-      },
-      "totalSize": {
-        "type": "String"
-      }
-    }
-  },
   "pasteCurrentFile": "正在複製 {name}",
   "@pasteCurrentFile": {
     "placeholders": {
@@ -465,28 +383,6 @@
   },
   "conflictsIntro": "逐項選擇處理方式；也可以勾選下方「對剩餘項套用」。",
   "conflictPending": "待定",
-  "conflictWriteInfo": "寫入 · {size} · {date}",
-  "@conflictWriteInfo": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "conflictExistingInfo": "已有 · {size} · {date}",
-  "@conflictExistingInfo": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "conflictOverwriteWarning": "目標檔案將被替換，不可撤銷",
   "conflictApplyRestCount": "對剩餘 {count} 項套用同一選擇",
   "@conflictApplyRestCount": {

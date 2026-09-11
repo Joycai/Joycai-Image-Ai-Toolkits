@@ -14,7 +14,6 @@
   },
   "fileAlreadyExists": "同名文件已存在",
   "noFilesFound": "未找到文件",
-  "switchViewMode": "切换视图模式",
   "sortBy": "排序方式",
   "sortName": "文件名",
   "sortDate": "修改日期",
@@ -29,27 +28,12 @@
   "catOthers": "其他",
   "openWithSystemDefault": "使用系统默认程序打开",
   "aiBatchRename": "AI 批量重命名",
-  "rulesInstructions": "重命名规则 / 指令",
   "generateSuggestions": "生成建议",
-  "noSuggestions": "尚未生成建议",
   "searchFilesHint": "搜索文件名…",
   "deselectAllDirectories": "取消全部目录选择",
-  "applyRenames": "应用重命名",
-  "additionalInstructions": "补充指令（可选）",
   "aiRenameInstructionsHint": "例如：保留原扩展名、转换为拼音…",
   "noTemplateSelected": "未选择模板",
   "selectTemplateFirst": "请先选择一个重命名模板。",
-  "generatingSuggestions": "正在生成建议…",
-  "renamePreviewTitle": "重命名预览",
-  "conflictsFound": "{count} 个冲突",
-  "@conflictsFound": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "conflictDuplicateTarget": "目标文件名重复",
   "addToSelection": "添加到选中列表",
   "removeFromSelection": "从选中列表移除",
   "imagesSelected": "已选 {count} 项",
@@ -66,14 +50,6 @@
   "fileBrowserAndroidHint": "请使用设备的文件管理器来整理文件。",
   "stagingArea": "暂存区",
   "addToStaging": "加入暂存区",
-  "addToStagingCount": "加入暂存区 · {count} 项",
-  "@addToStagingCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "removeFromStaging": "从暂存区移除",
   "stagedBadge": "已暂存",
   "clearStaging": "清空",
@@ -143,22 +119,6 @@
     }
   },
   "onlyThisDirectory": "仅看此目录",
-  "pasteMoveTitle": "移动到 {folder}",
-  "@pasteMoveTitle": {
-    "placeholders": {
-      "folder": {
-        "type": "String"
-      }
-    }
-  },
-  "pasteCopyTitle": "复制到 {folder}",
-  "@pasteCopyTitle": {
-    "placeholders": {
-      "folder": {
-        "type": "String"
-      }
-    }
-  },
   "pasteNoDestination": "请先指定目标目录",
   "pasteDestinationGone": "目标目录已不存在",
   "pasteNothingToDo": "没有可搬运的文件",
@@ -166,14 +126,10 @@
   "conflictSkip": "跳过",
   "conflictOverwrite": "覆盖",
   "conflictRename": "自动改名",
-  "conflictApplyToRest": "对全部剩余项应用",
   "conflictReasonExists": "目标目录中已存在",
   "conflictReasonDuplicate": "另一个暂存文件同名",
   "conflictReasonSameLocation": "已在此目录中",
   "conflictReasonMissing": "源文件已不存在",
-  "pasteCrossVolumeWarning": "跨盘搬运：先复制再删除，耗时更久，且可能中途停下。",
-  "pasteRunningMove": "正在移动…",
-  "pasteRunningCopy": "正在复制…",
   "pasteProgressCount": "{done} / {total}",
   "@pasteProgressCount": {
     "placeholders": {
@@ -185,7 +141,6 @@
       }
     }
   },
-  "pasteDoneTitle": "搬运完成",
   "pasteCancelledTitle": "搬运已取消",
   "pasteSucceededCount": "成功 {count} 项",
   "@pasteSucceededCount": {
@@ -303,14 +258,6 @@
       }
     }
   },
-  "renameEditingHint": "第 {row} 行正在就地改名",
-  "@renameEditingHint": {
-    "placeholders": {
-      "row": {
-        "type": "int"
-      }
-    }
-  },
   "renameConflictsPending": "{count} 个冲突待处理 · 未决冲突不会被应用",
   "@renameConflictsPending": {
     "placeholders": {
@@ -338,7 +285,6 @@
   "renameDuplicateBadge": "重名",
   "renameSkippedBadge": "已跳过",
   "renameRenamedBadge": "已改名",
-  "renameActionAccept": "接受",
   "renameActionSkip": "跳过",
   "renameActionEdit": "就地改名",
   "renameActionUndo": "撤销跳过",
@@ -346,17 +292,6 @@
   "renameNoModelsTitle": "没有可用的语言模型",
   "renameNoModelsDesc": "批量重命名需要一个对话模型来阅读图片并生成名字。请先在「模型与渠道」里配置至少一个可用渠道。",
   "renameGoToSettings": "前往设置",
-  "renameBatchFailed": "第 {batch} 批请求失败 · {reason}",
-  "@renameBatchFailed": {
-    "placeholders": {
-      "batch": {
-        "type": "int"
-      },
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
   "renameBatchFailedDesc": "已产出的 {kept} 条建议已保留，未生成的 {missing} 个文件可单独重试",
   "@renameBatchFailedDesc": {
     "placeholders": {
@@ -399,23 +334,6 @@
     }
   },
   "pasteCrossVolumeTag": "跨磁盘",
-  "pasteProgressItems": "{done} / {total} 项 · {doneSize} / {totalSize}",
-  "@pasteProgressItems": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "doneSize": {
-        "type": "String"
-      },
-      "totalSize": {
-        "type": "String"
-      }
-    }
-  },
   "pasteCurrentFile": "正在复制 {name}",
   "@pasteCurrentFile": {
     "placeholders": {
@@ -479,28 +397,6 @@
   },
   "conflictsIntro": "逐项选择处理方式；也可以勾选下方「对剩余项应用」。",
   "conflictPending": "待定",
-  "conflictWriteInfo": "写入 · {size} · {date}",
-  "@conflictWriteInfo": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "conflictExistingInfo": "已有 · {size} · {date}",
-  "@conflictExistingInfo": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "conflictOverwriteWarning": "目标文件将被替换，不可撤销",
   "conflictApplyRestCount": "对剩余 {count} 项应用同一选择",
   "@conflictApplyRestCount": {
@@ -749,8 +645,6 @@
   },
   "comingSoon": "敬请期待",
   "viewAll": "查看全部",
-  "noTasks": "暂无任务",
-  "sidebar": "侧边栏",
   "white": "白色",
   "black": "黑色",
   "red": "红色",
@@ -803,8 +697,6 @@
   "dropCopyItemsTo": "复制 {count} 项到 {name}",
   "dragMoveItems": "移动 {count} 项",
   "dragCopyItems": "复制 {count} 项",
-  "dropMovedItems": "已移动 {count} 项",
-  "dropCopiedItems": "已复制 {count} 项",
   "dropRejectIntoItself": "不能移动到它自己的子文件夹里",
   "dropRejectSameFolder": "已经在这个文件夹里",
   "dropRejectRoot": "根目录不能接收文件",
@@ -829,7 +721,6 @@
   "manualHtmlRequired": "手动模式下请先粘贴 HTML 内容。",
   "findImages": "寻找图像",
   "noImagesDiscovered": "尚未发现图像。",
-  "enterUrlToStart": "输入网址和需求以开始。",
   "addToQueue": "添加到下载队列",
   "addedToQueue": "已将 {count} 张图像添加到下载队列。",
   "@addedToQueue": {
@@ -862,7 +753,6 @@
     }
   },
   "manualHtmlMode": "手动 HTML 模式",
-  "manualHtmlHint": "在此粘贴已渲染的 HTML (F12 -> 复制外部 HTML)",
   "cookieHistory": "Cookie 历史",
   "noCookieHistory": "未保存 Cookie 历史",
   "pasteFromClipboard": "从剪贴板粘贴",
@@ -897,7 +787,6 @@
   "tokenUsageMetrics": "Token 使用统计",
   "clearAllUsage": "清除所有使用数据？",
   "clearUsageWarning": "这将永久从数据库中删除所有 Token 使用记录。",
-  "modelsLabel": "模型: ",
   "rangeLabel": "范围: ",
   "today": "今天",
   "lastWeek": "最近一周",
@@ -940,7 +829,6 @@
   "noUsageInRangeHint": "换一个区间，或先跑一个任务。",
   "usageLoadMoreStatus": "每页 {pageSize} · 已显示 {shown} / {total}",
   "models": "模型",
-  "modelManagement": "模型管理",
   "feeManagement": "费用管理",
   "modelsTab": "模型管理",
   "channelsTab": "渠道管理",
@@ -983,8 +871,6 @@
       }
     }
   },
-  "addFirstModel": "添加您的第一个 LLM 模型以开始使用",
-  "addNewModel": "添加新模型",
   "deleteModel": "删除模型",
   "deleteModelConfirmTitle": "删除模型？",
   "deleteModelConfirmMessage": "确定要删除“{name}”吗？",
@@ -995,20 +881,13 @@
       }
     }
   },
-  "addLlmModel": "添加 LLM 模型",
-  "editLlmModel": "编辑 LLM 模型",
   "modelIdLabel": "模型 ID",
   "displayName": "显示名称",
   "type": "类型",
   "tag": "标签",
-  "inputFeeLabel": "输入费用 ($/M Tokens)",
-  "outputFeeLabel": "输出费用 ($/M Tokens)",
-  "paidModel": "付费模型",
-  "freeModel": "免费模型",
   "billingMode": "计费模式",
   "perToken": "按 Token 计费 (每百万)",
   "perRequest": "按次计费",
-  "requestFeeLabel": "单次费用 ($/次)",
   "requestCount": "请求次数",
   "requests": "请求数",
   "feeGroups": "费率组",
@@ -1023,7 +902,6 @@
   "cachePriceFollowsInput": "缓存命中按“输入价格”计费",
   "outputPrice": "输出价格 ($/M Tokens)",
   "requestPrice": "请求价格 ($/次)",
-  "priceConfig": "价格配置",
   "priceLabelInput": "输入",
   "priceLabelCache": "缓存",
   "priceLabelOutput": "输出",
@@ -1069,69 +947,42 @@
       }
     }
   },
-  "stepProtocol": "选择协议",
   "stepProvider": "选择提供商",
-  "stepApiKey": "API 密钥",
-  "stepConfig": "额外配置",
-  "stepPreview": "预览",
-  "protocolOpenAI": "OpenAI 兼容协议 (REST)",
   "protocolOpenAIDesc": "标准 OpenAI REST API 兼容接口",
-  "protocolGoogle": "Google GenAI 协议 (REST)",
   "protocolGoogleDesc": "Google Gemini 官方 REST API",
   "protocolMidjourney": "Midjourney 代理",
   "protocolMidjourneyDesc": "midjourney-proxy / NewAPI 的 /mj/* 协议",
-  "protocolAnthropic": "Anthropic Messages 协议",
   "protocolAnthropicDesc": "Claude 原生 /v1/messages 接口",
   "midjourneyEndpointHint": "填写主机根地址（如 https://your-newapi.com），/mj/* 路径将自动补全。",
-  "providerOpenAIOfficial": "OpenAI 官方",
-  "providerGoogleOfficial": "Google GenAI 官方",
-  "providerGoogleCompatible": "Google GenAI (OpenAI 兼容)",
-  "providerGoogleCompatibleDesc": "通过 OpenAI 适配端点访问 Gemini",
   "providerDashScopeDesc": "dashscope.aliyuncs.com/compatible-mode · OpenAI 形状请求 · 千问对话 + qwen-image / 万相原生出图 + 万相视频",
   "providerDashScopeCompat": "阿里云百炼（OpenAI 兼容）",
   "providerDashScopeNative": "阿里云百炼（DashScope 原生）",
   "providerDashScopeNativeDesc": "dashscope.aliyuncs.com/api/v1 · 阿里云自有请求格式 · qwen-audio 只能走这条",
-  "endpointOverrideHint": "已按所选提供商预填，可改为中转、网关或国际站地址。",
-  "providerQianwen": "千问平台",
-  "providerQianwenDesc": "platform.qianwenai.com · API 同 DashScope — 千问对话 + qwen-image / wan2.7 出图",
   "providerCustom": "自定义提供商",
   "providerCustomDesc": "自建或第三方 API 服务商",
-  "providerGroupOther": "其他",
   "stepConnection": "连接与密钥",
-  "sectionAppearance": "外观",
   "moreColors": "更多颜色",
   "protocolXai": "xAI (Grok) API",
-  "providerXaiOfficial": "xAI 官方",
   "providerXaiOfficialDesc": "api.x.ai · Grok 聊天 + 原生 Imagine 视频",
   "providerNewApiOpenAI": "New API（OpenAI 格式）",
   "providerNewApiGemini": "New API（Gemini 格式）",
   "providerNewApiDesc": "New API 中转 · Bearer 令牌鉴权",
-  "providerAnthropicOfficial": "Anthropic 官方",
-  "providerAnthropicOfficialDesc": "api.anthropic.com · Claude",
   "providerNewApiAnthropic": "New API（Anthropic 格式）",
   "providerMiniMaxAnthropic": "MiniMax（Anthropic 格式）",
   "providerMiniMaxDesc": "OpenAI 兼容 /v1 端点",
   "newApiBaseUrl": "New API 基础地址",
   "newApiBaseHint": "填写 New API 主机地址，版本路径将自动补全",
-  "customEndpointHint": "请输入自定义端点 URL",
   "openaiV1Hint": "提示：OpenAI 兼容接口通常以 '/v1' 结尾",
   "googleV1BetaHint": "提示：Google GenAI 接口通常以 '/v1beta' 结尾",
   "anthropicV1Hint": "提示：Anthropic 接口通常以 '/v1' 结尾",
   "dashscopeApiV1Hint": "提示：DashScope 原生接口以 '/api/v1' 结尾",
-  "enterApiKey": "请输入 API 密钥",
   "apiKeyStorageNotice": "您的密钥仅存储在本地，不会发送到我们的服务器。",
   "nameHint": "例如：生产环境 API",
   "enableDiscoveryDesc": "自动从端点获取可用模型列表",
   "tagHint": "例如：GPT4, 核心, 等",
-  "bindTag": "绑定标签",
   "previewReady": "准备好添加此渠道了吗？",
   "feeGroupDesc": "定义模型的计费标准，以便准确计算使用成本。",
-  "feeGroupEditorSubtitle": "配置模型的计费标准",
   "noFeeGroups": "尚未创建费率组",
-  "pricePerMillion": "每百万 Token 价格",
-  "pricePerRequest": "单次请求价格",
-  "tokenBilling": "Token 计费",
-  "requestBilling": "按次计费",
   "feeGroupModelCount": "{count} 个模型",
   "@feeGroupModelCount": {
     "placeholders": {
@@ -1155,7 +1006,6 @@
   },
   "deselectAll": "取消全选",
   "capabilities": "能力",
-  "modelSaveRequirementHint": "渠道、名称、ID 三项齐备后方可保存。",
   "cardPreview": "卡片预览",
   "capabilityStreamingShort": "流式",
   "capabilityStandardShort": "标准请求",
@@ -1198,15 +1048,11 @@
   "enableThinkingDesc": "让模型先推理再作答。会消耗输出 token，仅 Anthropic 格式渠道支持。",
   "enableWebSearch": "服务端联网搜索",
   "enableWebSearchDesc": "允许服务商在作答过程中自行搜索网页。按额外 token 计费，并会代你抓取网页。",
-  "addChannelSubtitle": "先选这是谁，再填连接方式",
-  "searchProviders": "搜索提供商…",
   "noProviderMatch": "没有匹配的提供商",
-  "resetToDefault": "重置为默认",
   "apiKeyRequired": "该提供商需要密钥才能添加渠道",
   "endpointRequired": "请填写接口地址",
   "probeRetry": "重试",
   "customColor": "自定义颜色",
-  "stepConnectionAppearance": "连接与外观",
   "channelListPreview": "列表预览",
   "pickerNoMatches": "没有匹配项",
   "pickerMatchCount": "显示 {count} 项",
@@ -1241,7 +1087,6 @@
       }
     }
   },
-  "previewInList": "列表中的样子",
   "providerGroupVendor": "厂商",
   "providerGroupVendorHint": "官方直连 · 地址已预填",
   "providerGroupRelay": "中转站",
@@ -1272,7 +1117,6 @@
   "variantNewApiGemini": "Gemini 格式",
   "variantNewApiAnthropic": "Anthropic 格式",
   "channelPresetLabel": "供应商预设",
-  "channelPresetHint": "预设只负责一键填好下面的字段。填完仍可逐项修改，改过也不会被覆盖。",
   "changePreset": "更换预设",
   "presetUnmatched": "未匹配预设",
   "presetUnmatchedHint": "这条渠道用的是旧版本创建的类型，已不在预设列表里。保持不动即可继续使用；点「更换预设」会覆盖下面的字段。",
@@ -1280,7 +1124,6 @@
   "restorePresetEndpoint": "恢复预设值",
   "changePresetOverlayHint": "选中会用预设值覆盖接口协议与地址（密钥、名称、标签不动）。",
   "protocolField": "接口协议",
-  "protocolFieldHint": "共 5 个协议族，任何已存储的类型都能在这里表示。",
   "deprecatedLabel": "已废弃",
   "apiKeyOptional": "可选",
   "apiKeyLocalPlaceholder": "本地服务通常不需要",
@@ -1333,7 +1176,6 @@
   "protocolUnrecognizedAuto": "未识别此模型 ID，按渠道默认方式发送。如果中转站用的是「{name}」，请手动选择。",
   "protocolUnrecognizedSingle": "未识别此模型 ID，参数按「{name}」默认。",
   "protocolParamsLabel": "参数",
-  "protocolParamsDefault": "按「{name}」默认 — {items}",
   "protocolParamsNone": "无专属参数，只有提示词与参考图",
   "protocolParamReferenceLimit": "参考图上限",
   "protocolSendVia": "按「{name}」发送",
@@ -1403,7 +1245,6 @@
   "newPrompt": "新建提示词",
   "editPrompt": "编辑提示词",
   "noPromptsSaved": "未保存提示词",
-  "saveFavoritePrompts": "在此保存您常用的提示词或优化器系统提示词",
   "createFirstPrompt": "创建第一个提示词",
   "deletePromptConfirmTitle": "删除提示词？",
   "deletePromptConfirmMessage": "确定要删除“{title}”吗？",
@@ -1416,7 +1257,6 @@
   },
   "title": "标题",
   "tagCategory": "标签 (分类)",
-  "setAsRefiner": "设为优化器",
   "promptContent": "提示词内容",
   "userPrompts": "用户提示词",
   "refinerPrompts": "优化器提示词",
@@ -1424,22 +1264,12 @@
   "templateType": "模板用途",
   "typeRename": "批量重命名",
   "typeRefiner": "提示词优化",
-  "selectRenameTemplate": "选择重命名模板",
-  "selectCategory": "选择分类",
   "categoriesTab": "分类管理",
   "addCategory": "添加分类",
   "editCategory": "编辑分类",
   "library": "提示词库",
   "refiner": "优化器",
   "selectionMode": "选择模式",
-  "selectionModeCount": "选择模式（{count}）",
-  "@selectionModeCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "nSelected": "已选择 {count} 项",
   "@nSelected": {
     "placeholders": {
@@ -1535,9 +1365,6 @@
   "openGraphicsSettings": "Windows 图形设置",
   "reduceVisualEffects": "减少视觉效果",
   "reduceVisualEffectsDesc": "关闭模糊效果，在核显或低性能 GPU 上获得更流畅的体验。",
-  "googleGenAiSettings": "Google GenAI REST 设置",
-  "openAiApiSettings": "OpenAI API REST 设置",
-  "standardConfig": "标准配置",
   "endpointUrl": "接口地址",
   "apiKey": "API 密钥",
   "outputDirectory": "输出目录",
@@ -1563,21 +1390,16 @@
   "includeUsage": "包含用量统计",
   "includeUsageDesc": "API Token 消耗历史",
   "exportNow": "立即导出",
-  "importNow": "立即导入",
   "importOptions": "导入选项",
   "notInBackup": "备份文件中不包含此项",
-  "importSettingsTitle": "导入设置？",
   "importSettingsConfirm": "这将替换您当前所有的模型、渠道和分类。\n\n注意：提示词库不受此导入影响。请在提示词页面管理提示词数据。",
   "importAndReplace": "导入并替换",
   "importErrorPromptsOnly": "这是提示词库导出文件，不是完整备份。请在提示词页面导入。",
   "importErrorNotABackup": "该文件不是有效的备份文件。请选择通过“导出设置”生成的文件。",
   "importErrorNewerSchema": "该备份由更高版本的应用创建。请先升级应用后再导入。",
   "importMode": "导入模式",
-  "importModeDesc": "选择导入提示词的方式：\n\n合并：将新项添加到您的库中。\n替换：删除当前库并使用导入的数据。",
   "merge": "合并",
   "replaceAll": "全部替换",
-  "applyOverwrite": "应用 (覆盖)",
-  "applyAppend": "应用 (追加)",
   "portableMode": "便携模式",
   "portableModeDesc": "在应用程序文件夹中存储数据库和缓存 (需要重启)",
   "restartRequired": "需要重启",
@@ -1671,14 +1493,12 @@
       }
     }
   },
-  "taskSummary": "任务摘要",
   "pendingTasks": "待处理",
   "processingTasks": "执行中",
   "completedTasks": "已完成",
   "failedTasks": "失败",
   "clearCompleted": "清除已完成",
   "clearAll": "清除全部",
-  "clearAllConfirm": "此操作将删除所有未运行的任务，且无法撤销。",
   "cancelAllPending": "取消所有等待中",
   "cancelTask": "取消任务",
   "images": "图像",
@@ -1706,7 +1526,6 @@
       }
     }
   },
-  "latestLog": "最新日志:",
   "taskCompletedNotification": "任务已完成",
   "taskFailedNotification": "任务失败",
   "taskCompletedBody": "任务 {id} 已成功完成。",
@@ -1742,7 +1561,6 @@
       }
     }
   },
-  "statusCancelled": "已取消",
   "retryTask": "重试",
   "queuedPosition": "排队第 {position} 位",
   "@queuedPosition": {
@@ -1832,36 +1650,24 @@
   "setupWizardTitle": "欢迎设置向导",
   "welcomeMessage": "欢迎使用 Joycai 图像 AI 工具箱！让我们开始设置吧。",
   "getStarted": "开始",
-  "stepAppearance": "外观",
   "stepStorage": "存储",
-  "stepApi": "智能 (API)",
   "setupCompleteMessage": "设置完成！尽情创作吧。",
   "skip": "跳过",
   "storageLocationDesc": "选择生成图像的保存位置。",
   "addChannelOptional": "添加您的第一个 AI 渠道（可选）。",
   "configureModelOptional": "为新渠道配置一个模型（可选）。",
-  "googleGenAiFree": "Google GenAI (免费)",
-  "googleGenAiPaid": "Google GenAI (付费)",
-  "openaiApi": "OpenAI API",
   "filenamePrefix": "文件名前缀",
-  "openaiEndpointHint": "提示：OpenAI 兼容接口通常以 '/v1' 结尾",
-  "googleEndpointHint": "提示：Google GenAI 接口通常以 '/v1beta' 结尾（内部已处理）",
   "workbench": "工作台",
-  "imageProcessing": "图片处理",
   "wbModeImage": "图像",
   "wbModeVideo": "视频",
   "wbTools": "工具",
-  "sourceGallery": "源图库",
-  "sourceExplorer": "源目录浏览器",
   "tempWorkspace": "临时工作区",
   "processResults": "处理结果",
-  "resultCache": "结果缓存区",
   "sectionSources": "来源",
   "sectionResults": "结果",
   "sectionWorkspace": "工作区",
   "allSources": "全部来源",
   "allResults": "全部结果",
-  "backToAll": "返回全部",
   "directories": "目录列表",
   "addFolder": "添加文件夹",
   "noFolders": "未添加文件夹",
@@ -1882,11 +1688,9 @@
     }
   },
   "removeFromWorkspace": "从临时工作区移除",
-  "dropFilesHere": "将图片拖放到此处以添加到临时工作区",
   "noImagesSelected": "未选择图像",
   "imageLoadFailed": "图像加载失败",
   "selectSourceDirectory": "选择源目录",
-  "removeFolderTooltip": "移除文件夹",
   "removeFolderConfirmTitle": "移除文件夹？",
   "removeFolderConfirmMessage": "确定要从列表中移除“{folderName}”吗？",
   "@removeFolderConfirmMessage": {
@@ -1900,7 +1704,6 @@
   "thumbnailDisplay": "缩略图展示",
   "thumbnailFitContain": "适应（完整显示）",
   "thumbnailFitCover": "填充（裁切铺满）",
-  "deleteFile": "删除文件",
   "deleteFileConfirmTitle": "删除文件？",
   "deleteFileConfirmMessage": "确定要删除“{filename}”吗？",
   "@deleteFileConfirmMessage": {
@@ -2044,7 +1847,6 @@
   "sendToVideoReferences": "添加到视频参考图",
   "sendToSelection": "添加到选中列表",
   "sendToOptimizer": "发送到提示词助手",
-  "optimizePromptWithImage": "以此图优化提示词",
   "selectFromLibrary": "从库中选择",
   "metadataSelectedNone": "未选中图像元数据",
   "labelRaw": "原图",
@@ -2143,7 +1945,6 @@
   "maskOpacity": "蒙版透明度",
   "undo": "撤销",
   "saveToTemp": "保存至工作区",
-  "saveMaskToTemp": "保存遮罩至工作区",
   "binaryMode": "二值化模式",
   "maskSourceCaption": "蒙版 {width}×{height}",
   "@maskSourceCaption": {
@@ -2212,9 +2013,7 @@
   "promptOptimizer": "提示词助手",
   "refinerModel": "优化模型",
   "systemPrompt": "系统提示词",
-  "refinerIntro": "使用 AI 分析图像并优化您的提示词。",
   "roughPrompt": "初步想法 / 提示词",
-  "optimizedPrompt": "优化后的提示词",
   "applyToWorkbench": "应用到工作台",
   "promptApplied": "提示词已应用到工作台",
   "refineFailed": "优化失败: {error}",
@@ -2244,7 +2043,6 @@
   "optViewed": "AI 已查看",
   "optRemoveImage": "移除图片",
   "optEmptyImagesHint": "在图库中右键图片，选择“发送到提示词助手”即可添加到这里。",
-  "videoGeneration": "视频生成",
   "referenceImages": "参考图片",
   "firstFrame": "首帧",
   "lastFrame": "尾帧",
@@ -2257,8 +2055,6 @@
   "videoQualityHigh": "高清",
   "openInSystemPlayer": "在系统播放器中打开",
   "dropVideoReferenceHere": "在此处拖入用于风格/内容参考的图片",
-  "dropFirstFrameHere": "在此处拖入起始帧图片",
-  "dropLastFrameHere": "在此处拖入结束帧图片",
   "executionLogs": "执行日志",
   "saveToPhotos": "保存到系统相册",
   "saveToGallery": "保存到相册",
@@ -2275,7 +2071,6 @@
   "iosSandboxDesc": "在 iOS 上，请使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。",
   "mobileSandboxActive": "移动端存储限制生效",
   "mobileSandboxDesc": "在移动设备上，直接访问文件夹可能受限。建议使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。",
-  "filesAppSuffix": " (文件 App)",
   "tapToPick": "点击选取",
   "goToGallery": "前往图库",
   "binaryModeActive": "二值化模式已启用 — 背景已隐藏以导出纯净蒙版",
@@ -2599,7 +2394,6 @@
   "optAbortHint": "Esc 中断",
   "optKbSearching": "检索中",
   "optKbCitedRunning": "进行中",
-  "optSysPromptTemplate": "模板",
   "optSysPromptPick": "选择模板",
   "optSysPromptSearch": "搜索模板…",
   "optSysPromptNone": "未选择模板",

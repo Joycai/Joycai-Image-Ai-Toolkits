@@ -3,7 +3,6 @@
   "tokenUsageMetrics": "Token Usage Metrics",
   "clearAllUsage": "Clear All Usage Data?",
   "clearUsageWarning": "This will permanently delete all token usage records from the database.",
-  "modelsLabel": "Models: ",
   "rangeLabel": "Range: ",
   "today": "Today",
   "lastWeek": "Last Week",

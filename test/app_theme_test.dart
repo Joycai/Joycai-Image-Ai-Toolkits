@@ -231,21 +231,6 @@ void main() {
   });
 
   group('metricsOnly', _metricsOnlyTests);
-
-  test('tonal buttons keep their own colours despite the filled theme', () {
-    // FilledButton.tonal reads the same FilledButtonTheme, and a theme's
-    // background outranks the tonal variant's default — so every tonal button
-    // has to pass this style back in. The tonal form is the 12% wash under the
-    // deep ink (`A3a` 「Apply / 保存到库」), not Material's secondary container.
-    for (final theme in [dark(), light()]) {
-      final scheme = theme.colorScheme;
-      final tonal = tonalButtonStyle(scheme);
-
-      expect(tonal.backgroundColor?.resolve({}), scheme.accentTint);
-      expect(tonal.foregroundColor?.resolve({}), scheme.onAccentTint);
-      expect(tonal.backgroundColor?.resolve({WidgetState.disabled}), isNotNull);
-    }
-  });
 }
 
 void _noop() {}

@@ -11,14 +11,12 @@
       }
     }
   },
-  "taskSummary": "任务摘要",
   "pendingTasks": "待处理",
   "processingTasks": "执行中",
   "completedTasks": "已完成",
   "failedTasks": "失败",
   "clearCompleted": "清除已完成",
   "clearAll": "清除全部",
-  "clearAllConfirm": "此操作将删除所有未运行的任务，且无法撤销。",
   "cancelAllPending": "取消所有等待中",
   "cancelTask": "取消任务",
   "removeFromList": "从列表中移除",
@@ -47,7 +45,6 @@
       }
     }
   },
-  "latestLog": "最新日志:",
   "taskCompletedNotification": "任务已完成",
   "taskFailedNotification": "任务失败",
   "taskCompletedBody": "任务 {id} 已成功完成。",
@@ -84,7 +81,6 @@
     }
   },
   "filterAll": "全部",
-  "statusCancelled": "已取消",
   "retryTask": "重试",
   "queuedPosition": "排队第 {position} 位",
   "@queuedPosition": {

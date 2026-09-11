@@ -8,8 +8,7 @@ import '../services/task_queue_service.dart';
 /// `image_outlined` for everything, so a video generation and a batch rename
 /// both appeared in the monitor as pictures. Two lists of the same queue
 /// disagreeing about what its rows *are* is the kind of drift a shared mapping
-/// exists to stop — the same argument as [AppStatusBadge] for the four
-/// conditions.
+/// exists to stop.
 ///
 /// Presentation rather than logic, so it lives here as an extension rather
 /// than on [TaskType] itself.

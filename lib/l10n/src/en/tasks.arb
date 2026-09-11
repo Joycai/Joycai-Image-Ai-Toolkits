@@ -11,14 +11,12 @@
       }
     }
   },
-  "taskSummary": "Task Summary",
   "pendingTasks": "Pending",
   "processingTasks": "Processing",
   "completedTasks": "Completed",
   "failedTasks": "Failed",
   "clearCompleted": "Clear Completed",
   "clearAll": "Clear All",
-  "clearAllConfirm": "This will remove all non-running tasks. This action cannot be undone.",
   "cancelAllPending": "Cancel All Pending",
   "cancelTask": "Cancel Task",
   "removeFromList": "Remove from list",
@@ -47,7 +45,6 @@
       }
     }
   },
-  "latestLog": "Latest Log:",
   "taskCompletedNotification": "Task Completed",
   "taskFailedNotification": "Task Failed",
   "taskCompletedBody": "Task {id} has finished successfully.",
@@ -84,7 +81,6 @@
     }
   },
   "filterAll": "All",
-  "statusCancelled": "Cancelled",
   "retryTask": "Retry",
   "queuedPosition": "#{position} in queue",
   "@queuedPosition": {

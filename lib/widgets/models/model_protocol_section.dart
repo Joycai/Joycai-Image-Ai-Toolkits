@@ -23,28 +23,6 @@ String modelKindLabel(AppLocalizations l10n, String tag) {
   }
 }
 
-/// The parameter names a capability table puts in front of the user, in the
-/// words the workbench's own panels use — what the 「参数」 row promises.
-///
-/// Video always leads with the two controls the video panel draws for every
-/// model (resolution and aspect ratio), which a table does not list; images
-/// only have what their table declares. The reference-image ceiling is named
-/// last, and only when there is one.
-List<String> paramSourceNames(
-    AppLocalizations l10n, ModelCapabilities caps, Surface surface) {
-  final video = surface == Surface.videoJob;
-  final names = <String>[if (video) l10n.resolution, if (video) l10n.aspectRatio];
-  for (final spec in video ? caps.videoParams : caps.imageParams) {
-    final name = _paramName(l10n, spec.labelKey, video);
-    if (name != null && !names.contains(name)) names.add(name);
-  }
-  final ceiling = caps.maxReferenceImages;
-  if (names.isNotEmpty && ceiling != null && ceiling > 0) {
-    names.add(l10n.protocolParamReferenceLimit);
-  }
-  return names;
-}
-
 /// The chips of the parameter summary under the request method (D1c `1a`,
 /// `1c`): each parameter with the value it starts at, in the surface's fixed
 /// order — video always opens with resolution and aspect ratio — and the

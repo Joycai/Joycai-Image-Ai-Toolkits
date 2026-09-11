@@ -3,8 +3,8 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/protocol_section_form.dart';
 
-/// Pins spec D2a rulings 1, 2 and 4: which shape the model editor's
-/// 「请求方式」 section takes, and when the 「参数」 source row appears.
+/// Pins spec D2a rulings 1 and 2: which shape the model editor's
+/// 「请求方式」 section takes.
 ///
 /// Decided from the dispatcher's real menus rather than hand-built ones, so a
 /// change to what a channel offers shows up here as a changed section, not
@@ -16,31 +16,20 @@ void main() {
           LLMDispatcher.protocolMenu(channelType, modelId, tag: tag),
           pinIsStale: stale);
 
-  bool paramRowFor(String channelType, String modelId, String tag) {
-    final menu = LLMDispatcher.protocolMenu(channelType, modelId, tag: tag);
-    return showsParamSourceRow(
-        menu, protocolSectionForm(menu, pinIsStale: false));
-  }
-
   group('ruling 1: the section exists for a choice or an unknown id', () {
-    test('an unrecognized relay image model gets the dropdown and the row',
-        () {
+    test('an unrecognized relay image model gets the dropdown', () {
       expect(formFor(Vendors.openAIRest, 'nano-banana-pro', 'image'),
           ProtocolSectionForm.dropdown);
-      expect(paramRowFor(Vendors.openAIRest, 'nano-banana-pro', 'image'),
-          isTrue);
     });
 
-    test('a recognized one gets the dropdown and no row (20a)', () {
+    test('a recognized one gets the dropdown too (20a)', () {
       expect(formFor(Vendors.openAIRest, 'gpt-image-1', 'image'),
           ProtocolSectionForm.dropdown);
-      expect(paramRowFor(Vendors.openAIRest, 'gpt-image-1', 'image'), isFalse);
     });
 
     test('one route and an unknown id is the read-only line (20d)', () {
       expect(formFor(Vendors.openAIRest, 'my-sora', 'video'),
           ProtocolSectionForm.readOnly);
-      expect(paramRowFor(Vendors.openAIRest, 'my-sora', 'video'), isTrue);
       // The Claude-format neighbour of 20e: images through chat is the only
       // route, and a one-entry dropdown has nothing to choose.
       expect(formFor(Vendors.newApiAnthropic, 'my-image', 'image'),
@@ -59,8 +48,6 @@ void main() {
     test('chat keeps 18a: a menu of three is a dropdown, never read-only', () {
       expect(formFor(Vendors.dashscope, 'qwen-max', 'chat'),
           ProtocolSectionForm.dropdown);
-      // "Unrecognized" is not a thing for chat — nearly every chat id is.
-      expect(paramRowFor(Vendors.dashscope, 'qwen-max', 'chat'), isFalse);
     });
   });
 
@@ -68,8 +55,6 @@ void main() {
     test('a video model on a Claude-format relay', () {
       expect(formFor(Vendors.newApiAnthropic, 'my-video', 'video'),
           ProtocolSectionForm.notice);
-      expect(paramRowFor(Vendors.newApiAnthropic, 'my-video', 'video'),
-          isFalse);
     });
   });
 
@@ -93,7 +78,6 @@ void main() {
     test('no menu at all (no channel or no id yet) builds nothing', () {
       expect(protocolSectionForm(null, pinIsStale: false),
           ProtocolSectionForm.none);
-      expect(showsParamSourceRow(null, ProtocolSectionForm.none), isFalse);
     });
   });
 }

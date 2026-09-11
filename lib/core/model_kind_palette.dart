@@ -6,8 +6,7 @@ import 'constants.dart';
 ///
 /// A kind's hue follows it across the models screen's chips, the discovery
 /// dialog's list and the type picker in the model editor, so a user scanning
-/// a long list can find every video model without reading a word. Like
-/// `core/fee_group_palette.dart` and `core/metric_palette.dart`, these name a
+/// a long list can find every video model without reading a word. These name a
 /// category rather than state a condition, which is why they are literals and
 /// not roles on the [ColorScheme]: seeded hues would collapse four categories
 /// into four shades of one colour.

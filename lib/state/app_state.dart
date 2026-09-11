@@ -216,8 +216,6 @@ class AppState extends ChangeNotifier {
   // existing behavior (original bytes reach the API) doesn't change silently.
   bool compressReferenceImages = false;
   bool isMarkdownWorkbench = true;
-  bool isMarkdownRefinerSource = true;
-  bool isMarkdownRefinerTarget = true;
 
   // Data cache
   List<LLMModel> _models = [];
@@ -409,7 +407,6 @@ class AppState extends ChangeNotifier {
 
   // Browser State Proxies
   Set<String> get unreachableBrowserDirectories => fileBrowserState.unreachableDirectories;
-  int get browserRefreshCounter => fileBrowserState.refreshCounter;
 
   Future<String?> getSetting(String key) => _db.getSetting(key);
 
@@ -510,8 +507,6 @@ class AppState extends ChangeNotifier {
     }
 
     isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
-    isMarkdownRefinerSource = (await _db.getSetting('is_markdown_refiner_source') ?? 'true') == 'true';
-    isMarkdownRefinerTarget = (await _db.getSetting('is_markdown_refiner_target') ?? 'true') == 'true';
 
     _cacheData(
       models: await _db.getModels(),

@@ -3,7 +3,6 @@
   "tokenUsageMetrics": "Token 使用统计",
   "clearAllUsage": "清除所有使用数据？",
   "clearUsageWarning": "这将永久从数据库中删除所有 Token 使用记录。",
-  "modelsLabel": "模型: ",
   "rangeLabel": "范围: ",
   "today": "今天",
   "lastWeek": "最近一周",

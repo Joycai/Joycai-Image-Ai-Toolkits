@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import '../core/constants.dart';
 
 class PromptTag {
@@ -38,6 +37,4 @@ class PromptTag {
     }
     return data;
   }
-
-  Color get uiColor => Color(color);
 }

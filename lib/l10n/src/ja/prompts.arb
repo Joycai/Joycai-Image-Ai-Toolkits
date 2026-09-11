@@ -4,13 +4,11 @@
   "newPrompt": "新しいプロンプト",
   "editPrompt": "プロンプトを編集",
   "noPromptsSaved": "プロンプトが保存されていません",
-  "saveFavoritePrompts": "お気に入りのプロンプトやリファイナーのシステムプロンプトをここに保存します",
   "createFirstPrompt": "最初のプロンプトを作成",
   "deletePromptConfirmTitle": "プロンプトを削除しますか？",
   "deletePromptConfirmMessage": "「{title}」を削除してもよろしいですか？",
   "title": "タイトル",
   "tagCategory": "タグ（カテゴリ）",
-  "setAsRefiner": "リファイナーとして設定",
   "promptContent": "プロンプトの内容",
   "userPrompts": "ユーザープロンプト",
   "refinerPrompts": "リファイナープロンプト",
@@ -18,20 +16,12 @@
   "templateType": "テンプレートタイプ",
   "typeRename": "一括名前変更",
   "typeRefiner": "プロンプトリファイナー",
-  "selectRenameTemplate": "名前変更テンプレートを選択",
-  "selectCategory": "カテゴリを選択",
   "categoriesTab": "カテゴリ",
   "addCategory": "カテゴリを追加",
   "editCategory": "カテゴリを編集",
   "library": "ライブラリ",
   "refiner": "リファイナー",
   "selectionMode": "選択モード",
-  "selectionModeCount": "選択モード（{count}）",
-  "@selectionModeCount": {
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
   "nSelected": "{count} 件を選択",
   "@nSelected": {
     "placeholders": {

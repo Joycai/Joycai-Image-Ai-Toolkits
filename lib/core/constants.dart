@@ -61,7 +61,6 @@ enum VeoAspectRatio {
 
 class AppConstants {
   // UI Defaults
-  static const double defaultThumbnailSize = 150.0;
   static const int maxConcurrency = 8;
   static const int workbenchTabCount = 6;
 
@@ -69,9 +68,6 @@ class AppConstants {
   // had no call sites at all — the app measured itself in literals instead.
   // Geometry now lives in `core/design_tokens.dart` (AppRadius / AppSize /
   // AppAlpha) and type sizes in the scale that `core/app_theme.dart` builds.
-
-  static const double minThumbnailSize = 80.0;
-  static const double maxThumbnailSize = 400.0;
 
   /// The key of [presetThemes] the app opens with, and falls back to when a
   /// stored preference no longer names a preset.
