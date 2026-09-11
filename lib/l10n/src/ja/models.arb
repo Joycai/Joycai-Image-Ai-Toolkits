@@ -388,7 +388,6 @@
   "moveUp": "上へ移動",
   "moveDown": "下へ移動",
   "channelReorderFootnote": "ホバーでハンドル表示 · ドラッグで並べ替え · 右クリックか Alt+↑/↓ でも可",
-  "channelReorderLockedNote": "検索中は並べ替えできません。一覧の一部しか表示されていないため、ドロップ位置が正しくなりません。検索をクリアすると戻ります。",
   "noModelsConfiguredHint": "「モデル取得」で検出するか、手動で追加してください。",
   "addModelManually": "手動で追加",
   "selectAChannelHint": "左でチャネルを選ぶと、ここにそのモデルが表示されます。",
@@ -401,5 +400,9 @@
   "deleteChannelBody": "これらのモデルを使うワークベンチの設定は「モデル未選択」になります。送信済みのタスクには影響しません。使用記録はモデル名で残ります。",
   "newFeeGroup": "新しいグループ",
   "cachePriceBlankPlaceholder": "空欄 = 入力価格と同じ",
-  "fetchFailedTitle": "接続に失敗しました"
+  "fetchFailedTitle": "接続に失敗しました",
+  "channelDefaultFeeGroup": "既定の料金グループ",
+  "channelDefaultFeeGroupHint": "このチャンネルに追加したモデルは、最初にこのグループに入ります",
+  "modelIdTakenTitle": "このチャンネルには同じ Model ID がすでにあります",
+  "modelIdTakenDesc": "Model ID はチャンネル内で一意である必要があります。ID を変えるか、すでにあるモデルを編集してください。"
 }

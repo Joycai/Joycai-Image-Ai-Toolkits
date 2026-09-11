@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
+import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/app_button.dart';
 
@@ -262,37 +264,58 @@ class PromptLibraryEmptyState extends StatelessWidget {
   }
 }
 
-/// Why dragging is off (`C1 · 1a` 底部通栏): a 36px warning strip across the
-/// foot of the list while a filter or search narrows it. Dragging a list with
-/// half its rows hidden has no honest drop position.
+/// Why dragging is off (`00d · 1a` 禁用): the warning strip under a list a
+/// filter or search narrows — the warning container at r6, the warning glyph,
+/// the reason in the warning ink, and where to go instead. Dragging a list
+/// with half its rows hidden has no honest drop position.
 class PromptReorderBlockedStrip extends StatelessWidget {
   const PromptReorderBlockedStrip({super.key});
 
+  /// The strip's height on one line; a reason that wraps grows it.
   static const double height = 36;
 
   @override
   Widget build(BuildContext context) {
     final semantic = context.semantic;
     final l10n = AppLocalizations.of(context)!;
+    final horizontal = Responsive.isMobile(context) ? 12.0 : 20.0;
 
-    return Container(
-      height: height,
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16),
-      color: semantic.warningContainer,
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, size: AppSize.iconSm, color: semantic.onWarningContainer),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              l10n.reorderDisabledWhileFiltered,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: semantic.onWarningContainer),
-            ),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        horizontal,
+        0,
+        horizontal,
+        AppSpace.s10 + MediaQuery.paddingOf(context).bottom,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: height, minWidth: double.infinity),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: semantic.warningContainer,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
-        ],
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Icon(Icons.warning_amber_rounded, size: AppSize.iconSm, color: semantic.warning),
+              ),
+              const SizedBox(width: AppSpace.s6),
+              Expanded(
+                child: Text(
+                  l10n.reorderOffFiltered,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: semantic.onWarningContainer,
+                        fontWeight: FontWeight.w400,
+                        height: AppType.tightHeight,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -344,53 +367,117 @@ class PromptDragHandle extends StatelessWidget {
   }
 }
 
-/// Decorates the card a drag has lifted (`C1 · 1a`): the accent edge and a
-/// deep soft shadow, drawn over the card and not over the gap below it.
-Widget promptDragProxyDecorator(Widget child, int index, Animation<double> animation, {double gap = 8}) {
-  return Builder(
-    builder: (context) {
-      final scheme = Theme.of(context).colorScheme;
-      final radius = BorderRadius.circular(AppRadius.control);
-      return Material(
-        type: MaterialType.transparency,
-        child: Stack(
-          children: [
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: gap,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: radius,
-                  boxShadow: [
-                    BoxShadow(
-                      color: scheme.shadow.withValues(alpha: 0.22),
-                      blurRadius: 28,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            child,
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: gap,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: radius,
-                    border: Border.all(color: scheme.primary),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
+/// `00d` 无障碍 · 键盘: moves a card one place with Ctrl+↑ / Ctrl+↓ while
+/// focus is anywhere inside it, and keeps focus on it.
+///
+/// A reorderable list keys each item by its index as well as its own key, so
+/// a moved card is built afresh and the control that had focus goes with the
+/// old one. This remembers which of the card's focusable controls had it — by
+/// position, since the rebuilt card has the same controls — and hands focus to
+/// that control once the card stands in its new place.
+class PromptReorderFocus {
+  final Map<Object, Set<FocusNode>> _groups = {};
+
+  void _attach(Object id, FocusNode node) => (_groups[id] ??= <FocusNode>{}).add(node);
+
+  void _detach(Object id, FocusNode node) {
+    final group = _groups[id];
+    if (group == null) return;
+    group.remove(node);
+    if (group.isEmpty) _groups.remove(id);
+  }
+
+  /// Runs [move] for the card [id], then puts focus back where it was in it.
+  void moveKeepingFocus(Object id, VoidCallback move) {
+    final primary = FocusManager.instance.primaryFocus;
+    int slot = -1;
+    if (primary != null) {
+      for (final node in _groups[id] ?? const <FocusNode>{}) {
+        slot = node.traversalDescendants.toList().indexOf(primary);
+        if (slot >= 0) break;
+      }
+    }
+    move();
+    if (slot < 0) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final node in _groups[id] ?? const <FocusNode>{}) {
+        final controls = node.traversalDescendants.toList();
+        if (slot < controls.length) {
+          controls[slot].requestFocus();
+          return;
+        }
+      }
+    });
+  }
+}
+
+/// Binds Ctrl+↑ / Ctrl+↓ over one card of a reorderable prompt list; see
+/// [PromptReorderFocus]. [onMove] takes -1 for up and 1 for down; null leaves
+/// the keys unbound (selection mode) without changing the tree, so focus is
+/// not lost when it toggles.
+class PromptReorderKeys extends StatefulWidget {
+  const PromptReorderKeys({
+    super.key,
+    required this.focus,
+    required this.id,
+    required this.onMove,
+    required this.child,
+  });
+
+  final PromptReorderFocus focus;
+  final Object id;
+  final ValueChanged<int>? onMove;
+  final Widget child;
+
+  @override
+  State<PromptReorderKeys> createState() => _PromptReorderKeysState();
+}
+
+class _PromptReorderKeysState extends State<PromptReorderKeys> {
+  final FocusNode _node = FocusNode(
+    debugLabel: 'PromptReorderKeys',
+    canRequestFocus: false,
+    skipTraversal: true,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    widget.focus._attach(widget.id, _node);
+  }
+
+  @override
+  void didUpdateWidget(PromptReorderKeys oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focus != widget.focus || oldWidget.id != widget.id) {
+      oldWidget.focus._detach(oldWidget.id, _node);
+      widget.focus._attach(widget.id, _node);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.focus._detach(widget.id, _node);
+    _node.dispose();
+    super.dispose();
+  }
+
+  void _move(int delta) {
+    final onMove = widget.onMove;
+    if (onMove == null) return;
+    widget.focus.moveKeepingFocus(widget.id, () => onMove(delta));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CallbackShortcuts(
+      bindings: widget.onMove == null
+          ? const <ShortcutActivator, VoidCallback>{}
+          : {
+              const SingleActivator(LogicalKeyboardKey.arrowUp, control: true): () => _move(-1),
+              const SingleActivator(LogicalKeyboardKey.arrowDown, control: true): () => _move(1),
+            },
+      child: Focus(focusNode: _node, child: widget.child),
+    );
+  }
 }

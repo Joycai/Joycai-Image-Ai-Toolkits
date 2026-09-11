@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:desktop_drop/desktop_drop.dart';
@@ -11,6 +12,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../services/file_permission_service.dart';
 import '../../state/gallery_state.dart';
+import '../../widgets/drag/app_drop_zone.dart';
 import '../../widgets/placeholders/permission_placeholder.dart';
 import 'widgets/image_card.dart';
 import 'widgets/preview/media_preview_dialog.dart';
@@ -76,8 +78,68 @@ class Gallery extends StatefulWidget {
 class _GalleryState extends State<Gallery> {
   bool _isDragging = false;
 
+  /// Paths the last drop from the operating system added, and the token that
+  /// rings their cards (`00d` 确认 「画廊新卡 --ok 环」).
+  Set<String> _confirmedPaths = const {};
+  Object? _confirmToken;
+  Timer? _confirmTimer;
+
+  /// How long the added paths stay marked: past the ring's own 600ms + M1
+  /// (1.2s with less motion), so clearing them never cuts a ring short.
+  static const Duration _confirmWindow = Duration(milliseconds: 1500);
+
   /// Grid gutter and inset (`A1` spec: 卡 gap 10).
   static const double _gap = AppSpace.s10;
+
+  @override
+  void dispose() {
+    _confirmTimer?.cancel();
+    super.dispose();
+  }
+
+  void _handleDrop(DropDoneDetails details, GalleryState galleryState) {
+    setState(() => _isDragging = false);
+    final List<AppImage> newFiles = [];
+    for (var file in details.files) {
+      if (AppConstants.isSupportedFile(file.path)) {
+        newFiles.add(AppImage(path: file.path, name: file.name));
+      }
+    }
+    if (newFiles.isEmpty) return;
+
+    final existing = {for (final image in galleryState.droppedImages) image.path};
+    galleryState.addDroppedFiles(newFiles);
+    galleryState.setViewMode(GalleryViewMode.temp);
+    _ringNewCards({
+      for (final file in newFiles)
+        if (!existing.contains(file.path)) file.path,
+    });
+  }
+
+  /// Rings the cards of [paths] once they are on screen.
+  ///
+  /// A ring fires on a *change* of its trigger, and a card mounted by this
+  /// drop has nothing to change from — so this frame mounts the new cards
+  /// with no trigger, and the next hands them the token.
+  void _ringNewCards(Set<String> paths) {
+    if (paths.isEmpty) return;
+    _confirmTimer?.cancel();
+    setState(() {
+      _confirmedPaths = paths;
+      _confirmToken = null;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _confirmToken = Object());
+      _confirmTimer = Timer(_confirmWindow, () {
+        if (!mounted) return;
+        setState(() {
+          _confirmedPaths = const {};
+          _confirmToken = null;
+        });
+      });
+    });
+  }
 
   /// How much of the column the floating chrome covers, from the layout that
   /// hosts this gallery. Zero outside a workbench layout (tests, previews).
@@ -97,25 +159,31 @@ class _GalleryState extends State<Gallery> {
     final chrome = _chromeInsets(context);
     final insets = chrome.copyWith(bottom: chrome.bottom + widget.extraBottomInset);
 
+    final l10n = AppLocalizations.of(context)!;
+
     return DropTarget(
-      onDragDone: (details) {
-        final List<AppImage> newFiles = [];
-        for (var file in details.files) {
-          if (AppConstants.isSupportedFile(file.path)) {
-            newFiles.add(AppImage(path: file.path, name: file.name));
-          }
-        }
-        if (newFiles.isNotEmpty) {
-          galleryState.addDroppedFiles(newFiles);
-          galleryState.setViewMode(GalleryViewMode.temp);
-        }
-      },
+      onDragDone: (details) => _handleDrop(details, galleryState),
       onDragEntered: (details) => setState(() => _isDragging = true),
       onDragExited: (details) => setState(() => _isDragging = false),
       child: Stack(
         children: [
           Positioned.fill(child: _buildImageGrid(context, galleryState, grid, insets)),
-          if (_isDragging) const Positioned.fill(child: IgnorePointer(child: _DropOverlay())),
+          // `00d · 1c` 整面投放: `--scrim` with no blur, between the floating
+          // toolbar and the bar below — as the frame draws it, so the
+          // chrome's glass never blurs a scrim.
+          if (_isDragging)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: insets.top,
+              bottom: insets.bottom,
+              child: IgnorePointer(
+                child: AppDropSurfaceOverlay(
+                  title: l10n.galleryDropTitle,
+                  subtitle: l10n.galleryDropSystemHint,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -235,9 +303,15 @@ class _GalleryState extends State<Gallery> {
                         final imageFile = imageGroup[index];
                         final globalIndex = globalIndexByPath[imageFile.path] ?? 0;
 
-                        // The ordinal, not a bool: a card also has to repaint
-                        // when its *place* in the selection shifts.
-                        return Selector<GalleryState, int>(
+                        // `00d` 确认: a card an OS drop just added rings once.
+                        // Always wrapped, so the ring sees its trigger change
+                        // rather than being mounted with it.
+                        return AppDropConfirmRing(
+                          trigger: _confirmedPaths.contains(imageFile.path) ? _confirmToken : null,
+                          child: SizedBox.expand(
+                            // The ordinal, not a bool: a card also has to
+                            // repaint when its *place* in the selection shifts.
+                            child: Selector<GalleryState, int>(
                           selector: (_, state) => state.selectionNumberOf(imageFile.path),
                           builder: (context, selectionNumber, _) {
                             final isVideo = AppConstants.isVideoFile(imageFile.path);
@@ -260,6 +334,8 @@ class _GalleryState extends State<Gallery> {
                                     },
                             );
                           },
+                            ),
+                          ),
                         );
                       },
                       childCount: grouped[path]!.length,
@@ -272,43 +348,6 @@ class _GalleryState extends State<Gallery> {
           ),
         );
       },
-    );
-  }
-}
-
-/// `A1 · 1c`: the whole column washed in the accent's 12% form under a 2px
-/// dashed accent edge, with what will happen to the drop.
-class _DropOverlay extends StatelessWidget {
-  const _DropOverlay();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    return CustomPaint(
-      foregroundPainter: _DashedRectPainter(color: scheme.primary, strokeWidth: 2, radius: 0),
-      child: ColoredBox(
-        color: scheme.accentTint,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.download, size: 28, color: scheme.primary),
-              const SizedBox(height: AppSpace.s6),
-              Text(
-                l10n.galleryDropTitle,
-                style: textTheme.titleLarge!.copyWith(color: scheme.onAccentTint),
-              ),
-              const SizedBox(height: AppSpace.s4),
-              Text(
-                l10n.galleryDropHint,
-                style: textTheme.bodySmall!.copyWith(color: scheme.onSurfaceVariant),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

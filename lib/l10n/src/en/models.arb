@@ -554,7 +554,6 @@
   "moveUp": "Move Up",
   "moveDown": "Move Down",
   "channelReorderFootnote": "Hover for the handle · drag to reorder · right-click or Alt+↑/↓ does the same",
-  "channelReorderLockedNote": "Reordering is off while searching: only part of the list is shown, so a drop position would be wrong. Clear the search to restore it.",
   "noModelsConfiguredHint": "Use Fetch Models to discover them, or add one by hand.",
   "addModelManually": "Add manually",
   "selectAChannelHint": "Pick a channel on the left to see its models here.",
@@ -588,5 +587,9 @@
   "deleteChannelBody": "Workbench settings using these models become \"No model selected\"; submitted tasks are unaffected. Usage records are kept by model name.",
   "newFeeGroup": "New Group",
   "cachePriceBlankPlaceholder": "Blank = input price",
-  "fetchFailedTitle": "Connection failed"
+  "fetchFailedTitle": "Connection failed",
+  "channelDefaultFeeGroup": "Default fee group",
+  "channelDefaultFeeGroupHint": "Models added to this channel start in this group",
+  "modelIdTakenTitle": "This channel already has this Model ID",
+  "modelIdTakenDesc": "A Model ID must be unique within a channel. Change the ID, or edit the model that already has it."
 }

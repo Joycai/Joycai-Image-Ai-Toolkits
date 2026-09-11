@@ -497,14 +497,6 @@
     }
   },
   "conflictApplyAndContinue": "套用並繼續",
-  "dragMoveHint": "移動 {count} 項 · 按住 Ctrl 複製",
-  "@dragMoveHint": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "showInSystem": "在系統中顯示",
   "newSubfolder": "新增子資料夾",
   "newFolderDefaultName": "新增資料夾",

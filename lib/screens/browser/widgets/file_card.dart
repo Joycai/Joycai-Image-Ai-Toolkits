@@ -9,6 +9,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/drag/app_drag_session.dart';
 import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
 import '../../workbench/widgets/preview/media_preview_dialog.dart' show previewHeroTag;
 import '../../workbench/widgets/preview/video_thumbnail.dart';
@@ -84,6 +85,22 @@ class _FileCardState extends State<FileCard> {
   String _dimensions = '';
   bool _isPressed = false;
   bool _isHovered = false;
+
+  /// This card's files are being dragged.
+  bool _dragging = false;
+
+  void _dragStarted() {
+    setState(() => _dragging = true);
+    AppDragSession.begin(widget.dragPayload);
+  }
+
+  /// Wired to every end callback: `onDragEnd` is skipped once the card has
+  /// been unmounted — a drop that moved its file away — and the session must
+  /// end regardless.
+  void _dragEnded() {
+    if (mounted && _dragging) setState(() => _dragging = false);
+    AppDragSession.end();
+  }
 
   @override
   void initState() {
@@ -330,10 +347,15 @@ class _FileCardState extends State<FileCard> {
       data: widget.dragPayload,
       dragAnchorStrategy: pointerDragAnchorStrategy,
       feedback: BrowserFileDragChip(count: widget.dragPayload.length),
-      // The card stays put and dims: a grid that reflows mid-drag loses the
-      // drop target the user was aiming at.
-      childWhenDragging: Opacity(opacity: 0.4, child: card),
-      child: card,
+      onDragStarted: _dragStarted,
+      onDragEnd: (_) => _dragEnded(),
+      onDragCompleted: _dragEnded,
+      onDraggableCanceled: (_, _) => _dragEnded(),
+      // `00d`: dragged out of the grid, the card stays where it is at half
+      // strength — it may not move at all, and a grid that reflows mid-drag
+      // loses the folder the user was aiming at. An Opacity in place rather
+      // than `childWhenDragging`, so the thumbnail is not rebuilt.
+      child: Opacity(opacity: _dragging ? 0.5 : 1, child: card),
     );
   }
 }

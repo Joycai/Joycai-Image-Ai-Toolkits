@@ -7,47 +7,9 @@ import 'package:path/path.dart' as p;
 
 import '../core/file_utils.dart';
 import '../models/browser_file.dart';
+import '../services/browser_file_scanner.dart';
 import '../services/database_service.dart';
 import '../services/file_permission_service.dart';
-
-List<Map<String, dynamic>> _scanFilesIsolate(List<String> paths) {
-  List<Map<String, dynamic>> results = [];
-  for (var path in paths) {
-    try {
-      final dir = Directory(path);
-      if (dir.existsSync()) {
-        for (var file in dir.listSync(recursive: false)) {
-          if (file is File) {
-            final stat = file.statSync();
-            final filePath = file.path;
-            final name = p.basename(filePath);
-            final ext = p.extension(filePath).toLowerCase();
-            
-            int categoryIndex = 5; // other
-            if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.avif'].contains(ext)) {
-              categoryIndex = 1; // image
-            } else if (['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v'].contains(ext)) {
-              categoryIndex = 2; // video
-            } else if (['.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac', '.wma'].contains(ext)) {
-              categoryIndex = 3; // audio
-            } else if (['.txt', '.md', '.json', '.xml', '.yaml', '.yml', '.srt', '.ass', '.vtt', '.csv', '.log'].contains(ext)) {
-              categoryIndex = 4; // text
-            }
-
-            results.add({
-              'path': filePath,
-              'name': name,
-              'categoryIndex': categoryIndex,
-              'size': stat.size,
-              'modified': stat.modified.millisecondsSinceEpoch,
-            });
-          }
-        }
-      }
-    } catch (_) {}
-  }
-  return results;
-}
 
 enum BrowserViewMode {
   grid,
@@ -255,6 +217,24 @@ class FileBrowserState extends ChangeNotifier {
   /// can show `B1a · 1d` 「扫描中」 instead of an empty state.
   bool isScanning = false;
 
+  /// How many files the running scan has found so far, for the scanning
+  /// state's count; 0 until the scan's first report.
+  ///
+  /// A notifier of its own rather than a field behind [notifyListeners]: it
+  /// ticks up to ten times a second, and each tick through the state would
+  /// rebuild the whole browser — including a grid already on screen while a
+  /// watcher-driven rescan runs underneath it.
+  final ValueNotifier<int> scanProgress = ValueNotifier<int>(0);
+
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    scanProgress.dispose();
+    super.dispose();
+  }
+
   Future<void> refresh() async {
     _refreshCounter++;
     final scan = _refreshCounter;
@@ -276,8 +256,16 @@ class FileBrowserState extends ChangeNotifier {
     }
 
     isScanning = true;
+    scanProgress.value = 0;
     notifyListeners();
-    final List<Map<String, dynamic>> rawFiles = await compute(_scanFilesIsolate, activeDirectories);
+    final List<Map<String, dynamic>> rawFiles = await scanBrowserFiles(
+      activeDirectories,
+      onProgress: (found) {
+        // A superseded scan keeps counting in its isolate; only the newest
+        // one's figure is shown.
+        if (!_disposed && scan == _refreshCounter) scanProgress.value = found;
+      },
+    );
     // Only the newest scan ends the scanning state; an older one landing
     // late must not clear it while the newer is still out.
     if (scan == _refreshCounter) isScanning = false;

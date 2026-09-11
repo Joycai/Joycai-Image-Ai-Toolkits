@@ -13,6 +13,7 @@ import '../../services/llm/context_budget.dart';
 import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/vendors/vendors.dart';
+import '../../services/model_id_uniqueness.dart';
 import '../../state/app_state.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
@@ -90,6 +91,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   /// Whether a field has been typed into, so an empty new form does not open
   /// covered in error strokes.
   bool _idTouched = false;
+
+  /// Whether the fee group was picked by hand. Until it is, a new model's
+  /// group follows its channel's default as the channel changes.
+  bool _feeGroupTouched = false;
   bool _contextTouched = false;
 
   /// The kinds offered, in order. Colours live in [modelTagAccent] only.
@@ -130,7 +135,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         widget.preChannelId ??
         (widget.appState.allChannels.isNotEmpty ? widget.appState.allChannels.first.id : null);
     tag = model?.tag ?? 'chat';
-    feeGroupId = model?.feeGroupId;
+    // A new model starts in its channel's default group (`D1b · 1e`); an
+    // existing one keeps what it has.
+    feeGroupId = model == null ? widget.appState.defaultFeeGroupFor(channelId) : model.feeGroupId;
     supportsStream = model?.supportsStream ?? true;
     supportsStandard = model?.supportsStandard ?? true;
     forceViewAllImages = model?.forceViewAllImages ?? false;
@@ -163,7 +170,15 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       contextMode != ContextWindowMode.specified || (_contextTokens ?? 0) > 0;
 
   /// The ID is the only required field — a blank name saves as the ID.
-  bool get _canSave => channelId != null && idCtrl.text.trim().isNotEmpty && _contextValid;
+  bool get _canSave => channelId != null && idCtrl.text.trim().isNotEmpty && !_idTaken && _contextValid;
+
+  /// The ID is already on the selected channel, under another model.
+  bool get _idTaken => isModelIdTaken(
+        widget.appState.allModels,
+        channelId: channelId,
+        modelId: idCtrl.text,
+        exceptId: widget.model?.id,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -614,6 +629,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   Widget _idField(AppFieldSize size, {bool autofocus = false, String? helper}) {
     final l10n = widget.l10n;
     final missing = _idTouched && idCtrl.text.trim().isEmpty;
+    // Shown at once, typed into or not: choosing a channel that already has
+    // this ID is as much a reason the dialog cannot save as typing it.
+    final taken = !missing && _idTaken;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -629,7 +647,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             mono: true,
             autofocus: autofocus,
             hint: 'e.g. gpt-4, gemini-1.5-pro',
-            error: missing,
+            error: missing || taken,
             onChanged: (_) => setState(() => _idTouched = true),
           ),
         ),
@@ -639,6 +657,14 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             child: ModelEditValidationNote(
               title: l10n.modelIdRequiredTitle,
               description: l10n.modelIdRequiredDesc,
+            ),
+          )
+        else if (taken)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpace.s6),
+            child: ModelEditValidationNote(
+              title: l10n.modelIdTakenTitle,
+              description: l10n.modelIdTakenDesc,
             ),
           )
         else if (helper != null)
@@ -677,7 +703,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       child: SearchablePickerField<int>(
         selected: channel == null ? null : channelPickerOption(channel),
         optionsBuilder: () => appState.allChannels.map(channelPickerOption).toList(),
-        onChanged: (v) => setState(() => channelId = v),
+        onChanged: (v) => setState(() {
+          channelId = v;
+          if (widget.model == null && !_feeGroupTouched) {
+            feeGroupId = widget.appState.defaultFeeGroupFor(v);
+          }
+        }),
         hint: l10n.selectAChannel,
         searchHint: l10n.searchChannels,
         dialogIcon: Icons.hub_outlined,
@@ -726,7 +757,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           AppDropdownItem(value: null, label: l10n.noFeeGroup, muted: true),
           for (final g in widget.appState.allPricingGroups) AppDropdownItem(value: g.id!, label: g.name),
         ],
-        onChanged: (v) => setState(() => feeGroupId = v),
+        onChanged: (v) => setState(() {
+          feeGroupId = v;
+          _feeGroupTouched = true;
+        }),
         prefixIcon: Icons.payments_outlined,
         size: size,
       ),

@@ -358,6 +358,16 @@ class AppState extends ChangeNotifier {
     return _models.where((m) => m.channelId == channelId).toList();
   }
 
+  /// The fee group a new model on [channelId] starts in: the channel's
+  /// default, while that group still exists.
+  int? defaultFeeGroupFor(int? channelId) {
+    if (channelId == null) return null;
+    final channel = _channels.cast<LLMChannel?>().firstWhere((c) => c?.id == channelId, orElse: () => null);
+    final groupId = channel?.defaultFeeGroupId;
+    if (groupId == null) return null;
+    return _pricingGroups.any((g) => g.id == groupId) ? groupId : null;
+  }
+
   @override
   void dispose() {
     galleryState.dispose();

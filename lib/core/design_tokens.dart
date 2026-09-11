@@ -220,10 +220,6 @@ extension AppAccent on ColorScheme {
   /// The shadow tinted glass casts in its own hue (`--p` at 35%).
   Color get accentGlow => primary.withValues(alpha: 0.35);
 
-  /// The aurora's faint second wash, bottom-right (`--p` at 7%). Belongs to
-  /// the 12% form, falling off to nothing.
-  Color get accentEcho => primary.withValues(alpha: 0.07);
-
   /// The accent *as text on a surface* — a text button, a link, a group
   /// caption, a live-status label.
   ///

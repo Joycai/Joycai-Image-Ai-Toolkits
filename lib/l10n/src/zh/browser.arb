@@ -511,14 +511,6 @@
     }
   },
   "conflictApplyAndContinue": "应用并继续",
-  "dragMoveHint": "移动 {count} 项 · 按住 Ctrl 复制",
-  "@dragMoveHint": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "showInSystem": "在系统中显示",
   "newSubfolder": "新建子文件夹",
   "newFolderDefaultName": "新建文件夹",

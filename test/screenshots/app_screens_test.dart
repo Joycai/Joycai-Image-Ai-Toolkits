@@ -12,6 +12,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
 import 'package:joycai_image_ai_toolkits/services/task_queue_service.dart';
 import 'package:joycai_image_ai_toolkits/services/task_list_ordering.dart';
 import 'package:joycai_image_ai_toolkits/widgets/task_capsule_monitor.dart';
@@ -206,7 +207,7 @@ void main() {
       );
 
   Finder menuItem(String label) => find.descendant(
-        of: find.byType(PopupMenuItem<void>),
+        of: find.byType(AppGlassMenu),
         matching: find.text(label),
       );
 

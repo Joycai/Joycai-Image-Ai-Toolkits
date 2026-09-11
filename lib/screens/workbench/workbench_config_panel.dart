@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_semantic_colors.dart';
@@ -20,6 +21,8 @@ import '../../widgets/app_switch.dart';
 import '../../widgets/dashed_border.dart';
 import '../../widgets/dialogs/library_dialog.dart';
 import '../../widgets/dialogs/prompt_history_dialog.dart';
+import '../../widgets/drag/app_drag_lift.dart';
+import '../../widgets/drag/app_reorder_gap.dart';
 import '../../widgets/markdown_editor.dart';
 import '../../widgets/scroll_edge_fade.dart';
 import 'model_selection_section.dart';
@@ -721,47 +724,69 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           const SizedBox(height: _kCardInnerGap),
           SizedBox(
             height: _kThumbSize,
-            child: ReorderableListView.builder(
-              scrollDirection: Axis.horizontal,
-              buildDefaultDragHandles: false,
+            // `00d · 1b`: the gap the strip opens is the drop target, 88 wide
+            // with 「放到第 3 位」 in it; the moved thumbnail confirms with the
+            // 600ms ring.
+            child: AppReorderGap(
               itemCount: selectedImages.length,
-              onReorderItem: (oldIndex, newIndex) {
-                Provider.of<AppState>(context, listen: false).galleryState.reorderSelectedImages(oldIndex, newIndex);
-              },
-              // `1a` 「拖动第 3 张」: the picked-up thumbnail rises 3px inside a
-              // 2px accent ring, and settles back as it is dropped.
-              proxyDecorator: (child, index, animation) {
-                if (index >= selectedImages.length) return child;
-                return AnimatedBuilder(
-                  animation: animation,
-                  builder: (context, _) => Material(
-                    type: MaterialType.transparency,
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.only(end: AppSpace.s6),
-                      child: _SelectionThumb(
-                        image: selectedImages[index],
-                        index: index,
-                        lift: AppMotion.enter.transform(animation.value),
+              axis: Axis.horizontal,
+              touch: touchDrag,
+              // The margin after each thumbnail, so the gap is the picture's
+              // own 88.
+              slotPadding: Directionality.of(context) == TextDirection.rtl
+                  ? const EdgeInsets.only(left: AppSpace.s6)
+                  : const EdgeInsets.only(right: AppSpace.s6),
+              builder: (context, gap) => ReorderableListView.builder(
+                scrollDirection: Axis.horizontal,
+                buildDefaultDragHandles: false,
+                itemCount: selectedImages.length,
+                // `1f` 到时：触觉 medium.
+                onReorderStart: gap.onReorderStart((_) {
+                  if (touchDrag) HapticFeedback.mediumImpact();
+                }),
+                onReorderItem: gap.onReorderItem((oldIndex, newIndex) {
+                  Provider.of<AppState>(context, listen: false).galleryState.reorderSelectedImages(oldIndex, newIndex);
+                }),
+                // `1b` 抬起: the picked-up thumbnail rises 3px inside a 2px
+                // accent ring — no 1px edge, which a picture's own edge would
+                // swallow — and settles back as it is dropped. With less motion
+                // (`1g`) the ring is simply there.
+                proxyDecorator: (child, index, animation) {
+                  if (index >= selectedImages.length) return child;
+                  return AnimatedBuilder(
+                    animation: animation,
+                    builder: (context, _) => Material(
+                      type: MaterialType.transparency,
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(end: AppSpace.s6),
+                        child: _SelectionThumb(
+                          image: selectedImages[index],
+                          index: index,
+                          lift: AppMotion.prefersReduced(context) ? 1 : AppMotion.enter.transform(animation.value),
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-              itemBuilder: (context, index) {
-                final image = selectedImages[index];
-                final thumb = _SelectionThumb(
-                  image: image,
-                  index: index,
-                  onRemove: () => Provider.of<AppState>(context, listen: false).toggleImageSelection(image),
-                );
-                return Padding(
-                  key: ValueKey(image.path),
-                  padding: const EdgeInsetsDirectional.only(end: AppSpace.s6),
-                  child: touchDrag
-                      ? ReorderableDelayedDragStartListener(index: index, child: thumb)
-                      : ReorderableDragStartListener(index: index, child: thumb),
-                );
-              },
+                  );
+                },
+                itemBuilder: (context, index) {
+                  final image = selectedImages[index];
+                  final thumb = _SelectionThumb(
+                    image: image,
+                    index: index,
+                    onRemove: () => Provider.of<AppState>(context, listen: false).toggleImageSelection(image),
+                  );
+                  return gap.item(
+                    key: ValueKey(image.path),
+                    index: index,
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(end: AppSpace.s6),
+                      child: touchDrag
+                          ? AppLongPressDragStartListener(index: index, child: thumb)
+                          : ReorderableDragStartListener(index: index, child: thumb),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
           if (selectedImages.length > 1) ...[

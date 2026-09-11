@@ -388,7 +388,6 @@
   "moveUp": "上移",
   "moveDown": "下移",
   "channelReorderFootnote": "懸停顯示把手 · 拖動重排 · 右鍵或 Alt+↑/↓ 同效",
-  "channelReorderLockedNote": "搜尋或篩選中不能重排——清單只顯示了一部分，落點是假的。清除後恢復。",
   "noModelsConfiguredHint": "用「取得模型」自動探索，或手動新增一個。",
   "addModelManually": "手動新增",
   "selectAChannelHint": "左側選一個渠道，這裡顯示它的模型。",
@@ -401,5 +400,9 @@
   "deleteChannelBody": "工作台裡正在引用這些模型的設定會變成「未選擇模型」，已提交的任務不受影響。用量紀錄依模型名稱保留。",
   "newFeeGroup": "新增組",
   "cachePriceBlankPlaceholder": "留空 = 同輸入價",
-  "fetchFailedTitle": "連線失敗"
+  "fetchFailedTitle": "連線失敗",
+  "channelDefaultFeeGroup": "預設費用群組",
+  "channelDefaultFeeGroupHint": "這個通道新加的模型預設歸到這個群組",
+  "modelIdTakenTitle": "該通道下已有同名 Model ID",
+  "modelIdTakenDesc": "同一個通道裡 ID 必須唯一。改 ID，或去編輯已存在的那一筆。"
 }

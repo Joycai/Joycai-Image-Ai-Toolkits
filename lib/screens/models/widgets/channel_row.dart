@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
@@ -6,6 +5,7 @@ import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
+import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/models/channel_avatar.dart';
 import '../../../widgets/models/model_tag_chip.dart';
 
@@ -35,38 +35,28 @@ class ChannelDragLift extends InheritedWidget {
   bool updateShouldNotify(ChannelDragLift oldDelegate) => oldDelegate.progress != progress;
 }
 
-/// The `proxyDecorator` for a reorderable channel list: the row paints its own
-/// lifted form (panel ground, 1px accent edge, `0 12 28` shadow, grip in the
-/// accent) once it finds a [ChannelDragLift] above it.
+/// The `proxyDecorator` for a reorderable channel list (`00d` 抬起态).
 ///
-/// Painted by the row rather than wrapped around it here, because the list
-/// item carries the row's 4px bottom margin and a decoration around the item
-/// would include it.
-Widget channelDragProxy(Widget child, int index, Animation<double> animation) {
-  return AnimatedBuilder(
+/// The row paints its own lifted ground, edge and accent grip once it finds a
+/// [ChannelDragLift] above it — its edge is the row's shape, which a box
+/// around the item would not match. The scale and the `0 12 28` shadow come
+/// from [appReorderLiftDecorator], inset by [slotPadding] (the row's 4px
+/// bottom margin) so they follow the row and not its slot.
+Widget channelDragProxy(
+  Widget child,
+  int index,
+  Animation<double> animation, {
+  EdgeInsets slotPadding = const EdgeInsets.only(bottom: AppSpace.s4),
+}) {
+  final lifted = AnimatedBuilder(
     animation: animation,
-    builder: (context, _) => ChannelDragLift(
-      progress: AppMotion.quick.transform(animation.value),
-      child: Material(type: MaterialType.transparency, child: child),
+    child: Material(type: MaterialType.transparency, child: child),
+    builder: (context, child) => ChannelDragLift(
+      progress: AppMotion.prefersReduced(context) ? 1 : AppMotion.enter.transform(animation.value),
+      child: child!,
     ),
   );
-}
-
-/// [ReorderableDelayedDragStartListener] at 300 ms instead of the framework's
-/// 500 ms long-press timeout: half a second of holding still before a row
-/// lifts reads as the app not having noticed the touch.
-class ChannelLongPressDragListener extends ReorderableDelayedDragStartListener {
-  const ChannelLongPressDragListener({
-    super.key,
-    required super.index,
-    required super.child,
-  });
-
-  @override
-  MultiDragGestureRecognizer createRecognizer() => DelayedMultiDragGestureRecognizer(
-        delay: const Duration(milliseconds: 300),
-        debugOwner: this,
-      );
+  return appReorderLiftDecorator(lifted, index, animation, slotPadding: slotPadding, edge: false);
 }
 
 /// One channel (`D1a · 1a`): the identity plate, the name, and a subline
@@ -75,7 +65,7 @@ class ChannelLongPressDragListener extends ReorderableDelayedDragStartListener {
 /// Hover is the row's own state, never the screen's: on the screen it rebuilt
 /// both columns on every pointer crossing. At rest a draggable row and a
 /// locked or single one are pixel-identical (`1b`) — the grip slot is always
-/// reserved and only filled on hover.
+/// reserved and the grip fades in on hover (`00d · 1a`, M1).
 class ChannelRow extends StatefulWidget {
   const ChannelRow({
     super.key,
@@ -107,7 +97,7 @@ class ChannelRow extends StatefulWidget {
   /// Right-click, with the pointer's global position.
   final ValueChanged<Offset>? onContextMenu;
 
-  /// A trailing control in place of the grip slot — the phone row's ⋮.
+  /// A trailing control in place of the grip slot — the row's ⋮.
   final Widget? trailing;
 
   @override
@@ -136,9 +126,13 @@ class _ChannelRowState extends State<ChannelRow> {
             : _hovering
                 ? scheme.surfaceContainer
                 : (widget.filled ? scheme.surface : Colors.transparent);
-    final BorderSide side = lifted || selected
-        ? BorderSide(color: scheme.primary)
-        : (widget.filled ? BorderSide(color: scheme.outlineVariant) : BorderSide.none);
+    // `00d` 抬起: the edge turns from the hairline to the accent as the row
+    // lifts.
+    final BorderSide side = lifted
+        ? BorderSide(color: Color.lerp(scheme.outlineVariant, scheme.primary, lift)!)
+        : selected
+            ? BorderSide(color: scheme.primary)
+            : (widget.filled ? BorderSide(color: scheme.outlineVariant) : BorderSide.none);
     final radius = BorderRadius.circular(AppRadius.control);
 
     final bool showHandle = widget.handle != ChannelHandle.none && (_hovering || lifted);
@@ -174,20 +168,28 @@ class _ChannelRowState extends State<ChannelRow> {
 
     final Widget handleSlot = SizedBox(
       width: AppSize.iconMd,
-      child: showHandle
-          ? MouseRegion(
-              onEnter: (_) => setState(() => _handleHovering = true),
-              onExit: (_) => setState(() => _handleHovering = false),
-              child: Tooltip(
-                message: locked ? l10n.reorderDisabledWhileFiltered : l10n.channelReorderHandleTooltip,
-                child: Icon(
-                  locked ? Icons.lock_outline : Icons.drag_indicator,
-                  size: AppSize.iconMd,
-                  color: handleColor,
+      child: widget.handle == ChannelHandle.none
+          ? null
+          : AnimatedOpacity(
+              opacity: showHandle ? 1 : 0,
+              duration: AppMotion.durationOf(context, AppMotion.hover),
+              curve: AppMotion.quick,
+              child: IgnorePointer(
+                ignoring: !showHandle,
+                child: MouseRegion(
+                  onEnter: (_) => setState(() => _handleHovering = true),
+                  onExit: (_) => setState(() => _handleHovering = false),
+                  child: Tooltip(
+                    message: locked ? l10n.reorderDisabledWhileFiltered : l10n.channelReorderHandleTooltip,
+                    child: Icon(
+                      locked ? Icons.lock_outline : Icons.drag_indicator,
+                      size: AppSize.iconMd,
+                      color: handleColor,
+                    ),
+                  ),
                 ),
               ),
-            )
-          : null,
+            ),
     );
 
     final content = Padding(
@@ -220,35 +222,22 @@ class _ChannelRowState extends State<ChannelRow> {
       ),
     );
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: lifted
-            ? [
-                BoxShadow(
-                  color: scheme.shadow.withValues(alpha: 0.28 * lift),
-                  blurRadius: 28,
-                  offset: const Offset(0, 12),
-                ),
-              ]
-            : null,
-      ),
-      child: Material(
-        color: background,
-        shape: RoundedRectangleBorder(borderRadius: radius, side: side),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: widget.onTap,
-          onSecondaryTapUp: widget.onContextMenu == null
-              ? null
-              : (details) => widget.onContextMenu!(details.globalPosition),
-          onHover: (hovering) {
-            if (hovering != _hovering) setState(() => _hovering = hovering);
-          },
-          hoverColor: Colors.transparent,
-          mouseCursor: widget.handle == ChannelHandle.drag ? SystemMouseCursors.grab : SystemMouseCursors.click,
-          child: SizedBox(height: widget.dense ? 52 : 56, child: content),
-        ),
+    // The lifted shadow is the proxy decorator's, not the row's.
+    return Material(
+      color: background,
+      shape: RoundedRectangleBorder(borderRadius: radius, side: side),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: widget.onTap,
+        onSecondaryTapUp: widget.onContextMenu == null
+            ? null
+            : (details) => widget.onContextMenu!(details.globalPosition),
+        onHover: (hovering) {
+          if (hovering != _hovering) setState(() => _hovering = hovering);
+        },
+        hoverColor: Colors.transparent,
+        mouseCursor: widget.handle == ChannelHandle.drag ? SystemMouseCursors.grab : SystemMouseCursors.click,
+        child: SizedBox(height: widget.dense ? 52 : 56, child: content),
       ),
     );
   }

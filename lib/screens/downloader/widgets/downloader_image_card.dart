@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +10,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../../services/web_scraper_service.dart';
 import '../../../widgets/app_snackbar.dart';
-import '../../../widgets/glass/app_glass.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 
 /// Inset of the tick and the meta plate from the card's edge (`left/top 8`).
 const double _inset = 8;
@@ -81,11 +80,12 @@ class _DownloaderImageCardState extends State<DownloaderImageCard> {
   void _openMenu(Offset position) {
     final l10n = AppLocalizations.of(context)!;
     final url = widget.image.url;
-    _showGlassMenu(
+    showAppGlassMenu(
       context,
       position: position,
-      items: [
-        _GlassMenuItem(
+      width: 200,
+      entries: [
+        AppGlassMenuItem(
           icon: Icons.open_in_new,
           label: l10n.openRawImage,
           onSelected: () {
@@ -93,7 +93,7 @@ class _DownloaderImageCardState extends State<DownloaderImageCard> {
             if (uri != null) FileUtils.openUri(uri);
           },
         ),
-        _GlassMenuItem(
+        AppGlassMenuItem(
           icon: Icons.content_copy,
           label: l10n.copyImageUrl,
           onSelected: () {
@@ -218,145 +218,6 @@ class _TickCircle extends StatelessWidget {
         border: selected ? null : Border.all(color: Colors.white.withValues(alpha: 0.45)),
       ),
       child: selected ? Icon(Icons.check, size: AppSize.iconSm, color: scheme.onPrimary) : null,
-    );
-  }
-}
-
-class _GlassMenuItem {
-  const _GlassMenuItem({required this.icon, required this.label, required this.onSelected});
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onSelected;
-}
-
-/// Shows a 200px float-grade glass menu at [position] (`B3 · 1c` 「结果卡右键
-/// G2 200」).
-///
-/// A route of its own rather than [showMenu]: Material's popup route draws
-/// behind its own clip, where a backdrop filter cannot reach the page.
-Future<void> _showGlassMenu(
-  BuildContext context, {
-  required Offset position,
-  required List<_GlassMenuItem> items,
-}) {
-  return Navigator.of(context).push(_GlassMenuRoute(
-    position: position,
-    items: items,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    duration: AppMotion.durationOf(context, AppMotion.state),
-  ));
-}
-
-class _GlassMenuRoute extends PopupRoute<void> {
-  _GlassMenuRoute({
-    required this.position,
-    required this.items,
-    required this.barrierLabel,
-    required Duration duration,
-  }) : _duration = duration;
-
-  final Offset position;
-  final List<_GlassMenuItem> items;
-  final Duration _duration;
-
-  static const double _width = 200;
-  static const double _pad = AppSpace.s6;
-  static const double _row = AppSize.compact;
-
-  @override
-  final String barrierLabel;
-
-  @override
-  Color? get barrierColor => null;
-
-  @override
-  bool get barrierDismissible => true;
-
-  @override
-  Duration get transitionDuration => _duration;
-
-  @override
-  Duration get reverseTransitionDuration => _duration * AppMotion.exitFactor;
-
-  @override
-  Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
-    final size = MediaQuery.sizeOf(context);
-    final height = _pad * 2 + items.length * _row;
-    final double left = position.dx.clamp(_pad, math.max(_pad, size.width - _width - _pad)).toDouble();
-    final double top = position.dy.clamp(_pad, math.max(_pad, size.height - height - _pad)).toDouble();
-
-    return Stack(
-      children: [
-        Positioned(
-          left: left,
-          top: top,
-          width: _width,
-          child: FadeTransition(
-            opacity: CurvedAnimation(parent: animation, curve: AppMotion.enter),
-            child: AppGlass(
-              grade: GlassGrade.float,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              padding: const EdgeInsets.all(_pad),
-              child: Material(
-                type: MaterialType.transparency,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final (i, item) in items.indexed) _GlassMenuRow(item: item, autofocus: i == 0),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _GlassMenuRow extends StatelessWidget {
-  const _GlassMenuRow({required this.item, required this.autofocus});
-
-  final _GlassMenuItem item;
-  final bool autofocus;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final ink = GlassInk.maybeOf(context)?.ink ?? scheme.onSurface;
-    return InkWell(
-      autofocus: autofocus,
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      hoverColor: ink.withValues(alpha: 0.08),
-      focusColor: ink.withValues(alpha: 0.08),
-      splashColor: ink.withValues(alpha: 0.10),
-      highlightColor: Colors.transparent,
-      onTap: () {
-        Navigator.of(context).pop();
-        item.onSelected();
-      },
-      child: SizedBox(
-        height: _GlassMenuRoute._row,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Row(
-            children: [
-              Icon(item.icon, size: AppSize.iconMd, color: ink),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(color: ink),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

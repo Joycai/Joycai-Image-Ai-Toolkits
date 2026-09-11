@@ -7,7 +7,7 @@ import '../../../services/file_transfer_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/file_staging_state.dart';
 import '../staging_paste_flow.dart';
-import 'folder_glass_menu.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 
 /// The folder context menu in the browser's directory tree — `B1b 1d`: a
 /// 250-wide float-grade glass menu in groups of look · paste · show · manage ·
@@ -41,79 +41,80 @@ void showFolderContextMenu({
   final staged = staging.count;
   final manages = onNewSubfolder != null || onRename != null || onDelete != null;
 
-  showFolderGlassMenu(
-    context: context,
+  showAppGlassMenu(
+    context,
     position: position,
-    entries: <Widget>[
-      folderGlassMenuItem(
+    width: 250,
+    entries: <AppGlassMenuEntry>[
+      AppGlassMenuItem(
         icon: Icons.filter_alt_outlined,
         label: l10n.onlyThisDirectory,
-        onTap: () => appState.fileBrowserState.setExclusiveDirectory(path),
+        onSelected: () => appState.fileBrowserState.setExclusiveDirectory(path),
       ),
-      folderGlassMenuItem(
+      AppGlassMenuItem(
         icon: Icons.deselect,
         label: l10n.deselectAllDirectories,
-        onTap: () => appState.fileBrowserState.clearActiveDirectories(),
+        onSelected: () => appState.fileBrowserState.clearActiveDirectories(),
       ),
       if (staged > 0) ...[
-        const FolderGlassMenuDivider(),
+        const AppGlassMenuDivider(),
         // The count is in the label because this menu commits immediately —
         // there is no second screen between the click and the files moving,
         // so the number of files has to be on the thing being clicked.
-        folderGlassMenuItem(
+        AppGlassMenuItem(
           icon: Icons.drive_file_move_outlined,
           label: l10n.moveCountHere(staged),
-          onTap: () => runStagingPaste(context, mode: FileTransferMode.move, destination: path),
+          onSelected: () => runStagingPaste(context, mode: FileTransferMode.move, destination: path),
         ),
-        folderGlassMenuItem(
+        AppGlassMenuItem(
           icon: Icons.content_copy_outlined,
           label: l10n.copyCountHere(staged),
-          onTap: () => runStagingPaste(context, mode: FileTransferMode.copy, destination: path),
+          onSelected: () => runStagingPaste(context, mode: FileTransferMode.copy, destination: path),
         ),
       ],
-      const FolderGlassMenuDivider(),
-      folderGlassMenuItem(
+      const AppGlassMenuDivider(),
+      AppGlassMenuItem(
         icon: Icons.open_in_new,
         label: l10n.showInSystem,
-        onTap: () => FileUtils.openPath(path),
+        onSelected: () => FileUtils.openPath(path),
       ),
       if (manages) ...[
-        const FolderGlassMenuDivider(),
-        folderGlassMenuItem(
+        const AppGlassMenuDivider(),
+        AppGlassMenuItem(
           icon: Icons.create_new_folder_outlined,
           label: l10n.newSubfolder,
-          onTap: onNewSubfolder ?? () {},
+          onSelected: onNewSubfolder ?? () {},
           enabled: onNewSubfolder != null,
         ),
-        folderGlassMenuItem(
+        AppGlassMenuItem(
           icon: Icons.drive_file_rename_outline,
           label: l10n.rename,
-          shortcut: 'F2',
-          onTap: onRename ?? () {},
+          trailing: 'F2',
+          onSelected: onRename ?? () {},
           enabled: onRename != null,
         ),
-        folderGlassMenuItem(
+        AppGlassMenuItem(
           icon: Icons.drive_file_move_outline,
           label: l10n.moveFolderTo,
-          onTap: onMoveTo ?? () {},
+          onSelected: onMoveTo ?? () {},
           enabled: !isRoot && onMoveTo != null,
-          disabledNote: isRoot ? l10n.rootCannotMove : null,
+          note: isRoot ? l10n.rootCannotMove : null,
         ),
-        const FolderGlassMenuDivider(),
+        const AppGlassMenuDivider(),
         if (isRoot)
-          folderGlassMenuItem(
+          AppGlassMenuItem(
             icon: Icons.playlist_remove,
             label: l10n.removeFromList,
-            onTap: onRemoveFromList ?? () {},
+            onSelected: onRemoveFromList ?? () {},
             enabled: onRemoveFromList != null,
           )
         else
-          folderGlassMenuItem(
+          AppGlassMenuItem(
             icon: Icons.delete_outline,
             label: l10n.delete,
-            shortcut: 'Delete',
+            trailing: 'Delete',
             danger: true,
-            onTap: onDelete ?? () {},
+            onSelected: onDelete ?? () {},
             enabled: onDelete != null,
           ),
       ],

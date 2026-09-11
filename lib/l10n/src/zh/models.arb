@@ -437,7 +437,6 @@
   "moveUp": "上移",
   "moveDown": "下移",
   "channelReorderFootnote": "悬停显示把手 · 拖动重排 · 右键或 Alt+↑/↓ 同效",
-  "channelReorderLockedNote": "搜索或筛选中不能重排——列表只显示了一部分，落点是假的。清除后恢复。",
   "noModelsConfiguredHint": "用「获取模型」自动发现，或手动添加一个。",
   "addModelManually": "手动添加",
   "selectAChannelHint": "左侧选一个渠道，这里显示它的模型。",
@@ -450,5 +449,9 @@
   "deleteChannelBody": "工作台里正在引用这些模型的配置会变成「未选择模型」，已提交的任务不受影响。用量记录按模型名保留。",
   "newFeeGroup": "新建组",
   "cachePriceBlankPlaceholder": "留空 = 同输入价",
-  "fetchFailedTitle": "连接失败"
+  "fetchFailedTitle": "连接失败",
+  "channelDefaultFeeGroup": "默认费率组",
+  "channelDefaultFeeGroupHint": "这个渠道新加的模型默认归到这个组",
+  "modelIdTakenTitle": "该渠道下已有同名 Model ID",
+  "modelIdTakenDesc": "同一个渠道里 ID 必须唯一。改 ID，或去编辑已存在的那一条。"
 }

@@ -10,9 +10,11 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_search_field.dart';
+import '../../../widgets/drag/app_drag_lift.dart';
+import '../../../widgets/drag/app_reorder_gap.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import 'channel_row.dart';
-import 'glass_context_menu.dart';
 import 'models_actions.dart';
 import 'models_controls.dart';
 
@@ -20,9 +22,10 @@ import 'models_controls.dart';
 ///
 /// A 56 header with the counts and Add Channel, the search field, the rows,
 /// and the pinned fee-management entry. Reordering has three equal entries —
-/// drag (hover grip, whole row), the context menu, and Alt+↑/↓ (bound by the
-/// screen around this column) — and all three are off while [reorderLocked],
-/// with the reason stated under the search field.
+/// drag (hover grip, whole row), the context menu, and Alt+↑/↓ or Ctrl+↑/↓
+/// (bound by the screen around this column). While [reorderLocked] the drag is off, each row
+/// trades its grip for a ⋮ opening that menu, and a warning strip at the foot
+/// of the rows says so (`00d · 1a` 禁用).
 class ChannelColumn extends StatelessWidget {
   const ChannelColumn({
     super.key,
@@ -88,12 +91,12 @@ class ChannelColumn extends StatelessWidget {
             ),
           ),
         ),
+        Expanded(child: _buildList(context, l10n, all, canReorder)),
         if (reorderLocked && multiple)
           Padding(
             padding: const EdgeInsets.fromLTRB(AppSpace.s10, 0, AppSpace.s10, AppSpace.s10),
-            child: _ReorderLockedNote(message: l10n.channelReorderLockedNote),
+            child: _ReorderLockedNote(message: l10n.reorderOffFiltered),
           ),
-        Expanded(child: _buildList(context, l10n, all, canReorder)),
         FeeManagementEntry(
           groupCount: appState.allPricingGroups.length,
           onTap: actions.openFeeManager,
@@ -111,70 +114,88 @@ class ChannelColumn extends StatelessWidget {
     }
 
     final scheme = Theme.of(context).colorScheme;
-    final handle = all.length <= 1
-        ? ChannelHandle.none
-        : (reorderLocked ? ChannelHandle.locked : ChannelHandle.drag);
+    final bool locked = reorderLocked && all.length > 1;
+    final handle = canReorder ? ChannelHandle.drag : ChannelHandle.none;
 
-    return ReorderableListView.builder(
-      padding: const EdgeInsets.fromLTRB(AppSpace.s10, 0, AppSpace.s10, AppSpace.s10),
+    // `00d · 1a`: the gap the rail opens is the drop target, and says where.
+    return AppReorderGap(
       itemCount: visible.length,
-      // The grip is ours (hover-revealed, whole row draggable), not the
-      // framework's trailing handles.
-      buildDefaultDragHandles: false,
-      onReorderItem: (oldIndex, newIndex) {
-        // Only reachable unfiltered, where `visible` is the stored order.
-        if (canReorder) actions.moveChannel(oldIndex, newIndex);
-      },
-      onReorderStart: (_) {
-        if (touch) HapticFeedback.selectionClick();
-      },
-      proxyDecorator: channelDragProxy,
-      // The three reorder entries, stated once at the list's end (`1a`).
-      footer: canReorder && !touch
-          ? Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpace.s6, AppSpace.s6, AppSpace.s6, 0),
-              child: Text(
-                l10n.channelReorderFootnote,
-                style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
-              ),
-            )
-          : null,
-      itemBuilder: (context, index) {
-        final channel = visible[index];
-        final storedIndex = all.indexWhere((c) => c.id == channel.id);
+      touch: touch,
+      // The row's own bottom margin, so the gap is the row's height.
+      slotPadding: const EdgeInsets.only(bottom: AppSpace.s4),
+      builder: (context, gap) => ReorderableListView.builder(
+        padding: const EdgeInsets.fromLTRB(AppSpace.s10, 0, AppSpace.s10, AppSpace.s10),
+        itemCount: visible.length,
+        // The grip is ours (hover-revealed, whole row draggable), not the
+        // framework's trailing handles.
+        buildDefaultDragHandles: false,
+        onReorderItem: gap.onReorderItem((oldIndex, newIndex) {
+          // Only reachable unfiltered, where `visible` is the stored order.
+          if (canReorder) actions.moveChannel(oldIndex, newIndex);
+        }),
+        // `1f` 到时：触觉 medium + 抬起.
+        onReorderStart: gap.onReorderStart((_) {
+          if (touch) HapticFeedback.mediumImpact();
+        }),
+        proxyDecorator: channelDragProxy,
+        // The three reorder entries, stated once at the list's end (`1a`).
+        footer: canReorder && !touch
+            ? Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpace.s6, AppSpace.s6, AppSpace.s6, 0),
+                child: Text(
+                  l10n.channelReorderFootnote,
+                  style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
+                ),
+              )
+            : null,
+        itemBuilder: (context, index) {
+          final channel = visible[index];
+          final storedIndex = all.indexWhere((c) => c.id == channel.id);
 
-        final row = Padding(
-          padding: const EdgeInsets.only(bottom: AppSpace.s4),
-          child: ChannelRow(
-            channel: channel,
-            modelCount: appState.getModelsForChannel(channel.id).length,
-            selected: channel.id == selectedId,
-            dense: dense,
-            handle: handle,
-            onTap: () => onSelect(channel),
-            onContextMenu: (position) => showGlassContextMenu(
-              context,
-              position: position,
-              items: channelMenuItems(
-                context,
+          // Moves act on the stored order ([storedIndex] of all channels), so
+          // they stay honest while a search hides the neighbours — which is
+          // why the menu is the one way to reorder a filtered rail (`00d`
+          // 禁用: 「用行尾菜单的上移 / 下移」).
+          List<AppGlassMenuEntry> menu(BuildContext anchor) => channelMenuItems(
+                anchor,
                 actions: actions,
                 channel: channel,
                 index: storedIndex,
                 count: all.length,
-                reorderLocked: reorderLocked,
-              ),
-            ),
-          ),
-        );
+                reorderLocked: false,
+              );
 
-        if (!canReorder) return KeyedSubtree(key: ValueKey(channel.id), child: row);
-        // Whole-row drag, so the pointer never has to find the grip. Touch
-        // has no hover to reveal it and no cursor to change, so there the
-        // gesture is an explicit long press.
-        return touch
-            ? ChannelLongPressDragListener(key: ValueKey(channel.id), index: index, child: row)
-            : ReorderableDragStartListener(key: ValueKey(channel.id), index: index, child: row);
-      },
+          final row = Padding(
+            padding: const EdgeInsets.only(bottom: AppSpace.s4),
+            child: ChannelRow(
+              channel: channel,
+              modelCount: appState.getModelsForChannel(channel.id).length,
+              selected: channel.id == selectedId,
+              dense: dense,
+              handle: handle,
+              onTap: () => onSelect(channel),
+              onContextMenu: (position) => showAppGlassMenu(
+                context,
+                position: position,
+                entries: menu(context),
+              ),
+              // `00d · 1a` 禁用: the grip is withdrawn and the row menu takes
+              // its place.
+              trailing: locked ? Builder(builder: (anchor) => _RowMenuButton(anchor: anchor, entries: menu)) : null,
+            ),
+          );
+
+          // Whole-row drag, so the pointer never has to find the grip. Touch
+          // has no hover to reveal it and no cursor to change, so there the
+          // gesture is an explicit 300ms long press.
+          final Widget child = !canReorder
+              ? row
+              : touch
+                  ? AppLongPressDragStartListener(index: index, child: row)
+                  : ReorderableDragStartListener(index: index, child: row);
+          return gap.item(key: ValueKey(channel.id), index: index, child: child);
+        },
+      ),
     );
   }
 }
@@ -245,7 +266,41 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// `D1a · 1b` 禁用说明条: why the grip turned into a lock.
+/// The ⋮ a filtered rail's row carries in its grip's place: a 28 glyph in the
+/// tertiary ink, opening the row menu under itself.
+class _RowMenuButton extends StatelessWidget {
+  const _RowMenuButton({required this.anchor, required this.entries});
+
+  final BuildContext anchor;
+  final List<AppGlassMenuEntry> Function(BuildContext anchor) entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return SizedBox(
+      width: AppSize.compact,
+      height: AppSize.compact,
+      child: IconButton(
+        icon: const Icon(Icons.more_vert, size: AppSize.iconMd),
+        tooltip: l10n.more,
+        color: Theme.of(context).colorScheme.outline,
+        padding: EdgeInsets.zero,
+        style: IconButton.styleFrom(
+          minimumSize: const Size(AppSize.compact, AppSize.compact),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+        ),
+        onPressed: () => showAppGlassMenu(
+          anchor,
+          position: appGlassMenuPositionBelow(anchor),
+          entries: entries(anchor),
+        ),
+      ),
+    );
+  }
+}
+
+/// `00d · 1a` 禁用说明条: why the rail will not take a drag — the warning
+/// container at r6, the warning glyph in the warning colour, 11px warning ink.
 class _ReorderLockedNote extends StatelessWidget {
   const _ReorderLockedNote({required this.message});
 
@@ -256,21 +311,25 @@ class _ReorderLockedNote extends StatelessWidget {
     final semantic = context.semantic;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: 8),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: semantic.warningContainer,
-        borderRadius: BorderRadius.circular(AppRadius.control),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, size: AppSize.iconSm, color: semantic.onWarningContainer),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(Icons.warning_amber_rounded, size: AppSize.iconSm, color: semantic.warning),
+          ),
           const SizedBox(width: AppSpace.s6),
           Expanded(
             child: Text(
               message,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: semantic.onWarningContainer,
+                    fontWeight: FontWeight.w400,
                     height: AppType.tightHeight,
                   ),
             ),

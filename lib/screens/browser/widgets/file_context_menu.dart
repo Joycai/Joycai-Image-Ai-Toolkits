@@ -14,7 +14,7 @@ import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart';
-import 'browser_glass_menu.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 
 /// The file context menu — `B1a · 1b`: G2 glass, 230 wide, four groups.
 ///
@@ -44,12 +44,12 @@ void showFileContextMenu({
   final bool allStaged = targets.every((f) => staging.contains(f.path));
   final String? countHint = targets.length > 1 ? '${targets.length}' : null;
 
-  showBrowserGlassMenu(
-    context: context,
+  showAppGlassMenu(
+    context,
     position: position,
     entries: [
       if (isImage)
-        BrowserMenuItem(
+        AppGlassMenuItem(
           icon: Icons.visibility_outlined,
           label: l10n.openInPreview,
           trailing: 'Enter',
@@ -69,13 +69,13 @@ void showFileContextMenu({
           },
         ),
       if (canOpenWithSystem)
-        BrowserMenuItem(
+        AppGlassMenuItem(
           icon: Icons.open_in_new,
           label: l10n.openWithSystemDefault,
           onSelected: () => FileUtils.openPath(file.path),
         ),
-      if (isImage || canOpenWithSystem) const BrowserMenuDivider(),
-      BrowserMenuItem(
+      if (isImage || canOpenWithSystem) const AppGlassMenuDivider(),
+      AppGlassMenuItem(
         icon: isPartOfSelection ? Icons.remove_circle_outline : Icons.add_circle_outline,
         label: isPartOfSelection ? l10n.removeFromSelection : l10n.addToSelection,
         onSelected: () => browser.toggleSelection(file),
@@ -83,7 +83,7 @@ void showFileContextMenu({
       // The second way into staging, beside the floating bar's: the bar only
       // exists once something is selected, and one right-click is the faster
       // path for one file.
-      BrowserMenuItem(
+      AppGlassMenuItem(
         icon: allStaged ? Icons.unarchive_outlined : Icons.inbox_outlined,
         label: allStaged ? l10n.removeFromStaging : l10n.addToStaging,
         trailing: countHint,
@@ -95,8 +95,8 @@ void showFileContextMenu({
           }
         },
       ),
-      const BrowserMenuDivider(),
-      BrowserMenuItem(
+      const AppGlassMenuDivider(),
+      AppGlassMenuItem(
         icon: Icons.edit_outlined,
         label: l10n.rename,
         trailing: 'F2',
@@ -109,18 +109,18 @@ void showFileContextMenu({
           );
         },
       ),
-      BrowserMenuItem(
+      AppGlassMenuItem(
         icon: Icons.content_copy_outlined,
         label: l10n.copyFilename,
         onSelected: () => Clipboard.setData(ClipboardData(text: file.name)),
       ),
-      const BrowserMenuDivider(),
-      BrowserMenuItem(
+      const AppGlassMenuDivider(),
+      AppGlassMenuItem(
         icon: Icons.folder_open_outlined,
         label: l10n.openInFolder,
         onSelected: () => FileUtils.openFolder(file.path),
       ),
-      BrowserMenuItem(
+      AppGlassMenuItem(
         icon: Icons.ios_share,
         label: targets.length > 1 ? l10n.shareFiles(targets.length) : l10n.share,
         onSelected: () async {

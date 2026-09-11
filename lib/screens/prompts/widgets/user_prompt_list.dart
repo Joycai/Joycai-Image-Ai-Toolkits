@@ -6,12 +6,15 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../services/database_service.dart';
 import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/drag/app_drag_lift.dart';
+import '../../../widgets/drag/app_reorder_gap.dart';
 import '../../../widgets/prompt_card.dart';
 import '../prompt_reorder.dart';
 import 'prompt_library_parts.dart';
 import 'prompt_selection_capsule.dart';
 
-/// Gap under each card; the drag proxy leaves it out of its edge.
+/// Gap under each card; the lifted card, the drop gap and the confirmation
+/// ring all leave it out.
 const double _kCardGap = 8;
 
 class UserPromptList extends StatefulWidget {
@@ -54,6 +57,7 @@ class UserPromptList extends StatefulWidget {
 class _UserPromptListState extends State<UserPromptList> {
   final DatabaseService _db = DatabaseService();
   final Set<int> _expandedPromptIds = {};
+  final PromptReorderFocus _reorderFocus = PromptReorderFocus();
 
   /// The order just written, shown until the reload carrying it arrives, so a
   /// dropped card does not snap back for a frame.
@@ -98,14 +102,33 @@ class _UserPromptListState extends State<UserPromptList> {
     widget.onRefresh();
   }
 
-  Future<void> _moveToEdge(List<Prompt> shown, int id, {required bool toEnd}) async {
-    final full = (widget.allPrompts ?? shown).map((p) => p.id!).toList();
-    final nextIds = moveIdToEdge(full, id, toEnd: toEnd);
+  /// The stored order with the order on screen folded in — the two differ
+  /// between a move and the reload that carries it, and a second move in that
+  /// moment must build on the first.
+  List<int> _fullIds(List<Prompt> shown) {
+    final shownIds = [for (final p in shown) p.id!];
+    final all = widget.allPrompts;
+    return all == null ? shownIds : mergeSubsetOrder([for (final p in all) p.id!], shownIds);
+  }
+
+  /// Writes [nextIds], the whole stored order, showing [shown] in it at once.
+  Future<void> _writeOrder(List<Prompt> shown, List<int> nextIds) async {
     final byId = {for (final p in shown) p.id!: p};
     setState(() => _optimistic = [for (final i in nextIds) if (byId.containsKey(i)) byId[i]!]);
     await _db.updatePromptOrder(nextIds);
     widget.onRefresh();
   }
+
+  Future<void> _moveToEdge(List<Prompt> shown, int id, {required bool toEnd}) =>
+      _writeOrder(shown, moveIdToEdge(_fullIds(shown), id, toEnd: toEnd));
+
+  /// Move up / Move down and Ctrl+↑ / Ctrl+↓: past the card the user sees
+  /// next to it, under a filter too — `00d` sends a filtered list's reordering
+  /// here — trading places with it in the full order.
+  Future<void> _moveStep(List<Prompt> shown, int id, {required bool down}) => _writeOrder(
+        shown,
+        moveIdPastVisibleNeighbour(_fullIds(shown), [for (final p in shown) p.id!], id, down: down),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -130,64 +153,111 @@ class _UserPromptListState extends State<UserPromptList> {
         MediaQuery.paddingOf(context).bottom +
         (phone && widget.isSelectionMode ? PromptSelectionCapsule.height + 28 : 0);
 
-    return ReorderableListView.builder(
-      padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, bottom),
+    // `00d · 1a`: the gap the list opens is the drop target, and says where.
+    return AppReorderGap(
       itemCount: prompts.length,
-      buildDefaultDragHandles: false,
-      onReorderItem: (oldIndex, newIndex) => _reorder(prompts, oldIndex, newIndex),
-      proxyDecorator: (child, index, animation) =>
-          promptDragProxyDecorator(child, index, animation, gap: _kCardGap),
-      itemBuilder: (context, index) {
-        final prompt = prompts[index];
-        final id = prompt.id!;
-        final isExpanded = _expandedPromptIds.contains(id);
-        final isSelected = widget.selectedIds.contains(id);
-        final isFirst = fullIds.isNotEmpty && fullIds.first == id;
-        final isLast = fullIds.isNotEmpty && fullIds.last == id;
-
-        return Padding(
-          key: ValueKey('user_$id'),
-          padding: const EdgeInsets.only(bottom: _kCardGap),
-          child: PromptCard(
-            prompt: prompt,
-            isExpanded: isExpanded,
-            selectionMode: widget.isSelectionMode,
-            selected: isSelected,
-            onLongPress: () => widget.onEnterSelectionMode(id),
-            onToggle: widget.isSelectionMode
-                ? () => widget.onToggleSelection(id)
-                : () => setState(() {
-                      if (isExpanded) {
-                        _expandedPromptIds.remove(id);
-                      } else {
-                        _expandedPromptIds.add(id);
-                      }
-                    }),
-            dragHandle: PromptDragHandle(index: index, enabled: canDrag, onBlockedTap: _showBlocked),
-            onMoveToTop: (isFirst || widget.isSelectionMode) ? null : () => _moveToEdge(prompts, id, toEnd: false),
-            onMoveToBottom: (isLast || widget.isSelectionMode) ? null : () => _moveToEdge(prompts, id, toEnd: true),
-            menuActions: [
-              PromptCardAction(
-                icon: Icons.copy_all,
-                label: l10n.copyPrompt,
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: prompt.content));
-                  AppSnackBar.info(context, l10n.copiedToClipboard(prompt.title));
-                },
-              ),
-              PromptCardAction(
-                icon: Icons.edit_outlined,
-                label: l10n.edit,
-                onPressed: () => widget.onShowEditDialog(l10n, prompt: prompt),
-              ),
-              PromptCardAction(
-                icon: Icons.delete_outline,
-                label: l10n.delete,
-                danger: true,
-                onPressed: () => widget.onConfirmDelete(l10n, prompt, isSystem: false),
-              ),
-            ],
+      touch: phone,
+      slotPadding: const EdgeInsets.only(bottom: _kCardGap),
+      builder: (context, gap) {
+        final reorder = gap.onReorderItem((oldIndex, newIndex) => _reorder(prompts, oldIndex, newIndex));
+        // A move from a card's menu or keys, confirmed and announced as a drop
+        // at [target] would be.
+        void moveTo(int index, int target, Future<void> Function() move) =>
+            gap.onReorderItem((_, _) => move())(index, target);
+        return ReorderableListView.builder(
+          padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, bottom),
+          itemCount: prompts.length,
+          buildDefaultDragHandles: false,
+          onReorderItem: reorder,
+          // `1f` 到时：触觉 medium + 抬起.
+          onReorderStart: gap.onReorderStart((_) {
+            if (phone) HapticFeedback.mediumImpact();
+          }),
+          proxyDecorator: (child, index, animation) => appReorderLiftDecorator(
+            child,
+            index,
+            animation,
+            slotPadding: const EdgeInsets.only(bottom: _kCardGap),
           ),
+          itemBuilder: (context, index) {
+            final prompt = prompts[index];
+            final id = prompt.id!;
+            final isExpanded = _expandedPromptIds.contains(id);
+            final isSelected = widget.selectedIds.contains(id);
+            final isFirst = fullIds.isNotEmpty && fullIds.first == id;
+            final isLast = fullIds.isNotEmpty && fullIds.last == id;
+            final selecting = widget.isSelectionMode;
+            final last = prompts.length - 1;
+
+            return gap.item(
+              key: ValueKey('user_$id'),
+              index: index,
+              child: PromptReorderKeys(
+                focus: _reorderFocus,
+                id: id,
+                onMove: selecting
+                    ? null
+                    : (delta) {
+                        final target = index + delta;
+                        if (target < 0 || target > last) return;
+                        moveTo(index, target, () => _moveStep(prompts, id, down: delta > 0));
+                      },
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: _kCardGap),
+                  child: PromptCard(
+                    prompt: prompt,
+                    isExpanded: isExpanded,
+                    selectionMode: widget.isSelectionMode,
+                    selected: isSelected,
+                    onLongPress: () => widget.onEnterSelectionMode(id),
+                    onToggle: widget.isSelectionMode
+                        ? () => widget.onToggleSelection(id)
+                        : () => setState(() {
+                              if (isExpanded) {
+                                _expandedPromptIds.remove(id);
+                              } else {
+                                _expandedPromptIds.add(id);
+                              }
+                            }),
+                    dragHandle: PromptDragHandle(index: index, enabled: canDrag, onBlockedTap: _showBlocked),
+                    onMoveUp: (selecting || index == 0)
+                        ? null
+                        : () => moveTo(index, index - 1, () => _moveStep(prompts, id, down: false)),
+                    onMoveDown: (selecting || index == last)
+                        ? null
+                        : () => moveTo(index, index + 1, () => _moveStep(prompts, id, down: true)),
+                    onMoveToTop: (isFirst || selecting)
+                        ? null
+                        : () => moveTo(index, 0, () => _moveToEdge(prompts, id, toEnd: false)),
+                    onMoveToBottom: (isLast || selecting)
+                        ? null
+                        : () => moveTo(index, last, () => _moveToEdge(prompts, id, toEnd: true)),
+                    menuActions: [
+                      PromptCardAction(
+                        icon: Icons.copy_all,
+                        label: l10n.copyPrompt,
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: prompt.content));
+                          AppSnackBar.info(context, l10n.copiedToClipboard(prompt.title));
+                        },
+                      ),
+                      PromptCardAction(
+                        icon: Icons.edit_outlined,
+                        label: l10n.edit,
+                        onPressed: () => widget.onShowEditDialog(l10n, prompt: prompt),
+                      ),
+                      PromptCardAction(
+                        icon: Icons.delete_outline,
+                        label: l10n.delete,
+                        danger: true,
+                        onPressed: () => widget.onConfirmDelete(l10n, prompt, isSystem: false),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );

@@ -41,9 +41,24 @@ class DashedBorder extends StatelessWidget {
       );
 }
 
+/// Strokes [rrect] as a dash of 5 and a gap of 4 with [paint] (a stroke paint).
+///
+/// The rhythm of [DashedBorder], for painters that draw a dashed edge of their
+/// own — the drop indicators of `00d` among them.
+void drawDashedRRect(Canvas canvas, RRect rrect, Paint paint) {
+  const double dash = 5;
+  const double gap = 4;
+  final path = Path()..addRRect(rrect);
+  for (final metric in path.computeMetrics()) {
+    var distance = 0.0;
+    while (distance < metric.length) {
+      canvas.drawPath(metric.extractPath(distance, (distance + dash).clamp(0.0, metric.length)), paint);
+      distance += dash + gap;
+    }
+  }
+}
+
 class _DashedBorderPainter extends CustomPainter {
-  static const double _dash = 5;
-  static const double _gap = 4;
 
   final Color color;
   final double radius;
@@ -62,19 +77,7 @@ class _DashedBorderPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
 
-    final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius)));
-
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        canvas.drawPath(
-          metric.extractPath(distance, (distance + _dash).clamp(0.0, metric.length)),
-          paint,
-        );
-        distance += _dash + _gap;
-      }
-    }
+    drawDashedRRect(canvas, RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius)), paint);
   }
 
   @override

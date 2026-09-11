@@ -826,7 +826,6 @@
   "galleryViewSourcesShort": "Sources",
   "galleryViewResultsShort": "Results",
   "galleryDropTitle": "Drop images here…",
-  "galleryDropHint": "They join the temporary workspace, and the view switches to it",
   "galleryEmptyWorkspaceTitle": "Drop files here",
   "galleryEmptyWorkspaceDesc": "Drag images or videos in to add them to the temporary workspace",
   "galleryEmptySourceDesc": "This source has no supported images",
@@ -858,7 +857,6 @@
   },
   "videoFrameOptional": "Optional",
   "videoDropOrPick": "Drop or click to pick",
-  "videoDropRelease": "Release to add",
   "videoReferenceDropMax": "Drop reference images (max {count})",
   "@videoReferenceDropMax": {
     "placeholders": {

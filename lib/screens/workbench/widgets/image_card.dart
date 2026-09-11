@@ -16,6 +16,8 @@ import '../../../services/image_metadata_service.dart';
 import '../../../services/video_thumbnail_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/drag/app_drag_follower.dart';
+import '../../../widgets/drag/app_drag_session.dart';
 import '../../../widgets/glass/app_glass.dart';
 import 'image_card_context_menu.dart';
 import 'preview/media_preview_dialog.dart' show previewHeroTag;
@@ -197,24 +199,30 @@ class _ImageCardState extends State<ImageCard> {
 
     return Draggable<AppImage>(
       data: widget.imageFile,
-      feedback: Material(
-        elevation: 8,
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        clipBehavior: Clip.antiAlias,
-        child: SizedBox(
-          width: 100,
-          height: 100,
-          child: _buildThumbnail(context, colorScheme, thumbFit, width: 100, height: 100),
-        ),
-      ),
+      // `00d · 1e` 图片卡: the opaque 88 thumbnail in a 2px accent ring, with
+      // the pointer off its top-left corner.
+      feedback: _buildDragFollower(context),
+      dragAnchorStrategy: pointerDragAnchorStrategy,
+      // `00d`: a drag out to another container leaves the source at .5 —
+      // it is still here, and a drop elsewhere may not move it.
       childWhenDragging: Opacity(
-        opacity: 0.3,
+        opacity: 0.5,
         child: _buildCardContent(context, colorScheme, isMobile, thumbFit),
       ),
-      // A drag steals the pointer stream: the Listener below never sees the
-      // up event once the drag proxy takes over, so the press is released
-      // here or it sticks at 0.97 until the next click.
-      onDragStarted: () => setState(() => _isPressed = false),
+      onDragStarted: () {
+        // A drag steals the pointer stream: the Listener below never sees the
+        // up event once the drag proxy takes over, so the press is released
+        // here or it sticks at 0.97 until the next click.
+        setState(() => _isPressed = false);
+        // Slots not under the pointer yet learn of the drag here, to show
+        // 「可放」.
+        AppDragSession.begin(widget.imageFile);
+      },
+      // All three: `onDragEnd` is skipped once this card is unmounted
+      // mid-drag (a recycled grid cell), the other two are not.
+      onDragEnd: (_) => AppDragSession.end(),
+      onDragCompleted: AppDragSession.end,
+      onDraggableCanceled: (_, _) => AppDragSession.end(),
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovering = true),
         onExit: (_) => setState(() => _isHovering = false),
@@ -241,6 +249,45 @@ class _ImageCardState extends State<ImageCard> {
           ),
         ),
       ),
+    );
+  }
+
+  /// What follows the pointer while this card is dragged (`00d · 1e` 图片卡).
+  ///
+  /// A picture reuses the grid's own decode — the same [ResizeImage] key the
+  /// card paints — so starting a drag decodes nothing. A video carries its
+  /// extracted frame with the play glyph over it, so the follower still says
+  /// it is a video; a video whose frame has not been extracted yet has no
+  /// picture to show and falls back to the named chip.
+  Widget _buildDragFollower(BuildContext context) {
+    if (!AppConstants.isVideoFile(widget.imageFile.path)) {
+      return AppImageDragFollower(
+        image: ResizeImage(
+          widget.imageFile.imageProvider,
+          width: thumbnailDecodeWidth(context, widget.thumbnailSize),
+        ),
+      );
+    }
+
+    final frame = _videoThumbnailPath;
+    if (frame == null) {
+      return AppDragFollower(icon: Icons.movie_outlined, label: widget.imageFile.name);
+    }
+
+    const double size = 88;
+    return Stack(
+      children: [
+        AppImageDragFollower(image: FileImage(File(frame)), size: size),
+        Positioned(
+          left: AppDragFollower.pointerOffset.dx,
+          top: AppDragFollower.pointerOffset.dy,
+          width: size,
+          height: size,
+          child: const Center(
+            child: Icon(Icons.play_circle_outline, size: 28, color: _playGlyphInk),
+          ),
+        ),
+      ],
     );
   }
 

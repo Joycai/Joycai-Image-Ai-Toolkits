@@ -21,7 +21,7 @@ import 'channel_provider_row.dart';
 
 /// Edit-channel dialog (design `D1b 1e`): the wizard's fields laid flat in
 /// four sections — provider preset, basic info, configuration, tag and
-/// appearance beside the list preview — in a 760 panel, with Delete at the
+/// appearance beside billing — in a 760 panel, with Delete at the
 /// footer's left and Cancel / Save at its right.
 ///
 /// The preset card is a shortcut, not the way in: the fields below stay
@@ -56,6 +56,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   late bool discovery;
   late int tagColor;
 
+  /// The channel's default fee group (`D1b · 1e` 计费), or null for none.
+  int? defaultFeeGroupId;
+
   bool _probing = false;
   ChannelProbeResult? _probe;
 
@@ -81,6 +84,11 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     _presetId = presetForChannelType(type, endpoint: epCtrl.text)?.id;
     discovery = channel?.enableDiscovery ?? true;
     tagColor = channel?.tagColor ?? AppConstants.tagColors.first.toARGB32();
+    // A dropdown can only show a value it lists: a stored group that no
+    // longer exists reads as no default.
+    final storedGroup = channel?.defaultFeeGroupId;
+    defaultFeeGroupId =
+        widget.appState.allPricingGroups.any((g) => g.id == storedGroup) ? storedGroup : null;
   }
 
   @override
@@ -150,6 +158,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       'enable_discovery': discovery ? 1 : 0,
       'tag': tagCtrl.text.trim(),
       'tag_color': tagColor,
+      'default_fee_group_id': defaultFeeGroupId,
     };
 
     if (widget.channel == null) {
@@ -331,7 +340,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       const SizedBox(height: AppSpace.s16),
       _pair(
         _buildAppearanceSection(l10n, stacked: stacked),
-        _buildPreviewSection(l10n),
+        _buildBillingSection(l10n),
         stacked: stacked,
         gap: AppSpace.s22,
       ),
@@ -652,7 +661,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     );
   }
 
-  // --- Tag & appearance, list preview ----------------------------------------
+  // --- Tag & appearance, billing ---------------------------------------------
 
   Widget _buildAppearanceSection(AppLocalizations l10n, {required bool stacked}) {
     return Column(
@@ -672,27 +681,35 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     );
   }
 
-  /// The channel exactly as its row will render in the models screen's
-  /// channel column, so the name, tag and colour above are previewed as the
-  /// one thing they actually produce.
-  Widget _buildPreviewSection(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
+  /// `D1b · 1e` 计费: the fee group a model added to this channel starts in.
+  Widget _buildBillingSection(AppLocalizations l10n) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ChannelSectionLabel(l10n.previewInList),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(AppRadius.control),
-          ),
-          child: ChannelListRowPreview(
-            name: nameCtrl.text.trim(),
-            namePlaceholder: l10n.displayName,
-            tag: tagCtrl.text.trim(),
-            color: Color(tagColor),
-            subline: l10n.countModels(_modelCount),
+        ChannelSectionLabel(l10n.billing),
+        ChannelLabelledField(
+          label: l10n.channelDefaultFeeGroup,
+          helper: l10n.channelDefaultFeeGroupHint,
+          child: Theme(
+            // The column-coloured fill of the fields around it, as the
+            // protocol dropdown takes.
+            data: theme.copyWith(
+              inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerLow,
+              ),
+            ),
+            child: AppDropdown<int?>(
+              value: defaultFeeGroupId,
+              size: AppFieldSize.regular,
+              prefixIcon: Icons.payments_outlined,
+              items: [
+                AppDropdownItem(value: null, label: l10n.noFeeGroup, muted: true),
+                for (final g in widget.appState.allPricingGroups) AppDropdownItem(value: g.id!, label: g.name),
+              ],
+              onChanged: (v) => setState(() => defaultFeeGroupId = v),
+            ),
           ),
         ),
       ],

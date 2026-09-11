@@ -131,6 +131,8 @@ class ModelRepository {
   Future<void> deletePricingGroup(int id) async {
     final db = await _db;
     await db.update('llm_models', {'fee_group_id': null}, where: 'fee_group_id = ?', whereArgs: [id]);
+    await db.update('llm_channels', {'default_fee_group_id': null},
+        where: 'default_fee_group_id = ?', whereArgs: [id]);
     await db.delete('fee_groups', where: 'id = ?', whereArgs: [id]);
   }
 

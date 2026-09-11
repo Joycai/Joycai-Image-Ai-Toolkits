@@ -745,7 +745,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
 
   // ── Actions ─────────────────────────────────────────────────────────────────
 
-  void _handleBulkAction(String action, TaskQueueService queue) {
+  Future<void> _handleBulkAction(String action, TaskQueueService queue) async {
     if (action == 'clear_completed') {
       final toRemove = queue.queue
           .where((t) =>
@@ -764,10 +764,23 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
         queue.cancelTask(id);
       }
     } else if (action == 'clear_all') {
-      final toRemove =
-          queue.queue.where((t) => t.status != TaskStatus.processing).map((t) => t.id).toList();
+      // Waiting tasks are cancelled first and cleared with the finished ones.
+      // A running task is left alone: cancelling it mid-write would let its
+      // executor save the row back after the clear deleted it.
+      final waiting =
+          queue.queue.where((t) => t.status == TaskStatus.pending).map((t) => t.id).toList();
+      for (final id in waiting) {
+        await queue.cancelTask(id);
+      }
+      final toRemove = queue.queue
+          .where((t) =>
+              t.status == TaskStatus.completed ||
+              t.status == TaskStatus.failed ||
+              t.status == TaskStatus.cancelled)
+          .map((t) => t.id)
+          .toList();
       for (final id in toRemove) {
-        queue.removeTask(id);
+        await queue.removeTask(id);
       }
     }
   }

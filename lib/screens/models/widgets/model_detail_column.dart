@@ -10,10 +10,10 @@ import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
 import '../../../models/pricing_group.dart';
 import '../../../widgets/app_search_field.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/models/channel_avatar.dart';
 import '../../../widgets/scroll_edge_fade.dart';
-import 'glass_context_menu.dart';
 import 'model_card.dart';
 import 'models_actions.dart';
 import 'models_controls.dart';
@@ -395,11 +395,11 @@ class _ChannelHeader extends StatelessWidget {
                     height: AppSize.iconButton,
                   ),
                   color: scheme.onSurfaceVariant,
-                  onPressed: () => showGlassContextMenu(
+                  onPressed: () => showAppGlassMenu(
                     anchor,
-                    position: menuPositionBelow(anchor),
-                    items: [
-                      GlassMenuItem(
+                    position: appGlassMenuPositionBelow(anchor),
+                    entries: [
+                      AppGlassMenuItem(
                         icon: Icons.delete_outline,
                         label: l10n.delete,
                         danger: true,

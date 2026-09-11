@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
@@ -6,6 +7,8 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/tag.dart';
 import '../../../services/database_service.dart';
+import '../../../widgets/drag/app_drag_lift.dart';
+import '../../../widgets/drag/app_reorder_gap.dart';
 import '../prompt_reorder.dart';
 import 'prompt_library_parts.dart';
 
@@ -38,6 +41,7 @@ class TagManagementList extends StatefulWidget {
 
 class _TagManagementListState extends State<TagManagementList> {
   final DatabaseService _db = DatabaseService();
+  final PromptReorderFocus _reorderFocus = PromptReorderFocus();
   List<PromptTag>? _optimistic;
 
   @override
@@ -61,6 +65,14 @@ class _TagManagementListState extends State<TagManagementList> {
     widget.onRefresh();
   }
 
+  /// Ctrl+↑ / Ctrl+↓: one place, through the drop's own path so it is
+  /// confirmed and announced like a drop.
+  void _moveBy(void Function(int, int) reorder, int count, int index, int delta) {
+    final target = index + delta;
+    if (target < 0 || target >= count) return;
+    reorder(index, target);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -71,72 +83,115 @@ class _TagManagementListState extends State<TagManagementList> {
     final tags = pending != null && pending.length == widget.tags.length ? pending : widget.tags;
     final horizontal = phone ? 12.0 : 20.0;
 
-    final list = ReorderableListView.builder(
-      padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, 12),
+    // `00d · 1a`: the gap the list opens is the drop target, and says where.
+    final list = AppReorderGap(
       itemCount: tags.length,
-      buildDefaultDragHandles: false,
-      onReorderItem: (oldIndex, newIndex) => _reorder(tags, oldIndex, newIndex),
-      proxyDecorator: (child, index, animation) =>
-          promptDragProxyDecorator(child, index, animation, gap: _kCardGap),
-      itemBuilder: (context, index) {
-        final tag = tags[index];
-        final count = widget.promptCounts[tag.id] ?? 0;
+      touch: phone,
+      slotPadding: const EdgeInsets.only(bottom: _kCardGap),
+      builder: (context, gap) {
+        final reorder = gap.onReorderItem((oldIndex, newIndex) => _reorder(tags, oldIndex, newIndex));
+        return ReorderableListView.builder(
+          padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, 12),
+          itemCount: tags.length,
+          buildDefaultDragHandles: false,
+          onReorderItem: reorder,
+          // `1f` 到时：触觉 medium + 抬起.
+          onReorderStart: gap.onReorderStart((_) {
+            if (phone) HapticFeedback.mediumImpact();
+          }),
+          proxyDecorator: (child, index, animation) => appReorderLiftDecorator(
+            child,
+            index,
+            animation,
+            slotPadding: const EdgeInsets.only(bottom: _kCardGap),
+          ),
+          itemBuilder: (context, index) {
+            final tag = tags[index];
+            final count = widget.promptCounts[tag.id] ?? 0;
 
-        return Padding(
-          key: ValueKey('tag_${tag.id}'),
-          padding: const EdgeInsets.only(bottom: _kCardGap),
-          child: Container(
-            height: 52,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: scheme.surface,
-              borderRadius: BorderRadius.circular(AppRadius.control),
-              border: Border.all(color: scheme.outlineVariant),
-            ),
-            child: Row(
-              children: [
-                PromptDragHandle(index: index, enabled: true, onBlockedTap: () {}),
-                const SizedBox(width: AppSpace.s10),
-                PromptCategoryDot(color: Color(tag.color), size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          tag.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            return gap.item(
+              key: ValueKey('tag_${tag.id}'),
+              index: index,
+              child: PromptReorderKeys(
+                focus: _reorderFocus,
+                id: tag.id!,
+                onMove: (delta) => _moveBy(reorder, tags.length, index, delta),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: _kCardGap),
+                  child: Container(
+                    height: 52,
+                    padding: phone
+                        ? const EdgeInsetsDirectional.only(end: 14)
+                        : const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.control),
+                      border: Border.all(color: scheme.outlineVariant),
+                    ),
+                    child: Row(
+                      children: [
+                        if (phone)
+                          // `00d · 1f`: on a phone the grip is hit across the
+                          // row's inset, the grip and the gap (44), the glyph
+                          // laid out centred where it always was.
+                          SizedBox(
+                            width: 14 + 20 + AppSpace.s10,
+                            height: AppSize.compact,
+                            child: OverflowBox(
+                              minWidth: 2 * 14 + 20,
+                              maxWidth: 2 * 14 + 20,
+                              alignment: AlignmentDirectional.centerStart,
+                              child: PromptDragHandle(index: index, enabled: true, onBlockedTap: () {}),
+                            ),
+                          )
+                        else ...[
+                          PromptDragHandle(index: index, enabled: true, onBlockedTap: () {}),
+                          const SizedBox(width: AppSpace.s10),
+                        ],
+                        PromptCategoryDot(color: Color(tag.color), size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  tag.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                l10n.promptCount(count),
+                                style: textTheme.labelSmall!.mono.copyWith(
+                                  fontWeight: FontWeight.w400,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        l10n.promptCount(count),
-                        style: textTheme.labelSmall!.mono.copyWith(
-                          fontWeight: FontWeight.w400,
+                        const SizedBox(width: 8),
+                        _RowGlyph(
+                          icon: Icons.edit_outlined,
+                          tooltip: l10n.edit,
                           color: scheme.onSurfaceVariant,
+                          onPressed: () => widget.onShowEditDialog(l10n, tag: tag),
                         ),
-                      ),
-                    ],
+                        _RowGlyph(
+                          icon: Icons.delete_outline,
+                          tooltip: l10n.delete,
+                          color: scheme.error,
+                          onPressed: () => widget.onConfirmDelete(l10n, tag),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                _RowGlyph(
-                  icon: Icons.edit_outlined,
-                  tooltip: l10n.edit,
-                  color: scheme.onSurfaceVariant,
-                  onPressed: () => widget.onShowEditDialog(l10n, tag: tag),
-                ),
-                _RowGlyph(
-                  icon: Icons.delete_outline,
-                  tooltip: l10n.delete,
-                  color: scheme.error,
-                  onPressed: () => widget.onConfirmDelete(l10n, tag),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );

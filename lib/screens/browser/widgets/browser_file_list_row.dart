@@ -7,6 +7,7 @@ import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/image_metadata_service.dart';
+import '../../../widgets/drag/app_drag_session.dart';
 import 'browser_drag_chip.dart';
 
 /// The ground and glyph colour of a file type's icon plate (`B1a · 1b`):
@@ -65,6 +66,22 @@ class BrowserFileListRow extends StatefulWidget {
 
 class _BrowserFileListRowState extends State<BrowserFileListRow> {
   bool _hovered = false;
+
+  /// This row's files are being dragged.
+  bool _dragging = false;
+
+  void _dragStarted() {
+    setState(() => _dragging = true);
+    AppDragSession.begin(widget.dragPayload);
+  }
+
+  /// Wired to every end callback: `onDragEnd` is skipped once the row has
+  /// been unmounted — a drop that moved its file away — and the session must
+  /// end regardless.
+  void _dragEnded() {
+    if (mounted && _dragging) setState(() => _dragging = false);
+    AppDragSession.end();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,10 +164,15 @@ class _BrowserFileListRowState extends State<BrowserFileListRow> {
       data: widget.dragPayload,
       dragAnchorStrategy: pointerDragAnchorStrategy,
       feedback: BrowserFileDragChip(count: widget.dragPayload.length),
-      // The row stays put and dims: a list that reflows mid-drag loses the
-      // folder the user was aiming at.
-      childWhenDragging: Opacity(opacity: 0.4, child: row),
-      child: row,
+      onDragStarted: _dragStarted,
+      onDragEnd: (_) => _dragEnded(),
+      onDragCompleted: _dragEnded,
+      onDraggableCanceled: (_, _) => _dragEnded(),
+      // `00d`: dragged out of the list, the row stays where it is at half
+      // strength — it may not move at all, and a list that reflows mid-drag
+      // loses the folder the user was aiming at. An Opacity in place rather
+      // than `childWhenDragging`, so the row keeps its state.
+      child: Opacity(opacity: _dragging ? 0.5 : 1, child: row),
     );
   }
 }
