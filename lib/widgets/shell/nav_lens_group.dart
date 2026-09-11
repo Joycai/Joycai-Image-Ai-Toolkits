@@ -13,79 +13,56 @@ import 'app_destinations.dart';
 
 /// Item geometry for the two bars the lens group sits in.
 enum NavLensDensity {
-  /// The 36px desktop title bar: 32×28 items (`01 · 1b`).
-  titleBar(itemWidth: 32, itemHeight: 28),
+  /// The 36px desktop title bar: 32×28 cells at r10 (`01b · 1b`).
+  titleBar(itemWidth: 32, itemHeight: 28, radius: AppRadius.control),
 
-  /// The 48px tablet top bar: 40×36 items (`01` spec 「透镜 · 平板 36×40」).
-  topBar(itemWidth: 40, itemHeight: 36);
+  /// The 48px tablet top bar: 36×40 cells at r12 (`01b · 1e`).
+  topBar(itemWidth: 36, itemHeight: 40, radius: 12);
 
-  const NavLensDensity({required this.itemWidth, required this.itemHeight});
+  const NavLensDensity({required this.itemWidth, required this.itemHeight, required this.radius});
 
   final double itemWidth;
   final double itemHeight;
+  final double radius;
 }
 
-/// The eight destinations as one row of glyphs on a glass bar, the current one
-/// expanded into an icon-and-label lens (`01 设计系统 · 1b` 「顶栏合一」).
+/// The eight destinations as a row of equal glyph cells on a glass bar, with a
+/// lens under the current one that slides from cell to cell (`01b · 1b`).
 ///
-/// Why glyphs: a Japanese label is up to twice the English one, and a row of
-/// eight labels would be the first thing to break at an ordinary window width.
-/// Only the current destination spends width on its name; every other one
-/// names itself in a tooltip that also carries its `Ctrl+N`.
+/// Every cell is the same width whichever destination is current. The group is
+/// centred, and while the current destination spelled out its label inside the
+/// group, the group's width followed that label: each switch between screens
+/// with names of different lengths moved all eight icons sideways. The current
+/// destination's name lives in the title instead, and every cell names itself
+/// in a tooltip that also carries its `Ctrl+N`.
+///
+/// Only the lens moves (180ms). The icons and the screen underneath change at
+/// once.
 ///
 /// The count badge on Tasks is the accent under its own ink — not red, which
 /// means a task *failed*.
 class NavLensGroup extends StatelessWidget {
-  const NavLensGroup({
-    super.key,
-    required this.density,
-    this.showSelectedLabel = true,
-  });
+  const NavLensGroup({super.key, required this.density});
 
   final NavLensDensity density;
-
-  /// The first thing dropped when the bar is too narrow.
-  final bool showSelectedLabel;
 
   static const double _gap = 2;
 
   /// A 1px rule with 4px either side, between the destinations and Settings.
   static const double _dividerExtent = 9;
 
-  static TextStyle _labelStyle(BuildContext context) =>
-      Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(fontWeight: FontWeight.w600);
-
-  /// The width this group will take, so a bar can decide what to drop before
-  /// laying it out. Measured, never guessed from a breakpoint.
-  static double widthFor(
-    BuildContext context, {
-    required NavLensDensity density,
-    required AppDestination current,
-    required bool showSelectedLabel,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    final destinations = AppDestination.available;
-    double width = 0;
-    for (final d in destinations) {
-      if (d == current && showSelectedLabel) {
-        final painter = TextPainter(
-          text: TextSpan(text: d.label(l10n), style: _labelStyle(context)),
-          textDirection: TextDirection.ltr,
-          textScaler: MediaQuery.textScalerOf(context),
-          maxLines: 1,
-        )..layout();
-        width += _lensLeading + AppSize.iconLg + _lensGap + painter.width + _lensTrailing;
-      } else {
-        width += density.itemWidth;
-      }
-    }
-    width += _gap * destinations.length + _dividerExtent;
-    return width.ceilToDouble();
+  /// The width this group takes. It does not depend on the current
+  /// destination, which is the whole point.
+  static double widthFor({required NavLensDensity density}) {
+    final count = AppDestination.available.length;
+    // The cells, the divider, and a gap between each neighbouring pair —
+    // the divider counts as a neighbour.
+    return count * density.itemWidth + _dividerExtent + _gap * count;
   }
 
-  static const double _lensLeading = 6;
-  static const double _lensGap = 6;
-  static const double _lensTrailing = 10;
+  /// Where the [index]th available destination's cell starts.
+  static double _cellLeft(int index, int dividerBefore, NavLensDensity density) =>
+      index * (density.itemWidth + _gap) + (index >= dividerBefore ? _dividerExtent + _gap : 0);
 
   @override
   Widget build(BuildContext context) {
@@ -94,33 +71,65 @@ class NavLensGroup extends StatelessWidget {
     final queueCount = context.select<TaskQueueService, int>((q) => q.queue
         .where((t) => t.status == TaskStatus.pending || t.status == TaskStatus.processing)
         .length);
-    final edge = GlassInk.maybeOf(context)?.edge ?? Theme.of(context).colorScheme.outlineVariant;
+    final scheme = Theme.of(context).colorScheme;
+    final edge = GlassInk.maybeOf(context)?.edge ?? scheme.outlineVariant;
 
-    final children = <Widget>[];
-    for (final d in AppDestination.available) {
-      if (d == AppDestination.settings) {
-        children.add(Padding(
+    final destinations = AppDestination.available;
+    final settingsAt = destinations.indexOf(AppDestination.settings);
+    final dividerBefore = settingsAt < 0 ? destinations.length : settingsAt;
+    final selected = destinations.indexOf(current);
+
+    final cells = <Widget>[];
+    for (int i = 0; i < destinations.length; i++) {
+      if (i == settingsAt) {
+        cells.add(Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: SizedBox(width: 1, height: 16, child: ColoredBox(color: edge)),
         ));
       }
-      children.add(_NavLens(
+      final d = destinations[i];
+      cells.add(_NavLens(
         destination: d,
         selected: d == current,
-        showLabel: showSelectedLabel,
         badge: d.showsQueueBadge ? queueCount : 0,
         density: density,
       ));
     }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (int i = 0; i < children.length; i++) ...[
-          if (i > 0) const SizedBox(width: _gap),
-          children[i],
+    return SizedBox(
+      width: widthFor(density: density),
+      height: density.itemHeight,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (selected >= 0)
+            AnimatedPositioned(
+              duration: AppMotion.durationOf(context, AppMotion.state),
+              curve: AppMotion.emphasized,
+              left: _cellLeft(selected, dividerBefore, density),
+              top: 0,
+              width: density.itemWidth,
+              height: density.itemHeight,
+              child: IgnorePointer(
+                child: AppGlass(
+                  grade: GlassGrade.lens,
+                  borderRadius: BorderRadius.circular(density.radius),
+                  reducedColor: scheme.accentTint,
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (int i = 0; i < cells.length; i++) ...[
+                if (i > 0) const SizedBox(width: _gap),
+                cells[i],
+              ],
+            ],
+          ),
         ],
-      ],
+      ),
     );
   }
 }
@@ -129,14 +138,12 @@ class _NavLens extends StatefulWidget {
   const _NavLens({
     required this.destination,
     required this.selected,
-    required this.showLabel,
     required this.badge,
     required this.density,
   });
 
   final AppDestination destination;
   final bool selected;
-  final bool showLabel;
   final int badge;
   final NavLensDensity density;
 
@@ -151,60 +158,28 @@ class _NavLensState extends State<_NavLens> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
-    final glassInk = GlassInk.maybeOf(context);
-    final ink = glassInk?.ink ?? scheme.onSurfaceVariant;
+    final ink2 = GlassInk.maybeOf(context)?.ink2 ?? scheme.onSurfaceVariant;
     final d = widget.destination;
     final label = d.label(l10n);
-    final radius = BorderRadius.circular(AppRadius.control);
 
-    final icon = Icon(
-      widget.selected ? d.selectedIcon : d.icon,
-      size: AppSize.iconLg,
-      color: widget.selected ? scheme.primary : ink,
+    Widget box = AnimatedContainer(
+      duration: AppMotion.durationOf(context, AppMotion.hover),
+      curve: AppMotion.quick,
+      width: widget.density.itemWidth,
+      height: widget.density.itemHeight,
+      decoration: BoxDecoration(
+        // The current cell's ground is the lens sliding behind the row.
+        color: _hovering && !widget.selected ? ink2.withValues(alpha: 0.08) : Colors.transparent,
+        borderRadius: BorderRadius.circular(widget.density.radius),
+      ),
+      child: Center(
+        child: Icon(
+          widget.selected ? d.selectedIcon : d.icon,
+          size: AppSize.iconLg,
+          color: widget.selected ? scheme.primary : ink2,
+        ),
+      ),
     );
-
-    Widget box;
-    if (widget.selected) {
-      final lensChild = widget.showLabel
-          ? Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  NavLensGroup._lensLeading, 0, NavLensGroup._lensTrailing, 0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  icon,
-                  const SizedBox(width: NavLensGroup._lensGap),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    style: NavLensGroup._labelStyle(context).copyWith(color: scheme.onAccentTint),
-                  ),
-                ],
-              ),
-            )
-          : SizedBox(width: widget.density.itemWidth, child: Center(child: icon));
-      box = SizedBox(
-        height: widget.density.itemHeight,
-        child: AppGlass(
-          grade: GlassGrade.lens,
-          borderRadius: radius,
-          reducedColor: scheme.accentTint,
-          child: lensChild,
-        ),
-      );
-    } else {
-      box = AnimatedContainer(
-        duration: AppMotion.durationOf(context, AppMotion.hover),
-        curve: AppMotion.quick,
-        width: widget.density.itemWidth,
-        height: widget.density.itemHeight,
-        decoration: BoxDecoration(
-          color: _hovering ? ink.withValues(alpha: 0.08) : Colors.transparent,
-          borderRadius: radius,
-        ),
-        child: Center(child: icon),
-      );
-    }
 
     if (widget.badge > 0) {
       box = Stack(
