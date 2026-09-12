@@ -46,7 +46,8 @@ class LLMService {
   }) async {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
-      logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+      logger: (msg, {level = 'INFO'}) =>
+          onLogAdded?.call(msg, level: level, contextId: contextId),
     );
     // Tool calling reaches the streaming surface only where the protocol
     // assembles calls out of deltas — every chat family does now, but
@@ -83,29 +84,46 @@ class LLMService {
         final LLMResponse response;
         var cancelledMidStream = false;
         if (useStream) {
-          log('Connecting to ${config.channelType} (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG');
-          final streamed = await _streamOnce(config, turnHistory,
-              options: options,
-              tools: tools,
-              toolBearing: toolBearing,
-              isCancelled: isCancelled,
-              log: log);
-          response = streamed.response;
-          cancelledMidStream = streamed.cancelled;
-        } else {
-          log('Connecting to ${config.channelType} (standard)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG');
-          final deadline = _dispatcher.generateTimeout(config, options: options);
-          response = await _dispatcher.generate(
+          log(
+            'Connecting to ${config.channelType} (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}',
+            level: 'DEBUG',
+          );
+          final streamed = await _streamOnce(
             config,
             turnHistory,
             options: options,
             tools: tools,
-            logger: log,
-            // Its own type rather than the bare TimeoutException Future
-            // supplies, so the retry decision can tell "the generation ran
-            // long" apart from "the connection died" — see
-            // [LLMDeadlineExceeded].
-          ).timeout(deadline, onTimeout: () => throw LLMDeadlineExceeded(deadline));
+            toolBearing: toolBearing,
+            isCancelled: isCancelled,
+            log: log,
+          );
+          response = streamed.response;
+          cancelledMidStream = streamed.cancelled;
+        } else {
+          log(
+            'Connecting to ${config.channelType} (standard)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}',
+            level: 'DEBUG',
+          );
+          final deadline = _dispatcher.generateTimeout(
+            config,
+            options: options,
+          );
+          response = await _dispatcher
+              .generate(
+                config,
+                turnHistory,
+                options: options,
+                tools: tools,
+                logger: log,
+                // Its own type rather than the bare TimeoutException Future
+                // supplies, so the retry decision can tell "the generation ran
+                // long" apart from "the connection died" — see
+                // [LLMDeadlineExceeded].
+              )
+              .timeout(
+                deadline,
+                onTimeout: () => throw LLMDeadlineExceeded(deadline),
+              );
           if (response.text.isNotEmpty) {
             log('[AI]: ${response.text}');
           }
@@ -115,7 +133,13 @@ class LLMService {
         // generated was billed, whether or not the turn goes on or the caller
         // is still there.
         if (response.metadata.isNotEmpty) {
-          _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null, taskTag: options?['usageTag']?.toString());
+          await _recordUsage(
+            config.modelId,
+            config,
+            response.metadata,
+            modelDbId: modelIdentifier is int ? modelIdentifier : null,
+            taskTag: options?['usageTag']?.toString(),
+          );
         }
 
         // Deliberately after [_recordUsage] and before the session is
@@ -136,14 +160,19 @@ class LLMService {
         if (continuation != null) {
           final done = parts.length - 1;
           if (done < maxTurnContinuations) {
-            log('The host paused the turn after a server-side tool run; '
-                'continuing (${done + 1}/$maxTurnContinuations).');
+            log(
+              'The host paused the turn after a server-side tool run; '
+              'continuing (${done + 1}/$maxTurnContinuations).',
+            );
             turnHistory = [...turnHistory, ...continuation];
             attempt = 0;
             continue;
           }
-          log('The host paused the turn $done times; delivering the partial '
-              'answer as-is.', level: 'WARN');
+          log(
+            'The host paused the turn $done times; delivering the partial '
+            'answer as-is.',
+            level: 'WARN',
+          );
         }
 
         return mergeTurnParts(parts);
@@ -197,8 +226,10 @@ class LLMService {
     );
 
     var cancelledMidStream = false;
-    await for (final chunk
-        in _idleGuarded(stream, first: _firstChunkGapFor(config, options))) {
+    await for (final chunk in _idleGuarded(
+      stream,
+      first: _firstChunkGapFor(config, options),
+    )) {
       if (isCancelled?.call() ?? false) {
         // Leaving the loop is the abort. `await for` cancels its
         // subscription on break, which propagates to the response
@@ -269,17 +300,18 @@ class LLMService {
       generatedImages: accumulatedImages,
       metadata: finalMetadata ?? {},
       toolCalls: accumulatedToolCalls,
-      reasoningContent:
-          accumulatedReasoning.isEmpty ? null : accumulatedReasoning,
-      reasoningFieldName:
-          accumulatedReasoning.isEmpty ? null : reasoningFieldName,
+      reasoningContent: accumulatedReasoning.isEmpty
+          ? null
+          : accumulatedReasoning,
+      reasoningFieldName: accumulatedReasoning.isEmpty
+          ? null
+          : reasoningFieldName,
       reasoningSignature: reasoningSignature,
       rawThinkingBlocks: rawThinkingBlocks,
       rawContentBlocks: rawContentBlocks,
-      rawThinkingModelId:
-          rawThinkingBlocks == null && rawContentBlocks == null
-              ? null
-              : config.modelId,
+      rawThinkingModelId: rawThinkingBlocks == null && rawContentBlocks == null
+          ? null
+          : config.modelId,
     );
 
     return (response: response, cancelled: cancelledMidStream);
@@ -307,8 +339,9 @@ class LLMService {
   /// subscription, where the non-streaming `Future.timeout` leaves its request
   /// running upstream and billing.
   static Stream<LLMResponseChunk> _idleGuarded(
-          Stream<LLMResponseChunk> stream, {Duration? first}) =>
-      _guard(stream, first: first ?? _firstChunkGap, subsequent: _idleGap);
+    Stream<LLMResponseChunk> stream, {
+    Duration? first,
+  }) => _guard(stream, first: first ?? _firstChunkGap, subsequent: _idleGap);
 
   /// How long the first chunk may take on this particular route.
   ///
@@ -328,7 +361,9 @@ class LLMService {
   /// 120 s floor would otherwise tighten the guard on the image routes it
   /// does not describe.
   Duration _firstChunkGapFor(
-      LLMModelConfig config, Map<String, dynamic>? options) {
+    LLMModelConfig config,
+    Map<String, dynamic>? options,
+  ) {
     if (!_dispatcher.streamIsSingleShot(config)) return _firstChunkGap;
     final deadline = _dispatcher.generateTimeout(config, options: options);
     return deadline > _firstChunkGap ? deadline : _firstChunkGap;
@@ -339,8 +374,7 @@ class LLMService {
     Stream<T> stream, {
     required Duration first,
     required Duration subsequent,
-  }) =>
-      _guard(stream, first: first, subsequent: subsequent);
+  }) => _guard(stream, first: first, subsequent: subsequent);
 
   static Stream<T> _guard<T>(
     Stream<T> stream, {
@@ -395,12 +429,12 @@ class LLMService {
       return true;
     }
 
-    final statusCodeMatch =
-        RegExp(r'failed:?\s+(\d{3})\b').firstMatch(errorStr);
+    final statusCodeMatch = RegExp(
+      r'failed:?\s+(\d{3})\b',
+    ).firstMatch(errorStr);
     if (statusCodeMatch != null) {
       final code = int.tryParse(statusCodeMatch.group(1)!);
-      if (code != null &&
-          (code == 429 || (code >= 500 && code < 600))) {
+      if (code != null && (code == 429 || (code >= 500 && code < 600))) {
         return true;
       }
     }
@@ -414,12 +448,21 @@ class LLMService {
     String? contextId,
     Map<String, dynamic>? options,
   }) async* {
-    onLogAdded?.call('Preparing request for model: $modelIdentifier', level: 'DEBUG', contextId: contextId);
-    final config = await _configResolver.resolveConfig(
-      modelIdentifier, 
-      logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+    onLogAdded?.call(
+      'Preparing request for model: $modelIdentifier',
+      level: 'DEBUG',
+      contextId: contextId,
     );
-    onLogAdded?.call('Connecting to ${config.channelType}...', level: 'DEBUG', contextId: contextId);
+    final config = await _configResolver.resolveConfig(
+      modelIdentifier,
+      logger: (msg, {level = 'INFO'}) =>
+          onLogAdded?.call(msg, level: level, contextId: contextId),
+    );
+    onLogAdded?.call(
+      'Connecting to ${config.channelType}...',
+      level: 'DEBUG',
+      contextId: contextId,
+    );
 
     final int maxRetries = options?['retryCount'] ?? 0;
     int attempt = 0;
@@ -434,37 +477,65 @@ class LLMService {
       try {
         int imageCount = 0;
         Map<String, dynamic>? finalMetadata;
-        
+
         final stream = _dispatcher.generateStream(
-          config, 
-          messages, 
-          options: options, 
-          logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+          config,
+          messages,
+          options: options,
+          logger: (msg, {level = 'INFO'}) =>
+              onLogAdded?.call(msg, level: level, contextId: contextId),
         );
 
-        await for (final chunk
-            in _idleGuarded(stream, first: _firstChunkGapFor(config, options))) {
+        await for (final chunk in _idleGuarded(
+          stream,
+          first: _firstChunkGapFor(config, options),
+        )) {
           if (chunk.reasoningPart != null) {
-            onLogAdded?.call('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG', contextId: contextId);
+            onLogAdded?.call(
+              '[AI thinking]: ${chunk.reasoningPart}',
+              level: 'DEBUG',
+              contextId: contextId,
+            );
           }
           if (chunk.textPart != null) {
-            onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
+            onLogAdded?.call(
+              '[AI]: ${chunk.textPart}',
+              level: 'INFO',
+              contextId: contextId,
+            );
           }
           if (chunk.imagePart != null) {
             imageCount++;
-            onLogAdded?.call('Received image part ($imageCount)', level: 'DEBUG', contextId: contextId);
+            onLogAdded?.call(
+              'Received image part ($imageCount)',
+              level: 'DEBUG',
+              contextId: contextId,
+            );
           }
           if (chunk.metadata != null) finalMetadata = chunk.metadata;
           deliveredAnyChunk = true;
           yield chunk;
         }
 
-        onLogAdded?.call('Stream completed. Total images: $imageCount', level: 'DEBUG', contextId: contextId);
+        onLogAdded?.call(
+          'Stream completed. Total images: $imageCount',
+          level: 'DEBUG',
+          contextId: contextId,
+        );
 
         // Unified Token Usage Recording
         if (finalMetadata != null) {
-          onLogAdded?.call('Recording token usage...', level: 'DEBUG', contextId: contextId);
-          _recordUsage(config.modelId, config, finalMetadata, modelDbId: modelIdentifier is int ? modelIdentifier : null);
+          onLogAdded?.call(
+            'Recording token usage...',
+            level: 'DEBUG',
+            contextId: contextId,
+          );
+          await _recordUsage(
+            config.modelId,
+            config,
+            finalMetadata,
+            modelDbId: modelIdentifier is int ? modelIdentifier : null,
+          );
         }
 
         return; // Success, exit retry loop
@@ -473,13 +544,23 @@ class LLMService {
         if (deliveredAnyChunk || attempt > maxRetries || !isRetryable(e)) {
           rethrow;
         }
-        onLogAdded?.call('Stream failed: $e. Retrying in 2 seconds...', level: 'WARN', contextId: contextId);
+        onLogAdded?.call(
+          'Stream failed: $e. Retrying in 2 seconds...',
+          level: 'WARN',
+          contextId: contextId,
+        );
         await Future.delayed(const Duration(seconds: 2));
       }
     }
   }
 
-  Future<void> _recordUsage(String modelId, LLMModelConfig config, Map<String, dynamic> metadata, {int? modelDbId, String? taskTag}) async {
+  Future<void> _recordUsage(
+    String modelId,
+    LLMModelConfig config,
+    Map<String, dynamic> metadata, {
+    int? modelDbId,
+    String? taskTag,
+  }) async {
     final db = DatabaseService();
 
     // Standardize metadata keys. Three spellings are in play: Google
@@ -487,9 +568,11 @@ class LLMService {
     // *Images* API (`input_tokens`) — gpt-image-1 reports only the third, so
     // reading the first two alone recorded every image generation as zero
     // tokens and only request-billed channels came out right.
-    final promptTokens = _asTokenCount(metadata['promptTokenCount'] ??
-        metadata['prompt_tokens'] ??
-        metadata['input_tokens']);
+    final promptTokens = _asTokenCount(
+      metadata['promptTokenCount'] ??
+          metadata['prompt_tokens'] ??
+          metadata['input_tokens'],
+    );
     final outputTokens = outputTokensOf(metadata);
     final cacheTokens = _extractCacheTokens(metadata, promptTokens);
 
@@ -527,7 +610,8 @@ class LLMService {
   /// subtracting one from the other would count the cache twice.
   int _extractCacheTokens(Map<String, dynamic> metadata, int promptTokens) {
     final details = metadata['prompt_tokens_details'];
-    final raw = metadata['cachedContentTokenCount'] ??
+    final raw =
+        metadata['cachedContentTokenCount'] ??
         metadata['cache_read_input_tokens'] ??
         (details is Map ? details['cached_tokens'] : null);
     return _asTokenCount(raw).clamp(0, promptTokens);
@@ -536,7 +620,9 @@ class LLMService {
   /// Token counts arrive as int, double or String depending on provider and
   /// transport; anything unparseable counts as zero.
   int _asTokenCount(dynamic value) {
-    final count = value is num ? value.toInt() : (value is String ? int.tryParse(value) : null);
+    final count = value is num
+        ? value.toInt()
+        : (value is String ? int.tryParse(value) : null);
     return (count == null || count < 0) ? 0 : count;
   }
 
@@ -552,7 +638,8 @@ class LLMService {
   /// the metrics page and the billing agree with the invoice.
   @visibleForTesting
   static int outputTokensOf(Map<String, dynamic> metadata) {
-    final counted = metadata['candidatesTokenCount'] ??
+    final counted =
+        metadata['candidatesTokenCount'] ??
         metadata['completion_tokens'] ??
         metadata['output_tokens'];
     var total = _asTokenCountStatic(counted);
@@ -564,7 +651,9 @@ class LLMService {
   }
 
   static int _asTokenCountStatic(dynamic value) {
-    final count = value is num ? value.toInt() : (value is String ? int.tryParse(value) : null);
+    final count = value is num
+        ? value.toInt()
+        : (value is String ? int.tryParse(value) : null);
     return (count == null || count < 0) ? 0 : count;
   }
 
@@ -577,7 +666,8 @@ class LLMService {
   /// conclude the context is empty on exactly the small local models that
   /// overflow first, so this returns null and lets them fall back.
   static int? promptTokensOf(Map<String, dynamic> metadata) {
-    final raw = metadata['promptTokenCount'] ??
+    final raw =
+        metadata['promptTokenCount'] ??
         metadata['prompt_tokens'] ??
         metadata['input_tokens'];
     if (raw == null) return null;
@@ -593,21 +683,24 @@ class LLMService {
   }) async {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
-      logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+      logger: (msg, {level = 'INFO'}) =>
+          onLogAdded?.call(msg, level: level, contextId: contextId),
     );
     final ticket = await _dispatcher.startLongRunning(
       config,
       messages,
       options: options,
-      logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+      logger: (msg, {level = 'INFO'}) =>
+          onLogAdded?.call(msg, level: level, contextId: contextId),
     );
     // Video jobs never flow back through request()/requestStream(), so the
     // accepted submission is the only moment they can be billed at all —
     // without this every Veo/Sora/xAI generation was invisible to the metrics
     // page and to request-billed channels. Providers report no token usage at
     // submit time; the row records the request itself (tokens 0).
-    _recordUsage(config.modelId, config, const {'operation': 'submit'},
-        modelDbId: modelIdentifier is int ? modelIdentifier : null);
+    await _recordUsage(config.modelId, config, const {
+      'operation': 'submit',
+    }, modelDbId: modelIdentifier is int ? modelIdentifier : null);
     return ticket;
   }
 
@@ -619,13 +712,15 @@ class LLMService {
   }) async {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
-      logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+      logger: (msg, {level = 'INFO'}) =>
+          onLogAdded?.call(msg, level: level, contextId: contextId),
     );
     return await _dispatcher.checkOperation(
       config,
       operationName,
       surfaceId: operationSurface,
-      logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+      logger: (msg, {level = 'INFO'}) =>
+          onLogAdded?.call(msg, level: level, contextId: contextId),
     );
   }
 
@@ -667,8 +762,11 @@ class LLMService {
           )
           .timeout(_cancelTimeout);
     } catch (e) {
-      onLogAdded?.call('Upstream cancel failed for $operationName: $e',
-          level: 'WARN', contextId: contextId);
+      onLogAdded?.call(
+        'Upstream cancel failed for $operationName: $e',
+        level: 'WARN',
+        contextId: contextId,
+      );
       return null;
     }
   }

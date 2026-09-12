@@ -46,6 +46,7 @@ void main() async {
 
   final appState = AppState();
   await appState.loadSettings();
+  await appState.taskQueue.resumePendingTasks();
 
   // Prune stale video thumbnails in the background; don't block startup.
   unawaited(VideoThumbnailService.instance.cleanup());
@@ -62,7 +63,9 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: appState),
-        ChangeNotifierProvider<TaskQueueService>.value(value: appState.taskQueue),
+        ChangeNotifierProvider<TaskQueueService>.value(
+          value: appState.taskQueue,
+        ),
         ChangeNotifierProvider.value(value: appState.workbenchUIState),
         ChangeNotifierProvider.value(value: appState.taskListState),
         ChangeNotifierProvider.value(value: appState.fileBrowserState),
@@ -107,12 +110,19 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeMode = context.select<AppState, ThemeMode>((s) => s.themeMode);
     final locale = context.select<AppState, Locale?>((s) => s.locale);
-    final themeAccent = context.select<AppState, ThemeAccent>((s) => s.themeAccent);
-    final fontFamily = context.select<AppState, String?>((s) => s.themeFontFamily);
-    final reduceEffects = context.select<AppState, bool>((s) => s.reduceVisualEffects);
+    final themeAccent = context.select<AppState, ThemeAccent>(
+      (s) => s.themeAccent,
+    );
+    final fontFamily = context.select<AppState, String?>(
+      (s) => s.themeFontFamily,
+    );
+    final reduceEffects = context.select<AppState, bool>(
+      (s) => s.reduceVisualEffects,
+    );
 
     final app = MaterialApp(
-      onGenerateTitle: (context) => '${AppLocalizations.of(context)!.appTitle} v$version',
+      onGenerateTitle: (context) =>
+          '${AppLocalizations.of(context)!.appTitle} v$version',
       themeMode: themeMode,
       locale: locale,
       scrollBehavior: const _AppScrollBehavior(),
@@ -184,7 +194,9 @@ class _WindowChromeSyncState extends State<_WindowChromeSync> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final appState = context.read<AppState>();
-    WindowChromeService.applyTheme(Theme.of(context).colorScheme).then((report) {
+    WindowChromeService.applyTheme(Theme.of(context).colorScheme).then((
+      report,
+    ) {
       if (report != null) appState.addLog(report);
     });
   }
@@ -273,27 +285,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (appState.settingsLoaded && !appState.setupCompleted && !_wizardShown) {
       _wizardShown = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SetupWizard()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const SetupWizard()));
       });
     }
   }
 
   static Widget _screenFor(AppDestination destination) => switch (destination) {
-        AppDestination.workbench => const WorkbenchScreen(),
-        AppDestination.fileBrowser => const FileBrowserScreen(),
-        AppDestination.tasks => const TaskQueueScreen(),
-        AppDestination.downloader => const ImageDownloaderScreen(),
-        AppDestination.prompts => const PromptsScreen(),
-        AppDestination.models => const ModelsScreen(),
-        AppDestination.usage => const TokenUsageScreen(),
-        AppDestination.settings => const SettingsScreen(),
-      };
+    AppDestination.workbench => const WorkbenchScreen(),
+    AppDestination.fileBrowser => const FileBrowserScreen(),
+    AppDestination.tasks => const TaskQueueScreen(),
+    AppDestination.downloader => const ImageDownloaderScreen(),
+    AppDestination.prompts => const PromptsScreen(),
+    AppDestination.models => const ModelsScreen(),
+    AppDestination.usage => const TokenUsageScreen(),
+    AppDestination.settings => const SettingsScreen(),
+  };
 
   @override
   Widget build(BuildContext context) {
-    final activeIndex = context.select<AppState, int>((s) => s.activeScreenIndex);
+    final activeIndex = context.select<AppState, int>(
+      (s) => s.activeScreenIndex,
+    );
     var current = AppDestination.values[activeIndex];
     if (!AppDestination.isAvailable(current)) {
       // A destination this OS does not offer (restored from a desktop backup).
@@ -349,7 +363,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   child: screen,
                 ),
         ),
-        if (isPhone) const Positioned(left: 0, right: 0, bottom: 0, child: PhoneDock()),
+        if (isPhone)
+          const Positioned(left: 0, right: 0, bottom: 0, child: PhoneDock()),
         // Unconditional: the capsule governs its own visibility so it can
         // fade out instead of unmounting between two frames.
         const TaskCapsuleMonitor(),

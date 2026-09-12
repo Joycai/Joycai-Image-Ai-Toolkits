@@ -9,7 +9,11 @@ class TaskRepository {
 
   Future<void> saveTask(Map<String, dynamic> task) async {
     final db = await _db;
-    await db.insert('tasks', task, conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'tasks',
+      task,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   /// The newest [limit] tasks by creation time.
@@ -21,11 +25,31 @@ class TaskRepository {
   /// filled, the same fallback `TaskItem.fromMap` applies.
   Future<List<Map<String, dynamic>>> getRecentTasks(int limit) async {
     final db = await _db;
-    return await db.query(
+    final recent = await db.query(
       'tasks',
       orderBy: 'COALESCE(created_at, start_time, end_time) DESC',
       limit: limit,
     );
+    // Pending work is operational state, not history. Always include it even
+    // when newer completed tasks have filled the history window, otherwise a
+    // restart can silently abandon queued work.
+    final pending = await db.query(
+      'tasks',
+      where: 'status = ?',
+      whereArgs: ['pending'],
+      orderBy: 'COALESCE(created_at, start_time, end_time) DESC',
+    );
+    final byId = <String, Map<String, dynamic>>{
+      for (final row in [...recent, ...pending]) row['id'] as String: row,
+    };
+    final merged = byId.values.toList()
+      ..sort((a, b) {
+        String stamp(Map<String, dynamic> row) =>
+            (row['created_at'] ?? row['start_time'] ?? row['end_time'] ?? '')
+                as String;
+        return stamp(b).compareTo(stamp(a));
+      });
+    return merged;
   }
 
   /// Tasks whose parameters carry the given assistant session id — the
@@ -64,10 +88,10 @@ class TaskRepository {
   Future<void> cleanupStuckTasks() async {
     final db = await _db;
     await db.update(
-      'tasks', 
-      {'status': 'failed'}, 
-      where: 'status = ?', 
-      whereArgs: ['processing']
+      'tasks',
+      {'status': 'failed'},
+      where: 'status = ?',
+      whereArgs: ['processing'],
     );
   }
 
@@ -76,7 +100,9 @@ class TaskRepository {
     final results = await db.query(
       'tasks',
       columns: ['start_time', 'end_time'],
-      where: 'model_pk = ? AND status = "completed" AND start_time IS NOT NULL AND end_time IS NOT NULL'.replaceAll('"', "'"),
+      where:
+          'model_pk = ? AND status = "completed" AND start_time IS NOT NULL AND end_time IS NOT NULL'
+              .replaceAll('"', "'"),
       whereArgs: [modelDbId],
       orderBy: 'end_time DESC',
       limit: limit,

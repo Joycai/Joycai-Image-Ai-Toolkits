@@ -82,8 +82,10 @@ class AnthropicHistory {
 ///    tool calls arrives as N tool messages, and all N results have to travel
 ///    in *one* user message immediately after the assistant turn that asked
 ///    for them.
-AnthropicHistory buildAnthropicHistory(List<LLMMessage> history,
-    {String? modelId}) {
+AnthropicHistory buildAnthropicHistory(
+  List<LLMMessage> history, {
+  String? modelId,
+}) {
   final systemParts = <String>[];
   final messages = <Map<String, dynamic>>[];
 
@@ -113,7 +115,7 @@ AnthropicHistory buildAnthropicHistory(List<LLMMessage> history,
           // A text block may not be empty, and a tool legitimately returning
           // nothing is not an error — say so instead of sending "".
           'content': msg.content.isEmpty ? '(no output)' : msg.content,
-        }
+        },
       ]);
       continue;
     }
@@ -198,7 +200,10 @@ List<Map<String, dynamic>> anthropicUserBlocks(LLMMessage msg) {
     if (attachment.path == null && attachment.bytes == null) continue;
     final read = ImageCompressor.readForApi(attachment);
     final resolved = ImageCompressor.coerceMediaType(
-        read.bytes, read.mimeType, anthropicImageMediaTypes);
+      read.bytes,
+      read.mimeType,
+      anthropicImageMediaTypes,
+    );
     blocks.add({
       'type': 'image',
       'source': {
@@ -283,12 +288,12 @@ Map<String, dynamic>? anthropicOutputConfig(
 /// 400 that names the field, which the on-400 retry deliberately does *not*
 /// treat as a dialect problem (see [isAnthropicThinkingRejection]).
 String? anthropicEffortWire(ReasoningEffort? effort) => switch (effort) {
-      null || ReasoningEffort.off => null,
-      ReasoningEffort.low => 'low',
-      ReasoningEffort.medium => 'medium',
-      ReasoningEffort.high => 'high',
-      ReasoningEffort.max => 'max',
-    };
+  null || ReasoningEffort.off => null,
+  ReasoningEffort.low => 'low',
+  ReasoningEffort.medium => 'medium',
+  ReasoningEffort.high => 'high',
+  ReasoningEffort.max => 'max',
+};
 
 /// The two Anthropic spellings are each other's fallback; MiniMax's has none
 /// to fall to (a rejected `adaptive` there is a real error), and `none` stays
@@ -299,8 +304,7 @@ ThinkingDialect? alternateAnthropicThinkingDialect(ThinkingDialect dialect) =>
       ThinkingDialect.anthropicBudget => ThinkingDialect.anthropicAdaptive,
       ThinkingDialect.adaptive ||
       ThinkingDialect.none ||
-      ThinkingDialect.openaiThinkingObject =>
-        null,
+      ThinkingDialect.openaiThinkingObject => null,
     };
 
 /// Dialects learned from a 400, keyed by endpoint and model, for the life of
@@ -329,8 +333,10 @@ String _thinkingMemoKey(LLMTarget target) =>
 ThinkingDialect resolveAnthropicThinkingDialect(LLMTarget target) {
   final learned = _learnedThinkingDialects[_thinkingMemoKey(target)];
   if (learned != null) return learned;
-  return declaredAnthropicThinkingDialect(target.vendor.thinking,
-      legacyModel: target.model.usesLegacyAnthropicThinking);
+  return declaredAnthropicThinkingDialect(
+    target.vendor.thinking,
+    legacyModel: target.model.usesLegacyAnthropicThinking,
+  );
 }
 
 /// The spelling a vendor's declared [dialect] takes for one model, before
@@ -339,18 +345,25 @@ ThinkingDialect resolveAnthropicThinkingDialect(LLMTarget target) {
 ///
 /// Split out so the model editor's reasoning ladder
 /// (`LLMDispatcher.reasoningLadder`) reads the same decision the request does.
-ThinkingDialect declaredAnthropicThinkingDialect(ThinkingDialect dialect,
-    {required bool legacyModel}) {
-  final isAnthropicSpelling = dialect == ThinkingDialect.anthropicAdaptive ||
+ThinkingDialect declaredAnthropicThinkingDialect(
+  ThinkingDialect dialect, {
+  required bool legacyModel,
+}) {
+  final isAnthropicSpelling =
+      dialect == ThinkingDialect.anthropicAdaptive ||
       dialect == ThinkingDialect.anthropicBudget;
-  if (isAnthropicSpelling && legacyModel) return ThinkingDialect.anthropicBudget;
+  if (isAnthropicSpelling && legacyModel) {
+    return ThinkingDialect.anthropicBudget;
+  }
   return dialect;
 }
 
 /// Records that [rejected] was refused for this endpoint + model and returns
 /// the spelling to retry with, or null when there is none.
 ThinkingDialect? learnAnthropicThinkingDialect(
-    LLMTarget target, ThinkingDialect rejected) {
+  LLMTarget target,
+  ThinkingDialect rejected,
+) {
   final alternate = alternateAnthropicThinkingDialect(rejected);
   if (alternate != null) {
     _learnedThinkingDialects[_thinkingMemoKey(target)] = alternate;
@@ -360,7 +373,8 @@ ThinkingDialect? learnAnthropicThinkingDialect(
 
 /// Forgets every learned dialect. Tests only.
 @visibleForTesting
-void resetAnthropicThinkingDialectsForTest() => _learnedThinkingDialects.clear();
+void resetAnthropicThinkingDialectsForTest() =>
+    _learnedThinkingDialects.clear();
 
 /// Whether [error] is the API refusing the *shape* of the thinking request —
 /// the one 400 worth answering with the other dialect.
@@ -400,8 +414,10 @@ Map<String, dynamic> prepareAnthropicPayload(
   required bool isStreaming,
   ThinkingDialect? dialect,
 }) {
-  final converted =
-      buildAnthropicHistory(history, modelId: target.config.modelId);
+  final converted = buildAnthropicHistory(
+    history,
+    modelId: target.config.modelId,
+  );
   final maxTokens = anthropicMaxTokens(options);
   final thinkingDialect = dialect ?? resolveAnthropicThinkingDialect(target);
   final effort = target.config.effectiveReasoningEffort;
@@ -626,35 +642,44 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
         rawThinkingBlocks.add(block.cast<String, dynamic>());
       } else if (type == 'tool_use') {
         final input = block['input'];
-        toolCalls.add(LLMToolCall(
-          id: block['id']?.toString() ?? 'toolu_${toolCalls.length}',
-          name: block['name']?.toString() ?? '',
-          arguments: input is Map ? input.cast<String, dynamic>() : {},
-        ));
+        toolCalls.add(
+          LLMToolCall(
+            id: block['id']?.toString() ?? 'toolu_${toolCalls.length}',
+            name: block['name']?.toString() ?? '',
+            arguments: input is Map ? input.cast<String, dynamic>() : {},
+          ),
+        );
       } else if (type == 'server_tool_use') {
         hasServerTool = true;
         final input = block['input'];
         final query = input is Map ? (input['query']?.toString() ?? '') : '';
         runsByCallId[block['id']?.toString() ?? ''] = serverToolRuns.length;
-        serverToolRuns.add(ServerToolRun(
-          block['name']?.toString() ?? '',
-          query,
-          const [],
-        ));
+        serverToolRuns.add(
+          ServerToolRun(block['name']?.toString() ?? '', query, const []),
+        );
       } else if (type == 'web_search_tool_result') {
         hasServerTool = true;
         final parsed = _parseWebSearchResult(block['content']);
         final index = runsByCallId[block['tool_use_id']?.toString() ?? ''];
         if (index != null) {
           final run = serverToolRuns[index];
-          serverToolRuns[index] = ServerToolRun(run.name, run.query,
-              parsed.results,
-              error: parsed.error);
+          serverToolRuns[index] = ServerToolRun(
+            run.name,
+            run.query,
+            parsed.results,
+            error: parsed.error,
+          );
         } else {
           // A result with no call in front of it: keep the sources anyway
           // rather than lose them to a bookkeeping mismatch.
-          serverToolRuns.add(ServerToolRun('web_search', '', parsed.results,
-              error: parsed.error));
+          serverToolRuns.add(
+            ServerToolRun(
+              'web_search',
+              '',
+              parsed.results,
+              error: parsed.error,
+            ),
+          );
         }
       }
       // `redacted_thinking` is an opaque encrypted blob — there is nothing to
@@ -676,7 +701,8 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
               if (block is Map) block.cast<String, dynamic>(),
           ]
         : const [],
-    turnIncomplete: hasServerTool && lastVisibleType == 'web_search_tool_result',
+    turnIncomplete:
+        hasServerTool && lastVisibleType == 'web_search_tool_result',
   );
 }
 
@@ -684,7 +710,7 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
 /// of results or — when the search itself failed — a single error object
 /// (`{type: web_search_tool_result_error, error_code}`) in the same field.
 ({List<({String title, String url})> results, String? error})
-    _parseWebSearchResult(Object? content) {
+_parseWebSearchResult(Object? content) {
   final results = <({String title, String url})>[];
   if (content is Map) {
     final code = content['error_code']?.toString();
@@ -738,10 +764,10 @@ Map<String, dynamic> anthropicUsageMetadata(
             'name': run.name,
             'query': run.query,
             'sources': [
-              for (final r in run.results) {'title': r.title, 'url': r.url}
+              for (final r in run.results) {'title': r.title, 'url': r.url},
             ],
             if (run.error != null) 'error': run.error,
-          }
+          },
       ],
     // The MiniMax-shaped half-turn: `end_turn` on a search result with no
     // answer after it. `finish_reason` still says `stop` — the field is
@@ -809,11 +835,13 @@ class AnthropicStreamAssembler {
   /// end: indices are reused across blocks, and a call whose arguments are
   /// still a JSON fragment must never escape (see
   /// [LLMResponseChunk.toolCallPart]).
-  final Map<int, ({String id, String name, StringBuffer json})> _pendingCalls = {};
+  final Map<int, ({String id, String name, StringBuffer json})> _pendingCalls =
+      {};
 
   /// Server-tool calls under construction — same shape, but these are never
   /// emitted as calls: the host runs them itself.
-  final Map<int, ({String id, String name, StringBuffer json})> _pendingServerCalls = {};
+  final Map<int, ({String id, String name, StringBuffer json})>
+  _pendingServerCalls = {};
 
   /// Every block of the turn, verbatim as far as a stream allows, keyed by
   /// index and in arrival order. This is the replay carrier for a
@@ -908,8 +936,9 @@ class AnthropicStreamAssembler {
               json: StringBuffer(),
             );
             final startInput = block['input'];
-            final startQuery =
-                startInput is Map ? startInput['query']?.toString() : null;
+            final startQuery = startInput is Map
+                ? startInput['query']?.toString()
+                : null;
             logger?.call(
               'Host running ${block['name']}'
               '${startQuery == null || startQuery.isEmpty ? '' : '("$startQuery")'}…',
@@ -921,13 +950,21 @@ class AnthropicStreamAssembler {
             final at = _runsByCallId[block['tool_use_id']?.toString() ?? ''];
             if (at != null) {
               final run = _serverToolRuns[at];
-              _serverToolRuns[at] = ServerToolRun(run.name, run.query,
-                  parsed.results,
-                  error: parsed.error);
+              _serverToolRuns[at] = ServerToolRun(
+                run.name,
+                run.query,
+                parsed.results,
+                error: parsed.error,
+              );
             } else {
-              _serverToolRuns.add(ServerToolRun('web_search', '',
+              _serverToolRuns.add(
+                ServerToolRun(
+                  'web_search',
+                  '',
                   parsed.results,
-                  error: parsed.error));
+                  error: parsed.error,
+                ),
+              );
             }
         }
 
@@ -991,21 +1028,28 @@ class AnthropicStreamAssembler {
         final index = _indexOf(event);
         final call = _pendingCalls.remove(index);
         if (call != null) {
-          final completed = _completeCall(call, startedWith: _blocks[index]?['input']);
+          final completed = _completeCall(
+            call,
+            startedWith: _blocks[index]?['input'],
+          );
           _blocks[index]?['input'] = completed.arguments;
           yield LLMResponseChunk(toolCallPart: completed);
         }
         final serverCall = _pendingServerCalls.remove(index);
         if (serverCall != null) {
-          final input =
-              _completeCall(serverCall, startedWith: _blocks[index]?['input']).arguments;
+          final input = _completeCall(
+            serverCall,
+            startedWith: _blocks[index]?['input'],
+          ).arguments;
           _blocks[index]?['input'] = input;
           _runsByCallId[serverCall.id] = _serverToolRuns.length;
-          _serverToolRuns.add(ServerToolRun(
-            serverCall.name,
-            input['query']?.toString() ?? '',
-            const [],
-          ));
+          _serverToolRuns.add(
+            ServerToolRun(
+              serverCall.name,
+              input['query']?.toString() ?? '',
+              const [],
+            ),
+          );
         }
         final thought = _pendingThinking.remove(index);
         if (thought != null) _keepForReplay(thought);
@@ -1016,7 +1060,9 @@ class AnthropicStreamAssembler {
           _stopReason = delta['stop_reason'].toString();
         }
         final finalUsage = event['usage'];
-        if (finalUsage is Map) _usage.addAll(finalUsage.cast<String, dynamic>());
+        if (finalUsage is Map) {
+          _usage.addAll(finalUsage.cast<String, dynamic>());
+        }
 
       // message_stop / ping carry nothing this consumer needs.
     }
@@ -1027,8 +1073,10 @@ class AnthropicStreamAssembler {
   /// but a relay re-assembling the stream may hand the whole object over at
   /// the start and send no fragments at all — so an empty buffer falls back
   /// to it rather than to nothing.
-  LLMToolCall _completeCall(({String id, String name, StringBuffer json}) call,
-      {Object? startedWith}) {
+  LLMToolCall _completeCall(
+    ({String id, String name, StringBuffer json}) call, {
+    Object? startedWith,
+  }) {
     // A tool taking no arguments sends no input_json_delta at all, so an
     // empty buffer is `{}` and not a parse failure. A buffer that is present
     // but unparseable means the stream was cut mid-arguments: dropping the
@@ -1045,9 +1093,10 @@ class AnthropicStreamAssembler {
         if (decoded is Map<String, dynamic>) arguments = decoded;
       } catch (_) {
         logger?.call(
-            'Tool call ${call.name} arrived with unparseable arguments — the '
-            'stream was cut mid-JSON.',
-            level: 'WARN');
+          'Tool call ${call.name} arrived with unparseable arguments — the '
+          'stream was cut mid-JSON.',
+          level: 'WARN',
+        );
       }
     }
     return LLMToolCall(id: call.id, name: call.name, arguments: arguments);
@@ -1112,8 +1161,9 @@ class AnthropicStreamAssembler {
               serverToolRuns: _serverToolRuns,
               turnIncomplete: turnIncomplete,
             ),
-      rawThinkingBlocks:
-          _rawThinkingBlocks.isEmpty ? null : List.of(_rawThinkingBlocks),
+      rawThinkingBlocks: _rawThinkingBlocks.isEmpty
+          ? null
+          : List.of(_rawThinkingBlocks),
       reasoningSignature: _thinkingSignature,
       rawContentBlocks: rawContent.isEmpty ? null : rawContent,
     );
@@ -1166,13 +1216,25 @@ class AnthropicChatProtocol implements ChatProtocol {
   }) async {
     final dialect = resolveAnthropicThinkingDialect(target);
     try {
-      return await _generateOnce(target, history,
-          options: options, tools: tools, logger: logger, dialect: dialect);
+      return await _generateOnce(
+        target,
+        history,
+        options: options,
+        tools: tools,
+        logger: logger,
+        dialect: dialect,
+      );
     } catch (e) {
       final retry = _retryDialectFor(target, dialect, e, options, logger);
       if (retry == null) rethrow;
-      return _generateOnce(target, history,
-          options: options, tools: tools, logger: logger, dialect: retry);
+      return _generateOnce(
+        target,
+        history,
+        options: options,
+        tools: tools,
+        logger: logger,
+        dialect: retry,
+      );
     }
   }
 
@@ -1188,8 +1250,14 @@ class AnthropicChatProtocol implements ChatProtocol {
     final url = Uri.parse('${trimBaseUrl(config.endpoint)}/messages');
     logger?.call('Preparing Anthropic request to: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
-    final payload = prepareAnthropicPayload(target, history,
-        options: options, tools: tools, isStreaming: false, dialect: dialect);
+    final payload = prepareAnthropicPayload(
+      target,
+      history,
+      options: options,
+      tools: tools,
+      isStreaming: false,
+      dialect: dialect,
+    );
 
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
@@ -1197,17 +1265,24 @@ class AnthropicChatProtocol implements ChatProtocol {
       final appState = AppState();
       LLMDebugLog? debugFile;
       if (appState.enableApiDebug) {
-        debugFile = await LLMDebugLogger.startLog(config.modelId, 'Anthropic (Standard)', {
-          'url': redactUrl(url),
-          'headers': headers,
-          'body': payload,
-        });
+        debugFile = await LLMDebugLogger.startLog(
+          config.modelId,
+          'Anthropic (Standard)',
+          {'url': redactUrl(url), 'headers': headers, 'body': payload},
+        );
       }
 
-      final response = await client.post(url, headers: headers, body: jsonEncode(payload));
+      final response = await client.post(
+        url,
+        headers: headers,
+        body: jsonEncode(payload),
+      );
 
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(
+          debugFile,
+          'Status: ${response.statusCode}',
+        );
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
         await LLMDebugLogger.finish(debugFile);
       }
@@ -1224,13 +1299,18 @@ class AnthropicChatProtocol implements ChatProtocol {
         // Same rule the other two families now follow: a body carrying no
         // content is a failed request, not a model that chose to say nothing.
         final body = response.body;
-        throw Exception('Anthropic API returned no content: '
-            '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
+        throw Exception(
+          'Anthropic API returned no content: '
+          '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+        );
       }
 
       final content = parseAnthropicContent(rawContent);
       if (content.toolCalls.isNotEmpty) {
-        logger?.call('Model requested ${content.toolCalls.length} tool call(s).', level: 'DEBUG');
+        logger?.call(
+          'Model requested ${content.toolCalls.length} tool call(s).',
+          level: 'DEBUG',
+        );
       }
       for (final run in content.serverToolRuns) {
         _logServerToolRun(run, logger);
@@ -1255,8 +1335,9 @@ class AnthropicChatProtocol implements ChatProtocol {
           serverToolRuns: content.serverToolRuns,
           turnIncomplete: content.turnIncomplete,
         ),
-        rawContentBlocks:
-            content.rawContentBlocks.isEmpty ? null : content.rawContentBlocks,
+        rawContentBlocks: content.rawContentBlocks.isEmpty
+            ? null
+            : content.rawContentBlocks,
         reasoningContent: content.thinking,
         // Deliberately no field *name*: ④'s echo-back obligation is not a
         // field on the message but the whole thinking block, verified by its
@@ -1268,9 +1349,10 @@ class AnthropicChatProtocol implements ChatProtocol {
             ? null
             : content.rawThinkingBlocks,
         rawThinkingModelId:
-            content.rawThinkingBlocks.isEmpty && content.rawContentBlocks.isEmpty
-                ? null
-                : config.modelId,
+            content.rawThinkingBlocks.isEmpty &&
+                content.rawContentBlocks.isEmpty
+            ? null
+            : config.modelId,
         toolCalls: content.toolCalls,
       );
     } finally {
@@ -1315,8 +1397,14 @@ class AnthropicChatProtocol implements ChatProtocol {
     final dialect = resolveAnthropicThinkingDialect(target);
     ThinkingDialect? retry;
     try {
-      yield* _streamOnce(target, history,
-          options: options, tools: tools, logger: logger, dialect: dialect);
+      yield* _streamOnce(
+        target,
+        history,
+        options: options,
+        tools: tools,
+        logger: logger,
+        dialect: dialect,
+      );
       return;
     } catch (e) {
       // Only a 400 on the opening response qualifies (see
@@ -1325,8 +1413,14 @@ class AnthropicChatProtocol implements ChatProtocol {
       retry = _retryDialectFor(target, dialect, e, options, logger);
       if (retry == null) rethrow;
     }
-    yield* _streamOnce(target, history,
-        options: options, tools: tools, logger: logger, dialect: retry);
+    yield* _streamOnce(
+      target,
+      history,
+      options: options,
+      tools: tools,
+      logger: logger,
+      dialect: retry,
+    );
   }
 
   Stream<LLMResponseChunk> _streamOnce(
@@ -1341,8 +1435,14 @@ class AnthropicChatProtocol implements ChatProtocol {
     final url = Uri.parse('${trimBaseUrl(config.endpoint)}/messages');
     logger?.call('Starting Anthropic stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
-    final payload = prepareAnthropicPayload(target, history,
-        options: options, tools: tools, isStreaming: true, dialect: dialect);
+    final payload = prepareAnthropicPayload(
+      target,
+      history,
+      options: options,
+      tools: tools,
+      isStreaming: true,
+      dialect: dialect,
+    );
 
     final request = http.Request('POST', url);
     request.headers.addAll(headers);
@@ -1352,39 +1452,60 @@ class AnthropicChatProtocol implements ChatProtocol {
     final appState = AppState();
     LLMDebugLog? debugFile;
     if (appState.enableApiDebug) {
-      debugFile = await LLMDebugLogger.startLog(config.modelId, 'Anthropic (Stream)', {
-        'url': redactUrl(url),
-        'headers': headers,
-        'body': payload,
-      });
+      debugFile = await LLMDebugLogger.startLog(
+        config.modelId,
+        'Anthropic (Stream)',
+        {'url': redactUrl(url), 'headers': headers, 'body': payload},
+      );
     }
 
-    final response = await client.send(request);
+    final http.StreamedResponse response;
+    try {
+      response = await client.send(request);
+    } catch (_) {
+      client.close();
+      rethrow;
+    }
 
     if (response.statusCode != 200) {
       final body = await response.stream.bytesToString();
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(
+          debugFile,
+          'Error Status: ${response.statusCode}',
+        );
         await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
         await LLMDebugLogger.finish(debugFile);
       }
       client.close();
-      logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
+      logger?.call(
+        'Stream request failed with status: ${response.statusCode}',
+        level: 'ERROR',
+      );
       throw LLMApiException(
-          'Anthropic API Stream Request failed: ${response.statusCode} - $body',
-          statusCode: response.statusCode);
+        'Anthropic API Stream Request failed: ${response.statusCode} - $body',
+        statusCode: response.statusCode,
+      );
     }
 
-    logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');
+    logger?.call(
+      'Stream connection established, waiting for chunks...',
+      level: 'DEBUG',
+    );
     if (debugFile != null) {
-      await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+      await LLMDebugLogger.appendLine(
+        debugFile,
+        'Status: ${response.statusCode}',
+      );
     }
 
     final assembler = AnthropicStreamAssembler(logger: logger);
 
     try {
       await for (final line
-          in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+          in response.stream
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())) {
         if (debugFile != null && line.isNotEmpty) {
           await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
@@ -1428,10 +1549,11 @@ class AnthropicChatProtocol implements ChatProtocol {
 
     if (!assembler.sawMessage) {
       throw LLMApiException(
-          'Anthropic API stream ended without a message — the base URL may '
-          'point at something that is not this API, or the relay answered '
-          'with an empty stream.',
-          isNonJsonBody: true);
+        'Anthropic API stream ended without a message — the base URL may '
+        'point at something that is not this API, or the relay answered '
+        'with an empty stream.',
+        isNonJsonBody: true,
+      );
     }
 
     final closing = assembler.finish();

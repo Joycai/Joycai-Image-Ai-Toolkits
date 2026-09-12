@@ -11,20 +11,13 @@ import '../services/browser_file_scanner.dart';
 import '../services/database_service.dart';
 import '../services/file_permission_service.dart';
 
-enum BrowserViewMode {
-  grid,
-  list,
-}
+enum BrowserViewMode { grid, list }
 
-enum BrowserSortField {
-  name,
-  date,
-  type,
-}
+enum BrowserSortField { name, date, type }
 
 class FileBrowserState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
-  
+
   List<BrowserFile> allFiles = [];
   List<BrowserFile> filteredFiles = [];
   Set<BrowserFile> selectedFiles = {};
@@ -34,7 +27,7 @@ class FileBrowserState extends ChangeNotifier {
   /// [selectRangeTo] resolves it back to an index against the current
   /// [filteredFiles] at click time.
   String? _selectionAnchorPath;
-  
+
   FileCategory currentFilter = FileCategory.all;
   String searchQuery = '';
   BrowserViewMode viewMode = BrowserViewMode.grid;
@@ -48,7 +41,7 @@ class FileBrowserState extends ChangeNotifier {
   Set<String> unreachableDirectories = {};
   int _refreshCounter = 0;
   int get refreshCounter => _refreshCounter;
-  
+
   FileBrowserState() {
     reloadSettings();
   }
@@ -58,12 +51,12 @@ class FileBrowserState extends ChangeNotifier {
     if (savedThumbSize != null) {
       thumbnailSize = double.tryParse(savedThumbSize) ?? 150.0;
     }
-    
+
     final savedViewMode = await _db.getSetting('browser_view_mode');
     if (savedViewMode != null) {
       viewMode = BrowserViewMode.values.firstWhere(
-        (e) => e.name == savedViewMode, 
-        orElse: () => BrowserViewMode.grid
+        (e) => e.name == savedViewMode,
+        orElse: () => BrowserViewMode.grid,
       );
     }
 
@@ -71,7 +64,7 @@ class FileBrowserState extends ChangeNotifier {
     if (savedSortField != null) {
       sortField = BrowserSortField.values.firstWhere(
         (e) => e.name == savedSortField,
-        orElse: () => BrowserSortField.date
+        orElse: () => BrowserSortField.date,
       );
     }
 
@@ -100,8 +93,14 @@ class FileBrowserState extends ChangeNotifier {
     if (!sourceDirectories.contains(path)) {
       sourceDirectories.add(path);
       activeDirectories.add(path);
-      await _db.saveSetting('browser_source_directories', sourceDirectories.join('|'));
-      await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
+      await _db.saveSetting(
+        'browser_source_directories',
+        sourceDirectories.join('|'),
+      );
+      await _db.saveSetting(
+        'browser_active_directories',
+        activeDirectories.join('|'),
+      );
       refresh();
       notifyListeners();
     }
@@ -110,9 +109,17 @@ class FileBrowserState extends ChangeNotifier {
   Future<void> removeBaseDirectory(String path) async {
     if (sourceDirectories.contains(path)) {
       sourceDirectories.remove(path);
-      activeDirectories.removeWhere((p) => p.startsWith(path));
-      await _db.saveSetting('browser_source_directories', sourceDirectories.join('|'));
-      await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
+      activeDirectories.removeWhere(
+        (candidate) => p.equals(candidate, path) || p.isWithin(path, candidate),
+      );
+      await _db.saveSetting(
+        'browser_source_directories',
+        sourceDirectories.join('|'),
+      );
+      await _db.saveSetting(
+        'browser_active_directories',
+        activeDirectories.join('|'),
+      );
       refresh();
       notifyListeners();
     }
@@ -124,7 +131,10 @@ class FileBrowserState extends ChangeNotifier {
     } else {
       activeDirectories.add(path);
     }
-    await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
+    await _db.saveSetting(
+      'browser_active_directories',
+      activeDirectories.join('|'),
+    );
     refresh();
   }
 
@@ -137,7 +147,10 @@ class FileBrowserState extends ChangeNotifier {
 
   Future<void> setExclusiveDirectory(String path) async {
     activeDirectories = [path];
-    await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
+    await _db.saveSetting(
+      'browser_active_directories',
+      activeDirectories.join('|'),
+    );
     refresh();
   }
 
@@ -147,17 +160,26 @@ class FileBrowserState extends ChangeNotifier {
   /// Does not rescan: the caller refreshes once after every list is in step.
   Future<void> rewritePathPrefix(String from, String to) async {
     List<String> rewrite(List<String> paths) => [
-          for (final path in paths) FileUtils.rebasePath(path, from: from, to: to) ?? path,
-        ];
+      for (final path in paths)
+        FileUtils.rebasePath(path, from: from, to: to) ?? path,
+    ];
     final newSources = rewrite(sourceDirectories);
     final newActive = rewrite(activeDirectories);
-    final changed = !listEquals(newSources, sourceDirectories) || !listEquals(newActive, activeDirectories);
+    final changed =
+        !listEquals(newSources, sourceDirectories) ||
+        !listEquals(newActive, activeDirectories);
     if (!changed) return;
 
     sourceDirectories = newSources;
     activeDirectories = newActive;
-    await _db.saveSetting('browser_source_directories', sourceDirectories.join('|'));
-    await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
+    await _db.saveSetting(
+      'browser_source_directories',
+      sourceDirectories.join('|'),
+    );
+    await _db.saveSetting(
+      'browser_active_directories',
+      activeDirectories.join('|'),
+    );
     notifyListeners();
   }
 
@@ -173,11 +195,16 @@ class FileBrowserState extends ChangeNotifier {
 
     final kept = activeDirectories.where((d) => !removed.contains(d)).toList();
     final parent = p.dirname(path);
-    final parentInTree = sourceDirectories.any((r) => p.equals(r, parent) || p.isWithin(r, parent));
+    final parentInTree = sourceDirectories.any(
+      (r) => p.equals(r, parent) || p.isWithin(r, parent),
+    );
     if (parentInTree && !kept.any((d) => p.equals(d, parent))) kept.add(parent);
 
     activeDirectories = kept;
-    await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
+    await _db.saveSetting(
+      'browser_active_directories',
+      activeDirectories.join('|'),
+    );
     notifyListeners();
   }
 
@@ -232,14 +259,20 @@ class FileBrowserState extends ChangeNotifier {
     if (_disposed) return;
     _refreshCounter++;
     final scan = _refreshCounter;
-    
+
     // Check for unreachable directories
-    final newUnreachable = <String>{};
-    for (var path in sourceDirectories) {
-      if (FilePermissionService().isPathUnreachable(path)) {
-        newUnreachable.add(path);
-      }
-    }
+    final permission = FilePermissionService();
+    final checks = await Future.wait(
+      sourceDirectories.map(
+        (path) async =>
+            MapEntry(path, await permission.isPathUnreachableAsync(path)),
+      ),
+    );
+    if (_disposed || scan != _refreshCounter) return;
+    final newUnreachable = <String>{
+      for (final check in checks)
+        if (check.value) check.key,
+    };
     unreachableDirectories = newUnreachable;
 
     if (activeDirectories.isEmpty) {
@@ -267,7 +300,7 @@ class FileBrowserState extends ChangeNotifier {
     // mid-scan drops the answer for the same reason it stops counting.
     if (_disposed || scan != _refreshCounter) return;
     isScanning = false;
-    
+
     final newAllFiles = rawFiles.map((m) => BrowserFile.fromMap(m)).toList();
 
     // Evict from image cache only if the file was modified or removed.
@@ -275,9 +308,7 @@ class FileBrowserState extends ChangeNotifier {
     // Indexed rather than searched: this was a linear `firstWhere` over the
     // previous listing per file, so a directory of a thousand pictures cost
     // half a million comparisons on the UI thread every time the watcher fired.
-    final previousModified = {
-      for (final f in allFiles) f.path: f.modified,
-    };
+    final previousModified = {for (final f in allFiles) f.path: f.modified};
     for (var file in newAllFiles) {
       if (file.category == FileCategory.image) {
         final existing = previousModified[file.path];
@@ -317,12 +348,16 @@ class FileBrowserState extends ChangeNotifier {
     if (currentFilter == FileCategory.all) {
       filteredFiles = List.from(allFiles);
     } else {
-      filteredFiles = allFiles.where((f) => f.category == currentFilter).toList();
+      filteredFiles = allFiles
+          .where((f) => f.category == currentFilter)
+          .toList();
     }
 
     if (searchQuery.isNotEmpty) {
       final q = searchQuery.toLowerCase();
-      filteredFiles = filteredFiles.where((f) => f.name.toLowerCase().contains(q)).toList();
+      filteredFiles = filteredFiles
+          .where((f) => f.name.toLowerCase().contains(q))
+          .toList();
     }
 
     // Apply sorting
@@ -344,9 +379,11 @@ class FileBrowserState extends ChangeNotifier {
       }
       return sortAscending ? cmp : -cmp;
     });
-    
+
     // Cleanup selection
-    selectedFiles.removeWhere((selected) => !allFiles.any((f) => f.path == selected.path));
+    selectedFiles.removeWhere(
+      (selected) => !allFiles.any((f) => f.path == selected.path),
+    );
     notifyListeners();
   }
 

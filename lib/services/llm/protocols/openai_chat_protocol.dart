@@ -177,8 +177,9 @@ class StreamingToolCallAccumulator {
       // the field, the fallback is resolved from the call's own identity —
       // see [_slotForIndexless] for why bare array position is not enough.
       final rawIndex = tc['index'];
-      final index =
-          rawIndex is num ? rawIndex.toInt() : _slotForIndexless(tc, position);
+      final index = rawIndex is num
+          ? rawIndex.toInt()
+          : _slotForIndexless(tc, position);
       final pending = _calls.putIfAbsent(index, _PendingToolCall.new);
       pending.id = _merge(pending.id, tc['id']);
       final fn = tc['function'];
@@ -199,7 +200,8 @@ class StreamingToolCallAccumulator {
       // instead, whose prefix test replaces the restated frame.
       final rawId = tc['id'];
       final frameHasId = rawId is String && rawId.isNotEmpty;
-      final isNamelessDelta = pending.name.isNotEmpty &&
+      final isNamelessDelta =
+          pending.name.isNotEmpty &&
           !frameHasId &&
           (rawName is! String || rawName.isEmpty);
       pending.name = _merge(pending.name, rawName);
@@ -268,12 +270,15 @@ class StreamingToolCallAccumulator {
     final calls = <LLMToolCall>[];
     for (final index in _calls.keys.toList()..sort()) {
       final pending = _calls[index]!;
-      calls.add(LLMToolCall(
-        id: resolveToolCallId(pending.id, index),
-        name: pending.name,
-        arguments: pending.decodedArguments ??
-            decodeToolArguments(pending.arguments, logger: logger),
-      ));
+      calls.add(
+        LLMToolCall(
+          id: resolveToolCallId(pending.id, index),
+          name: pending.name,
+          arguments:
+              pending.decodedArguments ??
+              decodeToolArguments(pending.arguments, logger: logger),
+        ),
+      );
     }
     _calls.clear();
     _lastIndexlessSlot = null;
@@ -457,7 +462,9 @@ StructuredImages extractStructuredImages(Map<String, dynamic> source) {
       if (comma == -1) return;
       try {
         bytes.add(base64Decode(url.substring(comma + 1)));
-      } catch (_) {/* not decodable — nothing to add */}
+      } catch (_) {
+        /* not decodable — nothing to add */
+      }
     } else if (url.startsWith('http://') || url.startsWith('https://')) {
       urls.add(url);
     }
@@ -467,7 +474,9 @@ StructuredImages extractStructuredImages(Map<String, dynamic> source) {
     if (raw is! String || raw.isEmpty) return;
     try {
       bytes.add(base64Decode(raw));
-    } catch (_) {/* not decodable — nothing to add */}
+    } catch (_) {
+      /* not decodable — nothing to add */
+    }
   }
 
   /// A bare string entry: a link, a data URI, or the base64 itself. Bare
@@ -482,7 +491,9 @@ StructuredImages extractStructuredImages(Map<String, dynamic> source) {
     try {
       final decoded = base64Decode(value);
       if (imageMimeFromBytes(decoded) != null) bytes.add(decoded);
-    } catch (_) {/* not base64 — nothing to add */}
+    } catch (_) {
+      /* not base64 — nothing to add */
+    }
   }
 
   addBase64(source['image_data']);
@@ -580,8 +591,10 @@ class ImageDeduper {
   bool admit(Uint8List image) => _seen.add(sha256.convert(image).toString());
 
   /// [images] without the ones already admitted (or repeated within).
-  List<Uint8List> filter(Iterable<Uint8List> images) =>
-      [for (final img in images) if (admit(img)) img];
+  List<Uint8List> filter(Iterable<Uint8List> images) => [
+    for (final img in images)
+      if (admit(img)) img,
+  ];
 }
 
 /// Image URLs a reply's *text* points at, in declaration order, deduplicated.
@@ -597,11 +610,14 @@ class ImageDeduper {
 /// that merely cites a URL must not cause the app to go download it.
 List<String> imageUrlsInText(String text) {
   final urls = <String>{};
-  for (final m in RegExp(r'!\[[^\]]*\]\((https?://[^\s)]+)\)').allMatches(text)) {
+  for (final m in RegExp(
+    r'!\[[^\]]*\]\((https?://[^\s)]+)\)',
+  ).allMatches(text)) {
     urls.add(m.group(1)!);
   }
-  for (final m
-      in RegExp(r'https?://storage\.googleapis\.com/[^\s"\]\)]+').allMatches(text)) {
+  for (final m in RegExp(
+    r'https?://storage\.googleapis\.com/[^\s"\]\)]+',
+  ).allMatches(text)) {
     urls.add(m.group(0)!);
   }
   return urls.toList();
@@ -630,9 +646,18 @@ class OpenAIChatProtocol implements ChatProtocol {
     final url = Uri.parse('${trimBaseUrl(config.endpoint)}/chat/completions');
     logger?.call('Preparing OpenAI request to: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
-    final payload = _prepareChatPayload(target, history, options, isStreaming: false, tools: tools);
+    final payload = _prepareChatPayload(
+      target,
+      history,
+      options,
+      isStreaming: false,
+      tools: tools,
+    );
     if (payload.containsKey('safety_settings')) {
-      logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
+      logger?.call(
+        'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',
+        level: 'DEBUG',
+      );
     }
 
     logger?.call('Sending POST request...', level: 'DEBUG');
@@ -641,17 +666,24 @@ class OpenAIChatProtocol implements ChatProtocol {
       final appState = AppState();
       LLMDebugLog? debugFile;
       if (appState.enableApiDebug) {
-        debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Standard)', {
-          'url': redactUrl(url),
-          'headers': headers,
-          'body': payload,
-        });
+        debugFile = await LLMDebugLogger.startLog(
+          config.modelId,
+          'OpenAI (Standard)',
+          {'url': redactUrl(url), 'headers': headers, 'body': payload},
+        );
       }
 
-      final response = await client.post(url, headers: headers, body: jsonEncode(payload));
+      final response = await client.post(
+        url,
+        headers: headers,
+        body: jsonEncode(payload),
+      );
 
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(
+          debugFile,
+          'Status: ${response.statusCode}',
+        );
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
         await LLMDebugLogger.finish(debugFile);
       }
@@ -667,15 +699,18 @@ class OpenAIChatProtocol implements ChatProtocol {
 
       final choice = firstChoice(data);
       final rawMessage = choice?['message'];
-      final message =
-          rawMessage is Map ? rawMessage.cast<String, dynamic>() : null;
+      final message = rawMessage is Map
+          ? rawMessage.cast<String, dynamic>()
+          : null;
       if (message == null) {
         // Previously this fell through to an empty LLMResponse, which callers
         // (the assistant loop above all) read as "the model chose to say
         // nothing" — an expired key looked like a silent no-op.
         final body = response.body;
-        throw Exception('OpenAI API returned no choices: '
-            '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
+        throw Exception(
+          'OpenAI API returned no choices: '
+          '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+        );
       }
       {
         text = contentToText(message['content']);
@@ -683,11 +718,13 @@ class OpenAIChatProtocol implements ChatProtocol {
         // ① family chain-of-thought: field-based (DeepSeek reasoning_content,
         // OpenRouter reasoning — no standard spelling exists, so probe the
         // known candidates and remember which one answered)...
-        final rawReasoning = message['reasoning_content'] ?? message['reasoning'];
+        final rawReasoning =
+            message['reasoning_content'] ?? message['reasoning'];
         if (rawReasoning is String && rawReasoning.isNotEmpty) {
           reasoningContent = rawReasoning;
-          reasoningFieldName =
-              message['reasoning_content'] != null ? 'reasoning_content' : 'reasoning';
+          reasoningFieldName = message['reasoning_content'] != null
+              ? 'reasoning_content'
+              : 'reasoning';
         }
         // ...or inline <think> spans glued into content (MiniMax default).
         // Inline reasoning is display/accounting-only — it carries no echo
@@ -708,14 +745,19 @@ class OpenAIChatProtocol implements ChatProtocol {
             final fn = tc is Map ? tc['function'] : null;
             if (fn is! Map) continue;
             final args = decodeToolArguments(fn['arguments'], logger: logger);
-            toolCalls.add(LLMToolCall(
-              id: resolveToolCallId(tc['id'], i),
-              name: fn['name']?.toString() ?? '',
-              arguments: args,
-            ));
+            toolCalls.add(
+              LLMToolCall(
+                id: resolveToolCallId(tc['id'], i),
+                name: fn['name']?.toString() ?? '',
+                arguments: args,
+              ),
+            );
           }
           if (toolCalls.isNotEmpty) {
-            logger?.call('Model requested ${toolCalls.length} tool call(s).', level: 'DEBUG');
+            logger?.call(
+              'Model requested ${toolCalls.length} tool call(s).',
+              level: 'DEBUG',
+            );
           }
         }
 
@@ -725,18 +767,29 @@ class OpenAIChatProtocol implements ChatProtocol {
         final dedupe = ImageDeduper();
         final structured = extractStructuredImages(message);
         images.addAll(dedupe.filter(structured.bytes));
-        images.addAll(dedupe.filter(await _fetchImageUrls(structured.urls, config, logger)));
+        images.addAll(
+          dedupe.filter(await _fetchImageUrls(structured.urls, config, logger)),
+        );
 
         if (text.isNotEmpty) {
-          logger?.call('Extracting images from text response...', level: 'DEBUG');
-          final result = await _processTextAndExtractImages(text, config,
-              imageReply: target.model.capabilities.isImageGenerator);
+          logger?.call(
+            'Extracting images from text response...',
+            level: 'DEBUG',
+          );
+          final result = await _processTextAndExtractImages(
+            text,
+            config,
+            imageReply: target.model.capabilities.isImageGenerator,
+          );
           text = result.text;
           images.addAll(dedupe.filter(result.images));
         }
       }
 
-      logger?.call('Parse complete. Text length: ${text.length}, Images: ${images.length}', level: 'DEBUG');
+      logger?.call(
+        'Parse complete. Text length: ${text.length}, Images: ${images.length}',
+        level: 'DEBUG',
+      );
 
       final metadata = <String, dynamic>{
         ...?(data['usage'] as Map?)?.cast<String, dynamic>(),
@@ -781,10 +834,18 @@ class OpenAIChatProtocol implements ChatProtocol {
     final url = Uri.parse('${trimBaseUrl(config.endpoint)}/chat/completions');
     logger?.call('Starting OpenAI stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
-    final payload =
-        _prepareChatPayload(target, history, options, isStreaming: true, tools: tools);
+    final payload = _prepareChatPayload(
+      target,
+      history,
+      options,
+      isStreaming: true,
+      tools: tools,
+    );
     if (payload.containsKey('safety_settings')) {
-      logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
+      logger?.call(
+        'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',
+        level: 'DEBUG',
+      );
     }
 
     final request = http.Request('POST', url);
@@ -795,14 +856,20 @@ class OpenAIChatProtocol implements ChatProtocol {
     final appState = AppState();
     LLMDebugLog? debugFile;
     if (appState.enableApiDebug) {
-      debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Stream)', {
-        'url': redactUrl(url),
-        'headers': headers,
-        'body': payload,
-      });
+      debugFile = await LLMDebugLogger.startLog(
+        config.modelId,
+        'OpenAI (Stream)',
+        {'url': redactUrl(url), 'headers': headers, 'body': payload},
+      );
     }
 
-    final response = await client.send(request);
+    final http.StreamedResponse response;
+    try {
+      response = await client.send(request);
+    } catch (_) {
+      client.close();
+      rethrow;
+    }
 
     if (response.statusCode != 200) {
       // Read unconditionally, not just for the debug log: the body carries
@@ -811,22 +878,35 @@ class OpenAIChatProtocol implements ChatProtocol {
       // the handle's close.
       final body = await response.stream.bytesToString();
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(
+          debugFile,
+          'Error Status: ${response.statusCode}',
+        );
         await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
         await LLMDebugLogger.finish(debugFile);
       }
-      logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
+      logger?.call(
+        'Stream request failed with status: ${response.statusCode}',
+        level: 'ERROR',
+      );
       client.close();
       throw LLMApiException(
-          'OpenAI API Stream Request failed: ${response.statusCode} - '
-          '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
-          statusCode: response.statusCode);
+        'OpenAI API Stream Request failed: ${response.statusCode} - '
+        '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+        statusCode: response.statusCode,
+      );
     }
 
-    logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');
+    logger?.call(
+      'Stream connection established, waiting for chunks...',
+      level: 'DEBUG',
+    );
 
     if (debugFile != null) {
-      await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+      await LLMDebugLogger.appendLine(
+        debugFile,
+        'Status: ${response.statusCode}',
+      );
     }
 
     String accumulatedText = "";
@@ -853,7 +933,10 @@ class OpenAIChatProtocol implements ChatProtocol {
     var sawChunk = false;
 
     try {
-      await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+      await for (final line
+          in response.stream
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())) {
         if (debugFile != null && line.isNotEmpty) {
           await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
@@ -883,7 +966,9 @@ class OpenAIChatProtocol implements ChatProtocol {
         final choice = firstChoice(chunkData);
         if (choice == null) continue;
         final rawFinish = choice['finish_reason'];
-        if (rawFinish is String && rawFinish.isNotEmpty) finishReason = rawFinish;
+        if (rawFinish is String && rawFinish.isNotEmpty) {
+          finishReason = rawFinish;
+        }
 
         // Structured image fields, read outside the tolerant try for the same
         // reason as usage: on a relay that answers with `delta.images[]`
@@ -915,7 +1000,8 @@ class OpenAIChatProtocol implements ChatProtocol {
             yield LLMResponseChunk(imagePart: img);
           }
           for (final img in dedupe.filter(
-              await _fetchImageUrls(structured.urls, config, logger))) {
+            await _fetchImageUrls(structured.urls, config, logger),
+          )) {
             yield LLMResponseChunk(imagePart: img);
           }
         }
@@ -953,7 +1039,9 @@ class OpenAIChatProtocol implements ChatProtocol {
               accumulatedText += cleanText;
 
               // Check if we are currently receiving a massive base64 string
-              if (!isLikelyBase64Stream && accumulatedText.length > 500 && _isBase64Heuristic(accumulatedText)) {
+              if (!isLikelyBase64Stream &&
+                  accumulatedText.length > 500 &&
+                  _isBase64Heuristic(accumulatedText)) {
                 isLikelyBase64Stream = true;
               }
 
@@ -963,7 +1051,6 @@ class OpenAIChatProtocol implements ChatProtocol {
               }
             }
           }
-
         } catch (e) {
           // Ignore parse errors
         }
@@ -979,10 +1066,14 @@ class OpenAIChatProtocol implements ChatProtocol {
       }
 
       if (accumulatedText.isNotEmpty) {
-        final result = await _processTextAndExtractImages(accumulatedText, config,
-            imageReply: target.model.capabilities.isImageGenerator);
+        final result = await _processTextAndExtractImages(
+          accumulatedText,
+          config,
+          imageReply: target.model.capabilities.isImageGenerator,
+        );
         // If the text was mostly images, don't yield the messy leftover text
-        if (result.text.length < accumulatedText.length * 0.1 || _isBase64Heuristic(result.text)) {
+        if (result.text.length < accumulatedText.length * 0.1 ||
+            _isBase64Heuristic(result.text)) {
           // Skip yielding textPart
         } else if (isLikelyBase64Stream) {
           // If we suppressed it during streaming but it turned out to have valid text, yield it now
@@ -1002,10 +1093,11 @@ class OpenAIChatProtocol implements ChatProtocol {
 
     if (!sawChunk) {
       throw LLMApiException(
-          'OpenAI API stream ended without a single chunk — the base URL may '
-          'point at something that is not this API, or the relay answered '
-          'with an empty stream.',
-          isNonJsonBody: true);
+        'OpenAI API stream ended without a single chunk — the base URL may '
+        'point at something that is not this API, or the relay answered '
+        'with an empty stream.',
+        isNonJsonBody: true,
+      );
     }
 
     // After the loop, never inside it: a call is whole only once the last
@@ -1015,8 +1107,10 @@ class OpenAIChatProtocol implements ChatProtocol {
     // deliver a half-built call.
     final assembled = streamedToolCalls.flush(logger: logger);
     if (assembled.isNotEmpty) {
-      logger?.call('Model requested ${assembled.length} tool call(s).',
-          level: 'DEBUG');
+      logger?.call(
+        'Model requested ${assembled.length} tool call(s).',
+        level: 'DEBUG',
+      );
     }
     for (final call in assembled) {
       yield LLMResponseChunk(toolCallPart: call);
@@ -1026,10 +1120,9 @@ class OpenAIChatProtocol implements ChatProtocol {
     // it a streamed request recorded no token usage at all — the sync path's
     // `usage` + `finish_reason` are reported here in the same shape.
     if (usageMetadata != null) {
-      yield LLMResponseChunk(metadata: {
-        ...usageMetadata,
-        'finish_reason': ?finishReason,
-      });
+      yield LLMResponseChunk(
+        metadata: {...usageMetadata, 'finish_reason': ?finishReason},
+      );
     }
 
     yield LLMResponseChunk(isDone: true);
@@ -1053,7 +1146,10 @@ class OpenAIChatProtocol implements ChatProtocol {
           if (resp.statusCode == 200) {
             images.add(resp.bodyBytes);
           } else {
-            logger?.call('Image URL returned ${resp.statusCode}: $url', level: 'WARN');
+            logger?.call(
+              'Image URL returned ${resp.statusCode}: $url',
+              level: 'WARN',
+            );
           }
         } catch (e) {
           logger?.call('Failed to fetch image URL $url: $e', level: 'WARN');
@@ -1070,7 +1166,9 @@ class OpenAIChatProtocol implements ChatProtocol {
     // Check if it contains data URI prefix
     if (text.contains('data:image/')) return true;
     // Check if it's a long string of base64 characters with no spaces
-    return text.length > 200 && !text.contains(' ') && RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(text.substring(0, 100));
+    return text.length > 200 &&
+        !text.contains(' ') &&
+        RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(text.substring(0, 100));
   }
 
   Future<_TextProcessResult> _processTextAndExtractImages(
@@ -1097,7 +1195,9 @@ class OpenAIChatProtocol implements ChatProtocol {
                 imageMimeFromBytes(response.bodyBytes) != null) {
               images.add(response.bodyBytes);
             }
-          } catch (e) { /* ignore */ }
+          } catch (e) {
+            /* ignore */
+          }
         }
         if (images.isNotEmpty) return _TextProcessResult('', images);
       }
@@ -1109,7 +1209,9 @@ class OpenAIChatProtocol implements ChatProtocol {
         try {
           images.add(base64Decode(match.group(1)!));
           cleanText = cleanText.replaceFirst(match.group(0)!, '[Image Data]');
-        } catch (e) { /* ignore */ }
+        } catch (e) {
+          /* ignore */
+        }
       }
 
       // 2. Fetch images the text points at rather than embeds.
@@ -1119,7 +1221,9 @@ class OpenAIChatProtocol implements ChatProtocol {
           if (response.statusCode == 200) {
             images.add(response.bodyBytes);
           }
-        } catch (e) { /* ignore */ }
+        } catch (e) {
+          /* ignore */
+        }
       }
     } finally {
       client.close();
@@ -1132,9 +1236,10 @@ class OpenAIChatProtocol implements ChatProtocol {
   Map<String, dynamic> _prepareChatPayload(
     LLMTarget target,
     List<LLMMessage> history,
-    Map<String, dynamic>? options,
-    {required bool isStreaming, List<LLMTool>? tools}
-  ) {
+    Map<String, dynamic>? options, {
+    required bool isStreaming,
+    List<LLMTool>? tools,
+  }) {
     final messages = history.map((msg) {
       // Tool result message.
       if (msg.role == LLMRole.tool) {
@@ -1157,14 +1262,18 @@ class OpenAIChatProtocol implements ChatProtocol {
           // (<think>) reasoning has no field name and no obligation.
           if (msg.reasoningContent != null && msg.reasoningFieldName != null)
             msg.reasoningFieldName!: msg.reasoningContent,
-          "tool_calls": msg.toolCalls.map((tc) => {
-            "id": tc.id,
-            "type": "function",
-            "function": {
-              "name": tc.name,
-              "arguments": jsonEncode(tc.arguments),
-            },
-          }).toList(),
+          "tool_calls": msg.toolCalls
+              .map(
+                (tc) => {
+                  "id": tc.id,
+                  "type": "function",
+                  "function": {
+                    "name": tc.name,
+                    "arguments": jsonEncode(tc.arguments),
+                  },
+                },
+              )
+              .toList(),
         };
       }
 
@@ -1177,10 +1286,11 @@ class OpenAIChatProtocol implements ChatProtocol {
         // URL or image data URI`) while accepting a one-element array with
         // the same text — and there is no other way around it. Chat models
         // keep the string: it is the shape every host accepts.
-        content = (msg.role == LLMRole.user &&
+        content =
+            (msg.role == LLMRole.user &&
                 target.model.capabilities.isImageGenerator)
             ? [
-                {"type": "text", "text": msg.content}
+                {"type": "text", "text": msg.content},
               ]
             : msg.content;
       } else {
@@ -1194,17 +1304,15 @@ class OpenAIChatProtocol implements ChatProtocol {
           parts.add({
             "type": "image_url",
             "image_url": {
-              "url": "data:${resolved.mimeType};base64,${base64Encode(resolved.bytes)}"
-            }
+              "url":
+                  "data:${resolved.mimeType};base64,${base64Encode(resolved.bytes)}",
+            },
           });
         }
         content = parts;
       }
 
-      return {
-        "role": msg.role.name,
-        "content": content
-      };
+      return {"role": msg.role.name, "content": content};
     }).toList();
 
     final effort = target.config.effectiveReasoningEffort;
@@ -1228,14 +1336,18 @@ class OpenAIChatProtocol implements ChatProtocol {
     };
 
     if (tools != null && tools.isNotEmpty) {
-      payload["tools"] = tools.map((t) => {
-        "type": "function",
-        "function": {
-          "name": t.name,
-          "description": t.description,
-          "parameters": t.parameters,
-        },
-      }).toList();
+      payload["tools"] = tools
+          .map(
+            (t) => {
+              "type": "function",
+              "function": {
+                "name": t.name,
+                "description": t.description,
+                "parameters": t.parameters,
+              },
+            },
+          )
+          .toList();
       payload["tool_choice"] = "auto";
     }
 
@@ -1271,14 +1383,16 @@ class OpenAIChatProtocol implements ChatProtocol {
   /// `thinking` object on a vendor that declares
   /// [ThinkingDialect.openaiThinkingObject]. Empty for the default level.
   static Map<String, dynamic> openaiThinkingFields(
-      ThinkingDialect dialect, ReasoningEffort? effort) {
+    ThinkingDialect dialect,
+    ReasoningEffort? effort,
+  ) {
     if (effort == null) return const {};
     if (dialect != ThinkingDialect.openaiThinkingObject) {
       return {'reasoning_effort': ?openaiReasoningEffortWire(effort)};
     }
     if (effort == ReasoningEffort.off) {
       return {
-        'thinking': {'type': 'disabled'}
+        'thinking': {'type': 'disabled'},
       };
     }
     return {
@@ -1297,8 +1411,13 @@ class OpenAIChatProtocol implements ChatProtocol {
     Map<String, dynamic>? options,
     required bool isStreaming,
     List<LLMTool>? tools,
-  }) =>
-      _prepareChatPayload(target, history, options, isStreaming: isStreaming, tools: tools);
+  }) => _prepareChatPayload(
+    target,
+    history,
+    options,
+    isStreaming: isStreaming,
+    tools: tools,
+  );
 
   /// Gemini-via-OpenAI compatibility extensions used by relay services.
   ///
@@ -1318,18 +1437,23 @@ class OpenAIChatProtocol implements ChatProtocol {
   /// derives `responseModalities` from the model name and takes safety
   /// thresholds from its own server-side config — but they are what other
   /// OpenAI-shaped Gemini hosts read, and an unknown field costs nothing.
-  void _applyGeminiCompatExtensions(Map<String, dynamic> payload, Map<String, dynamic>? options) {
+  void _applyGeminiCompatExtensions(
+    Map<String, dynamic> payload,
+    Map<String, dynamic>? options,
+  ) {
     payload["modalities"] = ["image", "text"];
 
-    payload["safety_settings"] =
-        SafetySettings.toApiList(options?[SafetySettings.paramKey]);
+    payload["safety_settings"] = SafetySettings.toApiList(
+      options?[SafetySettings.paramKey],
+    );
 
     if (options == null) return;
 
     // Only these two keys are portable; `person_generation` /
     // `number_of_images` belong to the top-level dialect alone.
     final portable = <String, dynamic>{};
-    if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
+    if (options.containsKey('aspectRatio') &&
+        options['aspectRatio'] != 'not_set') {
       portable['aspect_ratio'] = options['aspectRatio'];
     }
     final size = options['imageSize'];
@@ -1373,11 +1497,15 @@ class OpenAIDiscoveryProtocol implements DiscoveryProtocol {
     final rawModels = data['data'];
     final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
 
-    return modelsJson.map((m) => DiscoveredModel(
-      modelId: m['id']?.toString() ?? '',
-      displayName: m['id']?.toString() ?? '',
-      description: 'Owned by: ${m['owned_by'] ?? 'unknown'}',
-      rawData: m as Map<String, dynamic>,
-    )).toList();
+    return modelsJson
+        .map(
+          (m) => DiscoveredModel(
+            modelId: m['id']?.toString() ?? '',
+            displayName: m['id']?.toString() ?? '',
+            description: 'Owned by: ${m['owned_by'] ?? 'unknown'}',
+            rawData: m as Map<String, dynamic>,
+          ),
+        )
+        .toList();
   }
 }

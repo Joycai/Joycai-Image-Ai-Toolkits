@@ -54,24 +54,20 @@ Map<String, List<int>> _scanImagesIsolate(List<String> paths) {
   return results;
 }
 
-enum GalleryViewMode {
-  all,
-  processed,
-  temp,
-  folder,
-}
+enum GalleryViewMode { all, processed, temp, folder }
 
 class GalleryState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
-  
+
   List<String> sourceDirectories = [];
   List<String> activeSourceDirectories = [];
   Set<String> unreachableDirectories = {};
-  
+
   // View State
   GalleryViewMode viewMode = GalleryViewMode.all;
   String? viewSourcePath; // Used when viewMode is folder
-  bool folderViewIsResult = false; // Whether the browsed folder belongs to the result tree
+  bool folderViewIsResult =
+      false; // Whether the browsed folder belongs to the result tree
 
   // Model-based image lists
   List<AppImage> galleryImages = [];
@@ -88,9 +84,7 @@ class GalleryState extends ChangeNotifier {
   /// instead of scanning the list once per grid cell.
   set selectedImages(List<AppImage> value) {
     _selectedImages = value;
-    _selectionOrder = {
-      for (var i = 0; i < value.length; i++) value[i].path: i,
-    };
+    _selectionOrder = {for (var i = 0; i < value.length; i++) value[i].path: i};
   }
 
   /// O(1) selection membership check (avoids O(n) `selectedImages.any(...)`).
@@ -104,7 +98,7 @@ class GalleryState extends ChangeNotifier {
   /// the pictures reach the model, and a prompt that says "use the second
   /// image's pose" is wrong the moment the two disagree.
   int selectionNumberOf(String path) => (_selectionOrder[path] ?? -1) + 1;
-  
+
   String? outputDirectory;
   String? resultCacheDirectory;
   double thumbnailSize = 150.0;
@@ -114,7 +108,9 @@ class GalleryState extends ChangeNotifier {
   /// output directory plus the platform result cache when it differs.
   List<String> get resultRootDirectories {
     final roots = <String>[];
-    if (outputDirectory != null && outputDirectory!.isNotEmpty) roots.add(outputDirectory!);
+    if (outputDirectory != null && outputDirectory!.isNotEmpty) {
+      roots.add(outputDirectory!);
+    }
     if (resultCacheDirectory != null &&
         resultCacheDirectory!.isNotEmpty &&
         resultCacheDirectory != outputDirectory) {
@@ -179,6 +175,10 @@ class GalleryState extends ChangeNotifier {
 
   int _refreshCounter = 0;
   int get refreshCounter => _refreshCounter;
+  int _sourceScanGeneration = 0;
+  int _processedScanGeneration = 0;
+  int _folderScanGeneration = 0;
+  bool _disposed = false;
 
   GalleryState() {
     reloadSettings();
@@ -186,6 +186,7 @@ class GalleryState extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     for (var sub in _watchers.values) {
       sub.cancel();
     }
@@ -210,16 +211,17 @@ class GalleryState extends ChangeNotifier {
       resultCacheDirectory = p.join(cacheDir.path, 'result_cache');
       final dir = Directory(resultCacheDirectory!);
       if (!dir.existsSync()) dir.createSync(recursive: true);
-      
+
       await _db.saveSetting('result_cache_directory', resultCacheDirectory!);
-      
+
       // On iOS, we also treat this as the primary output if not set
-      if (Platform.isIOS && (outputDirectory == null || outputDirectory!.isEmpty)) {
+      if (Platform.isIOS &&
+          (outputDirectory == null || outputDirectory!.isEmpty)) {
         outputDirectory = resultCacheDirectory;
         await _db.saveSetting('output_directory', outputDirectory!);
       }
     }
-    
+
     final dirs = await _db.getSourceDirectories();
     sourceDirectories = dirs.map((d) => d['path'] as String).toList();
     activeSourceDirectories = dirs
@@ -301,7 +303,7 @@ class GalleryState extends ChangeNotifier {
       await _db.addSourceDirectory(path);
       _log('Added base directory: $path');
       _scanImages();
-      _setupSourceWatchers(); 
+      _setupSourceWatchers();
       notifyListeners();
     }
   }
@@ -309,7 +311,9 @@ class GalleryState extends ChangeNotifier {
   Future<void> removeBaseDirectory(String path) async {
     if (sourceDirectories.contains(path)) {
       sourceDirectories.remove(path);
-      activeSourceDirectories.removeWhere((p) => p.startsWith(path));
+      activeSourceDirectories.removeWhere(
+        (candidate) => p.equals(candidate, path) || p.isWithin(path, candidate),
+      );
       await _db.removeSourceDirectory(path);
       _log('Removed base directory: $path');
       _scanImages();
@@ -382,7 +386,7 @@ class GalleryState extends ChangeNotifier {
     _refreshCounter++;
     await _scanImages();
     await _scanProcessedImages();
-    
+
     // Verify droppedImages (Temporary Workspace)
     final List<AppImage> existingDropped = [];
     for (var img in droppedImages) {
@@ -404,13 +408,16 @@ class GalleryState extends ChangeNotifier {
   }
 
   void _cleanupSelection() {
-    final validSelection = selectedImages.where((selected) => 
-      galleryImages.any((img) => img.path == selected.path) ||
-      processedImages.any((img) => img.path == selected.path) ||
-      droppedImages.any((img) => img.path == selected.path) ||
-      folderImages.any((img) => img.path == selected.path)
-    ).toList();
-    
+    final validSelection = selectedImages
+        .where(
+          (selected) =>
+              galleryImages.any((img) => img.path == selected.path) ||
+              processedImages.any((img) => img.path == selected.path) ||
+              droppedImages.any((img) => img.path == selected.path) ||
+              folderImages.any((img) => img.path == selected.path),
+        )
+        .toList();
+
     if (validSelection.length != selectedImages.length) {
       selectedImages = validSelection;
     }
@@ -434,8 +441,10 @@ class GalleryState extends ChangeNotifier {
   /// for the life of the process.
   void _evictChanged(List<String> roots, Map<String, List<int>> scanned) {
     final rootSet = roots.toSet();
-    _fingerprints.removeWhere((path, _) =>
-        rootSet.contains(p.dirname(path)) && !scanned.containsKey(path));
+    _fingerprints.removeWhere(
+      (path, _) =>
+          rootSet.contains(p.dirname(path)) && !scanned.containsKey(path),
+    );
 
     scanned.forEach((path, current) {
       final previous = _fingerprints[path];
@@ -450,19 +459,20 @@ class GalleryState extends ChangeNotifier {
   }
 
   Future<void> _scanFolder(String path) async {
-    _refreshReachability([path]);
+    final generation = ++_folderScanGeneration;
+    await _refreshReachability([path]);
+    if (_disposed || generation != _folderScanGeneration) return;
     final scanned = await compute(_scanImagesIsolate, [path]);
+    if (_disposed || generation != _folderScanGeneration) return;
     _evictChanged([path], scanned);
     folderImages = scanned.keys.map((p) => AppImage.fromFile(File(p))).toList();
     notifyListeners();
   }
 
   Future<void> _scanImages() async {
-    _refreshReachability(sourceDirectories);
-    unreachableDirectories = {
-      for (final path in sourceDirectories)
-        if (isPathUnreachable(path)) path,
-    };
+    final generation = ++_sourceScanGeneration;
+    await _refreshReachability(sourceDirectories);
+    if (_disposed || generation != _sourceScanGeneration) return;
 
     if (activeSourceDirectories.isEmpty) {
       galleryImages = [];
@@ -471,29 +481,40 @@ class GalleryState extends ChangeNotifier {
     }
 
     final scanned = await compute(_scanImagesIsolate, activeSourceDirectories);
+    if (_disposed || generation != _sourceScanGeneration) return;
     _evictChanged(activeSourceDirectories, scanned);
-    galleryImages = scanned.keys.map((p) => AppImage.fromFile(File(p))).toList();
+    galleryImages = scanned.keys
+        .map((p) => AppImage.fromFile(File(p)))
+        .toList();
     notifyListeners();
   }
 
   Future<void> _scanProcessedImages() async {
+    final generation = ++_processedScanGeneration;
     final List<String> scanPaths = [];
-    if (outputDirectory != null && outputDirectory!.isNotEmpty) scanPaths.add(outputDirectory!);
-    if (resultCacheDirectory != null && resultCacheDirectory!.isNotEmpty && resultCacheDirectory != outputDirectory) {
+    if (outputDirectory != null && outputDirectory!.isNotEmpty) {
+      scanPaths.add(outputDirectory!);
+    }
+    if (resultCacheDirectory != null &&
+        resultCacheDirectory!.isNotEmpty &&
+        resultCacheDirectory != outputDirectory) {
       scanPaths.add(resultCacheDirectory!);
     }
 
     if (scanPaths.isEmpty) {
+      if (_disposed || generation != _processedScanGeneration) return;
       processedImages = [];
       notifyListeners();
       return;
     }
 
-    _refreshReachability(scanPaths);
+    await _refreshReachability(scanPaths);
+    if (_disposed || generation != _processedScanGeneration) return;
 
     try {
       // Overlapping roots dedupe on the way in — the isolate keys by path.
       final scanned = await compute(_scanImagesIsolate, scanPaths);
+      if (_disposed || generation != _processedScanGeneration) return;
       _evictChanged(scanPaths, scanned);
 
       // Newest first, from the modification times the isolate already read.
@@ -536,7 +557,9 @@ class GalleryState extends ChangeNotifier {
   }
 
   void toggleImageSelection(AppImage image) {
-    if (AppConstants.isVideoFile(image.path)) return; // Prevent selecting videos
+    if (AppConstants.isVideoFile(image.path)) {
+      return; // Prevent selecting videos
+    }
     final newList = List<AppImage>.from(selectedImages);
     final index = newList.indexWhere((img) => img.path == image.path);
     if (index != -1) {
@@ -563,7 +586,9 @@ class GalleryState extends ChangeNotifier {
 
   void selectAllImages() {
     // Select all from current active collections that are not videos
-    selectedImages = galleryImages.where((img) => !AppConstants.isVideoFile(img.path)).toList();
+    selectedImages = galleryImages
+        .where((img) => !AppConstants.isVideoFile(img.path))
+        .toList();
     notifyListeners();
   }
 
@@ -584,8 +609,8 @@ class GalleryState extends ChangeNotifier {
       _db.saveSetting('thumbnail_size', thumbnailSize.toString());
 
   Future<void> setImagePrefix(String prefix) async {
-    imagePrefix = prefix;
-    await _db.saveSetting('image_prefix', prefix);
+    imagePrefix = FileUtils.safeFilenamePrefix(prefix);
+    await _db.saveSetting('image_prefix', imagePrefix);
     notifyListeners();
   }
 
@@ -614,10 +639,14 @@ class GalleryState extends ChangeNotifier {
 
   List<AppImage> get currentViewImages {
     switch (viewMode) {
-      case GalleryViewMode.all: return galleryImages;
-      case GalleryViewMode.processed: return processedImages;
-      case GalleryViewMode.temp: return droppedImages;
-      case GalleryViewMode.folder: return folderImages;
+      case GalleryViewMode.all:
+        return galleryImages;
+      case GalleryViewMode.processed:
+        return processedImages;
+      case GalleryViewMode.temp:
+        return droppedImages;
+      case GalleryViewMode.folder:
+        return folderImages;
     }
   }
 
@@ -638,15 +667,24 @@ class GalleryState extends ChangeNotifier {
   final Set<String> _unreachablePaths = {};
 
   /// Re-probes [paths] and folds the answers into [_unreachablePaths].
-  void _refreshReachability(List<String> paths) {
+  Future<void> _refreshReachability(List<String> paths) async {
     final permissions = FilePermissionService();
-    for (final path in paths) {
-      if (path.isEmpty) continue;
-      if (permissions.isPathUnreachable(path)) {
-        _unreachablePaths.add(path);
+    final checks = await Future.wait(
+      paths
+          .where((path) => path.isNotEmpty)
+          .map(
+            (path) async =>
+                MapEntry(path, await permissions.isPathUnreachableAsync(path)),
+          ),
+    );
+    if (_disposed) return;
+    for (final result in checks) {
+      if (result.value) {
+        _unreachablePaths.add(result.key);
       } else {
-        _unreachablePaths.remove(path);
+        _unreachablePaths.remove(result.key);
       }
     }
+    unreachableDirectories = {..._unreachablePaths};
   }
 }
