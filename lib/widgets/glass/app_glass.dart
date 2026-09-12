@@ -15,6 +15,15 @@ import '../../core/design_tokens.dart';
 /// three glass layers visible at once, and glass only touches the *edges* of a
 /// scrolling area. A full-width backdrop blur costs ~19ms a frame on an
 /// integrated GPU at 4K, which is the reason for the budget, not taste.
+///
+/// Half of that budget is now kept by the class rather than by hand: a [lens]
+/// laid on another glass layer paints its fill and edge but skips the
+/// backdrop sample, because what it would be blurring is the parent's
+/// already blurred output. The workbench had drifted to seven layers before
+/// that rule existed — the nav lens on the title bar, and a segmented
+/// control's indicator and hover lens on the floating toolbar. Counting the
+/// remaining layers is still a per-screen judgement; `rebuild_scope_test`
+/// pins the workbench's.
 enum GlassGrade {
   /// G1 · the one full-width layer per screen: the title bar, a tablet top bar,
   /// a phone screen's top toolbar.
@@ -290,12 +299,36 @@ class AppGlass extends StatelessWidget {
       ),
     );
 
+    // A lens laid on another glass layer does not sample the window again.
+    //
+    // G3 is defined as something laid *on* a surface — a segment's indicator,
+    // a hover or pressed state, a strip over a thumbnail. When that surface is
+    // itself glass, the lens's backdrop is the parent's already blurred,
+    // already saturated, fill-covered output; blurring it a second time
+    // through a 42% fill returns close to nothing and costs a second
+    // full-size backdrop pass. The fill, the refraction edge and the
+    // highlight all still paint, so the lens looks like a lens.
+    //
+    // Grade-scoped on purpose: a menu, a sheet or a snackbar is a [float],
+    // overhangs whatever it opened from, and keeps its own blur even when the
+    // element tree puts it under one — which an OverlayPortal does.
+    //
+    // This is what holds the budget in the class doc above. Before it the
+    // workbench carried seven backdrop filters at once against a documented
+    // ceiling of three: the nav lens on the title bar, and the segmented
+    // control's indicator and hover lens on the floating toolbar.
+    final GlassInk? onGlass = GlassInk.maybeOf(context);
+    final bool nestedLens =
+        grade == GlassGrade.lens && onGlass != null && !onGlass.reduced;
+
     surface = ClipRRect(
       borderRadius: borderRadius,
-      child: BackdropFilter(
-        filter: glassFilter(blur: recipe.blur, saturation: recipe.saturation),
-        child: surface,
-      ),
+      child: nestedLens
+          ? surface
+          : BackdropFilter(
+              filter: glassFilter(blur: recipe.blur, saturation: recipe.saturation),
+              child: surface,
+            ),
     );
 
     if (shadow && grade != GlassGrade.lens) {
@@ -449,6 +482,13 @@ class AppTintedGlass extends StatelessWidget {
       );
     }
 
+    // Standing on glass, it does not sample the window again — for the reason
+    // [AppGlass] gives a nested lens, and more so here: this fill is the
+    // accent at 74%, so what a second blur of an already blurred surface
+    // shows through it is very close to nothing. Off glass — on a panel, in a
+    // dialog — it is the first layer and keeps its own.
+    final bool nested = glassInk != null && !glassInk.reduced;
+
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: borderRadius,
@@ -462,8 +502,8 @@ class AppTintedGlass extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: borderRadius,
-        child: BackdropFilter(
-          filter: glassFilter(blur: 16, saturation: 1.4),
+        child: _maybeBlur(
+          nested: nested,
           child: CustomPaint(
             foregroundPainter: _TintedEdgePainter(borderRadius: borderRadius),
             child: DecoratedBox(
@@ -478,6 +518,14 @@ class AppTintedGlass extends StatelessWidget {
       ),
     );
   }
+
+  static Widget _maybeBlur({required bool nested, required Widget child}) =>
+      nested
+          ? child
+          : BackdropFilter(
+              filter: glassFilter(blur: 16, saturation: 1.4),
+              child: child,
+            );
 }
 
 /// The refraction edge: a 1px stroke that is bright where light would enter

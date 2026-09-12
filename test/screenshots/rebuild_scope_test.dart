@@ -67,6 +67,12 @@ void main() {
       label: 'rebuild-scope-workbench',
     );
 
+    // The glass budget, on the screen that carries the most of it. AppGlass's
+    // own doc allows one full-width bar plus three floating layers; the
+    // workbench had seven, three of them lenses re-blurring the bar or the
+    // toolbar they sat on.
+    expect(find.byType(BackdropFilter), findsNWidgets(4));
+
     final gallery = AppState().galleryState;
     final images = gallery.currentViewImages;
     expect(images, isNotEmpty, reason: 'the fixture gallery must have tiles');

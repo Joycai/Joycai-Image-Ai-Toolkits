@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:joycai_image_ai_toolkits/core/thumbnail_decode.dart';
+import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_breathing_dot.dart';
 
 void main() {
@@ -109,5 +110,68 @@ void main() {
       ),
     );
     expect(fade.opacity.value, 1.0);
+  });
+
+  group('glass nesting', () {
+    Future<void> pump(WidgetTester tester, Widget child) => tester.pumpWidget(
+          MaterialApp(home: Scaffold(body: Center(child: child))),
+        );
+
+    testWidgets('a lens on glass does not sample the window twice',
+        (WidgetTester tester) async {
+      // A nested backdrop filter samples its parent's already blurred,
+      // already saturated, fill-covered output. The workbench carried seven
+      // of these at once against the ceiling of three in AppGlass's own doc —
+      // three of them lenses sitting on a bar.
+      await pump(
+        tester,
+        const AppGlass(
+          grade: GlassGrade.bar,
+          child: AppGlass(grade: GlassGrade.lens, child: SizedBox.square(dimension: 20)),
+        ),
+      );
+      expect(find.byType(BackdropFilter), findsOneWidget);
+    });
+
+    testWidgets('a lens standing on its own keeps its blur',
+        (WidgetTester tester) async {
+      await pump(
+        tester,
+        const AppGlass(grade: GlassGrade.lens, child: SizedBox.square(dimension: 20)),
+      );
+      expect(find.byType(BackdropFilter), findsOneWidget);
+    });
+
+    testWidgets('a float on glass keeps its own blur', (WidgetTester tester) async {
+      // Grade-scoped on purpose: a menu, a sheet or a snackbar overhangs
+      // whatever it opened from, and an OverlayPortal leaves it under that
+      // widget in the element tree even though it is drawn outside it.
+      await pump(
+        tester,
+        const AppGlass(
+          grade: GlassGrade.bar,
+          child: AppGlass(grade: GlassGrade.float, child: SizedBox.square(dimension: 20)),
+        ),
+      );
+      expect(find.byType(BackdropFilter), findsNWidgets(2));
+    });
+
+    testWidgets('the tinted CTA does not re-blur the bar it stands on',
+        (WidgetTester tester) async {
+      await pump(
+        tester,
+        const AppGlass(
+          grade: GlassGrade.bar,
+          child: AppTintedGlass(child: SizedBox.square(dimension: 20)),
+        ),
+      );
+      expect(find.byType(BackdropFilter), findsOneWidget);
+    });
+
+    testWidgets('off glass, the tinted CTA is the first layer and blurs',
+        (WidgetTester tester) async {
+      await pump(tester, const AppTintedGlass(child: SizedBox.square(dimension: 20)));
+      expect(find.byType(BackdropFilter), findsOneWidget);
+    });
   });
 }
