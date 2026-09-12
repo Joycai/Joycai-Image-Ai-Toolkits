@@ -3417,6 +3417,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sendToOptimizer => '发送到提示词助手';
 
   @override
+  String get menuQuickMask => '蒙版';
+
+  @override
+  String get menuQuickCrop => '裁剪';
+
+  @override
+  String get menuQuickAssistant => '助手';
+
+  @override
+  String get menuSetAs => '设为';
+
+  @override
+  String get menuSetAsRaw => '原图 RAW';
+
+  @override
+  String get menuSetAsAfter => '结果 After';
+
+  @override
+  String get menuSetAsFirstFrame => '视频首帧';
+
+  @override
+  String get menuSetAsLastFrame => '视频尾帧';
+
+  @override
+  String get menuFileGroup => '文件';
+
+  @override
+  String get menuExportGroup => '导出';
+
+  @override
   String get selectFromLibrary => '从库中选择';
 
   @override
@@ -7776,6 +7806,36 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get sendToOptimizer => '發送到提示詞助手';
+
+  @override
+  String get menuQuickMask => '遮罩';
+
+  @override
+  String get menuQuickCrop => '裁切';
+
+  @override
+  String get menuQuickAssistant => '助手';
+
+  @override
+  String get menuSetAs => '設為';
+
+  @override
+  String get menuSetAsRaw => '原始圖 RAW';
+
+  @override
+  String get menuSetAsAfter => '處理後 After';
+
+  @override
+  String get menuSetAsFirstFrame => '影片首格';
+
+  @override
+  String get menuSetAsLastFrame => '影片末格';
+
+  @override
+  String get menuFileGroup => '檔案';
+
+  @override
+  String get menuExportGroup => '匯出';
 
   @override
   String get selectFromLibrary => '從庫中選取';

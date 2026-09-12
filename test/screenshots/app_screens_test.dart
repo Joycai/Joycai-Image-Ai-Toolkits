@@ -21,6 +21,7 @@ import 'package:path/path.dart' as p;
 
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/directory_tree_item.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/image_card.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
@@ -448,6 +449,33 @@ void main() {
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
           }
+        },
+      );
+    });
+  }
+
+  // A card's context menu (`A1 · 2a`): the quick block, the 「设为」 grid, the
+  // two submenu rows and the destructive tail — with 「文件 ▸」 opened, so the
+  // submenu's placement beside the panel, level with its row, is on film.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('workbench · contextMenu @ desktop ${brightness.name}', (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.workbench,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'contextMenu',
+        before: (_) async {
+          AppState().setWorkbenchTab(0);
+          AppState().isConsoleExpanded = false;
+          AppState().clearImageSelection();
+        },
+        after: (WidgetTester tester) async {
+          await tester.tap(find.byType(ImageCard).first, buttons: kSecondaryButton);
+          await settle(tester);
+          await tester.tap(menuItem('文件'));
+          await settle(tester);
         },
       );
     });

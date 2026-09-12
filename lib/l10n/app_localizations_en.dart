@@ -3565,6 +3565,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendToOptimizer => 'Send to Prompt Assistant';
 
   @override
+  String get menuQuickMask => 'Mask';
+
+  @override
+  String get menuQuickCrop => 'Crop';
+
+  @override
+  String get menuQuickAssistant => 'Assistant';
+
+  @override
+  String get menuSetAs => 'Set as';
+
+  @override
+  String get menuSetAsRaw => 'Before (RAW)';
+
+  @override
+  String get menuSetAsAfter => 'After';
+
+  @override
+  String get menuSetAsFirstFrame => 'First frame';
+
+  @override
+  String get menuSetAsLastFrame => 'Last frame';
+
+  @override
+  String get menuFileGroup => 'File';
+
+  @override
+  String get menuExportGroup => 'Export';
+
+  @override
   String get selectFromLibrary => 'Select from Library';
 
   @override

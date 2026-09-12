@@ -1,13 +1,15 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import 'app_glass.dart';
 
-/// One line of an [AppGlassMenu]: an [AppGlassMenuItem] or an
-/// [AppGlassMenuDivider].
+/// One line of an [AppGlassMenu]: an [AppGlassMenuItem], an
+/// [AppGlassMenuDivider], an [AppGlassMenuHeading], an [AppGlassMenuGrid] or
+/// an [AppGlassMenuQuickBlock].
 abstract class AppGlassMenuEntry {
   const AppGlassMenuEntry();
 }
@@ -15,23 +17,33 @@ abstract class AppGlassMenuEntry {
 /// An action row (`00` / `B1a · 1b` 右键菜单): 28 tall at r6 — glyph, label,
 /// an optional mono hint at the end, and under a disabled row an optional
 /// second line saying why.
+///
+/// A row given [children] is a submenu row instead (`A1 · 2a`: 「文件 ▸」,
+/// 「导出 ▸」): it ends in a chevron, and hovering, tapping or pressing → on
+/// it opens a second float-grade panel beside the menu, its first row level
+/// with this one. Such a row has no [onSelected] of its own.
 class AppGlassMenuItem extends AppGlassMenuEntry {
   const AppGlassMenuItem({
     this.icon,
     required this.label,
-    required this.onSelected,
+    this.onSelected,
+    this.children,
     this.trailing,
     this.note,
     this.enabled = true,
     this.danger = false,
-  });
+  }) : assert(onSelected == null || children == null, 'a submenu row has no action of its own');
 
   final IconData? icon;
   final String label;
 
   /// Runs once the menu has been popped, so a dialog it opens is not stacked
-  /// over a route on its way out. Null disables the row.
+  /// over a route on its way out. Null disables the row — unless the row
+  /// opens a submenu.
   final VoidCallback? onSelected;
+
+  /// The rows of this row's submenu; null for a plain action row.
+  final List<AppGlassMenuEntry>? children;
 
   /// A key the action really has (`F2`, `Alt+↑`) or a count the label would
   /// otherwise carry, in mono at the glass's secondary ink.
@@ -46,7 +58,9 @@ class AppGlassMenuItem extends AppGlassMenuEntry {
   /// The error ink, for the destructive row.
   final bool danger;
 
-  bool get isEnabled => enabled && onSelected != null;
+  bool get hasSubmenu => children != null && children!.isNotEmpty;
+
+  bool get isEnabled => enabled && (onSelected != null || hasSubmenu);
 }
 
 /// The rule between two groups of rows.
@@ -54,8 +68,59 @@ class AppGlassMenuDivider extends AppGlassMenuEntry {
   const AppGlassMenuDivider();
 }
 
+/// A small label over a group of rows (`A1 · 2a`: 「设为」 over the 2×2 grid
+/// of assignments). Not focusable, not a row.
+class AppGlassMenuHeading extends AppGlassMenuEntry {
+  const AppGlassMenuHeading(this.label);
+
+  final String label;
+}
+
+/// Rows laid two (or more) across instead of one under the other (`A1 · 2a`:
+/// the four mutually exclusive 「设为 ×」 assignments as a 2×2 grid). Each cell
+/// is an ordinary [AppGlassMenuItem] at the row height; a label that does not
+/// fit its half ends in an ellipsis.
+class AppGlassMenuGrid extends AppGlassMenuEntry {
+  const AppGlassMenuGrid(this.items, {this.columns = 2}) : assert(columns > 0);
+
+  final List<AppGlassMenuItem> items;
+  final int columns;
+}
+
+/// One cell of an [AppGlassMenuQuickBlock]: a glyph over a short label.
+class AppGlassMenuQuickCell {
+  const AppGlassMenuQuickCell({
+    required this.icon,
+    required this.label,
+    required this.onSelected,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final String label;
+
+  /// Runs once the menu has been popped, like [AppGlassMenuItem.onSelected].
+  final VoidCallback? onSelected;
+  final bool enabled;
+
+  bool get isEnabled => enabled && onSelected != null;
+}
+
+/// The strip of square cells across the top of a menu (`A1 · 2a`: the four
+/// high-frequency actions — preview · mask · crop · assistant — matching the
+/// card's hover strip one for one). 48 tall at r10, cells 2 apart, sharing
+/// the width equally.
+class AppGlassMenuQuickBlock extends AppGlassMenuEntry {
+  const AppGlassMenuQuickBlock(this.cells) : assert(cells.length > 0);
+
+  final List<AppGlassMenuQuickCell> cells;
+}
+
 /// The width most menus take (`B1a`, `D1a`: 「右键菜单 G2 230」).
 const double kAppGlassMenuWidth = 230;
+
+/// The width of a submenu panel (`A1 · 2a`: 「子菜单 200 宽」).
+const double kAppGlassSubmenuWidth = 200;
 
 /// Opens a float-grade glass menu with its top-left corner at the global
 /// [position], flipped to the other side of the point and then clamped where
@@ -67,8 +132,8 @@ const double kAppGlassMenuWidth = 230;
 /// form. This route lays an [AppGlass] straight onto the overlay, and reduce
 /// visual effects still turns it into the opaque panel through [AppGlass].
 ///
-/// The first enabled row takes focus; arrows move, Enter activates, Esc and a
-/// tap outside dismiss.
+/// The first enabled row takes focus; arrows move, Enter activates, → opens a
+/// submenu row and ← closes the submenu again, Esc and a tap outside dismiss.
 Future<void> showAppGlassMenu(
   BuildContext context, {
   required Offset position,
@@ -129,23 +194,34 @@ Offset appGlassMenuPositionBelow(BuildContext anchor, {double width = kAppGlassM
 }
 
 /// The height an [AppGlassMenu] built from [entries] wants: 6 of padding at
-/// each end, a 28 row each — 42 under a disabled row carrying its reason — and
-/// a 1px rule in 4 of padding for each divider.
+/// each end, a 28 row each — 42 under a disabled row carrying its reason — a
+/// 1px rule in 4 of padding for each divider, 48 for a quick block, 20 for a
+/// heading, and a grid's rows 2 apart.
 ///
 /// Not a layout input; the menu is still laid out by its own content. This is
 /// what [showAppGlassMenu] needs *before* the route exists, to know which
 /// corner the panel will be anchored by and therefore which corner it should
-/// scale out of.
+/// scale out of — and what a submenu needs to know whether it fits below its
+/// row.
 double appGlassMenuHeight(List<AppGlassMenuEntry> entries) {
   double height = AppSpace.s6 * 2;
   for (final AppGlassMenuEntry entry in entries) {
     height += switch (entry) {
       AppGlassMenuItem(:final bool isEnabled, :final String? note) =>
         !isEnabled && note != null ? _AppGlassMenuRow._noteHeight : AppSize.compact,
+      AppGlassMenuQuickBlock() => _AppGlassMenuQuickBlock.height,
+      AppGlassMenuHeading() => _AppGlassMenuHeading.height,
+      AppGlassMenuGrid(:final List<AppGlassMenuItem> items, :final int columns) =>
+        _gridHeight(items.length, columns),
       _ => 1 + AppSpace.s4 * 2,
     };
   }
   return height;
+}
+
+double _gridHeight(int count, int columns) {
+  final int rows = (count / columns).ceil();
+  return rows * AppSize.compact + math.max(0, rows - 1) * _AppGlassMenuGrid.gap;
 }
 
 /// Which corner of the menu ends up on [position] — the corner it should
@@ -213,12 +289,7 @@ class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
     return themes.wrap(
-      Builder(
-        builder: (context) => CustomSingleChildLayout(
-          delegate: _AppGlassMenuLayout(position: position, padding: MediaQuery.paddingOf(context)),
-          child: AppGlassMenu(width: width, entries: entries),
-        ),
-      ),
+      _AppGlassMenuHost(position: position, entries: entries, width: width),
     );
   }
 
@@ -240,6 +311,179 @@ class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
       ),
     );
   }
+}
+
+/// The route's page: the menu panel, and beside it whichever submenu is open.
+///
+/// One submenu at a time. It opens on hover, tap or → of its row and closes
+/// when the pointer reaches any *other* row of the menu (crossing the 4px gap
+/// to the submenu itself does not close it), on ← inside it, or with the
+/// menu. Its panel's top is one padding above its row, so its first row is
+/// level with the row that opened it; where the window runs out on the right
+/// it opens on the left instead, and it is clamped vertically.
+class _AppGlassMenuHost extends StatefulWidget {
+  const _AppGlassMenuHost({required this.position, required this.entries, required this.width});
+
+  final Offset position;
+  final List<AppGlassMenuEntry> entries;
+  final double width;
+
+  @override
+  State<_AppGlassMenuHost> createState() => _AppGlassMenuHostState();
+}
+
+class _AppGlassMenuHostState extends State<_AppGlassMenuHost> {
+  final GlobalKey _menuKey = GlobalKey();
+
+  AppGlassMenuItem? _open;
+  Offset _submenuOrigin = Offset.zero;
+  double _submenuMaxHeight = double.infinity;
+  bool _openedByKeyboard = false;
+
+  bool _isOpen(AppGlassMenuItem item) => identical(_open, item);
+
+  bool _isInSubmenu(AppGlassMenuEntry entry) {
+    final open = _open;
+    return open != null && open.children!.any((AppGlassMenuEntry e) => identical(e, entry));
+  }
+
+  /// A pointer over a row of the menu: opens that row's submenu, or closes the
+  /// open one if the row is another.
+  void _hover(AppGlassMenuEntry? entry, BuildContext rowContext) {
+    if (entry != null && _isInSubmenu(entry)) return;
+    if (entry is AppGlassMenuItem && entry.hasSubmenu && entry.isEnabled) {
+      if (!_isOpen(entry)) _openSubmenu(entry, rowContext, keyboard: false);
+      return;
+    }
+    _closeSubmenu();
+  }
+
+  void _toggle(AppGlassMenuItem item, BuildContext rowContext, {required bool keyboard}) {
+    if (_isOpen(item)) {
+      if (keyboard) {
+        // → on a row whose submenu is already open moves into it.
+        setState(() => _openedByKeyboard = true);
+      } else {
+        _closeSubmenu();
+      }
+      return;
+    }
+    _openSubmenu(item, rowContext, keyboard: keyboard);
+  }
+
+  void _openSubmenu(AppGlassMenuItem item, BuildContext rowContext, {required bool keyboard}) {
+    final RenderBox? host = context.findRenderObject() as RenderBox?;
+    final RenderBox? row = rowContext.findRenderObject() as RenderBox?;
+    final RenderBox? menu = _menuKey.currentContext?.findRenderObject() as RenderBox?;
+    if (host == null || row == null || menu == null || !host.hasSize || !row.hasSize || !menu.hasSize) {
+      return;
+    }
+
+    final EdgeInsets padding = MediaQuery.paddingOf(context);
+    const double margin = _AppGlassMenuLayout._margin;
+    const double width = kAppGlassSubmenuWidth;
+    final double rowTop = row.localToGlobal(Offset.zero, ancestor: host).dy;
+    final Rect menuRect = menu.localToGlobal(Offset.zero, ancestor: host) & menu.size;
+
+    final double maxHeight = math.max(0, host.size.height - padding.vertical - margin * 2);
+    final double height = math.min(appGlassMenuHeight(item.children!), maxHeight);
+
+    final double minX = padding.left + margin;
+    final double maxX = math.max(minX, host.size.width - padding.right - margin - width);
+    double x = menuRect.right + AppSpace.s4;
+    if (x > maxX) x = menuRect.left - AppSpace.s4 - width;
+
+    final double minY = padding.top + margin;
+    final double maxY = math.max(minY, host.size.height - padding.bottom - margin - height);
+    final double y = rowTop - AppSpace.s6;
+
+    setState(() {
+      _open = item;
+      _submenuOrigin = Offset(x.clamp(minX, maxX), y.clamp(minY, maxY));
+      _submenuMaxHeight = maxHeight;
+      _openedByKeyboard = keyboard;
+    });
+  }
+
+  void _closeSubmenu() {
+    if (_open == null) return;
+    setState(() {
+      _open = null;
+      _openedByKeyboard = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final open = _open;
+    return _AppGlassMenuScope(
+      host: this,
+      child: Stack(
+        children: [
+          CustomSingleChildLayout(
+            delegate: _AppGlassMenuLayout(position: widget.position, padding: MediaQuery.paddingOf(context)),
+            child: AppGlassMenu(key: _menuKey, width: widget.width, entries: widget.entries),
+          ),
+          if (open != null)
+            Positioned(
+              left: _submenuOrigin.dx,
+              top: _submenuOrigin.dy,
+              child: _AppGlassSubmenuAppear(
+                key: ObjectKey(open),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: _submenuMaxHeight),
+                  // Its own scope: an autofocus is honoured only where nothing
+                  // in the scope has focus yet, and the row that opened this
+                  // still has it. When the scope goes, focus falls back to
+                  // that row.
+                  child: FocusScope(
+                    child: AppGlassMenu(
+                      width: kAppGlassSubmenuWidth,
+                      entries: open.children!,
+                      // Opened by hover the pointer is what is in the submenu,
+                      // and the focus ring stays where the keyboard left it.
+                      autofocus: _openedByKeyboard,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A submenu's entrance: M1 fade, nothing more — the menu it belongs to has
+/// already made the state-change motion.
+class _AppGlassSubmenuAppear extends StatelessWidget {
+  const _AppGlassSubmenuAppear({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: AppMotion.durationOf(context, AppMotion.hover),
+      curve: AppMotion.enter,
+      child: child,
+      builder: (context, t, child) => Opacity(opacity: t, child: child),
+    );
+  }
+}
+
+/// How a row reaches the host that owns the submenu state.
+class _AppGlassMenuScope extends InheritedWidget {
+  const _AppGlassMenuScope({required this.host, required super.child});
+
+  final _AppGlassMenuHostState host;
+
+  static _AppGlassMenuHostState? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_AppGlassMenuScope>()?.host;
+
+  @override
+  bool updateShouldNotify(_AppGlassMenuScope oldWidget) => host != oldWidget.host;
 }
 
 class _AppGlassMenuLayout extends SingleChildLayoutDelegate {
@@ -278,16 +522,24 @@ class _AppGlassMenuLayout extends SingleChildLayoutDelegate {
 /// The menu panel itself: G2 glass at r16 with 6 of padding around the rows.
 ///
 /// Public so tests can find a menu's rows through it; open one with
-/// [showAppGlassMenu].
+/// [showAppGlassMenu]. A submenu is another one of these, 200 wide.
 class AppGlassMenu extends StatelessWidget {
-  const AppGlassMenu({super.key, required this.entries, this.width = kAppGlassMenuWidth});
+  const AppGlassMenu({
+    super.key,
+    required this.entries,
+    this.width = kAppGlassMenuWidth,
+    this.autofocus = true,
+  });
 
   final List<AppGlassMenuEntry> entries;
   final double width;
 
+  /// Whether the first enabled row takes focus as the panel appears.
+  final bool autofocus;
+
   @override
   Widget build(BuildContext context) {
-    final firstEnabled = entries.indexWhere((e) => e is AppGlassMenuItem && e.isEnabled);
+    final firstEnabled = autofocus ? _firstFocusable(entries) : null;
 
     return SizedBox(
       width: width,
@@ -306,9 +558,14 @@ class AppGlassMenu extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (int i = 0; i < entries.length; i++)
-                    switch (entries[i]) {
-                      final AppGlassMenuItem item => _AppGlassMenuRow(item: item, autofocus: i == firstEnabled),
+                  for (final AppGlassMenuEntry entry in entries)
+                    switch (entry) {
+                      final AppGlassMenuItem item =>
+                        _AppGlassMenuRow(item: item, autofocus: identical(item, firstEnabled)),
+                      final AppGlassMenuQuickBlock block =>
+                        _AppGlassMenuQuickBlock(block: block, autofocus: firstEnabled),
+                      final AppGlassMenuHeading heading => _AppGlassMenuHeading(heading: heading),
+                      final AppGlassMenuGrid grid => _AppGlassMenuGrid(grid: grid, autofocus: firstEnabled),
                       _ => const _AppGlassMenuRule(),
                     },
                 ],
@@ -318,6 +575,28 @@ class AppGlassMenu extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// The first thing that can take focus, in reading order: a row, a quick
+  /// cell or a grid cell.
+  static Object? _firstFocusable(List<AppGlassMenuEntry> entries) {
+    for (final AppGlassMenuEntry entry in entries) {
+      switch (entry) {
+        case AppGlassMenuItem(:final bool isEnabled):
+          if (isEnabled) return entry;
+        case AppGlassMenuQuickBlock(:final List<AppGlassMenuQuickCell> cells):
+          for (final AppGlassMenuQuickCell cell in cells) {
+            if (cell.isEnabled) return cell;
+          }
+        case AppGlassMenuGrid(:final List<AppGlassMenuItem> items):
+          for (final AppGlassMenuItem item in items) {
+            if (item.isEnabled) return item;
+          }
+        default:
+          break;
+      }
+    }
+    return null;
   }
 }
 
@@ -340,6 +619,172 @@ class _AppGlassMenuRule extends StatelessWidget {
   }
 }
 
+/// `A1 · 2a`: 10.5 medium, tracked, in the secondary ink; 2 above, 3 below.
+class _AppGlassMenuHeading extends StatelessWidget {
+  const _AppGlassMenuHeading({required this.heading});
+
+  final AppGlassMenuHeading heading;
+
+  static const double height = 20;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final glass = GlassInk.maybeOf(context);
+    final ink2 = glass?.ink2 ?? Theme.of(context).colorScheme.onSurfaceVariant;
+    return SizedBox(
+      height: height,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 2, 8, 3),
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(
+            heading.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.labelSmall!.metricsOnly.copyWith(
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.6,
+              color: ink2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Rows in ranks of [AppGlassMenuGrid.columns], 2 apart both ways; a short
+/// last rank leaves its remaining cells empty.
+class _AppGlassMenuGrid extends StatelessWidget {
+  const _AppGlassMenuGrid({required this.grid, required this.autofocus});
+
+  final AppGlassMenuGrid grid;
+
+  /// The entry that takes focus, if it is one of this grid's.
+  final Object? autofocus;
+
+  static const double gap = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final int columns = grid.columns;
+    final int ranks = (grid.items.length / columns).ceil();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (int r = 0; r < ranks; r++) ...[
+          if (r > 0) const SizedBox(height: gap),
+          Row(
+            children: [
+              for (int c = 0; c < columns; c++) ...[
+                if (c > 0) const SizedBox(width: gap),
+                Expanded(
+                  child: r * columns + c < grid.items.length
+                      ? _AppGlassMenuRow(
+                          item: grid.items[r * columns + c],
+                          autofocus: identical(grid.items[r * columns + c], autofocus),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// `A1 · 2a`: cells 48 tall at r10, glyph at 20 over a 10.5 label in the
+/// secondary ink, hovering to 8% of the ink.
+class _AppGlassMenuQuickBlock extends StatelessWidget {
+  const _AppGlassMenuQuickBlock({required this.block, required this.autofocus});
+
+  final AppGlassMenuQuickBlock block;
+
+  /// The entry that takes focus, if it is one of this block's cells.
+  final Object? autofocus;
+
+  static const double height = 48;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      child: Row(
+        children: [
+          for (int i = 0; i < block.cells.length; i++) ...[
+            if (i > 0) const SizedBox(width: _AppGlassMenuGrid.gap),
+            Expanded(
+              child: _AppGlassMenuQuickCellView(
+                cell: block.cells[i],
+                autofocus: identical(block.cells[i], autofocus),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AppGlassMenuQuickCellView extends StatelessWidget {
+  const _AppGlassMenuQuickCellView({required this.cell, required this.autofocus});
+
+  final AppGlassMenuQuickCell cell;
+  final bool autofocus;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final glass = GlassInk.maybeOf(context);
+    final ink = glass?.ink ?? scheme.onSurface;
+    final ink2 = glass?.ink2 ?? scheme.onSurfaceVariant;
+    final host = _AppGlassMenuScope.maybeOf(context);
+
+    final enabled = cell.isEnabled;
+    final Color dim = ink2.withValues(alpha: ink2.a * 0.6);
+    final radius = BorderRadius.circular(AppRadius.md);
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      child: InkWell(
+        autofocus: autofocus,
+        borderRadius: radius,
+        hoverColor: ink.withValues(alpha: 0.08),
+        focusColor: ink.withValues(alpha: 0.10),
+        highlightColor: ink.withValues(alpha: 0.12),
+        splashFactory: NoSplash.splashFactory,
+        onHover: (bool hovering) {
+          if (hovering) host?._hover(null, context);
+        },
+        onTap: enabled ? () => Navigator.of(context).pop<VoidCallback>(cell.onSelected) : null,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(cell.icon, size: AppSize.iconLg, color: enabled ? ink : dim),
+            const SizedBox(height: 3),
+            Text(
+              cell.label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelSmall!.metricsOnly.copyWith(
+                fontWeight: FontWeight.w400,
+                color: enabled ? ink2 : dim,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _AppGlassMenuRow extends StatelessWidget {
   const _AppGlassMenuRow({required this.item, required this.autofocus});
 
@@ -355,72 +800,111 @@ class _AppGlassMenuRow extends StatelessWidget {
     final glass = GlassInk.maybeOf(context);
     final ink = glass?.ink ?? scheme.onSurface;
     final ink2 = glass?.ink2 ?? scheme.onSurfaceVariant;
+    final host = _AppGlassMenuScope.maybeOf(context);
 
     final enabled = item.isEnabled;
+    final bool submenu = item.hasSubmenu;
+    final bool open = submenu && (host?._isOpen(item) ?? false);
+    final bool inSubmenu = host?._isInSubmenu(item) ?? false;
     final Color dim = ink2.withValues(alpha: ink2.a * 0.6);
     final Color labelColor = !enabled ? dim : (item.danger ? scheme.error : ink);
     final Color glyphColor = !enabled ? dim : (item.danger ? scheme.error : ink2);
     final note = !enabled ? item.note : null;
     final radius = BorderRadius.circular(AppRadius.sm);
 
+    void activate() {
+      if (submenu) {
+        host?._toggle(item, context, keyboard: false);
+      } else {
+        Navigator.of(context).pop<VoidCallback>(item.onSelected);
+      }
+    }
+
     return Semantics(
       button: true,
       enabled: enabled,
-      child: InkWell(
-        autofocus: autofocus,
-        borderRadius: radius,
-        hoverColor: ink.withValues(alpha: 0.08),
-        focusColor: ink.withValues(alpha: 0.10),
-        highlightColor: ink.withValues(alpha: 0.12),
-        splashFactory: NoSplash.splashFactory,
-        onTap: enabled ? () => Navigator.of(context).pop<VoidCallback>(item.onSelected) : null,
-        child: SizedBox(
-          height: note == null ? AppSize.compact : _noteHeight,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              children: [
-                if (item.icon != null) ...[
-                  Icon(item.icon, size: AppSize.iconMd, color: glyphColor),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.label,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodySmall!.metricsOnly.copyWith(color: labelColor),
-                      ),
-                      if (note != null)
-                        Text(
-                          note,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.labelSmall!.metricsOnly.copyWith(
-                            fontWeight: FontWeight.w400,
-                            color: dim,
-                          ),
-                        ),
+      child: CallbackShortcuts(
+        bindings: <ShortcutActivator, VoidCallback>{
+          if (submenu && enabled)
+            const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+                host?._toggle(item, context, keyboard: true),
+          if (inSubmenu)
+            const SingleActivator(LogicalKeyboardKey.arrowLeft): () => host?._closeSubmenu(),
+        },
+        child: InkWell(
+          autofocus: autofocus,
+          borderRadius: radius,
+          hoverColor: ink.withValues(alpha: 0.08),
+          focusColor: ink.withValues(alpha: 0.10),
+          highlightColor: ink.withValues(alpha: 0.12),
+          splashFactory: NoSplash.splashFactory,
+          onHover: (bool hovering) {
+            if (hovering) host?._hover(item, context);
+          },
+          onTap: enabled ? activate : null,
+          child: DecoratedBox(
+            // A submenu row stays lit while its submenu is open, so the eye
+            // can tell which row the panel beside the menu belongs to.
+            decoration: BoxDecoration(
+              color: open ? ink.withValues(alpha: 0.08) : null,
+              borderRadius: radius,
+            ),
+            child: SizedBox(
+              height: note == null ? AppSize.compact : _noteHeight,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    if (item.icon != null) ...[
+                      Icon(item.icon, size: AppSize.iconMd, color: glyphColor),
+                      const SizedBox(width: 8),
                     ],
-                  ),
-                ),
-                if (item.trailing != null) ...[
-                  const SizedBox(width: AppSpace.s10),
-                  Text(
-                    item.trailing!,
-                    maxLines: 1,
-                    style: textTheme.labelSmall!.mono.metricsOnly.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: enabled ? ink2 : dim,
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.label,
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.bodySmall!.metricsOnly.copyWith(color: labelColor),
+                          ),
+                          if (note != null)
+                            Text(
+                              note,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.labelSmall!.metricsOnly.copyWith(
+                                fontWeight: FontWeight.w400,
+                                color: dim,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ],
+                    if (item.trailing != null) ...[
+                      const SizedBox(width: AppSpace.s10),
+                      Text(
+                        item.trailing!,
+                        maxLines: 1,
+                        style: textTheme.labelSmall!.mono.metricsOnly.copyWith(
+                          fontWeight: FontWeight.w400,
+                          color: enabled ? ink2 : dim,
+                        ),
+                      ),
+                    ],
+                    if (submenu)
+                      // `A1 · 2a`: the chevron sits 4 closer to the edge than
+                      // the text does, so it reads as the row's end.
+                      Transform.translate(
+                        offset: const Offset(AppSpace.s4, 0),
+                        child: Icon(Icons.chevron_right, size: AppSize.iconMd, color: enabled ? ink2 : dim),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

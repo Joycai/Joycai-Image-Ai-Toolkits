@@ -89,6 +89,19 @@ class WorkbenchUIState extends ChangeNotifier {
   AppImage? videoLastFrame;
   String? lastGeneratedVideoPath;
 
+  /// Whether a gallery card's context menu is up.
+  ///
+  /// The glass budget (`A1`: 「菜单打开即隐操作条」) — a desktop workbench
+  /// already shows three layers (title bar, toolbar, selection bar), and the
+  /// menu is a fourth; the selection bar yields to it while it is open.
+  bool galleryMenuOpen = false;
+
+  void setGalleryMenuOpen(bool open) {
+    if (galleryMenuOpen == open) return;
+    galleryMenuOpen = open;
+    notifyListeners();
+  }
+
   // Preview Methods
   void setPreviewList(List<AppImage> images, int initialIndex) {
     previewImages = List.from(images);

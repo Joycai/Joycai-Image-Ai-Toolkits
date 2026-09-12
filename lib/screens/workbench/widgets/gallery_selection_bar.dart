@@ -93,8 +93,11 @@ class GallerySelectionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final inputs = context.select<GalleryState, _BarInputs>(_barInputs);
+    // A card's context menu is glass too, and the budget is three layers: the
+    // bar steps aside while a menu is up (`A1`: 「菜单打开即隐操作条」).
+    final menuOpen = context.select<WorkbenchUIState, bool>((s) => s.galleryMenuOpen);
     final count = inputs.selected.length;
-    final visible = count > 0;
+    final visible = count > 0 && !menuOpen;
     final duration = AppMotion.sceneOf(context);
 
     return IgnorePointer(
