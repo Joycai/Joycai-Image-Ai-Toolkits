@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
 import 'package:joycai_image_ai_toolkits/services/browser_file_scanner.dart';
 import 'package:path/path.dart' as p;
 
@@ -49,6 +50,35 @@ void main() {
       expect(reports[i], greaterThan(reports[i - 1]));
     }
     expect(reports.last, lessThanOrEqualTo(40));
+  });
+
+  /// The scanner used to carry its own extension table, which had drifted
+  /// from `BrowserFile.categoryOf`: these four were categorised in one and
+  /// `other` in the other, so a listed file and the same file restored from a
+  /// staging mark disagreed about what it was.
+  test('classifies a file exactly as BrowserFile.categoryOf does', () async {
+    const names = ['clip.m4v', 'song.wma', 'rows.csv', 'app.log', 'photo.JPG', 'thing.bin'];
+    for (final name in names) {
+      write(name);
+    }
+
+    final files = await scanBrowserFiles([dir.path]);
+
+    expect(
+      {for (final f in files) f['name'] as String: f['categoryIndex'] as int},
+      {for (final name in names) name: BrowserFile.categoryOf(name).index},
+    );
+    expect(
+      {for (final f in files) f['name'] as String: f['categoryIndex'] as int},
+      {
+        'clip.m4v': FileCategory.video.index,
+        'song.wma': FileCategory.audio.index,
+        'rows.csv': FileCategory.text.index,
+        'app.log': FileCategory.text.index,
+        'photo.JPG': FileCategory.image.index,
+        'thing.bin': FileCategory.other.index,
+      },
+    );
   });
 
   test('a folder that is not there lists nothing and does not throw', () async {

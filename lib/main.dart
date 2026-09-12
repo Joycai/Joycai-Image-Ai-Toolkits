@@ -311,13 +311,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (isPhone) {
       // The dock floats over the bottom of the screen; the screen keeps its
       // content clear of it the same way it keeps clear of a home indicator.
+      //
+      // `padding` only. `viewPadding` stays the window's own, because that is
+      // what [PhoneDock.clearanceOf] measures from: overriding it too made
+      // the clearance count itself, and anything computing it from a screen's
+      // context — a snackbar's bottom margin — cleared the dock twice.
       final mq = MediaQuery.of(context);
       final clearance = PhoneDock.clearanceOf(context);
       screen = MediaQuery(
-        data: mq.copyWith(
-          padding: mq.padding.copyWith(bottom: clearance),
-          viewPadding: mq.viewPadding.copyWith(bottom: clearance),
-        ),
+        data: mq.copyWith(padding: mq.padding.copyWith(bottom: clearance)),
         child: screen,
       );
     }

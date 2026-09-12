@@ -4,6 +4,8 @@ import 'dart:isolate';
 
 import 'package:path/path.dart' as p;
 
+import '../models/browser_file.dart';
+
 /// Lists the files directly inside [paths] (not their subfolders) as the maps
 /// `BrowserFile.fromMap` reads, on an isolate of its own.
 ///
@@ -99,23 +101,13 @@ List<Map<String, dynamic>> _listFiles(List<String> paths, {void Function(int fou
         if (file is! File) continue;
         final stat = file.statSync();
         final filePath = file.path;
-        final ext = p.extension(filePath).toLowerCase();
-
-        int categoryIndex = 5; // other
-        if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.avif'].contains(ext)) {
-          categoryIndex = 1; // image
-        } else if (['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v'].contains(ext)) {
-          categoryIndex = 2; // video
-        } else if (['.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac', '.wma'].contains(ext)) {
-          categoryIndex = 3; // audio
-        } else if (['.txt', '.md', '.json', '.xml', '.yaml', '.yml', '.srt', '.ass', '.vtt', '.csv', '.log'].contains(ext)) {
-          categoryIndex = 4; // text
-        }
 
         results.add({
           'path': filePath,
           'name': p.basename(filePath),
-          'categoryIndex': categoryIndex,
+          // The extension table lives with the category it names, so a
+          // listing and a path classified on its own cannot disagree.
+          'categoryIndex': BrowserFile.categoryOf(filePath).index,
           'size': stat.size,
           'modified': stat.modified.millisecondsSinceEpoch,
         });

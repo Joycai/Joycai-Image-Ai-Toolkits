@@ -52,10 +52,14 @@ class CustomAccent {
     String s = input.trim();
     if (s.startsWith('#')) s = s.substring(1);
     if (s.length == 3) s = s.split('').map((c) => '$c$c').join();
-    if (s.length != 6) return null;
+    // Digits only: `int.tryParse` would take a leading sign, so a six-character
+    // string that is not six hex digits ('-FFFFF') would parse to a colour.
+    if (!_sixHexDigits.hasMatch(s)) return null;
     final int? v = int.tryParse(s, radix: 16);
     return v == null ? null : Color(0xFF000000 | v);
   }
+
+  static final RegExp _sixHexDigits = RegExp(r'^[0-9a-fA-F]{6}$');
 
   /// Upper-case `#RRGGBB`, alpha dropped.
   static String hex(Color c) =>
