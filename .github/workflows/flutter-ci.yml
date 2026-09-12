@@ -7,11 +7,13 @@ on:
     branches: [ main ]
 
 jobs:
-  analyze_and_test:
+  analyze:
+    name: Analyze
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: 'Install Flutter'
         uses: subosito/flutter-action@v2
         with:
@@ -27,5 +29,36 @@ jobs:
       - name: 'Static Analysis'
         run: flutter analyze
 
+  test:
+    name: Test (shard ${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Install Flutter'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 'Install Dependencies'
+        run: flutter pub get
+
+      - name: 'Generate Localization'
+        run: flutter gen-l10n
+
+      # Sharded by file, not with --total-shards: that flag splits individual
+      # tests, so every shard still compiles all ~135 files, and a few files
+      # rely on an earlier test in the same file having run first. The
+      # screenshot harness is excluded by tag — it writes PNGs and asserts
+      # nothing (see dart_test.yaml).
       - name: 'Run Tests'
-        run: flutter test
+        run: |
+          mapfile -t files < <(find test -name '*_test.dart' | LC_ALL=C sort | awk -v n=3 -v i=${{ matrix.shard }} '(NR - 1) % n == i')
+          echo "Shard ${{ matrix.shard }}: ${#files[@]} files"
+          flutter test -x screenshots "${files[@]}"
