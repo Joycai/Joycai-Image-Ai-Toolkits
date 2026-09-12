@@ -25,7 +25,30 @@ class FileBrowserState extends ChangeNotifier {
 
   List<BrowserFile> allFiles = [];
   List<BrowserFile> filteredFiles = [];
-  Set<BrowserFile> selectedFiles = {};
+  Set<BrowserFile> get selectedFiles => _selectedFiles;
+  Set<BrowserFile> _selectedFiles = const {};
+
+  /// Replaces the selection.
+  ///
+  /// Never mutate [selectedFiles] in place. A `select` holding it, and the
+  /// payload derived from it below, have nothing but its identity to tell
+  /// that it moved — the same rule the rest of this class follows for its
+  /// lists, and the one that hid a bug in the folder column until a reader
+  /// finally narrowed onto one.
+  set selectedFiles(Set<BrowserFile> next) {
+    _selectedFiles = next;
+    _selectionPayload = null;
+  }
+
+  /// The selection as one list, shared by every card that drags it.
+  ///
+  /// A [Draggable]'s data has to be a value at build time, so each selected
+  /// tile used to take its own `selectedFiles.toList()` — one copy of the
+  /// whole selection per visible selected tile per rebuild. They all carry
+  /// the same files, so they can carry the same list.
+  List<BrowserFile> get selectionPayload =>
+      _selectionPayload ??= List<BrowserFile>.unmodifiable(_selectedFiles);
+  List<BrowserFile>? _selectionPayload;
 
   /// The last file clicked without Shift — the fixed end of a Shift-click
   /// range. Stored by path, not index, so it survives a re-sort or re-filter;
@@ -397,18 +420,17 @@ class FileBrowserState extends ChangeNotifier {
     });
 
     // Cleanup selection
-    selectedFiles.removeWhere(
-      (selected) => !allFiles.any((f) => f.path == selected.path),
-    );
+    final Set<String> livePaths = {for (final f in allFiles) f.path};
+    if (selectedFiles.any((s) => !livePaths.contains(s.path))) {
+      selectedFiles = selectedFiles.where((s) => livePaths.contains(s.path)).toSet();
+    }
     notifyListeners();
   }
 
   void toggleSelection(BrowserFile file) {
-    if (selectedFiles.contains(file)) {
-      selectedFiles.remove(file);
-    } else {
-      selectedFiles.add(file);
-    }
+    selectedFiles = selectedFiles.contains(file)
+        ? (Set<BrowserFile>.of(selectedFiles)..remove(file))
+        : (Set<BrowserFile>.of(selectedFiles)..add(file));
     // A plain click re-anchors: the next Shift-click ranges from here.
     _selectionAnchorPath = file.path;
     notifyListeners();
@@ -433,21 +455,20 @@ class FileBrowserState extends ChangeNotifier {
     }
     final start = anchorIndex < targetIndex ? anchorIndex : targetIndex;
     final end = anchorIndex < targetIndex ? targetIndex : anchorIndex;
-    for (var i = start; i <= end; i++) {
-      selectedFiles.add(filteredFiles[i]);
-    }
+    selectedFiles = Set<BrowserFile>.of(selectedFiles)
+      ..addAll(filteredFiles.getRange(start, end + 1));
     // Anchor stays put, so successive Shift-clicks re-range from the same
     // origin — the behaviour every file manager has.
     notifyListeners();
   }
 
   void selectAll() {
-    selectedFiles.addAll(filteredFiles);
+    selectedFiles = Set<BrowserFile>.of(selectedFiles)..addAll(filteredFiles);
     notifyListeners();
   }
 
   void clearSelection() {
-    selectedFiles.clear();
+    selectedFiles = const {};
     _selectionAnchorPath = null;
     notifyListeners();
   }

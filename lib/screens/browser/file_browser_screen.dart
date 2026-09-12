@@ -466,7 +466,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               // selection; dragging one outside it drags only that file. Same
               // rule the context menu uses, so the count in the drag chip and
               // the count in the menu never disagree.
-              dragPayload: isSelected ? state.selectedFiles.toList() : <BrowserFile>[file],
+              dragPayload: isSelected ? state.selectionPayload : <BrowserFile>[file],
               thumbnailSize: state.thumbnailSize,
               heroScope: kBrowserPreviewHeroScope,
               onTap: () => _handleSelectionTap(state, file),
@@ -492,7 +492,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           file: file,
           isSelected: isSelected,
           isStaged: staging.contains(file.path),
-          dragPayload: isSelected ? state.selectedFiles.toList() : <BrowserFile>[file],
+          dragPayload: isSelected ? state.selectionPayload : <BrowserFile>[file],
           onTap: () => _handleSelectionTap(state, file),
           onDoubleTap: () => _openWithPreview(context, file, state),
           onSecondaryTap: (pos) => _showContextMenu(context, file, pos),

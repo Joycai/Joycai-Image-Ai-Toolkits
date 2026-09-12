@@ -166,6 +166,7 @@ void main() {
     env = installFixtureEnv(binding);
     await seedFixtures(env);
     await writeBulkGalleryImages(env, _kBulkImages);
+    await writeBulkBrowserFiles(env, _kBulkImages);
 
     final AppState appState = AppState();
     await appState.loadSettings();
@@ -285,12 +286,24 @@ void main() {
 
     final files = browser.filteredFiles;
     if (files.isNotEmpty) {
+      // A base selection, so the run under test is an ordinary add rather
+      // than the empty ↔ not boundary.
       browser.toggleSelection(files.first);
       await tester.pump();
       final List<String> pick =
-          await rebuildsFrom(tester, () => browser.toggleSelection(files.first));
-      say('  selection                     ${pick.length} builds');
+          await rebuildsFrom(tester, () => browser.toggleSelection(files[1]));
+      say('  selection, one card changes   ${pick.length} builds  '
+          '${(await costOf(tester, () => browser.toggleSelection(files[1]))).toStringAsFixed(1)} ms');
       reportDependents(pick, 'FileBrowserState');
+
+      // Select-all is the worst case the grid has: every visible card's
+      // state changes at once.
+      browser.clearSelection();
+      await tester.pump();
+      final List<String> all = await rebuildsFrom(tester, browser.selectAll);
+      say('  select all (${files.length} files)         ${all.length} builds');
+      browser.clearSelection();
+      await tester.pump();
     }
 
     final List<String> flash =
