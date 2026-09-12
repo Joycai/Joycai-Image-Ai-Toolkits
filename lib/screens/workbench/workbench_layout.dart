@@ -36,6 +36,10 @@ class WorkbenchLayoutState {
   /// Width the workbench actually got — measure against this, not the window.
   final double contentWidth;
 
+  /// Whether this tab has a left panel at all, inline, collapsed or in a
+  /// drawer. The toolbar's sidebar toggle is disabled without one.
+  final bool hasLeftPanel;
+
   /// Whether each side panel is reachable only through a drawer right now.
   /// Whoever draws the chrome owes the user a button that opens it.
   final bool leftInDrawer;
@@ -59,6 +63,7 @@ class WorkbenchLayoutState {
     required this.contentWidth,
     required this.leftInDrawer,
     required this.rightInDrawer,
+    this.hasLeftPanel = true,
     this.topClearance = 0,
     this.bottomClearance = 0,
     this.rightSheetOpener,
@@ -91,6 +96,7 @@ class WorkbenchLayoutState {
       other is WorkbenchLayoutState &&
           scaffoldKey == other.scaffoldKey &&
           contentWidth == other.contentWidth &&
+          hasLeftPanel == other.hasLeftPanel &&
           leftInDrawer == other.leftInDrawer &&
           rightInDrawer == other.rightInDrawer &&
           topClearance == other.topClearance &&
@@ -98,8 +104,8 @@ class WorkbenchLayoutState {
           rightSheetOpener == other.rightSheetOpener;
 
   @override
-  int get hashCode => Object.hash(
-      scaffoldKey, contentWidth, leftInDrawer, rightInDrawer, topClearance, bottomClearance, rightSheetOpener);
+  int get hashCode => Object.hash(scaffoldKey, contentWidth, hasLeftPanel, leftInDrawer, rightInDrawer,
+      topClearance, bottomClearance, rightSheetOpener);
 }
 
 typedef WorkbenchRightPanelBuilder = Widget Function(ScrollController? scrollController);
@@ -131,8 +137,11 @@ class _PanelWidths {
 ///
 /// - **Desktop** — three columns edge to edge: the left and right columns are
 ///   opaque column-coloured panels, the centre column is bare over the aurora
-///   (unless [centerGround] gives it one), the toolbar floats 10px inside the
-///   top of the centre column and [centerOverlay] floats at its bottom.
+///   (unless [centerGround] gives it one), and [centerOverlay] floats at the
+///   centre's bottom. The toolbar floats 10px inside the top of the *whole
+///   row*, across all three columns (`00e · 2b`): its tab strip keeps its
+///   window position whichever panel appears or hides, and every column's
+///   content starts below it.
 /// - **Tablet** — the centre alone; both side panels live in drawers, and the
 ///   toolbar carries the buttons that open them.
 /// - **Phone** — the toolbar becomes the screen's full-width glass bar, the
@@ -236,6 +245,7 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     final layoutState = WorkbenchLayoutState(
       _scaffoldKey,
       contentWidth: available,
+      hasLeftPanel: _hasLeft,
       leftInDrawer: leftInDrawer,
       rightInDrawer: rightInDrawer,
       topClearance: widget.toolbarBuilder != null ? WorkbenchGlassToolbar.clearance : 0,
@@ -256,13 +266,6 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                   ),
           ),
         ),
-        if (widget.toolbarBuilder != null)
-          Positioned(
-            left: WorkbenchGlassToolbar.inset,
-            right: WorkbenchGlassToolbar.inset,
-            top: WorkbenchGlassToolbar.inset,
-            child: widget.toolbarBuilder!(false),
-          ),
         if (widget.centerOverlay != null)
           Positioned(
             left: AppSpace.s10,
@@ -281,60 +284,16 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
         body: Column(
           children: [
             Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Stack(
                 children: [
-                  if (panels.leftInline) ...[
-                    PanelCard(
-                      width: panels.left,
-                      shape: PanelShape.column,
-                      child: widget.leftPanel!,
+                  Positioned.fill(child: _buildColumns(context, panels, center)),
+                  if (widget.toolbarBuilder != null)
+                    Positioned(
+                      left: WorkbenchGlassToolbar.inset,
+                      right: WorkbenchGlassToolbar.inset,
+                      top: WorkbenchGlassToolbar.inset,
+                      child: widget.toolbarBuilder!(false),
                     ),
-                    PanelResizer(
-                      shape: PanelShape.column,
-                      onDrag: (delta) {
-                        setState(() {
-                          _leftWidth = (_leftWidth + delta).clamp(
-                            kLeftPanelMin - _kDragSlack,
-                            panels.leftMax + _kDragSlack,
-                          );
-                        });
-                      },
-                      onDragEnd: () {
-                        setState(() {
-                          _leftWidth = _leftWidth.clamp(kLeftPanelMin, panels.leftMax);
-                        });
-                        Provider.of<AppState>(context, listen: false).setSidebarWidth(_leftWidth);
-                      },
-                    ),
-                  ],
-                  Expanded(child: center),
-                  if (panels.rightInline) ...[
-                    PanelResizer(
-                      shape: PanelShape.column,
-                      ruleSide: PanelRuleSide.leading,
-                      onDrag: (delta) {
-                        setState(() {
-                          _rightWidth = (_rightWidth - delta).clamp(
-                            kRightPanelMin - _kDragSlack,
-                            panels.rightMax + _kDragSlack,
-                          );
-                        });
-                      },
-                      onDragEnd: () {
-                        setState(() {
-                          _rightWidth = _rightWidth.clamp(kRightPanelMin, panels.rightMax);
-                        });
-                        DatabaseService().saveSetting(
-                            'workbench_right_panel_width', _rightWidth.round().toString());
-                      },
-                    ),
-                    PanelCard(
-                      width: panels.right,
-                      shape: PanelShape.column,
-                      child: widget.rightPanelBuilder!(null),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -359,6 +318,74 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
               )
             : null,
       ),
+    );
+  }
+
+  /// A side panel's content, started below the full-width toolbar. The
+  /// panel's own ground still runs to the top, under the glass.
+  Widget _underToolbar(Widget child) => widget.toolbarBuilder == null
+      ? child
+      : Padding(
+          padding: const EdgeInsets.only(top: WorkbenchGlassToolbar.clearance),
+          child: child,
+        );
+
+  Widget _buildColumns(BuildContext context, _PanelWidths panels, Widget center) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (panels.leftInline) ...[
+          PanelCard(
+            width: panels.left,
+            shape: PanelShape.column,
+            child: _underToolbar(widget.leftPanel!),
+          ),
+          PanelResizer(
+            shape: PanelShape.column,
+            onDrag: (delta) {
+              setState(() {
+                _leftWidth = (_leftWidth + delta).clamp(
+                  kLeftPanelMin - _kDragSlack,
+                  panels.leftMax + _kDragSlack,
+                );
+              });
+            },
+            onDragEnd: () {
+              setState(() {
+                _leftWidth = _leftWidth.clamp(kLeftPanelMin, panels.leftMax);
+              });
+              Provider.of<AppState>(context, listen: false).setSidebarWidth(_leftWidth);
+            },
+          ),
+        ],
+        Expanded(child: center),
+        if (panels.rightInline) ...[
+          PanelResizer(
+            shape: PanelShape.column,
+            ruleSide: PanelRuleSide.leading,
+            onDrag: (delta) {
+              setState(() {
+                _rightWidth = (_rightWidth - delta).clamp(
+                  kRightPanelMin - _kDragSlack,
+                  panels.rightMax + _kDragSlack,
+                );
+              });
+            },
+            onDragEnd: () {
+              setState(() {
+                _rightWidth = _rightWidth.clamp(kRightPanelMin, panels.rightMax);
+              });
+              DatabaseService().saveSetting(
+                  'workbench_right_panel_width', _rightWidth.round().toString());
+            },
+          ),
+          PanelCard(
+            width: panels.right,
+            shape: PanelShape.column,
+            child: _underToolbar(widget.rightPanelBuilder!(null)),
+          ),
+        ],
+      ],
     );
   }
 
@@ -425,6 +452,7 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     final layoutState = WorkbenchLayoutState(
       _scaffoldKey,
       contentWidth: screenWidth,
+      hasLeftPanel: _hasLeft,
       leftInDrawer: _hasLeft,
       rightInDrawer: false,
       topClearance: widget.toolbarBuilder != null ? WorkbenchGlassToolbar.phoneHeight : 0,

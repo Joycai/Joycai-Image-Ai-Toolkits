@@ -1128,7 +1128,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         }
         leftPanel = OptimizerLeftPanel(kbPath: _kbPath);
         showRightPanel = !isNarrow;
-        showLeftPanel = !isNarrow; // Show reference images on left
+        // Reference images on the left, behind the toolbar's sidebar toggle
+        // like the gallery's folders.
+        showLeftPanel = appState.isSidebarExpanded;
         // The one centre column the spec gives a ground of its own: `10g`
         // draws the chat column `#F5F7FD`, a recess between the `#FAFBFF`
         // panels either side. Every other tab leaves the column bare.
