@@ -1,6 +1,6 @@
 # 012 — 任务胶囊:甩出去的力道要算数,位移改走 transform
 
-- **Status**: TODO
+- **Status**: DONE(2026-09-12 执行,flutter analyze 零问题,1763 个测试全通过)
 - **Commit**: 0b97136
 - **Severity**: HIGH
 - **Category**: 可中断性(4)/ 性能(5)
