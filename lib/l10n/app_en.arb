@@ -14,7 +14,6 @@
   },
   "fileAlreadyExists": "A file with this name already exists",
   "noFilesFound": "No files found",
-  "switchViewMode": "Switch View Mode",
   "sortBy": "Sort by",
   "sortName": "Name",
   "sortDate": "Modify Date",
@@ -29,27 +28,12 @@
   "catOthers": "Others",
   "openWithSystemDefault": "Open with System Default",
   "aiBatchRename": "AI Batch Rename",
-  "rulesInstructions": "Renaming Rules / Instructions",
   "generateSuggestions": "Generate Suggestions",
-  "noSuggestions": "No suggestions generated yet",
   "searchFilesHint": "Search files…",
   "deselectAllDirectories": "Deselect all directories",
-  "applyRenames": "Apply Renames",
-  "additionalInstructions": "Additional Instructions (Optional)",
   "aiRenameInstructionsHint": "e.g. Keep original extensions, convert to Pinyin...",
   "noTemplateSelected": "No template selected",
   "selectTemplateFirst": "Please select a rename template first.",
-  "generatingSuggestions": "Generating suggestions…",
-  "renamePreviewTitle": "Rename Preview",
-  "conflictsFound": "{count} conflict(s)",
-  "@conflictsFound": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "conflictDuplicateTarget": "Duplicate target name",
   "addToSelection": "Add to Selection",
   "removeFromSelection": "Remove from Selection",
   "imagesSelected": "{count} selected",
@@ -66,14 +50,6 @@
   "fileBrowserAndroidHint": "Please use your device's file manager to organize files.",
   "stagingArea": "Staging",
   "addToStaging": "Add to Staging",
-  "addToStagingCount": "Add to Staging - {count}",
-  "@addToStagingCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "removeFromStaging": "Remove from Staging",
   "stagedBadge": "Staged",
   "clearStaging": "Clear",
@@ -143,22 +119,6 @@
     }
   },
   "onlyThisDirectory": "Show only this folder",
-  "pasteMoveTitle": "Move to {folder}",
-  "@pasteMoveTitle": {
-    "placeholders": {
-      "folder": {
-        "type": "String"
-      }
-    }
-  },
-  "pasteCopyTitle": "Copy to {folder}",
-  "@pasteCopyTitle": {
-    "placeholders": {
-      "folder": {
-        "type": "String"
-      }
-    }
-  },
   "pasteNoDestination": "Pick a destination folder first",
   "pasteDestinationGone": "The destination folder no longer exists",
   "pasteNothingToDo": "Nothing to transfer",
@@ -166,14 +126,10 @@
   "conflictSkip": "Skip",
   "conflictOverwrite": "Overwrite",
   "conflictRename": "Keep both",
-  "conflictApplyToRest": "Apply to all remaining",
   "conflictReasonExists": "Already in the destination",
   "conflictReasonDuplicate": "Another staged file has this name",
   "conflictReasonSameLocation": "Already in this folder",
   "conflictReasonMissing": "Source file is gone",
-  "pasteCrossVolumeWarning": "A different drive - files are copied then deleted, which takes longer and can stop partway.",
-  "pasteRunningMove": "Moving…",
-  "pasteRunningCopy": "Copying…",
   "pasteProgressCount": "{done} / {total}",
   "@pasteProgressCount": {
     "placeholders": {
@@ -185,7 +141,6 @@
       }
     }
   },
-  "pasteDoneTitle": "Transfer finished",
   "pasteCancelledTitle": "Transfer cancelled",
   "pasteSucceededCount": "{count} transferred",
   "@pasteSucceededCount": {
@@ -303,14 +258,6 @@
       }
     }
   },
-  "renameEditingHint": "renaming row {row} in place",
-  "@renameEditingHint": {
-    "placeholders": {
-      "row": {
-        "type": "int"
-      }
-    }
-  },
   "renameConflictsPending": "{count} conflicts unresolved · they will not be applied",
   "@renameConflictsPending": {
     "placeholders": {
@@ -338,7 +285,6 @@
   "renameDuplicateBadge": "Name taken",
   "renameSkippedBadge": "Skipped",
   "renameRenamedBadge": "Renamed",
-  "renameActionAccept": "Accept",
   "renameActionSkip": "Skip",
   "renameActionEdit": "Edit name",
   "renameActionUndo": "Undo skip",
@@ -346,17 +292,6 @@
   "renameNoModelsTitle": "No chat model available",
   "renameNoModelsDesc": "Batch renaming needs a chat model to read the pictures and write the names. Configure at least one working channel under Models and Channels first.",
   "renameGoToSettings": "Go to settings",
-  "renameBatchFailed": "Batch {batch} failed · {reason}",
-  "@renameBatchFailed": {
-    "placeholders": {
-      "batch": {
-        "type": "int"
-      },
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
   "renameBatchFailedDesc": "The {kept} suggestions produced so far are kept; the {missing} files with no name can be retried on their own.",
   "@renameBatchFailedDesc": {
     "placeholders": {
@@ -399,23 +334,6 @@
     }
   },
   "pasteCrossVolumeTag": "across drives",
-  "pasteProgressItems": "{done} / {total} items · {doneSize} / {totalSize}",
-  "@pasteProgressItems": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "doneSize": {
-        "type": "String"
-      },
-      "totalSize": {
-        "type": "String"
-      }
-    }
-  },
   "pasteCurrentFile": "Copying {name}",
   "@pasteCurrentFile": {
     "placeholders": {
@@ -479,28 +397,6 @@
   },
   "conflictsIntro": "Choose what to do with each, or tick the box below to apply one answer to the rest.",
   "conflictPending": "Undecided",
-  "conflictWriteInfo": "Incoming · {size} · {date}",
-  "@conflictWriteInfo": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "conflictExistingInfo": "Already there · {size} · {date}",
-  "@conflictExistingInfo": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "conflictOverwriteWarning": "The file there will be replaced. This cannot be undone.",
   "conflictApplyRestCount": "Apply the same answer to the remaining {count}",
   "@conflictApplyRestCount": {
@@ -777,8 +673,6 @@
   },
   "comingSoon": "Coming Soon",
   "viewAll": "View All",
-  "noTasks": "No active tasks",
-  "sidebar": "Sidebar",
   "white": "White",
   "black": "Black",
   "red": "Red",
@@ -910,22 +804,6 @@
       }
     }
   },
-  "dropMovedItems": "{count, plural, =1{Moved 1 item} other{Moved {count} items}}",
-  "@dropMovedItems": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dropCopiedItems": "{count, plural, =1{Copied 1 item} other{Copied {count} items}}",
-  "@dropCopiedItems": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "dropRejectIntoItself": "Can't move a folder into itself",
   "dropRejectSameFolder": "Already in this folder",
   "dropRejectRoot": "The root folder can't hold files",
@@ -957,7 +835,6 @@
   "manualHtmlRequired": "Please paste the HTML content in Manual Mode.",
   "findImages": "Find Images",
   "noImagesDiscovered": "No images discovered yet.",
-  "enterUrlToStart": "Enter a URL and requirement to start.",
   "addToQueue": "Add to Queue",
   "addedToQueue": "Added {count} images to download queue.",
   "@addedToQueue": {
@@ -990,7 +867,6 @@
     }
   },
   "manualHtmlMode": "Manual HTML Mode",
-  "manualHtmlHint": "Paste rendered HTML here (F12 -> Copy Outer HTML)",
   "cookieHistory": "Cookie History",
   "noCookieHistory": "No cookie history saved",
   "pasteFromClipboard": "Paste from Clipboard",
@@ -1039,7 +915,6 @@
   "tokenUsageMetrics": "Token Usage Metrics",
   "clearAllUsage": "Clear All Usage Data?",
   "clearUsageWarning": "This will permanently delete all token usage records from the database.",
-  "modelsLabel": "Models: ",
   "rangeLabel": "Range: ",
   "today": "Today",
   "lastWeek": "Last Week",
@@ -1109,7 +984,6 @@
     }
   },
   "models": "Models",
-  "modelManagement": "Model Management",
   "feeManagement": "Fee Management",
   "modelsTab": "Models",
   "channelsTab": "Channels",
@@ -1152,8 +1026,6 @@
       }
     }
   },
-  "addFirstModel": "Add your first LLM model to get started",
-  "addNewModel": "Add New Model",
   "deleteModel": "Delete Model",
   "deleteModelConfirmTitle": "Delete Model?",
   "deleteModelConfirmMessage": "Are you sure you want to delete \"{name}\"?",
@@ -1164,20 +1036,13 @@
       }
     }
   },
-  "addLlmModel": "Add LLM Model",
-  "editLlmModel": "Edit LLM Model",
   "modelIdLabel": "Model ID",
   "displayName": "Display Name",
   "type": "Type",
   "tag": "Tag",
-  "inputFeeLabel": "Input Fee ($/M Tokens)",
-  "outputFeeLabel": "Output Fee ($/M Tokens)",
-  "paidModel": "Paid Model",
-  "freeModel": "Free Model",
   "billingMode": "Billing Mode",
   "perToken": "Per Million Tokens",
   "perRequest": "Per Request",
-  "requestFeeLabel": "Request Fee ($/Request)",
   "requestCount": "Request Count",
   "requests": "Requests",
   "feeGroups": "Fee Groups",
@@ -1192,7 +1057,6 @@
   "cachePriceFollowsInput": "Cache hits are billed at the input price",
   "outputPrice": "Output Price ($/M Tokens)",
   "requestPrice": "Request Price ($/Req)",
-  "priceConfig": "Price Config",
   "priceLabelInput": "Input",
   "priceLabelCache": "Cache",
   "priceLabelOutput": "Output",
@@ -1238,69 +1102,42 @@
       }
     }
   },
-  "stepProtocol": "Choose Protocol",
   "stepProvider": "Choose Provider",
-  "stepApiKey": "API Key",
-  "stepConfig": "Extra Config",
-  "stepPreview": "Preview",
-  "protocolOpenAI": "OpenAI Compatible (REST)",
   "protocolOpenAIDesc": "Standard OpenAI REST API compatibility",
-  "protocolGoogle": "Google GenAI (REST)",
   "protocolGoogleDesc": "Official Google Gemini REST API",
   "protocolMidjourney": "Midjourney Proxy",
   "protocolMidjourneyDesc": "midjourney-proxy / NewAPI /mj/* surface",
-  "protocolAnthropic": "Anthropic Messages",
   "protocolAnthropicDesc": "Native /v1/messages surface (Claude)",
   "midjourneyEndpointHint": "Host root (e.g. https://your-newapi.com). /mj/* paths are added automatically.",
-  "providerOpenAIOfficial": "OpenAI Official",
-  "providerGoogleOfficial": "Google GenAI Official",
-  "providerGoogleCompatible": "Google GenAI (OpenAI Compatible)",
-  "providerGoogleCompatibleDesc": "Google Gemini via OpenAI endpoint",
   "providerDashScopeDesc": "dashscope.aliyuncs.com/compatible-mode · OpenAI-shaped requests · Qwen chat + native qwen-image / wan images + wan video",
   "providerDashScopeCompat": "Alibaba DashScope (OpenAI compatible)",
   "providerDashScopeNative": "Alibaba DashScope (native)",
   "providerDashScopeNativeDesc": "dashscope.aliyuncs.com/api/v1 · Alibaba's own request format · the only route for qwen-audio",
-  "endpointOverrideHint": "Prefilled for this provider. Replace it to use a relay, gateway or international host.",
-  "providerQianwen": "Qianwen Platform",
-  "providerQianwenDesc": "platform.qianwenai.com · same DashScope API — Qwen chat + qwen-image / wan2.7 image generation",
   "providerCustom": "Custom Provider",
   "providerCustomDesc": "Self-hosted or 3rd party provider",
-  "providerGroupOther": "Other",
   "stepConnection": "Endpoint & key",
-  "sectionAppearance": "Appearance",
   "moreColors": "More colors",
   "protocolXai": "xAI (Grok) API",
-  "providerXaiOfficial": "xAI Official",
   "providerXaiOfficialDesc": "api.x.ai · Grok chat + native Imagine video",
   "providerNewApiOpenAI": "New API (OpenAI format)",
   "providerNewApiGemini": "New API (Gemini format)",
   "providerNewApiDesc": "New API relay · bearer-token auth",
-  "providerAnthropicOfficial": "Anthropic Official",
-  "providerAnthropicOfficialDesc": "api.anthropic.com · Claude",
   "providerNewApiAnthropic": "New API (Anthropic format)",
   "providerMiniMaxAnthropic": "MiniMax (Anthropic format)",
   "providerMiniMaxDesc": "OpenAI-compatible /v1 endpoint",
   "newApiBaseUrl": "New API Base URL",
   "newApiBaseHint": "Enter your New API host; the version path is added automatically",
-  "customEndpointHint": "Enter your custom endpoint URL",
   "openaiV1Hint": "Hint: OpenAI compatible endpoints usually end with '/v1'",
   "googleV1BetaHint": "Hint: Google GenAI endpoints usually end with '/v1beta'",
   "anthropicV1Hint": "Hint: Anthropic endpoints usually end with '/v1'",
   "dashscopeApiV1Hint": "Hint: DashScope native endpoints end with '/api/v1'",
-  "enterApiKey": "Enter your API Key",
   "apiKeyStorageNotice": "Your key is stored locally and never sent to our servers.",
   "nameHint": "e.g. My Production API",
   "enableDiscoveryDesc": "Automatically list available models from this endpoint",
   "tagHint": "e.g. GPT4, Local, etc.",
-  "bindTag": "Bind Tag",
   "previewReady": "Ready to add this channel?",
   "feeGroupDesc": "Define billing standards for models to accurately calculate usage costs.",
-  "feeGroupEditorSubtitle": "Configure how a model is billed",
   "noFeeGroups": "No fee groups created yet",
-  "pricePerMillion": "Price per Million Tokens",
-  "pricePerRequest": "Price per Request",
-  "tokenBilling": "Token Billing",
-  "requestBilling": "Request Billing",
   "feeGroupModelCount": "{count} models",
   "@feeGroupModelCount": {
     "placeholders": {
@@ -1324,7 +1161,6 @@
   },
   "deselectAll": "Deselect All",
   "capabilities": "Capabilities",
-  "modelSaveRequirementHint": "Pick a channel and fill in both the name and the ID to save.",
   "cardPreview": "Card preview",
   "capabilityStreamingShort": "Streaming",
   "capabilityStandardShort": "Standard requests",
@@ -1367,15 +1203,11 @@
   "enableThinkingDesc": "Let the model reason before answering. Costs output tokens; Anthropic-format channels only.",
   "enableWebSearch": "Host web search",
   "enableWebSearchDesc": "Let the provider run its own web searches mid-answer. Billed as extra tokens and fetches pages on your behalf.",
-  "addChannelSubtitle": "Pick who this is, then fill in the connection",
-  "searchProviders": "Search providers…",
   "noProviderMatch": "No provider matches this search",
-  "resetToDefault": "Reset to default",
   "apiKeyRequired": "This provider needs an API key before the channel can be added",
   "endpointRequired": "Enter the endpoint URL for this channel",
   "probeRetry": "Retry",
   "customColor": "Custom color",
-  "stepConnectionAppearance": "Connection & appearance",
   "channelListPreview": "List preview",
   "pickerNoMatches": "No matches",
   "pickerMatchCount": "{count} shown",
@@ -1410,7 +1242,6 @@
       }
     }
   },
-  "previewInList": "List preview",
   "providerGroupVendor": "Vendors",
   "providerGroupVendorHint": "Official · endpoint prefilled",
   "providerGroupRelay": "Relays",
@@ -1441,7 +1272,6 @@
   "variantNewApiGemini": "Gemini format",
   "variantNewApiAnthropic": "Anthropic format",
   "channelPresetLabel": "Provider preset",
-  "channelPresetHint": "The preset only fills the fields below in one tap. You can still edit each one, and your edits are not overwritten.",
   "changePreset": "Change preset",
   "presetUnmatched": "No matching preset",
   "presetUnmatchedHint": "This channel uses a type from an older build that is no longer offered. Leaving it alone keeps it working; Change preset overwrites the fields below.",
@@ -1449,7 +1279,6 @@
   "restorePresetEndpoint": "Restore preset value",
   "changePresetOverlayHint": "Picking one overwrites the protocol and address with the preset's values. Key, name and tag are left alone.",
   "protocolField": "API protocol",
-  "protocolFieldHint": "Five protocol families; any stored type can be represented here.",
   "deprecatedLabel": "Deprecated",
   "apiKeyOptional": "Optional",
   "apiKeyLocalPlaceholder": "Local services usually need none",
@@ -1537,17 +1366,6 @@
     }
   },
   "protocolParamsLabel": "Parameters",
-  "protocolParamsDefault": "“{name}” defaults — {items}",
-  "@protocolParamsDefault": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      },
-      "items": {
-        "type": "String"
-      }
-    }
-  },
   "protocolParamsNone": "No model-specific parameters; just the prompt and reference images",
   "protocolParamReferenceLimit": "reference image limit",
   "protocolSendVia": "Sent via “{name}”",
@@ -1710,7 +1528,6 @@
   "newPrompt": "New Prompt",
   "editPrompt": "Edit Prompt",
   "noPromptsSaved": "No prompts saved",
-  "saveFavoritePrompts": "Save your favorite prompts or Refiner system prompts here",
   "createFirstPrompt": "Create First Prompt",
   "deletePromptConfirmTitle": "Delete Prompt?",
   "deletePromptConfirmMessage": "Are you sure you want to delete \"{title}\"?",
@@ -1723,7 +1540,6 @@
   },
   "title": "Title",
   "tagCategory": "Tag (Category)",
-  "setAsRefiner": "Set as Refiner",
   "promptContent": "Prompt Content",
   "userPrompts": "User Prompts",
   "refinerPrompts": "Refiner Prompts",
@@ -1731,22 +1547,12 @@
   "templateType": "Template Type",
   "typeRename": "Batch Rename",
   "typeRefiner": "Prompt Refiner",
-  "selectRenameTemplate": "Select Rename Template",
-  "selectCategory": "Select Category",
   "categoriesTab": "Categories",
   "addCategory": "Add Category",
   "editCategory": "Edit Category",
   "library": "Library",
   "refiner": "Refiner",
   "selectionMode": "Selection Mode",
-  "selectionModeCount": "Selection Mode ({count})",
-  "@selectionModeCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "nSelected": "{count} Selected",
   "@nSelected": {
     "placeholders": {
@@ -1886,9 +1692,6 @@
   "openGraphicsSettings": "Windows graphics settings",
   "reduceVisualEffects": "Reduce visual effects",
   "reduceVisualEffectsDesc": "Turns off the blur effects for smoother performance on integrated or low-power GPUs.",
-  "googleGenAiSettings": "Google GenAI REST Settings",
-  "openAiApiSettings": "OpenAI API REST Settings",
-  "standardConfig": "Standard Config",
   "endpointUrl": "Endpoint URL",
   "apiKey": "API Key",
   "outputDirectory": "Output Directory",
@@ -1914,21 +1717,16 @@
   "includeUsage": "Include Usage Metrics",
   "includeUsageDesc": "API token consumption history",
   "exportNow": "Export Now",
-  "importNow": "Import Now",
   "importOptions": "Import Options",
   "notInBackup": "Not available in backup file",
-  "importSettingsTitle": "Import Settings?",
   "importSettingsConfirm": "This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.",
   "importAndReplace": "Import & Replace",
   "importErrorPromptsOnly": "This is a prompt library export, not a full backup. Import it from the Prompts screen instead.",
   "importErrorNotABackup": "This file is not a valid backup. Choose a file exported with Export Settings.",
   "importErrorNewerSchema": "This backup was created by a newer version of the app. Please update before importing it.",
   "importMode": "Import Mode",
-  "importModeDesc": "Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.",
   "merge": "Merge",
   "replaceAll": "Replace All",
-  "applyOverwrite": "Apply (Overwrite)",
-  "applyAppend": "Apply (Append)",
   "portableMode": "Portable Mode",
   "portableModeDesc": "Store database and cache in the application folder (requires restart)",
   "restartRequired": "Restart Required",
@@ -2022,14 +1820,12 @@
       }
     }
   },
-  "taskSummary": "Task Summary",
   "pendingTasks": "Pending",
   "processingTasks": "Processing",
   "completedTasks": "Completed",
   "failedTasks": "Failed",
   "clearCompleted": "Clear Completed",
   "clearAll": "Clear All",
-  "clearAllConfirm": "This will remove all non-running tasks. This action cannot be undone.",
   "cancelAllPending": "Cancel All Pending",
   "cancelTask": "Cancel Task",
   "images": "Images",
@@ -2057,7 +1853,6 @@
       }
     }
   },
-  "latestLog": "Latest Log:",
   "taskCompletedNotification": "Task Completed",
   "taskFailedNotification": "Task Failed",
   "taskCompletedBody": "Task {id} has finished successfully.",
@@ -2093,7 +1888,6 @@
       }
     }
   },
-  "statusCancelled": "Cancelled",
   "retryTask": "Retry",
   "queuedPosition": "#{position} in queue",
   "@queuedPosition": {
@@ -2190,36 +1984,24 @@
   "setupWizardTitle": "Welcome Setup",
   "welcomeMessage": "Welcome to Joycai Image AI Toolkits! Let's get you set up.",
   "getStarted": "Get Started",
-  "stepAppearance": "Appearance",
   "stepStorage": "Storage",
-  "stepApi": "Intelligence (API)",
   "setupCompleteMessage": "You are all set! Enjoy creating.",
   "skip": "Skip",
   "storageLocationDesc": "Select where generated images will be saved.",
   "addChannelOptional": "Add your first AI provider channel (Optional).",
   "configureModelOptional": "Configure a model for your new channel (Optional).",
-  "googleGenAiFree": "Google GenAI (Free)",
-  "googleGenAiPaid": "Google GenAI (Paid)",
-  "openaiApi": "OpenAI API",
   "filenamePrefix": "Filename Prefix",
-  "openaiEndpointHint": "Hint: OpenAI compatible endpoints usually end with '/v1'",
-  "googleEndpointHint": "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)",
   "workbench": "Workbench",
-  "imageProcessing": "Image Processing",
   "wbModeImage": "Image",
   "wbModeVideo": "Video",
   "wbTools": "Tools",
-  "sourceGallery": "Source Gallery",
-  "sourceExplorer": "Source Explorer",
   "tempWorkspace": "Temp Workspace",
   "processResults": "Process Results",
-  "resultCache": "Result Cache",
   "sectionSources": "Sources",
   "sectionResults": "Results",
   "sectionWorkspace": "Workspace",
   "allSources": "All Sources",
   "allResults": "All Results",
-  "backToAll": "Back to all",
   "directories": "DIRECTORIES",
   "addFolder": "Add Folder",
   "noFolders": "No folders added",
@@ -2240,11 +2022,9 @@
     }
   },
   "removeFromWorkspace": "Remove from Workspace",
-  "dropFilesHere": "Drop images here to add them to temporary workspace",
   "noImagesSelected": "No images selected",
   "imageLoadFailed": "Failed to load image",
   "selectSourceDirectory": "Select Source Directory",
-  "removeFolderTooltip": "Remove folder",
   "removeFolderConfirmTitle": "Remove Folder?",
   "removeFolderConfirmMessage": "Are you sure you want to remove \"{folderName}\" from the list?",
   "@removeFolderConfirmMessage": {
@@ -2258,7 +2038,6 @@
   "thumbnailDisplay": "Thumbnail Display",
   "thumbnailFitContain": "Fit (whole image)",
   "thumbnailFitCover": "Fill (cropped)",
-  "deleteFile": "Delete File",
   "deleteFileConfirmTitle": "Delete File?",
   "deleteFileConfirmMessage": "Are you sure you want to delete \"{filename}\"?",
   "@deleteFileConfirmMessage": {
@@ -2402,7 +2181,6 @@
   "sendToVideoReferences": "Add to Video References",
   "sendToSelection": "Add to Selection",
   "sendToOptimizer": "Send to Prompt Assistant",
-  "optimizePromptWithImage": "Optimize Prompt with Image",
   "selectFromLibrary": "Select from Library",
   "metadataSelectedNone": "No image metadata selected",
   "labelRaw": "RAW",
@@ -2501,7 +2279,6 @@
   "maskOpacity": "Mask Opacity",
   "undo": "Undo",
   "saveToTemp": "Save to Workspace",
-  "saveMaskToTemp": "Save Mask to Workspace",
   "binaryMode": "Binary Mode",
   "maskSourceCaption": "Mask {width}×{height}",
   "@maskSourceCaption": {
@@ -2570,9 +2347,7 @@
   "promptOptimizer": "Prompt Assistant",
   "refinerModel": "Refiner Model",
   "systemPrompt": "System Prompt",
-  "refinerIntro": "Use AI to analyze images and refine your prompt.",
   "roughPrompt": "Rough Prompt / Ideas",
-  "optimizedPrompt": "Optimized Prompt",
   "applyToWorkbench": "Apply to Workbench",
   "promptApplied": "Prompt applied to workbench",
   "refineFailed": "Refine failed: {error}",
@@ -2602,7 +2377,6 @@
   "optViewed": "Viewed by AI",
   "optRemoveImage": "Remove image",
   "optEmptyImagesHint": "Right-click an image in the gallery and choose \"Send to Prompt Assistant\" to add it here.",
-  "videoGeneration": "Video Generation",
   "referenceImages": "Reference Images",
   "firstFrame": "First Frame",
   "lastFrame": "Last Frame",
@@ -2615,8 +2389,6 @@
   "videoQualityHigh": "High",
   "openInSystemPlayer": "Open in System Player",
   "dropVideoReferenceHere": "Drop images here for style/content reference",
-  "dropFirstFrameHere": "Drop image here for start frame",
-  "dropLastFrameHere": "Drop image here for end frame",
   "executionLogs": "EXECUTION LOGS",
   "saveToPhotos": "Save to Photos",
   "saveToGallery": "Save to Gallery",
@@ -2633,7 +2405,6 @@
   "iosSandboxDesc": "On iOS, please use the 'Import from Gallery' button in the top toolbar to add images to your Temporary Workspace.",
   "mobileSandboxActive": "Mobile Storage Restriction",
   "mobileSandboxDesc": "On mobile devices, direct folder access may be limited by the OS. It is recommended to use the 'Import from Gallery' button in the top toolbar.",
-  "filesAppSuffix": " (Files App)",
   "tapToPick": "Tap to Pick",
   "goToGallery": "Go to Gallery",
   "binaryModeActive": "Binary mode active — background hidden for clean mask export",
@@ -2957,7 +2728,6 @@
   "optAbortHint": "Esc to stop",
   "optKbSearching": "Reading",
   "optKbCitedRunning": "in progress",
-  "optSysPromptTemplate": "Template",
   "optSysPromptPick": "Choose a template",
   "optSysPromptSearch": "Search templates...",
   "optSysPromptNone": "No template",

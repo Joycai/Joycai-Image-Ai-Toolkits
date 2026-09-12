@@ -35,9 +35,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noFilesFound => 'ファイルが見つかりません';
 
   @override
-  String get switchViewMode => '表示モードを切り替え';
-
-  @override
   String get sortBy => '並べ替え';
 
   @override
@@ -80,25 +77,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aiBatchRename => 'AI一括名前変更';
 
   @override
-  String get rulesInstructions => '名前変更ルール/指示';
-
-  @override
   String get generateSuggestions => '提案を生成';
-
-  @override
-  String get noSuggestions => 'まだ提案は生成されていません';
 
   @override
   String get searchFilesHint => 'ファイル名を検索…';
 
   @override
   String get deselectAllDirectories => 'すべてのディレクトリ選択を解除';
-
-  @override
-  String get applyRenames => '名前の変更を適用';
-
-  @override
-  String get additionalInstructions => '追加指示（任意）';
 
   @override
   String get aiRenameInstructionsHint => '例：元の拡張子を保持、ピンインに変換…';
@@ -108,20 +93,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get selectTemplateFirst => '先に名前変更テンプレートを選択してください。';
-
-  @override
-  String get generatingSuggestions => '提案を生成中…';
-
-  @override
-  String get renamePreviewTitle => '名前変更プレビュー';
-
-  @override
-  String conflictsFound(int count) {
-    return '$count件の競合';
-  }
-
-  @override
-  String get conflictDuplicateTarget => '変更後のファイル名が重複しています';
 
   @override
   String get addToSelection => '選択に追加';
@@ -152,11 +123,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get addToStaging => 'ステージングに追加';
-
-  @override
-  String addToStagingCount(int count) {
-    return 'ステージングに追加 · $count 件';
-  }
 
   @override
   String get removeFromStaging => 'ステージングから削除';
@@ -235,16 +201,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get onlyThisDirectory => 'このフォルダーのみ表示';
 
   @override
-  String pasteMoveTitle(String folder) {
-    return '$folder へ移動';
-  }
-
-  @override
-  String pasteCopyTitle(String folder) {
-    return '$folder へコピー';
-  }
-
-  @override
   String get pasteNoDestination => '先に対象フォルダーを指定してください';
 
   @override
@@ -266,9 +222,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get conflictRename => '両方保持';
 
   @override
-  String get conflictApplyToRest => '残りすべてに適用';
-
-  @override
   String get conflictReasonExists => '対象フォルダーに既にあります';
 
   @override
@@ -281,22 +234,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get conflictReasonMissing => '元ファイルが存在しません';
 
   @override
-  String get pasteCrossVolumeWarning =>
-      '別ドライブへの転送: コピー後に削除するため時間がかかり、途中で止まることがあります。';
-
-  @override
-  String get pasteRunningMove => '移動中…';
-
-  @override
-  String get pasteRunningCopy => 'コピー中…';
-
-  @override
   String pasteProgressCount(int done, int total) {
     return '$done / $total';
   }
-
-  @override
-  String get pasteDoneTitle => '転送が完了しました';
 
   @override
   String get pasteCancelledTitle => '転送を中止しました';
@@ -388,11 +328,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String renameEditingHint(int row) {
-    return '$row 行目を編集中';
-  }
-
-  @override
   String renameConflictsPending(int count) {
     return '未解決の衝突 $count 件 · 適用されません';
   }
@@ -417,9 +352,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get renameRenamedBadge => '改名済み';
 
   @override
-  String get renameActionAccept => '採用';
-
-  @override
   String get renameActionSkip => 'スキップ';
 
   @override
@@ -440,11 +372,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get renameGoToSettings => '設定を開く';
-
-  @override
-  String renameBatchFailed(int batch, String reason) {
-    return 'バッチ $batch が失敗 · $reason';
-  }
 
   @override
   String renameBatchFailedDesc(int kept, int missing) {
@@ -477,16 +404,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pasteCrossVolumeTag => '別ドライブ';
-
-  @override
-  String pasteProgressItems(
-    int done,
-    int total,
-    String doneSize,
-    String totalSize,
-  ) {
-    return '$done / $total 件 · $doneSize / $totalSize';
-  }
 
   @override
   String pasteCurrentFile(String name) {
@@ -546,16 +463,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get conflictPending => '未決定';
-
-  @override
-  String conflictWriteInfo(String size, String date) {
-    return '書き込み · $size · $date';
-  }
-
-  @override
-  String conflictExistingInfo(String size, String date) {
-    return '既存 · $size · $date';
-  }
 
   @override
   String get conflictOverwriteWarning => '対象のファイルは置き換えられます。元に戻せません';
@@ -905,12 +812,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get viewAll => 'すべて表示';
 
   @override
-  String get noTasks => 'No active tasks';
-
-  @override
-  String get sidebar => 'サイドバー';
-
-  @override
   String get white => '白';
 
   @override
@@ -1070,16 +971,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String dropMovedItems(int count) {
-    return '$count 件を移動しました';
-  }
-
-  @override
-  String dropCopiedItems(int count) {
-    return '$count 件をコピーしました';
-  }
-
-  @override
   String get dropRejectIntoItself => 'フォルダーをそれ自身の中には移動できません';
 
   @override
@@ -1154,9 +1045,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noImagesDiscovered => 'まだ画像が見つかっていません。';
 
   @override
-  String get enterUrlToStart => 'URLと要件を入力して開始してください。';
-
-  @override
   String get addToQueue => 'キューに追加';
 
   @override
@@ -1195,9 +1083,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get manualHtmlMode => '手動HTMLモード';
-
-  @override
-  String get manualHtmlHint => 'レンダリングされたHTMLをここに貼り付けます（F12 -> 外部HTMLをコピー）';
 
   @override
   String get cookieHistory => 'クッキー履歴';
@@ -1277,9 +1162,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get clearUsageWarning => 'これにより、データベースからすべてのトークン使用状況レコードが完全に削除されます。';
-
-  @override
-  String get modelsLabel => 'モデル：';
 
   @override
   String get rangeLabel => '範囲：';
@@ -1376,9 +1258,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get models => 'モデル';
 
   @override
-  String get modelManagement => 'モデル管理';
-
-  @override
   String get feeManagement => '料金管理';
 
   @override
@@ -1469,12 +1348,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get addFirstModel => '最初のLLMモデルを追加して始めましょう';
-
-  @override
-  String get addNewModel => '新しいモデルを追加';
-
-  @override
   String get deleteModel => 'モデルを削除';
 
   @override
@@ -1484,12 +1357,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String deleteModelConfirmMessage(String name) {
     return '「$name」を削除してもよろしいですか？';
   }
-
-  @override
-  String get addLlmModel => 'LLMモデルを追加';
-
-  @override
-  String get editLlmModel => 'LLMモデルを編集';
 
   @override
   String get modelIdLabel => 'モデル ID';
@@ -1504,18 +1371,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tag => 'タグ';
 
   @override
-  String get inputFeeLabel => '入力料金（\$/Mトークン）';
-
-  @override
-  String get outputFeeLabel => '出力料金（\$/Mトークン）';
-
-  @override
-  String get paidModel => '有料モデル';
-
-  @override
-  String get freeModel => '無料モデル';
-
-  @override
   String get billingMode => '請求モード';
 
   @override
@@ -1523,9 +1378,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get perRequest => 'リクエストあたり';
-
-  @override
-  String get requestFeeLabel => 'リクエスト料金（\$/リクエスト）';
 
   @override
   String get requestCount => 'リクエスト数';
@@ -1568,9 +1420,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get requestPrice => 'リクエスト価格（\$/リクエスト）';
-
-  @override
-  String get priceConfig => '価格設定';
 
   @override
   String get priceLabelInput => '入力';
@@ -1632,28 +1481,10 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get stepProtocol => 'プロトコルを選択';
-
-  @override
   String get stepProvider => 'プロバイダーを選択';
 
   @override
-  String get stepApiKey => 'APIキー';
-
-  @override
-  String get stepConfig => '追加設定';
-
-  @override
-  String get stepPreview => 'プレビュー';
-
-  @override
-  String get protocolOpenAI => 'OpenAI互換（REST）';
-
-  @override
   String get protocolOpenAIDesc => '標準のOpenAI REST API互換性';
-
-  @override
-  String get protocolGoogle => 'Google GenAI（REST）';
 
   @override
   String get protocolGoogleDesc => '公式Google Gemini REST API';
@@ -1666,26 +1497,11 @@ class AppLocalizationsJa extends AppLocalizations {
       'midjourney-proxy / NewAPI の /mj/* インターフェース';
 
   @override
-  String get protocolAnthropic => 'Anthropic Messages';
-
-  @override
   String get protocolAnthropicDesc => 'Claude ネイティブの /v1/messages インターフェース';
 
   @override
   String get midjourneyEndpointHint =>
       'ホストのルートURL（例: https://your-newapi.com）を入力してください。/mj/* パスは自動的に追加されます。';
-
-  @override
-  String get providerOpenAIOfficial => 'OpenAI公式';
-
-  @override
-  String get providerGoogleOfficial => 'Google GenAI公式';
-
-  @override
-  String get providerGoogleCompatible => 'Google GenAI（OpenAI互換）';
-
-  @override
-  String get providerGoogleCompatibleDesc => 'OpenAIエンドポイント経由のGoogle Gemini';
 
   @override
   String get providerDashScopeDesc =>
@@ -1702,39 +1518,19 @@ class AppLocalizationsJa extends AppLocalizations {
       'dashscope.aliyuncs.com/api/v1 · Alibaba 独自のリクエスト形式 · qwen-audio はこの経路のみ';
 
   @override
-  String get endpointOverrideHint =>
-      '選択したプロバイダーの既定値です。中継・ゲートウェイ・国際版ホストに変更できます。';
-
-  @override
-  String get providerQianwen => 'Qianwen プラットフォーム';
-
-  @override
-  String get providerQianwenDesc =>
-      'platform.qianwenai.com · DashScope と同一 API — Qwen チャット + qwen-image / wan2.7 画像生成';
-
-  @override
   String get providerCustom => 'カスタムプロバイダー';
 
   @override
   String get providerCustomDesc => 'セルフホストまたはサードパーティプロバイダー';
 
   @override
-  String get providerGroupOther => 'その他';
-
-  @override
   String get stepConnection => '接続とキー';
-
-  @override
-  String get sectionAppearance => '外観';
 
   @override
   String get moreColors => 'その他の色';
 
   @override
   String get protocolXai => 'xAI (Grok) API';
-
-  @override
-  String get providerXaiOfficial => 'xAI 公式';
 
   @override
   String get providerXaiOfficialDesc =>
@@ -1748,12 +1544,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get providerNewApiDesc => 'New API リレー · ベアラートークン認証';
-
-  @override
-  String get providerAnthropicOfficial => 'Anthropic 公式';
-
-  @override
-  String get providerAnthropicOfficialDesc => 'api.anthropic.com · Claude';
 
   @override
   String get providerNewApiAnthropic => 'New API（Anthropic 形式）';
@@ -1771,9 +1561,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get newApiBaseHint => 'New API のホストを入力してください。バージョンパスは自動的に追加されます';
 
   @override
-  String get customEndpointHint => 'カスタムエンドポイントURLを入力してください';
-
-  @override
   String get openaiV1Hint => 'ヒント：OpenAI互換のエンドポイントは通常「/v1」で終わります';
 
   @override
@@ -1785,9 +1572,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get dashscopeApiV1Hint =>
       'ヒント：DashScope ネイティブのエンドポイントは「/api/v1」で終わります';
-
-  @override
-  String get enterApiKey => 'APIキーを入力してください';
 
   @override
   String get apiKeyStorageNotice => 'キーはローカルに保存され、当社のサーバーには送信されません。';
@@ -1802,31 +1586,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tagHint => '例：GPT4, Local, など';
 
   @override
-  String get bindTag => 'タグをバインド';
-
-  @override
   String get previewReady => 'このチャンネルを追加する準備ができましたか？';
 
   @override
   String get feeGroupDesc => 'モデルの請求基準を定義して、使用コストを正確に計算します。';
 
   @override
-  String get feeGroupEditorSubtitle => 'モデルの請求基準を設定します';
-
-  @override
   String get noFeeGroups => 'まだ料金グループが作成されていません';
-
-  @override
-  String get pricePerMillion => '100万トークンあたりの価格';
-
-  @override
-  String get pricePerRequest => 'リクエストあたりの価格';
-
-  @override
-  String get tokenBilling => 'トークン請求';
-
-  @override
-  String get requestBilling => 'リクエスト請求';
 
   @override
   String feeGroupModelCount(int count) {
@@ -1849,9 +1615,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get capabilities => '機能';
-
-  @override
-  String get modelSaveRequirementHint => 'チャンネル・名前・ID の 3 項目がそろうと保存できます。';
 
   @override
   String get cardPreview => 'カードプレビュー';
@@ -1968,16 +1731,7 @@ class AppLocalizationsJa extends AppLocalizations {
       '回答中にプロバイダー自身がウェブ検索を実行します。追加トークンとして課金され、代理でページを取得します。';
 
   @override
-  String get addChannelSubtitle => 'まず「どこか」を選び、次に接続情報を入力';
-
-  @override
-  String get searchProviders => 'プロバイダーを検索…';
-
-  @override
   String get noProviderMatch => '一致するプロバイダーがありません';
-
-  @override
-  String get resetToDefault => '既定値に戻す';
 
   @override
   String get apiKeyRequired => 'このプロバイダーはチャンネル追加に API キーが必要です';
@@ -1990,9 +1744,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get customColor => 'カスタムカラー';
-
-  @override
-  String get stepConnectionAppearance => '接続と外観';
 
   @override
   String get channelListPreview => '一覧プレビュー';
@@ -2038,9 +1789,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String countGroups(int count) {
     return '$count 組';
   }
-
-  @override
-  String get previewInList => 'リストでの見え方';
 
   @override
   String get providerGroupVendor => 'ベンダー';
@@ -2135,10 +1883,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelPresetLabel => 'プロバイダプリセット';
 
   @override
-  String get channelPresetHint =>
-      'プリセットは下の項目をまとめて入力するだけです。入力後も個別に編集でき、編集内容が上書きされることはありません。';
-
-  @override
   String get changePreset => 'プリセットを変更';
 
   @override
@@ -2160,9 +1904,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get protocolField => 'APIプロトコル';
-
-  @override
-  String get protocolFieldHint => 'プロトコルファミリーは 5 つ。保存済みのどの種別もここで表現できます。';
 
   @override
   String get deprecatedLabel => '非推奨';
@@ -2284,11 +2025,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get protocolParamsLabel => 'パラメータ';
-
-  @override
-  String protocolParamsDefault(String name, String items) {
-    return '「$name」の既定値 — $items';
-  }
 
   @override
   String get protocolParamsNone => '専用パラメータはなく、プロンプトと参照画像のみ';
@@ -2532,9 +2268,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noPromptsSaved => 'プロンプトが保存されていません';
 
   @override
-  String get saveFavoritePrompts => 'お気に入りのプロンプトやリファイナーのシステムプロンプトをここに保存します';
-
-  @override
   String get createFirstPrompt => '最初のプロンプトを作成';
 
   @override
@@ -2550,9 +2283,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tagCategory => 'タグ（カテゴリ）';
-
-  @override
-  String get setAsRefiner => 'リファイナーとして設定';
 
   @override
   String get promptContent => 'プロンプトの内容';
@@ -2576,12 +2306,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get typeRefiner => 'プロンプトリファイナー';
 
   @override
-  String get selectRenameTemplate => '名前変更テンプレートを選択';
-
-  @override
-  String get selectCategory => 'カテゴリを選択';
-
-  @override
   String get categoriesTab => 'カテゴリ';
 
   @override
@@ -2598,11 +2322,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get selectionMode => '選択モード';
-
-  @override
-  String selectionModeCount(int count) {
-    return '選択モード（$count）';
-  }
 
   @override
   String nSelected(int count) {
@@ -2800,15 +2519,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get reduceVisualEffectsDesc => 'ぼかし効果を無効にして、内蔵GPUや低性能GPUでも滑らかに動作させます。';
 
   @override
-  String get googleGenAiSettings => 'Google GenAI REST設定';
-
-  @override
-  String get openAiApiSettings => 'OpenAI API REST設定';
-
-  @override
-  String get standardConfig => '標準設定';
-
-  @override
   String get endpointUrl => 'エンドポイントURL';
 
   @override
@@ -2884,16 +2594,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get exportNow => '今すぐエクスポート';
 
   @override
-  String get importNow => '今すぐインポート';
-
-  @override
   String get importOptions => 'インポートオプション';
 
   @override
   String get notInBackup => 'バックアップファイルで利用できません';
-
-  @override
-  String get importSettingsTitle => '設定をインポートしますか？';
 
   @override
   String get importSettingsConfirm =>
@@ -2918,20 +2622,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get importMode => 'インポートモード';
 
   @override
-  String get importModeDesc =>
-      'プロンプトのインポート方法を選択してください:\n\nマージ: ライブラリに新しいアイテムを追加します。\n置換: 現在のライブラリを削除し、インポートされたデータを使用します。';
-
-  @override
   String get merge => 'マージ';
 
   @override
   String get replaceAll => 'すべて置換';
-
-  @override
-  String get applyOverwrite => '適用（上書き）';
-
-  @override
-  String get applyAppend => '適用（追加）';
 
   @override
   String get portableMode => 'ポータブルモード';
@@ -3131,9 +2825,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get taskSummary => 'タスクの概要';
-
-  @override
   String get pendingTasks => '保留中';
 
   @override
@@ -3150,9 +2841,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get clearAll => 'すべてクリア';
-
-  @override
-  String get clearAllConfirm => '実行中でないすべてのタスクを削除します。この操作は元に戻せません。';
 
   @override
   String get cancelAllPending => 'すべての保留中をキャンセル';
@@ -3177,9 +2865,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String plannedCount(int count) {
     return '$count 個計画済み';
   }
-
-  @override
-  String get latestLog => '最新ログ:';
 
   @override
   String get taskCompletedNotification => 'タスク完了';
@@ -3209,9 +2894,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String taskTotalCount(int count) {
     return '全 $count 件';
   }
-
-  @override
-  String get statusCancelled => 'キャンセル済み';
 
   @override
   String get retryTask => '再試行';
@@ -3370,13 +3052,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get getStarted => '始める';
 
   @override
-  String get stepAppearance => '外観';
-
-  @override
   String get stepStorage => 'ストレージ';
-
-  @override
-  String get stepApi => 'インテリジェンス (API)';
 
   @override
   String get setupCompleteMessage => 'すべての準備が整いました！創作をお楽しみください。';
@@ -3394,29 +3070,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get configureModelOptional => '新しいチャネルのモデルを設定します（オプション）。';
 
   @override
-  String get googleGenAiFree => 'Google GenAI (無料)';
-
-  @override
-  String get googleGenAiPaid => 'Google GenAI (有料)';
-
-  @override
-  String get openaiApi => 'OpenAI API';
-
-  @override
   String get filenamePrefix => 'ファイル名のプレフィックス';
 
   @override
-  String get openaiEndpointHint => 'ヒント: OpenAI互換のエンドポイントは通常「/v1」で終わります';
-
-  @override
-  String get googleEndpointHint =>
-      'ヒント: Google GenAIのエンドポイントは通常「/v1beta」で終わります（内部処理）';
-
-  @override
   String get workbench => 'ワークベンチ';
-
-  @override
-  String get imageProcessing => '画像処理';
 
   @override
   String get wbModeImage => '画像';
@@ -3428,19 +3085,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get wbTools => 'ツール';
 
   @override
-  String get sourceGallery => 'ソースギャラリー';
-
-  @override
-  String get sourceExplorer => 'ソースエクスプローラー';
-
-  @override
   String get tempWorkspace => '一時ワークスペース';
 
   @override
   String get processResults => '処理結果';
-
-  @override
-  String get resultCache => '結果キャッシュ';
 
   @override
   String get sectionSources => 'ソース';
@@ -3456,9 +3104,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get allResults => 'すべての結果';
-
-  @override
-  String get backToAll => 'すべてに戻る';
 
   @override
   String get directories => 'ディレクトリ';
@@ -3502,9 +3147,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get removeFromWorkspace => '一時ワークスペースから外す';
 
   @override
-  String get dropFilesHere => 'ここに画像をドロップして一時ワークスペースに追加';
-
-  @override
   String get noImagesSelected => '画像が選択されていません';
 
   @override
@@ -3512,9 +3154,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get selectSourceDirectory => 'ソースディレクトリを選択';
-
-  @override
-  String get removeFolderTooltip => 'フォルダを削除';
 
   @override
   String get removeFolderConfirmTitle => 'フォルダを削除しますか？';
@@ -3535,9 +3174,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get thumbnailFitCover => 'フィル（切り抜き）';
-
-  @override
-  String get deleteFile => 'ファイルを削除';
 
   @override
   String get deleteFileConfirmTitle => 'ファイルを削除しますか？';
@@ -3761,9 +3397,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sendToOptimizer => 'プロンプトアシスタントに送信';
 
   @override
-  String get optimizePromptWithImage => '画像からプロンプトを最適化';
-
-  @override
   String get selectFromLibrary => 'ライブラリから選択';
 
   @override
@@ -3904,9 +3537,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get saveToTemp => 'ワークスペースに保存';
 
   @override
-  String get saveMaskToTemp => 'マスクをワークスペースに保存';
-
-  @override
   String get binaryMode => 'バイナリモード';
 
   @override
@@ -3961,13 +3591,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get systemPrompt => 'システムプロンプト';
 
   @override
-  String get refinerIntro => 'AIを使用して画像を分析し、プロンプトを洗練させます。';
-
-  @override
   String get roughPrompt => 'ラフなプロンプト / アイデア';
-
-  @override
-  String get optimizedPrompt => '最適化されたプロンプト';
 
   @override
   String get applyToWorkbench => 'ワークベンチに適用';
@@ -4021,9 +3645,6 @@ class AppLocalizationsJa extends AppLocalizations {
       'ギャラリーで画像を右クリックし、「プロンプトアシスタントに送信」を選択すると追加できます。';
 
   @override
-  String get videoGeneration => '動画生成';
-
-  @override
   String get referenceImages => '参照画像';
 
   @override
@@ -4060,12 +3681,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dropVideoReferenceHere => 'スタイル/内容参照用の画像をここにドロップ';
 
   @override
-  String get dropFirstFrameHere => '開始フレーム画像をここにドロップ';
-
-  @override
-  String get dropLastFrameHere => '終了フレーム画像をここにドロップ';
-
-  @override
   String get executionLogs => '実行ログ';
 
   @override
@@ -4095,9 +3710,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get mobileSandboxDesc =>
       'モバイルデバイスでは、OSによって直接のフォルダアクセスが制限される場合があります。上部のツールバーにある「ギャラリーからインポート」ボタンを使用することをお勧めします。';
-
-  @override
-  String get filesAppSuffix => ' (ファイル App)';
 
   @override
   String get tapToPick => 'タップして選択';
@@ -4522,9 +4134,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optKbCitedRunning => '実行中';
-
-  @override
-  String get optSysPromptTemplate => 'テンプレート';
 
   @override
   String get optSysPromptPick => 'テンプレートを選択';

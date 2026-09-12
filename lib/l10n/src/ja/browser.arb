@@ -7,7 +7,6 @@
   "renameFailed": "名前の変更に失敗しました: {error}",
   "fileAlreadyExists": "この名前のファイルは既に存在します",
   "noFilesFound": "ファイルが見つかりません",
-  "switchViewMode": "表示モードを切り替え",
   "sortBy": "並べ替え",
   "sortName": "名前",
   "sortDate": "更新日",
@@ -22,27 +21,12 @@
   "catOthers": "その他",
   "openWithSystemDefault": "システムのデフォルトで開く",
   "aiBatchRename": "AI一括名前変更",
-  "rulesInstructions": "名前変更ルール/指示",
   "generateSuggestions": "提案を生成",
-  "noSuggestions": "まだ提案は生成されていません",
   "searchFilesHint": "ファイル名を検索…",
   "deselectAllDirectories": "すべてのディレクトリ選択を解除",
-  "applyRenames": "名前の変更を適用",
-  "additionalInstructions": "追加指示（任意）",
   "aiRenameInstructionsHint": "例：元の拡張子を保持、ピンインに変換…",
   "noTemplateSelected": "テンプレート未選択",
   "selectTemplateFirst": "先に名前変更テンプレートを選択してください。",
-  "generatingSuggestions": "提案を生成中…",
-  "renamePreviewTitle": "名前変更プレビュー",
-  "conflictsFound": "{count}件の競合",
-  "@conflictsFound": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "conflictDuplicateTarget": "変更後のファイル名が重複しています",
   "addToSelection": "選択に追加",
   "removeFromSelection": "選択から削除",
   "imagesSelected": "{count}個選択済み",
@@ -52,14 +36,6 @@
   "fileBrowserAndroidHint": "ファイルの整理には、デバイスのファイルマネージャーをご使用ください。",
   "stagingArea": "ステージング",
   "addToStaging": "ステージングに追加",
-  "addToStagingCount": "ステージングに追加 · {count} 件",
-  "@addToStagingCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "removeFromStaging": "ステージングから削除",
   "stagedBadge": "ステージ済み",
   "clearStaging": "クリア",
@@ -129,22 +105,6 @@
     }
   },
   "onlyThisDirectory": "このフォルダーのみ表示",
-  "pasteMoveTitle": "{folder} へ移動",
-  "@pasteMoveTitle": {
-    "placeholders": {
-      "folder": {
-        "type": "String"
-      }
-    }
-  },
-  "pasteCopyTitle": "{folder} へコピー",
-  "@pasteCopyTitle": {
-    "placeholders": {
-      "folder": {
-        "type": "String"
-      }
-    }
-  },
   "pasteNoDestination": "先に対象フォルダーを指定してください",
   "pasteDestinationGone": "対象フォルダーが存在しません",
   "pasteNothingToDo": "転送するファイルがありません",
@@ -152,14 +112,10 @@
   "conflictSkip": "スキップ",
   "conflictOverwrite": "上書き",
   "conflictRename": "両方保持",
-  "conflictApplyToRest": "残りすべてに適用",
   "conflictReasonExists": "対象フォルダーに既にあります",
   "conflictReasonDuplicate": "別のステージング項目と同名",
   "conflictReasonSameLocation": "すでにこのフォルダー内",
   "conflictReasonMissing": "元ファイルが存在しません",
-  "pasteCrossVolumeWarning": "別ドライブへの転送: コピー後に削除するため時間がかかり、途中で止まることがあります。",
-  "pasteRunningMove": "移動中…",
-  "pasteRunningCopy": "コピー中…",
   "pasteProgressCount": "{done} / {total}",
   "@pasteProgressCount": {
     "placeholders": {
@@ -171,7 +127,6 @@
       }
     }
   },
-  "pasteDoneTitle": "転送が完了しました",
   "pasteCancelledTitle": "転送を中止しました",
   "pasteSucceededCount": "{count} 件成功",
   "@pasteSucceededCount": {
@@ -289,14 +244,6 @@
       }
     }
   },
-  "renameEditingHint": "{row} 行目を編集中",
-  "@renameEditingHint": {
-    "placeholders": {
-      "row": {
-        "type": "int"
-      }
-    }
-  },
   "renameConflictsPending": "未解決の衝突 {count} 件 · 適用されません",
   "@renameConflictsPending": {
     "placeholders": {
@@ -324,7 +271,6 @@
   "renameDuplicateBadge": "名前が重複",
   "renameSkippedBadge": "スキップ",
   "renameRenamedBadge": "改名済み",
-  "renameActionAccept": "採用",
   "renameActionSkip": "スキップ",
   "renameActionEdit": "名前を編集",
   "renameActionUndo": "スキップを取消",
@@ -332,17 +278,6 @@
   "renameNoModelsTitle": "利用できるモデルがありません",
   "renameNoModelsDesc": "一括リネームには画像を読んで名前を作るチャットモデルが必要です。まず「モデルとチャネル」で利用可能なチャネルを設定してください。",
   "renameGoToSettings": "設定を開く",
-  "renameBatchFailed": "バッチ {batch} が失敗 · {reason}",
-  "@renameBatchFailed": {
-    "placeholders": {
-      "batch": {
-        "type": "int"
-      },
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
   "renameBatchFailedDesc": "生成済みの {kept} 件は保持されます。未生成の {missing} 件は個別に再試行できます",
   "@renameBatchFailedDesc": {
     "placeholders": {
@@ -385,23 +320,6 @@
     }
   },
   "pasteCrossVolumeTag": "別ドライブ",
-  "pasteProgressItems": "{done} / {total} 件 · {doneSize} / {totalSize}",
-  "@pasteProgressItems": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "doneSize": {
-        "type": "String"
-      },
-      "totalSize": {
-        "type": "String"
-      }
-    }
-  },
   "pasteCurrentFile": "{name} をコピー中",
   "@pasteCurrentFile": {
     "placeholders": {
@@ -465,28 +383,6 @@
   },
   "conflictsIntro": "項目ごとに選ぶか、下のチェックで残りにも同じ選択を適用します。",
   "conflictPending": "未決定",
-  "conflictWriteInfo": "書き込み · {size} · {date}",
-  "@conflictWriteInfo": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "conflictExistingInfo": "既存 · {size} · {date}",
-  "@conflictExistingInfo": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "conflictOverwriteWarning": "対象のファイルは置き換えられます。元に戻せません",
   "conflictApplyRestCount": "残り {count} 件にも同じ選択を適用",
   "@conflictApplyRestCount": {

@@ -43,14 +43,3 @@ ProtocolSectionForm protocolSectionForm(ProtocolMenu? menu,
   return pinIsStale ? ProtocolSectionForm.dropdown : ProtocolSectionForm.none;
 }
 
-/// Whether the 「参数」 source row appears under the section (ruling 4).
-///
-/// Only for an image or video model whose id is not recognized, and only
-/// where a route exists: a recognized model uses its own parameter table,
-/// which needs no explaining, and a notice has no parameters to talk about.
-bool showsParamSourceRow(ProtocolMenu? menu, ProtocolSectionForm form) =>
-    menu != null &&
-    menu.surface != Surface.chat &&
-    !menu.recognized &&
-    (form == ProtocolSectionForm.dropdown ||
-        form == ProtocolSectionForm.readOnly);

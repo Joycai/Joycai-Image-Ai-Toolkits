@@ -20,7 +20,7 @@ flutter test test/screenshots/component_gallery_test.dart  # every component, 8 
 
 ```
 lib/
-  main.dart             # app entry, MultiProvider root, NavigationRail (desktop) / NavigationBar+Drawer (mobile)
+  main.dart             # app entry, MultiProvider root, MainNavigationScreen inside AppWindowFrame (title-bar nav · tablet top bar · phone dock, see widgets/shell/)
   state/                # ChangeNotifier classes: AppState, GalleryState, FileBrowserState, DownloaderState, WorkbenchUIState, TaskListState
   services/             # all business logic
     llm/                # LLMService facade + LLMDispatcher; three-layer API stack (see architecture note)

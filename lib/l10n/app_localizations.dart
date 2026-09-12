@@ -149,12 +149,6 @@ abstract class AppLocalizations {
   /// **'No files found'**
   String get noFilesFound;
 
-  /// No description provided for @switchViewMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Switch View Mode'**
-  String get switchViewMode;
-
   /// No description provided for @sortBy.
   ///
   /// In en, this message translates to:
@@ -239,23 +233,11 @@ abstract class AppLocalizations {
   /// **'AI Batch Rename'**
   String get aiBatchRename;
 
-  /// No description provided for @rulesInstructions.
-  ///
-  /// In en, this message translates to:
-  /// **'Renaming Rules / Instructions'**
-  String get rulesInstructions;
-
   /// No description provided for @generateSuggestions.
   ///
   /// In en, this message translates to:
   /// **'Generate Suggestions'**
   String get generateSuggestions;
-
-  /// No description provided for @noSuggestions.
-  ///
-  /// In en, this message translates to:
-  /// **'No suggestions generated yet'**
-  String get noSuggestions;
 
   /// No description provided for @searchFilesHint.
   ///
@@ -268,18 +250,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deselect all directories'**
   String get deselectAllDirectories;
-
-  /// No description provided for @applyRenames.
-  ///
-  /// In en, this message translates to:
-  /// **'Apply Renames'**
-  String get applyRenames;
-
-  /// No description provided for @additionalInstructions.
-  ///
-  /// In en, this message translates to:
-  /// **'Additional Instructions (Optional)'**
-  String get additionalInstructions;
 
   /// No description provided for @aiRenameInstructionsHint.
   ///
@@ -298,30 +268,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please select a rename template first.'**
   String get selectTemplateFirst;
-
-  /// No description provided for @generatingSuggestions.
-  ///
-  /// In en, this message translates to:
-  /// **'Generating suggestions…'**
-  String get generatingSuggestions;
-
-  /// No description provided for @renamePreviewTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Rename Preview'**
-  String get renamePreviewTitle;
-
-  /// No description provided for @conflictsFound.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} conflict(s)'**
-  String conflictsFound(int count);
-
-  /// No description provided for @conflictDuplicateTarget.
-  ///
-  /// In en, this message translates to:
-  /// **'Duplicate target name'**
-  String get conflictDuplicateTarget;
 
   /// No description provided for @addToSelection.
   ///
@@ -376,12 +322,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to Staging'**
   String get addToStaging;
-
-  /// No description provided for @addToStagingCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Add to Staging - {count}'**
-  String addToStagingCount(int count);
 
   /// No description provided for @removeFromStaging.
   ///
@@ -503,18 +443,6 @@ abstract class AppLocalizations {
   /// **'Show only this folder'**
   String get onlyThisDirectory;
 
-  /// No description provided for @pasteMoveTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Move to {folder}'**
-  String pasteMoveTitle(String folder);
-
-  /// No description provided for @pasteCopyTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy to {folder}'**
-  String pasteCopyTitle(String folder);
-
   /// No description provided for @pasteNoDestination.
   ///
   /// In en, this message translates to:
@@ -557,12 +485,6 @@ abstract class AppLocalizations {
   /// **'Keep both'**
   String get conflictRename;
 
-  /// No description provided for @conflictApplyToRest.
-  ///
-  /// In en, this message translates to:
-  /// **'Apply to all remaining'**
-  String get conflictApplyToRest;
-
   /// No description provided for @conflictReasonExists.
   ///
   /// In en, this message translates to:
@@ -587,35 +509,11 @@ abstract class AppLocalizations {
   /// **'Source file is gone'**
   String get conflictReasonMissing;
 
-  /// No description provided for @pasteCrossVolumeWarning.
-  ///
-  /// In en, this message translates to:
-  /// **'A different drive - files are copied then deleted, which takes longer and can stop partway.'**
-  String get pasteCrossVolumeWarning;
-
-  /// No description provided for @pasteRunningMove.
-  ///
-  /// In en, this message translates to:
-  /// **'Moving…'**
-  String get pasteRunningMove;
-
-  /// No description provided for @pasteRunningCopy.
-  ///
-  /// In en, this message translates to:
-  /// **'Copying…'**
-  String get pasteRunningCopy;
-
   /// No description provided for @pasteProgressCount.
   ///
   /// In en, this message translates to:
   /// **'{done} / {total}'**
   String pasteProgressCount(int done, int total);
-
-  /// No description provided for @pasteDoneTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Transfer finished'**
-  String get pasteDoneTitle;
 
   /// No description provided for @pasteCancelledTitle.
   ///
@@ -755,12 +653,6 @@ abstract class AppLocalizations {
   /// **'{count} skipped'**
   String renameSkippedCount(int count);
 
-  /// No description provided for @renameEditingHint.
-  ///
-  /// In en, this message translates to:
-  /// **'renaming row {row} in place'**
-  String renameEditingHint(int row);
-
   /// No description provided for @renameConflictsPending.
   ///
   /// In en, this message translates to:
@@ -796,12 +688,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Renamed'**
   String get renameRenamedBadge;
-
-  /// No description provided for @renameActionAccept.
-  ///
-  /// In en, this message translates to:
-  /// **'Accept'**
-  String get renameActionAccept;
 
   /// No description provided for @renameActionSkip.
   ///
@@ -844,12 +730,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Go to settings'**
   String get renameGoToSettings;
-
-  /// No description provided for @renameBatchFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Batch {batch} failed · {reason}'**
-  String renameBatchFailed(int batch, String reason);
 
   /// No description provided for @renameBatchFailedDesc.
   ///
@@ -898,17 +778,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'across drives'**
   String get pasteCrossVolumeTag;
-
-  /// No description provided for @pasteProgressItems.
-  ///
-  /// In en, this message translates to:
-  /// **'{done} / {total} items · {doneSize} / {totalSize}'**
-  String pasteProgressItems(
-    int done,
-    int total,
-    String doneSize,
-    String totalSize,
-  );
 
   /// No description provided for @pasteCurrentFile.
   ///
@@ -1005,18 +874,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Undecided'**
   String get conflictPending;
-
-  /// No description provided for @conflictWriteInfo.
-  ///
-  /// In en, this message translates to:
-  /// **'Incoming · {size} · {date}'**
-  String conflictWriteInfo(String size, String date);
-
-  /// No description provided for @conflictExistingInfo.
-  ///
-  /// In en, this message translates to:
-  /// **'Already there · {size} · {date}'**
-  String conflictExistingInfo(String size, String date);
 
   /// No description provided for @conflictOverwriteWarning.
   ///
@@ -1612,18 +1469,6 @@ abstract class AppLocalizations {
   /// **'View All'**
   String get viewAll;
 
-  /// No description provided for @noTasks.
-  ///
-  /// In en, this message translates to:
-  /// **'No active tasks'**
-  String get noTasks;
-
-  /// No description provided for @sidebar.
-  ///
-  /// In en, this message translates to:
-  /// **'Sidebar'**
-  String get sidebar;
-
   /// No description provided for @white.
   ///
   /// In en, this message translates to:
@@ -1894,18 +1739,6 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Copy 1 item} other{Copy {count} items}}'**
   String dragCopyItems(int count);
 
-  /// No description provided for @dropMovedItems.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{Moved 1 item} other{Moved {count} items}}'**
-  String dropMovedItems(int count);
-
-  /// No description provided for @dropCopiedItems.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{Copied 1 item} other{Copied {count} items}}'**
-  String dropCopiedItems(int count);
-
   /// No description provided for @dropRejectIntoItself.
   ///
   /// In en, this message translates to:
@@ -2050,12 +1883,6 @@ abstract class AppLocalizations {
   /// **'No images discovered yet.'**
   String get noImagesDiscovered;
 
-  /// No description provided for @enterUrlToStart.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a URL and requirement to start.'**
-  String get enterUrlToStart;
-
   /// No description provided for @addToQueue.
   ///
   /// In en, this message translates to:
@@ -2121,12 +1948,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manual HTML Mode'**
   String get manualHtmlMode;
-
-  /// No description provided for @manualHtmlHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Paste rendered HTML here (F12 -> Copy Outer HTML)'**
-  String get manualHtmlHint;
 
   /// No description provided for @cookieHistory.
   ///
@@ -2271,12 +2092,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This will permanently delete all token usage records from the database.'**
   String get clearUsageWarning;
-
-  /// No description provided for @modelsLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Models: '**
-  String get modelsLabel;
 
   /// No description provided for @rangeLabel.
   ///
@@ -2446,12 +2261,6 @@ abstract class AppLocalizations {
   /// **'Models'**
   String get models;
 
-  /// No description provided for @modelManagement.
-  ///
-  /// In en, this message translates to:
-  /// **'Model Management'**
-  String get modelManagement;
-
   /// No description provided for @feeManagement.
   ///
   /// In en, this message translates to:
@@ -2620,18 +2429,6 @@ abstract class AppLocalizations {
   /// **'{count} Models'**
   String countModels(int count);
 
-  /// No description provided for @addFirstModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Add your first LLM model to get started'**
-  String get addFirstModel;
-
-  /// No description provided for @addNewModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Add New Model'**
-  String get addNewModel;
-
   /// No description provided for @deleteModel.
   ///
   /// In en, this message translates to:
@@ -2649,18 +2446,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Are you sure you want to delete \"{name}\"?'**
   String deleteModelConfirmMessage(String name);
-
-  /// No description provided for @addLlmModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Add LLM Model'**
-  String get addLlmModel;
-
-  /// No description provided for @editLlmModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit LLM Model'**
-  String get editLlmModel;
 
   /// No description provided for @modelIdLabel.
   ///
@@ -2686,30 +2471,6 @@ abstract class AppLocalizations {
   /// **'Tag'**
   String get tag;
 
-  /// No description provided for @inputFeeLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Input Fee (\$/M Tokens)'**
-  String get inputFeeLabel;
-
-  /// No description provided for @outputFeeLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Output Fee (\$/M Tokens)'**
-  String get outputFeeLabel;
-
-  /// No description provided for @paidModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Paid Model'**
-  String get paidModel;
-
-  /// No description provided for @freeModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Free Model'**
-  String get freeModel;
-
   /// No description provided for @billingMode.
   ///
   /// In en, this message translates to:
@@ -2727,12 +2488,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Per Request'**
   String get perRequest;
-
-  /// No description provided for @requestFeeLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Request Fee (\$/Request)'**
-  String get requestFeeLabel;
 
   /// No description provided for @requestCount.
   ///
@@ -2817,12 +2572,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Request Price (\$/Req)'**
   String get requestPrice;
-
-  /// No description provided for @priceConfig.
-  ///
-  /// In en, this message translates to:
-  /// **'Price Config'**
-  String get priceConfig;
 
   /// No description provided for @priceLabelInput.
   ///
@@ -2926,53 +2675,17 @@ abstract class AppLocalizations {
   /// **'Failed to fetch models: {error}'**
   String fetchFailed(String error);
 
-  /// No description provided for @stepProtocol.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose Protocol'**
-  String get stepProtocol;
-
   /// No description provided for @stepProvider.
   ///
   /// In en, this message translates to:
   /// **'Choose Provider'**
   String get stepProvider;
 
-  /// No description provided for @stepApiKey.
-  ///
-  /// In en, this message translates to:
-  /// **'API Key'**
-  String get stepApiKey;
-
-  /// No description provided for @stepConfig.
-  ///
-  /// In en, this message translates to:
-  /// **'Extra Config'**
-  String get stepConfig;
-
-  /// No description provided for @stepPreview.
-  ///
-  /// In en, this message translates to:
-  /// **'Preview'**
-  String get stepPreview;
-
-  /// No description provided for @protocolOpenAI.
-  ///
-  /// In en, this message translates to:
-  /// **'OpenAI Compatible (REST)'**
-  String get protocolOpenAI;
-
   /// No description provided for @protocolOpenAIDesc.
   ///
   /// In en, this message translates to:
   /// **'Standard OpenAI REST API compatibility'**
   String get protocolOpenAIDesc;
-
-  /// No description provided for @protocolGoogle.
-  ///
-  /// In en, this message translates to:
-  /// **'Google GenAI (REST)'**
-  String get protocolGoogle;
 
   /// No description provided for @protocolGoogleDesc.
   ///
@@ -2992,12 +2705,6 @@ abstract class AppLocalizations {
   /// **'midjourney-proxy / NewAPI /mj/* surface'**
   String get protocolMidjourneyDesc;
 
-  /// No description provided for @protocolAnthropic.
-  ///
-  /// In en, this message translates to:
-  /// **'Anthropic Messages'**
-  String get protocolAnthropic;
-
   /// No description provided for @protocolAnthropicDesc.
   ///
   /// In en, this message translates to:
@@ -3009,30 +2716,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Host root (e.g. https://your-newapi.com). /mj/* paths are added automatically.'**
   String get midjourneyEndpointHint;
-
-  /// No description provided for @providerOpenAIOfficial.
-  ///
-  /// In en, this message translates to:
-  /// **'OpenAI Official'**
-  String get providerOpenAIOfficial;
-
-  /// No description provided for @providerGoogleOfficial.
-  ///
-  /// In en, this message translates to:
-  /// **'Google GenAI Official'**
-  String get providerGoogleOfficial;
-
-  /// No description provided for @providerGoogleCompatible.
-  ///
-  /// In en, this message translates to:
-  /// **'Google GenAI (OpenAI Compatible)'**
-  String get providerGoogleCompatible;
-
-  /// No description provided for @providerGoogleCompatibleDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Google Gemini via OpenAI endpoint'**
-  String get providerGoogleCompatibleDesc;
 
   /// No description provided for @providerDashScopeDesc.
   ///
@@ -3058,24 +2741,6 @@ abstract class AppLocalizations {
   /// **'dashscope.aliyuncs.com/api/v1 · Alibaba\'s own request format · the only route for qwen-audio'**
   String get providerDashScopeNativeDesc;
 
-  /// No description provided for @endpointOverrideHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Prefilled for this provider. Replace it to use a relay, gateway or international host.'**
-  String get endpointOverrideHint;
-
-  /// No description provided for @providerQianwen.
-  ///
-  /// In en, this message translates to:
-  /// **'Qianwen Platform'**
-  String get providerQianwen;
-
-  /// No description provided for @providerQianwenDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'platform.qianwenai.com · same DashScope API — Qwen chat + qwen-image / wan2.7 image generation'**
-  String get providerQianwenDesc;
-
   /// No description provided for @providerCustom.
   ///
   /// In en, this message translates to:
@@ -3088,23 +2753,11 @@ abstract class AppLocalizations {
   /// **'Self-hosted or 3rd party provider'**
   String get providerCustomDesc;
 
-  /// No description provided for @providerGroupOther.
-  ///
-  /// In en, this message translates to:
-  /// **'Other'**
-  String get providerGroupOther;
-
   /// No description provided for @stepConnection.
   ///
   /// In en, this message translates to:
   /// **'Endpoint & key'**
   String get stepConnection;
-
-  /// No description provided for @sectionAppearance.
-  ///
-  /// In en, this message translates to:
-  /// **'Appearance'**
-  String get sectionAppearance;
 
   /// No description provided for @moreColors.
   ///
@@ -3117,12 +2770,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'xAI (Grok) API'**
   String get protocolXai;
-
-  /// No description provided for @providerXaiOfficial.
-  ///
-  /// In en, this message translates to:
-  /// **'xAI Official'**
-  String get providerXaiOfficial;
 
   /// No description provided for @providerXaiOfficialDesc.
   ///
@@ -3147,18 +2794,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New API relay · bearer-token auth'**
   String get providerNewApiDesc;
-
-  /// No description provided for @providerAnthropicOfficial.
-  ///
-  /// In en, this message translates to:
-  /// **'Anthropic Official'**
-  String get providerAnthropicOfficial;
-
-  /// No description provided for @providerAnthropicOfficialDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'api.anthropic.com · Claude'**
-  String get providerAnthropicOfficialDesc;
 
   /// No description provided for @providerNewApiAnthropic.
   ///
@@ -3190,12 +2825,6 @@ abstract class AppLocalizations {
   /// **'Enter your New API host; the version path is added automatically'**
   String get newApiBaseHint;
 
-  /// No description provided for @customEndpointHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter your custom endpoint URL'**
-  String get customEndpointHint;
-
   /// No description provided for @openaiV1Hint.
   ///
   /// In en, this message translates to:
@@ -3219,12 +2848,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hint: DashScope native endpoints end with \'/api/v1\''**
   String get dashscopeApiV1Hint;
-
-  /// No description provided for @enterApiKey.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter your API Key'**
-  String get enterApiKey;
 
   /// No description provided for @apiKeyStorageNotice.
   ///
@@ -3250,12 +2873,6 @@ abstract class AppLocalizations {
   /// **'e.g. GPT4, Local, etc.'**
   String get tagHint;
 
-  /// No description provided for @bindTag.
-  ///
-  /// In en, this message translates to:
-  /// **'Bind Tag'**
-  String get bindTag;
-
   /// No description provided for @previewReady.
   ///
   /// In en, this message translates to:
@@ -3268,41 +2885,11 @@ abstract class AppLocalizations {
   /// **'Define billing standards for models to accurately calculate usage costs.'**
   String get feeGroupDesc;
 
-  /// No description provided for @feeGroupEditorSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Configure how a model is billed'**
-  String get feeGroupEditorSubtitle;
-
   /// No description provided for @noFeeGroups.
   ///
   /// In en, this message translates to:
   /// **'No fee groups created yet'**
   String get noFeeGroups;
-
-  /// No description provided for @pricePerMillion.
-  ///
-  /// In en, this message translates to:
-  /// **'Price per Million Tokens'**
-  String get pricePerMillion;
-
-  /// No description provided for @pricePerRequest.
-  ///
-  /// In en, this message translates to:
-  /// **'Price per Request'**
-  String get pricePerRequest;
-
-  /// No description provided for @tokenBilling.
-  ///
-  /// In en, this message translates to:
-  /// **'Token Billing'**
-  String get tokenBilling;
-
-  /// No description provided for @requestBilling.
-  ///
-  /// In en, this message translates to:
-  /// **'Request Billing'**
-  String get requestBilling;
 
   /// No description provided for @feeGroupModelCount.
   ///
@@ -3339,12 +2926,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Capabilities'**
   String get capabilities;
-
-  /// No description provided for @modelSaveRequirementHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick a channel and fill in both the name and the ID to save.'**
-  String get modelSaveRequirementHint;
 
   /// No description provided for @cardPreview.
   ///
@@ -3556,29 +3137,11 @@ abstract class AppLocalizations {
   /// **'Let the provider run its own web searches mid-answer. Billed as extra tokens and fetches pages on your behalf.'**
   String get enableWebSearchDesc;
 
-  /// No description provided for @addChannelSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick who this is, then fill in the connection'**
-  String get addChannelSubtitle;
-
-  /// No description provided for @searchProviders.
-  ///
-  /// In en, this message translates to:
-  /// **'Search providers…'**
-  String get searchProviders;
-
   /// No description provided for @noProviderMatch.
   ///
   /// In en, this message translates to:
   /// **'No provider matches this search'**
   String get noProviderMatch;
-
-  /// No description provided for @resetToDefault.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset to default'**
-  String get resetToDefault;
 
   /// No description provided for @apiKeyRequired.
   ///
@@ -3603,12 +3166,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Custom color'**
   String get customColor;
-
-  /// No description provided for @stepConnectionAppearance.
-  ///
-  /// In en, this message translates to:
-  /// **'Connection & appearance'**
-  String get stepConnectionAppearance;
 
   /// No description provided for @channelListPreview.
   ///
@@ -3687,12 +3244,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} groups'**
   String countGroups(int count);
-
-  /// No description provided for @previewInList.
-  ///
-  /// In en, this message translates to:
-  /// **'List preview'**
-  String get previewInList;
 
   /// No description provided for @providerGroupVendor.
   ///
@@ -3874,12 +3425,6 @@ abstract class AppLocalizations {
   /// **'Provider preset'**
   String get channelPresetLabel;
 
-  /// No description provided for @channelPresetHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The preset only fills the fields below in one tap. You can still edit each one, and your edits are not overwritten.'**
-  String get channelPresetHint;
-
   /// No description provided for @changePreset.
   ///
   /// In en, this message translates to:
@@ -3921,12 +3466,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'API protocol'**
   String get protocolField;
-
-  /// No description provided for @protocolFieldHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Five protocol families; any stored type can be represented here.'**
-  String get protocolFieldHint;
 
   /// No description provided for @deprecatedLabel.
   ///
@@ -4137,12 +3676,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Parameters'**
   String get protocolParamsLabel;
-
-  /// No description provided for @protocolParamsDefault.
-  ///
-  /// In en, this message translates to:
-  /// **'“{name}” defaults — {items}'**
-  String protocolParamsDefault(String name, String items);
 
   /// No description provided for @protocolParamsNone.
   ///
@@ -4558,12 +4091,6 @@ abstract class AppLocalizations {
   /// **'No prompts saved'**
   String get noPromptsSaved;
 
-  /// No description provided for @saveFavoritePrompts.
-  ///
-  /// In en, this message translates to:
-  /// **'Save your favorite prompts or Refiner system prompts here'**
-  String get saveFavoritePrompts;
-
   /// No description provided for @createFirstPrompt.
   ///
   /// In en, this message translates to:
@@ -4593,12 +4120,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tag (Category)'**
   String get tagCategory;
-
-  /// No description provided for @setAsRefiner.
-  ///
-  /// In en, this message translates to:
-  /// **'Set as Refiner'**
-  String get setAsRefiner;
 
   /// No description provided for @promptContent.
   ///
@@ -4642,18 +4163,6 @@ abstract class AppLocalizations {
   /// **'Prompt Refiner'**
   String get typeRefiner;
 
-  /// No description provided for @selectRenameTemplate.
-  ///
-  /// In en, this message translates to:
-  /// **'Select Rename Template'**
-  String get selectRenameTemplate;
-
-  /// No description provided for @selectCategory.
-  ///
-  /// In en, this message translates to:
-  /// **'Select Category'**
-  String get selectCategory;
-
   /// No description provided for @categoriesTab.
   ///
   /// In en, this message translates to:
@@ -4689,12 +4198,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Selection Mode'**
   String get selectionMode;
-
-  /// No description provided for @selectionModeCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Selection Mode ({count})'**
-  String selectionModeCount(int count);
 
   /// No description provided for @nSelected.
   ///
@@ -5038,24 +4541,6 @@ abstract class AppLocalizations {
   /// **'Turns off the blur effects for smoother performance on integrated or low-power GPUs.'**
   String get reduceVisualEffectsDesc;
 
-  /// No description provided for @googleGenAiSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Google GenAI REST Settings'**
-  String get googleGenAiSettings;
-
-  /// No description provided for @openAiApiSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'OpenAI API REST Settings'**
-  String get openAiApiSettings;
-
-  /// No description provided for @standardConfig.
-  ///
-  /// In en, this message translates to:
-  /// **'Standard Config'**
-  String get standardConfig;
-
   /// No description provided for @endpointUrl.
   ///
   /// In en, this message translates to:
@@ -5206,12 +4691,6 @@ abstract class AppLocalizations {
   /// **'Export Now'**
   String get exportNow;
 
-  /// No description provided for @importNow.
-  ///
-  /// In en, this message translates to:
-  /// **'Import Now'**
-  String get importNow;
-
   /// No description provided for @importOptions.
   ///
   /// In en, this message translates to:
@@ -5223,12 +4702,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not available in backup file'**
   String get notInBackup;
-
-  /// No description provided for @importSettingsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Import Settings?'**
-  String get importSettingsTitle;
 
   /// No description provided for @importSettingsConfirm.
   ///
@@ -5266,12 +4739,6 @@ abstract class AppLocalizations {
   /// **'Import Mode'**
   String get importMode;
 
-  /// No description provided for @importModeDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.'**
-  String get importModeDesc;
-
   /// No description provided for @merge.
   ///
   /// In en, this message translates to:
@@ -5283,18 +4750,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Replace All'**
   String get replaceAll;
-
-  /// No description provided for @applyOverwrite.
-  ///
-  /// In en, this message translates to:
-  /// **'Apply (Overwrite)'**
-  String get applyOverwrite;
-
-  /// No description provided for @applyAppend.
-  ///
-  /// In en, this message translates to:
-  /// **'Apply (Append)'**
-  String get applyAppend;
 
   /// No description provided for @portableMode.
   ///
@@ -5662,12 +5117,6 @@ abstract class AppLocalizations {
   /// **'Task ID: {id}'**
   String taskId(String id);
 
-  /// No description provided for @taskSummary.
-  ///
-  /// In en, this message translates to:
-  /// **'Task Summary'**
-  String get taskSummary;
-
   /// No description provided for @pendingTasks.
   ///
   /// In en, this message translates to:
@@ -5704,12 +5153,6 @@ abstract class AppLocalizations {
   /// **'Clear All'**
   String get clearAll;
 
-  /// No description provided for @clearAllConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'This will remove all non-running tasks. This action cannot be undone.'**
-  String get clearAllConfirm;
-
   /// No description provided for @cancelAllPending.
   ///
   /// In en, this message translates to:
@@ -5745,12 +5188,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} planned'**
   String plannedCount(int count);
-
-  /// No description provided for @latestLog.
-  ///
-  /// In en, this message translates to:
-  /// **'Latest Log:'**
-  String get latestLog;
 
   /// No description provided for @taskCompletedNotification.
   ///
@@ -5793,12 +5230,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} total'**
   String taskTotalCount(int count);
-
-  /// No description provided for @statusCancelled.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancelled'**
-  String get statusCancelled;
 
   /// No description provided for @retryTask.
   ///
@@ -6082,23 +5513,11 @@ abstract class AppLocalizations {
   /// **'Get Started'**
   String get getStarted;
 
-  /// No description provided for @stepAppearance.
-  ///
-  /// In en, this message translates to:
-  /// **'Appearance'**
-  String get stepAppearance;
-
   /// No description provided for @stepStorage.
   ///
   /// In en, this message translates to:
   /// **'Storage'**
   String get stepStorage;
-
-  /// No description provided for @stepApi.
-  ///
-  /// In en, this message translates to:
-  /// **'Intelligence (API)'**
-  String get stepApi;
 
   /// No description provided for @setupCompleteMessage.
   ///
@@ -6130,53 +5549,17 @@ abstract class AppLocalizations {
   /// **'Configure a model for your new channel (Optional).'**
   String get configureModelOptional;
 
-  /// No description provided for @googleGenAiFree.
-  ///
-  /// In en, this message translates to:
-  /// **'Google GenAI (Free)'**
-  String get googleGenAiFree;
-
-  /// No description provided for @googleGenAiPaid.
-  ///
-  /// In en, this message translates to:
-  /// **'Google GenAI (Paid)'**
-  String get googleGenAiPaid;
-
-  /// No description provided for @openaiApi.
-  ///
-  /// In en, this message translates to:
-  /// **'OpenAI API'**
-  String get openaiApi;
-
   /// No description provided for @filenamePrefix.
   ///
   /// In en, this message translates to:
   /// **'Filename Prefix'**
   String get filenamePrefix;
 
-  /// No description provided for @openaiEndpointHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Hint: OpenAI compatible endpoints usually end with \'/v1\''**
-  String get openaiEndpointHint;
-
-  /// No description provided for @googleEndpointHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Hint: Google GenAI endpoints usually end with \'/v1beta\' (internal handling)'**
-  String get googleEndpointHint;
-
   /// No description provided for @workbench.
   ///
   /// In en, this message translates to:
   /// **'Workbench'**
   String get workbench;
-
-  /// No description provided for @imageProcessing.
-  ///
-  /// In en, this message translates to:
-  /// **'Image Processing'**
-  String get imageProcessing;
 
   /// No description provided for @wbModeImage.
   ///
@@ -6196,18 +5579,6 @@ abstract class AppLocalizations {
   /// **'Tools'**
   String get wbTools;
 
-  /// No description provided for @sourceGallery.
-  ///
-  /// In en, this message translates to:
-  /// **'Source Gallery'**
-  String get sourceGallery;
-
-  /// No description provided for @sourceExplorer.
-  ///
-  /// In en, this message translates to:
-  /// **'Source Explorer'**
-  String get sourceExplorer;
-
   /// No description provided for @tempWorkspace.
   ///
   /// In en, this message translates to:
@@ -6219,12 +5590,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Process Results'**
   String get processResults;
-
-  /// No description provided for @resultCache.
-  ///
-  /// In en, this message translates to:
-  /// **'Result Cache'**
-  String get resultCache;
 
   /// No description provided for @sectionSources.
   ///
@@ -6255,12 +5620,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All Results'**
   String get allResults;
-
-  /// No description provided for @backToAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Back to all'**
-  String get backToAll;
 
   /// No description provided for @directories.
   ///
@@ -6340,12 +5699,6 @@ abstract class AppLocalizations {
   /// **'Remove from Workspace'**
   String get removeFromWorkspace;
 
-  /// No description provided for @dropFilesHere.
-  ///
-  /// In en, this message translates to:
-  /// **'Drop images here to add them to temporary workspace'**
-  String get dropFilesHere;
-
   /// No description provided for @noImagesSelected.
   ///
   /// In en, this message translates to:
@@ -6363,12 +5716,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select Source Directory'**
   String get selectSourceDirectory;
-
-  /// No description provided for @removeFolderTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove folder'**
-  String get removeFolderTooltip;
 
   /// No description provided for @removeFolderConfirmTitle.
   ///
@@ -6405,12 +5752,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fill (cropped)'**
   String get thumbnailFitCover;
-
-  /// No description provided for @deleteFile.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete File'**
-  String get deleteFile;
 
   /// No description provided for @deleteFileConfirmTitle.
   ///
@@ -6808,12 +6149,6 @@ abstract class AppLocalizations {
   /// **'Send to Prompt Assistant'**
   String get sendToOptimizer;
 
-  /// No description provided for @optimizePromptWithImage.
-  ///
-  /// In en, this message translates to:
-  /// **'Optimize Prompt with Image'**
-  String get optimizePromptWithImage;
-
   /// No description provided for @selectFromLibrary.
   ///
   /// In en, this message translates to:
@@ -7065,12 +6400,6 @@ abstract class AppLocalizations {
   /// **'Save to Workspace'**
   String get saveToTemp;
 
-  /// No description provided for @saveMaskToTemp.
-  ///
-  /// In en, this message translates to:
-  /// **'Save Mask to Workspace'**
-  String get saveMaskToTemp;
-
   /// No description provided for @binaryMode.
   ///
   /// In en, this message translates to:
@@ -7155,23 +6484,11 @@ abstract class AppLocalizations {
   /// **'System Prompt'**
   String get systemPrompt;
 
-  /// No description provided for @refinerIntro.
-  ///
-  /// In en, this message translates to:
-  /// **'Use AI to analyze images and refine your prompt.'**
-  String get refinerIntro;
-
   /// No description provided for @roughPrompt.
   ///
   /// In en, this message translates to:
   /// **'Rough Prompt / Ideas'**
   String get roughPrompt;
-
-  /// No description provided for @optimizedPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Optimized Prompt'**
-  String get optimizedPrompt;
 
   /// No description provided for @applyToWorkbench.
   ///
@@ -7263,12 +6580,6 @@ abstract class AppLocalizations {
   /// **'Right-click an image in the gallery and choose \"Send to Prompt Assistant\" to add it here.'**
   String get optEmptyImagesHint;
 
-  /// No description provided for @videoGeneration.
-  ///
-  /// In en, this message translates to:
-  /// **'Video Generation'**
-  String get videoGeneration;
-
   /// No description provided for @referenceImages.
   ///
   /// In en, this message translates to:
@@ -7341,18 +6652,6 @@ abstract class AppLocalizations {
   /// **'Drop images here for style/content reference'**
   String get dropVideoReferenceHere;
 
-  /// No description provided for @dropFirstFrameHere.
-  ///
-  /// In en, this message translates to:
-  /// **'Drop image here for start frame'**
-  String get dropFirstFrameHere;
-
-  /// No description provided for @dropLastFrameHere.
-  ///
-  /// In en, this message translates to:
-  /// **'Drop image here for end frame'**
-  String get dropLastFrameHere;
-
   /// No description provided for @executionLogs.
   ///
   /// In en, this message translates to:
@@ -7406,12 +6705,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On mobile devices, direct folder access may be limited by the OS. It is recommended to use the \'Import from Gallery\' button in the top toolbar.'**
   String get mobileSandboxDesc;
-
-  /// No description provided for @filesAppSuffix.
-  ///
-  /// In en, this message translates to:
-  /// **' (Files App)'**
-  String get filesAppSuffix;
 
   /// No description provided for @tapToPick.
   ///
@@ -8144,12 +7437,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'in progress'**
   String get optKbCitedRunning;
-
-  /// No description provided for @optSysPromptTemplate.
-  ///
-  /// In en, this message translates to:
-  /// **'Template'**
-  String get optSysPromptTemplate;
 
   /// No description provided for @optSysPromptPick.
   ///

@@ -35,9 +35,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noFilesFound => '未找到文件';
 
   @override
-  String get switchViewMode => '切换视图模式';
-
-  @override
   String get sortBy => '排序方式';
 
   @override
@@ -80,25 +77,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiBatchRename => 'AI 批量重命名';
 
   @override
-  String get rulesInstructions => '重命名规则 / 指令';
-
-  @override
   String get generateSuggestions => '生成建议';
-
-  @override
-  String get noSuggestions => '尚未生成建议';
 
   @override
   String get searchFilesHint => '搜索文件名…';
 
   @override
   String get deselectAllDirectories => '取消全部目录选择';
-
-  @override
-  String get applyRenames => '应用重命名';
-
-  @override
-  String get additionalInstructions => '补充指令（可选）';
 
   @override
   String get aiRenameInstructionsHint => '例如：保留原扩展名、转换为拼音…';
@@ -108,20 +93,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get selectTemplateFirst => '请先选择一个重命名模板。';
-
-  @override
-  String get generatingSuggestions => '正在生成建议…';
-
-  @override
-  String get renamePreviewTitle => '重命名预览';
-
-  @override
-  String conflictsFound(int count) {
-    return '$count 个冲突';
-  }
-
-  @override
-  String get conflictDuplicateTarget => '目标文件名重复';
 
   @override
   String get addToSelection => '添加到选中列表';
@@ -152,11 +123,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get addToStaging => '加入暂存区';
-
-  @override
-  String addToStagingCount(int count) {
-    return '加入暂存区 · $count 项';
-  }
 
   @override
   String get removeFromStaging => '从暂存区移除';
@@ -234,16 +200,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onlyThisDirectory => '仅看此目录';
 
   @override
-  String pasteMoveTitle(String folder) {
-    return '移动到 $folder';
-  }
-
-  @override
-  String pasteCopyTitle(String folder) {
-    return '复制到 $folder';
-  }
-
-  @override
   String get pasteNoDestination => '请先指定目标目录';
 
   @override
@@ -265,9 +221,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get conflictRename => '自动改名';
 
   @override
-  String get conflictApplyToRest => '对全部剩余项应用';
-
-  @override
   String get conflictReasonExists => '目标目录中已存在';
 
   @override
@@ -280,21 +233,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get conflictReasonMissing => '源文件已不存在';
 
   @override
-  String get pasteCrossVolumeWarning => '跨盘搬运：先复制再删除，耗时更久，且可能中途停下。';
-
-  @override
-  String get pasteRunningMove => '正在移动…';
-
-  @override
-  String get pasteRunningCopy => '正在复制…';
-
-  @override
   String pasteProgressCount(int done, int total) {
     return '$done / $total';
   }
-
-  @override
-  String get pasteDoneTitle => '搬运完成';
 
   @override
   String get pasteCancelledTitle => '搬运已取消';
@@ -386,11 +327,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String renameEditingHint(int row) {
-    return '第 $row 行正在就地改名';
-  }
-
-  @override
   String renameConflictsPending(int count) {
     return '$count 个冲突待处理 · 未决冲突不会被应用';
   }
@@ -415,9 +351,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get renameRenamedBadge => '已改名';
 
   @override
-  String get renameActionAccept => '接受';
-
-  @override
   String get renameActionSkip => '跳过';
 
   @override
@@ -438,11 +371,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get renameGoToSettings => '前往设置';
-
-  @override
-  String renameBatchFailed(int batch, String reason) {
-    return '第 $batch 批请求失败 · $reason';
-  }
 
   @override
   String renameBatchFailedDesc(int kept, int missing) {
@@ -475,16 +403,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pasteCrossVolumeTag => '跨磁盘';
-
-  @override
-  String pasteProgressItems(
-    int done,
-    int total,
-    String doneSize,
-    String totalSize,
-  ) {
-    return '$done / $total 项 · $doneSize / $totalSize';
-  }
 
   @override
   String pasteCurrentFile(String name) {
@@ -544,16 +462,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get conflictPending => '待定';
-
-  @override
-  String conflictWriteInfo(String size, String date) {
-    return '写入 · $size · $date';
-  }
-
-  @override
-  String conflictExistingInfo(String size, String date) {
-    return '已有 · $size · $date';
-  }
 
   @override
   String get conflictOverwriteWarning => '目标文件将被替换，不可撤销';
@@ -903,12 +811,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get viewAll => '查看全部';
 
   @override
-  String get noTasks => '暂无任务';
-
-  @override
-  String get sidebar => '侧边栏';
-
-  @override
   String get white => '白色';
 
   @override
@@ -1066,16 +968,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String dropMovedItems(int count) {
-    return '已移动 $count 项';
-  }
-
-  @override
-  String dropCopiedItems(int count) {
-    return '已复制 $count 项';
-  }
-
-  @override
   String get dropRejectIntoItself => '不能移动到它自己的子文件夹里';
 
   @override
@@ -1150,9 +1042,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noImagesDiscovered => '尚未发现图像。';
 
   @override
-  String get enterUrlToStart => '输入网址和需求以开始。';
-
-  @override
   String get addToQueue => '添加到下载队列';
 
   @override
@@ -1190,9 +1079,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get manualHtmlMode => '手动 HTML 模式';
-
-  @override
-  String get manualHtmlHint => '在此粘贴已渲染的 HTML (F12 -> 复制外部 HTML)';
 
   @override
   String get cookieHistory => 'Cookie 历史';
@@ -1271,9 +1157,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get clearUsageWarning => '这将永久从数据库中删除所有 Token 使用记录。';
-
-  @override
-  String get modelsLabel => '模型: ';
 
   @override
   String get rangeLabel => '范围: ';
@@ -1370,9 +1253,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get models => '模型';
 
   @override
-  String get modelManagement => '模型管理';
-
-  @override
   String get feeManagement => '费用管理';
 
   @override
@@ -1461,12 +1341,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get addFirstModel => '添加您的第一个 LLM 模型以开始使用';
-
-  @override
-  String get addNewModel => '添加新模型';
-
-  @override
   String get deleteModel => '删除模型';
 
   @override
@@ -1476,12 +1350,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String deleteModelConfirmMessage(String name) {
     return '确定要删除“$name”吗？';
   }
-
-  @override
-  String get addLlmModel => '添加 LLM 模型';
-
-  @override
-  String get editLlmModel => '编辑 LLM 模型';
 
   @override
   String get modelIdLabel => '模型 ID';
@@ -1496,18 +1364,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tag => '标签';
 
   @override
-  String get inputFeeLabel => '输入费用 (\$/M Tokens)';
-
-  @override
-  String get outputFeeLabel => '输出费用 (\$/M Tokens)';
-
-  @override
-  String get paidModel => '付费模型';
-
-  @override
-  String get freeModel => '免费模型';
-
-  @override
   String get billingMode => '计费模式';
 
   @override
@@ -1515,9 +1371,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get perRequest => '按次计费';
-
-  @override
-  String get requestFeeLabel => '单次费用 (\$/次)';
 
   @override
   String get requestCount => '请求次数';
@@ -1560,9 +1413,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get requestPrice => '请求价格 (\$/次)';
-
-  @override
-  String get priceConfig => '价格配置';
 
   @override
   String get priceLabelInput => '输入';
@@ -1624,28 +1474,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get stepProtocol => '选择协议';
-
-  @override
   String get stepProvider => '选择提供商';
 
   @override
-  String get stepApiKey => 'API 密钥';
-
-  @override
-  String get stepConfig => '额外配置';
-
-  @override
-  String get stepPreview => '预览';
-
-  @override
-  String get protocolOpenAI => 'OpenAI 兼容协议 (REST)';
-
-  @override
   String get protocolOpenAIDesc => '标准 OpenAI REST API 兼容接口';
-
-  @override
-  String get protocolGoogle => 'Google GenAI 协议 (REST)';
 
   @override
   String get protocolGoogleDesc => 'Google Gemini 官方 REST API';
@@ -1657,26 +1489,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolMidjourneyDesc => 'midjourney-proxy / NewAPI 的 /mj/* 协议';
 
   @override
-  String get protocolAnthropic => 'Anthropic Messages 协议';
-
-  @override
   String get protocolAnthropicDesc => 'Claude 原生 /v1/messages 接口';
 
   @override
   String get midjourneyEndpointHint =>
       '填写主机根地址（如 https://your-newapi.com），/mj/* 路径将自动补全。';
-
-  @override
-  String get providerOpenAIOfficial => 'OpenAI 官方';
-
-  @override
-  String get providerGoogleOfficial => 'Google GenAI 官方';
-
-  @override
-  String get providerGoogleCompatible => 'Google GenAI (OpenAI 兼容)';
-
-  @override
-  String get providerGoogleCompatibleDesc => '通过 OpenAI 适配端点访问 Gemini';
 
   @override
   String get providerDashScopeDesc =>
@@ -1693,38 +1510,19 @@ class AppLocalizationsZh extends AppLocalizations {
       'dashscope.aliyuncs.com/api/v1 · 阿里云自有请求格式 · qwen-audio 只能走这条';
 
   @override
-  String get endpointOverrideHint => '已按所选提供商预填，可改为中转、网关或国际站地址。';
-
-  @override
-  String get providerQianwen => '千问平台';
-
-  @override
-  String get providerQianwenDesc =>
-      'platform.qianwenai.com · API 同 DashScope — 千问对话 + qwen-image / wan2.7 出图';
-
-  @override
   String get providerCustom => '自定义提供商';
 
   @override
   String get providerCustomDesc => '自建或第三方 API 服务商';
 
   @override
-  String get providerGroupOther => '其他';
-
-  @override
   String get stepConnection => '连接与密钥';
-
-  @override
-  String get sectionAppearance => '外观';
 
   @override
   String get moreColors => '更多颜色';
 
   @override
   String get protocolXai => 'xAI (Grok) API';
-
-  @override
-  String get providerXaiOfficial => 'xAI 官方';
 
   @override
   String get providerXaiOfficialDesc => 'api.x.ai · Grok 聊天 + 原生 Imagine 视频';
@@ -1737,12 +1535,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get providerNewApiDesc => 'New API 中转 · Bearer 令牌鉴权';
-
-  @override
-  String get providerAnthropicOfficial => 'Anthropic 官方';
-
-  @override
-  String get providerAnthropicOfficialDesc => 'api.anthropic.com · Claude';
 
   @override
   String get providerNewApiAnthropic => 'New API（Anthropic 格式）';
@@ -1760,9 +1552,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get newApiBaseHint => '填写 New API 主机地址，版本路径将自动补全';
 
   @override
-  String get customEndpointHint => '请输入自定义端点 URL';
-
-  @override
   String get openaiV1Hint => '提示：OpenAI 兼容接口通常以 \'/v1\' 结尾';
 
   @override
@@ -1773,9 +1562,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dashscopeApiV1Hint => '提示：DashScope 原生接口以 \'/api/v1\' 结尾';
-
-  @override
-  String get enterApiKey => '请输入 API 密钥';
 
   @override
   String get apiKeyStorageNotice => '您的密钥仅存储在本地，不会发送到我们的服务器。';
@@ -1790,31 +1576,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tagHint => '例如：GPT4, 核心, 等';
 
   @override
-  String get bindTag => '绑定标签';
-
-  @override
   String get previewReady => '准备好添加此渠道了吗？';
 
   @override
   String get feeGroupDesc => '定义模型的计费标准，以便准确计算使用成本。';
 
   @override
-  String get feeGroupEditorSubtitle => '配置模型的计费标准';
-
-  @override
   String get noFeeGroups => '尚未创建费率组';
-
-  @override
-  String get pricePerMillion => '每百万 Token 价格';
-
-  @override
-  String get pricePerRequest => '单次请求价格';
-
-  @override
-  String get tokenBilling => 'Token 计费';
-
-  @override
-  String get requestBilling => '按次计费';
 
   @override
   String feeGroupModelCount(int count) {
@@ -1837,9 +1605,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get capabilities => '能力';
-
-  @override
-  String get modelSaveRequirementHint => '渠道、名称、ID 三项齐备后方可保存。';
 
   @override
   String get cardPreview => '卡片预览';
@@ -1951,16 +1716,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enableWebSearchDesc => '允许服务商在作答过程中自行搜索网页。按额外 token 计费，并会代你抓取网页。';
 
   @override
-  String get addChannelSubtitle => '先选这是谁，再填连接方式';
-
-  @override
-  String get searchProviders => '搜索提供商…';
-
-  @override
   String get noProviderMatch => '没有匹配的提供商';
-
-  @override
-  String get resetToDefault => '重置为默认';
 
   @override
   String get apiKeyRequired => '该提供商需要密钥才能添加渠道';
@@ -1973,9 +1729,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get customColor => '自定义颜色';
-
-  @override
-  String get stepConnectionAppearance => '连接与外观';
 
   @override
   String get channelListPreview => '列表预览';
@@ -2021,9 +1774,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String countGroups(int count) {
     return '$count 组';
   }
-
-  @override
-  String get previewInList => '列表中的样子';
 
   @override
   String get providerGroupVendor => '厂商';
@@ -2116,9 +1866,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channelPresetLabel => '供应商预设';
 
   @override
-  String get channelPresetHint => '预设只负责一键填好下面的字段。填完仍可逐项修改，改过也不会被覆盖。';
-
-  @override
   String get changePreset => '更换预设';
 
   @override
@@ -2139,9 +1886,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get protocolField => '接口协议';
-
-  @override
-  String get protocolFieldHint => '共 5 个协议族，任何已存储的类型都能在这里表示。';
 
   @override
   String get deprecatedLabel => '已废弃';
@@ -2261,11 +2005,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get protocolParamsLabel => '参数';
-
-  @override
-  String protocolParamsDefault(String name, String items) {
-    return '按「$name」默认 — $items';
-  }
 
   @override
   String get protocolParamsNone => '无专属参数，只有提示词与参考图';
@@ -2503,9 +2242,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noPromptsSaved => '未保存提示词';
 
   @override
-  String get saveFavoritePrompts => '在此保存您常用的提示词或优化器系统提示词';
-
-  @override
   String get createFirstPrompt => '创建第一个提示词';
 
   @override
@@ -2521,9 +2257,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get tagCategory => '标签 (分类)';
-
-  @override
-  String get setAsRefiner => '设为优化器';
 
   @override
   String get promptContent => '提示词内容';
@@ -2547,12 +2280,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get typeRefiner => '提示词优化';
 
   @override
-  String get selectRenameTemplate => '选择重命名模板';
-
-  @override
-  String get selectCategory => '选择分类';
-
-  @override
   String get categoriesTab => '分类管理';
 
   @override
@@ -2569,11 +2296,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get selectionMode => '选择模式';
-
-  @override
-  String selectionModeCount(int count) {
-    return '选择模式（$count）';
-  }
 
   @override
   String nSelected(int count) {
@@ -2769,15 +2491,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reduceVisualEffectsDesc => '关闭模糊效果，在核显或低性能 GPU 上获得更流畅的体验。';
 
   @override
-  String get googleGenAiSettings => 'Google GenAI REST 设置';
-
-  @override
-  String get openAiApiSettings => 'OpenAI API REST 设置';
-
-  @override
-  String get standardConfig => '标准配置';
-
-  @override
   String get endpointUrl => '接口地址';
 
   @override
@@ -2853,16 +2566,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get exportNow => '立即导出';
 
   @override
-  String get importNow => '立即导入';
-
-  @override
   String get importOptions => '导入选项';
 
   @override
   String get notInBackup => '备份文件中不包含此项';
-
-  @override
-  String get importSettingsTitle => '导入设置？';
 
   @override
   String get importSettingsConfirm =>
@@ -2884,20 +2591,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importMode => '导入模式';
 
   @override
-  String get importModeDesc =>
-      '选择导入提示词的方式：\n\n合并：将新项添加到您的库中。\n替换：删除当前库并使用导入的数据。';
-
-  @override
   String get merge => '合并';
 
   @override
   String get replaceAll => '全部替换';
-
-  @override
-  String get applyOverwrite => '应用 (覆盖)';
-
-  @override
-  String get applyAppend => '应用 (追加)';
 
   @override
   String get portableMode => '便携模式';
@@ -3094,9 +2791,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get taskSummary => '任务摘要';
-
-  @override
   String get pendingTasks => '待处理';
 
   @override
@@ -3113,9 +2807,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get clearAll => '清除全部';
-
-  @override
-  String get clearAllConfirm => '此操作将删除所有未运行的任务，且无法撤销。';
 
   @override
   String get cancelAllPending => '取消所有等待中';
@@ -3140,9 +2831,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String plannedCount(int count) {
     return '$count 个已计划';
   }
-
-  @override
-  String get latestLog => '最新日志:';
 
   @override
   String get taskCompletedNotification => '任务已完成';
@@ -3172,9 +2860,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String taskTotalCount(int count) {
     return '共 $count 个任务';
   }
-
-  @override
-  String get statusCancelled => '已取消';
 
   @override
   String get retryTask => '重试';
@@ -3332,13 +3017,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get getStarted => '开始';
 
   @override
-  String get stepAppearance => '外观';
-
-  @override
   String get stepStorage => '存储';
-
-  @override
-  String get stepApi => '智能 (API)';
 
   @override
   String get setupCompleteMessage => '设置完成！尽情创作吧。';
@@ -3356,29 +3035,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get configureModelOptional => '为新渠道配置一个模型（可选）。';
 
   @override
-  String get googleGenAiFree => 'Google GenAI (免费)';
-
-  @override
-  String get googleGenAiPaid => 'Google GenAI (付费)';
-
-  @override
-  String get openaiApi => 'OpenAI API';
-
-  @override
   String get filenamePrefix => '文件名前缀';
 
   @override
-  String get openaiEndpointHint => '提示：OpenAI 兼容接口通常以 \'/v1\' 结尾';
-
-  @override
-  String get googleEndpointHint =>
-      '提示：Google GenAI 接口通常以 \'/v1beta\' 结尾（内部已处理）';
-
-  @override
   String get workbench => '工作台';
-
-  @override
-  String get imageProcessing => '图片处理';
 
   @override
   String get wbModeImage => '图像';
@@ -3390,19 +3050,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wbTools => '工具';
 
   @override
-  String get sourceGallery => '源图库';
-
-  @override
-  String get sourceExplorer => '源目录浏览器';
-
-  @override
   String get tempWorkspace => '临时工作区';
 
   @override
   String get processResults => '处理结果';
-
-  @override
-  String get resultCache => '结果缓存区';
 
   @override
   String get sectionSources => '来源';
@@ -3418,9 +3069,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get allResults => '全部结果';
-
-  @override
-  String get backToAll => '返回全部';
 
   @override
   String get directories => '目录列表';
@@ -3464,9 +3112,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get removeFromWorkspace => '从临时工作区移除';
 
   @override
-  String get dropFilesHere => '将图片拖放到此处以添加到临时工作区';
-
-  @override
   String get noImagesSelected => '未选择图像';
 
   @override
@@ -3474,9 +3119,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get selectSourceDirectory => '选择源目录';
-
-  @override
-  String get removeFolderTooltip => '移除文件夹';
 
   @override
   String get removeFolderConfirmTitle => '移除文件夹？';
@@ -3497,9 +3139,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get thumbnailFitCover => '填充（裁切铺满）';
-
-  @override
-  String get deleteFile => '删除文件';
 
   @override
   String get deleteFileConfirmTitle => '删除文件？';
@@ -3722,9 +3361,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sendToOptimizer => '发送到提示词助手';
 
   @override
-  String get optimizePromptWithImage => '以此图优化提示词';
-
-  @override
   String get selectFromLibrary => '从库中选择';
 
   @override
@@ -3865,9 +3501,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get saveToTemp => '保存至工作区';
 
   @override
-  String get saveMaskToTemp => '保存遮罩至工作区';
-
-  @override
   String get binaryMode => '二值化模式';
 
   @override
@@ -3922,13 +3555,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get systemPrompt => '系统提示词';
 
   @override
-  String get refinerIntro => '使用 AI 分析图像并优化您的提示词。';
-
-  @override
   String get roughPrompt => '初步想法 / 提示词';
-
-  @override
-  String get optimizedPrompt => '优化后的提示词';
 
   @override
   String get applyToWorkbench => '应用到工作台';
@@ -3980,9 +3607,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optEmptyImagesHint => '在图库中右键图片，选择“发送到提示词助手”即可添加到这里。';
 
   @override
-  String get videoGeneration => '视频生成';
-
-  @override
   String get referenceImages => '参考图片';
 
   @override
@@ -4019,12 +3643,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dropVideoReferenceHere => '在此处拖入用于风格/内容参考的图片';
 
   @override
-  String get dropFirstFrameHere => '在此处拖入起始帧图片';
-
-  @override
-  String get dropLastFrameHere => '在此处拖入结束帧图片';
-
-  @override
   String get executionLogs => '执行日志';
 
   @override
@@ -4053,9 +3671,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get mobileSandboxDesc =>
       '在移动设备上，直接访问文件夹可能受限。建议使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。';
-
-  @override
-  String get filesAppSuffix => ' (文件 App)';
 
   @override
   String get tapToPick => '点击选取';
@@ -4480,9 +4095,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optKbCitedRunning => '进行中';
 
   @override
-  String get optSysPromptTemplate => '模板';
-
-  @override
   String get optSysPromptPick => '选择模板';
 
   @override
@@ -4724,9 +4336,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get noFilesFound => '未找到任何檔案';
 
   @override
-  String get switchViewMode => '切換視圖模式';
-
-  @override
   String get sortBy => '排序方式';
 
   @override
@@ -4769,25 +4378,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get aiBatchRename => 'AI 批量重新命名';
 
   @override
-  String get rulesInstructions => '重新命名規則/說明';
-
-  @override
   String get generateSuggestions => '產生建議';
-
-  @override
-  String get noSuggestions => '尚未產生建議';
 
   @override
   String get searchFilesHint => '搜尋檔案名稱…';
 
   @override
   String get deselectAllDirectories => '取消全部目錄選擇';
-
-  @override
-  String get applyRenames => '套用重新命名';
-
-  @override
-  String get additionalInstructions => '補充指令（可選）';
 
   @override
   String get aiRenameInstructionsHint => '例如：保留原始副檔名、轉換為拼音…';
@@ -4797,20 +4394,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get selectTemplateFirst => '請先選擇一個重新命名模板。';
-
-  @override
-  String get generatingSuggestions => '正在產生建議…';
-
-  @override
-  String get renamePreviewTitle => '重新命名預覽';
-
-  @override
-  String conflictsFound(int count) {
-    return '$count 個衝突';
-  }
-
-  @override
-  String get conflictDuplicateTarget => '目標檔名重複';
 
   @override
   String get addToSelection => '新增至選取項目';
@@ -4841,11 +4424,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get addToStaging => '加入暫存區';
-
-  @override
-  String addToStagingCount(int count) {
-    return '加入暫存區 · $count 項';
-  }
 
   @override
   String get removeFromStaging => '從暫存區移除';
@@ -4923,16 +4501,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get onlyThisDirectory => '僅看此目錄';
 
   @override
-  String pasteMoveTitle(String folder) {
-    return '移動到 $folder';
-  }
-
-  @override
-  String pasteCopyTitle(String folder) {
-    return '複製到 $folder';
-  }
-
-  @override
   String get pasteNoDestination => '請先指定目標目錄';
 
   @override
@@ -4954,9 +4522,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get conflictRename => '自動改名';
 
   @override
-  String get conflictApplyToRest => '對全部剩餘項套用';
-
-  @override
   String get conflictReasonExists => '目標目錄中已存在';
 
   @override
@@ -4969,21 +4534,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get conflictReasonMissing => '來源檔案已不存在';
 
   @override
-  String get pasteCrossVolumeWarning => '跨磁碟搬運：先複製再刪除，耗時更久，且可能中途停下。';
-
-  @override
-  String get pasteRunningMove => '正在移動…';
-
-  @override
-  String get pasteRunningCopy => '正在複製…';
-
-  @override
   String pasteProgressCount(int done, int total) {
     return '$done / $total';
   }
-
-  @override
-  String get pasteDoneTitle => '搬運完成';
 
   @override
   String get pasteCancelledTitle => '搬運已取消';
@@ -5075,11 +4628,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String renameEditingHint(int row) {
-    return '第 $row 行正在就地改名';
-  }
-
-  @override
   String renameConflictsPending(int count) {
     return '$count 個衝突待處理 · 未決衝突不會被套用';
   }
@@ -5104,9 +4652,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get renameRenamedBadge => '已改名';
 
   @override
-  String get renameActionAccept => '接受';
-
-  @override
   String get renameActionSkip => '跳過';
 
   @override
@@ -5127,11 +4672,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get renameGoToSettings => '前往設定';
-
-  @override
-  String renameBatchFailed(int batch, String reason) {
-    return '第 $batch 批請求失敗 · $reason';
-  }
 
   @override
   String renameBatchFailedDesc(int kept, int missing) {
@@ -5164,16 +4704,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get pasteCrossVolumeTag => '跨磁碟';
-
-  @override
-  String pasteProgressItems(
-    int done,
-    int total,
-    String doneSize,
-    String totalSize,
-  ) {
-    return '$done / $total 項 · $doneSize / $totalSize';
-  }
 
   @override
   String pasteCurrentFile(String name) {
@@ -5233,16 +4763,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get conflictPending => '待定';
-
-  @override
-  String conflictWriteInfo(String size, String date) {
-    return '寫入 · $size · $date';
-  }
-
-  @override
-  String conflictExistingInfo(String size, String date) {
-    return '已有 · $size · $date';
-  }
 
   @override
   String get conflictOverwriteWarning => '目標檔案將被替換，不可撤銷';
@@ -5592,9 +5112,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get viewAll => '檢視全部';
 
   @override
-  String get sidebar => '側邊欄';
-
-  @override
   String get white => '白色';
 
   @override
@@ -5752,16 +5269,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String dropMovedItems(int count) {
-    return '已移動 $count 項';
-  }
-
-  @override
-  String dropCopiedItems(int count) {
-    return '已複製 $count 項';
-  }
-
-  @override
   String get dropRejectIntoItself => '不能移動到它自己的子資料夾裡';
 
   @override
@@ -5836,9 +5343,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get noImagesDiscovered => '尚未發現任何圖片。';
 
   @override
-  String get enterUrlToStart => '請輸入網址和需求以開始。';
-
-  @override
   String get addToQueue => '新增至佇列';
 
   @override
@@ -5876,9 +5380,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get manualHtmlMode => '手動 HTML 模式';
-
-  @override
-  String get manualHtmlHint => '在此貼上呈現的 HTML（F12 -> 複製外部 HTML）';
 
   @override
   String get cookieHistory => 'Cookie 歷史記錄';
@@ -5957,9 +5458,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get clearUsageWarning => '這將永久刪除資料庫中的所有 Token 用量記錄。';
-
-  @override
-  String get modelsLabel => '模型：';
 
   @override
   String get rangeLabel => '範圍：';
@@ -6056,9 +5554,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get models => '模型';
 
   @override
-  String get modelManagement => '模型管理';
-
-  @override
   String get feeManagement => '費用管理';
 
   @override
@@ -6147,12 +5642,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get addFirstModel => '新增您的第一個 LLM 模型以開始';
-
-  @override
-  String get addNewModel => '新增模型';
-
-  @override
   String get deleteModel => '刪除模型';
 
   @override
@@ -6162,12 +5651,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String deleteModelConfirmMessage(String name) {
     return '您確定要刪除「$name」嗎？';
   }
-
-  @override
-  String get addLlmModel => '新增 LLM 模型';
-
-  @override
-  String get editLlmModel => '編輯 LLM 模型';
 
   @override
   String get modelIdLabel => '模型 ID';
@@ -6182,18 +5665,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get tag => '標籤';
 
   @override
-  String get inputFeeLabel => '輸入費用（美元/百萬 Token）';
-
-  @override
-  String get outputFeeLabel => '輸出費用（美元/百萬 Token）';
-
-  @override
-  String get paidModel => '付費模型';
-
-  @override
-  String get freeModel => '免費模型';
-
-  @override
   String get billingMode => '計費模式';
 
   @override
@@ -6201,9 +5672,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get perRequest => '每次請求';
-
-  @override
-  String get requestFeeLabel => '請求費用（美元/次）';
 
   @override
   String get requestCount => '請求次數';
@@ -6246,9 +5714,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get requestPrice => '請求價格（美元/次）';
-
-  @override
-  String get priceConfig => '價格設定';
 
   @override
   String get priceLabelInput => '輸入';
@@ -6310,28 +5775,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get stepProtocol => '選擇協議';
-
-  @override
   String get stepProvider => '選擇供應商';
 
   @override
-  String get stepApiKey => 'API 金鑰';
-
-  @override
-  String get stepConfig => '額外設定';
-
-  @override
-  String get stepPreview => '預覽';
-
-  @override
-  String get protocolOpenAI => 'OpenAI 相容 (REST)';
-
-  @override
   String get protocolOpenAIDesc => '標準 OpenAI REST API 相容性';
-
-  @override
-  String get protocolGoogle => 'Google GenAI (REST)';
 
   @override
   String get protocolGoogleDesc => '官方 Google Gemini REST API';
@@ -6343,26 +5790,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get protocolMidjourneyDesc => 'midjourney-proxy / NewAPI 的 /mj/* 介面';
 
   @override
-  String get protocolAnthropic => 'Anthropic Messages 協定';
-
-  @override
   String get protocolAnthropicDesc => 'Claude 原生 /v1/messages 介面';
 
   @override
   String get midjourneyEndpointHint =>
       '填寫主機根位址（如 https://your-newapi.com），/mj/* 路徑將自動補全。';
-
-  @override
-  String get providerOpenAIOfficial => 'OpenAI 官方';
-
-  @override
-  String get providerGoogleOfficial => 'Google GenAI 官方';
-
-  @override
-  String get providerGoogleCompatible => 'Google GenAI (OpenAI 相容)';
-
-  @override
-  String get providerGoogleCompatibleDesc => '透過 OpenAI 端點的 Google Gemini';
 
   @override
   String get providerDashScopeDesc =>
@@ -6379,38 +5811,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
       'dashscope.aliyuncs.com/api/v1 · 阿里雲自有請求格式 · qwen-audio 只能走這條';
 
   @override
-  String get endpointOverrideHint => '已依所選提供商預填，可改為中轉、閘道或國際站位址。';
-
-  @override
-  String get providerQianwen => '千問平台';
-
-  @override
-  String get providerQianwenDesc =>
-      'platform.qianwenai.com · API 同 DashScope — 千問對話 + qwen-image / wan2.7 出圖';
-
-  @override
   String get providerCustom => '自訂供應商';
 
   @override
   String get providerCustomDesc => '自行託管或第三方供應商';
 
   @override
-  String get providerGroupOther => '其他';
-
-  @override
   String get stepConnection => '連線與金鑰';
-
-  @override
-  String get sectionAppearance => '外觀';
 
   @override
   String get moreColors => '更多顏色';
 
   @override
   String get protocolXai => 'xAI (Grok) API';
-
-  @override
-  String get providerXaiOfficial => 'xAI 官方';
 
   @override
   String get providerXaiOfficialDesc => 'api.x.ai · Grok 聊天 + 原生 Imagine 影片';
@@ -6423,12 +5836,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get providerNewApiDesc => 'New API 中轉 · Bearer 權杖驗證';
-
-  @override
-  String get providerAnthropicOfficial => 'Anthropic 官方';
-
-  @override
-  String get providerAnthropicOfficialDesc => 'api.anthropic.com · Claude';
 
   @override
   String get providerNewApiAnthropic => 'New API（Anthropic 格式）';
@@ -6446,9 +5853,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get newApiBaseHint => '填寫 New API 主機位址，版本路徑將自動補全';
 
   @override
-  String get customEndpointHint => '輸入您的自訂端點 URL';
-
-  @override
   String get openaiV1Hint => '提示：OpenAI 相容端點通常以「/v1」結尾';
 
   @override
@@ -6459,9 +5863,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get dashscopeApiV1Hint => '提示：DashScope 原生端點以「/api/v1」結尾';
-
-  @override
-  String get enterApiKey => '輸入您的 API 金鑰';
 
   @override
   String get apiKeyStorageNotice => '您的金鑰會儲存在本機，絕不會傳送至我們的伺服器。';
@@ -6476,31 +5877,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get tagHint => '例如：GPT4、Local 等。';
 
   @override
-  String get bindTag => '綁定標籤';
-
-  @override
   String get previewReady => '準備好新增此通道了嗎？';
 
   @override
   String get feeGroupDesc => '定義模型的計費標準，以準確計算使用成本。';
 
   @override
-  String get feeGroupEditorSubtitle => '設定模型的計費標準';
-
-  @override
   String get noFeeGroups => '尚未建立費用群組';
-
-  @override
-  String get pricePerMillion => '每百萬 Token 價格';
-
-  @override
-  String get pricePerRequest => '每次請求價格';
-
-  @override
-  String get tokenBilling => 'Token 計費';
-
-  @override
-  String get requestBilling => '請求計費';
 
   @override
   String feeGroupModelCount(int count) {
@@ -6523,9 +5906,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get capabilities => '能力';
-
-  @override
-  String get modelSaveRequirementHint => '通道、名稱、ID 三項齊備後方可儲存。';
 
   @override
   String get cardPreview => '卡片預覽';
@@ -6637,16 +6017,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get enableWebSearchDesc => '允許服務商在作答過程中自行搜尋網頁。按額外 token 計費，並會代你抓取網頁。';
 
   @override
-  String get addChannelSubtitle => '先選這是誰，再填連線方式';
-
-  @override
-  String get searchProviders => '搜尋提供商…';
-
-  @override
   String get noProviderMatch => '沒有符合的提供商';
-
-  @override
-  String get resetToDefault => '重設為預設值';
 
   @override
   String get apiKeyRequired => '此提供商需要金鑰才能新增通道';
@@ -6659,9 +6030,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get customColor => '自訂顏色';
-
-  @override
-  String get stepConnectionAppearance => '連線與外觀';
 
   @override
   String get channelListPreview => '清單預覽';
@@ -6707,9 +6075,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String countGroups(int count) {
     return '$count 組';
   }
-
-  @override
-  String get previewInList => '列表中的樣子';
 
   @override
   String get providerGroupVendor => '廠商';
@@ -6802,9 +6167,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get channelPresetLabel => '供應商預設';
 
   @override
-  String get channelPresetHint => '預設只負責一鍵填好下面的欄位。填完仍可逐項修改，改過也不會被覆蓋。';
-
-  @override
   String get changePreset => '更換預設';
 
   @override
@@ -6825,9 +6187,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get protocolField => '介面協定';
-
-  @override
-  String get protocolFieldHint => '共 5 個協定族，任何已儲存的類型都能在這裡表示。';
 
   @override
   String get deprecatedLabel => '已廢棄';
@@ -6947,11 +6306,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get protocolParamsLabel => '參數';
-
-  @override
-  String protocolParamsDefault(String name, String items) {
-    return '按「$name」預設 — $items';
-  }
 
   @override
   String get protocolParamsNone => '無專屬參數，只有提示詞與參考圖';
@@ -7189,9 +6543,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get noPromptsSaved => '未儲存任何提示';
 
   @override
-  String get saveFavoritePrompts => '在此儲存您最愛的提示或 Refiner 系統提示';
-
-  @override
   String get createFirstPrompt => '建立第一個提示';
 
   @override
@@ -7207,9 +6558,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get tagCategory => '標籤（類別）';
-
-  @override
-  String get setAsRefiner => '設為 Refiner';
 
   @override
   String get promptContent => '提示內容';
@@ -7233,12 +6581,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get typeRefiner => '提示 Refiner';
 
   @override
-  String get selectRenameTemplate => '選取重新命名範本';
-
-  @override
-  String get selectCategory => '選取類別';
-
-  @override
   String get categoriesTab => '類別';
 
   @override
@@ -7255,11 +6597,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get selectionMode => '選擇模式';
-
-  @override
-  String selectionModeCount(int count) {
-    return '選擇模式（$count）';
-  }
 
   @override
   String nSelected(int count) {
@@ -7455,15 +6792,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get reduceVisualEffectsDesc => '關閉模糊效果，在內顯或低效能 GPU 上獲得更流暢的體驗。';
 
   @override
-  String get googleGenAiSettings => 'Google GenAI REST 設定';
-
-  @override
-  String get openAiApiSettings => 'OpenAI API REST 設定';
-
-  @override
-  String get standardConfig => '標準設定';
-
-  @override
   String get endpointUrl => '端點 URL';
 
   @override
@@ -7539,16 +6867,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get exportNow => '立即匯出';
 
   @override
-  String get importNow => '立即匯入';
-
-  @override
   String get importOptions => '匯入選項';
 
   @override
   String get notInBackup => '備份檔案中不可用';
-
-  @override
-  String get importSettingsTitle => '匯入設定？';
 
   @override
   String get importSettingsConfirm =>
@@ -7570,20 +6892,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get importMode => '匯入模式';
 
   @override
-  String get importModeDesc =>
-      '選擇您要如何匯入提示：\n\n合併：將新項目新增至您的媒體庫。\n取代：刪除目前的媒體庫並使用匯入的資料。';
-
-  @override
   String get merge => '合併';
 
   @override
   String get replaceAll => '全部取代';
-
-  @override
-  String get applyOverwrite => '套用 (覆寫)';
-
-  @override
-  String get applyAppend => '套用 (附加)';
 
   @override
   String get portableMode => '可攜式模式';
@@ -7781,9 +7093,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get taskSummary => '任務摘要';
-
-  @override
   String get pendingTasks => '待處理';
 
   @override
@@ -7800,9 +7109,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get clearAll => '清除全部';
-
-  @override
-  String get clearAllConfirm => '此操作將刪除所有未運行的任務，且無法復原。';
 
   @override
   String get cancelAllPending => '取消所有待處理';
@@ -7827,9 +7133,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String plannedCount(int count) {
     return '$count 個已計劃';
   }
-
-  @override
-  String get latestLog => '最新日誌：';
 
   @override
   String get taskCompletedNotification => '任務完成';
@@ -7859,9 +7162,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String taskTotalCount(int count) {
     return '共 $count 個任務';
   }
-
-  @override
-  String get statusCancelled => '已取消';
 
   @override
   String get retryTask => '重試';
@@ -8019,13 +7319,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get getStarted => '開始使用';
 
   @override
-  String get stepAppearance => '外觀';
-
-  @override
   String get stepStorage => '儲存';
-
-  @override
-  String get stepApi => '智慧 (API)';
 
   @override
   String get setupCompleteMessage => '您已全部設定完成！盡情享受創作吧。';
@@ -8043,28 +7337,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get configureModelOptional => '為您的新通道設定模型 (選用)。';
 
   @override
-  String get googleGenAiFree => 'Google GenAI (免費)';
-
-  @override
-  String get googleGenAiPaid => 'Google GenAI (付費)';
-
-  @override
-  String get openaiApi => 'OpenAI API';
-
-  @override
   String get filenamePrefix => '檔案名稱前綴詞';
 
   @override
-  String get openaiEndpointHint => '提示：OpenAI 相容端點通常以「/v1」結尾';
-
-  @override
-  String get googleEndpointHint => '提示：Google GenAI 端點通常以「/v1beta」結尾 (內部處理)';
-
-  @override
   String get workbench => '工作台';
-
-  @override
-  String get imageProcessing => '圖片處理';
 
   @override
   String get wbModeImage => '圖像';
@@ -8076,19 +7352,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get wbTools => '工具';
 
   @override
-  String get sourceGallery => '來源圖庫';
-
-  @override
-  String get sourceExplorer => '來源瀏覽器';
-
-  @override
   String get tempWorkspace => '臨時工作區';
 
   @override
   String get processResults => '處理結果';
-
-  @override
-  String get resultCache => '結果快取';
 
   @override
   String get sectionSources => '來源';
@@ -8104,9 +7371,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get allResults => '全部結果';
-
-  @override
-  String get backToAll => '返回全部';
 
   @override
   String get directories => '目錄';
@@ -8150,9 +7414,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get removeFromWorkspace => '從暫存工作區移除';
 
   @override
-  String get dropFilesHere => '將圖片拖放到此處以新增到臨時工作區';
-
-  @override
   String get noImagesSelected => '未選取圖片';
 
   @override
@@ -8160,9 +7421,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get selectSourceDirectory => '選取來源目錄';
-
-  @override
-  String get removeFolderTooltip => '移除資料夾';
 
   @override
   String get removeFolderConfirmTitle => '移除資料夾？';
@@ -8183,9 +7441,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get thumbnailFitCover => '填滿（裁切鋪滿）';
-
-  @override
-  String get deleteFile => '刪除檔案';
 
   @override
   String get deleteFileConfirmTitle => '刪除檔案？';
@@ -8408,9 +7663,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get sendToOptimizer => '發送到提示詞助手';
 
   @override
-  String get optimizePromptWithImage => '使用圖片優化提示詞';
-
-  @override
   String get selectFromLibrary => '從庫中選取';
 
   @override
@@ -8551,9 +7803,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get saveToTemp => '儲存到工作區';
 
   @override
-  String get saveMaskToTemp => '儲存遮罩到工作區';
-
-  @override
   String get binaryMode => '二進制模式';
 
   @override
@@ -8608,13 +7857,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get systemPrompt => '系統提示詞';
 
   @override
-  String get refinerIntro => '使用 AI 分析圖片並優化您的提示詞。';
-
-  @override
   String get roughPrompt => '初步想法 / 草稿';
-
-  @override
-  String get optimizedPrompt => '優化後的提示詞';
 
   @override
   String get applyToWorkbench => '套用到工作台';
@@ -8666,9 +7909,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optEmptyImagesHint => '在圖庫中右鍵圖片，選擇「發送到提示詞助手」即可加入此處。';
 
   @override
-  String get videoGeneration => '影片生成';
-
-  @override
   String get referenceImages => '參考圖片';
 
   @override
@@ -8705,12 +7945,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get dropVideoReferenceHere => '在此處拖入用於風格/內容參考的圖片';
 
   @override
-  String get dropFirstFrameHere => '在此處拖入起始幀圖片';
-
-  @override
-  String get dropLastFrameHere => '在此處拖入結束幀圖片';
-
-  @override
   String get executionLogs => '執行日誌';
 
   @override
@@ -8739,9 +7973,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get mobileSandboxDesc =>
       '在行動裝置上，操作系統可能會限制直接存取資料夾。建議使用頂部工具列中的「從圖庫匯入」按鈕。';
-
-  @override
-  String get filesAppSuffix => ' (檔案 App)';
 
   @override
   String get tapToPick => '點擊選取';
@@ -9164,9 +8395,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optKbCitedRunning => '進行中';
-
-  @override
-  String get optSysPromptTemplate => '範本';
 
   @override
   String get optSysPromptPick => '選擇範本';

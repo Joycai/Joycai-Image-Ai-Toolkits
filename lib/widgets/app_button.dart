@@ -23,11 +23,6 @@ enum AppButtonVariant {
   /// one thing the design spec is emphatic about ("主题色只出现在选中态、主
   /// CTA 与徽标上"). An outline separates it from the primary by weight
   /// instead of by hue, leaving the accent to mean something.
-  ///
-  /// [tonalButtonStyle] is still exported for the handful of hand-rolled
-  /// [FilledButton.tonal]s elsewhere, which still need it — the app-wide
-  /// filled-button theme outranks the tonal variant's own default and would
-  /// otherwise paint them fully primary.
   secondary,
 
   /// A secondary action that is still the accent's: an accent wash behind an
@@ -40,7 +35,7 @@ enum AppButtonVariant {
   /// makes the button that applies the model's output look like any other
   /// button on the card.
   ///
-  /// Deliberately **not** Material's tonal. [tonalButtonStyle] is a
+  /// Deliberately **not** Material's tonal. [FilledButton.tonal] is a
   /// `secondaryContainer` slab, and `secondaryContainer` is a muted derivative
   /// of the seed that reads as grey-with-a-tint at several of them. This takes
   /// the app's own accent ladder instead — [AppAccent.accentTint] behind

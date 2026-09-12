@@ -71,9 +71,6 @@ class CustomAccent {
   static Color seedForHue(double hue) =>
       Color(Hct.from(hue % 360, ringChroma, ringTone).toInt());
 
-  /// [color]'s HCT hue, in degrees.
-  static double hueOf(Color color) => Hct.fromInt(color.toARGB32()).hue;
-
   /// Where tone 44 stops being the hue and becomes brown — amber through
   /// yellow-green. Orange (`#FF9800`) sits inside it; deep orange and lime
   /// sit on either side and survive tone 44.

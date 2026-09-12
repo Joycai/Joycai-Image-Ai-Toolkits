@@ -55,8 +55,6 @@
   },
   "comingSoon": "Coming Soon",
   "viewAll": "View All",
-  "noTasks": "No active tasks",
-  "sidebar": "Sidebar",
   "white": "White",
   "black": "Black",
   "red": "Red",
@@ -182,22 +180,6 @@
   },
   "dragCopyItems": "{count, plural, =1{Copy 1 item} other{Copy {count} items}}",
   "@dragCopyItems": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dropMovedItems": "{count, plural, =1{Moved 1 item} other{Moved {count} items}}",
-  "@dropMovedItems": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dropCopiedItems": "{count, plural, =1{Copied 1 item} other{Copied {count} items}}",
-  "@dropCopiedItems": {
     "placeholders": {
       "count": {
         "type": "int"

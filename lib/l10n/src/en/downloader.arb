@@ -15,7 +15,6 @@
   "manualHtmlRequired": "Please paste the HTML content in Manual Mode.",
   "findImages": "Find Images",
   "noImagesDiscovered": "No images discovered yet.",
-  "enterUrlToStart": "Enter a URL and requirement to start.",
   "addToQueue": "Add to Queue",
   "addedToQueue": "Added {count} images to download queue.",
   "@addedToQueue": {
@@ -48,7 +47,6 @@
     }
   },
   "manualHtmlMode": "Manual HTML Mode",
-  "manualHtmlHint": "Paste rendered HTML here (F12 -> Copy Outer HTML)",
   "cookieHistory": "Cookie History",
   "noCookieHistory": "No cookie history saved",
   "pasteFromClipboard": "Paste from Clipboard",

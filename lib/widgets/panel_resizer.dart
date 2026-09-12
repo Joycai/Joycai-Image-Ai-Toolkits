@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../core/design_tokens.dart';
 
-/// Height of the header row that lives inside the top of a [PanelCard].
-///
-/// Tabs drawn in a header have to fill it exactly for their indicator to land
-/// on the header's bottom border, so the number is shared rather than repeated.
-const double kPanelHeaderHeight = 56;
-
 /// The shape a [PanelCard] and its neighbouring [PanelResizer] take.
 ///
 /// The design spec draws both, on different screens, and they are not

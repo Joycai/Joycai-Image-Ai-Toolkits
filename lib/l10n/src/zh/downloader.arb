@@ -15,7 +15,6 @@
   "manualHtmlRequired": "手动模式下请先粘贴 HTML 内容。",
   "findImages": "寻找图像",
   "noImagesDiscovered": "尚未发现图像。",
-  "enterUrlToStart": "输入网址和需求以开始。",
   "addToQueue": "添加到下载队列",
   "addedToQueue": "已将 {count} 张图像添加到下载队列。",
   "@addedToQueue": {
@@ -48,7 +47,6 @@
     }
   },
   "manualHtmlMode": "手动 HTML 模式",
-  "manualHtmlHint": "在此粘贴已渲染的 HTML (F12 -> 复制外部 HTML)",
   "cookieHistory": "Cookie 历史",
   "noCookieHistory": "未保存 Cookie 历史",
   "pasteFromClipboard": "从剪贴板粘贴",

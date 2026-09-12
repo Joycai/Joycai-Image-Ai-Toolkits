@@ -133,9 +133,6 @@ class ChannelProviderPreset {
     required this.icon,
   });
 
-  /// True for the New API-style relays, whose base URL gains a version path.
-  bool get isRelayBase => endpointSuffix.isNotEmpty;
-
   bool get hasVariants => variants.isNotEmpty;
 }
 

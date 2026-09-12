@@ -35,9 +35,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noFilesFound => 'No files found';
 
   @override
-  String get switchViewMode => 'Switch View Mode';
-
-  @override
   String get sortBy => 'Sort by';
 
   @override
@@ -80,25 +77,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiBatchRename => 'AI Batch Rename';
 
   @override
-  String get rulesInstructions => 'Renaming Rules / Instructions';
-
-  @override
   String get generateSuggestions => 'Generate Suggestions';
-
-  @override
-  String get noSuggestions => 'No suggestions generated yet';
 
   @override
   String get searchFilesHint => 'Search files…';
 
   @override
   String get deselectAllDirectories => 'Deselect all directories';
-
-  @override
-  String get applyRenames => 'Apply Renames';
-
-  @override
-  String get additionalInstructions => 'Additional Instructions (Optional)';
 
   @override
   String get aiRenameInstructionsHint =>
@@ -109,20 +94,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectTemplateFirst => 'Please select a rename template first.';
-
-  @override
-  String get generatingSuggestions => 'Generating suggestions…';
-
-  @override
-  String get renamePreviewTitle => 'Rename Preview';
-
-  @override
-  String conflictsFound(int count) {
-    return '$count conflict(s)';
-  }
-
-  @override
-  String get conflictDuplicateTarget => 'Duplicate target name';
 
   @override
   String get addToSelection => 'Add to Selection';
@@ -155,11 +126,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addToStaging => 'Add to Staging';
-
-  @override
-  String addToStagingCount(int count) {
-    return 'Add to Staging - $count';
-  }
 
   @override
   String get removeFromStaging => 'Remove from Staging';
@@ -238,16 +204,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onlyThisDirectory => 'Show only this folder';
 
   @override
-  String pasteMoveTitle(String folder) {
-    return 'Move to $folder';
-  }
-
-  @override
-  String pasteCopyTitle(String folder) {
-    return 'Copy to $folder';
-  }
-
-  @override
   String get pasteNoDestination => 'Pick a destination folder first';
 
   @override
@@ -269,9 +225,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get conflictRename => 'Keep both';
 
   @override
-  String get conflictApplyToRest => 'Apply to all remaining';
-
-  @override
   String get conflictReasonExists => 'Already in the destination';
 
   @override
@@ -284,22 +237,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get conflictReasonMissing => 'Source file is gone';
 
   @override
-  String get pasteCrossVolumeWarning =>
-      'A different drive - files are copied then deleted, which takes longer and can stop partway.';
-
-  @override
-  String get pasteRunningMove => 'Moving…';
-
-  @override
-  String get pasteRunningCopy => 'Copying…';
-
-  @override
   String pasteProgressCount(int done, int total) {
     return '$done / $total';
   }
-
-  @override
-  String get pasteDoneTitle => 'Transfer finished';
 
   @override
   String get pasteCancelledTitle => 'Transfer cancelled';
@@ -391,11 +331,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String renameEditingHint(int row) {
-    return 'renaming row $row in place';
-  }
-
-  @override
   String renameConflictsPending(int count) {
     return '$count conflicts unresolved · they will not be applied';
   }
@@ -420,9 +355,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get renameRenamedBadge => 'Renamed';
 
   @override
-  String get renameActionAccept => 'Accept';
-
-  @override
   String get renameActionSkip => 'Skip';
 
   @override
@@ -443,11 +375,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get renameGoToSettings => 'Go to settings';
-
-  @override
-  String renameBatchFailed(int batch, String reason) {
-    return 'Batch $batch failed · $reason';
-  }
 
   @override
   String renameBatchFailedDesc(int kept, int missing) {
@@ -480,16 +407,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pasteCrossVolumeTag => 'across drives';
-
-  @override
-  String pasteProgressItems(
-    int done,
-    int total,
-    String doneSize,
-    String totalSize,
-  ) {
-    return '$done / $total items · $doneSize / $totalSize';
-  }
 
   @override
   String pasteCurrentFile(String name) {
@@ -550,16 +467,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get conflictPending => 'Undecided';
-
-  @override
-  String conflictWriteInfo(String size, String date) {
-    return 'Incoming · $size · $date';
-  }
-
-  @override
-  String conflictExistingInfo(String size, String date) {
-    return 'Already there · $size · $date';
-  }
 
   @override
   String get conflictOverwriteWarning =>
@@ -915,12 +822,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewAll => 'View All';
 
   @override
-  String get noTasks => 'No active tasks';
-
-  @override
-  String get sidebar => 'Sidebar';
-
-  @override
   String get white => 'White';
 
   @override
@@ -1098,28 +999,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String dropMovedItems(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Moved $count items',
-      one: 'Moved 1 item',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dropCopiedItems(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Copied $count items',
-      one: 'Copied 1 item',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get dropRejectIntoItself => 'Can\'t move a folder into itself';
 
   @override
@@ -1197,9 +1076,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noImagesDiscovered => 'No images discovered yet.';
 
   @override
-  String get enterUrlToStart => 'Enter a URL and requirement to start.';
-
-  @override
   String get addToQueue => 'Add to Queue';
 
   @override
@@ -1239,10 +1115,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get manualHtmlMode => 'Manual HTML Mode';
-
-  @override
-  String get manualHtmlHint =>
-      'Paste rendered HTML here (F12 -> Copy Outer HTML)';
 
   @override
   String get cookieHistory => 'Cookie History';
@@ -1325,9 +1197,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get clearUsageWarning =>
       'This will permanently delete all token usage records from the database.';
-
-  @override
-  String get modelsLabel => 'Models: ';
 
   @override
   String get rangeLabel => 'Range: ';
@@ -1425,9 +1294,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get models => 'Models';
 
   @override
-  String get modelManagement => 'Model Management';
-
-  @override
   String get feeManagement => 'Fee Management';
 
   @override
@@ -1520,12 +1386,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get addFirstModel => 'Add your first LLM model to get started';
-
-  @override
-  String get addNewModel => 'Add New Model';
-
-  @override
   String get deleteModel => 'Delete Model';
 
   @override
@@ -1535,12 +1395,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String deleteModelConfirmMessage(String name) {
     return 'Are you sure you want to delete \"$name\"?';
   }
-
-  @override
-  String get addLlmModel => 'Add LLM Model';
-
-  @override
-  String get editLlmModel => 'Edit LLM Model';
 
   @override
   String get modelIdLabel => 'Model ID';
@@ -1555,18 +1409,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tag => 'Tag';
 
   @override
-  String get inputFeeLabel => 'Input Fee (\$/M Tokens)';
-
-  @override
-  String get outputFeeLabel => 'Output Fee (\$/M Tokens)';
-
-  @override
-  String get paidModel => 'Paid Model';
-
-  @override
-  String get freeModel => 'Free Model';
-
-  @override
   String get billingMode => 'Billing Mode';
 
   @override
@@ -1574,9 +1416,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get perRequest => 'Per Request';
-
-  @override
-  String get requestFeeLabel => 'Request Fee (\$/Request)';
 
   @override
   String get requestCount => 'Request Count';
@@ -1622,9 +1461,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get requestPrice => 'Request Price (\$/Req)';
-
-  @override
-  String get priceConfig => 'Price Config';
 
   @override
   String get priceLabelInput => 'Input';
@@ -1686,28 +1522,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get stepProtocol => 'Choose Protocol';
-
-  @override
   String get stepProvider => 'Choose Provider';
 
   @override
-  String get stepApiKey => 'API Key';
-
-  @override
-  String get stepConfig => 'Extra Config';
-
-  @override
-  String get stepPreview => 'Preview';
-
-  @override
-  String get protocolOpenAI => 'OpenAI Compatible (REST)';
-
-  @override
   String get protocolOpenAIDesc => 'Standard OpenAI REST API compatibility';
-
-  @override
-  String get protocolGoogle => 'Google GenAI (REST)';
 
   @override
   String get protocolGoogleDesc => 'Official Google Gemini REST API';
@@ -1720,27 +1538,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'midjourney-proxy / NewAPI /mj/* surface';
 
   @override
-  String get protocolAnthropic => 'Anthropic Messages';
-
-  @override
   String get protocolAnthropicDesc => 'Native /v1/messages surface (Claude)';
 
   @override
   String get midjourneyEndpointHint =>
       'Host root (e.g. https://your-newapi.com). /mj/* paths are added automatically.';
-
-  @override
-  String get providerOpenAIOfficial => 'OpenAI Official';
-
-  @override
-  String get providerGoogleOfficial => 'Google GenAI Official';
-
-  @override
-  String get providerGoogleCompatible => 'Google GenAI (OpenAI Compatible)';
-
-  @override
-  String get providerGoogleCompatibleDesc =>
-      'Google Gemini via OpenAI endpoint';
 
   @override
   String get providerDashScopeDesc =>
@@ -1757,39 +1559,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'dashscope.aliyuncs.com/api/v1 · Alibaba\'s own request format · the only route for qwen-audio';
 
   @override
-  String get endpointOverrideHint =>
-      'Prefilled for this provider. Replace it to use a relay, gateway or international host.';
-
-  @override
-  String get providerQianwen => 'Qianwen Platform';
-
-  @override
-  String get providerQianwenDesc =>
-      'platform.qianwenai.com · same DashScope API — Qwen chat + qwen-image / wan2.7 image generation';
-
-  @override
   String get providerCustom => 'Custom Provider';
 
   @override
   String get providerCustomDesc => 'Self-hosted or 3rd party provider';
 
   @override
-  String get providerGroupOther => 'Other';
-
-  @override
   String get stepConnection => 'Endpoint & key';
-
-  @override
-  String get sectionAppearance => 'Appearance';
 
   @override
   String get moreColors => 'More colors';
 
   @override
   String get protocolXai => 'xAI (Grok) API';
-
-  @override
-  String get providerXaiOfficial => 'xAI Official';
 
   @override
   String get providerXaiOfficialDesc =>
@@ -1803,12 +1585,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get providerNewApiDesc => 'New API relay · bearer-token auth';
-
-  @override
-  String get providerAnthropicOfficial => 'Anthropic Official';
-
-  @override
-  String get providerAnthropicOfficialDesc => 'api.anthropic.com · Claude';
 
   @override
   String get providerNewApiAnthropic => 'New API (Anthropic format)';
@@ -1827,9 +1603,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter your New API host; the version path is added automatically';
 
   @override
-  String get customEndpointHint => 'Enter your custom endpoint URL';
-
-  @override
   String get openaiV1Hint =>
       'Hint: OpenAI compatible endpoints usually end with \'/v1\'';
 
@@ -1846,9 +1619,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Hint: DashScope native endpoints end with \'/api/v1\'';
 
   @override
-  String get enterApiKey => 'Enter your API Key';
-
-  @override
   String get apiKeyStorageNotice =>
       'Your key is stored locally and never sent to our servers.';
 
@@ -1863,9 +1633,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tagHint => 'e.g. GPT4, Local, etc.';
 
   @override
-  String get bindTag => 'Bind Tag';
-
-  @override
   String get previewReady => 'Ready to add this channel?';
 
   @override
@@ -1873,22 +1640,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Define billing standards for models to accurately calculate usage costs.';
 
   @override
-  String get feeGroupEditorSubtitle => 'Configure how a model is billed';
-
-  @override
   String get noFeeGroups => 'No fee groups created yet';
-
-  @override
-  String get pricePerMillion => 'Price per Million Tokens';
-
-  @override
-  String get pricePerRequest => 'Price per Request';
-
-  @override
-  String get tokenBilling => 'Token Billing';
-
-  @override
-  String get requestBilling => 'Request Billing';
 
   @override
   String feeGroupModelCount(int count) {
@@ -1911,10 +1663,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get capabilities => 'Capabilities';
-
-  @override
-  String get modelSaveRequirementHint =>
-      'Pick a channel and fill in both the name and the ID to save.';
 
   @override
   String get cardPreview => 'Card preview';
@@ -2034,17 +1782,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Let the provider run its own web searches mid-answer. Billed as extra tokens and fetches pages on your behalf.';
 
   @override
-  String get addChannelSubtitle =>
-      'Pick who this is, then fill in the connection';
-
-  @override
-  String get searchProviders => 'Search providers…';
-
-  @override
   String get noProviderMatch => 'No provider matches this search';
-
-  @override
-  String get resetToDefault => 'Reset to default';
 
   @override
   String get apiKeyRequired =>
@@ -2058,9 +1796,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get customColor => 'Custom color';
-
-  @override
-  String get stepConnectionAppearance => 'Connection & appearance';
 
   @override
   String get channelListPreview => 'List preview';
@@ -2106,9 +1841,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String countGroups(int count) {
     return '$count groups';
   }
-
-  @override
-  String get previewInList => 'List preview';
 
   @override
   String get providerGroupVendor => 'Vendors';
@@ -2207,10 +1939,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelPresetLabel => 'Provider preset';
 
   @override
-  String get channelPresetHint =>
-      'The preset only fills the fields below in one tap. You can still edit each one, and your edits are not overwritten.';
-
-  @override
   String get changePreset => 'Change preset';
 
   @override
@@ -2232,10 +1960,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get protocolField => 'API protocol';
-
-  @override
-  String get protocolFieldHint =>
-      'Five protocol families; any stored type can be represented here.';
 
   @override
   String get deprecatedLabel => 'Deprecated';
@@ -2362,11 +2086,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get protocolParamsLabel => 'Parameters';
-
-  @override
-  String protocolParamsDefault(String name, String items) {
-    return '“$name” defaults — $items';
-  }
 
   @override
   String get protocolParamsNone =>
@@ -2627,10 +2346,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPromptsSaved => 'No prompts saved';
 
   @override
-  String get saveFavoritePrompts =>
-      'Save your favorite prompts or Refiner system prompts here';
-
-  @override
   String get createFirstPrompt => 'Create First Prompt';
 
   @override
@@ -2646,9 +2361,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tagCategory => 'Tag (Category)';
-
-  @override
-  String get setAsRefiner => 'Set as Refiner';
 
   @override
   String get promptContent => 'Prompt Content';
@@ -2672,12 +2384,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get typeRefiner => 'Prompt Refiner';
 
   @override
-  String get selectRenameTemplate => 'Select Rename Template';
-
-  @override
-  String get selectCategory => 'Select Category';
-
-  @override
   String get categoriesTab => 'Categories';
 
   @override
@@ -2694,11 +2400,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectionMode => 'Selection Mode';
-
-  @override
-  String selectionModeCount(int count) {
-    return 'Selection Mode ($count)';
-  }
 
   @override
   String nSelected(int count) {
@@ -2903,15 +2604,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Turns off the blur effects for smoother performance on integrated or low-power GPUs.';
 
   @override
-  String get googleGenAiSettings => 'Google GenAI REST Settings';
-
-  @override
-  String get openAiApiSettings => 'OpenAI API REST Settings';
-
-  @override
-  String get standardConfig => 'Standard Config';
-
-  @override
   String get endpointUrl => 'Endpoint URL';
 
   @override
@@ -2989,16 +2681,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportNow => 'Export Now';
 
   @override
-  String get importNow => 'Import Now';
-
-  @override
   String get importOptions => 'Import Options';
 
   @override
   String get notInBackup => 'Not available in backup file';
-
-  @override
-  String get importSettingsTitle => 'Import Settings?';
 
   @override
   String get importSettingsConfirm =>
@@ -3023,20 +2709,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importMode => 'Import Mode';
 
   @override
-  String get importModeDesc =>
-      'Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.';
-
-  @override
   String get merge => 'Merge';
 
   @override
   String get replaceAll => 'Replace All';
-
-  @override
-  String get applyOverwrite => 'Apply (Overwrite)';
-
-  @override
-  String get applyAppend => 'Apply (Append)';
 
   @override
   String get portableMode => 'Portable Mode';
@@ -3246,9 +2922,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get taskSummary => 'Task Summary';
-
-  @override
   String get pendingTasks => 'Pending';
 
   @override
@@ -3265,10 +2938,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearAll => 'Clear All';
-
-  @override
-  String get clearAllConfirm =>
-      'This will remove all non-running tasks. This action cannot be undone.';
 
   @override
   String get cancelAllPending => 'Cancel All Pending';
@@ -3293,9 +2962,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String plannedCount(int count) {
     return '$count planned';
   }
-
-  @override
-  String get latestLog => 'Latest Log:';
 
   @override
   String get taskCompletedNotification => 'Task Completed';
@@ -3325,9 +2991,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String taskTotalCount(int count) {
     return '$count total';
   }
-
-  @override
-  String get statusCancelled => 'Cancelled';
 
   @override
   String get retryTask => 'Retry';
@@ -3490,13 +3153,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get getStarted => 'Get Started';
 
   @override
-  String get stepAppearance => 'Appearance';
-
-  @override
   String get stepStorage => 'Storage';
-
-  @override
-  String get stepApi => 'Intelligence (API)';
 
   @override
   String get setupCompleteMessage => 'You are all set! Enjoy creating.';
@@ -3517,30 +3174,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Configure a model for your new channel (Optional).';
 
   @override
-  String get googleGenAiFree => 'Google GenAI (Free)';
-
-  @override
-  String get googleGenAiPaid => 'Google GenAI (Paid)';
-
-  @override
-  String get openaiApi => 'OpenAI API';
-
-  @override
   String get filenamePrefix => 'Filename Prefix';
 
   @override
-  String get openaiEndpointHint =>
-      'Hint: OpenAI compatible endpoints usually end with \'/v1\'';
-
-  @override
-  String get googleEndpointHint =>
-      'Hint: Google GenAI endpoints usually end with \'/v1beta\' (internal handling)';
-
-  @override
   String get workbench => 'Workbench';
-
-  @override
-  String get imageProcessing => 'Image Processing';
 
   @override
   String get wbModeImage => 'Image';
@@ -3552,19 +3189,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wbTools => 'Tools';
 
   @override
-  String get sourceGallery => 'Source Gallery';
-
-  @override
-  String get sourceExplorer => 'Source Explorer';
-
-  @override
   String get tempWorkspace => 'Temp Workspace';
 
   @override
   String get processResults => 'Process Results';
-
-  @override
-  String get resultCache => 'Result Cache';
 
   @override
   String get sectionSources => 'Sources';
@@ -3580,9 +3208,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allResults => 'All Results';
-
-  @override
-  String get backToAll => 'Back to all';
 
   @override
   String get directories => 'DIRECTORIES';
@@ -3627,10 +3252,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeFromWorkspace => 'Remove from Workspace';
 
   @override
-  String get dropFilesHere =>
-      'Drop images here to add them to temporary workspace';
-
-  @override
   String get noImagesSelected => 'No images selected';
 
   @override
@@ -3638,9 +3259,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectSourceDirectory => 'Select Source Directory';
-
-  @override
-  String get removeFolderTooltip => 'Remove folder';
 
   @override
   String get removeFolderConfirmTitle => 'Remove Folder?';
@@ -3661,9 +3279,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get thumbnailFitCover => 'Fill (cropped)';
-
-  @override
-  String get deleteFile => 'Delete File';
 
   @override
   String get deleteFileConfirmTitle => 'Delete File?';
@@ -3890,9 +3505,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendToOptimizer => 'Send to Prompt Assistant';
 
   @override
-  String get optimizePromptWithImage => 'Optimize Prompt with Image';
-
-  @override
   String get selectFromLibrary => 'Select from Library';
 
   @override
@@ -4035,9 +3647,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveToTemp => 'Save to Workspace';
 
   @override
-  String get saveMaskToTemp => 'Save Mask to Workspace';
-
-  @override
   String get binaryMode => 'Binary Mode';
 
   @override
@@ -4092,13 +3701,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get systemPrompt => 'System Prompt';
 
   @override
-  String get refinerIntro => 'Use AI to analyze images and refine your prompt.';
-
-  @override
   String get roughPrompt => 'Rough Prompt / Ideas';
-
-  @override
-  String get optimizedPrompt => 'Optimized Prompt';
 
   @override
   String get applyToWorkbench => 'Apply to Workbench';
@@ -4152,9 +3755,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Right-click an image in the gallery and choose \"Send to Prompt Assistant\" to add it here.';
 
   @override
-  String get videoGeneration => 'Video Generation';
-
-  @override
   String get referenceImages => 'Reference Images';
 
   @override
@@ -4192,12 +3792,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Drop images here for style/content reference';
 
   @override
-  String get dropFirstFrameHere => 'Drop image here for start frame';
-
-  @override
-  String get dropLastFrameHere => 'Drop image here for end frame';
-
-  @override
   String get executionLogs => 'EXECUTION LOGS';
 
   @override
@@ -4227,9 +3821,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get mobileSandboxDesc =>
       'On mobile devices, direct folder access may be limited by the OS. It is recommended to use the \'Import from Gallery\' button in the top toolbar.';
-
-  @override
-  String get filesAppSuffix => ' (Files App)';
 
   @override
   String get tapToPick => 'Tap to Pick';
@@ -4664,9 +4255,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optKbCitedRunning => 'in progress';
-
-  @override
-  String get optSysPromptTemplate => 'Template';
 
   @override
   String get optSysPromptPick => 'Choose a template';

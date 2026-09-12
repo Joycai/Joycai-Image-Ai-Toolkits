@@ -581,23 +581,6 @@ Color _navInk(ColorScheme colorScheme, Set<WidgetState> states) =>
         ? colorScheme.onSurface.withValues(alpha: AppAlpha.disabled)
         : colorScheme.navForeground(selected: states.contains(WidgetState.selected));
 
-/// The skin a slider wears when it changes how you *look* at the work — a
-/// thumbnail size, a viewport zoom — rather than the work itself. Greyscale,
-/// so the brightest thing on screen is not the one control that alters
-/// nothing.
-SliderThemeData neutralSliderTheme(ColorScheme colorScheme) {
-  return SliderThemeData(
-    trackHeight: 3,
-    activeTrackColor: colorScheme.onSurfaceVariant,
-    inactiveTrackColor: colorScheme.surfaceContainerHighest,
-    thumbColor: colorScheme.onSurfaceVariant,
-    overlayColor: colorScheme.onSurface.withValues(alpha: 0.08),
-    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-    overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-    tickMarkShape: SliderTickMarkShape.noTickMark,
-  );
-}
-
 /// The scheme a destructive *fill* takes its colours from.
 ///
 /// `00 · 1f` 「删除」 draws `--err` under white in both brightnesses. The
@@ -608,22 +591,6 @@ ColorScheme errorFillScheme() {
   return ColorScheme.fromSeed(seedColor: _ErrorRoles.light.error).copyWith(
     primary: _ErrorRoles.light.error,
     onPrimary: _ErrorRoles.light.onError,
-  );
-}
-
-/// The tonal form (`A3a` 「版本角标 / Apply / 保存到库」): the 12% wash under the
-/// deep ink, ringed. Spent only on "put the model's output to use".
-///
-/// Pass it to every tonal button — the app-wide filled theme names a
-/// background for all filled buttons and would otherwise win.
-ButtonStyle tonalButtonStyle(ColorScheme colorScheme) {
-  return FilledButton.styleFrom(
-    backgroundColor: colorScheme.accentTint,
-    foregroundColor: colorScheme.onAccentTint,
-    disabledBackgroundColor: colorScheme.surfaceContainerHighest,
-    disabledForegroundColor: colorScheme.outline,
-    elevation: 0,
-    side: BorderSide(color: colorScheme.accentRing),
   );
 }
 

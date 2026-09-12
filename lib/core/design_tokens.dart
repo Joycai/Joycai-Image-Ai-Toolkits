@@ -273,15 +273,6 @@ extension AppShadow on ColorScheme {
         ),
       ];
 
-  /// [shadowRaised] cast upward, for chrome anchored to the bottom edge.
-  List<BoxShadow> get shadowRaisedUp => [
-        BoxShadow(
-          color: shadow.withValues(alpha: 0.08),
-          blurRadius: 4,
-          offset: const Offset(0, -2),
-        ),
-      ];
-
   /// An opaque surface floating over scrolling content.
   List<BoxShadow> get shadowOverlay => [
         BoxShadow(

@@ -104,11 +104,6 @@ class DownloaderState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void clearLogs() {
-    logs.clear();
-    notifyListeners();
-  }
-
   void reset() {
     discoveredImages = [];
     logs.clear();

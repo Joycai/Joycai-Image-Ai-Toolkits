@@ -10,18 +10,6 @@ extension AppStateWorkbench on AppState {
     notify();
   }
 
-  Future<void> setIsMarkdownRefinerSource(bool value) async {
-    isMarkdownRefinerSource = value;
-    await _db.saveSetting('is_markdown_refiner_source', value.toString());
-    notify();
-  }
-
-  Future<void> setIsMarkdownRefinerTarget(bool value) async {
-    isMarkdownRefinerTarget = value;
-    await _db.saveSetting('is_markdown_refiner_target', value.toString());
-    notify();
-  }
-
   /// Moves the workbench's configuration and persists it.
   ///
   /// The fields move and [AppState.notify] fires **before** anything is
