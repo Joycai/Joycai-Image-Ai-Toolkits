@@ -41,6 +41,10 @@ Future<List<String>> rebuiltBy(
 
 Matcher rebuilt(String name) => contains(contains(name));
 
+/// How many widgets of one type the pump rebuilt.
+int timesRebuilt(List<String> lines, String name) =>
+    lines.where((String line) => line.contains(name)).length;
+
 void main() {
   final TestWidgetsFlutterBinding binding =
       TestWidgetsFlutterBinding.ensureInitialized();
@@ -233,12 +237,33 @@ void main() {
 
     // And a selection change, which the column has no part in either.
     final files = browser.filteredFiles;
-    if (files.isNotEmpty) {
-      final List<String> pick =
-          await rebuiltBy(tester, () => browser.toggleSelection(files.first));
-      expect(pick, isNot(rebuilt('FolderList')));
-      expect(pick, isNot(rebuilt('DirectoryTreeItem')));
-    }
+    expect(files.length, greaterThan(4), reason: 'need a grid, not one row');
+
+    // From one already picked, so this is an ordinary add rather than the
+    // empty ↔ not boundary.
+    browser.toggleSelection(files.first);
+    await tester.pump();
+    final List<String> pick =
+        await rebuiltBy(tester, () => browser.toggleSelection(files[1]));
+
+    expect(pick, isNot(rebuilt('FolderList')));
+    expect(pick, isNot(rebuilt('DirectoryTreeItem')));
+    // The grid is where this cost sat: the screen watched the whole notifier,
+    // so picking one file rebuilt the header, the filter bar, the tree and
+    // every visible tile. Each tile carries its own subscription now.
+    expect(pick, isNot(rebuilt('FileBrowserScreen')),
+        reason: 'the layout draws no part of the selection');
+    expect(pick, isNot(rebuilt('_FileArea')),
+        reason: 'the area draws the file list, not what is picked');
+    expect(pick, isNot(rebuilt('BrowserFilterBar')));
+    expect(
+      timesRebuilt(pick, 'FileCard('),
+      lessThanOrEqualTo(2),
+      reason: 'one tile changed — at most it and the one that lost the '
+          'anchor may rebuild, never the whole grid',
+    );
+    browser.clearSelection();
+    await tester.pump();
 
     // Let the pulse's own 1.5s clear timer run out before the tree is torn
     // down; flutter_test fails a test that ends with one pending.

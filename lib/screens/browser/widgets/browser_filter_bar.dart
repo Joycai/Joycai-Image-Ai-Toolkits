@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
@@ -18,6 +19,25 @@ import '../../../widgets/thumbnail_fit_toggle.dart';
 /// When the row cannot hold the slider beside the categories and the sort
 /// button (measured, not a breakpoint), the slider gives way to a size button
 /// that opens the same control in a dialog, so the setting is never lost.
+/// The five things this bar draws out of the state. Not the selection, not
+/// the file list — a bar of filters must not rebuild because a file was
+/// picked.
+typedef _FilterInputs = ({
+  BrowserViewMode viewMode,
+  FileCategory currentFilter,
+  BrowserSortField sortField,
+  bool sortAscending,
+  double thumbnailSize,
+});
+
+_FilterInputs _filterInputs(FileBrowserState s) => (
+      viewMode: s.viewMode,
+      currentFilter: s.currentFilter,
+      sortField: s.sortField,
+      sortAscending: s.sortAscending,
+      thumbnailSize: s.thumbnailSize,
+    );
+
 class BrowserFilterBar extends StatelessWidget {
   final FileBrowserState state;
 
@@ -35,6 +55,7 @@ class BrowserFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
+    final inputs = context.select<FileBrowserState, _FilterInputs>(_filterInputs);
 
     return Container(
       height: height,
@@ -45,13 +66,13 @@ class BrowserFilterBar extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final isGrid = state.viewMode == BrowserViewMode.grid;
+          final isGrid = inputs.viewMode == BrowserViewMode.grid;
 
           double chipsWidth = 0;
           for (final cat in FileCategory.values) {
             chipsWidth += _CategoryChip.widthFor(context, _categoryLabel(cat, l10n)) + _chipGap;
           }
-          final sortWidth = _SortChip.widthFor(context, _sortFieldLabel(state.sortField, l10n));
+          final sortWidth = _SortChip.widthFor(context, _sortFieldLabel(inputs.sortField, l10n));
           final sliderWidth = _ThumbnailSizeSlider.widthFor(context);
           final showSlider = isGrid &&
               chipsWidth + _groupGap + sortWidth + _groupGap + sliderWidth + AppSpace.s4 + AppSize.compact <=
@@ -70,7 +91,7 @@ class BrowserFilterBar extends StatelessWidget {
                         for (final cat in FileCategory.values) ...[
                           _CategoryChip(
                             label: _categoryLabel(cat, l10n),
-                            selected: state.currentFilter == cat,
+                            selected: inputs.currentFilter == cat,
                             onTap: () => state.setFilter(cat),
                           ),
                           const SizedBox(width: _chipGap),
@@ -81,7 +102,7 @@ class BrowserFilterBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: _groupGap),
-              _buildSortControl(context, l10n),
+              _buildSortControl(context, l10n, inputs),
               if (isGrid) ...[
                 const SizedBox(width: _groupGap),
                 if (showSlider)
@@ -95,7 +116,7 @@ class BrowserFilterBar extends StatelessWidget {
                       tooltip: l10n.thumbnailSize,
                       onPressed: () => showThumbnailSizeDialog(
                         context,
-                        initialSize: state.thumbnailSize,
+                        initialSize: inputs.thumbnailSize,
                         onChanged: state.setThumbnailSize,
                         onChangeEnd: state.persistThumbnailSize,
                       ),
@@ -113,7 +134,11 @@ class BrowserFilterBar extends StatelessWidget {
 
   /// Sort field and direction in one menu (Name / Modify Date / File Type,
   /// then ascending / descending).
-  Widget _buildSortControl(BuildContext context, AppLocalizations l10n) {
+  Widget _buildSortControl(
+    BuildContext context,
+    AppLocalizations l10n,
+    _FilterInputs inputs,
+  ) {
     return PopupMenuButton<Object>(
       tooltip: l10n.sortBy,
       position: PopupMenuPosition.under,
@@ -128,7 +153,7 @@ class BrowserFilterBar extends StatelessWidget {
         for (final field in BrowserSortField.values)
           CheckedPopupMenuItem(
             value: field,
-            checked: state.sortField == field,
+            checked: inputs.sortField == field,
             child: Text(
               _sortFieldLabel(field, l10n),
               style: Theme.of(context).textTheme.labelLarge,
@@ -137,18 +162,18 @@ class BrowserFilterBar extends StatelessWidget {
         const PopupMenuDivider(),
         CheckedPopupMenuItem(
           value: true,
-          checked: state.sortAscending,
+          checked: inputs.sortAscending,
           child: Text(l10n.sortAsc, style: Theme.of(context).textTheme.labelLarge),
         ),
         CheckedPopupMenuItem(
           value: false,
-          checked: !state.sortAscending,
+          checked: !inputs.sortAscending,
           child: Text(l10n.sortDesc, style: Theme.of(context).textTheme.labelLarge),
         ),
       ],
       child: _SortChip(
-        label: _sortFieldLabel(state.sortField, l10n),
-        ascending: state.sortAscending,
+        label: _sortFieldLabel(inputs.sortField, l10n),
+        ascending: inputs.sortAscending,
       ),
     );
   }

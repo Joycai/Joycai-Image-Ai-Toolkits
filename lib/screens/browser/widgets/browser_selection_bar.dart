@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/browser_file.dart';
 import '../../../state/file_browser_state.dart';
+import '../../../state/file_staging_state.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
 
@@ -17,21 +20,32 @@ import '../../../widgets/glass/glass_controls.dart';
 ///
 /// When the column is too narrow for the labels — measured, not guessed —
 /// every action keeps only its glyph and names itself in a tooltip.
+/// What the bar states: how many files are picked, and whether the staging
+/// button has anything left to do.
+///
+/// Read here, off both notifiers, rather than handed down. It used to be
+/// computed by the screen, which meant the screen had to watch the selection
+/// to draw a bar that floats over the grid — and so every file picked rebuilt
+/// the header, the filter bar, the folder tree and every visible tile.
+typedef _BarInputs = ({int count, bool allStaged});
+
+_BarInputs _barInputs(FileBrowserState browser, FileStagingState staging) {
+  final Set<BrowserFile> selected = browser.selectedFiles;
+  return (
+    count: selected.length,
+    allStaged: selected.isNotEmpty &&
+        selected.every((BrowserFile f) => staging.contains(f.path)),
+  );
+}
+
 class BrowserSelectionBar extends StatelessWidget {
-  final FileBrowserState state;
   final VoidCallback onAiRename;
   final VoidCallback onAddToStaging;
 
-  /// Whether every selected file is already staged, which is when the staging
-  /// button has nothing left to do.
-  final bool allSelectionStaged;
-
   const BrowserSelectionBar({
     super.key,
-    required this.state,
     required this.onAiRename,
     required this.onAddToStaging,
-    required this.allSelectionStaged,
   });
 
   static const double height = 44;
@@ -45,7 +59,14 @@ class BrowserSelectionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final count = state.selectedFiles.length;
+    return Selector2<FileBrowserState, FileStagingState, _BarInputs>(
+      selector: (_, browser, staging) => _barInputs(browser, staging),
+      builder: (context, bar, _) => _buildBar(context, bar),
+    );
+  }
+
+  Widget _buildBar(BuildContext context, _BarInputs bar) {
+    final count = bar.count;
     final visible = count > 0;
     final duration = AppMotion.sceneOf(context);
 
@@ -63,12 +84,12 @@ class BrowserSelectionBar extends StatelessWidget {
           curve: AppMotion.emphasized,
           child: LayoutBuilder(
             builder: (context, constraints) => _BarContent(
-              state: state,
+              state: Provider.of<FileBrowserState>(context, listen: false),
               count: count,
               maxWidth: constraints.maxWidth,
               onAiRename: onAiRename,
               onAddToStaging: onAddToStaging,
-              allSelectionStaged: allSelectionStaged,
+              allSelectionStaged: bar.allStaged,
             ),
           ),
         ),
