@@ -1,6 +1,6 @@
 # 013 — 对话框:入场时长与它自以为的对上,退场给一条回程曲线
 
-- **Status**: TODO
+- **Status**: DONE(2026-09-12 执行,flutter analyze 零问题,1763 个测试全通过)
 - **Commit**: 0b97136
 - **Severity**: HIGH
 - **Category**: 缓动与时长(2)/ 无障碍(6)

@@ -926,6 +926,7 @@ class ChannelColorPickerDialog extends StatefulWidget {
   }) {
     return showDialog<int>(
       context: context,
+      animationStyle: appDialogAnimation(context),
       builder: (_) => ChannelColorPickerDialog(
         l10n: l10n,
         initialColor: initialColor,

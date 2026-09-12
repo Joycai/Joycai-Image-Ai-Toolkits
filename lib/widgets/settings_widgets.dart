@@ -294,6 +294,7 @@ class _FontSelectorState extends State<FontSelector> {
     if (!context.mounted) return;
     final ok = await showDialog<bool>(
       context: context,
+      animationStyle: appDialogAnimation(context),
       barrierDismissible: false,
       builder: (_) => _FontDownloadDialog(fontKey: key, l10n: widget.l10n),
     );

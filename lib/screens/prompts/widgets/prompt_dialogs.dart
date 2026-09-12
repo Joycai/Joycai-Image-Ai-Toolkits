@@ -85,6 +85,7 @@ Future<bool> showPromptEditDialog(
 
   final saved = await showDialog<bool>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     builder: (context) => StatefulBuilder(
       builder: (context, setDialogState) => AppDialog(
         icon: Icons.edit_note,
@@ -180,6 +181,7 @@ Future<bool> showSystemPromptEditDialog(
 
   final saved = await showDialog<bool>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     builder: (context) => StatefulBuilder(
       builder: (context, setDialogState) {
         final typeStyle = promptTemplateTypeStyle(context, selectedType);
@@ -284,6 +286,7 @@ Future<bool> showTagEditDialog(
 
   final saved = await showDialog<bool>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     builder: (context) => StatefulBuilder(
       builder: (context, setDialogState) {
         return AppDialog(
@@ -497,6 +500,7 @@ Future<List<int>?> showBulkCategorizeDialog(
 
   final confirmed = await showDialog<bool>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     builder: (context) => StatefulBuilder(
       builder: (context, setDialogState) {
         final scheme = Theme.of(context).colorScheme;

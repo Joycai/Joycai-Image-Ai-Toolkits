@@ -24,6 +24,7 @@ Future<String?> showResultFeedbackDialog(
 
   return showDialog<String>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     builder: (context) {
       final colorScheme = Theme.of(context).colorScheme;
       final textTheme = Theme.of(context).textTheme;

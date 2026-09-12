@@ -35,6 +35,7 @@ Future<void> runFolderDelete(BuildContext context, String path) async {
 
   final confirmed = await showDialog<bool>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     builder: (_) => _FolderDeleteDialog(path: path, toTrash: toTrash),
   );
   if (confirmed != true || !context.mounted) return;

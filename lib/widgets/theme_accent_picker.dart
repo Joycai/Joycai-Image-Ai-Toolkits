@@ -598,6 +598,7 @@ class _HueDot extends StatelessWidget {
 Future<Color?> showCustomAccentDialog(BuildContext context, {required Color initialSeed}) {
   return showDialog<Color>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     builder: (_) => _CustomAccentDialog(initialSeed: initialSeed),
   );
 }

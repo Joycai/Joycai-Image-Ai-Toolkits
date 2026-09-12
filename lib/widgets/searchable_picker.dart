@@ -328,6 +328,7 @@ Future<PickerResult<T>?> showSearchablePicker<T>({
 }) {
   return showDialog<PickerResult<T>>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     builder: (_) => _SearchablePickerDialog<T>(
       title: title,
       icon: icon,

@@ -1,6 +1,6 @@
 # 014 — 侧边面板:退场不再是入场倒放
 
-- **Status**: TODO
+- **Status**: DONE(2026-09-12 执行,flutter analyze 零问题,1763 个测试全通过)
 - **Commit**: 0b97136
 - **Severity**: MEDIUM
 - **Category**: 缓动与时长(2)/ 一致性(7)

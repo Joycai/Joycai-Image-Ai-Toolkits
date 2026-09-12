@@ -62,46 +62,58 @@ class AppSidePanel extends StatelessWidget {
       );
     }
 
-    return showGeneralDialog<T>(
-      context: context,
-      barrierDismissible: true,
-      // 25%, not the 50% black showGeneralDialog defaults to. This surface is
-      // a *place* rather than a question, and its promise is that the work it
-      // belongs to stays visible beside it — a half-black scrim is the
-      // opposite of that promise. Dialogs keep their darker black54 (chosen in
-      // dialogTheme): a modal question wants the world dimmed, a parallel
-      // panel wants it merely held.
-      barrierColor: const Color(0x40000000),
-      // Material's own translated label, not the bare English "Dismiss" the
-      // copies used — this is what a screen reader announces for the barrier.
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      // Read once, here, rather than inside the transition builder: a route's
-      // duration is fixed when it is pushed, so a builder that disagreed with
-      // it would animate against a clock it cannot change.
-      transitionDuration: AppMotion.prefersReduced(context)
-          ? AppMotion.reveal
-          : AppMotion.panel,
-      pageBuilder: (context, _, _) => Align(
-        alignment: Alignment.centerRight,
-        child: AppSidePanel(width: width, child: builder(context)),
+    // Read once, here, rather than inside the transition builder: a route's
+    // durations are fixed when it is pushed, so a builder that disagreed with
+    // them would animate against a clock it cannot change.
+    final Duration enter =
+        AppMotion.prefersReduced(context) ? AppMotion.reveal : AppMotion.panel;
+    // `00 · 1e`: an exit runs at [AppMotion.exitFactor] of its entrance.
+    // Arriving is the event; leaving is getting out of the way.
+    final Duration leave =
+        Duration(milliseconds: (enter.inMilliseconds * AppMotion.exitFactor).round());
+
+    return Navigator.of(context, rootNavigator: true).push<T>(
+      _AppSidePanelRoute<T>(
+        // 25%, not the 50% black showGeneralDialog defaults to. This surface is
+        // a *place* rather than a question, and its promise is that the work it
+        // belongs to stays visible beside it — a half-black scrim is the
+        // opposite of that promise. Dialogs keep their darker black54 (chosen in
+        // dialogTheme): a modal question wants the world dimmed, a parallel
+        // panel wants it merely held.
+        barrierColor: const Color(0x40000000),
+        // Material's own translated label, not the bare English "Dismiss" the
+        // copies used — this is what a screen reader announces for the barrier.
+        barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+        transitionDuration: enter,
+        reverseDuration: leave,
+        pageBuilder: (context, _, _) => Align(
+          alignment: Alignment.centerRight,
+          child: AppSidePanel(width: width, child: builder(context)),
+        ),
+        // The one transition in the app that does *not* collapse to nothing
+        // under reduce-motion, and the reason `AppMotion.durationOf` documents
+        // this as the exception. 450px of panel appearing between two frames
+        // reads as the screen having changed rather than as something arriving,
+        // which loses the very thing the slide is there to say. A cross-fade is
+        // the non-vestibular equivalent: no travel, same arrival.
+        transitionBuilder: (context, animation, _, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: AppMotion.enter,
+            // M1 out. Without this the panel leaves on `enter` played
+            // backwards, which is an ease-in: it hangs, then bolts.
+            reverseCurve: AppMotion.quick,
+          );
+          if (AppMotion.prefersReduced(context)) {
+            return FadeTransition(opacity: curved, child: child);
+          }
+          return SlideTransition(
+            position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+                .animate(curved),
+            child: child,
+          );
+        },
       ),
-      // The one transition in the app that does *not* collapse to nothing
-      // under reduce-motion, and the reason `AppMotion.durationOf` documents
-      // this as the exception. 450px of panel appearing between two frames
-      // reads as the screen having changed rather than as something arriving,
-      // which loses the very thing the slide is there to say. A cross-fade is
-      // the non-vestibular equivalent: no travel, same arrival.
-      transitionBuilder: (context, animation, _, child) {
-        final curved = CurvedAnimation(parent: animation, curve: AppMotion.enter);
-        if (AppMotion.prefersReduced(context)) {
-          return FadeTransition(opacity: curved, child: child);
-        }
-        return SlideTransition(
-          position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-              .animate(curved),
-          child: child,
-        );
-      },
     );
   }
 
@@ -133,4 +145,26 @@ class AppSidePanel extends StatelessWidget {
       ),
     );
   }
+}
+
+/// [showGeneralDialog] with one thing added: an exit shorter than the entrance.
+///
+/// `showGeneralDialog` takes no `reverseTransitionDuration`, [RawDialogRoute]
+/// never overrides it, and `TransitionRoute` falls back to the forward one — so
+/// 450px of panel used to take as long leaving as arriving. Everything else
+/// here is what `showGeneralDialog` would have built.
+class _AppSidePanelRoute<T> extends RawDialogRoute<T> {
+  _AppSidePanelRoute({
+    required super.pageBuilder,
+    required super.transitionBuilder,
+    required super.transitionDuration,
+    required super.barrierColor,
+    required super.barrierLabel,
+    required this.reverseDuration,
+  }) : super(barrierDismissible: true);
+
+  final Duration reverseDuration;
+
+  @override
+  Duration get reverseTransitionDuration => reverseDuration;
 }

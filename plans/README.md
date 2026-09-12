@@ -20,10 +20,10 @@ commit `0b97136`(2026-09-12,v4.0.0)。审计范围:`lib/` 全部动画与动效�
 | [008](008-smooth-task-progress.md) | 进度条:把 2Hz 的阶跃换成连续推进 | MEDIUM | DONE |
 | [009](009-snackbar-instant-replace.md) | Snackbar 连发不再「退场再进场」地闪 | MEDIUM | DONE |
 | [010](010-model-dialog-token-drift.md) | 收回模型编辑对话框最后一处令牌漂移 | LOW | DONE |
-| [011](011-glass-menu-scale-origin.md) | 玻璃菜单从触发它的那个角长出 | HIGH | TODO |
-| [012](012-task-capsule-spring-settle.md) | 任务胶囊:甩出去的力道要算数,位移改走 transform | HIGH | TODO |
-| [013](013-dialog-route-clock.md) | 对话框:入场时长与它自以为的对上,退场给一条回程曲线 | HIGH | TODO |
-| [014](014-side-panel-exit.md) | 侧边面板:退场不再是入场倒放 | MEDIUM | TODO |
+| [011](011-glass-menu-scale-origin.md) | 玻璃菜单从触发它的那个角长出 | HIGH | DONE |
+| [012](012-task-capsule-spring-settle.md) | 任务胶囊:甩出去的力道要算数,位移改走 transform | HIGH | DONE |
+| [013](013-dialog-route-clock.md) | 对话框:入场时长与它自以为的对上,退场给一条回程曲线 | HIGH | DONE |
+| [014](014-side-panel-exit.md) | 侧边面板:退场不再是入场倒放 | MEDIUM | DONE |
 
 > 001–005 已于 2026-08-22 全部执行完毕。`flutter analyze` 零问题,
 > `flutter test test/screenshots` 87 个测试通过、无新增溢出。
@@ -62,6 +62,37 @@ commit `0b97136`(2026-09-12,v4.0.0)。审计范围:`lib/` 全部动画与动效�
 `lib/screens/models/models_screen.dart` 与 `lib/widgets/models/model_edit_dialog.dart`,
 互不重叠。008 触及 `task_capsule_monitor.dart` / `app_run_console.dart` /
 `task_queue_screen.dart`,与其余四份均无交集。
+
+> 011–014 已于 2026-09-12 全部执行完毕。`flutter analyze` 零问题,`flutter test`
+> 1763 个测试通过、截图无新增溢出;改动落在 15 个 `lib/` 文件与 3 个测试文件上。
+
+## 第三轮执行时相对计划的四处偏离
+
+1. **011 的新测试用 `find.ancestor`,不是计划写的 `find.descendant`。** `ScaleTransition`
+   由路由的 `buildTransitions` 生成,是 `AppGlassMenu` 的**祖先**而非后代;计划里那段
+   示例代码写反了,照抄会永远找不到。另外「下拉菜单」这条测试必须用一个真正按钮大小的
+   锚点:第一版拿 `pumpHost` 那个铺满全屏的 `SizedBox.expand` 当锚点,菜单被正确地判定
+   为要翻转,于是断言 topRight 时红了——红得对,是测试搭错了。
+2. **012 顺手删掉了 `_dragging` 字段。** 它此前唯一的读者就是
+   `AnimatedPositioned(duration: _dragging ? …)`,换成弹簧之后成了死状态,
+   `flutter analyze` 直接报 `unused_field`。三处赋值一并清掉。
+3. **012 计划里没提、最后也没加「甩动速度」的测试。** 试过三版,都不可信,如实记录:
+   - 第一版用 `tester.fling`:高速档 200px 只用两帧走完,`VelocityTracker` 样本不够,
+     估出来的速度反而更小。
+   - 第二版用 `timedDrag`:数值漂亮(慢 7px / 快 162px),但**变异验证不过**——
+     把 `SpringSimulation` 的初速强行置 0,它依然是绿的。两次拖拽的松手位置不同
+     (1054.7 vs 1094.7),差异其实来自剩余行程而非速度。这正是「绿得毫无意义」的典型。
+   - 第三版手写 `TestGesture` 让两次拖拽经过完全相同的五个点、只改时间间隔。这一版
+     思路是对的,但踩了两个坑:`TestGesture.moveBy` 的 `timeStamp` **默认是
+     `Duration.zero`**(五个样本在速度追踪器眼里是同一瞬间发生的,速度恒为 0,和中间
+     pump 了多久无关),以及 `AnimationController` 的**第一帧只用来对表**、不产生位移,
+     所以 `up()` 之后必须先 `pump()` 一次再采样。补上这两点后慢速档仍然量到 0,时间预算
+     用尽,遂放弃。
+   **结论:速度是否真的接上了,目前只由计划里的 feel check 保证。** 上面这些坑已经
+   记下来,下次再做从第三版继续,别从头试。
+4. **013 的两条新测试做了变异验证。** 把 `AppDialog.show` 里的 `animationStyle` 去掉,
+   两条都红,且报出的正是 `Duration:<0:00:00.150000>` —— 审计结论(`showDialog` 写死
+   150ms)因此不只是读 SDK 源码读出来的,是在这个仓库里实测出来的。
 
 ## 第三轮(011–014)执行顺序与依赖
 
