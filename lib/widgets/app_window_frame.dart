@@ -5,12 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../core/app_effects.dart';
 import '../core/app_theme.dart';
 import '../core/design_tokens.dart';
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../state/app_state.dart';
+import 'baked_backdrop.dart';
 import 'glass/app_glass.dart';
 import 'shell/app_destinations.dart';
 import 'shell/nav_lens_group.dart';
@@ -120,68 +120,26 @@ class _AppWindowFrameState extends State<AppWindowFrame> {
 /// the wall.
 ///
 /// Most screens cover it with opaque columns; the workbench gallery, the file
-/// browser grid and the downloader results sit straight on it. Nothing here
-/// scrolls or animates, so it paints once behind a repaint boundary. With
-/// *reduce visual effects* on it is the canvas colour alone — the switch that
-/// also turns glass opaque.
+/// browser grid and the downloader results sit straight on it. With *reduce
+/// visual effects* on it is the canvas colour alone — the switch that also
+/// turns glass opaque.
+///
+/// **Drawn once into an image, not four fills per frame.** The recipe is
+/// static — it moves only with the theme, the accent and the window size —
+/// so [BakedAuroraBackdrop] bakes it at quarter resolution and hands the GPU
+/// one textured quad. This used to be four stacked `SizedBox.expand`
+/// decorations behind a `RepaintBoundary`, with a comment claiming that made
+/// it “paint once”; a repaint boundary bounds which Dart paint code re-runs,
+/// not what the GPU executes, and the raster cache has a size ceiling a 4K
+/// window is far past. Measured on the dev machine’s integrated Radeon,
+/// maximized at 4K: 9.91 → 4.84 ms of GPU time a frame, against a floor of
+/// 2.58 ms for a blank window. See [BakedBackdrop] and
+/// `lib/bench/render_bench.dart`.
 class AuroraBackdrop extends StatelessWidget {
   const AuroraBackdrop({super.key});
 
-  static const double _glowAlpha = 0.06;
-  static const double _echoAlpha = 0.04;
-  static const double _liftAlpha = 0.55;
-
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    if (AppEffects.reduced(context)) {
-      return ColoredBox(color: scheme.surfaceContainer);
-    }
-
-    final glow = scheme.primary.withValues(alpha: _glowAlpha);
-    final echo = scheme.primary.withValues(alpha: _echoAlpha);
-    final lift = scheme.surface.withValues(alpha: _liftAlpha);
-
-    // Each layer fades to its own colour at zero alpha rather than to
-    // `Colors.transparent`, which is transparent *black*: the gradient
-    // interpolates unpremultiplied and would grey the middle of the fade.
-    return RepaintBoundary(
-      child: ColoredBox(
-        color: scheme.surfaceContainer,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: const Alignment(-0.7, -1.2),
-              radius: 1.2,
-              colors: [glow, glow.withValues(alpha: 0)],
-              stops: const [0, 0.6],
-            ),
-          ),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: const Alignment(0.9, 1.1),
-                radius: 1.0,
-                colors: [echo, echo.withValues(alpha: 0)],
-                stops: const [0, 0.62],
-              ),
-            ),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [lift, lift.withValues(alpha: 0)],
-                  stops: const [0, 0.42],
-                ),
-              ),
-              child: const SizedBox.expand(),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const BakedAuroraBackdrop();
 }
 
 /// The app mark (`01 · 1b`): the application's own icon, at [size].

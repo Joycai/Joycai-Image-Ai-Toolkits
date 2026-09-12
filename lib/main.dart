@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'bench/render_bench.dart';
 import 'core/app_effects.dart';
 import 'core/app_theme.dart';
 import 'core/responsive.dart';
@@ -75,7 +76,7 @@ void main() async {
         // Separate from AppState on purpose — see LogState.
         ChangeNotifierProvider.value(value: appState.logState),
       ],
-      child: MyApp(version: packageInfo.version),
+      child: maybeWrapWithBench(MyApp(version: packageInfo.version)),
     ),
   );
 }
