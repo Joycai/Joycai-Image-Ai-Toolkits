@@ -1421,6 +1421,12 @@ abstract class AppLocalizations {
   /// **'Logs'**
   String get logs;
 
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
+
   /// No description provided for @copyFilename.
   ///
   /// In en, this message translates to:
@@ -4948,6 +4954,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copyright © {year} {holder}. Released under the MIT License.'**
   String aboutCopyright(Object year, Object holder);
+
+  /// No description provided for @aboutVersionBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} · build {build}'**
+  String aboutVersionBuild(Object version, Object build);
+
+  /// No description provided for @aboutChangelog.
+  ///
+  /// In en, this message translates to:
+  /// **'Changelog'**
+  String get aboutChangelog;
+
+  /// No description provided for @aboutChangelogNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Every release and what changed in it'**
+  String get aboutChangelogNote;
+
+  /// No description provided for @aboutThirdParty.
+  ///
+  /// In en, this message translates to:
+  /// **'Third-party licenses'**
+  String get aboutThirdParty;
+
+  /// No description provided for @aboutThirdPartyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The open-source components this app is built on'**
+  String get aboutThirdPartyNote;
+
+  /// No description provided for @aboutFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Report an issue'**
+  String get aboutFeedback;
+
+  /// No description provided for @aboutFeedbackNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Please attach the runtime info below and a log excerpt'**
+  String get aboutFeedbackNote;
+
+  /// No description provided for @aboutActionOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get aboutActionOpen;
+
+  /// No description provided for @aboutActionView.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get aboutActionView;
+
+  /// No description provided for @aboutRuntime.
+  ///
+  /// In en, this message translates to:
+  /// **'Runtime info'**
+  String get aboutRuntime;
+
+  /// No description provided for @aboutRuntimeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy this whole block into the issue when you report a problem.'**
+  String get aboutRuntimeHint;
+
+  /// No description provided for @aboutRuntimeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Runtime info copied'**
+  String get aboutRuntimeCopied;
+
+  /// No description provided for @aboutMetaVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get aboutMetaVersion;
+
+  /// No description provided for @aboutMetaEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine'**
+  String get aboutMetaEngine;
+
+  /// No description provided for @aboutMetaPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform'**
+  String get aboutMetaPlatform;
+
+  /// No description provided for @aboutMetaDataDir.
+  ///
+  /// In en, this message translates to:
+  /// **'Data directory'**
+  String get aboutMetaDataDir;
+
+  /// No description provided for @aboutModelNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This app ships no model weights. Ownership of what you generate, and compliance with the rules around it, are governed by each provider’s own terms of service.'**
+  String get aboutModelNotice;
 
   /// No description provided for @themeMode.
   ///

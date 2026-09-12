@@ -132,6 +132,29 @@
       "holder": {}
     }
   },
+  "aboutVersionBuild": "版本 {version} · 建置 {build}",
+  "@aboutVersionBuild": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "aboutChangelog": "更新日誌",
+  "aboutChangelogNote": "每個版本的發布說明",
+  "aboutThirdParty": "第三方授權",
+  "aboutThirdPartyNote": "本應用所使用的開源元件",
+  "aboutFeedback": "回報問題",
+  "aboutFeedbackNote": "提交前請附上下方的執行資訊與日誌片段",
+  "aboutActionOpen": "開啟",
+  "aboutActionView": "檢視",
+  "aboutRuntime": "執行資訊",
+  "aboutRuntimeHint": "回報問題時把這塊整段複製進 issue。",
+  "aboutRuntimeCopied": "執行資訊已複製",
+  "aboutMetaVersion": "版本",
+  "aboutMetaEngine": "引擎",
+  "aboutMetaPlatform": "平台",
+  "aboutMetaDataDir": "資料目錄",
+  "aboutModelNotice": "本應用不附帶任何模型權重；生成內容的權屬與合規責任由各通道服務條款約定。",
   "themeMode": "主題模式",
   "visualEffects": "效果",
   "settingsGroupNotifications": "通知與日誌",

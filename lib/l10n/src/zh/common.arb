@@ -26,6 +26,7 @@
   "finished": "结束时间",
   "config": "配置",
   "logs": "日志",
+  "copy": "复制",
   "copyFilename": "复制文件名",
   "openInFolder": "在文件夹中打开",
   "openInPreview": "在预览中打开",

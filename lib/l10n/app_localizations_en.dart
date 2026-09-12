@@ -792,6 +792,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logs => 'Logs';
 
   @override
+  String get copy => 'Copy';
+
+  @override
   String get copyFilename => 'Copy Filename';
 
   @override
@@ -2828,6 +2831,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String aboutCopyright(Object year, Object holder) {
     return 'Copyright © $year $holder. Released under the MIT License.';
   }
+
+  @override
+  String aboutVersionBuild(Object version, Object build) {
+    return 'Version $version · build $build';
+  }
+
+  @override
+  String get aboutChangelog => 'Changelog';
+
+  @override
+  String get aboutChangelogNote => 'Every release and what changed in it';
+
+  @override
+  String get aboutThirdParty => 'Third-party licenses';
+
+  @override
+  String get aboutThirdPartyNote =>
+      'The open-source components this app is built on';
+
+  @override
+  String get aboutFeedback => 'Report an issue';
+
+  @override
+  String get aboutFeedbackNote =>
+      'Please attach the runtime info below and a log excerpt';
+
+  @override
+  String get aboutActionOpen => 'Open';
+
+  @override
+  String get aboutActionView => 'View';
+
+  @override
+  String get aboutRuntime => 'Runtime info';
+
+  @override
+  String get aboutRuntimeHint =>
+      'Copy this whole block into the issue when you report a problem.';
+
+  @override
+  String get aboutRuntimeCopied => 'Runtime info copied';
+
+  @override
+  String get aboutMetaVersion => 'Version';
+
+  @override
+  String get aboutMetaEngine => 'Engine';
+
+  @override
+  String get aboutMetaPlatform => 'Platform';
+
+  @override
+  String get aboutMetaDataDir => 'Data directory';
+
+  @override
+  String get aboutModelNotice =>
+      'This app ships no model weights. Ownership of what you generate, and compliance with the rules around it, are governed by each provider’s own terms of service.';
 
   @override
   String get themeMode => 'Theme mode';

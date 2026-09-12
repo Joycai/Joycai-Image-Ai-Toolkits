@@ -781,6 +781,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logs => '日志';
 
   @override
+  String get copy => '复制';
+
+  @override
   String get copyFilename => '复制文件名';
 
   @override
@@ -2703,6 +2706,59 @@ class AppLocalizationsZh extends AppLocalizations {
   String aboutCopyright(Object year, Object holder) {
     return '版权所有 © $year $holder，基于 MIT 许可协议发布。';
   }
+
+  @override
+  String aboutVersionBuild(Object version, Object build) {
+    return '版本 $version · 构建 $build';
+  }
+
+  @override
+  String get aboutChangelog => '更新日志';
+
+  @override
+  String get aboutChangelogNote => '每个版本的发布说明';
+
+  @override
+  String get aboutThirdParty => '第三方许可';
+
+  @override
+  String get aboutThirdPartyNote => '本应用所使用的开源组件';
+
+  @override
+  String get aboutFeedback => '反馈问题';
+
+  @override
+  String get aboutFeedbackNote => '提交前请附上下方的运行信息和日志片段';
+
+  @override
+  String get aboutActionOpen => '打开';
+
+  @override
+  String get aboutActionView => '查看';
+
+  @override
+  String get aboutRuntime => '运行信息';
+
+  @override
+  String get aboutRuntimeHint => '报问题时把这块整段复制进 issue。';
+
+  @override
+  String get aboutRuntimeCopied => '运行信息已复制';
+
+  @override
+  String get aboutMetaVersion => '版本';
+
+  @override
+  String get aboutMetaEngine => '引擎';
+
+  @override
+  String get aboutMetaPlatform => '平台';
+
+  @override
+  String get aboutMetaDataDir => '数据目录';
+
+  @override
+  String get aboutModelNotice => '本应用不附带任何模型权重；生成内容的权属与合规责任由各渠道服务条款约定。';
 
   @override
   String get themeMode => '主题模式';
@@ -5082,6 +5138,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get logs => '日誌';
 
   @override
+  String get copy => '複製';
+
+  @override
   String get copyFilename => '複製檔案名稱';
 
   @override
@@ -7005,6 +7064,59 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String aboutCopyright(Object year, Object holder) {
     return '版權所有 © $year $holder，依 MIT 授權條款發布。';
   }
+
+  @override
+  String aboutVersionBuild(Object version, Object build) {
+    return '版本 $version · 建置 $build';
+  }
+
+  @override
+  String get aboutChangelog => '更新日誌';
+
+  @override
+  String get aboutChangelogNote => '每個版本的發布說明';
+
+  @override
+  String get aboutThirdParty => '第三方授權';
+
+  @override
+  String get aboutThirdPartyNote => '本應用所使用的開源元件';
+
+  @override
+  String get aboutFeedback => '回報問題';
+
+  @override
+  String get aboutFeedbackNote => '提交前請附上下方的執行資訊與日誌片段';
+
+  @override
+  String get aboutActionOpen => '開啟';
+
+  @override
+  String get aboutActionView => '檢視';
+
+  @override
+  String get aboutRuntime => '執行資訊';
+
+  @override
+  String get aboutRuntimeHint => '回報問題時把這塊整段複製進 issue。';
+
+  @override
+  String get aboutRuntimeCopied => '執行資訊已複製';
+
+  @override
+  String get aboutMetaVersion => '版本';
+
+  @override
+  String get aboutMetaEngine => '引擎';
+
+  @override
+  String get aboutMetaPlatform => '平台';
+
+  @override
+  String get aboutMetaDataDir => '資料目錄';
+
+  @override
+  String get aboutModelNotice => '本應用不附帶任何模型權重；生成內容的權屬與合規責任由各通道服務條款約定。';
 
   @override
   String get themeMode => '主題模式';
