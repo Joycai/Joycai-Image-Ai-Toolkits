@@ -207,8 +207,16 @@ class GalleryState extends ChangeNotifier {
   bool _disposed = false;
 
   GalleryState() {
-    reloadSettings();
+    settingsLoaded = reloadSettings();
   }
+
+  /// The settings read the constructor started — thumbnail size, prefix,
+  /// output directory, source directories — resolved once it has landed.
+  ///
+  /// A test that mounts this state under the widget binding's fake clock
+  /// must await this on the real one first; a fixed delay standing in for it
+  /// was what turned a slow CI runner into "a Timer is still pending".
+  late final Future<void> settingsLoaded;
 
   @override
   void dispose() {

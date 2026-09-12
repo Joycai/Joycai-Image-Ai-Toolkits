@@ -93,11 +93,18 @@ void main() {
     /// [GalleryState] reads its settings from SQLite while constructing. That
     /// query has to land on the real clock, before the widget binding's fake
     /// one takes over, or the test ends with a timer still pending.
+    ///
+    /// Constructed *inside* `runAsync`, not merely awaited there: a future
+    /// chain started under the fake zone completes through microtasks that
+    /// only a pump of the fake clock flushes, so awaiting it from the real
+    /// zone waits forever. And awaited, not slept through — a 200ms stand-in
+    /// was not enough for the first database open on a slow CI runner.
     Future<GalleryState> settledGalleryState(WidgetTester tester) async {
-      final state = GalleryState();
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 200)),
-      );
+      final GalleryState state = (await tester.runAsync(() async {
+        final GalleryState state = GalleryState();
+        await state.settingsLoaded;
+        return state;
+      }))!;
       return state;
     }
 
