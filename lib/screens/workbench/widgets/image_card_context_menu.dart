@@ -13,12 +13,19 @@ import '../../../state/gallery_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 import 'gallery_file_actions.dart';
 import 'preview/media_preview_dialog.dart';
 
 /// Builds and shows the right-click / long-press context menu for a gallery
-/// [imageFile]. All side effects route through [AppState], [WorkbenchUIState]
-/// and [gallery_file_actions], keeping this purely an action dispatcher.
+/// [imageFile] — the same G2 glass menu the file browser opens, in groups of
+/// open · edit | selection · comparator | video · assistant | rename · copy ·
+/// reveal | save · share | remove · delete.
+///
+/// All side effects route through [AppState], [WorkbenchUIState] and
+/// [gallery_file_actions], keeping this purely an action dispatcher. Every
+/// [AppGlassMenuItem.onSelected] runs once the menu has been popped, so the
+/// dialogs opened from here need no post-frame deferral.
 void showImageCardContextMenu(
   BuildContext context, {
   required AppImage imageFile,
@@ -27,241 +34,167 @@ void showImageCardContextMenu(
   final l10n = AppLocalizations.of(context)!;
   final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
   final appState = Provider.of<AppState>(context, listen: false);
-  final colorScheme = Theme.of(context).colorScheme;
 
   final bool isPartOfSelection = appState.isImageSelected(imageFile.path);
   final List<AppImage> filesToShare = isPartOfSelection ? appState.selectedImages : [imageFile];
   final bool isVideo = AppConstants.isVideoFile(imageFile.path);
 
-  final List<PopupMenuEntry<dynamic>> menuItems = [
-    PopupMenuItem(
-      child: ListTile(
-        leading: const Icon(Icons.open_in_new, size: 18),
-        title: Text(l10n.openInPreview),
-        dense: true,
-      ),
-      onTap: () {
-        final images = appState.galleryState.currentViewImages;
-        final idx = images.indexWhere((img) => img.path == imageFile.path);
-        showMediaPreview(context, galleryImages: images, initialIndex: idx >= 0 ? idx : 0, heroScope: kWorkbenchPreviewHeroScope);
-      },
-    ),
-  ];
-
-  if (!isVideo) {
-    menuItems.addAll([
-      PopupMenuItem(
-        child: ListTile(
-          leading: const Icon(Icons.brush_outlined, size: 18),
-          title: Text(l10n.drawMask),
-          dense: true,
-        ),
-        onTap: () {
-          workbenchUIState.setMaskEditorSourceImage(imageFile);
-          appState.setWorkbenchTab(2); // Mask Editor
+  showAppGlassMenu(
+    context,
+    position: position,
+    entries: <AppGlassMenuEntry>[
+      AppGlassMenuItem(
+        icon: Icons.open_in_new,
+        label: l10n.openInPreview,
+        onSelected: () {
+          if (!context.mounted) return;
+          final images = appState.galleryState.currentViewImages;
+          final idx = images.indexWhere((img) => img.path == imageFile.path);
+          showMediaPreview(
+            context,
+            galleryImages: images,
+            initialIndex: idx >= 0 ? idx : 0,
+            heroScope: kWorkbenchPreviewHeroScope,
+          );
         },
       ),
-      PopupMenuItem(
-        child: ListTile(
-          leading: const Icon(Icons.crop_outlined, size: 18),
-          title: Text(l10n.cropAndResize),
-          dense: true,
+      if (!isVideo) ...[
+        AppGlassMenuItem(
+          icon: Icons.brush_outlined,
+          label: l10n.drawMask,
+          onSelected: () {
+            workbenchUIState.setMaskEditorSourceImage(imageFile);
+            appState.setWorkbenchTab(2); // Mask Editor
+          },
         ),
-        onTap: () {
-          workbenchUIState.setCropResizeSourceImage(imageFile);
-          appState.setWorkbenchTab(3); // Crop & Resize Tab
-        },
-      ),
-    ]);
-  }
-
-  menuItems.add(const PopupMenuDivider());
-
-  if (!isVideo) {
-    menuItems.add(
-      PopupMenuItem(
-        child: ListTile(
-          leading: Icon(isPartOfSelection ? Icons.remove_circle_outline : Icons.add_circle_outline, size: 18),
-          title: Text(isPartOfSelection ? l10n.removeFromSelection : l10n.sendToSelection),
-          dense: true,
+        AppGlassMenuItem(
+          icon: Icons.crop_outlined,
+          label: l10n.cropAndResize,
+          onSelected: () {
+            workbenchUIState.setCropResizeSourceImage(imageFile);
+            appState.setWorkbenchTab(3); // Crop & Resize Tab
+          },
         ),
-        onTap: () => appState.galleryState.toggleImageSelection(imageFile),
-      ),
-    );
-  }
-
-  if (!isVideo) {
-    menuItems.addAll([
-      PopupMenuItem(
-        child: ListTile(
-          leading: Icon(Icons.compare, size: 18, color: colorScheme.primary),
-          title: Text(l10n.sendToComparatorRaw),
-          dense: true,
+        const AppGlassMenuDivider(),
+        AppGlassMenuItem(
+          icon: isPartOfSelection ? Icons.remove_circle_outline : Icons.add_circle_outline,
+          label: isPartOfSelection ? l10n.removeFromSelection : l10n.sendToSelection,
+          onSelected: () => appState.galleryState.toggleImageSelection(imageFile),
         ),
-        onTap: () {
-          workbenchUIState.sendToComparator(imageFile.path, isAfter: false);
-        },
-      ),
-      PopupMenuItem(
-        child: ListTile(
-          leading: Icon(Icons.compare, size: 18, color: colorScheme.tertiary),
-          title: Text(l10n.sendToComparatorAfter),
-          dense: true,
+        AppGlassMenuItem(
+          icon: Icons.compare,
+          label: l10n.sendToComparatorRaw,
+          onSelected: () => workbenchUIState.sendToComparator(imageFile.path, isAfter: false),
         ),
-        onTap: () {
-          workbenchUIState.sendToComparator(imageFile.path, isAfter: true);
-        },
-      ),
-    ]);
-  }
-
-  if (!isVideo) {
-    menuItems.addAll([
-      const PopupMenuDivider(),
-      PopupMenuItem(
-        child: ListTile(
-          leading: Icon(Icons.video_library_outlined, size: 18, color: colorScheme.secondary),
-          title: Text(l10n.sendToFirstFrame),
-          dense: true,
+        AppGlassMenuItem(
+          icon: Icons.compare,
+          label: l10n.sendToComparatorAfter,
+          onSelected: () => workbenchUIState.sendToComparator(imageFile.path, isAfter: true),
         ),
-        onTap: () {
-          workbenchUIState.setVideoFirstFrame(imageFile);
-          appState.setWorkbenchTab(5); // Video Generation
-        },
-      ),
-      PopupMenuItem(
-        child: ListTile(
-          leading: Icon(Icons.video_library_outlined, size: 18, color: colorScheme.secondary),
-          title: Text(l10n.sendToLastFrame),
-          dense: true,
+        const AppGlassMenuDivider(),
+        AppGlassMenuItem(
+          icon: Icons.video_library_outlined,
+          label: l10n.sendToFirstFrame,
+          onSelected: () {
+            workbenchUIState.setVideoFirstFrame(imageFile);
+            appState.setWorkbenchTab(5); // Video Generation
+          },
         ),
-        onTap: () {
-          workbenchUIState.setVideoLastFrame(imageFile);
-          appState.setWorkbenchTab(5); // Video Generation
-        },
-      ),
-      PopupMenuItem(
-        child: ListTile(
-          leading: Icon(Icons.add_photo_alternate_outlined, size: 18, color: colorScheme.secondary),
-          title: Text(l10n.sendToVideoReferences),
-          dense: true,
+        AppGlassMenuItem(
+          icon: Icons.video_library_outlined,
+          label: l10n.sendToLastFrame,
+          onSelected: () {
+            workbenchUIState.setVideoLastFrame(imageFile);
+            appState.setWorkbenchTab(5); // Video Generation
+          },
         ),
-        onTap: () {
-          workbenchUIState.addVideoReferenceImage(imageFile);
-          appState.setWorkbenchTab(5); // Video Generation
-        },
-      ),
-      PopupMenuItem(
-        child: ListTile(
-          leading: Icon(Icons.assistant_outlined, size: 18, color: colorScheme.primary),
-          title: Text(l10n.sendToOptimizer),
-          dense: true,
+        AppGlassMenuItem(
+          icon: Icons.add_photo_alternate_outlined,
+          label: l10n.sendToVideoReferences,
+          onSelected: () {
+            workbenchUIState.addVideoReferenceImage(imageFile);
+            appState.setWorkbenchTab(5); // Video Generation
+          },
         ),
-        onTap: () {
-          // With an active multi-selection send the whole set, mirroring the
-          // share action's behavior.
-          final toSend = isPartOfSelection ? appState.selectedImages : [imageFile];
-          workbenchUIState.addAssistantImages(toSend);
-          appState.setWorkbenchTab(4); // Prompt Assistant
-        },
-      ),
-    ]);
-  }
-
-  menuItems.addAll([
-    const PopupMenuDivider(),
-    PopupMenuItem(
-      child: ListTile(
-        leading: const Icon(Icons.edit_outlined, size: 18),
-        title: Text(l10n.rename),
-        dense: true,
-      ),
-      onTap: () {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        AppGlassMenuItem(
+          icon: Icons.assistant_outlined,
+          label: l10n.sendToOptimizer,
+          onSelected: () {
+            // With an active multi-selection send the whole set, mirroring the
+            // share action's behavior.
+            final toSend = isPartOfSelection ? appState.selectedImages : [imageFile];
+            workbenchUIState.addAssistantImages(toSend);
+            appState.setWorkbenchTab(4); // Prompt Assistant
+          },
+        ),
+      ],
+      const AppGlassMenuDivider(),
+      AppGlassMenuItem(
+        icon: Icons.edit_outlined,
+        label: l10n.rename,
+        onSelected: () {
+          if (!context.mounted) return;
           showFileRenameDialog(
             context: context,
             filePath: imageFile.path,
             onSuccess: () => appState.galleryState.refreshImages(),
           );
-        });
-      },
-    ),
-    PopupMenuItem(
-      child: ListTile(
-        leading: const Icon(Icons.copy, size: 18),
-        title: Text(l10n.copyFilename),
-        dense: true,
+        },
       ),
-      onTap: () {
-        final filename = imageFile.name;
-        Clipboard.setData(ClipboardData(text: filename));
-        AppSnackBar.success(context, l10n.copiedToClipboard(filename));
-      },
-    ),
-    PopupMenuItem(
-      child: ListTile(
-        leading: const Icon(Icons.folder_open, size: 18),
-        title: Text(l10n.openInFolder),
-        dense: true,
+      AppGlassMenuItem(
+        icon: Icons.content_copy_outlined,
+        label: l10n.copyFilename,
+        onSelected: () {
+          final filename = imageFile.name;
+          Clipboard.setData(ClipboardData(text: filename));
+          if (!context.mounted) return;
+          AppSnackBar.success(context, l10n.copiedToClipboard(filename));
+        },
       ),
-      onTap: () async {
-        await FileUtils.openFolder(imageFile.path);
-      },
-    ),
-    const PopupMenuDivider(),
-    PopupMenuItem(
-      child: ListTile(
-        leading: Icon(Icons.save_alt, size: 18, color: colorScheme.primary),
-        title: Text(Platform.isIOS ? l10n.saveToPhotos : l10n.saveToGallery),
-        dense: true,
+      AppGlassMenuItem(
+        icon: Icons.folder_open_outlined,
+        label: l10n.openInFolder,
+        onSelected: () => FileUtils.openFolder(imageFile.path),
       ),
-      onTap: () => saveImageFile(context, imageFile.path, imageFile.name, l10n),
-    ),
-    PopupMenuItem(
-      child: ListTile(
-        leading: const Icon(Icons.share_outlined, size: 18),
-        title: Text(filesToShare.length > 1 ? l10n.shareFiles(filesToShare.length) : l10n.share),
-        dense: true,
+      const AppGlassMenuDivider(),
+      AppGlassMenuItem(
+        icon: Icons.save_alt,
+        label: Platform.isIOS ? l10n.saveToPhotos : l10n.saveToGallery,
+        onSelected: () {
+          if (!context.mounted) return;
+          saveImageFile(context, imageFile.path, imageFile.name, l10n);
+        },
       ),
-      onTap: () => shareImageFiles(context, filesToShare, l10n, position: position),
-    ),
-    const PopupMenuDivider(),
-  ]);
-
-  // Only in the workspace view, where it is unambiguous what the picture would
-  // be removed *from*. Elsewhere the same file may also sit in the workspace,
-  // and an entry that quietly reached into another view to change it would be
-  // acting on something not on screen. Sits above Delete as the softer of the
-  // two: this drops a reference, Delete goes to the file.
-  if (appState.galleryState.viewMode == GalleryViewMode.temp) {
-    menuItems.add(
-      PopupMenuItem(
-        child: ListTile(
-          leading: const Icon(Icons.remove_circle_outline, size: 18),
-          title: Text(l10n.removeFromWorkspace),
-          dense: true,
+      AppGlassMenuItem(
+        icon: Icons.ios_share,
+        label: filesToShare.length > 1 ? l10n.shareFiles(filesToShare.length) : l10n.share,
+        onSelected: () {
+          if (!context.mounted) return;
+          shareImageFiles(context, filesToShare, l10n, position: position);
+        },
+      ),
+      const AppGlassMenuDivider(),
+      // Only in the workspace view, where it is unambiguous what the picture
+      // would be removed *from*. Elsewhere the same file may also sit in the
+      // workspace, and an entry that quietly reached into another view to
+      // change it would be acting on something not on screen. Sits above
+      // Delete as the softer of the two: this drops a reference, Delete goes
+      // to the file.
+      if (appState.galleryState.viewMode == GalleryViewMode.temp)
+        AppGlassMenuItem(
+          icon: Icons.remove_circle_outline,
+          label: l10n.removeFromWorkspace,
+          onSelected: () => appState.galleryState.removeDroppedImage(imageFile.path),
         ),
-        onTap: () => appState.galleryState.removeDroppedImage(imageFile.path),
+      AppGlassMenuItem(
+        icon: Icons.delete_outline,
+        label: l10n.delete,
+        danger: true,
+        onSelected: () {
+          if (!context.mounted) return;
+          confirmAndDeleteImageFile(context, imageFile, l10n);
+        },
       ),
-    );
-  }
-
-  menuItems.add(
-    PopupMenuItem(
-      child: ListTile(
-        leading: Icon(Icons.delete_outline, size: 18, color: colorScheme.error),
-        title: Text(l10n.delete, style: TextStyle(color: colorScheme.error)),
-        dense: true,
-      ),
-      onTap: () {
-        WidgetsBinding.instance.addPostFrameCallback((_) => confirmAndDeleteImageFile(context, imageFile, l10n));
-      },
-    ),
-  );
-
-  showMenu<dynamic>(
-    context: context,
-    position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
-    items: menuItems,
+    ],
   );
 }
