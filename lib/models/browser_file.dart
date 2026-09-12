@@ -57,16 +57,22 @@ class BrowserFile {
   /// Split out of [fromFile] so a path with no file behind it can still be
   /// classified — which is what the staging area needs when it restores a
   /// mark whose file has since been moved away.
+  ///
+  /// The one table. The folder scanner (`browser_file_scanner.dart`) carried
+  /// a second copy that had drifted — `.m4v`, `.wma`, `.csv` and `.log` were
+  /// categorised there and not here — so a listed file and the same file
+  /// restored from a mark disagreed about what it was.
   static FileCategory categoryOf(String path) {
     final ext = p.extension(path).toLowerCase();
 
-    if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.avif'].contains(ext)) {
+    if (const ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.avif'].contains(ext)) {
       return FileCategory.image;
-    } else if (['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm'].contains(ext)) {
+    } else if (const ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v'].contains(ext)) {
       return FileCategory.video;
-    } else if (['.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac'].contains(ext)) {
+    } else if (const ['.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac', '.wma'].contains(ext)) {
       return FileCategory.audio;
-    } else if (['.txt', '.md', '.json', '.xml', '.yaml', '.yml', '.srt', '.ass', '.vtt'].contains(ext)) {
+    } else if (const ['.txt', '.md', '.json', '.xml', '.yaml', '.yml', '.srt', '.ass', '.vtt', '.csv', '.log']
+        .contains(ext)) {
       return FileCategory.text;
     }
     return FileCategory.other;

@@ -132,6 +132,29 @@
       "holder": {}
     }
   },
+  "aboutVersionBuild": "Version {version} · build {build}",
+  "@aboutVersionBuild": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "aboutChangelog": "Changelog",
+  "aboutChangelogNote": "Every release and what changed in it",
+  "aboutThirdParty": "Third-party licenses",
+  "aboutThirdPartyNote": "The open-source components this app is built on",
+  "aboutFeedback": "Report an issue",
+  "aboutFeedbackNote": "Please attach the runtime info below and a log excerpt",
+  "aboutActionOpen": "Open",
+  "aboutActionView": "View",
+  "aboutRuntime": "Runtime info",
+  "aboutRuntimeHint": "Copy this whole block into the issue when you report a problem.",
+  "aboutRuntimeCopied": "Runtime info copied",
+  "aboutMetaVersion": "Version",
+  "aboutMetaEngine": "Engine",
+  "aboutMetaPlatform": "Platform",
+  "aboutMetaDataDir": "Data directory",
+  "aboutModelNotice": "This app ships no model weights. Ownership of what you generate, and compliance with the rules around it, are governed by each provider’s own terms of service.",
   "themeMode": "Theme mode",
   "visualEffects": "Effects",
   "settingsGroupNotifications": "Notifications & logging",

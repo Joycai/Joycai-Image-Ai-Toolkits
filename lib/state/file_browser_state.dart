@@ -229,6 +229,7 @@ class FileBrowserState extends ChangeNotifier {
   }
 
   Future<void> refresh() async {
+    if (_disposed) return;
     _refreshCounter++;
     final scan = _refreshCounter;
     
@@ -259,9 +260,13 @@ class FileBrowserState extends ChangeNotifier {
         if (!_disposed && scan == _refreshCounter) scanProgress.value = found;
       },
     );
-    // Only the newest scan ends the scanning state; an older one landing
-    // late must not clear it while the newer is still out.
-    if (scan == _refreshCounter) isScanning = false;
+    // Only the newest scan's answer is worth anything: an older one landing
+    // late holds the directories the user has since changed, and applying it
+    // would put their files back in the grid — and it must not clear the
+    // scanning state while the newer scan is still out. A state disposed
+    // mid-scan drops the answer for the same reason it stops counting.
+    if (_disposed || scan != _refreshCounter) return;
+    isScanning = false;
     
     final newAllFiles = rawFiles.map((m) => BrowserFile.fromMap(m)).toList();
 

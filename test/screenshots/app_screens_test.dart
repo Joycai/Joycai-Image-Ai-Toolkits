@@ -237,6 +237,35 @@ void main() {
     });
   }
 
+  // The About category is a page of its own (`E1 · 2a`) and the default
+  // settings shot never opens it. The phone form stacks the identity block
+  // (`2b`), which is the only part of the page that changes shape.
+  for (final (ShotSize size, Brightness brightness) in <(ShotSize, Brightness)>[
+    (kShotSizes.last, Brightness.light),
+    (kShotSizes.last, Brightness.dark),
+    (kShotSizes.first, Brightness.light),
+  ]) {
+    testWidgets('settings · about @ ${size.label} ${brightness.name}', (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.settings,
+        size: size,
+        brightness: brightness,
+        suffix: 'about',
+        after: (WidgetTester tester) async {
+          await tester.tap(find.text('关于').first);
+          await settle(tester);
+          // The runtime block's data directory is real disk I/O, which the
+          // fake-async zone a widget test runs in never advances — without
+          // this the block photographs four blank values.
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+          await settle(tester);
+        },
+      );
+    });
+  }
+
   testWidgets('fileBrowser · folderMenu @ desktop light', (WidgetTester tester) async {
     await shoot(
       tester,

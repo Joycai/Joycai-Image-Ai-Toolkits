@@ -102,7 +102,11 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
 
   ChannelProviderPreset? get _preset => _presetId == null
       ? null
-      : kChannelProviderPresets.firstWhere((p) => p.id == _presetId);
+      // Null, not a throw, for an id the catalogue no longer carries — which
+      // is what the nullable type is for.
+      : kChannelProviderPresets
+          .cast<ChannelProviderPreset?>()
+          .firstWhere((p) => p?.id == _presetId, orElse: () => null);
 
   /// The endpoint the current preset would supply, or null when it has none
   /// (a relay, whose host is the user's own).

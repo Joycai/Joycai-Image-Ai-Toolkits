@@ -132,6 +132,29 @@
       "holder": {}
     }
   },
+  "aboutVersionBuild": "バージョン {version} · ビルド {build}",
+  "@aboutVersionBuild": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "aboutChangelog": "変更履歴",
+  "aboutChangelogNote": "各リリースの変更点",
+  "aboutThirdParty": "サードパーティライセンス",
+  "aboutThirdPartyNote": "このアプリが使用しているオープンソースコンポーネント",
+  "aboutFeedback": "問題を報告",
+  "aboutFeedbackNote": "送信前に下の実行情報とログの抄録を添付してください",
+  "aboutActionOpen": "開く",
+  "aboutActionView": "表示",
+  "aboutRuntime": "実行情報",
+  "aboutRuntimeHint": "問題を報告するときはこのブロックをそのまま issue に貼り付けてください。",
+  "aboutRuntimeCopied": "実行情報をコピーしました",
+  "aboutMetaVersion": "バージョン",
+  "aboutMetaEngine": "エンジン",
+  "aboutMetaPlatform": "プラットフォーム",
+  "aboutMetaDataDir": "データディレクトリ",
+  "aboutModelNotice": "このアプリはモデルの重みを含みません。生成物の権利帰属とコンプライアンスは各プロバイダーの利用規約に従います。",
   "themeMode": "テーマモード",
   "visualEffects": "エフェクト",
   "settingsGroupNotifications": "通知とログ",

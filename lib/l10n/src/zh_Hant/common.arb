@@ -26,6 +26,7 @@
   "finished": "已完成",
   "config": "設定",
   "logs": "日誌",
+  "copy": "複製",
   "copyFilename": "複製檔案名稱",
   "openInFolder": "在資料夾中開啟",
   "openInPreview": "在預覽中開啟",

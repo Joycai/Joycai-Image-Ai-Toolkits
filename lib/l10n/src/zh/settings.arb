@@ -132,6 +132,29 @@
       "holder": {}
     }
   },
+  "aboutVersionBuild": "版本 {version} · 构建 {build}",
+  "@aboutVersionBuild": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "aboutChangelog": "更新日志",
+  "aboutChangelogNote": "每个版本的发布说明",
+  "aboutThirdParty": "第三方许可",
+  "aboutThirdPartyNote": "本应用所使用的开源组件",
+  "aboutFeedback": "反馈问题",
+  "aboutFeedbackNote": "提交前请附上下方的运行信息和日志片段",
+  "aboutActionOpen": "打开",
+  "aboutActionView": "查看",
+  "aboutRuntime": "运行信息",
+  "aboutRuntimeHint": "报问题时把这块整段复制进 issue。",
+  "aboutRuntimeCopied": "运行信息已复制",
+  "aboutMetaVersion": "版本",
+  "aboutMetaEngine": "引擎",
+  "aboutMetaPlatform": "平台",
+  "aboutMetaDataDir": "数据目录",
+  "aboutModelNotice": "本应用不附带任何模型权重；生成内容的权属与合规责任由各渠道服务条款约定。",
   "themeMode": "主题模式",
   "visualEffects": "效果",
   "settingsGroupNotifications": "通知与日志",

@@ -782,6 +782,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get logs => 'ログ';
 
   @override
+  String get copy => 'コピー';
+
+  @override
   String get copyFilename => 'ファイル名をコピー';
 
   @override
@@ -2737,6 +2740,60 @@ class AppLocalizationsJa extends AppLocalizations {
   String aboutCopyright(Object year, Object holder) {
     return 'Copyright © $year $holder. MITライセンスの下で公開されています。';
   }
+
+  @override
+  String aboutVersionBuild(Object version, Object build) {
+    return 'バージョン $version · ビルド $build';
+  }
+
+  @override
+  String get aboutChangelog => '変更履歴';
+
+  @override
+  String get aboutChangelogNote => '各リリースの変更点';
+
+  @override
+  String get aboutThirdParty => 'サードパーティライセンス';
+
+  @override
+  String get aboutThirdPartyNote => 'このアプリが使用しているオープンソースコンポーネント';
+
+  @override
+  String get aboutFeedback => '問題を報告';
+
+  @override
+  String get aboutFeedbackNote => '送信前に下の実行情報とログの抄録を添付してください';
+
+  @override
+  String get aboutActionOpen => '開く';
+
+  @override
+  String get aboutActionView => '表示';
+
+  @override
+  String get aboutRuntime => '実行情報';
+
+  @override
+  String get aboutRuntimeHint => '問題を報告するときはこのブロックをそのまま issue に貼り付けてください。';
+
+  @override
+  String get aboutRuntimeCopied => '実行情報をコピーしました';
+
+  @override
+  String get aboutMetaVersion => 'バージョン';
+
+  @override
+  String get aboutMetaEngine => 'エンジン';
+
+  @override
+  String get aboutMetaPlatform => 'プラットフォーム';
+
+  @override
+  String get aboutMetaDataDir => 'データディレクトリ';
+
+  @override
+  String get aboutModelNotice =>
+      'このアプリはモデルの重みを含みません。生成物の権利帰属とコンプライアンスは各プロバイダーの利用規約に従います。';
 
   @override
   String get themeMode => 'テーマモード';

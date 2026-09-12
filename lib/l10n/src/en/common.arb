@@ -26,6 +26,7 @@
   "finished": "Finished",
   "config": "Config",
   "logs": "Logs",
+  "copy": "Copy",
   "copyFilename": "Copy Filename",
   "openInFolder": "Open in Folder",
   "openInPreview": "Open in Preview",

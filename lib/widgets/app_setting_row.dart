@@ -20,6 +20,7 @@ class AppSettingRow extends StatelessWidget {
     this.description,
     this.monoDescription = false,
     this.descriptionColor,
+    this.leading,
     this.trailing,
     this.footer,
     this.onTap,
@@ -50,6 +51,12 @@ class AppSettingRow extends StatelessWidget {
   /// reporting a fault rather than explaining the setting (a path that no
   /// longer resolves, say).
   final Color? descriptionColor;
+
+  /// A glyph plate before the title, for a list of rows that are of a kind and
+  /// are told apart by what they are — `E1 · 2a`'s five About links. A page of
+  /// unrelated settings does not take one: there the box is what separates the
+  /// rows, and a column of glyphs would only add noise.
+  final Widget? leading;
 
   /// The control. An [AppSwitch], a compact button, a dropdown — whatever the
   /// decision is made with.
@@ -86,6 +93,10 @@ class AppSettingRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
+                if (leading != null) ...[
+                  leading!,
+                  const SizedBox(width: 12),
+                ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
