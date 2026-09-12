@@ -238,10 +238,29 @@ class ModelFamilyClassifier {
   }
 
   /// Ids whose chat surface takes text only — image parts either 400 or,
-  /// worse, get silently dropped. DeepSeek's chat/completions endpoint does
-  /// not serve its multimodal models (as of 2026-08).
-  static bool isTextOnlyChat(String modelId) =>
-      modelId.toLowerCase().contains('deepseek');
+  /// worse, get silently dropped.
+  ///
+  /// DeepSeek is the one vendor here, and no longer wholesale: image
+  /// understanding arrived on `chat/completions` with DeepSeek-V4.1-Flash, so
+  /// the rule is a *subtraction* from the deepseek name rather than the whole
+  /// name. Sees images: `deepseek-flash`, the still-callable legacy names
+  /// `deepseek-v4-flash` / `deepseek-v4-flash-vision-exp` (both now served by
+  /// V4.1-Flash), and the open-source `deepseek-vl*` weights relays host.
+  /// Text only: `deepseek-v4-pro`, and the V3-era `deepseek-chat` /
+  /// `deepseek-reasoner`.
+  ///
+  /// Subtraction, not a `flash` allow-list, because `acceptsImageInput`
+  /// defaults to *true*: a DeepSeek id this rule has never heard of is likelier
+  /// to be another vision generation than another `-pro`. `flash` cannot
+  /// collide with another vendor's id here — the name must already contain
+  /// `deepseek` to be tested at all.
+  static bool isTextOnlyChat(String modelId) {
+    final id = modelId.toLowerCase();
+    if (!id.contains('deepseek')) return false;
+    return !id.contains('flash') &&
+        !id.contains('-vl') &&
+        !id.contains('vision');
+  }
 
   /// Claude ids whose generation knows only the **manual** thinking form
   /// (`{type: "enabled", budget_tokens}`): 4.5 and everything before it.

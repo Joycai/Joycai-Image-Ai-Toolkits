@@ -240,9 +240,34 @@ vLLM / llama.cpp。Google 与 Anthropic 也各自提供了一层 OpenAI 兼容�
 | **HTTP 200 + SSE 内错误** | 余额不足、上游故障、内容审核以 `data: {"error":…}` 事件送达，而非错误状态码 |
 | **静默截断 prompt** | 本地栈（ollama 等）超出上下文时从头部丢弃，system 指令先没 |
 | **`<think>` 内联** | 部分中继把思维链混进正文，用 `<think>…</think>` 包裹 |
+| **多模态只覆盖子集** | 同一个 key、同一个端点下，只有部分模型吃 `image_url` 部件；不吃的那些**静默丢弃**而不是 400（见下方 DeepSeek） |
 
 **结论：对 ① 的适配必须按"最小公倍数发送、最大宽容接收"写。** 官方端点可以
 乐观假设可选部分存在，兼容端点不行。
+
+### 插曲：DeepSeek 的图像输入（截至 2026-09）
+
+曾经整个 vendor 都是纯文本，现在不是了，而"能看图"是**按模型**而非按端点分的：
+
+- `deepseek-flash`（DeepSeek-V4.1-Flash）支持图像理解。旧名 `deepseek-v4-flash`
+  / `deepseek-v4-flash-vision-exp` 仍可调用，由 V4.1-Flash 提供服务。
+- `deepseek-v4-pro` 不支持。V3 时代的 `deepseek-chat` / `deepseek-reasoner`
+  也不支持（官方定价页已不再列这两个名字）。
+- 请求体就是 ① 的标准写法，没有私有扩展：
+  `{"type":"image_url","image_url":{"url":"data:image/jpeg;base64,…"}}`，
+  外链 URL 同形，另有 `{"type":"file","file_id":…}` 走 Files API。
+  可选 `detail`: `low`（缩到 512×512）/ `high`|`original` / `auto`（≡ original）。
+- **图片只能出现在 `user` 消息里**：`system` 或 `assistant` 带图返回 400。这是
+  本族里少见的"会响"的约束，多数同类问题是静默的。
+- 上限：单图内联 32 MiB（Files API 64 MiB）、body 48 MiB、单请求 600 张、
+  单边 8192px（≥15 张时 4096px）。格式 JPEG/PNG/GIF/WebP，**按字节内容判定**，
+  不看扩展名也不看声明的 MIME。
+- 计费：服务端先把图缩放到约 1300×1300 等效，**单图 token 上限 1024**。所以客户端
+  把长边压到 1568 以内既不损失信息也省不下更多钱（`ImageCompressor` 正是这个值）。
+
+本仓库的落点：`ModelFamilyClassifier.isTextOnlyChat` 从"id 含 deepseek 即纯文本"
+改成了对 flash / `-vl` / vision 做减法——默认值是"能看图"，而猜错方向的代价不对称
+（不支持的图是被悄悄丢掉的，模型会装作看过）。
 
 ### 一个具体样本：New API（截至 2026-08）
 
