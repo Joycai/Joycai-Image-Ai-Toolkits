@@ -20,6 +20,8 @@
 //   RBENCH_WARMUP=120         frames to discard first
 //   RBENCH_SIZE=1400x950      logical window size; omit to maximize
 //   RBENCH_SCENE=aurora       a bisection scene instead of the real app
+//                             (`app-lightbox`, `app-lightbox-legacy` drive the
+//                              real app instead of replacing it)
 //
 // Reading the numbers — and the trap this file exists to record:
 //
@@ -61,6 +63,7 @@ import '../core/constants.dart';
 import '../services/gpu_info_service.dart';
 import '../widgets/app_window_frame.dart';
 import '../widgets/glass/app_glass.dart';
+import '../widgets/shell/shell_cover.dart';
 import '../widgets/baked_backdrop.dart';
 
 bool get benchEnabled => Platform.environment['RBENCH'] == '1';
@@ -85,34 +88,69 @@ Size? get _requestedSize {
 Widget maybeWrapWithBench(Widget child) {
   if (!benchEnabled) return child;
   final scene = benchScene();
-  return _BenchDriver(child: scene ?? _maybeCover(child));
+  return _BenchDriver(child: scene ?? child);
 }
 
-/// `app-covered` / `app-covered-gated`: the real app under a full-window
-/// opaque black surface — what the media-preview lightbox does, since it is
-/// pushed with `opaque: false` over a `Scaffold(backgroundColor: black)` and
-/// an [Overlay] only stops painting downwards at an *opaque* entry.
+/// `app-lightbox` / `app-lightbox-legacy`: the real app with a full-screen
+/// opaque black page pushed onto its real [Navigator], the way the media
+/// preview does it.
 ///
-/// `-gated` is the fix: the shell stops painting once something fully covers
-/// it. Both render the identical final image, so the difference between them
-/// is the whole cost of the invisible work.
-Widget _maybeCover(Widget child) {
-  final covered = _scene == 'app-covered';
-  final gated = _scene == 'app-covered-gated';
-  if (!covered && !gated) return child;
-  return Stack(
-    fit: StackFit.expand,
-    children: [
-      Visibility(
-        visible: !gated,
-        maintainState: true,
-        maintainSize: true,
-        maintainAnimation: true,
-        child: child,
-      ),
-      const ColoredBox(color: Color(0xFF000000)),
-    ],
+/// `-legacy` is the plain `PageRouteBuilder(opaque: false)` the lightbox used
+/// to be pushed with, which leaves the whole shell painting underneath;
+/// `app-lightbox` is [FullScreenCoverRoute]. Both end on the identical image,
+/// so the difference between them is the cost of the invisible work.
+///
+/// The page is a stand-in rather than the real [MediaPreviewDialog] because
+/// that one needs a gallery selection to exist; what is under measurement is
+/// the shell underneath and the route mechanism, and both are the real thing.
+Future<void> _pushBenchCover({required bool legacy}) async {
+  final NavigatorState? navigator = _findNavigator();
+  if (navigator == null) {
+    stdout.writeln('RBENCH_WARN no Navigator found; cover not pushed');
+    return;
+  }
+  const Widget page = Scaffold(backgroundColor: Colors.black, body: SizedBox.expand());
+  const Duration reveal = Duration(milliseconds: 220);
+  navigator.push(
+    legacy
+        ? PageRouteBuilder<void>(
+            opaque: false,
+            fullscreenDialog: true,
+            transitionDuration: reveal,
+            reverseTransitionDuration: reveal,
+            pageBuilder: (_, _, _) => page,
+            transitionsBuilder: (_, animation, _, child) =>
+                FadeTransition(opacity: animation, child: child),
+          )
+        : FullScreenCoverRoute<void>(
+            fullscreenDialog: true,
+            transitionDuration: reveal,
+            reverseTransitionDuration: reveal,
+            pageBuilder: (_, _, _) => page,
+            transitionsBuilder: (_, animation, _, child) =>
+                FadeTransition(opacity: animation, child: child),
+          ),
   );
+}
+
+/// The app's own [NavigatorState], found by walking the element tree.
+///
+/// The bench wrapper sits above `MaterialApp`, so it has no route context of
+/// its own and no way to be handed a navigator key without changing
+/// production code for a benchmark's sake.
+NavigatorState? _findNavigator() {
+  NavigatorState? found;
+  void visit(Element element) {
+    if (found != null) return;
+    if (element is StatefulElement && element.state is NavigatorState) {
+      found = element.state as NavigatorState;
+      return;
+    }
+    element.visitChildren(visit);
+  }
+
+  WidgetsBinding.instance.rootElement?.visitChildren(visit);
+  return found;
 }
 
 // ---------------------------------------------------------------------------
@@ -130,6 +168,14 @@ Widget? benchScene() {
     // over the one below.
     case 'aurora':
       return _scaffold(const AuroraBackdrop());
+
+    // The ground as it was before `BakedAuroraBackdrop`: the same recipe, as
+    // four stacked full-window draws. Kept so the before/after can be taken
+    // in one session — the absolute numbers on this machine drift by up to 2x
+    // between sessions (a blank window has measured 1.12 and 2.58 ms), so a
+    // comparison across two runs is not evidence of anything.
+    case 'aurora-live':
+      return _scaffold(const _LiveAurora());
 
     // P2 after — the same recipe baked once into a quarter-resolution image
     // and drawn as one textured quad.
@@ -177,6 +223,29 @@ Widget? benchScene() {
 
     default:
       return null;
+  }
+}
+
+/// The pre-bake `AuroraBackdrop`: `ColoredBox` plus the recipe's three
+/// gradients, each `SizedBox.expand`, the last three blended over the one
+/// below. Reads the recipe from [AuroraRecipe] so it cannot drift from what
+/// the baked version draws.
+class _LiveAurora extends StatelessWidget {
+  const _LiveAurora();
+
+  @override
+  Widget build(BuildContext context) {
+    final recipe = AuroraRecipe.of(Theme.of(context).colorScheme);
+    Widget layer = const SizedBox.expand();
+    for (final Gradient gradient in recipe.gradients.reversed) {
+      layer = DecoratedBox(
+        decoration: BoxDecoration(gradient: gradient),
+        child: layer,
+      );
+    }
+    return RepaintBoundary(
+      child: ColoredBox(color: recipe.canvas, child: layer),
+    );
   }
 }
 
@@ -265,6 +334,11 @@ class _BenchDriverState extends State<_BenchDriver> with SingleTickerProviderSta
     await _applyWindowSize(_requestedSize);
     // Let the resize-triggered reallocation of render targets settle.
     await Future<void>.delayed(const Duration(milliseconds: 800));
+    if (_scene == 'app-lightbox' || _scene == 'app-lightbox-legacy') {
+      await _pushBenchCover(legacy: _scene == 'app-lightbox-legacy');
+      // Past the transition, so the cover is settled before sampling.
+      await Future<void>.delayed(const Duration(milliseconds: 900));
+    }
     _sized = true;
   }
 

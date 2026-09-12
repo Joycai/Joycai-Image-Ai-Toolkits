@@ -34,6 +34,7 @@ import 'widgets/app_window_frame.dart';
 import 'widgets/shell/app_destinations.dart';
 import 'widgets/shell/app_top_bar.dart';
 import 'widgets/shell/phone_dock.dart';
+import 'widgets/shell/shell_cover.dart';
 import 'widgets/task_capsule_monitor.dart';
 
 void main() async {
@@ -102,10 +103,23 @@ Future<void> _hideNativeTitleBar() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final String version;
 
   const MyApp({super.key, required this.version});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final ShellCoverController _shellCover = ShellCoverController();
+
+  @override
+  void dispose() {
+    _shellCover.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +137,7 @@ class MyApp extends StatelessWidget {
 
     final app = MaterialApp(
       onGenerateTitle: (context) =>
-          '${AppLocalizations.of(context)!.appTitle} v$version',
+          '${AppLocalizations.of(context)!.appTitle} v${widget.version}',
       themeMode: themeMode,
       locale: locale,
       scrollBehavior: const _AppScrollBehavior(),
@@ -150,7 +164,12 @@ class MyApp extends StatelessWidget {
       // outermost so the title bar's glass reads it too.
       builder: (context, child) => AppEffects(
         reduceVisualEffects: reduceEffects,
-        child: _WindowChromeSync(child: AppWindowFrame(child: child!)),
+        // Above the Navigator on purpose: a route that covers the shell has to
+        // be able to find this from `navigator.context`. See [ShellCover].
+        child: ShellCover(
+          controller: _shellCover,
+          child: _WindowChromeSync(child: AppWindowFrame(child: child!)),
+        ),
       ),
       home: const MainNavigationScreen(),
     );

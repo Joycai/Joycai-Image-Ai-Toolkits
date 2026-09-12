@@ -14,6 +14,7 @@ import 'baked_backdrop.dart';
 import 'glass/app_glass.dart';
 import 'shell/app_destinations.dart';
 import 'shell/nav_lens_group.dart';
+import 'shell/shell_cover.dart';
 
 /// Whether this build draws its own window chrome.
 ///
@@ -81,7 +82,7 @@ class _AppWindowFrameState extends State<AppWindowFrame> {
       type: MaterialType.transparency,
       child: Stack(
         children: [
-          const Positioned.fill(child: AuroraBackdrop()),
+          const WindowGround(),
           if (usesCustomWindowChrome)
             Column(
               children: [
@@ -98,6 +99,41 @@ class _AppWindowFrameState extends State<AppWindowFrame> {
 
   @override
   Widget build(BuildContext context) => Overlay(initialEntries: [_entry]);
+}
+
+/// The window ground, sized to what is actually visible.
+///
+/// Normally the whole window. While a [FullScreenCoverRoute] is settled the
+/// only part still showing is the strip behind the title bar — the bar lives
+/// above the [Navigator] in `MaterialApp.builder`, so no route can cover it,
+/// and it is real glass that needs something to refract. Everything below
+/// that strip is behind an opaque page, so the ground stops being drawn
+/// there.
+///
+/// Shrunk rather than clipped: a clip layer is itself a pass, and the ground
+/// is one textured quad — drawing a smaller quad is the cheap way to stop
+/// paying for 98% of it. Nothing moves on screen, because the pixels that are
+/// dropped are the ones the cover was already hiding.
+class WindowGround extends StatelessWidget {
+  const WindowGround({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final ShellCoverController? cover = ShellCover.maybeOf(context);
+    if (cover == null) return const Positioned.fill(child: AuroraBackdrop());
+    return ValueListenableBuilder<int>(
+      valueListenable: cover,
+      builder: (context, _, _) => cover.covered && usesCustomWindowChrome
+          ? const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: kTitleBarHeight,
+              child: AuroraBackdrop(),
+            )
+          : const Positioned.fill(child: AuroraBackdrop()),
+    );
+  }
 }
 
 /// The window ground (`00` 「aurora」): a quiet material wall.
