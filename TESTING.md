@@ -14,8 +14,12 @@ We use the standard `flutter_test` package.
 ### Running Tests
 To run the tests:
 ```bash
-flutter test
+flutter test -x screenshots
 ```
+
+`-x screenshots` leaves out the screenshot harness described below. It writes
+PNGs and asserts nothing, so it is not part of the gate; CI runs exactly this
+command, split by file across three parallel jobs.
 
 ## Visual Verification
 

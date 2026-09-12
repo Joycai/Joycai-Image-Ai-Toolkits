@@ -26,6 +26,9 @@
 // `popupMenuTheme`), so a specimen would be inventing the very thing that is
 // missing.
 
+@Tags(<String>['screenshots'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_semantic_colors.dart';
