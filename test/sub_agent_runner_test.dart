@@ -7,8 +7,8 @@ import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/sub_agent_runner.dart';
 
 /// Pins the sub-agent loop's invariants (pairing, cancellation stubs, the
-/// force-text last round) and the delegate routing/template rules from
-/// docs/plans/2026-08-ai-improvement-plan.md §3.
+/// force-text last round) and the delegate routing/template rules from M3 of
+/// the 2026-08 AI improvement plan (retired; see docs/plans/README.md).
 void main() {
   LLMToolCall toolCall(String id, [String name = 'read_knowledge_file']) =>
       LLMToolCall(id: id, name: name, arguments: {'path': 'x.md'});

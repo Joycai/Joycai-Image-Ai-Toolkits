@@ -56,10 +56,10 @@ id：走错端点不报错，图片被静默丢弃、模型当作没看见图来
 
 ## Surface × 协议菜单与模型级点单（2026-08 多面供应商重构）
 
-> 完整设计与取舍见
-> [`docs/plans/2026-08-vendor-protocol-model-refactor.md`](../plans/2026-08-vendor-protocol-model-refactor.md)；
 > 协议事实见 [`docs/api/qianwen-bailian.md`](../api/qianwen-bailian.md)
-> 与 [`docs/api/minimax.md`](../api/minimax.md)。
+> 与 [`docs/api/minimax.md`](../api/minimax.md)。当轮的完整设计与取舍已随执行
+> 完毕的方案退役（[台账](../plans/README.md)），正文在
+> `git show f709059:docs/plans/2026-08-vendor-protocol-model-refactor.md`。
 
 百炼一家在同一 surface 上有多条 wire 且**与模型耦合**（qwen-image 仅同步、
 wan2.7 同步异步皆可、④ 兼容面只服务子集），"vendor 固定一个 family + 布尔
@@ -137,8 +137,9 @@ surface 开关"表达不了它。绑定关系升级为：
 
 ## 模型类型声明与多媒体协议点单（2026-09）
 
-> 完整设计、取舍与测试清单见
-> [`docs/plans/2026-09-model-kind-protocol-pin.md`](../plans/2026-09-model-kind-protocol-pin.md)。
+> 当轮的完整设计、取舍与测试清单已随执行完毕的方案退役（[台账](../plans/README.md)，
+> 三条没做的界面细节记在那里），正文在
+> `git show f709059:docs/plans/2026-09-model-kind-protocol-pin.md`。
 
 中转站的模型名是自由文本，`nano-banana-pro` 按 id 分类是 chat、`my-sora` 什么都
 不是 —— 生图模型被当对话发、视频模型在工作台里根本不出现，而上一节的点单下拉在

@@ -31,4 +31,4 @@ We are excited to announce the release of version 1.1.0 of **Joycai Image AI Too
 *   **App Data Access**: Added a localized button in Settings to quickly open the app's internal data directory.
 
 ---
-*For more details on setting up the new MCP feature, please refer to the `docs/MCP_GUIDE.md`.*
+*The MCP guide referenced by this release has since been removed — the feature did not ship.*

@@ -3,11 +3,11 @@
 > 一家供应商、一把 key、一个 host（`dashscope.aliyuncs.com`），六条 wire：
 > 3 种 chat + 图片同步/异步 + 视频异步。本文只写协议事实（本目录的规矩）；
 > 本项目怎么路由这六条 wire，见
-> [`../plans/2026-08-vendor-protocol-model-refactor.md`](../plans/2026-08-vendor-protocol-model-refactor.md)。
+> [`../architecture/llm-three-layer.md`](../architecture/llm-three-layer.md)。
 >
 > **来源与可信度**：整理自 `platform.qianwenai.com` 的 API reference
-> （2026-08 抓取）。该站曾被证实是二手镜像（见
-> `2026-08-dashscope-native-image.md` §2.2 的 B 形状前科），实现前对
+> （2026-08 抓取）。该站曾被证实是二手镜像（顶层 `messages` 那条 B 形状至今
+> 没人用真实 key 验证过，见 [`../plans/README.md`](../plans/README.md)），实现前对
 > 有 ⚠ 标记的条目按 help.aliyun.com 官方文档或实测复核。猜错会响
 > （400 / 404），不会静默。
 

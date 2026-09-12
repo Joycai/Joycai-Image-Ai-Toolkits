@@ -1,36 +1,71 @@
-# Joycai Image AI Toolkits - Documentation Directory
+# Documentation
 
-Welcome to the documentation directory of the Joycai Image AI Toolkits project. This directory contains guides, API specifications, historical design notes, code quality reports, and release logs.
+Four kinds of document live here, and the difference between them is the whole
+filing system:
+
+| Directory | What it is | Rots when |
+|---|---|---|
+| [`architecture/`](architecture/) | How a subsystem works **today** — invariants, accepted limits, rejected alternatives. Maintained alongside the code. | The code changes and the note doesn't. Read it before changing that subsystem. |
+| [`api/`](api/) | **Protocol facts** about other people's APIs. "What the industry looks like", never "what this project chose". No `lib/` paths, on purpose. | A vendor changes their wire format. |
+| [`ai-agent-playbook/`](ai-agent-playbook/) | A reusable spec for building a multi-provider AI layer and an agent runtime, distilled from another project. Written to be dropped into a new repo as a standard. | Rarely — it is about mechanisms, not versions. |
+| [`plans/`](plans/) | One-shot construction specs. Deleted once executed; what survives goes into the ledger. | Immediately after landing — that is why they get retired. |
+
+Anything that is a dated snapshot of the code (an audit with `file:line`
+references, a phase-completion note, a conformance table) does not get a home
+here. It goes stale within one refactor and is more misleading than absent —
+run `/code-review` or `/security-review` for a fresh one instead.
 
 ---
 
-## 📂 Directory Structure & Index
+## Architecture notes
 
-### 1. 📖 User Guides
-*   **[MCP Server Guide](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/MCP_GUIDE.md)**: Steps to configure and connect external clients (such as Claude Desktop) using the Model Context Protocol.
+Required reading before touching the subsystem each one covers.
 
-### 2. ⚡ API Reference
-*   **[Gemini API calling details](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/api/gemini-api.md)**: A developer reference for fetching model parameters and supported generation methods via `/v1beta/models`.
-*   **[Google Veo Video cURL examples](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/api/veo.md)**: Examples for text-to-video, reference image matching, frame interpolation, and resolution settings.
-*   **[Gemini Image REST specification](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/api/google-api-standard.md)**: Detailed JSON-RPC response schemas, Base64 decoding guides, and safety interception behaviors.
+* **[LLM three-layer API stack](architecture/llm-three-layer.md)** — the
+  protocol / vendor / model layering under `lib/services/llm/`, the single
+  dispatcher routing table, the greppable hard-coding red-flag list, and the
+  old→new path map for reading pre-refactor documents.
+* **[Prompt Assistant context management](architecture/assistant-context.md)** —
+  the elide/compact layers, the `context_window` tri-state, and how
+  knowledge-base reads are budgeted and paged.
+* **[Design tokens, multi-accent and liquid glass](architecture/design-tokens.md)** —
+  where the tokens live, why the greys never follow the accent, the three
+  forms the accent may take, the glass grades and their budget, and the
+  deliberate divergences from the design spec.
 
-### 3. 🏛️ Architecture Notes
-Living descriptions of how a subsystem works today — invariants, accepted limits, and rejected alternatives. Unlike the design notes below, these are maintained alongside the code rather than dated to a phase.
-*   **[LLM three-layer API stack](architecture/llm-three-layer.md)**: The protocol / vendor / model layering under `lib/services/llm/`, the single dispatcher routing table, the greppable hard-coding red-flag list, and the old→new path mapping for pre-refactor documents.
-*   **[Prompt Assistant context management](architecture/assistant-context.md)**: The elide/compact layers, the `context_window` tri-state, and how knowledge-base reads are budgeted and paged.
+## API reference
 
-### 4. 🎨 Design & Implementation Notes
-*   **[Workflow Efficiency (Phase 1)](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/design_notes/workflow-efficiency.md)**: Design notes on gallery context-menu shortcuts, unified search bar styling, and bulk prompt tags/deletion.
-*   **[Layout Polish (Phase 2)](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/design_notes/layout-polish.md)**: Notes on expanding the resizable workbench divider's hit box, hover animations, and smooth collapsible card transitions.
-*   **[Mobile Optimization (Phase 3)](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/design_notes/mobile-optimization.md)**: Adaptations for smaller screens, including mobile task queue sheets, click-to-pick slots, and quick concurrency controls.
+[`api/README.md`](api/README.md) is the index: four protocol families, the
+three orthogonal axes (family / deployment / compatibility layer), and a file
+per topic — [tools](api/tools.md), [streaming](api/streaming.md),
+[reasoning](api/reasoning.md), [usage](api/usage.md),
+[structured output](api/structured.md) — plus one per vendor whose wire is its
+own ([Qianwen/DashScope](api/qianwen-bailian.md), [MiniMax](api/minimax.md),
+[Veo](api/veo.md), [Gemini](api/gemini-api.md),
+[Gemini images](api/google-api-standard.md)).
 
-### 5. 🛡️ Quality & Audit Reports
-*   **[API Standards Audit (August 13, 2026)](reports/api-standards-audit.md)**: How this project's `lib/services/llm/` implementation measures up against the protocol facts in [`docs/api/`](api/) — 14 findings across the OpenAI Chat Completions and Google GenAI families, plus the video/image surfaces. *File paths predate the three-layer refactor (PR #86); see the mapping table in the architecture note.*
-*   **[Code Review Report (June 13, 2026)](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/reports/code-review-report-20260613.md)**: An in-depth security, performance, and logic audit of the Dart codebase.
+## AI agent playbook
 
-### 6. 🏷️ Release Notes History
-*   **[v2.3.0 Release Notes (Latest)](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/release_notes/RELEASE_NOTES_v2.3.0.md)**
-*   **[v2.2.0 Release Notes](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/release_notes/RELEASE_NOTES_v2.2.0.md)**
-*   **[v2.1.1 Release Notes](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/release_notes/RELEASE_NOTES_v2.1.1.md)**
-*   **[v2.0.0 Release Notes](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/release_notes/RELEASE_NOTES_v2.0.0.md)**
-*   **[Older Releases](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/release_notes/)**: Release details from v1.1.0 to v1.4.0.
+[`ai-agent-playbook/README.md`](ai-agent-playbook/README.md) — twelve chapters
+across the protocol layer, the agent runtime, sub-agents and long sessions,
+closing with a [pitfall catalogue](ai-agent-playbook/11-pitfalls.md) and a
+[staged migration roadmap](ai-agent-playbook/12-migration-roadmap.md).
+
+## Plans and the ledger
+
+[`plans/README.md`](plans/README.md) — which rounds landed, where their
+conclusions now live, and **what is still owed**: the six checks that need a
+real API key, three design gaps left out of the model-editor round, and two
+security findings that are still open.
+
+## Tooling
+
+* **[UI screenshot harness](ui-screenshot-harness.md)** — renders the real
+  screens headlessly at four widths in light and dark, so a layout can be
+  looked at instead of inferred. Not a regression gate.
+
+## Release notes
+
+[`release_notes/`](release_notes/) archives v1.1.0 – v2.3.0. From v2.4.0
+onwards the notes live on
+[GitHub Releases](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/releases).

@@ -12,8 +12,16 @@ flutter test test/screenshots
 flutter test test/screenshots --plain-name workbench
 ```
 
+```bash
+flutter test test/screenshots/component_gallery_test.dart
+```
+
 Output: `build/ui-screenshots/<screen>_<size>_<brightness>[_<suffix>].png`
-— 8 screens × 3 widths in light, plus a dark shot of each, 32 files, ~30s.
+— 8 screens × 4 widths in light, a dark shot of each at desktop, then a long
+tail of state variants (staging, conflicts, folder ops, AI rename, every
+workbench tab, the model editor's four states). 123 files from
+`app_screens_test.dart` plus the 16 `gallery_*.png` theme sheets from
+`component_gallery_test.dart`, ~3 minutes for the lot.
 
 **This is not a regression gate.** The comparator installed by
 `flutter_test_config.dart` always overwrites and always passes, so a UI change
@@ -28,7 +36,7 @@ the run output for lines like:
 
 ## Why this and not a Flutter web build
 
-Web was the obvious idea and it does not pay off here. 56 files under `lib/`
+Web was the obvious idea and it does not pay off here. 70 files under `lib/`
 import `dart:io`, and the coupling is structural rather than incidental:
 `AppState` is a hard singleton behind `DatabaseService` → `sqflite_common_ffi`,
 and the models themselves are file-backed (`AppImage.imageProvider` returns
@@ -47,10 +55,18 @@ against a real database with seeded data.
 | `test/screenshots/harness/fixture_env.dart` | Temp directory tree, sqflite ffi, path_provider and plugin channel mocks |
 | `test/screenshots/harness/fixture_seed.dart` | Database rows and generated PNG fixtures |
 | `test/screenshots/harness/shoot.dart` | `shoot()`, the `AppScreen` enum and `kShotSizes` |
+| `test/screenshots/component_gallery_test.dart` | Every shared component on one page, rendered under all 8 preset accents × light/dark |
 
 ## Extending it
 
 **A new size** — add to `kShotSizes` in `harness/shoot.dart`.
+
+**A different accent** — `shoot(..., accent: AppConstants.presetThemes['Rose'])`.
+The accent name goes into the filename, so two accents never overwrite each
+other's PNG. For anything touching accent or status colour, reach for
+`component_gallery_test.dart` first: one page of every component under all 8
+seeds in both brightnesses is the only way to see whether a colour rule
+survives a seed change.
 
 **A variant** (a tab, an open dialog, a different view mode) — add a
 `testWidgets` with `suffix:` plus one of the hooks. `before` runs after the
@@ -77,10 +93,13 @@ and the scan rebuilds the `AppImage` list the selection was made against. That
 kind of state belongs in `after`. The `_workbenchTabs` table in
 `app_screens_test.dart` carries a `seedOnSettled` flag for exactly this.
 
-**The workbench is eight screens behind one nav entry**, and the main matrix
-only reaches tab 0. Tabs 3 and 4 (crop, prompt assistant) have their own
-entries in `_workbenchTabs`; anything else — comparator, mask editor, video —
-is still unphotographed. Add it there before redesigning it, not after.
+**The workbench is six tools behind one nav entry**, and the main matrix only
+reaches tab 0. The rest live in the `_workbenchTabs` table at the bottom of
+`app_screens_test.dart` — all six tabs are covered now, several of them more
+than once where the arrangements are separate rendering paths rather than
+settings of one (the comparator has side-by-side, stacked, slider and empty;
+the assistant has idle, running, system-prompt and knowledge-edit). Add a new
+one there before redesigning it, not after.
 
 **A different locale** — `shoot(..., locale: const Locale('ja'))`. The parameter
 already exists; the matrix just fixes it at `zh` because CJK is the widest text
@@ -126,7 +145,7 @@ happens in `setUpAll` (real async); inside a test everything async goes through
 `shoot` precaches every fixture image before the final pump — skip that and
 every thumbnail captures blank.
 
-**Mobile size is not mobile platform.** `main.dart:256` reads
+**Mobile size is not mobile platform.** `main.dart:248` reads
 `Platform.isAndroid || Platform.isIOS` to decide which nav destinations exist,
 and that is a `dart:io` check the harness cannot override on a macOS host. So
 the 390px shots show File Browser and Downloader in the nav even though a real
