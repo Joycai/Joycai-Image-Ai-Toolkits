@@ -14,6 +14,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:joycai_image_ai_toolkits/models/task_item.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 
 import 'harness/fixture_env.dart';
@@ -51,6 +52,7 @@ void main() {
     final AppState appState = AppState();
     await appState.loadSettings();
     await Future<void>.delayed(const Duration(seconds: 1));
+    markOneTaskRunning(appState);
   });
 
   tearDownAll(() => env.dispose());
@@ -125,5 +127,42 @@ void main() {
     expect(none, isEmpty,
         reason: 'a slider position the layout cannot distinguish from the '
             'last one must not reach the widget tree');
+  });
+
+  testWidgets('a progress tick reaches the running card, not the task screen',
+      (WidgetTester tester) async {
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.tasks,
+      size: const Size(1440, 900),
+      label: 'rebuild-scope-tasks',
+    );
+
+    final queue = AppState().taskQueue;
+    expect(
+      queue.queue.where((t) => t.status == TaskStatus.processing),
+      isNotEmpty,
+      reason: 'the fixture must have a running task for the tick to mean '
+          'anything',
+    );
+
+    // The 500ms estimate moving. It reaches the running card's progress edge
+    // and the console strip's percentage — and stops there.
+    final List<String> tick =
+        await rebuiltBy(tester, () => queue.progressTick.value++);
+    expect(tick, isNot(rebuilt('TaskQueueScreen')),
+        reason: 'the filter, the sort and the queue-position pass must not '
+            'run twice a second');
+    expect(tick, isNot(rebuilt('_GroupDivider')));
+
+    // The queue's *shape* changing is a different matter: that is what the
+    // screen draws, and it must still rebuild for it.
+    final List<String> structural =
+        await rebuiltBy(tester, queue.refreshQueue);
+    expect(structural, rebuilt('TaskQueueScreen'));
+    expect(structural.length, greaterThan(tick.length * 3),
+        reason: 'if the two notifications cost the same, the split has been '
+            'undone somewhere');
   });
 }
