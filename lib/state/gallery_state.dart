@@ -325,8 +325,14 @@ class GalleryState extends ChangeNotifier {
 
   Future<void> addBaseDirectory(String path) async {
     if (!sourceDirectories.contains(path)) {
-      sourceDirectories.add(path);
-      activeSourceDirectories.add(path);
+      // A new list, not an `add`. This class's contract is that a list it
+      // hands out is replaced rather than mutated when it changes — it is the
+      // only signal a selector holding one has — and these two methods were
+      // the exceptions. They got away with it while every reader watched the
+      // whole notifier; the first reader to narrow onto `sourceDirectories`
+      // stopped seeing folders appear.
+      sourceDirectories = <String>[...sourceDirectories, path];
+      activeSourceDirectories = <String>[...activeSourceDirectories, path];
       await _db.addSourceDirectory(path);
       _log('Added base directory: $path');
       _scanImages();
@@ -337,10 +343,11 @@ class GalleryState extends ChangeNotifier {
 
   Future<void> removeBaseDirectory(String path) async {
     if (sourceDirectories.contains(path)) {
-      sourceDirectories.remove(path);
-      activeSourceDirectories.removeWhere(
-        (candidate) => p.equals(candidate, path) || p.isWithin(path, candidate),
-      );
+      sourceDirectories = List<String>.of(sourceDirectories)..remove(path);
+      activeSourceDirectories = List<String>.of(activeSourceDirectories)
+        ..removeWhere(
+          (candidate) => p.equals(candidate, path) || p.isWithin(path, candidate),
+        );
       await _db.removeSourceDirectory(path);
       _log('Removed base directory: $path');
       _scanImages();

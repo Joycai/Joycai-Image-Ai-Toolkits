@@ -9,6 +9,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
@@ -1060,4 +1061,29 @@ Future<String> _writePng(
   await file.writeAsBytes(img.encodePng(image));
   env.fixtureImagePaths.add(file.path);
   return file.path;
+}
+
+/// Fills the workbench's source folder out to a realistic library size.
+///
+/// The screenshot fixtures write twelve images, which is the right number for
+/// a picture of the grid and the wrong one for measuring it — a grid that
+/// fits on one screen never shows what the grid costs. Used by
+/// `render_probe.dart`; must run before the first [AppState] touch, like
+/// everything else here.
+///
+/// The bytes are one fixture's, copied: the probe measures the widget tree,
+/// and twelve distinct pictures cost the decoder the same as a hundred and
+/// twenty identical ones do not — but the cache key is the path, so each is
+/// still decoded on its own.
+Future<void> writeBulkGalleryImages(FixtureEnv env, int count) async {
+  final List<String> seeds = env.fixtureImagePaths
+      .where((String path) => path.startsWith(env.sourceDir.path))
+      .toList();
+  if (seeds.isEmpty) return;
+  final Uint8List bytes = await File(seeds.first).readAsBytes();
+  for (int i = 0; i < count; i++) {
+    final File file = File(p.join(env.sourceDir.path, 'bulk_$i.png'));
+    await file.writeAsBytes(bytes);
+    env.fixtureImagePaths.add(file.path);
+  }
 }

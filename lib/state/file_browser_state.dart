@@ -16,6 +16,10 @@ enum BrowserViewMode { grid, list }
 
 enum BrowserSortField { name, date, type }
 
+/// A pulse the directory tree owes one row: which folder, and whether to draw
+/// it open. `(path: null, …)` means nothing is owed.
+typedef FolderFlash = ({String? path, bool expanded});
+
 class FileBrowserState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
 
@@ -96,8 +100,10 @@ class FileBrowserState extends ChangeNotifier {
 
   Future<void> addBaseDirectory(String path) async {
     if (!sourceDirectories.contains(path)) {
-      sourceDirectories.add(path);
-      activeDirectories.add(path);
+      // Replaced, not mutated — see [GalleryState.addBaseDirectory]. A list
+      // this class hands out is the only signal a selector holding it has.
+      sourceDirectories = <String>[...sourceDirectories, path];
+      activeDirectories = <String>[...activeDirectories, path];
       await _db.saveSetting(
         'browser_source_directories',
         sourceDirectories.join('|'),
@@ -113,10 +119,11 @@ class FileBrowserState extends ChangeNotifier {
 
   Future<void> removeBaseDirectory(String path) async {
     if (sourceDirectories.contains(path)) {
-      sourceDirectories.remove(path);
-      activeDirectories.removeWhere(
-        (candidate) => p.equals(candidate, path) || p.isWithin(path, candidate),
-      );
+      sourceDirectories = List<String>.of(sourceDirectories)..remove(path);
+      activeDirectories = List<String>.of(activeDirectories)
+        ..removeWhere(
+          (candidate) => p.equals(candidate, path) || p.isWithin(path, candidate),
+        );
       await _db.saveSetting(
         'browser_source_directories',
         sourceDirectories.join('|'),
@@ -131,11 +138,9 @@ class FileBrowserState extends ChangeNotifier {
   }
 
   Future<void> toggleDirectory(String path) async {
-    if (activeDirectories.contains(path)) {
-      activeDirectories.remove(path);
-    } else {
-      activeDirectories.add(path);
-    }
+    activeDirectories = activeDirectories.contains(path)
+        ? (List<String>.of(activeDirectories)..remove(path))
+        : <String>[...activeDirectories, path];
     await _db.saveSetting(
       'browser_active_directories',
       activeDirectories.join('|'),
@@ -214,26 +219,29 @@ class FileBrowserState extends ChangeNotifier {
   }
 
   /// The row the tree should pulse once it next draws — a folder just
-  /// created, renamed or dropped somewhere, so the eye finds where it landed.
-  /// Cleared on its own after the pulse has had time to play.
-  String? get flashPath => _flashPath;
-  String? _flashPath;
-  Timer? _flashTimer;
+  /// created, renamed or dropped somewhere, so the eye finds where it landed
+  /// — and whether that row should also draw open. A renamed folder comes
+  /// back under a new key, closed; `13c` wants it open if it was.
+  ///
+  /// [path] is null when no pulse is owed; the cue clears itself once the
+  /// pulse has had time to play.
+  ///
+  /// Carried on its own notifier, like [refreshTick], because exactly one
+  /// widget reads it: a row of the directory tree, deciding whether the cue
+  /// names itself or a child. Sent through [notifyListeners] it was two
+  /// whole-state notifications — one to set, one to clear 1.5s later — that
+  /// rebuilt the file grid, the filter bar and every other row for a pulse
+  /// none of them draw.
+  final ValueNotifier<FolderFlash> flashCue =
+      ValueNotifier<FolderFlash>((path: null, expanded: false));
 
-  /// Whether the row at [flashPath] should also draw open. A renamed folder
-  /// comes back under a new key, closed; `13c` wants it open if it was.
-  bool get flashExpanded => _flashExpanded;
-  bool _flashExpanded = false;
+  Timer? _flashTimer;
 
   void flash(String path, {bool expand = false}) {
     _flashTimer?.cancel();
-    _flashPath = path;
-    _flashExpanded = expand;
-    notifyListeners();
+    flashCue.value = (path: path, expanded: expand);
     _flashTimer = Timer(const Duration(milliseconds: 1500), () {
-      _flashPath = null;
-      _flashExpanded = false;
-      notifyListeners();
+      if (!_disposed) flashCue.value = (path: null, expanded: false);
     });
   }
 
@@ -256,8 +264,10 @@ class FileBrowserState extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _flashTimer?.cancel();
     scanProgress.dispose();
     refreshTick.dispose();
+    flashCue.dispose();
     super.dispose();
   }
 

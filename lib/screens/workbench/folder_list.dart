@@ -39,6 +39,19 @@ typedef _FolderInputs = ({
   int droppedCount,
 });
 
+/// The same, for the file browser's tree. Its column draws the registered
+/// folders and whether any of them is ticked; the browser's selection, its
+/// scans and its size slider are none of its business.
+typedef _BrowserInputs = ({
+  List<String> sourceDirectories,
+  bool hasActive,
+});
+
+_BrowserInputs _browserInputs(FileBrowserState s) => (
+      sourceDirectories: s.sourceDirectories,
+      hasActive: s.activeDirectories.isNotEmpty,
+    );
+
 _FolderInputs _folderInputs(GalleryState s) => (
       resultRoots: s.resultRootDirectories,
       viewMode: s.viewMode,
@@ -98,9 +111,11 @@ class _FolderListState extends State<FolderList> {
     // drawn, so it has to name the one it is actually showing — and, within
     // it, only the fields it draws (see [_FolderInputs]).
     final galleryState = Provider.of<GalleryState>(context, listen: false);
-    final sourceDirectories = useFileBrowserState
-        ? context.watch<FileBrowserState>().sourceDirectories
-        : context.select<GalleryState, List<String>>((s) => s.sourceDirectories);
+    final browser = useFileBrowserState
+        ? context.select<FileBrowserState, _BrowserInputs>(_browserInputs)
+        : null;
+    final sourceDirectories = browser?.sourceDirectories ??
+        context.select<GalleryState, List<String>>((s) => s.sourceDirectories);
 
     // A folder that left the list some other way has nothing left to confirm.
     final pending = _pendingRemoval != null && sourceDirectories.contains(_pendingRemoval!.path)
@@ -167,9 +182,9 @@ class _FolderListState extends State<FolderList> {
                 _HeaderAction(
                   icon: Icons.deselect,
                   tooltip: l10n.deselectAllDirectories,
-                  onPressed: appState.fileBrowserState.activeDirectories.isEmpty
-                      ? null
-                      : () => appState.fileBrowserState.clearActiveDirectories(),
+                  onPressed: browser!.hasActive
+                      ? () => appState.fileBrowserState.clearActiveDirectories()
+                      : null,
                 ),
                 const SizedBox(width: 2),
                 _HeaderAction(

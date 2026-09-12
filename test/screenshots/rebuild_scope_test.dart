@@ -171,4 +171,79 @@ void main() {
         reason: 'if the two notifications cost the same, the split has been '
             'undone somewhere');
   });
+
+  testWidgets('registering a folder does reach the folder column',
+      (WidgetTester tester) async {
+    // The other half of narrowing a subscription: a selector that compares a
+    // list by identity only fires if the state hands back a *new* list. The
+    // class documents that it always does; these two paths did not, and
+    // narrowing FolderList onto `sourceDirectories` would have quietly
+    // stopped the column from showing a folder the user had just added.
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.workbench,
+      size: const Size(1440, 900),
+      label: 'rebuild-scope-add-folder',
+    );
+
+    final gallery = AppState().galleryState;
+    final String added = env.docsDir.path;
+    expect(gallery.sourceDirectories, isNot(contains(added)));
+
+    // Registering writes to the database before it notifies, and only
+    // `runAsync` lets that finish — so the change is made out here and the
+    // rebuild it leaves behind is captured on the next pump.
+    await tester.runAsync(() => gallery.addBaseDirectory(added));
+    final List<String> lines = await rebuiltBy(tester, () {});
+    expect(gallery.sourceDirectories, contains(added));
+    expect(lines, rebuilt('FolderList'),
+        reason: 'the column lists the source folders — it must rebuild when '
+            'one is registered');
+
+    await tester.runAsync(() => gallery.removeBaseDirectory(added));
+    final List<String> removal = await rebuiltBy(tester, () {});
+    expect(removal, rebuilt('FolderList'),
+        reason: 'and when one is taken off the list');
+  });
+
+  testWidgets('a folder pulse reaches one tree row, not the browser',
+      (WidgetTester tester) async {
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: const Size(1440, 900),
+      label: 'rebuild-scope-browser',
+    );
+
+    final browser = AppState().fileBrowserState;
+    expect(browser.sourceDirectories, isNotEmpty);
+
+    // The pulse names at most one row. It used to go out through
+    // notifyListeners — twice, once to set and once to clear 1.5s later — so
+    // the file grid, the filter bar and every other row rebuilt for a cue
+    // none of them draw.
+    final List<String> pulse =
+        await rebuiltBy(tester, () => browser.flash(browser.sourceDirectories.first));
+    expect(pulse, rebuilt('DirectoryTreeItem'));
+    expect(pulse, isNot(rebuilt('FileBrowserScreen')));
+    expect(pulse, isNot(rebuilt('FolderList')));
+    expect(pulse, isNot(rebuilt('FileCard')));
+
+    // And a selection change, which the column has no part in either.
+    final files = browser.filteredFiles;
+    if (files.isNotEmpty) {
+      final List<String> pick =
+          await rebuiltBy(tester, () => browser.toggleSelection(files.first));
+      expect(pick, isNot(rebuilt('FolderList')));
+      expect(pick, isNot(rebuilt('DirectoryTreeItem')));
+    }
+
+    // Let the pulse's own 1.5s clear timer run out before the tree is torn
+    // down; flutter_test fails a test that ends with one pending.
+    for (int i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+  });
 }

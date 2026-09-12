@@ -192,6 +192,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   int _pulse = 0;
   String? _pulsedFor;
   ValueListenable<int>? _refreshTick;
+  ValueListenable<FolderFlash>? _flashCue;
 
   @override
   void didChangeDependencies() {
@@ -209,28 +210,52 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       _refreshTick = tick..addListener(_onRefreshed);
     }
 
+    // The pulse cue, on its own notifier for the same reason as the tick: a
+    // listening `Provider.of` here put every row of the tree on all of the
+    // browser's traffic — its selection, its scans, its size slider — to read
+    // one cue that names at most one row.
     if (widget.useFileBrowserState) {
-      final browser = Provider.of<FileBrowserState>(context);
-      final flash = browser.flashPath;
-      if (flash != null && flash != _pulsedFor) {
-        if (p.equals(flash, widget.path)) {
-          _pulsedFor = flash;
-          _pulse++;
-          // A renamed row comes back under its new key, closed. `13c`: it
-          // was open before, so it is open after — the state follows the
-          // directory even though the widget could not.
-          if (browser.flashExpanded && !_isExpanded) {
-            _isExpanded = true;
-            _loadSubDirectories();
-          }
-        } else if (p.equals(p.dirname(flash), widget.path) && !_isExpanded) {
-          // The row to pulse is a child of this one and this one is closed:
-          // open it, or the pulse plays to nobody.
-          _pulsedFor = flash;
-          _isExpanded = true;
-          _loadSubDirectories();
-        }
+      final cue = Provider.of<FileBrowserState>(context, listen: false).flashCue;
+      if (!identical(cue, _flashCue)) {
+        _flashCue?.removeListener(_onFlash);
+        _flashCue = cue..addListener(_onFlash);
+        // Read what is already there. A row created by the very action that
+        // set the cue — a new folder, a rename — mounts after it fired, so a
+        // listener alone would never hear its own pulse. A build follows
+        // this, so nothing needs marking dirty.
+        _applyFlash(cue.value, notify: false);
       }
+    }
+  }
+
+  void _onFlash() {
+    final cue = _flashCue?.value;
+    if (!mounted || cue == null) return;
+    _applyFlash(cue, notify: true);
+  }
+
+  void _applyFlash(FolderFlash cue, {required bool notify}) {
+    final String? flash = cue.path;
+    if (flash == null || flash == _pulsedFor) return;
+
+    void mutate(VoidCallback change) => notify ? setState(change) : change();
+
+    if (p.equals(flash, widget.path)) {
+      _pulsedFor = flash;
+      mutate(() => _pulse++);
+      // A renamed row comes back under its new key, closed. `13c`: it was
+      // open before, so it is open after — the state follows the directory
+      // even though the widget could not.
+      if (cue.expanded && !_isExpanded) {
+        mutate(() => _isExpanded = true);
+        _loadSubDirectories();
+      }
+    } else if (p.equals(p.dirname(flash), widget.path) && !_isExpanded) {
+      // The row to pulse is a child of this one and this one is closed: open
+      // it, or the pulse plays to nobody.
+      _pulsedFor = flash;
+      mutate(() => _isExpanded = true);
+      _loadSubDirectories();
     }
   }
 
@@ -249,6 +274,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   @override
   void dispose() {
     _refreshTick?.removeListener(_onRefreshed);
+    _flashCue?.removeListener(_onFlash);
     _focusNode.dispose();
     super.dispose();
   }
