@@ -1,186 +1,105 @@
-# 动画改进计划
+# 动效审计台账
 
-由 improve-animations 审计产出。首轮 001–005 基于 commit `b2d4b9c`(2026-08-22),
-第二轮 006–010 基于 commit `07906de`(2026-08-27,v3.24.0),第三轮 011–014 基于
-commit `0b97136`(2026-09-12,v4.0.0)。审计范围:`lib/` 全部动画与动效代码,八类标准
-(目的/频率、缓动/时长、物理性、可中断性、性能、无障碍、一致性、错失机会)。每份计划
-自包含,可交给任何执行代理(含低成本模型)独立完成。
+由 improve-animations 审计产出。截至 2026-09-12，**三轮 14 份计划全部执行完毕并已合入
+`main`**，计划正文（`001`–`014`）已删除——它们是一次性的施工说明书，落地之后真正的记录在
+代码、测试和提交信息里。需要回看时在 git 历史里取：
 
-## 计划一览
+```bash
+git show 46d5a72:plans/                                    # 14 份在这个 commit 上是齐的
+git show 46d5a72:plans/012-task-capsule-spring-settle.md
+```
 
-| # | 标题 | 严重度 | 状态 |
+留在这份文件里的，是**不随代码走的那部分**：已修过什么（免得下一轮重复上报）、还欠什么、
+哪些动效是刻意为之不要动、以及做动效测试时踩过的坑。
+
+> **下一轮从 `015` 开始编号。** 目录空了不等于可以从 001 重新开始，那会和下面这张表撞号。
+
+## 已修（不要重复上报）
+
+| 轮次 | 基线 commit | 落地 commit | 修了什么 |
 |---|---|---|---|
-| [001](001-remove-workbench-tab-dead-animation.md) | 移除工作台模式切换的 300ms 死区动画 | HIGH | DONE |
-| [002](002-app-motion-tokens.md) | 建立 AppMotion 动效令牌,消灭 19 处 linear 默认曲线 | HIGH | DONE |
-| [003](003-media-preview-keyboard-paging.md) | 媒体预览:键盘翻页去动画,远跳不再刷屏 | HIGH | DONE |
-| [004](004-half-animated-disclosures.md) | 修复「半动画」展开控件(胶囊/提示词卡/下载器日志) | MEDIUM | DONE |
-| [005](005-video-overlay-interruptible.md) | 视频播放覆盖层改为可中断的常驻淡入淡出 | MEDIUM | DONE |
-| [006](006-remove-top-level-nav-crossfade.md) | 移除顶层导航的整屏交叉淡入(Ctrl+1..8 也走它) | HIGH | DONE |
-| [007](007-channel-row-hover-scope.md) | 渠道行悬停:状态从整屏下沉到行内 | HIGH | DONE |
-| [008](008-smooth-task-progress.md) | 进度条:把 2Hz 的阶跃换成连续推进 | MEDIUM | DONE |
-| [009](009-snackbar-instant-replace.md) | Snackbar 连发不再「退场再进场」地闪 | MEDIUM | DONE |
-| [010](010-model-dialog-token-drift.md) | 收回模型编辑对话框最后一处令牌漂移 | LOW | DONE |
-| [011](011-glass-menu-scale-origin.md) | 玻璃菜单从触发它的那个角长出 | HIGH | DONE |
-| [012](012-task-capsule-spring-settle.md) | 任务胶囊:甩出去的力道要算数,位移改走 transform | HIGH | DONE |
-| [013](013-dialog-route-clock.md) | 对话框:入场时长与它自以为的对上,退场给一条回程曲线 | HIGH | DONE |
-| [014](014-side-panel-exit.md) | 侧边面板:退场不再是入场倒放 | MEDIUM | DONE |
+| 一（001–005） | `b2d4b9c` 2026-08-22 | `93919c9` | 工作台模式切换的死区动画、**AppMotion 令牌体系**（消灭 19 处 linear 默认曲线）、媒体预览键盘翻页去动画、半动画展开控件、视频覆盖层改可中断淡入淡出 |
+| 二（006–010） | `07906de` 2026-08-27 v3.24.0 | `81e3cf2` | 顶层导航整屏交叉淡入（Ctrl+1..8 也走它）、渠道行悬停从整屏下沉到行内、进度条 2Hz 阶跃改连续推进、Snackbar 连发不再退场再进场、模型编辑对话框的令牌漂移 |
+| 三（011–014） | `0b97136` 2026-09-12 v4.0.0 | `e3e4845` `6191279` `69e075b` | 玻璃菜单从触发它的角长出、任务胶囊弹簧归位（位移改走 transform）、对话框拿回 M 档时钟与回程曲线、侧边面板退场不再是入场倒放 |
 
-> 001–005 已于 2026-08-22 全部执行完毕。`flutter analyze` 零问题,
-> `flutter test test/screenshots` 87 个测试通过、无新增溢出。
->
-> 006–010 已于 2026-08-27 全部执行完毕。`flutter analyze` 零问题,
-> `flutter test` 1130 个测试通过、无新增溢出;改动仅落在 7 个 `lib/` 文件、
-> 1 个新建组件与 1 个测试文件上。
+三轮合计触及约 30 个 `lib/` 文件；每轮结束时 `flutter analyze` 零问题，`flutter test` 全绿
+（第三轮 1763 个测试），截图无新增溢出。
 
-## 执行时相对计划的两处偏离
+## 还欠的（2026-09-12 对照 `main` 逐条复核过行号）
 
-1. **008 的新文件注释改用英文。** 计划的 Target 节把
-   `lib/widgets/smooth_progress.dart` 的文档注释写成了中文,但 `lib/` 下没有一个文件
-   是中文注释的。语言随文件走,内容与计划一致。
-2. **009 的第 2 步(收紧既有测试)行不通,改为新增一个测试。** 既有测试的两次
-   `AppSnackBar` 调用发生在**同一个回调里、任何一帧之前**,此时第一条 toast 的进场
-   动画还停在 0,`hide` 与 `remove` 都是瞬间完成——把 `pumpAndSettle` 换成定量 pump
-   之后它依然是绿的(已实测)。于是保留原测试(它覆盖的是"不排队"这个契约),另加
-   `replacing a toast already on screen swaps it, it does not play an exit`:先让第一条
-   完全进场,再触发第二条。该测试在 `hide` 下红、在 `remove` 下绿,两个方向都已验证。
-   相应地,009 的 "Done when" 里那条
-   `grep hideCurrentSnackBar → 无输出` 与它自己的 Boundaries 冲突——
-   `app_snackbar.dart:21` 的类文档引用的是重构**之前**各调用点的写法,是史料,按
-   Boundaries 保留了。判定标准应为"调用处不再是 `hide`"。
+按价值排序。前两条是第三轮审计发现、当轮明确留在范围外的。
 
-## 第二轮(006–010)执行顺序与依赖
+- **胶囊内容区的 `AnimatedSize` 还挂在 M3 档**（`lib/widgets/task_capsule_monitor.dart:252-255`）。
+  它每次 `runningCount` 跨过 0 就重放一次——批量跑任务时是每个任务一次，按频率该降到 M2。
+- **选择栏退场的两半时钟对不上**（`lib/screens/browser/widgets/browser_selection_bar.dart:50-63`、
+  `lib/screens/workbench/widgets/gallery_selection_bar.dart:77-90`）：滑动走 `sceneOf`（280ms），
+  淡出走 `exitFactor` 后的 168ms，同一次退场里两个属性不同步。
+- **加载 → 网格硬切**（`lib/screens/workbench/gallery.dart:218-238`）：扫描占位在一帧内换成满屏
+  图块。仍是全应用视觉上最猛的一次跳变，一段 `AppMotion.reveal` 的淡入即可消解。
+  **这条从第一轮就在单子上，三轮未做——下一轮若无新的 HIGH，它应当优先立项。**
+- **两棵树的展开都是硬跳**：目录树在 `directory_tree_item.dart:647` 直接把子树插进 `Column`，
+  箭头在 `:1073-1085` 的 `_disclosure()` 里用 `chevron_right`/`expand_more` 两个图标互换而非旋转；
+  知识库树 `knowledge_tree_panel.dart:575` 同样是互换。箭头旋转（`AnimatedRotation` +
+  `AppMotion.state`）两处都能低成本拿下；子树伸缩只有目录树能用 `AnimatedSize`，知识库树是
+  扁平化过滤列表，要动就得换 `AnimatedList`，不划算。
+- **`ScrollEdgeFade` 的边缘渐变 0/1 硬切**（`lib/widgets/scroll_edge_fade.dart:96-101`）：两个 bool
+  直接决定渐变端点是白还是透明，于是滚动离开顶端的第一个像素就让渐变**满强度弹出**。用
+  `TweenAnimationBuilder<double>` 配 `AppMotion.hover` 把这两个 bool 补间成 0..1，可以在不引入
+  逐帧 `setState` 的前提下消掉这个 pop。
+- **渠道向导步骤切换无方向感**（`channel_wizard_dialog.dart:635-640`）：`AnimatedSwitcher` 纯淡入
+  淡出，后退与前进看起来一样。现在只剩两步且有步点指示位置，优先级低。
+- **用量比例条不生长**（`lib/screens/metrics/widgets/usage_summary.dart`、
+  `usage_group_costs.dart`）：占比条首帧即到位。一次 `0 → 值` 的 `AppMotion.panel` 生长是标准的
+  「稀有场景可以用愉悦预算」的位置。注意这两处有测试直接读取其 widget。
+- **性能（非动效本身）**：工作台分栏拖拽每个指针事件全行重布局；标题栏毛玻璃在任务运行期间
+  随脉冲动画全程重绘。二者是架构级取舍，不属于动效修缮。
 
-**没有硬依赖,五份可任意顺序、甚至并行执行——它们不共享任何文件。** 按收益排:
+## 判定「正确、勿改」的动效
 
-1. **006**(1 个文件删 12 行,收益最大:全应用最高频动作)
-2. **007**(1 个文件,新增一个私有 widget;修的是「模型」屏最贵的一次重建)
-3. **008**(新建 1 个共享组件 + 6 个调用点;覆盖面最广)
-4. **009**(1 行 + 1 个收紧的测试)
-5. **010**(2 行)
-
-文件冲突提示:007 与 010 都在「模型」相关代码里,但分属
-`lib/screens/models/models_screen.dart` 与 `lib/widgets/models/model_edit_dialog.dart`,
-互不重叠。008 触及 `task_capsule_monitor.dart` / `app_run_console.dart` /
-`task_queue_screen.dart`,与其余四份均无交集。
-
-> 011–014 已于 2026-09-12 全部执行完毕。`flutter analyze` 零问题,`flutter test`
-> 1763 个测试通过、截图无新增溢出;改动落在 15 个 `lib/` 文件与 3 个测试文件上。
-
-## 第三轮执行时相对计划的四处偏离
-
-1. **011 的新测试用 `find.ancestor`,不是计划写的 `find.descendant`。** `ScaleTransition`
-   由路由的 `buildTransitions` 生成,是 `AppGlassMenu` 的**祖先**而非后代;计划里那段
-   示例代码写反了,照抄会永远找不到。另外「下拉菜单」这条测试必须用一个真正按钮大小的
-   锚点:第一版拿 `pumpHost` 那个铺满全屏的 `SizedBox.expand` 当锚点,菜单被正确地判定
-   为要翻转,于是断言 topRight 时红了——红得对,是测试搭错了。
-2. **012 顺手删掉了 `_dragging` 字段。** 它此前唯一的读者就是
-   `AnimatedPositioned(duration: _dragging ? …)`,换成弹簧之后成了死状态,
-   `flutter analyze` 直接报 `unused_field`。三处赋值一并清掉。
-3. **012 计划里没提、最后也没加「甩动速度」的测试。** 试过三版,都不可信,如实记录:
-   - 第一版用 `tester.fling`:高速档 200px 只用两帧走完,`VelocityTracker` 样本不够,
-     估出来的速度反而更小。
-   - 第二版用 `timedDrag`:数值漂亮(慢 7px / 快 162px),但**变异验证不过**——
-     把 `SpringSimulation` 的初速强行置 0,它依然是绿的。两次拖拽的松手位置不同
-     (1054.7 vs 1094.7),差异其实来自剩余行程而非速度。这正是「绿得毫无意义」的典型。
-   - 第三版手写 `TestGesture` 让两次拖拽经过完全相同的五个点、只改时间间隔。这一版
-     思路是对的,但踩了两个坑:`TestGesture.moveBy` 的 `timeStamp` **默认是
-     `Duration.zero`**(五个样本在速度追踪器眼里是同一瞬间发生的,速度恒为 0,和中间
-     pump 了多久无关),以及 `AnimationController` 的**第一帧只用来对表**、不产生位移,
-     所以 `up()` 之后必须先 `pump()` 一次再采样。补上这两点后慢速档仍然量到 0,时间预算
-     用尽,遂放弃。
-   **结论:速度是否真的接上了,目前只由计划里的 feel check 保证。** 上面这些坑已经
-   记下来,下次再做从第三版继续,别从头试。
-4. **013 的两条新测试做了变异验证。** 把 `AppDialog.show` 里的 `animationStyle` 去掉,
-   两条都红,且报出的正是 `Duration:<0:00:00.150000>` —— 审计结论(`showDialog` 写死
-   150ms)因此不只是读 SDK 源码读出来的,是在这个仓库里实测出来的。
-
-## 第三轮(011–014)执行顺序与依赖
-
-**同样没有硬依赖,四份可并行——没有任何两份改同一个文件。** 按收益排:
-
-1. **011**(玻璃菜单原点)——全应用唯一的浮层,4 个下拉调用点**全都**从错的角展开;
-   视觉改动只有一行(`alignment:`),其余是为了把那一行算对而加的推导。
-2. **012**(胶囊弹簧)——最"手感"的一条:松手的力道目前在松手那一帧被清零。
-   改动最大,且**唯一需要动测试的一份**(`task_capsule_bounds_test.dart` 的测量口径
-   要下移一层,原因写在计划第 8 步)。
-3. **013**(对话框时钟)——面最广(18 个调用点各加一行),但每处都是同一句;
-   真正的收获是对话框第一次拿到「减少视觉效果 / 减少动态效果」两档降级。
-4. **014**(侧边面板退场)——单文件,和 013 一样是"入场 M3、退场 M1"这条规矩的
-   最后两个漏网点之一。
-
-文件冲突提示:013 只碰 `showDialog` 的调用点,014 只碰 `showGeneralDialog`,
-两者都不进 `app_glass_menu.dart` 与 `task_capsule_monitor.dart`。012 会改
-`task_capsule_monitor.dart`——上一轮 008 也改过它(`SmoothProgress`),但 008 已
-DONE,不构成冲突。
-
-### 本轮明确留在范围外的三件事
-
-- **对话框的退场仍与入场等长(280ms)。** `DialogRoute` 不接受
-  `AnimationStyle.reverseDuration`(已核对 SDK),要缩短就得自抄一份 `showDialog`。
-  013 把这个限制写进了 `appDialogAnimation` 的文档注释,不要"顺手"修。
-- **胶囊内容区的 `AnimatedSize` 还挂在 M3 档**(`task_capsule_monitor.dart:196`),
-  而它每次 `runningCount` 跨过 0 就重放一次——批量跑任务时是每个任务一次,应当降到
-  M2。这是本轮审计的第 4 条发现,未立项,留待下一轮。
-- **选择栏退场的两半时钟不一致**(`browser_selection_bar.dart:53-62` 与
-  `gallery_selection_bar.dart:80-89`:滑动 280ms、淡出 168ms)。同样未立项。
-
-## 上一轮遗留项的现状(2026-08-27 复核)
-
-- ~~**无障碍缺口**:全库无 `MediaQuery.disableAnimations` 处理~~ → **已解决**。
-  `AppMotion.prefersReduced` / `AppMotion.durationOf`
-  (`lib/core/design_tokens.dart:429-457`)已成为全应用入口,并有
-  `test/reduced_motion_test.dart` 钉住契约。剩两处漏网正由 007 与 010 收尾。
-- ~~**孤儿 Hero**~~ → **已解决**。灯箱改成透明 `PageRoute`,缩略图与预览页配对飞行
-  (`image_card.dart:315`、`file_card.dart:74`、`media_preview_dialog.dart:202`,
-  含 `flightShuttleBuilder`)。这是本轮审计里做得最好的一处动效。
-- ~~**控制台展开硬跳**~~ → **已解决**。`app_run_console.dart:214-220` 用了 `AnimatedSize`,
-  并在拖拽期间把 duration 归零,让高度 1:1 跟手。
-- **Snackbar 替换闪烁** → 立项为 **009**。
-
-## 已审计、暂未立项的发现(按价值排序)
-
-- **加载→网格硬切**:`lib/screens/workbench/gallery.dart:158-160` 扫描 spinner 在一帧内
-  换成满屏图块。仍是全应用视觉上最猛的一次跳变,一段 `AppMotion.reveal` 的淡入即可消解。
-  (上一轮就在这张单子上,至今未做——下一轮若无新的 HIGH,它应当优先立项。)
-- **目录树 / 知识库树的展开是硬跳**:`lib/screens/workbench/directory_tree_item.dart:291`
-  直接 `if (_isExpanded) ...` 插入子树,箭头则在 `:259` 用 `expand_less`/`expand_more`
-  两个图标互换而非旋转;`lib/screens/workbench/widgets/knowledge_tree_panel.dart:376`
-  同样是 `keyboard_arrow_down`/`keyboard_arrow_right` 互换。004 修的正是这类「半动画
-  展开」,这两处是同一类里的漏网。箭头旋转(`AnimatedRotation` + `AppMotion.state`)是
-  两处都能低成本拿下的部分;子树伸缩只有目录树能用 `AnimatedSize`,知识库树是扁平化过滤
-  列表,要动就得换 `AnimatedList`,不划算。
-- **ScrollEdgeFade 的边缘渐变 0/1 硬切**:`lib/widgets/scroll_edge_fade.dart:57-66` 用两个
-  bool 决定渐变端点是白还是透明,于是滚动离开顶端的第一个像素就让 24px 渐变**满强度
-  弹出**。用 `TweenAnimationBuilder<double>` 配 `AppMotion.hover` 把这两个 bool 补间成
-  0..1,可以在不引入逐帧 setState 的前提下消掉这个 pop。
-- **渠道向导步骤切换无方向感**:`channel_wizard_dialog.dart:1213` 纯淡入淡出,后退与
-  前进看起来一样。现在只剩两步且有步点指示位置,优先级比上一轮更低。
-- **用量比例条不生长**:`usage_summary.dart:288`、`usage_group_costs.dart:118` 的占比条
-  首帧即到位。一次 `0 → 值` 的 `AppMotion.panel` 生长是标准的「稀有场景可以用愉悦预算」
-  的位置。注意这两处有测试直接读取其 widget(见 008 的 Boundaries)。
-- **性能(非动效本身)**:工作台分栏拖拽(`workbench_layout.dart`、`app_run_console.dart:188`)
-  每个指针事件全行重布局;标题栏毛玻璃在任务运行期间随脉冲动画全程重绘。二者是架构级
-  取舍,不属于动效修缮。
-
-## 审计中判定「正确、勿改」的动画
-
-- **Hero 灯箱**(`media_preview_dialog.dart:202`,`flightShuttleBuilder` 始终取网格侧
-  缩略图,未配对的 tag 退化为路由淡入)——本应用最值得花愉悦预算的地方,花对了。
-- **任务胶囊**(`task_capsule_monitor.dart:117-180`):拖拽时 duration 归零做到 1:1 跟手,
-  松手用速度投影决定停靠边,按压 0.97 反馈——审计准则第 4 条的教科书实现。
-  > 第三轮补充:**选边**是对的,这条结论不变;但选完边之后的那段行程把速度丢了
-  > (定长 280ms 曲线),飞行中也抓不住。见 `plans/012` —— 是细化,不是翻案。
-- **对话框 materialize**(`app_dialog.dart:394-412`):0.96 起手、骑路由自身 animation
-  所以出场自动反向、减弱动画时降为纯淡入。
-  > 第三轮补充:**机制**是对的,这条结论不变;但它骑的那口钟不是它以为的 M3——
-  > `showDialog` 写死 150ms,于是两档降级全部落空,反向也没有回程曲线。
-  > 见 `plans/013`。
-- **呼吸圆点**(`app_run_console.dart:378-425`):生命周期正确,`stop` 而非 `reset`,
+- **Hero 灯箱**（`lib/screens/workbench/widgets/preview/media_preview_dialog.dart`，
+  `flightShuttleBuilder` 始终取网格侧缩略图，未配对的 tag 退化为路由淡入）——本应用最值得花
+  愉悦预算的地方，花对了。
+- **任务胶囊的选边**（`task_capsule_monitor.dart`，`_project()` 用速度投影决定停靠边、按压 0.97
+  反馈）。第三轮的 012 细化了它**选完边之后**的那段行程（原先定长 280ms 曲线把速度丢了），
+  选边本身这条结论不变。
+- **对话框 materialize 的机制**（`lib/widgets/app_dialog.dart`：0.96 起手、骑路由自身 animation
+  所以出场自动反向、减弱动画时降为纯淡入）。第三轮的 013 换掉的是它骑的那口钟，不是机制。
+- **呼吸圆点**（`lib/widgets/app_breathing_dot.dart`）：生命周期正确，`stop` 而非 `reset`，
   减弱动画时直接停表。
-- **滚动橡皮筋**(`main.dart:153-171`):`BouncingScrollPhysics` 覆盖全平台是 `7091ca5`
-  记录在案的刻意取舍(「只在用户自己的手势下发生」),按规矩不再翻案。
-- **主导航项的 160ms 底色过渡**(`main.dart:707`)、`app_side_panel` 抽屉滑入、
-  `app_text_field` 焦点环(零布局位移)、`panel_resizer` 拖拽 1:1 跟手、
-  `image_card` 悬停操作条不加动画(全应用最高频交互)、窗框按钮 90ms(贴合 Windows
-  原生节奏)、`models_screen.dart:527` 拖拽代理手动采样 `ReorderableListView` 自己的
-  animation。
+- **滚动橡皮筋**（`lib/main.dart:167`）：`BouncingScrollPhysics` 覆盖全平台是 `7091ca5` 记录在案的
+  刻意取舍（「只在用户自己的手势下发生」），按规矩不再翻案。
+- **对话框退场仍与入场等长**：`DialogRoute` 不接受 `AnimationStyle.reverseDuration`（已核对
+  SDK），要缩短就得自抄一份 `showDialog`。这个限制写在 `appDialogAnimation` 的文档注释里，
+  不要「顺手」修。
+- 另：主导航项的底色过渡、`app_side_panel` 抽屉滑入、`app_text_field` 焦点环（零布局位移）、
+  `panel_resizer` 拖拽 1:1 跟手、`image_card` 悬停操作条**不加**动画（全应用最高频交互）、
+  窗框按钮 90ms（贴合 Windows 原生节奏）、`models_screen.dart` 拖拽代理手动采样
+  `ReorderableListView` 自己的 animation。
+
+## 无障碍契约
+
+`AppMotion.prefersReduced` / `AppMotion.durationOf`（`lib/core/design_tokens.dart:352-362`）是全
+应用唯一入口，`test/reduced_motion_test.dart` 钉住契约——包括侧边面板那条**刻意的例外**
+（减弱动画时不归零，改为淡入，因为 450px 的面板在两帧之间出现读起来像换了屏）。新增任何
+`duration:` 都要走令牌，不要直接写毫秒数。
+
+## 做动效测试时踩过的坑
+
+- **`TestGesture.moveBy` 的 `timeStamp` 默认是 `Duration.zero`。** 五个样本在 `VelocityTracker`
+  眼里是同一瞬间发生的，估出来的速度恒为 0，和中间 pump 了多久无关。`startGesture` 则根本
+  没有 `timeStamp` 参数。
+- **`AnimationController` 的第一帧只用来对表**、不产生位移，所以 `up()` 之后必须先 `pump()`
+  一次再采样。
+- **`tester.fling` 在短行程上测不出速度差**：高速档 200px 只用两帧走完，样本不够，估出来的
+  速度反而更小。
+- **变异验证是必须的，不是可选的。** 胶囊甩动速度的第二版测试数值很漂亮（慢 7px / 快 162px），
+  但把 `SpringSimulation` 的初速强行置 0 之后它**依然是绿的**——两次拖拽的松手位置不同，
+  差异其实来自剩余行程而非速度。这是「绿得毫无意义」的典型。
+  **结论：胶囊松手速度是否真的接上了，目前只由 012 的 feel check 保证，没有测试。** 下次再做
+  从「手写 `TestGesture` 走完全相同的五个点、只改时间间隔」这一版继续，别从头试。
+- **路由级过渡要用 `find.ancestor` 而不是 `find.descendant`。** `ScaleTransition` /
+  `SlideTransition` 由路由的 `buildTransitions` 生成，是被测 widget 的**祖先**。
+- **同一个 testWidgets 里第二次 `pumpWidget` 会保留 Navigator**：上一个面板还开着，finder 会
+  命中它的路由。两次断言之间要 pop 掉并断言 `findsNothing`。
+- **`AppSidePanel.show` 先判 `Responsive.isNarrow`**：默认 800×600 的测试窗口在 1000px 断点
+  以下，不放大视口的话测到的是 `showModalBottomSheet` 的 250ms。
