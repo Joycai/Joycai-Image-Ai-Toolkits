@@ -4,7 +4,7 @@ Cross-platform Flutter desktop/mobile app for AI image and video generation, bui
 around a multi-vendor LLM layer. Designed for artists and designers working with
 AI-generated media.
 
-**Version:** 4.0.3 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
+**Version:** 4.0.4 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
 
 ## Key Commands
 
