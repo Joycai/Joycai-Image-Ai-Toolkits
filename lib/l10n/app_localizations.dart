@@ -7744,6 +7744,12 @@ abstract class AppLocalizations {
   /// **'Assistant'**
   String get wbToolAssistantShort;
 
+  /// No description provided for @wbToolGalleryShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get wbToolGalleryShort;
+
   /// No description provided for @galleryViewWorkspace.
   ///
   /// In en, this message translates to:

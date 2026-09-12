@@ -8,15 +8,15 @@ import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
 
 /// The prompt assistant's controls in the workbench's floating glass toolbar
-/// (`A3a · 1a`, `A3b · 1a`): what this is, which brain is answering, whether
-/// it is running, the session actions, and the one thing the screen builds
-/// towards.
+/// (`A3a · 1a`, `A3b · 1a`): which brain is answering, whether it is running,
+/// the session actions, and the one thing the screen builds towards. No
+/// title — the toolbar's tab strip already names the tab (`00e · 1b`).
 ///
-/// It fills the slot the toolbar gives it after the back button and the tool
-/// switch, and degrades inside that slot by measurement, in this order: the
-/// session actions lose their labels, the mode badge goes, the primary action
-/// takes its short label, the session actions fold into a menu, the running
-/// pill keeps only its dot, the title goes.
+/// It fills the slot the toolbar gives it after the tab strip, and degrades
+/// inside that slot by measurement, in this order: the session actions lose
+/// their labels, the mode badge goes, the primary action takes its short
+/// label, the session actions fold into a menu, the running pill keeps only
+/// its dot.
 class PromptOptimizerToolbar extends StatelessWidget {
   final VoidCallback onNewSession;
   final VoidCallback onHistory;
@@ -24,7 +24,7 @@ class PromptOptimizerToolbar extends StatelessWidget {
   final bool isRefining;
   final bool canApply;
 
-  /// Localised name of the session's mode, shown in the badge beside the title.
+  /// Localised name of the session's mode, shown in the leading badge.
   /// Null hides the badge.
   final String? modeLabel;
 
@@ -60,9 +60,6 @@ class PromptOptimizerToolbar extends StatelessWidget {
   static const double _gap = 4;
   static const double _leading = 6;
 
-  static TextStyle _titleStyle(BuildContext context) =>
-      Theme.of(context).textTheme.titleMedium!.metricsOnly.copyWith(fontWeight: FontWeight.w600);
-
   static TextStyle _chipStyle(BuildContext context) =>
       Theme.of(context).textTheme.labelSmall!.metricsOnly.copyWith(fontWeight: FontWeight.w500);
 
@@ -80,8 +77,7 @@ class PromptOptimizerToolbar extends StatelessWidget {
     int pendingKbEdits = 0,
   }) {
     final l10n = AppLocalizations.of(context)!;
-    final title = measureGlassText(context, l10n.promptOptimizer, _titleStyle(context));
-    final badge = modeLabel == null ? 0.0 : 8 + _chipWidth(context, l10n.optModeBadgeAgent(modeLabel));
+    final badge = modeLabel == null ? 0.0 : _chipWidth(context, l10n.optModeBadgeAgent(modeLabel));
     final session = GlassIconButton.widthFor(context, label: l10n.optHistory) +
         _gap +
         GlassIconButton.widthFor(context, label: l10n.optNewSession);
@@ -90,7 +86,7 @@ class PromptOptimizerToolbar extends StatelessWidget {
             _gap +
             _tintedWidth(context, l10n.kbEditConfirmAll(pendingKbEdits))
         : _tintedWidth(context, l10n.applyToWorkbench);
-    return (_leading + title + badge + AppSpace.s16 + session + _gap + primary).ceilToDouble();
+    return (_leading + badge + AppSpace.s16 + session + _gap + primary).ceilToDouble();
   }
 
   @override
@@ -108,7 +104,6 @@ class PromptOptimizerToolbar extends StatelessWidget {
     final runningText = steps == 0 ? l10n.optRunning : l10n.optRunningStep(steps);
     final hasPending = pendingKbEdits > 0;
 
-    bool showTitle = true;
     bool showBadge = modeLabel != null;
     bool sessionLabels = true;
     bool sessionInMenu = false;
@@ -121,9 +116,8 @@ class PromptOptimizerToolbar extends StatelessWidget {
 
     double measure() {
       double w = _leading;
-      if (showTitle) w += measureGlassText(context, l10n.promptOptimizer, _titleStyle(context));
-      if (showBadge) w += 8 + _chipWidth(context, l10n.optModeBadgeAgent(modeLabel!));
-      if (running) w += 8 + (runningLabel ? _chipWidth(context, runningText, dot: true) : 22);
+      if (showBadge) w += _chipWidth(context, l10n.optModeBadgeAgent(modeLabel!));
+      if (running) w += (showBadge ? 8 : 0) + (runningLabel ? _chipWidth(context, runningText, dot: true) : 22);
       w += AppSpace.s16;
       if (sessionInMenu) {
         w += AppSize.control;
@@ -145,46 +139,43 @@ class PromptOptimizerToolbar extends StatelessWidget {
     if (measure() > width) shortPrimary = true;
     if (measure() > width) sessionInMenu = true;
     if (measure() > width) runningLabel = false;
-    if (measure() > width) showTitle = false;
 
     final children = <Widget>[
       const SizedBox(width: _leading),
-      if (showTitle)
-        Flexible(
-          child: Text(
-            l10n.promptOptimizer,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            softWrap: false,
-            style: _titleStyle(context),
-          ),
+      // The chips get a row of their own. As loose Flexibles beside the
+      // spacer they each claimed a share of the free space and used less of
+      // it, and what they left over landed after the actions — so the actions
+      // stopped short of the bar's right edge.
+      Expanded(
+        child: Row(
+          children: [
+            // Which brain is answering: a fact about the session, not a state,
+            // so it is mono on a faint wash of the glass ink rather than the
+            // accent.
+            if (showBadge)
+              Flexible(
+                child: _Chip(
+                  label: l10n.optModeBadgeAgent(modeLabel!),
+                  background: ink.withValues(alpha: 0.10),
+                  foreground: ink,
+                  mono: true,
+                ),
+              ),
+            if (running) ...[
+              if (showBadge) const SizedBox(width: 8),
+              Flexible(
+                child: _Chip(
+                  label: runningLabel ? runningText : null,
+                  tooltip: runningText,
+                  background: scheme.accentTint,
+                  foreground: scheme.onAccentTint,
+                  dot: scheme.primary,
+                ),
+              ),
+            ],
+          ],
         ),
-      // Which brain is answering: a fact about the session, not a state, so
-      // it is mono on a faint wash of the glass ink rather than the accent.
-      if (showBadge) ...[
-        const SizedBox(width: 8),
-        Flexible(
-          child: _Chip(
-            label: l10n.optModeBadgeAgent(modeLabel!),
-            background: ink.withValues(alpha: 0.10),
-            foreground: ink,
-            mono: true,
-          ),
-        ),
-      ],
-      if (running) ...[
-        const SizedBox(width: 8),
-        Flexible(
-          child: _Chip(
-            label: runningLabel ? runningText : null,
-            tooltip: runningText,
-            background: scheme.accentTint,
-            foreground: scheme.onAccentTint,
-            dot: scheme.primary,
-          ),
-        ),
-      ],
-      const Expanded(child: SizedBox()),
+      ),
       if (sessionInMenu)
         MenuAnchor(
           menuChildren: [

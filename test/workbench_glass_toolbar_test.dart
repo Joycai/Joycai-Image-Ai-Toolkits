@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/prompt_optimizer_toolbar.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/workbench_glass_toolbar.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
@@ -38,6 +39,10 @@ void main() {
   usePrivateDataDir('joycai_workbench_glass_toolbar_test');
 
   final barKey = GlobalKey();
+  late TabController lastController;
+
+  /// The tab strip (`00e · 1b`): the one five-item segmented control.
+  final tabStrip = find.byWidgetPredicate((w) => w is GlassSegmented<int> && w.segments.length == 5);
 
   /// Renders the toolbar at [barWidth] inside a desktop-sized window, which is
   /// the situation that matters: a wide screen, a squeezed centre column.
@@ -49,6 +54,7 @@ void main() {
     int tab = WorkbenchTab.image,
     Widget? controls,
     double controlsWidth = 0,
+    bool hasLeftPanel = true,
   }) async {
     tester.view.physicalSize = const Size(1800, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -66,6 +72,7 @@ void main() {
 
     final tabController = TabController(length: 6, vsync: const TestVSync(), initialIndex: tab);
     addTearDown(tabController.dispose);
+    lastController = tabController;
 
     await tester.pumpWidget(
       MultiProvider(
@@ -76,6 +83,7 @@ void main() {
             value: WorkbenchLayoutState(
               GlobalKey<ScaffoldState>(),
               contentWidth: phone ? barWidth : 1400,
+              hasLeftPanel: hasLeftPanel,
               leftInDrawer: false,
               rightInDrawer: false,
             ),
@@ -233,12 +241,70 @@ void main() {
     }
   });
 
-  testWidgets('tool tabs show back and the tool switch, and never overflow', (tester) async {
+  testWidgets('a phone tool bar names the tool, and its back returns to the gallery', (tester) async {
+    // `A4 · 1b` / `A3a · 1d`: no strip on a phone.
+    for (final width in [360.0, 390.0, 430.0]) {
+      for (final tab in [WorkbenchTab.comparator, WorkbenchTab.mask, WorkbenchTab.crop]) {
+        await pumpAtWidth(tester, width, phone: true, tab: tab, hasLeftPanel: false,
+            controls: const SizedBox.expand(), controlsWidth: 300);
+        expect(tester.takeException(), isNull, reason: 'tab $tab at ${width}px');
+        expect(tabStrip, findsNothing);
+        expect(find.byTooltip('Back'), findsOneWidget);
+      }
+    }
+
+    await pumpAtWidth(tester, 390, phone: true, tab: WorkbenchTab.crop, hasLeftPanel: false);
+    expect(find.text('Crop'), findsOneWidget, reason: 'the menu names the active tool');
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pump();
+    expect(lastController.index, WorkbenchTab.image);
+  });
+
+  testWidgets('tool tabs have no back button and never overflow', (tester) async {
     for (var width = 300.0; width <= 1000.0; width += 50) {
       await pumpAtWidth(tester, width, tab: WorkbenchTab.crop);
       expect(tester.takeException(), isNull, reason: 'Overflow at ${width}px');
-      expect(find.byTooltip('Back'), findsOneWidget);
+      expect(find.byTooltip('Back'), findsNothing);
+      expect(find.byIcon(Icons.arrow_back), findsNothing);
     }
+  });
+
+  testWidgets("the strip's gallery item returns a tool tab to the gallery", (tester) async {
+    await pumpAtWidth(tester, 1700, tab: WorkbenchTab.crop);
+
+    await tester.tap(find.text('Gallery'));
+    await tester.pump();
+    expect(lastController.index, WorkbenchTab.image);
+  });
+
+  testWidgets('the tab strip holds its place and width on every tab', (tester) async {
+    // `00e`: switching tabs moves the selection and nothing else.
+    const allTabs = [
+      WorkbenchTab.image,
+      WorkbenchTab.comparator,
+      WorkbenchTab.mask,
+      WorkbenchTab.crop,
+      WorkbenchTab.assistant,
+      WorkbenchTab.video,
+    ];
+    var comparedLabelled = false;
+    for (final width in [900.0, 1200.0, 1500.0, 1700.0]) {
+      final rects = <Rect>[];
+      bool labelled = true;
+      for (final tab in allTabs) {
+        await pumpAtWidth(tester, width, tab: tab);
+        expect(tester.takeException(), isNull, reason: 'tab $tab at ${width}px');
+        if (tabStrip.evaluate().isEmpty) break; // folded into the Tools menu
+        rects.add(tester.getRect(tabStrip));
+        labelled &= tester.widget<GlassSegmented<int>>(tabStrip).showLabels;
+      }
+      if (rects.length < allTabs.length) continue;
+      for (final r in rects) {
+        expect(r, rects.first, reason: 'the strip moved between tabs at ${width}px');
+      }
+      comparedLabelled |= labelled;
+    }
+    expect(comparedLabelled, isTrue, reason: 'no width kept the labelled strip on all six tabs');
   });
 
   group('the tool-controls slot', () {
@@ -259,37 +325,52 @@ void main() {
       expect(find.text('Crop'), findsOneWidget, reason: 'room for both, so the switch keeps its labels');
     });
 
-    testWidgets('the tool switch gives up its labels before the controls must', (tester) async {
-      // Stated as "never this combination", so it holds wherever the test
-      // font puts the steps: the switch keeps its labels only while the
-      // controls still get every pixel of the width they asked for. (A fixed
-      // pair of widths broke once the switch, squeezed further, folded into
-      // the Tools menu, whose button names the active tool.)
+    testWidgets('the strip does not resize for what the controls ask for', (tester) async {
+      // The controls degrade inside their slot; the strip answers to the bar
+      // width alone, so it matches the gallery's at the same width.
       const controlsKey = Key('controls');
-      var sawIconOnlySwitch = false;
-      for (var asked = 0.0; asked <= 1000; asked += 25) {
+      await pumpAtWidth(tester, 1700);
+      final galleryStrip = tester.getRect(tabStrip);
+      for (var asked = 0.0; asked <= 1000; asked += 100) {
         await pumpAtWidth(
           tester,
-          1000,
+          1700,
           tab: WorkbenchTab.crop,
           controls: const SizedBox.expand(key: controlsKey),
           controlsWidth: asked,
         );
-
         expect(tester.takeException(), isNull, reason: 'controls asked for ${asked}px');
-        expect(find.byTooltip('Back'), findsOneWidget);
-
-        final switches = find.byType(GlassSegmented<int>);
-        if (switches.evaluate().isEmpty) continue; // folded into the Tools menu
-        if (tester.widget<GlassSegmented<int>>(switches).showLabels) {
-          expect(tester.getSize(find.byKey(controlsKey)).width, greaterThanOrEqualTo(asked - 0.01),
-              reason: 'the switch kept its labels while the controls got less than ${asked}px');
-        } else {
-          sawIconOnlySwitch = true;
-        }
+        expect(tester.getRect(tabStrip), galleryStrip, reason: 'controls asked for ${asked}px');
       }
-      expect(sawIconOnlySwitch, isTrue,
-          reason: 'no width left the switch inline without its labels — the step was skipped');
+    });
+
+    testWidgets("the assistant's actions sit against the bar's right edge", (tester) async {
+      // `A3a · 1a`: history · new session · apply are pushed fully right. The
+      // mode badge and running pill used to be loose Flexibles beside the
+      // spacer, and the space they did not use trailed after the actions.
+      for (final running in [false, true]) {
+        await pumpAtWidth(
+          tester,
+          1700,
+          tab: WorkbenchTab.assistant,
+          controls: PromptOptimizerToolbar(
+            onNewSession: () {},
+            onHistory: () {},
+            onApply: () {},
+            isRefining: running,
+            canApply: true,
+            modeLabel: 'System Prompt',
+            runningSteps: running ? 4 : null,
+          ),
+        );
+        expect(tester.takeException(), isNull);
+
+        final bar = tester.getRect(find.byKey(barKey));
+        final apply = tester.getRect(find.text('Apply to Workbench'));
+        // Bar padding 6 + the tinted action's own 12.
+        expect(bar.right - apply.right, lessThanOrEqualTo(6 + 12 + 0.5),
+            reason: 'running: $running — the actions stopped short of the right edge');
+      }
     });
 
     testWidgets('the controls are not offered on the gallery tabs', (tester) async {

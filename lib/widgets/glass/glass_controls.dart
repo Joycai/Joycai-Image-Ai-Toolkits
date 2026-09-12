@@ -73,6 +73,7 @@ class GlassSegmented<T> extends StatelessWidget {
     required this.onChanged,
     this.showLabels = true,
     this.accent = false,
+    this.dense = false,
     this.segmentHeight = AppSize.compact,
   });
 
@@ -83,7 +84,14 @@ class GlassSegmented<T> extends StatelessWidget {
   final ValueChanged<T> onChanged;
   final bool showLabels;
   final bool accent;
+
+  /// The workbench tab strip's tighter items (`00e · 1b`): labelled items
+  /// padded 10 instead of 12, icon-only items a 28 square instead of 36.
+  final bool dense;
   final double segmentHeight;
+
+  static double _labelPadding(bool dense) => dense ? 10 : 12;
+  static double _iconPadding(bool dense) => dense ? 6 : 10;
 
   static TextStyle labelStyle(BuildContext context, {required bool selected}) =>
       Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(
@@ -96,18 +104,18 @@ class GlassSegmented<T> extends StatelessWidget {
     BuildContext context,
     List<GlassSegment<T>> segments, {
     required bool showLabels,
+    bool dense = false,
   }) {
     double width = 4 + 2.0 * (segments.length - 1);
     for (final s in segments) {
       final hasIcon = s.icon != null;
       if (!showLabels && hasIcon) {
-        width += 10 + AppSize.iconMd + 10;
+        width += _iconPadding(dense) * 2 + AppSize.iconMd;
         continue;
       }
-      width += 12 +
+      width += _labelPadding(dense) * 2 +
           (hasIcon ? AppSize.iconMd + 6 : 0) +
-          measureGlassText(context, s.label, labelStyle(context, selected: true)) +
-          12;
+          measureGlassText(context, s.label, labelStyle(context, selected: true));
     }
     return width.ceilToDouble();
   }
@@ -136,6 +144,7 @@ class GlassSegmented<T> extends StatelessWidget {
               selected: segments[i].value == value,
               showLabel: showLabels || segments[i].icon == null,
               accent: accent,
+              dense: dense,
               height: segmentHeight,
               onTap: () => onChanged(segments[i].value),
             ),
@@ -152,6 +161,7 @@ class _GlassSegmentItem<T> extends StatefulWidget {
     required this.selected,
     required this.showLabel,
     required this.accent,
+    required this.dense,
     required this.height,
     required this.onTap,
   });
@@ -160,6 +170,7 @@ class _GlassSegmentItem<T> extends StatefulWidget {
   final bool selected;
   final bool showLabel;
   final bool accent;
+  final bool dense;
   final double height;
   final VoidCallback onTap;
 
@@ -183,7 +194,11 @@ class _GlassSegmentItemState<T> extends State<_GlassSegmentItem<T>> {
     final Color iconColor = selected && widget.accent ? scheme.primary : labelColor;
 
     final content = Padding(
-      padding: EdgeInsets.symmetric(horizontal: widget.showLabel ? 12 : 10),
+      padding: EdgeInsets.symmetric(
+        horizontal: widget.showLabel
+            ? GlassSegmented._labelPadding(widget.dense)
+            : GlassSegmented._iconPadding(widget.dense),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
