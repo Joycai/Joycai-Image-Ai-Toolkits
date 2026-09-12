@@ -256,6 +256,14 @@ void main() {
     expect(pick, isNot(rebuilt('_FileArea')),
         reason: 'the area draws the file list, not what is picked');
     expect(pick, isNot(rebuilt('BrowserFilterBar')));
+    // The header states the count, so one line of it has to move — but only
+    // that line. Rebuilding the header took the search field, the staging
+    // button, the view toggle and the refresh button with it, and re-ran the
+    // width measurement that decides whether the header collapses.
+    expect(pick, rebuilt('_HeaderSummary'),
+        reason: 'the subtitle states how many files are picked');
+    expect(pick, isNot(rebuilt('BrowserHeader')),
+        reason: 'and nothing else in the header does');
     expect(
       timesRebuilt(pick, 'FileCard('),
       lessThanOrEqualTo(2),
