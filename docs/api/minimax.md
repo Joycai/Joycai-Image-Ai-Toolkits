@@ -4,7 +4,7 @@
 > 2 种 chat（①/④ 兼容面）+ 1 个私有图像面（同步）+ 1 个私有视频任务面
 > （v2，含管理端点）。
 > 本文只写协议事实（本目录的规矩）；本项目怎么路由，见
-> [`../plans/2026-08-vendor-protocol-model-refactor.md`](../plans/2026-08-vendor-protocol-model-refactor.md)。
+> [`../architecture/llm-three-layer.md`](../architecture/llm-three-layer.md)。
 > ①/④ 两面的兼容层砍削样本已收录于 [`landscape.md`](landscape.md) §7
 > （第二、四样本），本文不重复；两条 chat 面只补最新差异，图像面（§3）与视频面
 > （§4）写全貌。

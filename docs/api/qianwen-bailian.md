@@ -3,7 +3,7 @@
 > 一家供应商、一把 key、一个 host（`dashscope.aliyuncs.com`），六条 wire：
 > 3 种 chat + 图片同步/异步 + 视频异步。本文只写协议事实（本目录的规矩）；
 > 本项目怎么路由这六条 wire，见
-> [`../plans/2026-08-vendor-protocol-model-refactor.md`](../plans/2026-08-vendor-protocol-model-refactor.md)。
+> [`../architecture/llm-three-layer.md`](../architecture/llm-three-layer.md)。
 >
 > **来源与可信度**：整理自 `platform.qianwenai.com` 的 API reference
 > （2026-08 抓取）。该站曾被证实是二手镜像（见
