@@ -319,11 +319,26 @@ void main() {
   });
 
   group('ModelDescriptor.acceptsImageInput', () {
-    test('deepseek ids are text-only; others keep the historical default', () {
+    test('text-only deepseek ids opt out; others keep the historical default', () {
       expect(ModelDescriptor.of('deepseek-chat').acceptsImageInput, isFalse);
       expect(ModelDescriptor.of('deepseek-reasoner').acceptsImageInput, isFalse);
+      expect(ModelDescriptor.of('deepseek-v4-pro').acceptsImageInput, isFalse);
+      expect(ModelDescriptor.of('deepseek-ai/DeepSeek-V3').acceptsImageInput,
+          isFalse);
       expect(ModelDescriptor.of('gpt-5-chat').acceptsImageInput, isTrue);
       expect(ModelDescriptor.of('gemini-2.5-flash').acceptsImageInput, isTrue);
+    });
+
+    test('V4.1-Flash and the VL weights see images', () {
+      expect(ModelDescriptor.of('deepseek-flash').acceptsImageInput, isTrue);
+      // Legacy names, still callable and now served by V4.1-Flash.
+      expect(ModelDescriptor.of('deepseek-v4-flash').acceptsImageInput, isTrue);
+      expect(
+          ModelDescriptor.of('deepseek-v4-flash-vision-exp').acceptsImageInput,
+          isTrue);
+      expect(
+          ModelDescriptor.of('deepseek-ai/deepseek-vl2').acceptsImageInput,
+          isTrue);
     });
   });
 

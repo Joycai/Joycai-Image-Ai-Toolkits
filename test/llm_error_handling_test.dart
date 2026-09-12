@@ -178,6 +178,7 @@ void main() {
       expect(ModelFamilyClassifier.isNijiVariant('Niji-6'), isTrue);
       expect(ModelFamilyClassifier.isNijiVariant('mj_fast'), isFalse);
       expect(ModelFamilyClassifier.isTextOnlyChat('deepseek-chat'), isTrue);
+      expect(ModelFamilyClassifier.isTextOnlyChat('deepseek-flash'), isFalse);
       expect(ModelFamilyClassifier.isTextOnlyChat('gpt-4o'), isFalse);
       expect(ModelFamilyClassifier.isMockModel('mock-video'), isTrue);
       expect(ModelFamilyClassifier.isMockModel('sora-2'), isFalse);
