@@ -142,31 +142,40 @@ class PromptOptimizerToolbar extends StatelessWidget {
 
     final children = <Widget>[
       const SizedBox(width: _leading),
-      // Which brain is answering: a fact about the session, not a state, so
-      // it is mono on a faint wash of the glass ink rather than the accent.
-      if (showBadge) ...[
-        Flexible(
-          child: _Chip(
-            label: l10n.optModeBadgeAgent(modeLabel!),
-            background: ink.withValues(alpha: 0.10),
-            foreground: ink,
-            mono: true,
-          ),
+      // The chips get a row of their own. As loose Flexibles beside the
+      // spacer they each claimed a share of the free space and used less of
+      // it, and what they left over landed after the actions — so the actions
+      // stopped short of the bar's right edge.
+      Expanded(
+        child: Row(
+          children: [
+            // Which brain is answering: a fact about the session, not a state,
+            // so it is mono on a faint wash of the glass ink rather than the
+            // accent.
+            if (showBadge)
+              Flexible(
+                child: _Chip(
+                  label: l10n.optModeBadgeAgent(modeLabel!),
+                  background: ink.withValues(alpha: 0.10),
+                  foreground: ink,
+                  mono: true,
+                ),
+              ),
+            if (running) ...[
+              if (showBadge) const SizedBox(width: 8),
+              Flexible(
+                child: _Chip(
+                  label: runningLabel ? runningText : null,
+                  tooltip: runningText,
+                  background: scheme.accentTint,
+                  foreground: scheme.onAccentTint,
+                  dot: scheme.primary,
+                ),
+              ),
+            ],
+          ],
         ),
-      ],
-      if (running) ...[
-        if (showBadge) const SizedBox(width: 8),
-        Flexible(
-          child: _Chip(
-            label: runningLabel ? runningText : null,
-            tooltip: runningText,
-            background: scheme.accentTint,
-            foreground: scheme.onAccentTint,
-            dot: scheme.primary,
-          ),
-        ),
-      ],
-      const Expanded(child: SizedBox()),
+      ),
       if (sessionInMenu)
         MenuAnchor(
           menuChildren: [

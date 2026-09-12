@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/prompt_optimizer_toolbar.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/workbench_glass_toolbar.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
@@ -340,6 +341,35 @@ void main() {
         );
         expect(tester.takeException(), isNull, reason: 'controls asked for ${asked}px');
         expect(tester.getRect(tabStrip), galleryStrip, reason: 'controls asked for ${asked}px');
+      }
+    });
+
+    testWidgets("the assistant's actions sit against the bar's right edge", (tester) async {
+      // `A3a · 1a`: history · new session · apply are pushed fully right. The
+      // mode badge and running pill used to be loose Flexibles beside the
+      // spacer, and the space they did not use trailed after the actions.
+      for (final running in [false, true]) {
+        await pumpAtWidth(
+          tester,
+          1700,
+          tab: WorkbenchTab.assistant,
+          controls: PromptOptimizerToolbar(
+            onNewSession: () {},
+            onHistory: () {},
+            onApply: () {},
+            isRefining: running,
+            canApply: true,
+            modeLabel: 'System Prompt',
+            runningSteps: running ? 4 : null,
+          ),
+        );
+        expect(tester.takeException(), isNull);
+
+        final bar = tester.getRect(find.byKey(barKey));
+        final apply = tester.getRect(find.text('Apply to Workbench'));
+        // Bar padding 6 + the tinted action's own 12.
+        expect(bar.right - apply.right, lessThanOrEqualTo(6 + 12 + 0.5),
+            reason: 'running: $running — the actions stopped short of the right edge');
       }
     });
 
