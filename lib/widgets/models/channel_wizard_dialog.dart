@@ -1060,6 +1060,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     final l10n = widget.l10n;
     return showDialog<bool>(
       context: context,
+      animationStyle: appDialogAnimation(context),
       builder: (dialogContext) => AppDialog(
         icon: Icons.fact_check_outlined,
         title: l10n.previewReady,

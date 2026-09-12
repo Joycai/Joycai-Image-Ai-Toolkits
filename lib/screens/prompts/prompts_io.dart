@@ -87,6 +87,7 @@ Future<bool> importPrompts(BuildContext context, AppLocalizations l10n) async {
 
   final String? importMode = await showDialog<String>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     builder: (_) => _ImportModeDialog(fileName: picked.name, incoming: incoming, current: current),
   );
 

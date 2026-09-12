@@ -10,6 +10,25 @@ import '../l10n/app_localizations.dart';
 /// lands on 22.
 const double appDialogRadius = AppRadius.dialog;
 
+/// The clock every dialog route runs on.
+///
+/// [showDialog] hard-codes 150ms unless it is handed an [AnimationStyle], which
+/// is both off the M ladder and deaf to the app's own reduce-visual-effects
+/// step-down. Passing this at every call site is what puts dialogs back on
+/// [AppMotion.sceneOf]: M3 normally, M2 under reduce visual effects, nothing at
+/// all under the platform's reduce motion.
+///
+/// `reverseDuration` is deliberately absent: `DialogRoute` extends
+/// `RawDialogRoute`, which never overrides `reverseTransitionDuration`, so the
+/// field would be accepted and silently ignored — a dialog closes over the same
+/// span it opened in. Shortening that would take a `DialogRoute` subclass and a
+/// hand-rolled `showDialog`, which is more machinery than the 112ms is worth.
+AnimationStyle appDialogAnimation(BuildContext context) => AnimationStyle(
+      duration: AppMotion.sceneOf(context),
+      curve: AppMotion.emphasized,
+      reverseCurve: AppMotion.quick,
+    );
+
 /// The app's dialog shell (`01 · 1h`).
 ///
 /// An **opaque panel** at r22 — dialogs are content, not controls, so they are
@@ -19,7 +38,9 @@ const double appDialogRadius = AppRadius.dialog;
 /// solid error fill.
 ///
 /// Use [AppDialog.show] for the common shape. For a dialog whose body owns its
-/// own layout, construct [AppDialog] inside your own `showDialog` call.
+/// own layout, construct [AppDialog] inside your own `showDialog` call — which
+/// must pass `animationStyle: appDialogAnimation(context)`, or it runs on
+/// Flutter's 150ms instead of the app's ladder.
 ///
 /// Popping: [actions] are built with the caller's context, so
 /// `Navigator.pop(context, value)` inside one pops this dialog — the app has a
@@ -128,6 +149,7 @@ class AppDialog extends StatelessWidget {
   }) {
     return showDialog<T>(
       context: context,
+      animationStyle: appDialogAnimation(context),
       barrierDismissible: barrierDismissible,
       builder: (_) => AppDialog(
         title: title,
@@ -346,7 +368,14 @@ class _Materialize extends StatelessWidget {
 
     return ScaleTransition(
       scale: Tween<double>(begin: _from, end: 1).animate(
-        CurvedAnimation(parent: animation, curve: AppMotion.emphasized),
+        CurvedAnimation(
+          parent: animation,
+          curve: AppMotion.emphasized,
+          // M1 out: a dialog closing is a response, not a decision. Without a
+          // reverse curve the exit is `emphasized` played backwards, which is
+          // an ease-in — it hangs at full size, then bolts.
+          reverseCurve: AppMotion.quick,
+        ),
       ),
       child: child,
     );

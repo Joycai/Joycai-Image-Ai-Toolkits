@@ -179,6 +179,7 @@ class _PromptHistorySheetState extends State<PromptHistorySheet> {
   Future<void> _openPreview(PromptHistoryEntry entry) async {
     final confirmed = await showDialog<bool>(
       context: context,
+      animationStyle: appDialogAnimation(context),
       builder: (context) => _PromptPreviewDialog(entry: entry),
     );
     if (confirmed != true || !mounted) return;

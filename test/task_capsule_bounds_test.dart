@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass.dart';
 import 'package:joycai_image_ai_toolkits/widgets/task_capsule_monitor.dart';
 
 import 'screenshots/harness/fixture_env.dart';
@@ -20,6 +21,17 @@ import 'screenshots/harness/shoot.dart';
 /// it, and assert it is still inside the window.
 void main() {
   final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
+
+  /// The capsule's painted box.
+  ///
+  /// Not `find.byType(TaskCapsuleMonitor)`: that resolves to the `Transform`
+  /// that moves the capsule, and a `RenderTransform`'s own box does not carry
+  /// the translation it applies to its child. Measuring — or tapping — there
+  /// would report the parked-at-origin rectangle instead of the capsule.
+  final Finder capsuleBody = find.descendant(
+    of: find.byType(TaskCapsuleMonitor),
+    matching: find.byType(AppGlass),
+  );
   late FixtureEnv env;
 
   setUpAll(() async {
@@ -54,15 +66,16 @@ void main() {
 
     final Finder capsule = find.byType(TaskCapsuleMonitor);
     expect(capsule, findsOneWidget);
+    expect(capsuleBody, findsOneWidget);
 
-    final Rect collapsed = tester.getRect(capsule);
+    final Rect collapsed = tester.getRect(capsuleBody);
     expect(collapsed.bottom, lessThanOrEqualTo(window.height),
         reason: 'collapsed capsule already overflows');
 
-    await tester.tap(capsule);
+    await tester.tap(capsuleBody);
     await settle(tester);
 
-    final Rect opened = tester.getRect(capsule);
+    final Rect opened = tester.getRect(capsuleBody);
     // It really did open — otherwise the assertion below passes for the wrong
     // reason and this test protects nothing.
     expect(opened.height, greaterThan(collapsed.height),
@@ -86,17 +99,16 @@ void main() {
       label: 'capsule-restore',
     );
 
-    final Finder capsule = find.byType(TaskCapsuleMonitor);
-    final Rect parked = tester.getRect(capsule);
+    final Rect parked = tester.getRect(capsuleBody);
 
-    await tester.tap(capsule);
+    await tester.tap(capsuleBody);
     await settle(tester);
-    final Rect opened = tester.getRect(capsule);
+    final Rect opened = tester.getRect(capsuleBody);
     expect(opened.top, lessThan(parked.top));
     expect(opened.bottom, closeTo(parked.bottom, 1));
 
-    await tester.tap(capsule);
+    await tester.tap(capsuleBody);
     await settle(tester);
-    expect(tester.getRect(capsule).top, closeTo(parked.top, 1));
+    expect(tester.getRect(capsuleBody).top, closeTo(parked.top, 1));
   });
 }

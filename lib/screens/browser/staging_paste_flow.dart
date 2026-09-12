@@ -121,6 +121,7 @@ Future<void> _runAndReport(
   // dismiss this dialog without taking the transfer down with it.
   unawaited(showDialog<void>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     barrierDismissible: false,
     builder: (dialogContext) => _ProgressDialog(
       plan: plan,
@@ -208,6 +209,7 @@ Future<Map<String, FileConflictResolution>?> _askConflicts(
   if (!context.mounted) return null;
   return showDialog<Map<String, FileConflictResolution>>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     builder: (_) => _ConflictDialog(
       plan: plan,
       conflicts: conflicts,

@@ -21,6 +21,7 @@ Future<String?> showImageSizePickerDialog({
 }) {
   return showDialog<String>(
     context: context,
+    animationStyle: appDialogAnimation(context),
     builder: (_) => _ImageSizePickerDialog(spec: spec, currentValue: currentValue),
   );
 }

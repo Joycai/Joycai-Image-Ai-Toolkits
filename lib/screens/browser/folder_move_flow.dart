@@ -97,6 +97,7 @@ Future<void> runFolderTransfer(
     // Not awaited: the transfer owns its own lifetime and pops this itself.
     unawaited(showDialog<void>(
       context: host,
+      animationStyle: appDialogAnimation(host),
       barrierDismissible: false,
       builder: (_) => _FolderProgressDialog(
         name: name,

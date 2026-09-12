@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_text_field.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_side_panel.dart';
 
 /// Pins the app's answer to the platform's reduce-motion flag.
@@ -145,6 +148,47 @@ void main() {
   });
 
   group('AppSidePanel is the documented exception', () {
+    /// Arriving is the event; leaving is getting out of the way. Pinned
+    /// because the shorter exit needs a route subclass to exist at all —
+    /// `showGeneralDialog` takes no reverse duration, and falling back to the
+    /// entrance is silent when it happens.
+    testWidgets('leaves faster than it arrives, in both motion settings',
+        (tester) async {
+      for (final bool disabled in [false, true]) {
+        useDesktopSurface(tester);
+        await tester.pumpWidget(harness(
+          disableAnimations: disabled,
+          child: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => AppSidePanel.show(
+                context,
+                builder: (_) => const Text('panel body'),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ));
+
+        await tester.tap(find.text('open'));
+        await tester.pump();
+        final route = ModalRoute.of(tester.element(find.text('panel body')))!;
+        final Duration expected = disabled ? AppMotion.reveal : AppMotion.panel;
+        expect(route.transitionDuration, expected, reason: 'disabled=$disabled');
+        expect(
+          route.reverseTransitionDuration,
+          Duration(milliseconds: (expected.inMilliseconds * AppMotion.exitFactor).round()),
+          reason: 'disabled=$disabled: the exit fell back to the entrance',
+        );
+
+        // Close it before the next pass: a second `pumpWidget` keeps the
+        // Navigator, so a panel left open would still be the one found — and
+        // the second assertion would read the first pass's route.
+        Navigator.of(tester.element(find.text('panel body'))).pop();
+        await tester.pumpAndSettle();
+        expect(find.text('panel body'), findsNothing);
+      }
+    });
+
     testWidgets('slides in when motion is allowed', (tester) async {
       useDesktopSurface(tester);
       await tester.pumpWidget(harness(
@@ -228,6 +272,46 @@ void main() {
 
       await tester.pumpAndSettle();
       expect(find.text('panel body'), findsOneWidget);
+    });
+  });
+
+  /// A dialog's own clock.
+  ///
+  /// `showDialog` hard-codes 150ms unless it is handed an `AnimationStyle`, and
+  /// nothing about that number is visible from `AppDialog` — the scale inside
+  /// it just rides whatever the route hands over. So the contract pinned here
+  /// is that the route runs on the ladder, in both directions of the flag.
+  group('a dialog route', () {
+    Future<ModalRoute<dynamic>> openDialog(
+      WidgetTester tester, {
+      required bool disableAnimations,
+    }) async {
+      late BuildContext ctx;
+      await tester.pumpWidget(harness(
+        disableAnimations: disableAnimations,
+        child: Builder(builder: (context) {
+          ctx = context;
+          return const SizedBox();
+        }),
+      ));
+
+      unawaited(AppDialog.show<void>(ctx, title: 'Title', content: const Text('dialog body')));
+      await tester.pump();
+      return ModalRoute.of(tester.element(find.text('dialog body')))!;
+    }
+
+    testWidgets('runs on the M ladder, not on the 150ms showDialog assumes',
+        (tester) async {
+      final route = await openDialog(tester, disableAnimations: false);
+      expect(route.transitionDuration, AppMotion.panel);
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('collapses to nothing when the platform asks for less motion',
+        (tester) async {
+      final route = await openDialog(tester, disableAnimations: true);
+      expect(route.transitionDuration, Duration.zero);
+      await tester.pumpAndSettle();
     });
   });
 }
