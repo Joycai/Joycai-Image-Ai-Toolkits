@@ -89,14 +89,6 @@ void main() {
           lessThan(AssistantNoteRepository.maxContentChars + 100));
       expect(note.content, contains('[note truncated'));
     });
-
-    test('listForSession returns only that session, oldest first', () async {
-      await notes.insert(sessionId: 's1', title: 'a', content: '1');
-      await notes.insert(sessionId: 's2', title: 'x', content: '2');
-      await notes.insert(sessionId: 's1', title: 'b', content: '3');
-      final list = await notes.listForSession('s1');
-      expect([for (final n in list) n.title], ['a', 'b']);
-    });
   });
 
   group('retention', () {
@@ -106,12 +98,13 @@ void main() {
           id: 's1', mode: AssistantMode.knowledgeBase, refImages: const []);
       final note =
           await notes.insert(sessionId: 's1', title: 't', content: 'c');
-      await notes.insert(sessionId: 'other', title: 't', content: 'kept');
+      final other =
+          await notes.insert(sessionId: 'other', title: 't', content: 'kept');
 
       await sessions.deleteSession('s1');
 
       expect(await notes.get(note.id, sessionId: 's1'), isNull);
-      expect(await notes.listForSession('other'), hasLength(1));
+      expect(await notes.get(other.id, sessionId: 'other'), isNotNull);
     });
   });
 

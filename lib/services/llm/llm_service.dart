@@ -13,7 +13,6 @@ class LLMService {
   factory LLMService() => _instance;
   LLMService._internal();
 
-  final Map<String, List<LLMMessage>> _sessions = {};
   final LLMConfigResolver _configResolver = LLMConfigResolver();
   final LLMDispatcher _dispatcher = LLMDispatcher();
 
@@ -39,7 +38,6 @@ class LLMService {
   Future<LLMResponse> request({
     required dynamic modelIdentifier, // Can be String (legacy ID) or int (DbId)
     required List<LLMMessage> messages,
-    String? sessionId,
     String? contextId,
     Map<String, dynamic>? options,
     List<LLMTool>? tools,
@@ -64,13 +62,6 @@ class LLMService {
     if (toolBearing && !_dispatcher.streamSupportsTools(config)) {
       useStream = false;
     }
-    List<LLMMessage> fullHistory = messages;
-    if (sessionId != null) {
-      _sessions[sessionId] ??= [];
-      _sessions[sessionId]!.addAll(messages);
-      fullHistory = _sessions[sessionId]!;
-    }
-
     final int maxRetries = options?['retryCount'] ?? 0;
     int attempt = 0;
     void log(String msg, {String level = 'INFO'}) =>
@@ -79,7 +70,7 @@ class LLMService {
     // The turn so far: the history this request is asked against (grows by
     // one continuation at a time) and the partial replies collected on the
     // way to a finished one.
-    var turnHistory = fullHistory;
+    var turnHistory = messages;
     final parts = <LLMResponse>[];
 
     while (true) {
@@ -155,17 +146,7 @@ class LLMService {
               'answer as-is.', level: 'WARN');
         }
 
-        final merged = mergeTurnParts(parts);
-
-        // Update session
-        if (sessionId != null) {
-          _sessions[sessionId]!.add(LLMMessage(
-            role: LLMRole.assistant,
-            content: merged.text,
-          ));
-        }
-
-        return merged;
+        return mergeTurnParts(parts);
       } catch (e) {
         attempt++;
         if (attempt > maxRetries || !isRetryable(e)) {
@@ -430,7 +411,6 @@ class LLMService {
   Stream<LLMResponseChunk> requestStream({
     required dynamic modelIdentifier, // Can be String (legacy ID) or int (DbId)
     required List<LLMMessage> messages,
-    String? sessionId,
     String? contextId,
     Map<String, dynamic>? options,
   }) async* {
@@ -439,13 +419,6 @@ class LLMService {
       modelIdentifier, 
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
-    List<LLMMessage> fullHistory = messages;
-    if (sessionId != null) {
-      _sessions[sessionId] ??= [];
-      _sessions[sessionId]!.addAll(messages);
-      fullHistory = _sessions[sessionId]!;
-    }
-
     onLogAdded?.call('Connecting to ${config.channelType}...', level: 'DEBUG', contextId: contextId);
 
     final int maxRetries = options?['retryCount'] ?? 0;
@@ -459,13 +432,12 @@ class LLMService {
 
     while (true) {
       try {
-        String accumulatedText = "";
         int imageCount = 0;
         Map<String, dynamic>? finalMetadata;
         
         final stream = _dispatcher.generateStream(
           config, 
-          fullHistory, 
+          messages, 
           options: options, 
           logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
         );
@@ -476,7 +448,6 @@ class LLMService {
             onLogAdded?.call('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG', contextId: contextId);
           }
           if (chunk.textPart != null) {
-            accumulatedText += chunk.textPart!;
             onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
           }
           if (chunk.imagePart != null) {
@@ -496,12 +467,6 @@ class LLMService {
           _recordUsage(config.modelId, config, finalMetadata, modelDbId: modelIdentifier is int ? modelIdentifier : null);
         }
 
-        if (sessionId != null) {
-          _sessions[sessionId]!.add(LLMMessage(
-            role: LLMRole.assistant,
-            content: accumulatedText,
-          ));
-        }
         return; // Success, exit retry loop
       } catch (e) {
         attempt++;
@@ -618,10 +583,6 @@ class LLMService {
     if (raw == null) return null;
     final count = raw is num ? raw.toInt() : int.tryParse(raw.toString());
     return (count == null || count <= 0) ? null : count;
-  }
-
-  void clearSession(String sessionId) {
-    _sessions.remove(sessionId);
   }
 
   Future<LLMOperationTicket> startLongRunning({

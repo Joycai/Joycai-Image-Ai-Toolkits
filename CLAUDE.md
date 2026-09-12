@@ -46,7 +46,7 @@ lib/
 
 **Task types:** `imageProcess` · `imageDownload` · `promptRefine` · `aiRename` · `videoGenerate`  
 **LLM protocol families:** `openai` · `gemini` · `anthropic` · `midjourney` — routing lives in `lib/services/llm/llm_dispatcher.dart`  
-**Key dependencies:** see `pubspec.yaml` — `provider`, `sqflite`, `http`, `shelf`, `shelf_router`, `photo_view`, `extended_image`, `video_player`, `desktop_drop`, `file_picker`, `image`, `local_notifier`, `gal`
+**Key dependencies:** see `pubspec.yaml` — `provider`, `sqflite`, `http`, `extended_image`, `video_player`, `desktop_drop`, `file_picker`, `image`, `flutter_local_notifications`, `gal`
 
 ## Architecture Notes
 

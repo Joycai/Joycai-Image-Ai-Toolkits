@@ -52,8 +52,8 @@ void main() {
 
       final plan = await planFor([a, b]);
 
-      expect(plan.hasConflicts, isFalse);
-      expect(plan.readyCount, 2);
+      expect(plan.entries, hasLength(2));
+      expect(plan.entries.where((e) => e.hasConflict), isEmpty);
       expect(plan.destinationExists, isTrue);
       // Sizes are read off the disk, not carried in from the caller's stale
       // listing — the progress readout is only as honest as this.
@@ -67,7 +67,7 @@ void main() {
       final plan = await planFor([a]);
 
       expect(plan.entries.single.conflict, FileTransferConflict.targetExists);
-      expect(plan.readyCount, 0);
+      expect(plan.entries.single.hasConflict, isTrue);
     });
 
     test('two staged files landing on one name collide with each other',
