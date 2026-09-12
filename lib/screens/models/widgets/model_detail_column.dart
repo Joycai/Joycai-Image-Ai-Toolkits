@@ -395,9 +395,8 @@ class _ChannelHeader extends StatelessWidget {
                     height: AppSize.iconButton,
                   ),
                   color: scheme.onSurfaceVariant,
-                  onPressed: () => showAppGlassMenu(
+                  onPressed: () => showAppGlassMenuBelow(
                     anchor,
-                    position: appGlassMenuPositionBelow(anchor),
                     entries: [
                       AppGlassMenuItem(
                         icon: Icons.delete_outline,

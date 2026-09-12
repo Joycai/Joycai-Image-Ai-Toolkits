@@ -552,9 +552,8 @@ class _TaskMenuButtonState extends State<TaskMenuButton> {
     final hasPrompt = task.parameters.containsKey('prompt');
 
     setState(() => _open = true);
-    await showAppGlassMenu(
+    await showAppGlassMenuBelow(
       context,
-      position: appGlassMenuPositionBelow(context, width: _menuWidth),
       width: _menuWidth,
       entries: [
         // First and unconditional: every status has a use for it, and a

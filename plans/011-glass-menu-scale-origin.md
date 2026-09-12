@@ -1,6 +1,6 @@
 # 011 — 玻璃菜单从触发它的那个角长出
 
-- **Status**: TODO
+- **Status**: DONE(2026-09-12 执行,flutter analyze 零问题,1763 个测试全通过)
 - **Commit**: 0b97136
 - **Severity**: HIGH
 - **Category**: 物理性与原点(3)

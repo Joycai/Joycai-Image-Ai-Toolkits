@@ -321,9 +321,8 @@ class _PhoneChannelsTab extends StatelessWidget {
                   icon: const Icon(Icons.more_vert, size: AppSize.iconLg),
                   tooltip: l10n.more,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  onPressed: () => showAppGlassMenu(
+                  onPressed: () => showAppGlassMenuBelow(
                     anchor,
-                    position: appGlassMenuPositionBelow(anchor),
                     entries: channelMenuItems(
                       anchor,
                       actions: actions,

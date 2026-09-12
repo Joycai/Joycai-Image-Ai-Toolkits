@@ -74,8 +74,16 @@ Future<void> showAppGlassMenu(
   required Offset position,
   required List<AppGlassMenuEntry> entries,
   double width = kAppGlassMenuWidth,
+  Alignment anchor = Alignment.topLeft,
 }) async {
   final navigator = Navigator.of(context);
+  final MediaQueryData media = MediaQuery.of(context);
+  // Measured the way the delegate will constrain it, so a menu longer than the
+  // window is measured at the height it will actually get.
+  final double maxHeight = math.max(
+    0,
+    media.size.height - media.padding.vertical - _AppGlassMenuLayout._margin * 2,
+  );
   final action = await navigator.push<VoidCallback>(
     _AppGlassMenuRoute(
       position: position,
@@ -84,9 +92,32 @@ Future<void> showAppGlassMenu(
       themes: InheritedTheme.capture(from: context, to: navigator.context),
       duration: AppMotion.durationOf(context, AppMotion.state),
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      origin: _menuOrigin(
+        position: position,
+        childSize: Size(width, math.min(appGlassMenuHeight(entries), maxHeight)),
+        screenSize: media.size,
+        padding: media.padding,
+        anchor: anchor,
+      ),
     ),
   );
   action?.call();
+}
+
+/// Opens a menu under the button [anchor] belongs to, its right edge on the
+/// button's right edge — and growing out of that corner.
+Future<void> showAppGlassMenuBelow(
+  BuildContext anchor, {
+  required List<AppGlassMenuEntry> entries,
+  double width = kAppGlassMenuWidth,
+}) {
+  return showAppGlassMenu(
+    anchor,
+    position: appGlassMenuPositionBelow(anchor, width: width),
+    entries: entries,
+    width: width,
+    anchor: Alignment.topRight,
+  );
 }
 
 /// Where a menu dropping from a button at [anchor] should open: its right edge
@@ -97,6 +128,52 @@ Offset appGlassMenuPositionBelow(BuildContext anchor, {double width = kAppGlassM
   return box.localToGlobal(Offset(box.size.width - width, box.size.height + AppSpace.s4));
 }
 
+/// The height an [AppGlassMenu] built from [entries] wants: 6 of padding at
+/// each end, a 28 row each — 42 under a disabled row carrying its reason — and
+/// a 1px rule in 4 of padding for each divider.
+///
+/// Not a layout input; the menu is still laid out by its own content. This is
+/// what [showAppGlassMenu] needs *before* the route exists, to know which
+/// corner the panel will be anchored by and therefore which corner it should
+/// scale out of.
+double appGlassMenuHeight(List<AppGlassMenuEntry> entries) {
+  double height = AppSpace.s6 * 2;
+  for (final AppGlassMenuEntry entry in entries) {
+    height += switch (entry) {
+      AppGlassMenuItem(:final bool isEnabled, :final String? note) =>
+        !isEnabled && note != null ? _AppGlassMenuRow._noteHeight : AppSize.compact,
+      _ => 1 + AppSpace.s4 * 2,
+    };
+  }
+  return height;
+}
+
+/// Which corner of the menu ends up on [position] — the corner it should
+/// therefore scale out of.
+///
+/// [anchor] is where the *caller* put the point: `topLeft` for a right-click,
+/// where the menu hangs off the pointer, and `topRight` for a dropdown laid
+/// under a button's right edge. [_AppGlassMenuLayout.getPositionForChild] then
+/// flips an axis where the menu would run off the window, and a flipped axis
+/// always leaves that far edge on the point.
+Alignment _menuOrigin({
+  required Offset position,
+  required Size childSize,
+  required Size screenSize,
+  required EdgeInsets padding,
+  required Alignment anchor,
+}) {
+  const double margin = _AppGlassMenuLayout._margin;
+  final double minX = padding.left + margin;
+  final double minY = padding.top + margin;
+  final double maxX = math.max(minX, screenSize.width - padding.right - margin - childSize.width);
+  final double maxY = math.max(minY, screenSize.height - padding.bottom - margin - childSize.height);
+  return Alignment(
+    position.dx > maxX ? 1 : anchor.x,
+    position.dy > maxY ? 1 : anchor.y,
+  );
+}
+
 class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
   _AppGlassMenuRoute({
     required this.position,
@@ -105,6 +182,7 @@ class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
     required this.themes,
     required this.duration,
     required this.barrierLabel,
+    required this.origin,
   });
 
   final Offset position;
@@ -112,6 +190,9 @@ class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
   final double width;
   final CapturedThemes themes;
   final Duration duration;
+
+  /// Which corner the panel grows out of — see [_menuOrigin].
+  final Alignment origin;
 
   @override
   final String barrierLabel;
@@ -154,7 +235,7 @@ class _AppGlassMenuRoute extends PopupRoute<VoidCallback> {
       opacity: curved,
       child: ScaleTransition(
         scale: Tween<double>(begin: 0.96, end: 1).animate(curved),
-        alignment: Alignment.topLeft,
+        alignment: origin,
         child: child,
       ),
     );

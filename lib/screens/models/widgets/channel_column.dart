@@ -289,9 +289,8 @@ class _RowMenuButton extends StatelessWidget {
           minimumSize: const Size(AppSize.compact, AppSize.compact),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
         ),
-        onPressed: () => showAppGlassMenu(
+        onPressed: () => showAppGlassMenuBelow(
           anchor,
-          position: appGlassMenuPositionBelow(anchor),
           entries: entries(anchor),
         ),
       ),

@@ -134,4 +134,58 @@ void main() {
     expect(position.dx + 210, closeTo(box.right, 0.01));
     expect(position.dy, closeTo(box.bottom + 4, 0.01));
   });
+
+  /// A panel has one way of saying where it came from, and that is the corner
+  /// it grows out of. The corner on the point is not always the top-left: a
+  /// dropdown is laid right-edge-to-right-edge under its button, and a menu
+  /// near a window edge is flipped to the other side of the click.
+  Alignment originOf(WidgetTester tester) {
+    final ScaleTransition scale = tester.widget(
+      find.ancestor(of: find.byType(AppGlassMenu), matching: find.byType(ScaleTransition)),
+    );
+    return scale.alignment;
+  }
+
+  testWidgets('a right-click menu grows out of the pointer, top-left', (tester) async {
+    await pumpHost(tester);
+    await open(tester, [AppGlassMenuItem(label: 'One', onSelected: () {})]);
+    expect(originOf(tester), Alignment.topLeft);
+  });
+
+  testWidgets('a dropdown under a button grows out of its top-right corner', (tester) async {
+    final anchorKey = GlobalKey();
+    tester.view.physicalSize = const Size(800, 600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Align(
+          alignment: Alignment.topRight,
+          child: SizedBox(key: anchorKey, width: 32, height: 32),
+        ),
+      ),
+    ));
+
+    // The helper lays the menu's *right* edge on the button's right edge, so
+    // the corner on the button is the top-right one.
+    showAppGlassMenuBelow(
+      tester.element(find.byKey(anchorKey)),
+      entries: [AppGlassMenuItem(label: 'One', onSelected: () {})],
+    );
+    await tester.pumpAndSettle();
+    expect(originOf(tester), Alignment.topRight);
+  });
+
+  testWidgets('a menu flipped at the corner grows out of the corner it was flipped onto',
+      (tester) async {
+    await pumpHost(tester);
+    await open(tester, [
+      AppGlassMenuItem(label: 'One', onSelected: () {}),
+      AppGlassMenuItem(label: 'Two', onSelected: () {}),
+    ], at: const Offset(780, 580));
+
+    // Same click as the flip test above: both edges land on the pointer, so
+    // the panel must grow up and to the left, out of its bottom-right corner.
+    expect(originOf(tester), Alignment.bottomRight);
+  });
 }
