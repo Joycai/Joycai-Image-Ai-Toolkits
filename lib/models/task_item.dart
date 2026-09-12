@@ -7,7 +7,14 @@ import 'dart:convert';
 /// these symbols, so existing imports of `task_queue_service.dart` keep working.
 
 enum TaskStatus { pending, processing, completed, failed, cancelled }
-enum TaskType { imageProcess, imageDownload, promptRefine, aiRename, videoGenerate }
+
+enum TaskType {
+  imageProcess,
+  imageDownload,
+  promptRefine,
+  aiRename,
+  videoGenerate,
+}
 
 enum TaskEventType { textChunk, imageResult, progress, statusChanged, error }
 
@@ -32,7 +39,7 @@ class TaskItem {
   final List<String> imagePaths;
   final Map<String, dynamic> parameters;
   final String modelId; // Legacy string ID
-  final int? modelDbId;   // New internal ID
+  final int? modelDbId; // New internal ID
   final String? channelTag;
   final int? channelColor;
   final bool useStream;
@@ -81,12 +88,13 @@ class TaskItem {
     this.progress,
     this.operationSurface,
     DateTime? createdAt,
-  })  : logs = logs ?? [],
-        resultPaths = resultPaths ?? [],
-        createdAt = createdAt ?? DateTime.now();
+  }) : logs = logs ?? [],
+       resultPaths = resultPaths ?? [],
+       createdAt = createdAt ?? DateTime.now();
 
   /// Marks where [addLog] dropped the head of an over-long log.
-  static const String logTruncationMarker = '[…] earlier lines dropped (log capped at $maxLogLines lines)';
+  static const String logTruncationMarker =
+      '[…] earlier lines dropped (log capped at $maxLogLines lines)';
 
   /// Ceiling on retained log lines. Streaming executors call [addLog] once per
   /// response chunk, so an uncapped log grows with the response and — now that
@@ -94,7 +102,9 @@ class TaskItem {
   static const int maxLogLines = 500;
 
   void addLog(String message) {
-    logs.add('[${DateTime.now().toIso8601String().split('T').last.substring(0, 8)}] $message');
+    logs.add(
+      '[${DateTime.now().toIso8601String().split('T').last.substring(0, 8)}] $message',
+    );
     if (logs.length <= maxLogLines) return;
     // Oldest lines go first, but the marker is kept pinned at the head and
     // trimmed around, so a truncated log never reads as a complete one.
@@ -151,22 +161,51 @@ class TaskItem {
     }
   }
 
+  static List<String> _decodeStringList(Object? raw) {
+    if (raw is! String || raw.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is List ? decoded.whereType<String>().toList() : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Map<String, dynamic> _decodeParameters(Object? raw) {
+    if (raw is! String || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map ? Map<String, dynamic>.from(decoded) : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  static DateTime? _decodeDate(Object? raw) =>
+      raw is String ? DateTime.tryParse(raw) : null;
+
   factory TaskItem.fromMap(Map<String, dynamic> map) {
     return TaskItem(
       id: map['id'],
-      type: TaskType.values.firstWhere((e) => e.name == (map['type'] ?? 'imageProcess'), orElse: () => TaskType.imageProcess),
-      imagePaths: List<String>.from(jsonDecode(map['image_path'])),
-      modelId: map['model_id'] ?? 'unknown',
+      type: TaskType.values.firstWhere(
+        (e) => e.name == (map['type'] ?? 'imageProcess'),
+        orElse: () => TaskType.imageProcess,
+      ),
+      imagePaths: _decodeStringList(map['image_path']),
+      modelId: map['model_id'] as String? ?? 'unknown',
       modelDbId: map['model_pk'] as int?,
       channelTag: map['channel_tag'] as String?,
       channelColor: map['channel_color'] as int?,
       useStream: (map['use_stream'] ?? 1) == 1,
-      status: TaskStatus.values.firstWhere((e) => e.name == map['status']),
-      parameters: Map<String, dynamic>.from(jsonDecode(map['parameters'])),
-      resultPaths: List<String>.from(jsonDecode(map['result_path'])),
+      status: TaskStatus.values.firstWhere(
+        (e) => e.name == map['status'],
+        orElse: () => TaskStatus.failed,
+      ),
+      parameters: _decodeParameters(map['parameters']),
+      resultPaths: _decodeStringList(map['result_path']),
       logs: _decodeLogs(map['logs']),
-      startTime: map['start_time'] != null ? DateTime.parse(map['start_time']) : null,
-      endTime: map['end_time'] != null ? DateTime.parse(map['end_time']) : null,
+      startTime: _decodeDate(map['start_time']),
+      endTime: _decodeDate(map['end_time']),
       operationSurface: map['operation_surface'] as String?,
       createdAt: _decodeCreatedAt(map),
     );

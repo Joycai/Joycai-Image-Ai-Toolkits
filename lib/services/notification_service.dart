@@ -18,13 +18,14 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
+  bool _disabled = false;
   int _nextId = 0;
 
   bool get _isDesktop =>
       Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 
   Future<void> init() async {
-    if (_initialized || !_isDesktop) return;
+    if (_initialized || _disabled || !_isDesktop) return;
 
     // macOS prompts the user for notification permission on first launch
     // (UNUserNotificationCenter) — local_notifier's NSUserNotification API
@@ -40,8 +41,15 @@ class NotificationService {
       ),
     );
 
-    await _plugin.initialize(settings: settings);
-    _initialized = true;
+    try {
+      await _plugin.initialize(settings: settings);
+      _initialized = true;
+    } catch (_) {
+      // Notifications are optional. Test runners and desktop environments
+      // without the native plugin must not turn a completed task into an
+      // unhandled asynchronous error.
+      _disabled = true;
+    }
   }
 
   Future<void> showNotification({
@@ -50,8 +58,9 @@ class NotificationService {
     String? subtitle,
     bool silent = false,
   }) async {
-    if (!_isDesktop) return;
+    if (!_isDesktop || _disabled) return;
     if (!_initialized) await init();
+    if (_disabled) return;
 
     final details = NotificationDetails(
       macOS: DarwinNotificationDetails(
@@ -62,11 +71,15 @@ class NotificationService {
       windows: const WindowsNotificationDetails(),
     );
 
-    await _plugin.show(
-      id: _nextId++,
-      title: title,
-      body: body,
-      notificationDetails: details,
-    );
+    try {
+      await _plugin.show(
+        id: _nextId++,
+        title: title,
+        body: body,
+        notificationDetails: details,
+      );
+    } catch (_) {
+      _disabled = true;
+    }
   }
 }

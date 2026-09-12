@@ -81,7 +81,7 @@ class DataSection extends StatelessWidget {
   Future<void> _openAppDataDir(BuildContext context) async {
     try {
       final path = await DatabaseService().getDatabasePath();
-      await FileUtils.openFolder(path);
+      await FileUtils.openPath(path);
     } catch (e) {
       // Ignore
     }

@@ -25,12 +25,24 @@ class GeminiChatProtocol implements ChatProtocol {
   }) async {
     final config = target.config;
     final url = target.decorateUrl(
-        Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent'));
-    logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
+      Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent'),
+    );
+    logger?.call(
+      'Preparing Google GenAI request to: ${url.host}',
+      level: 'DEBUG',
+    );
     final headers = target.headers();
-    final payload = prepareGooglePayload(history, options, config.endpoint,
-        tools: tools, emitsImages: target.model.capabilities.isImageGenerator);
-    logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
+    final payload = prepareGooglePayload(
+      history,
+      options,
+      config.endpoint,
+      tools: tools,
+      emitsImages: target.model.capabilities.isImageGenerator,
+    );
+    logger?.call(
+      'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',
+      level: 'DEBUG',
+    );
 
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
@@ -38,17 +50,24 @@ class GeminiChatProtocol implements ChatProtocol {
       final appState = AppState();
       LLMDebugLog? debugFile;
       if (appState.enableApiDebug) {
-        debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Standard)', {
-          'url': redactUrl(url),
-          'headers': headers,
-          'body': payload,
-        });
+        debugFile = await LLMDebugLogger.startLog(
+          config.modelId,
+          'GoogleGenAI (Standard)',
+          {'url': redactUrl(url), 'headers': headers, 'body': payload},
+        );
       }
 
-      final response = await client.post(url, headers: headers, body: jsonEncode(payload));
+      final response = await client.post(
+        url,
+        headers: headers,
+        body: jsonEncode(payload),
+      );
 
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(
+          debugFile,
+          'Status: ${response.statusCode}',
+        );
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
         await LLMDebugLogger.finish(debugFile);
       }
@@ -65,8 +84,10 @@ class GeminiChatProtocol implements ChatProtocol {
       final candidates = data['candidates'];
       if (candidates is! List || candidates.isEmpty) {
         final body = response.body;
-        throw Exception('Google GenAI returned no candidates: '
-            '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
+        throw Exception(
+          'Google GenAI returned no candidates: '
+          '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+        );
       }
 
       String text = "";
@@ -83,7 +104,10 @@ class GeminiChatProtocol implements ChatProtocol {
         if (chunk.metadata != null) metadata = chunk.metadata!;
       }
 
-      logger?.call('Parse complete. Text length: ${text.length}, Images: ${images.length}, Tool calls: ${toolCalls.length}', level: 'DEBUG');
+      logger?.call(
+        'Parse complete. Text length: ${text.length}, Images: ${images.length}, Tool calls: ${toolCalls.length}',
+        level: 'DEBUG',
+      );
 
       return LLMResponse(
         text: text,
@@ -121,13 +145,24 @@ class GeminiChatProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async* {
     final config = target.config;
-    final url = target.decorateUrl(Uri.parse(
-        '${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse'));
+    final url = target.decorateUrl(
+      Uri.parse(
+        '${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse',
+      ),
+    );
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
-    final payload = prepareGooglePayload(history, options, config.endpoint,
-        tools: tools, emitsImages: target.model.capabilities.isImageGenerator);
-    logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
+    final payload = prepareGooglePayload(
+      history,
+      options,
+      config.endpoint,
+      tools: tools,
+      emitsImages: target.model.capabilities.isImageGenerator,
+    );
+    logger?.call(
+      'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',
+      level: 'DEBUG',
+    );
 
     final request = http.Request('POST', url);
     request.headers.addAll(headers);
@@ -137,47 +172,73 @@ class GeminiChatProtocol implements ChatProtocol {
     final appState = AppState();
     LLMDebugLog? debugFile;
     if (appState.enableApiDebug) {
-      debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Stream)', {
-        'url': redactUrl(url),
-        'headers': headers,
-        'body': payload,
-      });
+      debugFile = await LLMDebugLogger.startLog(
+        config.modelId,
+        'GoogleGenAI (Stream)',
+        {'url': redactUrl(url), 'headers': headers, 'body': payload},
+      );
     }
 
-    final response = await client.send(request);
+    final http.StreamedResponse response;
+    try {
+      response = await client.send(request);
+    } catch (_) {
+      client.close();
+      rethrow;
+    }
 
     if (response.statusCode != 200) {
       final body = await response.stream.bytesToString();
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(
+          debugFile,
+          'Error Status: ${response.statusCode}',
+        );
         await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
         await LLMDebugLogger.finish(debugFile);
       }
       client.close();
-      logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
+      logger?.call(
+        'Stream request failed with status: ${response.statusCode}',
+        level: 'ERROR',
+      );
       // The shared decoder owns the message shape (provider error text when
       // the body is JSON, excerpt otherwise) and always throws on non-2xx.
-      decodeJsonBody(http.Response(body, response.statusCode),
-          apiName: 'Google GenAI stream');
+      decodeJsonBody(
+        http.Response(body, response.statusCode),
+        apiName: 'Google GenAI stream',
+      );
       throw LLMApiException(
-          'Google GenAI stream request failed: ${response.statusCode}',
-          statusCode: response.statusCode);
+        'Google GenAI stream request failed: ${response.statusCode}',
+        statusCode: response.statusCode,
+      );
     }
 
-    logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');
+    logger?.call(
+      'Stream connection established, waiting for chunks...',
+      level: 'DEBUG',
+    );
 
     try {
       if (debugFile != null) {
-        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(
+          debugFile,
+          'Status: ${response.statusCode}',
+        );
       }
-      await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+      await for (final line
+          in response.stream
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())) {
         if (line.isEmpty) continue;
 
         if (debugFile != null) {
           await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
 
-        yield* Stream.fromIterable(geminiChunksFromSseLine(line, logger: logger));
+        yield* Stream.fromIterable(
+          geminiChunksFromSseLine(line, logger: logger),
+        );
       }
     } finally {
       client.close();
@@ -205,8 +266,10 @@ class GeminiChatProtocol implements ChatProtocol {
 /// An in-chunk error envelope still throws: that is the request failing, not
 /// the line being noise, so it is checked *after* the tolerant decode.
 @visibleForTesting
-Iterable<LLMResponseChunk> geminiChunksFromSseLine(String line,
-    {LLMLogger? logger}) {
+Iterable<LLMResponseChunk> geminiChunksFromSseLine(
+  String line, {
+  LLMLogger? logger,
+}) {
   if (line.startsWith('event:')) return const [];
   final payload = sseDataPayload(line);
   if (payload == null) return const [];
@@ -246,11 +309,15 @@ class GeminiDiscoveryProtocol implements DiscoveryProtocol {
     final rawModels = data['models'];
     final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
 
-    return modelsJson.map((m) => DiscoveredModel(
-      modelId: m['name']?.toString().replaceFirst('models/', '') ?? '',
-      displayName: m['displayName'] ?? m['name'] ?? '',
-      description: m['description'] ?? '',
-      rawData: m as Map<String, dynamic>,
-    )).toList();
+    return modelsJson
+        .map(
+          (m) => DiscoveredModel(
+            modelId: m['name']?.toString().replaceFirst('models/', '') ?? '',
+            displayName: m['displayName'] ?? m['name'] ?? '',
+            description: m['description'] ?? '',
+            rawData: m as Map<String, dynamic>,
+          ),
+        )
+        .toList();
   }
 }

@@ -1,9 +1,22 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
+
+bool _probePath(String path) {
+  try {
+    final dir = Directory(path);
+    if (!dir.existsSync()) return true;
+    dir.listSync();
+    return false;
+  } catch (_) {
+    return true;
+  }
+}
 
 class FilePermissionService {
-  static final FilePermissionService _instance = FilePermissionService._internal();
+  static final FilePermissionService _instance =
+      FilePermissionService._internal();
   factory FilePermissionService() => _instance;
   FilePermissionService._internal();
 
@@ -11,24 +24,22 @@ class FilePermissionService {
   /// On macOS Sandbox, existsSync() can be true while listSync() throws.
   bool isPathUnreachable(String? path) {
     if (path == null || path.isEmpty) return false;
-    try {
-      final dir = Directory(path);
-      if (!dir.existsSync()) return true;
-      // Trigger a real OS read operation to check sandbox permissions
-      dir.listSync(); 
-      return false;
-    } catch (_) {
-      return true;
-    }
+    // Keep build-time checks cheap. Full directory probing belongs on a worker
+    // isolate via [isPathUnreachableAsync].
+    return !Directory(path).existsSync();
   }
+
+  Future<bool> isPathUnreachableAsync(String path) => compute(_probePath, path);
 
   /// Triggers a system dialog to let the user re-select and authorize a folder.
   Future<String?> reAuthorize(String initialPath, {String? title}) async {
     return await FilePicker.getDirectoryPath(
       initialDirectory: initialPath,
-      dialogTitle: title ?? (Platform.isMacOS 
-          ? "Re-authorize access to folder" 
-          : "Re-select missing folder"),
+      dialogTitle:
+          title ??
+          (Platform.isMacOS
+              ? "Re-authorize access to folder"
+              : "Re-select missing folder"),
     );
   }
 
