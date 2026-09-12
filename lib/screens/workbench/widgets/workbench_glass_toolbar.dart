@@ -59,6 +59,14 @@ enum _View { sources, results, workspace }
 /// first (`A1` spec: 导入 → 刷新 → 填充 → 尺寸).
 enum _Fold { import, refresh, fit, size }
 
+/// Which of the three gallery views [GalleryState] is currently showing.
+_View _currentView(GalleryState s) {
+  if (s.viewMode == GalleryViewMode.temp) return _View.workspace;
+  final bool isResult = s.viewMode == GalleryViewMode.processed ||
+      (s.viewMode == GalleryViewMode.folder && s.folderViewIsResult);
+  return isResult ? _View.results : _View.sources;
+}
+
 class _ToolDef {
   const _ToolDef(this.index, this.icon, this.shortLabel, this.fullLabel);
   final int index;
@@ -227,13 +235,13 @@ class _GalleryRow extends StatelessWidget {
     final layout = context.watch<WorkbenchLayoutState>();
     final isSidebarExpanded = context.select<AppState, bool>((s) => s.isSidebarExpanded);
     final fit = context.select<AppState, ThumbnailFit>((s) => s.thumbnailFit);
-    final gallery = context.watch<GalleryState>();
+    // The row shows which of the three views is current and nothing else out
+    // of the gallery; a `watch` put the whole toolbar — segments, tool menu,
+    // both glass shells — on the notifier's every tick, including each
+    // selection change and each frame of a size drag.
+    final view = context.select<GalleryState, _View>(_currentView);
+    final gallery = Provider.of<GalleryState>(context, listen: false);
     final tools = _tools(l10n);
-
-    final isTemp = gallery.viewMode == GalleryViewMode.temp;
-    final isResult = gallery.viewMode == GalleryViewMode.processed ||
-        (gallery.viewMode == GalleryViewMode.folder && gallery.folderViewIsResult);
-    final view = isTemp ? _View.workspace : (isResult ? _View.results : _View.sources);
 
     final modeSegments = [
       GlassSegment(value: WorkbenchTab.image, label: l10n.wbModeImage, icon: Icons.image_outlined),
@@ -248,7 +256,9 @@ class _GalleryRow extends StatelessWidget {
         value: _View.results,
         label: phone ? l10n.galleryViewResultsShort : l10n.allResults,
       ),
-      if (isTemp) GlassSegment(value: _View.workspace, label: l10n.galleryViewWorkspace),
+      // The workspace segment only offers itself while it is the view.
+      if (view == _View.workspace)
+        GlassSegment(value: _View.workspace, label: l10n.galleryViewWorkspace),
     ];
 
     bool labels = true;
@@ -652,12 +662,14 @@ class _GalleryOverflowMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
-    final gallery = context.watch<GalleryState>();
+    final gallery = context.read<GalleryState>();
     final appState = context.read<AppState>();
     final fit = context.select<AppState, ThumbnailFit>((s) => s.thumbnailFit);
     final isTouch = Platform.isAndroid || Platform.isIOS;
-    final canClearWorkspace =
-        gallery.viewMode == GalleryViewMode.temp && gallery.droppedImages.isNotEmpty;
+    // The one gallery fact the closed button's menu turns on. Everything else
+    // it reads — the size to open the slider at, the actions — is one-shot.
+    final canClearWorkspace = context.select<GalleryState, bool>((s) =>
+        s.viewMode == GalleryViewMode.temp && s.droppedImages.isNotEmpty);
 
     return MenuAnchor(
       menuChildren: [

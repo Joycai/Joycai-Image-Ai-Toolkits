@@ -40,8 +40,12 @@ class FileBrowserState extends ChangeNotifier {
   List<String> sourceDirectories = [];
   List<String> activeDirectories = [];
   Set<String> unreachableDirectories = {};
-  int _refreshCounter = 0;
-  int get refreshCounter => _refreshCounter;
+  /// Bumped on every rescan — both as the scan generation this file guards
+  /// its async work with, and as the signal the directory tree's rows drop
+  /// their cached children on. See [GalleryState.refreshTick] for why the
+  /// rows listen to this rather than to the whole state.
+  final ValueNotifier<int> refreshTick = ValueNotifier<int>(0);
+  int get refreshCounter => refreshTick.value;
 
   FileBrowserState() {
     reloadSettings();
@@ -253,13 +257,14 @@ class FileBrowserState extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     scanProgress.dispose();
+    refreshTick.dispose();
     super.dispose();
   }
 
   Future<void> refresh() async {
     if (_disposed) return;
-    _refreshCounter++;
-    final scan = _refreshCounter;
+    refreshTick.value++;
+    final scan = refreshCounter;
 
     // Check for unreachable directories
     final permission = FilePermissionService();
@@ -269,7 +274,7 @@ class FileBrowserState extends ChangeNotifier {
             MapEntry(path, await permission.isPathUnreachableAsync(path)),
       ),
     );
-    if (_disposed || scan != _refreshCounter) return;
+    if (_disposed || scan != refreshCounter) return;
     final newUnreachable = <String>{
       for (final check in checks)
         if (check.value) check.key,
@@ -291,7 +296,7 @@ class FileBrowserState extends ChangeNotifier {
       onProgress: (found) {
         // A superseded scan keeps counting in its isolate; only the newest
         // one's figure is shown.
-        if (!_disposed && scan == _refreshCounter) scanProgress.value = found;
+        if (!_disposed && scan == refreshCounter) scanProgress.value = found;
       },
     );
     // Only the newest scan's answer is worth anything: an older one landing
@@ -299,7 +304,7 @@ class FileBrowserState extends ChangeNotifier {
     // would put their files back in the grid — and it must not clear the
     // scanning state while the newer scan is still out. A state disposed
     // mid-scan drops the answer for the same reason it stops counting.
-    if (_disposed || scan != _refreshCounter) return;
+    if (_disposed || scan != refreshCounter) return;
     isScanning = false;
 
     final newAllFiles = rawFiles.map((m) => BrowserFile.fromMap(m)).toList();

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 import '../../../state/workbench_ui_state.dart';
@@ -61,6 +62,26 @@ void confirmClearTempWorkspace(
 ///
 /// When the column is too narrow for the labels, the labelled actions keep
 /// only their glyphs and name themselves in tooltips.
+/// The slice of [GalleryState] this bar draws.
+///
+/// Narrower than a `watch` because the bar hangs over the gallery on every
+/// gallery tab: subscribed to the whole notifier it rebuilt — glass shell,
+/// five buttons and all — for a rescan, a view change, even a drag of the
+/// thumbnail-size slider, none of which it shows.
+///
+/// [selected] compares by identity, which [GalleryState] guarantees.
+typedef _BarInputs = ({
+  List<AppImage> selected,
+  GalleryViewMode viewMode,
+  bool hasDropped,
+});
+
+_BarInputs _barInputs(GalleryState s) => (
+      selected: s.selectedImages,
+      viewMode: s.viewMode,
+      hasDropped: s.droppedImages.isNotEmpty,
+    );
+
 class GallerySelectionBar extends StatelessWidget {
   const GallerySelectionBar({super.key});
 
@@ -71,8 +92,8 @@ class GallerySelectionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gallery = context.watch<GalleryState>();
-    final count = gallery.selectedImages.length;
+    final inputs = context.select<GalleryState, _BarInputs>(_barInputs);
+    final count = inputs.selected.length;
     final visible = count > 0;
     final duration = AppMotion.sceneOf(context);
 
@@ -90,7 +111,7 @@ class GallerySelectionBar extends StatelessWidget {
           curve: AppMotion.emphasized,
           child: LayoutBuilder(
             builder: (context, constraints) =>
-                _BarContent(gallery: gallery, count: count, maxWidth: constraints.maxWidth),
+                _BarContent(inputs: inputs, count: count, maxWidth: constraints.maxWidth),
           ),
         ),
       ),
@@ -99,9 +120,9 @@ class GallerySelectionBar extends StatelessWidget {
 }
 
 class _BarContent extends StatelessWidget {
-  const _BarContent({required this.gallery, required this.count, required this.maxWidth});
+  const _BarContent({required this.inputs, required this.count, required this.maxWidth});
 
-  final GalleryState gallery;
+  final _BarInputs inputs;
   final int count;
   final double maxWidth;
 
@@ -109,9 +130,12 @@ class _BarContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
-    final isTemp = gallery.viewMode == GalleryViewMode.temp;
-    final canClearWorkspace = isTemp && gallery.droppedImages.isNotEmpty;
-    final selected = gallery.selectedImages;
+    // The actions only ever *call* the notifier, so they read it unlistened;
+    // what the bar draws comes off [inputs].
+    final gallery = Provider.of<GalleryState>(context, listen: false);
+    final isTemp = inputs.viewMode == GalleryViewMode.temp;
+    final canClearWorkspace = isTemp && inputs.hasDropped;
+    final selected = inputs.selected;
 
     final countStyle = Theme.of(context).textTheme.bodySmall!.metricsOnly.copyWith(
           fontWeight: FontWeight.w600,

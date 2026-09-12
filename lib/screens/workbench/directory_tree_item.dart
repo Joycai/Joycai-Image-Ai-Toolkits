@@ -178,7 +178,6 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   bool _isExpanded = false;
   List<Directory>? _subDirectories;
   bool _isLoading = false;
-  int _lastRefreshCounter = 0;
 
   /// Keyboard focus for the row, so F2 and Delete know which folder is meant.
   /// Taken on click (either button); the tree has no other focus concept.
@@ -192,26 +191,22 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   /// Bumped when the browser asks this row to pulse; 0 means never.
   int _pulse = 0;
   String? _pulsedFor;
+  ValueListenable<int>? _refreshTick;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Depend on the notifier that owns the counter — AppState no longer
-    // forwards either one.
-    final currentCounter = widget.useFileBrowserState
-        ? Provider.of<FileBrowserState>(context).refreshCounter
-        : Provider.of<GalleryState>(context).refreshCounter;
-
-    if (currentCounter != _lastRefreshCounter) {
-      _lastRefreshCounter = currentCounter;
-      if (_isExpanded) {
-        // Reload in place, keeping the stale list rendered until fresh data
-        // arrives — nulling it first unmounts every child DirectoryTreeItem,
-        // which destroys their expansion state (deep branches collapse).
-        _loadSubDirectories(force: true);
-      } else {
-        _subDirectories = null;
-      }
+    // The notifier that owns the counter — AppState no longer forwards
+    // either one — but subscribed to the *tick*, not to the notifier at
+    // large. A listening `Provider.of` here read one integer and paid for
+    // every notification the state made, so a row of the expanded tree
+    // rebuilt on each selection change and each frame of a size drag.
+    final tick = widget.useFileBrowserState
+        ? Provider.of<FileBrowserState>(context, listen: false).refreshTick
+        : Provider.of<GalleryState>(context, listen: false).refreshTick;
+    if (!identical(tick, _refreshTick)) {
+      _refreshTick?.removeListener(_onRefreshed);
+      _refreshTick = tick..addListener(_onRefreshed);
     }
 
     if (widget.useFileBrowserState) {
@@ -239,8 +234,21 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     }
   }
 
+  void _onRefreshed() {
+    if (!mounted) return;
+    if (_isExpanded) {
+      // Reload in place, keeping the stale list rendered until fresh data
+      // arrives — nulling it first unmounts every child DirectoryTreeItem,
+      // which destroys their expansion state (deep branches collapse).
+      _loadSubDirectories(force: true);
+    } else {
+      setState(() => _subDirectories = null);
+    }
+  }
+
   @override
   void dispose() {
+    _refreshTick?.removeListener(_onRefreshed);
     _focusNode.dispose();
     super.dispose();
   }

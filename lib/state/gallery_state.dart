@@ -107,7 +107,22 @@ class GalleryState extends ChangeNotifier {
 
   /// Root directories of the result tree (dedup, non-empty): the configured
   /// output directory plus the platform result cache when it differs.
+  ///
+  /// Memoised against the two paths it is derived from, because the rest of
+  /// this class trades on list *identity* meaning "this changed" — a selector
+  /// holding one of these lists has no other way to tell. A getter that
+  /// allocated on every read was a value that always compared unequal, so
+  /// anything watching it rebuilt on every notification the gallery made,
+  /// selection changes and size drags included. Same list back until one of
+  /// the paths moves.
+  List<String>? _resultRoots;
+  (String?, String?)? _resultRootsFrom;
+
   List<String> get resultRootDirectories {
+    final from = (outputDirectory, resultCacheDirectory);
+    final cached = _resultRoots;
+    if (cached != null && _resultRootsFrom == from) return cached;
+
     final roots = <String>[];
     if (outputDirectory != null && outputDirectory!.isNotEmpty) {
       roots.add(outputDirectory!);
@@ -117,7 +132,8 @@ class GalleryState extends ChangeNotifier {
         resultCacheDirectory != outputDirectory) {
       roots.add(resultCacheDirectory!);
     }
-    return roots;
+    _resultRootsFrom = from;
+    return _resultRoots = roots;
   }
 
   // Directory watchers
@@ -174,8 +190,17 @@ class GalleryState extends ChangeNotifier {
 
   bool isScanning = false;
 
-  int _refreshCounter = 0;
-  int get refreshCounter => _refreshCounter;
+  /// Bumped whenever a manual refresh invalidates what the folder trees have
+  /// cached about the filesystem.
+  ///
+  /// A [ValueNotifier] rather than a plain field, because the tree rows need
+  /// this one integer and nothing else. Reaching it through
+  /// `Provider.of<GalleryState>(context)` subscribed every row to the whole
+  /// notifier, so picking a picture in the grid — or dragging the size
+  /// slider — rebuilt the entire expanded tree. Rows listen to this directly
+  /// instead; [refreshCounter] stays for the one-shot reads inside this file.
+  final ValueNotifier<int> refreshTick = ValueNotifier<int>(0);
+  int get refreshCounter => refreshTick.value;
   int _sourceScanGeneration = 0;
   int _processedScanGeneration = 0;
   int _folderScanGeneration = 0;
@@ -194,6 +219,7 @@ class GalleryState extends ChangeNotifier {
     _outputWatcher?.cancel();
     _sourceScanTimer?.cancel();
     _outputScanTimer?.cancel();
+    refreshTick.dispose();
     super.dispose();
   }
 
@@ -384,7 +410,7 @@ class GalleryState extends ChangeNotifier {
     isScanning = true;
     notifyListeners();
     _log('Manually refreshing images...');
-    _refreshCounter++;
+    refreshTick.value++;
     await _scanImages();
     await _scanProcessedImages();
 
