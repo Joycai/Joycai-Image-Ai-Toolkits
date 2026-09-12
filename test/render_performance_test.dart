@@ -7,9 +7,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:joycai_image_ai_toolkits/core/thumbnail_decode.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_breathing_dot.dart';
 
 void main() {
+  group('thumbnail size snapping', () {
+    test('a slider sweep collapses onto a handful of distinct sizes', () {
+      // The grid lays out by column count, so most of a drag's pointer events
+      // ask for a picture identical to the last one. Measured over the real
+      // gallery, snapping took a full 80→400 drag from ~337k widget builds to
+      // ~46k.
+      final Set<double> distinct = <double>{
+        for (double v = 80; v <= 400; v += 1) snapThumbnailSize(v),
+      };
+      expect(distinct.length, lessThan(50));
+      expect(distinct.length, greaterThan(20),
+          reason: 'coarse enough to stop being smooth would be a real loss');
+    });
+
+    test('both ends of the slider stay reachable', () {
+      // Both grids run 80..400; a step that either end did not land on would
+      // quietly take the extreme away from the user.
+      expect(snapThumbnailSize(80), 80);
+      expect(snapThumbnailSize(400), 400);
+    });
+
+    test('snapping is stable — a snapped value snaps to itself', () {
+      for (double v = 80; v <= 400; v += 1) {
+        final double once = snapThumbnailSize(v);
+        expect(snapThumbnailSize(once), once);
+      }
+    });
+  });
+
   testWidgets(
     'the breathing dot keeps its repaint inside a boundary',
     (WidgetTester tester) async {

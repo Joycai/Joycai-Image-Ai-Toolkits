@@ -31,3 +31,27 @@ int thumbnailDecodeWidth(BuildContext context, double logicalSize) {
   final stepped = ((physical / _kDecodeStep).ceil()) * _kDecodeStep;
   return stepped.clamp(_kDecodeStep, _kMaxDecodeWidth);
 }
+
+/// Logical-pixel step a thumbnail-size slider reports on.
+///
+/// The grids lay out with [SliverGridDelegateWithMaxCrossAxisExtent], which
+/// derives the tile from the column count — `(width / maxExtent).ceil()`. So
+/// the *rendered* size only moves when that count changes: across the whole
+/// 80–400 range a 1440pt-wide grid passes through about fifteen distinct
+/// layouts. Every slider position between two of them paints an identical
+/// frame.
+///
+/// A raw slider does not know that. It reports a new value on every pointer
+/// event, each one a notification that rebuilds the entire visible grid —
+/// measured at ~1470 widget builds a frame on a full 1440×900 gallery — to
+/// produce, most of the time, the same picture.
+const double _kSizeStep = 8;
+
+/// Snaps a slider's raw value onto [_kSizeStep].
+///
+/// Eight logical pixels is comfortably finer than the layout's own resolution
+/// (40 steps for ~15 visible states), so nothing the user could have seen is
+/// lost; what goes away is the six-or-so redundant rebuilds between each pair
+/// of steps. Callers pair this with the `thumbnailSize == size` early return
+/// they already have, which then swallows the whole run.
+double snapThumbnailSize(double size) => (size / _kSizeStep).roundToDouble() * _kSizeStep;

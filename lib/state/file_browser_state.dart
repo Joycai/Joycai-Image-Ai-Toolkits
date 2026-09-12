@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
 import '../core/file_utils.dart';
+import '../core/thumbnail_decode.dart';
 import '../models/browser_file.dart';
 import '../services/browser_file_scanner.dart';
 import '../services/database_service.dart';
@@ -444,7 +445,8 @@ class FileBrowserState extends ChangeNotifier {
 
   /// Resizes the grid, live — no database write. See
   /// [GalleryState.setThumbnailSize] for why the persistence is split out.
-  void setThumbnailSize(double size) {
+  void setThumbnailSize(double rawSize) {
+    final size = snapThumbnailSize(rawSize);
     if (thumbnailSize == size) return;
     thumbnailSize = size;
     notifyListeners();

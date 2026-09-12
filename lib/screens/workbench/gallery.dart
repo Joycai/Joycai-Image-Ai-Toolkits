@@ -339,6 +339,17 @@ class _GalleryState extends State<Gallery> {
                         );
                       },
                       childCount: grouped[path]!.length,
+                      // Nothing in a tile asks to be kept alive — no
+                      // AutomaticKeepAliveClientMixin, no focus, no player —
+                      // so the three widgets the default wraps every cell in
+                      // (AutomaticKeepAlive, KeepAlive and its notification
+                      // listener) are built and thrown away once per cell per
+                      // rebuild. The repaint boundaries stay: those are what
+                      // keep one card's hover out of its neighbours.
+                      addAutomaticKeepAlives: false,
+                      // The whole grid is already inside an ExcludeSemantics,
+                      // so an index on each cell describes nothing.
+                      addSemanticIndexes: false,
                     ),
                   ),
                 ),

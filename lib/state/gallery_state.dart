@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../core/constants.dart';
 import '../core/file_utils.dart';
+import '../core/thumbnail_decode.dart';
 import '../models/app_image.dart';
 import '../services/database_service.dart';
 import '../services/file_permission_service.dart';
@@ -598,7 +599,11 @@ class GalleryState extends ChangeNotifier {
   /// It used to write the setting each time, which put sixty SQLite writes
   /// through one gesture; the value is persisted once, by
   /// [persistThumbnailSize], when the drag ends.
-  void setThumbnailSize(double size) {
+  void setThumbnailSize(double rawSize) {
+    // Snapped, not taken raw: the grid's layout is coarser than the slider
+    // is, so most of a drag's frames asked for a rebuild that painted the
+    // same picture. See [snapThumbnailSize].
+    final size = snapThumbnailSize(rawSize);
     if (thumbnailSize == size) return;
     thumbnailSize = size;
     notifyListeners();
