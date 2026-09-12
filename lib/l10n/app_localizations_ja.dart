@@ -4304,6 +4304,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get wbToolAssistantShort => 'アシスタント';
 
   @override
+  String get wbToolGalleryShort => 'ギャラリー';
+
+  @override
   String get galleryViewWorkspace => 'ワークスペース';
 
   @override

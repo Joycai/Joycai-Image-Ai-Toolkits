@@ -4260,6 +4260,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wbToolAssistantShort => '助手';
 
   @override
+  String get wbToolGalleryShort => '画廊';
+
+  @override
   String get galleryViewWorkspace => '工作区';
 
   @override
@@ -8616,6 +8619,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get wbToolAssistantShort => '助手';
+
+  @override
+  String get wbToolGalleryShort => '畫廊';
 
   @override
   String get galleryViewWorkspace => '工作區';
