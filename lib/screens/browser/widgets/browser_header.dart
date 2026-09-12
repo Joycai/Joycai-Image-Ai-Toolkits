@@ -27,16 +27,19 @@ import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
 /// The figures the header states, and the toggle it draws — read off
 /// [FileBrowserState] here rather than taken from whatever built the header,
 /// so a change it does not show cannot rebuild it.
+/// Pointedly missing: how many files are picked. That is the only figure up
+/// here that moves when the user clicks a tile, and it is read by
+/// [_HeaderSummary], the one line that states it — the rest of the header,
+/// the search field and the staging button and the view toggle, has no part
+/// in a selection.
 typedef _HeaderInputs = ({
   int fileCount,
-  int selectedCount,
   int folderCount,
   BrowserViewMode viewMode,
 });
 
 _HeaderInputs _headerInputs(FileBrowserState s) => (
       fileCount: s.filteredFiles.length,
-      selectedCount: s.selectedFiles.length,
       folderCount: s.sourceDirectories.length,
       viewMode: s.viewMode,
     );
@@ -93,9 +96,8 @@ class BrowserHeader extends StatelessWidget {
 
     final inputs = context.select<FileBrowserState, _HeaderInputs>(_headerInputs);
     final fileCount = inputs.fileCount;
-    final selectedCount = inputs.selectedCount;
     final filesLabel = l10n.filesCount(fileCount);
-    const separator = '  ·  ';
+    const separator = _HeaderSummary.separator;
     // `1c`: with the directory column behind the drawer, the subtitle takes
     // over its folder count.
     final String? foldersLabel =
@@ -162,24 +164,11 @@ class BrowserHeader extends StatelessWidget {
                 style: titleStyle,
               ),
               const SizedBox(height: 2),
-              Text.rich(
-                TextSpan(
-                  style: summaryStyle,
-                  children: [
-                    TextSpan(text: filesLabel),
-                    if (foldersLabel != null) ...[
-                      const TextSpan(text: separator),
-                      TextSpan(text: foldersLabel),
-                    ],
-                    if (selectedCount > 0) ...[
-                      const TextSpan(text: separator),
-                      TextSpan(text: l10n.imagesSelected(selectedCount), style: selectedStyle),
-                    ],
-                  ],
-                ),
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
+              _HeaderSummary(
+                filesLabel: filesLabel,
+                foldersLabel: foldersLabel,
+                summaryStyle: summaryStyle,
+                selectedStyle: selectedStyle,
               ),
             ],
           );
@@ -271,6 +260,67 @@ class BrowserHeader extends StatelessWidget {
 /// (`B1a · 1b`). On the right, the key that reaches it (`Ctrl+F`) while at
 /// rest, the key that leaves it (`Esc`) while focused, and a clear button
 /// once there is a query.
+/// The line under the title: how many files, how many folders on a narrow
+/// window, and how many are picked.
+///
+/// Its own widget, and the only thing in the header subscribed to the
+/// selection. The header used to read that count itself, so clicking one tile
+/// rebuilt the search field, the staging button, the view toggle and the
+/// refresh button with it — and re-ran the width measurement that decides
+/// whether the header collapses.
+///
+/// That measurement is unaffected by the split: it is taken against the
+/// widest the line can get — every file selected — precisely so that picking
+/// files never flips the header between its forms.
+class _HeaderSummary extends StatelessWidget {
+  const _HeaderSummary({
+    required this.filesLabel,
+    required this.foldersLabel,
+    required this.summaryStyle,
+    required this.selectedStyle,
+  });
+
+  final String filesLabel;
+
+  /// `1c`: null unless the directory column is behind a drawer, where this
+  /// line takes over its folder count.
+  final String? foldersLabel;
+
+  final TextStyle summaryStyle;
+  final TextStyle selectedStyle;
+
+  /// The gap between the line's facts, and the one thing shared with the
+  /// header's own width measurement.
+  static const String separator = '  ·  ';
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final int selectedCount =
+        context.select<FileBrowserState, int>((s) => s.selectedFiles.length);
+
+    return Text.rich(
+      TextSpan(
+        style: summaryStyle,
+        children: [
+          TextSpan(text: filesLabel),
+          if (foldersLabel != null) ...[
+            const TextSpan(text: separator),
+            TextSpan(text: foldersLabel),
+          ],
+          if (selectedCount > 0) ...[
+            const TextSpan(text: separator),
+            TextSpan(text: l10n.imagesSelected(selectedCount), style: selectedStyle),
+          ],
+        ],
+      ),
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
 class _BrowserSearchField extends StatefulWidget {
   const _BrowserSearchField({
     required this.controller,
