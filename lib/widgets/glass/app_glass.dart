@@ -13,8 +13,25 @@ import '../../core/design_tokens.dart';
 ///
 /// Budget per screen: at most **one full-width** layer ([bar]) and at most
 /// three glass layers visible at once, and glass only touches the *edges* of a
-/// scrolling area. A full-width backdrop blur costs ~19ms a frame on an
-/// integrated GPU at 4K, which is the reason for the budget, not taste.
+/// scrolling area.
+///
+/// The budget's old justification — “a full-width backdrop blur costs ~19ms a
+/// frame on an integrated GPU at 4K” — **does not reproduce under the
+/// renderer this app ships**. `lib/bench/render_bench.dart`'s glass ladder,
+/// maximized at 4K on the dev machine's integrated Radeon, measures a
+/// full-width G1 blur at **0.32 ms** of GPU time, and four live filters at
+/// 1.3 ms of an 11 ms frame. The 19 ms was taken before `windows/runner`
+/// pinned Skia (Impeller cannot import video_player_win's DXGI textures), so
+/// treat it as a figure from a different renderer, not as this one's cost.
+///
+/// Keep the budget anyway, for reasons that are now the honest ones: three
+/// layers is as much glass as the design reads well with, every filter is
+/// still a full-target readback whose cost scales with area × DPR² on
+/// hardware nobody here has measured, and the ceiling is what keeps the
+/// workbench from drifting back to seven. What the budget is **not** is the
+/// app's frame-time problem — the window ground was, at 7.3 ms before
+/// `BakedAuroraBackdrop`. Re-run the ladder before spending anything on
+/// blur count again.
 ///
 /// Half of that budget is now kept by the class rather than by hand: a [lens]
 /// laid on another glass layer paints its fill and edge but skips the
@@ -247,7 +264,6 @@ class AppGlass extends StatelessWidget {
 
   /// Whether the reduced form draws its hairline.
   final bool reducedBorder;
-
   final Widget child;
 
   @override

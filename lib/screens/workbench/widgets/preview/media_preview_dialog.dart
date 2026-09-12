@@ -15,6 +15,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../models/app_image.dart';
 import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/app_snackbar.dart';
+import '../../../../widgets/shell/shell_cover.dart';
 import 'preview_handler.dart';
 
 /// Hero scope for thumbnails in the workbench gallery.
@@ -439,8 +440,14 @@ void showMediaPreview(BuildContext context,
   // it is always opened from a specific thumbnail. Transparent, so the grid
   // stays visible under the black as it fades in; that is what the flight
   // flies over.
-  Navigator.of(context).push(PageRouteBuilder(
-    opaque: false,
+  //
+  // [FullScreenCoverRoute] rather than a plain transparent route: the page is
+  // a `Dialog.fullscreen` in solid black, so once the flight has landed there
+  // is nothing to see below it, and the route says so. Without that the
+  // gallery, its glass toolbar and the task capsule keep painting under the
+  // black for as long as the preview is open — about 3ms of GPU time a frame
+  // on an integrated GPU at 4K. See lib/widgets/shell/shell_cover.dart.
+  Navigator.of(context).push(FullScreenCoverRoute(
     fullscreenDialog: true,
     transitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
     reverseTransitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
