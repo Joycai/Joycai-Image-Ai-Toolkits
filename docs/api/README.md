@@ -8,7 +8,7 @@
 >
 > - **`docs/api/`** — 协议事实。四个协议族各自长什么样、彼此差在哪、第三方
 >   兼容层的坑在哪。不含本项目的取舍、不含 `src/` 的文件名。
-> - **`docs/*-plan.md`** — 本项目的方案与取舍。引用这里的事实，不复制。
+> - **`docs/architecture/`** — 本项目的方案与取舍。引用这里的事实，不复制。
 >
 > 判断标准：**换一个项目还成立的，写这里；只对本项目成立的，写那边。**
 
@@ -65,6 +65,9 @@ Chat Completions 和 Responses 同属 OpenAI 却分成两族，是因为它们�
 | [`usage.md`](usage.md) | token 计数的两个口径陷阱、输出上限、上下文窗口为何只能靠探测 | ✅ |
 | [`structured.md`](structured.md) | JSON mode / schema / 强制 tool_choice 的四族做法，含 `json_object` 的隐藏前置条件 | ✅ |
 | [`qianwen-bailian.md`](qianwen-bailian.md) | 千问（阿里云百炼 / DashScope）一家六条 wire：3 种 chat + 图片同步/异步 + 视频异步，模型 × 协议矩阵 | ✅ |
+| [`veo.md`](veo.md) | Google Veo 视频：文生视频、参考图、首尾帧、分辨率的 cURL 骨架与 LRO 轮询 | ✅ |
+| [`gemini-api.md`](gemini-api.md) | `/v1beta/models` 的模型清单与 `supportedGenerationMethods` 探测 | ✅ |
+| [`google-api-standard.md`](google-api-standard.md) | Gemini 图像 REST：响应 schema、Base64 取图、安全拦截行为 | ✅ |
 | [`minimax.md`](minimax.md) | MiniMax 一家四条 wire：①/④ 兼容双面 + 私有同步图像面（主体参考，非编辑）+ 私有 v2 视频任务面（直链结果、取消/删除、7 天保留），错误信封三套并存，四面无公共路径前缀 | ✅ |
 
 ## 接一个新协议族时，先看这三条
@@ -106,16 +109,16 @@ Chat Completions 和 Responses 同属 OpenAI 却分成两族，是因为它们�
 连着两次都没扫到 `ThinkingConfig`；`curl` 下来 grep 一次就找到了。摘要在这个
 量级会整节丢失，而丢掉的恰好可能是唯一的权威定义。
 
-相关的本项目方案文档：
+相关的本项目文档（协议事实的**对侧**：本工程实际怎么做的）：
 
-- [`../provider-layering.md`](../provider-layering.md) — 本项目的分层模型
-  （协议族 / 端点 / 模型 + 探测维）与"新参数放哪一层"的裁决依据
-- [`../provider-standards.md`](../provider-standards.md) — 本项目怎么把协议族 ×
-  official/compat 落成 6 个 `ApiStandard` 值
-- [`../reasoning-plan.md`](../reasoning-plan.md) — 本项目怎么加思考强度与思维链（① 族，已实现）
-- [`../anthropic-plan.md`](../anthropic-plan.md) — ④ 族的审计与接入（已实现）
-- [`../gemini-plan.md`](../gemini-plan.md) — ③ 族的盘点与接入（已实现）
-- [`../thinking-verification.md`](../thinking-verification.md) — 三族思考支持的**实测清单**（全部未验证）
+- [`../architecture/llm-three-layer.md`](../architecture/llm-three-layer.md) —
+  本项目的分层模型（protocol / vendor / model）、dispatcher 路由表、
+  以及禁止把上面这些事实硬编码进协议层的红线清单
+- [`../architecture/assistant-context.md`](../architecture/assistant-context.md) —
+  上下文窗口在本项目里怎么解释（`usage.md` 那条"只能靠探测"的落地）
+- [`../plans/README.md`](../plans/README.md) — 历轮接入方案的台账，含**还没用真实
+  key 验证过的六条**（`adaptive` 是否真开思考、`pause_turn` 续跑、wan2.7 的 body
+  形状……）。跑完一条就把日期与端点写回这里对应的文件
 
 ## 写作约定
 
