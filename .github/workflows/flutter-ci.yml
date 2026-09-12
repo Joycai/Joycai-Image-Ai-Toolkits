@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ main ]
 
+# A new push to a PR makes its previous run worthless, so cancel it. Runs on
+# main are left alone: each merge should get its own verdict.
+concurrency:
+  group: flutter-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   analyze:
     name: Analyze
