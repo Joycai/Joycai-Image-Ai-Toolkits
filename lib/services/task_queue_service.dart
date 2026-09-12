@@ -72,13 +72,43 @@ class TaskQueueService extends ChangeNotifier {
   Future<void> _loadRecentTasks() async {
     final db = DatabaseService();
     await db.cleanupStuckTasks();
-    final tasks = await db.getRecentTasks(reloadLimit);
+    final tasks = await _relabelled(await db.getRecentTasks(reloadLimit));
     _queue.clear();
     // Newest-first from the query, reversed so the queue itself runs oldest
     // to newest — the order `_attemptNextExecution` walks it in, which is
     // what makes a task submitted earlier run earlier.
     _queue.addAll(tasks.map((t) => TaskItem.fromMap(t)).toList().reversed);
     notifyListeners();
+  }
+
+  /// Repairs titles that hold a model's row id instead of its name.
+  ///
+  /// Rows written before [addTask] resolved the name carry the primary key
+  /// ("88") as their label, because the label was the identifier the caller
+  /// passed stringified. The label is display-only — the executors route by
+  /// `model_pk` — so the history is relabelled as it loads rather than
+  /// migrated, and a task whose model has since been deleted keeps the id it
+  /// was stored with.
+  Future<List<Map<String, dynamic>>> _relabelled(List<Map<String, dynamic>> rows) async {
+    bool needsName(Map<String, dynamic> row) {
+      final pk = row['model_pk'];
+      return pk is int && row['model_id'] == pk.toString();
+    }
+
+    if (!rows.any(needsName)) return rows;
+    final models = await DatabaseService().getModels();
+    final names = {
+      for (final m in models)
+        if (m.id != null) m.id!: m.modelName.isNotEmpty ? m.modelName : m.modelId,
+    };
+    return [
+      for (final row in rows)
+        if (needsName(row) && names[row['model_pk']] != null)
+          // sqflite hands back read-only maps.
+          Map<String, dynamic>.from(row)..['model_id'] = names[row['model_pk']]
+        else
+          row,
+    ];
   }
 
   Future<void> addTask(
@@ -90,6 +120,9 @@ class TaskQueueService extends ChangeNotifier {
     bool useStream = true,
     String? id,
   }) async {
+    // Display only: the executors route by [modelDbId]. Callers that pass the
+    // row id and no display string used to label the task with the primary
+    // key ("88") — the lookup below replaces it with the model's own name.
     String modelIdStr = modelIdDisplay ?? modelIdentifier.toString();
     int? modelDbId;
     String? channelTag;
@@ -103,6 +136,9 @@ class TaskQueueService extends ChangeNotifier {
       final models = await db.getModels();
       final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == modelDbId, orElse: () => null);
       if (model != null) {
+        if (modelIdDisplay == null) {
+          modelIdStr = model.modelName.isNotEmpty ? model.modelName : model.modelId;
+        }
         final channelId = model.channelId;
         if (channelId != null) {
           final channel = await db.getChannel(channelId);
