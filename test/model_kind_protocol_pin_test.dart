@@ -6,8 +6,8 @@ import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
-/// Pins the model-kind declaration and media protocol selection
-/// (docs/plans/2026-09-model-kind-protocol-pin.md).
+/// Pins the model-kind declaration and media protocol selection (the 2026-09
+/// round; plan retired, see docs/plans/README.md).
 ///
 /// The problem this exists for: a relay names its models freely, so routing
 /// by id sent `nano-banana-pro` through chat with no way to say otherwise,

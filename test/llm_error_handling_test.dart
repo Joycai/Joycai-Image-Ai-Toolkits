@@ -13,9 +13,9 @@ import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_chat_prot
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
-/// Pins the M1 error-handling fixes (docs/reviews/2026-08-ai-capability-review.md
-/// B1/B2/B5): the Gemini SSE line rules, the status-first response decode, and
-/// the structured retry decision.
+/// Pins the M1 error-handling fixes (B1/B2/B5 of the 2026-08 AI capability
+/// review, retired; see docs/plans/README.md): the Gemini SSE line rules, the
+/// status-first response decode, and the structured retry decision.
 void main() {
   group('geminiChunksFromSseLine (B1)', () {
     const chunk =
