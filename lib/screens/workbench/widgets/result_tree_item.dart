@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
@@ -36,17 +37,38 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
   bool _isExpanded = false;
   List<Directory>? _subDirectories;
   bool _isLoading = false;
-  int _lastRefreshCounter = 0;
+  ValueListenable<int>? _refreshTick;
 
+  /// Subscribed to the refresh signal alone, not to [GalleryState] at large.
+  ///
+  /// A listening `Provider.of` here read one integer and paid for the whole
+  /// notifier: every row of the expanded tree rebuilt on each selection
+  /// change and on each frame of a thumbnail-size drag, neither of which it
+  /// draws. The dependency is resolved unlistened, once, and the row listens
+  /// to the tick itself.
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final counter = Provider.of<GalleryState>(context).refreshCounter;
-    if (counter != _lastRefreshCounter) {
-      _lastRefreshCounter = counter;
-      _subDirectories = null;
-      if (_isExpanded) _loadSubDirectories();
+    final tick = Provider.of<GalleryState>(context, listen: false).refreshTick;
+    if (identical(tick, _refreshTick)) return;
+    _refreshTick?.removeListener(_onRefreshed);
+    _refreshTick = tick..addListener(_onRefreshed);
+  }
+
+  void _onRefreshed() {
+    if (!mounted) return;
+    _subDirectories = null;
+    if (_isExpanded) {
+      _loadSubDirectories();
+    } else {
+      setState(() {});
     }
+  }
+
+  @override
+  void dispose() {
+    _refreshTick?.removeListener(_onRefreshed);
+    super.dispose();
   }
 
   Future<void> _loadSubDirectories() async {

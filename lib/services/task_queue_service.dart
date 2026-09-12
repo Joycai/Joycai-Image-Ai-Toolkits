@@ -44,6 +44,24 @@ class TaskQueueService extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  /// Ticks twice a second while anything is running, and carries nothing but
+  /// the fact that the estimated progress written onto the running tasks has
+  /// moved.
+  ///
+  /// Separate from [notifyListeners] because the two have different
+  /// audiences. The queue's *shape* — what is in it, what state each task is
+  /// in — changes when a task is added, started, finished or removed, and
+  /// that is what the task screen draws. Progress is an estimate recomputed
+  /// on a 500ms timer, and the only things that show it are the running
+  /// cards' progress edges and the shell's capsule.
+  ///
+  /// Broadcasting the estimate through the notifier meant the whole task
+  /// screen rebuilt twice a second for as long as anything ran — re-running
+  /// the filter, the sort and the queue-position pass, and rebuilding every
+  /// visible card, ~1000 widget builds a tick with seven tasks in the queue —
+  /// to move a 3px bar on one of them.
+  final ValueNotifier<int> progressTick = ValueNotifier<int>(0);
+
   /// Returns a stream of events filtered by a specific task ID
   Stream<TaskEvent> subscribeToTask(String taskId) {
     return eventStream.where((event) => event.taskId == taskId);
@@ -451,7 +469,7 @@ class TaskQueueService extends ChangeNotifier {
     }
 
     if (hasActive) {
-      _notify();
+      if (!_disposed) progressTick.value++;
     } else {
       _stopProgressTimer();
     }
@@ -479,6 +497,7 @@ class TaskQueueService extends ChangeNotifier {
     _disposed = true;
     _progressTimer?.cancel();
     _eventController.close();
+    progressTick.dispose();
     super.dispose();
   }
 }

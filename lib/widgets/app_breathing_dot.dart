@@ -31,6 +31,26 @@ class _AppBreathingDotState extends State<AppBreathingDot>
   late final AnimationController _controller =
       AnimationController(vsync: this, duration: AppMotion.breath);
 
+  /// 1 → .35 → 1 over one period, eased at both ends like CSS `pulse`.
+  ///
+  /// Driven off the controller rather than recomputed in a builder: a
+  /// [FadeTransition] fed this animation repaints without rebuilding, so a
+  /// breath costs no element work at all.
+  late final Animation<double> _opacity = _controller.drive(
+    TweenSequence<double>(<TweenSequenceItem<double>>[
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 1, end: 0.35)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 1,
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 0.35, end: 1)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 1,
+      ),
+    ]),
+  );
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -66,16 +86,15 @@ class _AppBreathingDotState extends State<AppBreathingDot>
       decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
       child: SizedBox.square(dimension: widget.size),
     );
-    return AnimatedBuilder(
-      animation: _controller,
-      child: dot,
-      builder: (context, child) {
-        // 1 → .35 → 1 over one period, eased at both ends like CSS `pulse`.
-        final t = _controller.value;
-        final wave = t < 0.5 ? t * 2 : (1 - t) * 2;
-        final opacity = 1 - 0.65 * Curves.easeInOut.transform(wave);
-        return Opacity(opacity: opacity, child: child);
-      },
+    // The boundary is the point of this widget's whole shape. The capsule in
+    // the app shell (main.dart) puts a dot *inside* a BackdropFilter, and
+    // `markNeedsPaint` bubbles to the nearest repaint boundary — so without
+    // one here, every breath re-recorded the glass above it, sixty times a
+    // second, on whatever screen the user happened to be looking at. The two
+    // dots inside the task list got a boundary for free from the ListView;
+    // this one had none the whole way up.
+    return RepaintBoundary(
+      child: FadeTransition(opacity: _opacity, child: dot),
     );
   }
 }

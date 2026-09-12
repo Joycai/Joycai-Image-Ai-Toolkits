@@ -64,6 +64,17 @@ security findings that are still open.
   screens headlessly at four widths in light and dark, so a layout can be
   looked at instead of inferred. Not a regression gate.
 
+* **Render-performance probe** (`test/screenshots/render_probe.dart`) — the
+  same trick for cost instead of looks: mounts the real tree and reports what
+  one state change rebuilds, what a whole gesture costs, how many glass layers
+  a screen carries, and what an animation drags into its repaint. Run it by
+  name, `flutter test test/screenshots/render_probe.dart`; it is deliberately
+  not a `*_test.dart` file, so it stays out of CI. Read its header before the
+  numbers — the widget counts are the signal, the milliseconds are not. The
+  regressions it has already found are pinned by
+  `test/screenshots/rebuild_scope_test.dart` and
+  `test/render_performance_test.dart`.
+
 ## Release notes
 
 [`release_notes/`](release_notes/) archives v1.1.0 – v2.3.0. From v2.4.0

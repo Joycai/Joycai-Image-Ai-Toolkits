@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -49,6 +50,30 @@ class _AppRunConsoleState extends State<AppRunConsole> {
   /// The drag's own accumulator, allowed to run [_kDragSlack] past the limits
   /// while a drag is in flight. `null` when no drag is active.
   double? _dragHeight;
+
+  /// The strip states the run's percentage, which only the 500ms progress
+  /// tick moves — the service's own notifier now speaks for the queue's shape
+  /// alone. See [TaskQueueService.progressTick].
+  ValueListenable<int>? _progressTick;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final tick = Provider.of<TaskQueueService>(context, listen: false).progressTick;
+    if (identical(tick, _progressTick)) return;
+    _progressTick?.removeListener(_onProgress);
+    _progressTick = tick..addListener(_onProgress);
+  }
+
+  void _onProgress() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _progressTick?.removeListener(_onProgress);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

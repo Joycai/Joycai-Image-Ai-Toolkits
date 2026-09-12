@@ -1150,7 +1150,16 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     final tab = appState.workbenchTabIndex;
     final isGalleryTab = WorkbenchTab.isGallery(tab);
     // `A1` spec: on a phone the FAB gives way to the selection bar.
-    final hasSelection = context.select<GalleryState, bool>((g) => g.selectedImages.isNotEmpty);
+    //
+    // Read behind the width check, and `&&` short-circuits, so on a desktop
+    // window the dependency is never registered. It used to be: a screen that
+    // does not draw a FAB at all rebuilt itself entirely — both panels, the
+    // toolbar, the config panel and every visible card — whenever a selection
+    // crossed between empty and not. `isNarrow` rather than `isMobile`
+    // because WorkbenchLayout switches to the phone form on *content* width,
+    // which trails the window by the width of the rail.
+    final hasSelection = isNarrow &&
+        context.select<GalleryState, bool>((g) => g.selectedImages.isNotEmpty);
 
     // Context-aware FAB icon for mobile (null = no FAB for that tab)
     final IconData? fabIcon = switch (tab) {

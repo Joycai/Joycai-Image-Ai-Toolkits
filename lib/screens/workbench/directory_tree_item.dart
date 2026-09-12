@@ -178,7 +178,6 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   bool _isExpanded = false;
   List<Directory>? _subDirectories;
   bool _isLoading = false;
-  int _lastRefreshCounter = 0;
 
   /// Keyboard focus for the row, so F2 and Delete know which folder is meant.
   /// Taken on click (either button); the tree has no other focus concept.
@@ -192,55 +191,90 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   /// Bumped when the browser asks this row to pulse; 0 means never.
   int _pulse = 0;
   String? _pulsedFor;
+  ValueListenable<int>? _refreshTick;
+  ValueListenable<FolderFlash>? _flashCue;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Depend on the notifier that owns the counter — AppState no longer
-    // forwards either one.
-    final currentCounter = widget.useFileBrowserState
-        ? Provider.of<FileBrowserState>(context).refreshCounter
-        : Provider.of<GalleryState>(context).refreshCounter;
-
-    if (currentCounter != _lastRefreshCounter) {
-      _lastRefreshCounter = currentCounter;
-      if (_isExpanded) {
-        // Reload in place, keeping the stale list rendered until fresh data
-        // arrives — nulling it first unmounts every child DirectoryTreeItem,
-        // which destroys their expansion state (deep branches collapse).
-        _loadSubDirectories(force: true);
-      } else {
-        _subDirectories = null;
-      }
+    // The notifier that owns the counter — AppState no longer forwards
+    // either one — but subscribed to the *tick*, not to the notifier at
+    // large. A listening `Provider.of` here read one integer and paid for
+    // every notification the state made, so a row of the expanded tree
+    // rebuilt on each selection change and each frame of a size drag.
+    final tick = widget.useFileBrowserState
+        ? Provider.of<FileBrowserState>(context, listen: false).refreshTick
+        : Provider.of<GalleryState>(context, listen: false).refreshTick;
+    if (!identical(tick, _refreshTick)) {
+      _refreshTick?.removeListener(_onRefreshed);
+      _refreshTick = tick..addListener(_onRefreshed);
     }
 
+    // The pulse cue, on its own notifier for the same reason as the tick: a
+    // listening `Provider.of` here put every row of the tree on all of the
+    // browser's traffic — its selection, its scans, its size slider — to read
+    // one cue that names at most one row.
     if (widget.useFileBrowserState) {
-      final browser = Provider.of<FileBrowserState>(context);
-      final flash = browser.flashPath;
-      if (flash != null && flash != _pulsedFor) {
-        if (p.equals(flash, widget.path)) {
-          _pulsedFor = flash;
-          _pulse++;
-          // A renamed row comes back under its new key, closed. `13c`: it
-          // was open before, so it is open after — the state follows the
-          // directory even though the widget could not.
-          if (browser.flashExpanded && !_isExpanded) {
-            _isExpanded = true;
-            _loadSubDirectories();
-          }
-        } else if (p.equals(p.dirname(flash), widget.path) && !_isExpanded) {
-          // The row to pulse is a child of this one and this one is closed:
-          // open it, or the pulse plays to nobody.
-          _pulsedFor = flash;
-          _isExpanded = true;
-          _loadSubDirectories();
-        }
+      final cue = Provider.of<FileBrowserState>(context, listen: false).flashCue;
+      if (!identical(cue, _flashCue)) {
+        _flashCue?.removeListener(_onFlash);
+        _flashCue = cue..addListener(_onFlash);
+        // Read what is already there. A row created by the very action that
+        // set the cue — a new folder, a rename — mounts after it fired, so a
+        // listener alone would never hear its own pulse. A build follows
+        // this, so nothing needs marking dirty.
+        _applyFlash(cue.value, notify: false);
       }
+    }
+  }
+
+  void _onFlash() {
+    final cue = _flashCue?.value;
+    if (!mounted || cue == null) return;
+    _applyFlash(cue, notify: true);
+  }
+
+  void _applyFlash(FolderFlash cue, {required bool notify}) {
+    final String? flash = cue.path;
+    if (flash == null || flash == _pulsedFor) return;
+
+    void mutate(VoidCallback change) => notify ? setState(change) : change();
+
+    if (p.equals(flash, widget.path)) {
+      _pulsedFor = flash;
+      mutate(() => _pulse++);
+      // A renamed row comes back under its new key, closed. `13c`: it was
+      // open before, so it is open after — the state follows the directory
+      // even though the widget could not.
+      if (cue.expanded && !_isExpanded) {
+        mutate(() => _isExpanded = true);
+        _loadSubDirectories();
+      }
+    } else if (p.equals(p.dirname(flash), widget.path) && !_isExpanded) {
+      // The row to pulse is a child of this one and this one is closed: open
+      // it, or the pulse plays to nobody.
+      _pulsedFor = flash;
+      mutate(() => _isExpanded = true);
+      _loadSubDirectories();
+    }
+  }
+
+  void _onRefreshed() {
+    if (!mounted) return;
+    if (_isExpanded) {
+      // Reload in place, keeping the stale list rendered until fresh data
+      // arrives — nulling it first unmounts every child DirectoryTreeItem,
+      // which destroys their expansion state (deep branches collapse).
+      _loadSubDirectories(force: true);
+    } else {
+      setState(() => _subDirectories = null);
     }
   }
 
   @override
   void dispose() {
+    _refreshTick?.removeListener(_onRefreshed);
+    _flashCue?.removeListener(_onFlash);
     _focusNode.dispose();
     super.dispose();
   }

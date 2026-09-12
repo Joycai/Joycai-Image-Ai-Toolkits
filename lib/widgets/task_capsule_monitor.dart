@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:provider/provider.dart';
@@ -88,8 +89,29 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor>
       ..animateWith(SpringSimulation(_kSettle, 0, 1, v));
   }
 
+  /// The capsule is the one thing outside the task screen that draws live
+  /// progress, so it keeps the 500ms tick the screen has given up — taken
+  /// straight off the notifier that carries it rather than through the
+  /// service's own [notifyListeners], which now speaks only for the queue's
+  /// shape.
+  ValueListenable<int>? _progressTick;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final tick = Provider.of<TaskQueueService>(context, listen: false).progressTick;
+    if (identical(tick, _progressTick)) return;
+    _progressTick?.removeListener(_onProgress);
+    _progressTick = tick..addListener(_onProgress);
+  }
+
+  void _onProgress() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    _progressTick?.removeListener(_onProgress);
     _settle.dispose();
     super.dispose();
   }

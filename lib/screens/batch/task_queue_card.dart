@@ -657,6 +657,20 @@ class TaskQueueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A running card is the only one that has anything to say twice a second:
+    // its progress edge, its percentage and its elapsed time. It subscribes
+    // to [TaskQueueService.progressTick] itself, so the screen above it — the
+    // filter, the sort, the queue-position pass and every other card — is out
+    // of that loop entirely. The concurrency limit bounds how many cards are
+    // in it at once.
+    if (task.status != TaskStatus.processing) return _buildCard(context);
+    return ValueListenableBuilder<int>(
+      valueListenable: Provider.of<TaskQueueService>(context, listen: false).progressTick,
+      builder: (context, _, _) => _buildCard(context),
+    );
+  }
+
+  Widget _buildCard(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final failed = task.status == TaskStatus.failed;
 

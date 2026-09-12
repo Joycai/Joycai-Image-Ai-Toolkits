@@ -22,6 +22,44 @@ import 'widgets/result_tree_item.dart';
 /// the inline confirmation card.
 typedef _PendingRemoval = ({String path, String name});
 
+/// Everything this column draws out of [GalleryState] — and nothing else.
+///
+/// Pointedly missing: the selection. The column used to `watch` the whole
+/// notifier, so picking a picture in the grid rebuilt the entire folder tree,
+/// every [DirectoryTreeItem] and [ResultTreeItem] under it, for a change that
+/// does not reach the column at all.
+///
+/// The list fields compare by identity, which [GalleryState] guarantees — it
+/// assigns a fresh list before notifying.
+typedef _FolderInputs = ({
+  List<String> resultRoots,
+  GalleryViewMode viewMode,
+  int galleryCount,
+  int processedCount,
+  int droppedCount,
+});
+
+/// The same, for the file browser's tree. Its column draws the registered
+/// folders and whether any of them is ticked; the browser's selection, its
+/// scans and its size slider are none of its business.
+typedef _BrowserInputs = ({
+  List<String> sourceDirectories,
+  bool hasActive,
+});
+
+_BrowserInputs _browserInputs(FileBrowserState s) => (
+      sourceDirectories: s.sourceDirectories,
+      hasActive: s.activeDirectories.isNotEmpty,
+    );
+
+_FolderInputs _folderInputs(GalleryState s) => (
+      resultRoots: s.resultRootDirectories,
+      viewMode: s.viewMode,
+      galleryCount: s.galleryImages.length,
+      processedCount: s.processedImages.length,
+      droppedCount: s.droppedImages.length,
+    );
+
 /// The folder column — `A1 1a` on the workbench, and the file browser's
 /// directory tree.
 ///
@@ -70,11 +108,14 @@ class _FolderListState extends State<FolderList> {
     final l10n = AppLocalizations.of(context)!;
     // Subscribed to the notifier that owns each list. AppState no longer
     // forwards its sub-states, and this list is the one place both trees are
-    // drawn, so it has to name the one it is actually showing.
-    final galleryState = context.watch<GalleryState>();
-    final sourceDirectories = useFileBrowserState
-        ? context.watch<FileBrowserState>().sourceDirectories
-        : galleryState.sourceDirectories;
+    // drawn, so it has to name the one it is actually showing — and, within
+    // it, only the fields it draws (see [_FolderInputs]).
+    final galleryState = Provider.of<GalleryState>(context, listen: false);
+    final browser = useFileBrowserState
+        ? context.select<FileBrowserState, _BrowserInputs>(_browserInputs)
+        : null;
+    final sourceDirectories = browser?.sourceDirectories ??
+        context.select<GalleryState, List<String>>((s) => s.sourceDirectories);
 
     // A folder that left the list some other way has nothing left to confirm.
     final pending = _pendingRemoval != null && sourceDirectories.contains(_pendingRemoval!.path)
@@ -141,9 +182,9 @@ class _FolderListState extends State<FolderList> {
                 _HeaderAction(
                   icon: Icons.deselect,
                   tooltip: l10n.deselectAllDirectories,
-                  onPressed: appState.fileBrowserState.activeDirectories.isEmpty
-                      ? null
-                      : () => appState.fileBrowserState.clearActiveDirectories(),
+                  onPressed: browser!.hasActive
+                      ? () => appState.fileBrowserState.clearActiveDirectories()
+                      : null,
                 ),
                 const SizedBox(width: 2),
                 _HeaderAction(
@@ -223,7 +264,8 @@ class _FolderListState extends State<FolderList> {
     AppLocalizations l10n,
     List<String> sourceDirectories,
   ) {
-    final resultRoots = galleryState.resultRootDirectories;
+    final folders = context.select<GalleryState, _FolderInputs>(_folderInputs);
+    final resultRoots = folders.resultRoots;
     final metrics = FolderTreeMetrics.of(context);
 
     return ListView(
@@ -236,9 +278,9 @@ class _FolderListState extends State<FolderList> {
           metrics,
           icon: Icons.photo_library_outlined,
           label: l10n.allSources,
-          isSelected: galleryState.viewMode == GalleryViewMode.all,
+          isSelected: folders.viewMode == GalleryViewMode.all,
           onTap: () => galleryState.setViewMode(GalleryViewMode.all),
-          count: galleryState.galleryImages.length,
+          count: folders.galleryCount,
         ),
         if (sourceDirectories.isEmpty)
           _buildInlineHint(context, metrics, l10n.noFolders)
@@ -257,9 +299,9 @@ class _FolderListState extends State<FolderList> {
           metrics,
           icon: Icons.auto_awesome_motion_outlined,
           label: l10n.allResults,
-          isSelected: galleryState.viewMode == GalleryViewMode.processed,
+          isSelected: folders.viewMode == GalleryViewMode.processed,
           onTap: () => galleryState.setViewMode(GalleryViewMode.processed),
-          count: galleryState.processedImages.length,
+          count: folders.processedCount,
         ),
         if (resultRoots.isEmpty)
           _buildInlineHint(context, metrics, l10n.noResultsYet)
@@ -272,9 +314,9 @@ class _FolderListState extends State<FolderList> {
           metrics,
           icon: Icons.inbox_outlined,
           label: l10n.tempWorkspace,
-          isSelected: galleryState.viewMode == GalleryViewMode.temp,
+          isSelected: folders.viewMode == GalleryViewMode.temp,
           onTap: () => galleryState.setViewMode(GalleryViewMode.temp),
-          count: galleryState.droppedImages.length,
+          count: folders.droppedCount,
         ),
       ],
     );
