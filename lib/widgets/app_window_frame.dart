@@ -184,31 +184,37 @@ class AuroraBackdrop extends StatelessWidget {
   }
 }
 
-/// The app mark: a rounded square in the accent swept to its deep ink
-/// (`01 · 1b`). Solid accent under reduced effects (`01 · 1k`).
+/// The app mark (`01 · 1b`): the application's own icon, at [size].
+///
+/// The design draws a rounded square swept from the accent to its deep ink —
+/// a stand-in, like the grey boxes it draws for images. The mark is the app's
+/// identity rather than a themed swatch, so it does not follow the accent: an
+/// icon that changed colour with the theme would stop being the thing the
+/// user's eye finds in a taskbar full of windows.
+///
+/// Decoded at the size it is drawn at, not at the asset's 1024: the same mark
+/// is on screen at 16, 20 and 40, and a full-size decode of each would hold
+/// four megabytes to paint a 16px square.
 class AppMark extends StatelessWidget {
   const AppMark({super.key, this.size = 16});
 
   final double size;
 
+  static const String asset = 'assets/icon/icon.png';
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final reduced = AppEffects.reduced(context);
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        // r4 at 16, r10 at 40 — the same proportion as the design's two sizes.
-        borderRadius: BorderRadius.circular(size <= 20 ? AppRadius.xs : AppRadius.control),
-        color: reduced ? scheme.primary : null,
-        gradient: reduced
-            ? null
-            : LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [scheme.primary, scheme.onAccentTint],
-              ),
+    final int pixels = (size * MediaQuery.devicePixelRatioOf(context)).ceil();
+    return ClipRRect(
+      // r4 at 16, r10 at 40 — the same proportion as the design's two sizes.
+      borderRadius: BorderRadius.circular(size <= 20 ? AppRadius.xs : AppRadius.control),
+      child: Image.asset(
+        asset,
+        width: size,
+        height: size,
+        cacheWidth: pixels,
+        cacheHeight: pixels,
+        filterQuality: FilterQuality.medium,
       ),
     );
   }

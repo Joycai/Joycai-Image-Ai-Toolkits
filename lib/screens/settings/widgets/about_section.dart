@@ -11,6 +11,7 @@ import '../../../widgets/app_button.dart';
 import '../../../widgets/app_section_label.dart';
 import '../../../widgets/app_setting_row.dart';
 import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/app_window_frame.dart';
 import 'settings_layout.dart';
 
 const String _githubUrl = 'https://github.com/Joycai/Joycai-Image-Ai-Toolkits';
@@ -206,10 +207,9 @@ class _Identity extends StatelessWidget {
     final theme = Theme.of(context);
     final bool phone = Responsive.isMobile(context);
 
-    final Widget icon = ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: Image.asset('assets/icon/icon.png', width: 64, height: 64),
-    );
+    // The mark the title bar and the dock already draw, at the identity
+    // block's own size.
+    const Widget icon = AppMark(size: 64);
     final Widget name = Text(
       l10n.appTitle,
       style: theme.textTheme.headlineSmall,
