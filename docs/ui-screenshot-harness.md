@@ -19,13 +19,21 @@ flutter test test/screenshots/component_gallery_test.dart
 Output: `build/ui-screenshots/<screen>_<size>_<brightness>[_<suffix>].png`
 — 8 screens × 4 widths in light, a dark shot of each at desktop, then a long
 tail of state variants (staging, conflicts, folder ops, AI rename, every
-workbench tab, the model editor's four states). 123 files from
-`app_screens_test.dart` plus the 16 `gallery_*.png` theme sheets from
-`component_gallery_test.dart`, ~3 minutes for the lot.
+workbench tab, the model editor's four states). 123 files from the
+`app_screens_*_test.dart` files plus the 16 `gallery_*.png` theme sheets from
+`component_gallery_test.dart`, about a minute for the lot.
+
+The shots are split into one file per area because `flutter test` runs files
+in parallel but a file's own tests in sequence. As a single file they took
+~150s on their own; split, the runner spreads them across cores. Each file
+seeds its own fixture environment, so a new shot goes into the file for its
+area, after that area's matrix.
 
 **This is not a regression gate.** The comparator installed by
 `flutter_test_config.dart` always overwrites and always passes, so a UI change
-can never fail `flutter test`. Layout exceptions are drained and printed rather
+can never fail `flutter test`. Every file carries the `screenshots` tag, so the
+gate (`flutter test -x screenshots`, which CI runs) skips them; naming the
+directory still renders them. Layout exceptions are drained and printed rather
 than asserted — an overflow is the thing you want a picture of, and
 `expect(takeException(), isNull)` would abort before the PNG got written. Watch
 the run output for lines like:
@@ -51,7 +59,8 @@ against a real database with seeded data.
 | File | Responsibility |
 |---|---|
 | `test/screenshots/flutter_test_config.dart` | Loads real fonts; installs the always-overwrite golden comparator; disables the debug banner |
-| `test/screenshots/app_screens_test.dart` | The screen × size matrix |
+| `test/screenshots/app_screens_*_test.dart` | The screen × size matrix and each area's state variants, one file per area |
+| `test/screenshots/harness/suite.dart` | Per-file fixture setup, `shootMatrix()` and `settle()` |
 | `test/screenshots/harness/fixture_env.dart` | Temp directory tree, sqflite ffi, path_provider and plugin channel mocks |
 | `test/screenshots/harness/fixture_seed.dart` | Database rows and generated PNG fixtures |
 | `test/screenshots/harness/shoot.dart` | `shoot()`, the `AppScreen` enum and `kShotSizes` |
@@ -91,11 +100,11 @@ Seeding a gallery selection in `before` looks like it works — the count is
 right — and then photographs as empty, because the workbench rescans on mount
 and the scan rebuilds the `AppImage` list the selection was made against. That
 kind of state belongs in `after`. The `_workbenchTabs` table in
-`app_screens_test.dart` carries a `seedOnSettled` flag for exactly this.
+`app_screens_workbench_tabs_test.dart` carries a `seedOnSettled` flag for exactly this.
 
 **The workbench is six tools behind one nav entry**, and the main matrix only
 reaches tab 0. The rest live in the `_workbenchTabs` table at the bottom of
-`app_screens_test.dart` — all six tabs are covered now, several of them more
+`app_screens_workbench_tabs_test.dart` — all six tabs are covered now, several of them more
 than once where the arrangements are separate rendering paths rather than
 settings of one (the comparator has side-by-side, stacked, slider and empty;
 the assistant has idle, running, system-prompt and knowledge-edit). Add a new

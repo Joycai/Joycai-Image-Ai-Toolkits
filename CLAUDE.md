@@ -13,14 +13,17 @@ flutter pub get                                    # install dependencies
 dart tool/merge_l10n.dart && flutter gen-l10n      # regenerate l10n (run after editing .arb files)
 flutter run                                        # run the app
 flutter analyze                                    # MUST show "No issues found!" before any commit
-flutter test                                       # full suite — CI gates on this
+flutter test -x screenshots                        # the gate — everything but the screenshot harness
 flutter build macos                                # or windows / linux / apk / ipa
 flutter test test/screenshots                      # render every screen to build/ui-screenshots/*.png
 flutter test test/screenshots/component_gallery_test.dart  # every component, 8 theme seeds × light/dark
 ```
 
-CI (`.github/workflows/flutter-ci.yml`) runs `flutter gen-l10n` → `flutter analyze`
-→ `flutter test`. Both gates must be green locally before you push.
+CI (`.github/workflows/flutter-ci.yml`) runs `flutter analyze` and `flutter test -x screenshots`
+in parallel jobs, the tests split by file across three shards. Both gates must be green
+locally before you push. The `screenshots` tag (declared in `dart_test.yaml`) marks the
+harness files that write PNGs and assert nothing; `rebuild_scope_test.dart` asserts and
+stays in the gate.
 
 ## Project Map
 
@@ -89,7 +92,7 @@ executed, so an empty directory does not mean the work is open.
 
 ## Development Rules
 
-- **`flutter analyze` must pass** (zero issues, info-level included) and **`flutter test` must be green** after every code change.
+- **`flutter analyze` must pass** (zero issues, info-level included) and **`flutter test -x screenshots` must be green** after every code change.
 - **Responsive UI:** all changes must work on Mobile (<600px), Tablet (<1000px), Desktop (≥1000px). Use `Responsive`/`ResponsiveBuilder` (`lib/core/responsive.dart`). File Browser and Downloader are hidden on *mobile platforms* (`desktopOnly` in `widgets/shell/app_destinations.dart`, a `Platform.isAndroid || Platform.isIOS` check) — that is a platform gate, not a width gate, so both still render in a narrow desktop window.
 - **Render performance:** measure it, do not reason about it, and know which thread you are measuring.
   - **UI thread** — `flutter test test/screenshots/render_probe.dart` mounts the real tree and reports what one state change rebuilds, what a gesture costs, glass layers per screen, and what an animation drags into its repaint (see [docs/README.md](docs/README.md#tooling)). The invariants it found are pinned by `test/screenshots/rebuild_scope_test.dart` and `test/render_performance_test.dart` — a state class hands out a **new** list rather than mutating one, because list identity is the only signal a `select` has.

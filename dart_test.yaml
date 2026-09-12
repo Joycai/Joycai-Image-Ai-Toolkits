@@ -1,0 +1,10 @@
+# Test runner configuration, read by `flutter test`.
+
+tags:
+  # The screenshot harness: test/screenshots/app_screens_*_test.dart and
+  # component_gallery_test.dart. It writes PNGs to build/ui-screenshots/ and
+  # asserts nothing, so it is not part of the gate. CI and the everyday local
+  # run leave it out with `flutter test -x screenshots`; name the directory to
+  # render it (`flutter test test/screenshots`). Declared here so excluding it
+  # does not warn that the tag is unknown.
+  screenshots: {}
