@@ -62,7 +62,6 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   static const double _drawerWidth = 260;
 
   /// The grid's gutter, both ways (`1a`).
-  static const double _gridGap = 12;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
@@ -276,18 +275,23 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   }
 
   Widget _buildDesktopLayout(AppLocalizations l10n) {
-    final browser = context.watch<FileBrowserState>();
-    final staging = context.watch<FileStagingState>();
+    // Unlistened: the layout hands this down for its actions, and every piece
+    // that *draws* something out of it — the header's counts, the filter
+    // bar's chips, the selection bar, each tile — now subscribes to the slice
+    // it draws. The layout itself has no reason to rebuild when a file is
+    // picked, and rebuilding it took the whole browser with it.
+    final browser = Provider.of<FileBrowserState>(context, listen: false);
+    final staging = context.select<FileStagingState, _StagingInputs>(_stagingInputs);
     final scheme = Theme.of(context).colorScheme;
     final isNarrow = Responsive.isNarrow(context);
 
     // The column earns its width the moment there is something in it, and
     // only the first time — reopening it after the user closed it would be
     // the app arguing with them.
-    if (staging.isNotEmpty && !_stagingAutoOpened) {
+    if (staging.count > 0 && !_stagingAutoOpened) {
       _stagingAutoOpened = true;
       _stagingOpen = true;
-    } else if (staging.isEmpty && _stagingAutoOpened) {
+    } else if (staging.count == 0 && _stagingAutoOpened) {
       _stagingAutoOpened = false;
     }
 
@@ -383,18 +387,27 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                     Expanded(
                       child: Stack(
                         children: [
-                          Positioned.fill(child: _buildFileArea(context, browser, staging)),
+                          Positioned.fill(
+                            child: _FileArea(
+                              pendingRefreshes: _pendingRefreshes,
+                              onTap: (file) => _handleSelectionTap(browser, file),
+                              onDoubleTap: (file) =>
+                                  _openWithPreview(context, file, browser),
+                              onSecondaryTap: (file, pos) =>
+                                  _showContextMenu(context, file, pos),
+                            ),
+                          ),
                           Positioned(
                             left: AppSpace.s16,
                             right: AppSpace.s16,
                             bottom: BrowserSelectionBar.bottomInset,
                             child: Center(
                               child: BrowserSelectionBar(
-                                state: browser,
                                 onAiRename: () => _showAiRenameDialog(context),
-                                onAddToStaging: () => _addSelectionToStaging(browser, staging),
-                                allSelectionStaged: browser.selectedFiles.isNotEmpty &&
-                                    browser.selectedFiles.every((f) => staging.contains(f.path)),
+                                onAddToStaging: () => _addSelectionToStaging(
+                                  browser,
+                                  Provider.of<FileStagingState>(context, listen: false),
+                                ),
                               ),
                             ),
                           ),
@@ -418,87 +431,6 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
   void _addSelectionToStaging(FileBrowserState state, FileStagingState staging) {
     staging.addAll(state.selectedFiles);
-  }
-
-  Widget _buildFileArea(BuildContext context, FileBrowserState state, FileStagingState staging) {
-    if (state.filteredFiles.isEmpty) {
-      if (_pendingRefreshes > 0 || state.isScanning) return BrowserScanningState(progress: state.scanProgress);
-      return BrowserFilesEmptyState(noFolders: state.sourceDirectories.isEmpty);
-    }
-    return state.viewMode == BrowserViewMode.grid
-        ? _buildFileGrid(context, state, staging)
-        : _buildFileListView(context, state, staging);
-  }
-
-  Widget _buildFileGrid(BuildContext context, FileBrowserState state, FileStagingState staging) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth <= 0) return const SizedBox.shrink();
-
-        // The width each card actually gets, computed the way the delegate
-        // below will, so its height can follow it.
-        final double usable = math.max(0, constraints.maxWidth - AppSpace.s16 * 2);
-        final int columns = math.max(1, (usable / (state.thumbnailSize + _gridGap)).ceil());
-        final double cardWidth = math.max(1, (usable - _gridGap * (columns - 1)) / columns);
-
-        return GridView.builder(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpace.s16,
-            _gridGap,
-            AppSpace.s16,
-            _gridGap + BrowserSelectionBar.clearance,
-          ),
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: state.thumbnailSize,
-            mainAxisSpacing: _gridGap,
-            crossAxisSpacing: _gridGap,
-            mainAxisExtent: FileCard.mainAxisExtentFor(context, cardWidth),
-          ),
-          itemCount: state.filteredFiles.length,
-          itemBuilder: (context, index) {
-            final file = state.filteredFiles[index];
-            final isSelected = state.selectedFiles.contains(file);
-            return FileCard(
-              file: file,
-              isSelected: isSelected,
-              isStaged: staging.contains(file.path),
-              // Dragging a card inside the selection drags the whole
-              // selection; dragging one outside it drags only that file. Same
-              // rule the context menu uses, so the count in the drag chip and
-              // the count in the menu never disagree.
-              dragPayload: isSelected ? state.selectedFiles.toList() : <BrowserFile>[file],
-              thumbnailSize: state.thumbnailSize,
-              heroScope: kBrowserPreviewHeroScope,
-              onTap: () => _handleSelectionTap(state, file),
-              onDoubleTap: () => _openWithPreview(context, file, state),
-              onSecondaryTap: (pos) => _showContextMenu(context, file, pos),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildFileListView(BuildContext context, FileBrowserState state, FileStagingState staging) {
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: BrowserSelectionBar.clearance),
-      itemExtent: BrowserFileListRow.height,
-      itemCount: state.filteredFiles.length,
-      itemBuilder: (context, index) {
-        final file = state.filteredFiles[index];
-        final isSelected = state.selectedFiles.contains(file);
-        return BrowserFileListRow(
-          key: ValueKey(file.path),
-          file: file,
-          isSelected: isSelected,
-          isStaged: staging.contains(file.path),
-          dragPayload: isSelected ? state.selectedFiles.toList() : <BrowserFile>[file],
-          onTap: () => _handleSelectionTap(state, file),
-          onDoubleTap: () => _openWithPreview(context, file, state),
-          onSecondaryTap: (pos) => _showContextMenu(context, file, pos),
-        );
-      },
-    );
   }
 
   /// Single click toggles one file; Shift+click extends the selection from the
@@ -551,6 +483,181 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       position: position,
       workbenchUIState: Provider.of<WorkbenchUIState>(context, listen: false),
       onRefresh: () => state.refresh(),
+    );
+  }
+}
+
+/// What the file area draws out of [FileBrowserState] — and pointedly not the
+/// selection.
+///
+/// The selection is read per tile, by the [Selector2] inside the builders
+/// below. Putting it here would rebuild every visible card for a change that
+/// concerns one of them, which is what the area did when it was a method on
+/// the screen and the screen watched the whole notifier: picking one file
+/// rebuilt the header, the filter bar, the folder tree and all ~130 tiles.
+///
+/// [files] compares by identity, which [FileBrowserState] guarantees — the
+/// filter pass assigns a fresh list before notifying.
+/// What the layout itself draws out of the staging area: whether the column
+/// has earned its width, where a paste would land, and the count on the
+/// header's button. Not `items` — the column reads those.
+typedef _StagingInputs = ({int count, String? destination});
+
+_StagingInputs _stagingInputs(FileStagingState s) =>
+    (count: s.count, destination: s.destination);
+
+typedef _AreaInputs = ({
+  List<BrowserFile> files,
+  BrowserViewMode viewMode,
+  double thumbnailSize,
+  bool isScanning,
+  bool hasFolders,
+});
+
+_AreaInputs _areaInputs(FileBrowserState s) => (
+      files: s.filteredFiles,
+      viewMode: s.viewMode,
+      thumbnailSize: s.thumbnailSize,
+      isScanning: s.isScanning,
+      hasFolders: s.sourceDirectories.isNotEmpty,
+    );
+
+/// What one tile reads. [payloadCount] is what its drag chip would say — the
+/// whole selection when the tile is in it, one otherwise — so an *unselected*
+/// tile's value never moves, whatever the selection does around it.
+typedef _TileFlags = ({bool selected, bool staged, int payloadCount});
+
+/// The grid or the list of files (`B1a · 1a`).
+class _FileArea extends StatelessWidget {
+  const _FileArea({
+    required this.pendingRefreshes,
+    required this.onTap,
+    required this.onDoubleTap,
+    required this.onSecondaryTap,
+  });
+
+  final int pendingRefreshes;
+  final void Function(BrowserFile) onTap;
+  final void Function(BrowserFile) onDoubleTap;
+  final void Function(BrowserFile, Offset) onSecondaryTap;
+
+  /// The grid's gutter, both ways (`1a`).
+  static const double _gap = 12;
+
+  @override
+  Widget build(BuildContext context) {
+    final _AreaInputs area = context.select<FileBrowserState, _AreaInputs>(_areaInputs);
+
+    if (area.files.isEmpty) {
+      if (pendingRefreshes > 0 || area.isScanning) {
+        return BrowserScanningState(
+          progress: Provider.of<FileBrowserState>(context, listen: false).scanProgress,
+        );
+      }
+      return BrowserFilesEmptyState(noFolders: !area.hasFolders);
+    }
+    return area.viewMode == BrowserViewMode.grid
+        ? _buildGrid(context, area)
+        : _buildList(context, area);
+  }
+
+  /// Wraps one tile in the subscription that is allowed to rebuild it.
+  ///
+  /// Two notifiers because the two flags are orthogonal and live apart: what
+  /// is selected is the browser's, what is staged is the staging area's, and
+  /// a card draws both.
+  Widget _tile(
+    BrowserFile file,
+    Widget Function(BuildContext, _TileFlags, List<BrowserFile>) build,
+  ) {
+    return Selector2<FileBrowserState, FileStagingState, _TileFlags>(
+      selector: (_, browser, staging) {
+        final bool selected = browser.selectedFiles.contains(file);
+        return (
+          selected: selected,
+          staged: staging.contains(file.path),
+          payloadCount: selected ? browser.selectedFiles.length : 1,
+        );
+      },
+      builder: (context, flags, _) {
+        // Resolved here rather than passed down: every selected tile carries
+        // the same list instance (see [FileBrowserState.selectionPayload]),
+        // so this allocates nothing.
+        final List<BrowserFile> payload = flags.selected
+            ? Provider.of<FileBrowserState>(context, listen: false).selectionPayload
+            : <BrowserFile>[file];
+        return build(context, flags, payload);
+      },
+    );
+  }
+
+  Widget _buildGrid(BuildContext context, _AreaInputs area) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth <= 0) return const SizedBox.shrink();
+
+        // The width each card actually gets, computed the way the delegate
+        // below will, so its height can follow it.
+        final double usable = math.max(0, constraints.maxWidth - AppSpace.s16 * 2);
+        final int columns =
+            math.max(1, (usable / (area.thumbnailSize + _gap)).ceil());
+        final double cardWidth = math.max(1, (usable - _gap * (columns - 1)) / columns);
+
+        return GridView.builder(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpace.s16,
+            _gap,
+            AppSpace.s16,
+            _gap + BrowserSelectionBar.clearance,
+          ),
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: area.thumbnailSize,
+            mainAxisSpacing: _gap,
+            crossAxisSpacing: _gap,
+            mainAxisExtent: FileCard.mainAxisExtentFor(context, cardWidth),
+          ),
+          itemCount: area.files.length,
+          itemBuilder: (context, index) {
+            final BrowserFile file = area.files[index];
+            return _tile(file, (context, flags, payload) => FileCard(
+                  file: file,
+                  isSelected: flags.selected,
+                  isStaged: flags.staged,
+                  // Dragging a card inside the selection drags the whole
+                  // selection; dragging one outside it drags only that file.
+                  // Same rule the context menu uses, so the count in the drag
+                  // chip and the count in the menu never disagree.
+                  dragPayload: payload,
+                  thumbnailSize: area.thumbnailSize,
+                  heroScope: kBrowserPreviewHeroScope,
+                  onTap: () => onTap(file),
+                  onDoubleTap: () => onDoubleTap(file),
+                  onSecondaryTap: (pos) => onSecondaryTap(file, pos),
+                ));
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildList(BuildContext context, _AreaInputs area) {
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: BrowserSelectionBar.clearance),
+      itemExtent: BrowserFileListRow.height,
+      itemCount: area.files.length,
+      itemBuilder: (context, index) {
+        final BrowserFile file = area.files[index];
+        return _tile(file, (context, flags, payload) => BrowserFileListRow(
+              key: ValueKey(file.path),
+              file: file,
+              isSelected: flags.selected,
+              isStaged: flags.staged,
+              dragPayload: payload,
+              onTap: () => onTap(file),
+              onDoubleTap: () => onDoubleTap(file),
+              onSecondaryTap: (pos) => onSecondaryTap(file, pos),
+            ));
+      },
     );
   }
 }

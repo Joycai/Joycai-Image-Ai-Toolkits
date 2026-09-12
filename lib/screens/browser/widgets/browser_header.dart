@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+
 import '../../../state/file_browser_state.dart';
 import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
 
@@ -22,6 +24,23 @@ import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
 /// When the row cannot hold the title and the search field's own content —
 /// measured, not guessed — the search collapses to an icon button (`1c`),
 /// and opening it gives the field the title's place until it is dismissed.
+/// The figures the header states, and the toggle it draws — read off
+/// [FileBrowserState] here rather than taken from whatever built the header,
+/// so a change it does not show cannot rebuild it.
+typedef _HeaderInputs = ({
+  int fileCount,
+  int selectedCount,
+  int folderCount,
+  BrowserViewMode viewMode,
+});
+
+_HeaderInputs _headerInputs(FileBrowserState s) => (
+      fileCount: s.filteredFiles.length,
+      selectedCount: s.selectedFiles.length,
+      folderCount: s.sourceDirectories.length,
+      viewMode: s.viewMode,
+    );
+
 class BrowserHeader extends StatelessWidget {
   const BrowserHeader({
     super.key,
@@ -72,14 +91,15 @@ class BrowserHeader extends StatelessWidget {
       fontWeight: FontWeight.w500,
     );
 
-    final fileCount = state.filteredFiles.length;
-    final selectedCount = state.selectedFiles.length;
+    final inputs = context.select<FileBrowserState, _HeaderInputs>(_headerInputs);
+    final fileCount = inputs.fileCount;
+    final selectedCount = inputs.selectedCount;
     final filesLabel = l10n.filesCount(fileCount);
     const separator = '  ·  ';
     // `1c`: with the directory column behind the drawer, the subtitle takes
     // over its folder count.
     final String? foldersLabel =
-        onOpenDrawer != null ? l10n.browserFoldersCount(state.sourceDirectories.length) : null;
+        onOpenDrawer != null ? l10n.browserFoldersCount(inputs.folderCount) : null;
 
     return Container(
       height: height,
@@ -175,7 +195,7 @@ class BrowserHeader extends StatelessWidget {
             const SizedBox(width: 12),
             _StagingButton(count: stagingCount, open: stagingOpen, onPressed: onStagingPressed),
             const SizedBox(width: AppSpace.s6),
-            _ViewModeToggle(value: state.viewMode, onChanged: state.setViewMode),
+            _ViewModeToggle(value: inputs.viewMode, onChanged: state.setViewMode),
             const SizedBox(width: AppSpace.s6),
             SizedBox.square(
               dimension: AppSize.control,
