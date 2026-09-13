@@ -24,6 +24,7 @@ import '../app_labelled_field.dart';
 import '../app_section_label.dart';
 import '../glass/app_glass.dart';
 import '../searchable_picker.dart';
+import 'context_window_slider.dart';
 import 'model_edit_card_preview.dart';
 import 'fee_group_summary.dart';
 import 'model_edit_controls.dart';
@@ -69,6 +70,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
   /// The Specify figure, typed rather than picked off a preset ladder (`1d`).
   late TextEditingController contextCtrl;
+
+  /// Focus on the Specify field, watched so a `128k` typed there becomes
+  /// `131072` once the user moves on.
+  final FocusNode _contextFocus = FocusNode();
 
   int? channelId;
   late String tag;
@@ -143,6 +148,15 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     final cw = model?.contextWindow;
     contextMode = ContextBudget.modeOf(cw);
     contextCtrl = TextEditingController(text: cw != null && cw > 0 ? '$cw' : '');
+    _contextFocus.addListener(_normaliseContextOnBlur);
+  }
+
+  void _normaliseContextOnBlur() {
+    if (_contextFocus.hasFocus) return;
+    final tokens = _contextTokens;
+    if (tokens != null && contextCtrl.text != '$tokens') {
+      setState(() => contextCtrl.text = '$tokens');
+    }
   }
 
   @override
@@ -150,10 +164,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     idCtrl.dispose();
     nameCtrl.dispose();
     contextCtrl.dispose();
+    _contextFocus.dispose();
     super.dispose();
   }
 
-  int? get _contextTokens => int.tryParse(contextCtrl.text.trim());
+  /// The Specify figure — digits, or the `128k` / `1m` shorthand the labels use.
+  int? get _contextTokens => ContextWindowScale.parse(contextCtrl.text);
 
   /// Specify needs a positive whole number; blank or zero blocks saving.
   bool get _contextValid =>
@@ -889,10 +905,16 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
   // --- Behaviour ------------------------------------------------------------
 
+  /// `1a`'s Specify view. The typed figure is the value; the slider, the
+  /// preset menu, the tick labels and the arrow keys are four ways of writing
+  /// it. A status string on the caption's row says where the figure sits
+  /// (`= 128k · preset`, `≈ 128k–256k`).
   Widget _contextSection(BuildContext context) {
     final l10n = widget.l10n;
     final theme = Theme.of(context);
     final tokens = _contextTokens;
+    final specified = contextMode == ContextWindowMode.specified;
+    final hasValue = tokens != null && tokens > 0;
     final invalid = _contextTouched && !_contextValid;
 
     final description = switch (contextMode) {
@@ -911,7 +933,20 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _caption(l10n.contextWindow),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Expanded(child: _caption(l10n.contextWindow)),
+            if (specified && hasValue) ...[
+              const SizedBox(width: AppSpace.s10),
+              Text(
+                _contextStatus(tokens),
+                style: theme.textTheme.labelSmall?.mono.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ],
+        ),
         const SizedBox(height: AppSpace.s6),
         ModelEditChoiceGrid<ContextWindowMode>(
           choices: [
@@ -926,43 +961,32 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           duration: AppMotion.durationOf(context, AppMotion.reveal),
           curve: AppMotion.enter,
           alignment: Alignment.topCenter,
-          child: contextMode != ContextWindowMode.specified
+          child: !specified
               ? const SizedBox(width: double.infinity)
               : Padding(
                   padding: const EdgeInsets.only(top: _fieldGap),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      AppLabelledField(
-                        label: l10n.contextMax,
-                        size: _fieldSize(context),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: ModelEditTextField(
-                                controller: contextCtrl,
-                                icon: Icons.memory_outlined,
-                                mono: true,
-                                hint: '${ContextBudget.defaultWindowTokens}',
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                error: invalid,
-                                onChanged: (_) => setState(() => _contextTouched = true),
-                              ),
-                            ),
-                            const SizedBox(width: _fieldGap),
-                            Text(
-                              l10n.contextTokens(
-                                  tokens != null && tokens > 0 ? formatGroupedTokens(tokens) : '—'),
-                              style: theme.textTheme.bodySmall?.mono
-                                  .copyWith(color: theme.colorScheme.onSurfaceVariant),
-                            ),
-                          ],
+                      _contextField(context, invalid: invalid),
+                      const SizedBox(height: AppSpace.s6),
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpace.s6),
+                        child: ContextWindowSlider(
+                          value: hasValue ? ContextWindowScale.positionOf(tokens) : 0,
+                          semanticLabel: l10n.contextMax,
+                          // The typed figure where the thumb rests on it; the
+                          // track's own value anywhere else.
+                          semanticValueOf: (p) => l10n.contextTokens(formatGroupedTokens(
+                              hasValue && p == ContextWindowScale.positionOf(tokens)
+                                  ? tokens
+                                  : ContextWindowScale.tokensAt(p))),
+                          onChanged: (position) => _setContextTokens(ContextWindowScale.tokensAt(position)),
                         ),
                       ),
-                      const SizedBox(height: _fieldGap),
-                      _contextSlider(context),
+                      const SizedBox(height: AppSpace.s4),
+                      ModelEditHelperText(l10n.contextSliderHint),
                       // Shown whenever Specify holds nothing savable — the
                       // user chose Specify, and this is why Save is off. The
                       // stroke waits for typing.
@@ -981,45 +1005,76 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     );
   }
 
-  /// `1d`'s Specify slider: nine stops from 8k to 1M at equal distances,
-  /// 1024-token steps. The typed figure is the value: the thumb follows it,
-  /// between two stops in proportion, and dragging writes the field.
-  Widget _contextSlider(BuildContext context) {
+  /// The Specify field: mono, `tokens` after the figure, the 「档位」 preset
+  /// menu at its end. Takes `128k` / `1m` as well as digits, and normalises
+  /// what it holds to digits when focus leaves. ↑↓ walk the presets, ⇧↑↓
+  /// only the major ones (`1a` path ③).
+  Widget _contextField(BuildContext context, {required bool invalid}) {
     final l10n = widget.l10n;
     final tokens = _contextTokens;
-    final stops = ContextWindowScale.stops;
-    final hasValue = tokens != null && tokens > 0;
+    final metrics = ModelEditMetrics.of(context);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ModelEditTrackSlider(
-          stopCount: stops.length,
-          value: hasValue ? ContextWindowScale.positionOf(tokens) : 0,
-          // Every other stop is labelled: nine labels do not fit a column.
-          labels: [
-            for (var i = 0; i < stops.length; i++) i.isEven ? ContextWindowScale.label(stops[i]) : null,
-          ],
-          inset: 16,
-          semanticLabel: l10n.contextMax,
-          // The typed figure where the thumb rests on it; the track's own
-          // value anywhere else.
-          semanticValueOf: (p) => l10n.contextTokens(formatGroupedTokens(
-              hasValue && p == ContextWindowScale.positionOf(tokens) ? tokens : ContextWindowScale.tokensAt(p))),
-          onChanged: (position) {
-            final next = ContextWindowScale.tokensAt(position);
-            if (next == tokens) return;
-            setState(() {
-              contextCtrl.text = '$next';
-              _contextTouched = true;
-            });
-          },
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.arrowUp): () => _stepContext(1),
+        const SingleActivator(LogicalKeyboardKey.arrowDown): () => _stepContext(-1),
+        const SingleActivator(LogicalKeyboardKey.arrowUp, shift: true): () => _stepContext(1, majorOnly: true),
+        const SingleActivator(LogicalKeyboardKey.arrowDown, shift: true): () => _stepContext(-1, majorOnly: true),
+      },
+      child: ModelEditTextField(
+        controller: contextCtrl,
+        focusNode: _contextFocus,
+        mono: true,
+        hint: '${ContextBudget.defaultWindowTokens}',
+        keyboardType: TextInputType.text,
+        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9kKmM ,.]'))],
+        suffixText: l10n.contextTokensUnit,
+        suffix: ContextWindowPresetMenu(
+          label: l10n.contextPresets,
+          selected: tokens == null ? null : ContextWindowScale.stopIndexOf(tokens),
+          onSelected: (i) => _setContextTokens(ContextWindowScale.stops[i]),
+          height: metrics.fieldHeight,
         ),
-        const SizedBox(height: AppSpace.s4),
-        ModelEditHelperText(l10n.contextSliderHint),
-      ],
+        error: invalid,
+        onChanged: (_) => setState(() => _contextTouched = true),
+      ),
     );
+  }
+
+  /// Where the figure sits on the scale, for the caption's row.
+  String _contextStatus(int tokens) {
+    final l10n = widget.l10n;
+    final stops = ContextWindowScale.stops;
+    final exact = ContextWindowScale.stopIndexOf(tokens);
+    if (exact != null) return l10n.contextStatusPreset(ContextWindowScale.label(stops[exact]));
+    if (tokens < stops.first) return l10n.contextStatusBelow(ContextWindowScale.label(stops.first));
+    if (tokens > stops.last) return l10n.contextStatusAbove(ContextWindowScale.label(stops.last));
+    final lo = ContextWindowScale.positionOf(tokens).floor();
+    return l10n.contextStatusBetween(
+      ContextWindowScale.label(stops[lo]),
+      ContextWindowScale.label(stops[lo + 1]),
+    );
+  }
+
+  void _setContextTokens(int tokens) {
+    if (tokens == _contextTokens && contextCtrl.text == '$tokens') return;
+    setState(() {
+      contextCtrl.value = TextEditingValue(
+        text: '$tokens',
+        selection: TextSelection.collapsed(offset: '$tokens'.length),
+      );
+      _contextTouched = true;
+    });
+  }
+
+  /// An arrow in the field: the next preset in [direction]; from an empty
+  /// field, the first one.
+  void _stepContext(int direction, {bool majorOnly = false}) {
+    final current = _contextTokens;
+    final next = current == null || current <= 0
+        ? ContextWindowScale.stops.first
+        : ContextWindowScale.stepFrom(current, direction, majorOnly: majorOnly);
+    if (next != null) _setContextTokens(next);
   }
 
   Widget _agentSection(BuildContext context) {

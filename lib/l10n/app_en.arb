@@ -1264,7 +1264,44 @@
     }
   },
   "contextWindowHint": "Used to batch images per request, and to budget the Prompt Assistant's knowledge-base reads and summarization.",
-  "contextSliderHint": "The slider moves in 1,024-token steps from 8k to 1M. A typed value wins: the slider follows it, and rests between two presets in proportion.",
+  "contextSliderHint": "Nine presets from 8k to 1M. A drag snaps onto a nearby preset; tap a tick label to jump to it; the field takes 128k or 1m shorthand, ↑↓ step through presets and ⇧↑↓ only the major ones. A typed value wins and rests between two presets in proportion.",
+  "contextTokensUnit": "tokens",
+  "contextPresets": "Presets",
+  "contextStatusPreset": "= {label} · preset",
+  "@contextStatusPreset": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "contextStatusBetween": "≈ {lo}–{hi}",
+  "@contextStatusBetween": {
+    "placeholders": {
+      "lo": {
+        "type": "String"
+      },
+      "hi": {
+        "type": "String"
+      }
+    }
+  },
+  "contextStatusBelow": "< {label}",
+  "@contextStatusBelow": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "contextStatusAbove": "> {label}",
+  "@contextStatusAbove": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "agentBehavior": "Agent Behavior",
   "forceViewAllImages": "View all reference images",
   "forceViewAllImagesDesc": "Agents must view every reference image before delivering a result. Recommended for small local models.",
