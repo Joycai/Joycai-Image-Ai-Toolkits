@@ -147,15 +147,23 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
 
   // --- Filter row ----------------------------------------------------------
 
-  static const double _chipGap = AppSpace.s6;
+  /// `1a`: 8 between chips, 12 inside each.
+  static const double _chipGap = 8;
+  static const double _chipInset = 12;
   static const double _searchMin = 160;
   static const double _searchMax = 280;
 
+  /// The label at rest and picked (`1a`: 400 / 600). A chip is measured at
+  /// the picked weight and holds that width in both states, so picking one
+  /// does not shove the row — on Windows a CJK bold is synthesised wider
+  /// than its regular.
   TextStyle _chipLabelStyle(BuildContext context, {required bool selected}) =>
-      Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w500);
+      Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w400);
 
+  /// The count is the label's own size in mono — `1a` sets only the family —
+  /// so the digits sit on the label's baseline rather than a smaller slot's.
   TextStyle _chipCountStyle(BuildContext context) =>
-      Theme.of(context).textTheme.labelSmall!.mono.copyWith(fontWeight: FontWeight.w600);
+      _chipLabelStyle(context, selected: false).mono.copyWith(fontWeight: FontWeight.w500);
 
   /// `1a` 筛选行, degrading by measurement (`1c`): first the chip counts go,
   /// then search and Add Model fold into two 32 icons — the search icon opens
@@ -185,11 +193,11 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           double chipWidth(String? kind, String label, bool withCount) =>
-              AppSpace.s10 +
+              _chipInset +
               (kind == null ? 0 : AppSpace.s6 + AppSpace.s6) +
               measureGlassText(context, label, _chipLabelStyle(context, selected: true)) +
               (withCount ? AppSpace.s6 + measureGlassText(context, '${countOf(kind)}', _chipCountStyle(context)) : 0) +
-              AppSpace.s10;
+              _chipInset;
           double chipsWidth(bool withCount) =>
               kinds.fold<double>(0, (sum, k) => sum + chipWidth(k.$1, k.$2, withCount)) +
               _chipGap * (kinds.length - 1);
@@ -209,6 +217,7 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
                   count: withCounts ? countOf(kind) : null,
                   dot: kind == null ? null : modelTagAccent(kind),
                   selected: _kind == kind,
+                  inset: _chipInset,
                   labelStyle: _chipLabelStyle,
                   countStyle: _chipCountStyle(context),
                   onTap: () => setState(() => _kind = kind),
@@ -419,12 +428,17 @@ class _ChannelHeader extends StatelessWidget {
 /// A kind filter (`1a` 类型芯片): 28 tall, a capsule, the kind's 6px identity
 /// dot, the label and — while there is room — the mono count. Selected is the
 /// accent wash under the deep ink with no edge; at rest a hairline.
+///
+/// The label and the count share one strut, so the two faces sit on one
+/// baseline; the label reserves its picked-weight width in both states, so
+/// the chip's width is a property of its text, not of which chip is picked.
 class _KindChip extends StatelessWidget {
   const _KindChip({
     required this.label,
     required this.count,
     required this.dot,
     required this.selected,
+    required this.inset,
     required this.labelStyle,
     required this.countStyle,
     required this.onTap,
@@ -434,6 +448,7 @@ class _KindChip extends StatelessWidget {
   final int? count;
   final Color? dot;
   final bool selected;
+  final double inset;
   final TextStyle Function(BuildContext, {required bool selected}) labelStyle;
   final TextStyle countStyle;
   final VoidCallback onTap;
@@ -445,6 +460,9 @@ class _KindChip extends StatelessWidget {
     final shape = StadiumBorder(
       side: selected ? BorderSide.none : BorderSide(color: scheme.outlineVariant),
     );
+    final TextStyle picked = labelStyle(context, selected: true);
+    final TextStyle rest = labelStyle(context, selected: selected);
+    final strut = StrutStyle.fromTextStyle(rest, forceStrutHeight: true);
 
     return Semantics(
       button: true,
@@ -459,7 +477,7 @@ class _KindChip extends StatelessWidget {
           child: SizedBox(
             height: AppSize.compact,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+              padding: EdgeInsets.symmetric(horizontal: inset),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -471,17 +489,34 @@ class _KindChip extends StatelessWidget {
                     ),
                     const SizedBox(width: AppSpace.s6),
                   ],
-                  Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: labelStyle(context, selected: selected).copyWith(color: ink),
+                  // The picked weight, unseen, holds the width; the visible
+                  // label is centred over it.
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Visibility(
+                        visible: false,
+                        maintainSize: true,
+                        maintainState: true,
+                        maintainAnimation: true,
+                        child: Text(label, maxLines: 1, softWrap: false, style: picked, strutStyle: strut),
+                      ),
+                      Text(
+                        label,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: rest.copyWith(color: ink),
+                        strutStyle: strut,
+                      ),
+                    ],
                   ),
                   if (count != null) ...[
                     const SizedBox(width: AppSpace.s6),
                     Text(
                       '$count',
-                      style: countStyle.copyWith(color: selected ? scheme.onAccentTint : scheme.outline),
+                      // `1a`: the label's ink at 80%.
+                      style: countStyle.copyWith(color: ink.withValues(alpha: ink.a * 0.8)),
+                      strutStyle: strut,
                     ),
                   ],
                 ],
