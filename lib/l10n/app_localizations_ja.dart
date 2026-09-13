@@ -720,6 +720,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get browserGroupByFolder => 'フォルダーごとにグループ化';
 
   @override
+  String get browserGroupByFolderHint => '2 つ以上のフォルダーを選択時に有効。フォルダー内で並べ替え';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override

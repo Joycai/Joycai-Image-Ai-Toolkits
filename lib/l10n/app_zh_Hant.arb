@@ -594,6 +594,7 @@
   "conflictAlreadyThere": "已存在",
   "conflictUndecidedCount": "{count} 項未決定",
   "browserGroupByFolder": "按資料夾分組",
+  "browserGroupByFolderHint": "勾選 2 個以上目錄時生效；開啟後按組內排序",
   "appTitle": "Joycai Image AI Toolkits",
   "save": "儲存",
   "update": "更新",
