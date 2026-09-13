@@ -1758,7 +1758,33 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get contextSliderHint =>
-      'スライダーは 8k〜1M を 1024 トークン単位で動きます。入力した値が優先され、プリセットの間の値ではスライダーが比例した位置に止まります。';
+      '8k〜1M の 9 段階。ドラッグは近くのプリセットに吸着し、目盛りラベルをタップするとそこへ移動します。入力欄は 128k / 1m の短縮表記を受け付け、↑↓ で隣のプリセット、⇧↑↓ で主要プリセットのみを移動します。入力した値が優先され、プリセットの間では比例した位置に止まります。';
+
+  @override
+  String get contextTokensUnit => 'tokens';
+
+  @override
+  String get contextPresets => 'プリセット';
+
+  @override
+  String contextStatusPreset(String label) {
+    return '= $label · プリセット';
+  }
+
+  @override
+  String contextStatusBetween(String lo, String hi) {
+    return '≈ $lo–$hi';
+  }
+
+  @override
+  String contextStatusBelow(String label) {
+    return '< $label';
+  }
+
+  @override
+  String contextStatusAbove(String label) {
+    return '> $label';
+  }
 
   @override
   String get agentBehavior => 'エージェント動作';

@@ -1747,7 +1747,33 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get contextSliderHint =>
-      '滑块按 1024 token 步进，档位 8k–1M；以手填为准，填了非整档的数时滑块按比例停在两档之间。';
+      '九档 8k–1M。拖动靠近任一档即吸附；点刻度标签直达该档；输入框接受 128k / 1m 简写，↑↓ 走相邻档、⇧↑↓ 只跳主档。以手填为准，非整档的数按比例停在两档之间。';
+
+  @override
+  String get contextTokensUnit => 'tokens';
+
+  @override
+  String get contextPresets => '档位';
+
+  @override
+  String contextStatusPreset(String label) {
+    return '= $label · 整档';
+  }
+
+  @override
+  String contextStatusBetween(String lo, String hi) {
+    return '≈ $lo–$hi';
+  }
+
+  @override
+  String contextStatusBelow(String label) {
+    return '< $label';
+  }
+
+  @override
+  String contextStatusAbove(String label) {
+    return '> $label';
+  }
 
   @override
   String get agentBehavior => '代理行为';
@@ -6397,7 +6423,33 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get contextSliderHint =>
-      '滑桿按 1024 token 步進，檔位 8k–1M；以手填為準，填了非整檔的數時滑桿按比例停在兩檔之間。';
+      '九檔 8k–1M。拖曳靠近任一檔即吸附；點刻度標籤直達該檔；輸入框接受 128k / 1m 簡寫，↑↓ 走相鄰檔、⇧↑↓ 只跳主檔。以手填為準，非整檔的數按比例停在兩檔之間。';
+
+  @override
+  String get contextTokensUnit => 'tokens';
+
+  @override
+  String get contextPresets => '檔位';
+
+  @override
+  String contextStatusPreset(String label) {
+    return '= $label · 整檔';
+  }
+
+  @override
+  String contextStatusBetween(String lo, String hi) {
+    return '≈ $lo–$hi';
+  }
+
+  @override
+  String contextStatusBelow(String label) {
+    return '< $label';
+  }
+
+  @override
+  String contextStatusAbove(String label) {
+    return '> $label';
+  }
 
   @override
   String get agentBehavior => '代理行為';

@@ -1810,7 +1810,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contextSliderHint =>
-      'The slider moves in 1,024-token steps from 8k to 1M. A typed value wins: the slider follows it, and rests between two presets in proportion.';
+      'Nine presets from 8k to 1M. A drag snaps onto a nearby preset; tap a tick label to jump to it; the field takes 128k or 1m shorthand, ↑↓ step through presets and ⇧↑↓ only the major ones. A typed value wins and rests between two presets in proportion.';
+
+  @override
+  String get contextTokensUnit => 'tokens';
+
+  @override
+  String get contextPresets => 'Presets';
+
+  @override
+  String contextStatusPreset(String label) {
+    return '= $label · preset';
+  }
+
+  @override
+  String contextStatusBetween(String lo, String hi) {
+    return '≈ $lo–$hi';
+  }
+
+  @override
+  String contextStatusBelow(String label) {
+    return '< $label';
+  }
+
+  @override
+  String contextStatusAbove(String label) {
+    return '> $label';
+  }
 
   @override
   String get agentBehavior => 'Agent Behavior';

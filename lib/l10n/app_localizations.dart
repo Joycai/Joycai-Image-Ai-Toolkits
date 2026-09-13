@@ -3170,8 +3170,44 @@ abstract class AppLocalizations {
   /// No description provided for @contextSliderHint.
   ///
   /// In en, this message translates to:
-  /// **'The slider moves in 1,024-token steps from 8k to 1M. A typed value wins: the slider follows it, and rests between two presets in proportion.'**
+  /// **'Nine presets from 8k to 1M. A drag snaps onto a nearby preset; tap a tick label to jump to it; the field takes 128k or 1m shorthand, ↑↓ step through presets and ⇧↑↓ only the major ones. A typed value wins and rests between two presets in proportion.'**
   String get contextSliderHint;
+
+  /// No description provided for @contextTokensUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'tokens'**
+  String get contextTokensUnit;
+
+  /// No description provided for @contextPresets.
+  ///
+  /// In en, this message translates to:
+  /// **'Presets'**
+  String get contextPresets;
+
+  /// No description provided for @contextStatusPreset.
+  ///
+  /// In en, this message translates to:
+  /// **'= {label} · preset'**
+  String contextStatusPreset(String label);
+
+  /// No description provided for @contextStatusBetween.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {lo}–{hi}'**
+  String contextStatusBetween(String lo, String hi);
+
+  /// No description provided for @contextStatusBelow.
+  ///
+  /// In en, this message translates to:
+  /// **'< {label}'**
+  String contextStatusBelow(String label);
+
+  /// No description provided for @contextStatusAbove.
+  ///
+  /// In en, this message translates to:
+  /// **'> {label}'**
+  String contextStatusAbove(String label);
 
   /// No description provided for @agentBehavior.
   ///

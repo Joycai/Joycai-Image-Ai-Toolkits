@@ -159,12 +159,24 @@ class ModelEditTextField extends StatelessWidget {
     this.autofocus = false,
     this.keyboardType,
     this.inputFormatters,
+    this.focusNode,
+    this.suffixText,
+    this.suffix,
   });
 
   final TextEditingController controller;
   final ValueChanged<String>? onChanged;
   final IconData? icon;
   final String? hint;
+  final FocusNode? focusNode;
+
+  /// A unit after the value, in the secondary ink (「tokens」).
+  final String? suffixText;
+
+  /// A control at the field's end, on the field's own height — the context
+  /// window's preset menu. Laid out unconstrained so it can draw its own
+  /// divider from edge to edge.
+  final Widget? suffix;
 
   /// Identifiers and numbers the wire sees verbatim.
   final bool mono;
@@ -189,6 +201,7 @@ class ModelEditTextField extends StatelessWidget {
 
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       onChanged: onChanged,
       autofocus: autofocus,
       keyboardType: keyboardType,
@@ -206,6 +219,10 @@ class ModelEditTextField extends StatelessWidget {
         prefixIcon: icon == null
             ? null
             : Icon(icon, size: AppSize.iconMd, color: scheme.onSurfaceVariant),
+        suffixText: suffixText,
+        suffixStyle: style?.copyWith(color: scheme.onSurfaceVariant),
+        suffixIcon: suffix,
+        suffixIconConstraints: suffix == null ? null : const BoxConstraints(minWidth: 0, minHeight: 0),
         enabledBorder: error ? errorBorder : null,
         focusedBorder: error ? errorBorder : null,
       ),
