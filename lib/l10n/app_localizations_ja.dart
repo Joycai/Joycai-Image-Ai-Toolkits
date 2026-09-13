@@ -29,6 +29,22 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get renameHintKeys => 'Enter で確定 · Esc でキャンセル';
+
+  @override
+  String get renameExtensionLocked => '拡張子';
+
+  @override
+  String renameConflict(String name) {
+    return '$name はこのフォルダーに既にあります';
+  }
+
+  @override
+  String renameTooLong(int max) {
+    return '名前が $max 文字を超えています';
+  }
+
+  @override
   String get fileAlreadyExists => 'この名前のファイルは既に存在します';
 
   @override

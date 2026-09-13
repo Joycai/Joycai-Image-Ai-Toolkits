@@ -5,6 +5,24 @@
   "newFilename": "新しいファイル名",
   "renameSuccess": "名前の変更に成功しました",
   "renameFailed": "名前の変更に失敗しました: {error}",
+  "renameHintKeys": "Enter で確定 · Esc でキャンセル",
+  "renameExtensionLocked": "拡張子",
+  "renameConflict": "{name} はこのフォルダーに既にあります",
+  "@renameConflict": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "renameTooLong": "名前が {max} 文字を超えています",
+  "@renameTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "fileAlreadyExists": "この名前のファイルは既に存在します",
   "noFilesFound": "ファイルが見つかりません",
   "sortBy": "並べ替え",

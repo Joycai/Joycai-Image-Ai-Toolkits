@@ -29,6 +29,22 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get renameHintKeys => 'Enter 确认 · Esc 取消';
+
+  @override
+  String get renameExtensionLocked => '扩展名';
+
+  @override
+  String renameConflict(String name) {
+    return '该文件夹已有 $name';
+  }
+
+  @override
+  String renameTooLong(int max) {
+    return '名称超过 $max 个字符';
+  }
+
+  @override
   String get fileAlreadyExists => '同名文件已存在';
 
   @override
@@ -4416,6 +4432,22 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String renameFailed(String error) {
     return '重新命名失敗: $error';
+  }
+
+  @override
+  String get renameHintKeys => 'Enter 確認 · Esc 取消';
+
+  @override
+  String get renameExtensionLocked => '副檔名';
+
+  @override
+  String renameConflict(String name) {
+    return '此資料夾已有 $name';
+  }
+
+  @override
+  String renameTooLong(int max) {
+    return '名稱超過 $max 個字元';
   }
 
   @override

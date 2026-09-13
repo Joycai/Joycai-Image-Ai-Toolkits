@@ -14,6 +14,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
+import 'package:joycai_image_ai_toolkits/screens/browser/widgets/file_card.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/directory_tree_item.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
@@ -187,6 +188,29 @@ void main() {
       },
     );
   });
+
+  // The file rename dialog (`A1 · 2b`): float-grade glass at r22 over the
+  // lighter scrim, the stem selected, the extension locked beside it. Opened
+  // from a file card's menu, which is how both the browser and the gallery
+  // reach it.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('fileBrowser · fileRename @ desktop ${brightness.name}', (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.fileBrowser,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'fileRename',
+        after: (WidgetTester tester) async {
+          await tester.tap(find.byType(FileCard).first, buttons: kSecondaryButton);
+          await settle(tester);
+          await tester.tap(menuItem('重命名'));
+          await settle(tester);
+        },
+      );
+    });
+  }
 
   testWidgets('fileBrowser · folderNew @ desktop light', (WidgetTester tester) async {
     await shoot(
