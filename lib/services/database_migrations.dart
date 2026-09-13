@@ -67,6 +67,7 @@ class DatabaseMigration {
     if (oldVersion < 40) await _migrateV40ThemeSeed(db);
     if (oldVersion < 41) await _createV41Columns(db);
     if (oldVersion < 42) await _createV42Columns(db);
+    if (oldVersion < 43) await _createV43Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -108,7 +109,19 @@ class DatabaseMigration {
     await _createV39Columns(db);
     await _createV41Columns(db);
     await _createV42Columns(db);
+    await _createV43Columns(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// The user's arrangement of the fee groups (`D2 · 1g`): `fee_groups.sort_order`,
+  /// read wherever the groups are listed — the fee-group page, the model and
+  /// channel editors' pickers. Backfilled from `id` so an upgraded database
+  /// keeps the creation order it has always shown; the same convention as
+  /// the channel rail's v36 column.
+  static Future<void> _createV43Columns(Database db) async {
+    if (!await _tableExists(db, 'fee_groups')) return;
+    final added = await _addColumnIfNotExists(db, 'fee_groups', 'sort_order', 'INTEGER DEFAULT 0');
+    if (added) await db.execute('UPDATE fee_groups SET sort_order = id');
   }
 
   /// Per-model reasoning intensity (`ReasoningEffort` name, NULL = default).

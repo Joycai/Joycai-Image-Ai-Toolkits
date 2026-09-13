@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
@@ -6,38 +7,52 @@ import '../core/design_tokens.dart';
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../models/pricing_group.dart';
-import '../models/spec_rate.dart';
-import '../services/billing/spec_billing.dart';
 import '../state/app_state.dart';
 import 'app_button.dart';
-import 'app_dialog.dart';
+import 'app_icon_button.dart';
+import 'app_search_field.dart';
 import 'app_section_label.dart';
-import 'app_segmented_control.dart';
-import 'models/fee_group_summary.dart';
-import 'spec_rate_table.dart';
+import 'dashed_border.dart';
+import 'drag/app_drag_lift.dart';
+import 'drag/app_reorder_gap.dart';
+import 'glass/app_glass_menu.dart';
+import 'models/fee_group_dialogs.dart';
+import 'models/fee_group_draft.dart';
+import 'models/fee_group_edit_page.dart';
+import 'models/fee_group_editor_fields.dart';
+import 'models/fee_group_row.dart';
 
 enum PricingGroupManagerMode {
-  /// Embedded in a page that scrolls it — the usage screen's fee-group tab. A
-  /// heading with the description and Add, then the list, all in unbounded
-  /// height.
+  /// Embedded in a page that scrolls it — the usage screen's fee-group tab
+  /// (`D2 · 1d`–`1h`). The heading with the counts, filter, reorder and New,
+  /// then the list beside the editor (desktop) or with the editor inlined
+  /// under the edited group (tablet). On a phone: the cards alone, the
+  /// editor being a page of its own.
   section,
 
   /// A page of its own, scrolling its list under a fixed heading.
   fullPage,
 
   /// The body of the fee-management dialog (`D1a · 1d`): its own heading — the
-  /// payments plate, the counts, Add and close — over a scrolling list. Host
-  /// it in an [AppDialog] with no title and a `maxHeight`.
+  /// payments plate, the counts, Add and close — over a scrolling list with
+  /// the editor inlined. Host it in an [AppDialog] with no title and a
+  /// `maxHeight`.
   dialog,
 }
 
 /// Lists fee groups and edits them in place.
 ///
-/// `D1a · 1d`: each group is one row — the name, how many models it prices
-/// (or that none do), its rates as mono tags, and edit / delete. Editing
-/// opens the row into an accent-edged card with the name, the billing mode
-/// and the rates, validated as they are typed; adding opens the same card at
-/// the top of the list. There is no second dialog.
+/// `D2 · 1d`: each group is one row — the name, how many models it prices
+/// (or that none do), its rates as mono tags, and edit / delete. Selecting a
+/// row opens it in the editor card: the right column on desktop, where a
+/// dashed placeholder holds the column's place until then so the list never
+/// moves; directly under the row on tablet and in the dialog. 「新建组」 opens
+/// the same card empty. There is no second dialog.
+///
+/// `1g`: rows reorder by drag — the grip appears on hover, or always in the
+/// reorder mode the header's button toggles — and by Alt+↑/↓ on the selected
+/// group or the row's context menu. The order is stored and read wherever
+/// groups are listed.
 class PricingGroupManager extends StatefulWidget {
   final PricingGroupManagerMode mode;
 
@@ -45,10 +60,15 @@ class PricingGroupManager extends StatefulWidget {
   /// page's 「去补档位」 lands here with the group whose rates fell short.
   final int? initialEditGroupId;
 
+  /// The phone's explicit reorder mode (`1h`), toggled by the screen's
+  /// header: rows show the grip and lift on a long press.
+  final bool phoneReorder;
+
   const PricingGroupManager({
     super.key,
     this.mode = PricingGroupManagerMode.section,
     this.initialEditGroupId,
+    this.phoneReorder = false,
   });
 
   @override
@@ -62,18 +82,118 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
   /// Null, [_newGroup], or the id of the group open in the editor.
   Object? _editing;
 
+  /// The open editor's draft, built for [_editing] and dropped when the
+  /// target changes or a save lands.
+  FeeGroupDraft? _draft;
+  Object? _draftTarget;
+  bool _saving = false;
+
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _query = '';
+
+  /// `1g`: the header's reorder mode — grips always on show.
+  bool _reorderMode = false;
+
   @override
   void initState() {
     super.initState();
     _editing = widget.initialEditGroupId;
   }
 
-  void _startAdd() => setState(() => _editing = _newGroup);
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    _draft?.dispose();
+    super.dispose();
+  }
 
-  void _startEdit(PricingGroup group) => setState(() => _editing = group.id);
+  bool get _adding => identical(_editing, _newGroup);
 
-  void _stopEditing() {
-    if (mounted) setState(() => _editing = null);
+  void _dropDraft() {
+    _draft?.removeListener(_refresh);
+    _draft?.dispose();
+    _draft = null;
+    _draftTarget = null;
+  }
+
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
+  /// Builds the draft for whatever [_editing] names, once its group is known.
+  void _ensureDraft(List<PricingGroup> groups) {
+    final target = _editing;
+    if (target == null) {
+      if (_draft != null) _dropDraft();
+      return;
+    }
+    if (_draft != null && _draftTarget == target) return;
+    _dropDraft();
+    final group = target is int ? groups.firstWhere((g) => g.id == target) : null;
+    _draft = FeeGroupDraft(group)..addListener(_refresh);
+    _draftTarget = target;
+  }
+
+  /// Opens [target] in the editor. `1e`: switching groups swaps the card's
+  /// content in place; unsaved edits ask first.
+  Future<void> _open(Object target) async {
+    if (_editing == target) return;
+    final draft = _draft;
+    if (draft != null && draft.isDirty) {
+      final discard = await confirmDiscardFeeGroupDraft(context);
+      if (!discard || !mounted) return;
+    }
+    setState(() {
+      _dropDraft();
+      _editing = target;
+    });
+  }
+
+  void _close() {
+    if (!mounted) return;
+    setState(() {
+      _dropDraft();
+      _editing = null;
+    });
+  }
+
+  Future<void> _save(AppState appState) async {
+    final draft = _draft;
+    if (draft == null || _saving || !draft.canSave) return;
+    setState(() => _saving = true);
+    final id = await draft.save(appState);
+    if (!mounted) return;
+    // `1f`: a saved group stays selected — a new one has just joined the end
+    // of the list, and the card now shows it as stored.
+    setState(() {
+      _saving = false;
+      _dropDraft();
+      _editing = id;
+    });
+  }
+
+  Future<void> _delete(AppState appState, PricingGroup group, int modelCount) async {
+    final deleted = await confirmDeleteFeeGroup(context, appState, group, modelCount: modelCount);
+    if (deleted && _editing == group.id) _close();
+  }
+
+  void _move(AppState appState, int from, int to) {
+    final count = appState.allPricingGroups.length;
+    if (to < 0 || to >= count || from == to) return;
+    appState.reorderPricingGroups(from, to);
+  }
+
+  /// Alt+↑/↓ on the selected group (`1g`, as the channel rail binds them).
+  void _moveSelected(AppState appState, int delta) {
+    final id = _editing;
+    if (id is! int || _query.isNotEmpty) return;
+    final index = appState.allPricingGroups.indexWhere((g) => g.id == id);
+    if (index < 0) return;
+    _move(appState, index, index + delta);
+  }
+
+  Future<void> _openPhoneEditor(PricingGroup? group) async {
+    await FeeGroupEditPage.push(context, group: group);
   }
 
   @override
@@ -81,108 +201,447 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
     final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
     final groups = appState.allPricingGroups;
+    final phone = Responsive.isMobile(context);
 
     // A group deleted while open simply closes its editor.
     if (_editing is int && !groups.any((g) => g.id == _editing)) _editing = null;
-
-    final body = _buildBody(context, appState, l10n, groups);
+    if (!phone) _ensureDraft(groups);
 
     switch (widget.mode) {
       case PricingGroupManagerMode.dialog:
         final groupIds = {for (final g in groups) g.id};
         final pricedModels = appState.allModels.where((m) => groupIds.contains(m.feeGroupId)).length;
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _DialogHeading(
-              groupCount: groups.length,
-              modelCount: pricedModels,
-              onAdd: _startAdd,
-            ),
-            const SizedBox(height: AppSpace.s16),
-            Flexible(child: SingleChildScrollView(child: body)),
-          ],
+        return _shortcuts(
+          appState,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _DialogHeading(
+                groupCount: groups.length,
+                modelCount: pricedModels,
+                onAdd: () => _open(_newGroup),
+              ),
+              const SizedBox(height: AppSpace.s16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: _buildList(context, appState, l10n, groups, inlineEditor: true),
+                ),
+              ),
+            ],
+          ),
         );
       case PricingGroupManagerMode.fullPage:
-        final isMobile = Responsive.isMobile(context);
         return Scaffold(
           backgroundColor: Colors.transparent,
-          floatingActionButton: isMobile
+          floatingActionButton: phone
               ? FloatingActionButton.extended(
-                  onPressed: _startAdd,
+                  onPressed: () => _openPhoneEditor(null),
                   icon: const Icon(Icons.add),
-                  label: Text(l10n.addFeeGroup),
+                  label: Text(l10n.newFeeGroup),
                 )
               : null,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (!isMobile)
+              if (!phone)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                  child: _SectionHeading(onAdd: _startAdd),
+                  child: _buildHeading(context, appState, l10n, groups),
                 ),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
-                  child: body,
+                  child: phone
+                      ? _buildPhoneList(context, appState, l10n, groups)
+                      : _shortcuts(appState, _buildBody(context, appState, l10n, groups)),
                 ),
               ),
             ],
           ),
         );
       case PricingGroupManagerMode.section:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _SectionHeading(onAdd: _startAdd),
-            const SizedBox(height: AppSpace.s16),
-            body,
-          ],
+        if (phone) return _buildPhoneList(context, appState, l10n, groups);
+        return _shortcuts(
+          appState,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeading(context, appState, l10n, groups),
+              const SizedBox(height: 14),
+              _buildBody(context, appState, l10n, groups),
+            ],
+          ),
         );
     }
   }
 
+  /// Alt+↑/↓ move the selected group; Esc closes the editor (`1e`).
+  Widget _shortcuts(AppState appState, Widget child) {
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.arrowUp, alt: true): () => _moveSelected(appState, -1),
+        const SingleActivator(LogicalKeyboardKey.arrowDown, alt: true): () => _moveSelected(appState, 1),
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (_editing != null) _close();
+        },
+      },
+      child: child,
+    );
+  }
+
+  /// `1d` 头行: the caption over the mono counts, the filter, the reorder
+  /// button (tint-selected in reorder mode) and 「新建组」 (tint-selected while
+  /// adding — `1f` 「正在新建」).
+  Widget _buildHeading(BuildContext context, AppState appState, AppLocalizations l10n, List<PricingGroup> groups) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final groupIds = {for (final g in groups) g.id};
+    final pricedModels = appState.allModels.where((m) => groupIds.contains(m.feeGroupId)).length;
+    final desktop = Responsive.isDesktop(context);
+    final filtered = _query.isNotEmpty;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // `D2 · 1b`: the embedded list names itself with the tracked
+              // caption, not a second page title under the canvas tabs.
+              AppSectionLabel(l10n.feeGroups, padding: EdgeInsets.zero),
+              const SizedBox(height: 2),
+              Text(
+                '${l10n.countGroups(groups.length)} · ${l10n.feeGroupModelCount(pricedModels)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.labelSmall?.mono.copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+        if (desktop) ...[
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 200,
+            child: AppSearchField(
+              controller: _searchCtrl,
+              hint: l10n.filterFeeGroups,
+              compact: true,
+              onChanged: (q) => setState(() {
+                _query = q.trim().toLowerCase();
+                // `1g`: a filtered list cannot be reordered, so the mode ends.
+                if (_query.isNotEmpty) _reorderMode = false;
+              }),
+            ),
+          ),
+        ],
+        const SizedBox(width: 12),
+        AppIconButton(
+          icon: Icons.swap_vert,
+          tooltip: l10n.reorderFeeGroups,
+          selected: _reorderMode,
+          onPressed: filtered || groups.length < 2 ? null : () => setState(() => _reorderMode = !_reorderMode),
+        ),
+        const SizedBox(width: 12),
+        AppButton(
+          label: l10n.newFeeGroup,
+          icon: Icons.add,
+          variant: _adding ? AppButtonVariant.tonal : AppButtonVariant.primary,
+          onPressed: () => _open(_newGroup),
+        ),
+      ],
+    );
+  }
+
+  /// Desktop: the list beside the editor or its placeholder, `1fr 1fr gap
+  /// 20`; the two columns never move for each other. Below desktop: the
+  /// list with the editor inlined under the edited row.
   Widget _buildBody(BuildContext context, AppState appState, AppLocalizations l10n, List<PricingGroup> groups) {
-    final adding = identical(_editing, _newGroup);
+    if (!Responsive.isDesktop(context)) {
+      return _buildList(context, appState, l10n, groups, inlineEditor: true);
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: _buildList(context, appState, l10n, groups, inlineEditor: false)),
+        const SizedBox(width: 20),
+        Expanded(
+          child: _editing == null
+              ? _Placeholder(reorder: _reorderMode)
+              : _buildEditor(context, appState, l10n, groups),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditor(BuildContext context, AppState appState, AppLocalizations l10n, List<PricingGroup> groups) {
+    final draft = _draft;
+    if (draft == null) return const SizedBox.shrink();
+    final group = draft.group;
+    return _EditorCard(
+      key: ValueKey(_editing),
+      draft: draft,
+      saving: _saving,
+      onCancel: _close,
+      onSave: () => _save(appState),
+      onDelete: group == null
+          ? null
+          : () => _delete(appState, group, _modelsByGroup(appState)[group.id]?.length ?? 0),
+    );
+  }
+
+  Widget _buildList(
+    BuildContext context,
+    AppState appState,
+    AppLocalizations l10n,
+    List<PricingGroup> groups, {
+    required bool inlineEditor,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final adding = _adding;
     if (groups.isEmpty && !adding) return const _EmptyGroups();
 
+    final filtered = _query.isNotEmpty;
+    final visible = filtered ? groups.where((g) => g.name.toLowerCase().contains(_query)).toList() : groups;
+    final touch = switch (Theme.of(context).platform) {
+      TargetPlatform.android || TargetPlatform.iOS => true,
+      _ => false,
+    };
+    final canReorder = !filtered && groups.length > 1;
+    final handle = !canReorder
+        ? FeeGroupHandle.none
+        : _reorderMode
+            ? FeeGroupHandle.always
+            : touch
+                ? FeeGroupHandle.none
+                : FeeGroupHandle.hover;
     final modelsByGroup = _modelsByGroup(appState);
-    final children = <Widget>[
-      if (adding)
-        _GroupEditor(
-          key: const ValueKey('fee-group-new'),
-          appState: appState,
-          group: null,
-          onDone: _stopEditing,
+
+    final Widget list = AppReorderGap(
+      itemCount: visible.length,
+      touch: touch,
+      slotPadding: const EdgeInsets.only(bottom: AppSpace.s6),
+      builder: (context, gap) => ReorderableListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        itemCount: visible.length,
+        // The grip is ours (hover-revealed, whole row draggable), not the
+        // framework's trailing handles.
+        buildDefaultDragHandles: false,
+        onReorderItem: gap.onReorderItem((oldIndex, newIndex) {
+          // Only reachable unfiltered, where `visible` is the stored order.
+          if (canReorder) _move(appState, oldIndex, newIndex);
+        }),
+        onReorderStart: gap.onReorderStart((_) {
+          if (touch) HapticFeedback.mediumImpact();
+        }),
+        proxyDecorator: (child, index, animation) => appReorderLiftDecorator(
+          child,
+          index,
+          animation,
+          slotPadding: const EdgeInsets.only(bottom: AppSpace.s6),
         ),
-      for (final group in groups)
-        if (_editing == group.id)
-          _GroupEditor(
-            key: ValueKey('fee-group-${group.id}'),
-            appState: appState,
+        itemBuilder: (context, index) {
+          final group = visible[index];
+          final models = modelsByGroup[group.id] ?? const <String>[];
+          final storedIndex = groups.indexWhere((g) => g.id == group.id);
+
+          final row = FeeGroupRow(
             group: group,
-            onDone: _stopEditing,
-          )
-        else
-          _GroupRow(
-            group: group,
-            models: modelsByGroup[group.id] ?? const [],
-            onEdit: () => _startEdit(group),
-            onDelete: () => _confirmDelete(appState, l10n, group),
-          ),
-    ];
+            models: models,
+            selected: _editing == group.id,
+            handle: handle,
+            onTap: () => _open(group.id!),
+            onDelete: () => _delete(appState, group, models.length),
+            onContextMenu: (position) => showAppGlassMenu(
+              context,
+              position: position,
+              entries: [
+                AppGlassMenuItem(icon: Icons.edit_outlined, label: l10n.edit, onSelected: () => _open(group.id!)),
+                AppGlassMenuItem(
+                  icon: Icons.arrow_upward,
+                  label: l10n.moveUp,
+                  enabled: canReorder && storedIndex > 0,
+                  onSelected: () => _move(appState, storedIndex, storedIndex - 1),
+                ),
+                AppGlassMenuItem(
+                  icon: Icons.arrow_downward,
+                  label: l10n.moveDown,
+                  enabled: canReorder && storedIndex < groups.length - 1,
+                  onSelected: () => _move(appState, storedIndex, storedIndex + 1),
+                ),
+                const AppGlassMenuDivider(),
+                AppGlassMenuItem(
+                  icon: Icons.delete_outline,
+                  label: l10n.delete,
+                  danger: true,
+                  onSelected: () => _delete(appState, group, models.length),
+                ),
+              ],
+            ),
+          );
+
+          // `1h` 平板: the editor card sits right under the edited row and the
+          // rows below move down for it.
+          final Widget slot = Padding(
+            padding: const EdgeInsets.only(bottom: AppSpace.s6),
+            child: inlineEditor
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      row,
+                      AnimatedSize(
+                        duration: AppMotion.durationOf(context, AppMotion.state),
+                        curve: AppMotion.enter,
+                        alignment: Alignment.topCenter,
+                        child: _editing == group.id
+                            ? Padding(
+                                padding: const EdgeInsets.only(top: AppSpace.s6),
+                                child: _buildEditor(context, appState, l10n, groups),
+                              )
+                            : const SizedBox(width: double.infinity),
+                      ),
+                    ],
+                  )
+                : row,
+          );
+
+          // Whole-row drag, so the pointer never has to find the grip. Touch
+          // has no hover to reveal it, so there the gesture is an explicit
+          // 300ms long press.
+          final Widget child = !canReorder
+              ? slot
+              : touch
+                  ? AppLongPressDragStartListener(index: index, child: slot)
+                  : ReorderableDragStartListener(index: index, child: slot);
+          return gap.item(key: ValueKey(group.id), index: index, child: child);
+        },
+      ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final (index, child) in children.indexed) ...[
-          if (index > 0) const SizedBox(height: 8),
+        // `1f`: the new group's card opens at the top of the list.
+        if (adding && inlineEditor)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpace.s6),
+            child: _buildEditor(context, appState, l10n, groups),
+          ),
+        if (filtered && visible.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpace.s16),
+            child: Text(
+              l10n.pickerNoMatches,
+              textAlign: TextAlign.center,
+              style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          )
+        else
+          list,
+        // `1g`: what reordering needs, said once — and that a filtered list
+        // cannot be reordered.
+        if ((_reorderMode || filtered) && groups.length > 1)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpace.s4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, size: AppSize.iconSm, color: scheme.onSurfaceVariant),
+                const SizedBox(width: AppSpace.s4),
+                Expanded(
+                  child: Text(
+                    l10n.feeGroupReorderNote,
+                    style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// `1h` 手机: the two-line cards on the canvas; a tap opens the page. In
+  /// reorder mode the cards carry the grip and lift on a long press.
+  Widget _buildPhoneList(BuildContext context, AppState appState, AppLocalizations l10n, List<PricingGroup> groups) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    if (groups.isEmpty) return const _EmptyGroups();
+
+    final modelsByGroup = _modelsByGroup(appState);
+    final reorder = widget.phoneReorder && groups.length > 1;
+
+    final list = AppReorderGap(
+      itemCount: groups.length,
+      touch: true,
+      slotPadding: const EdgeInsets.only(bottom: 8),
+      builder: (context, gap) => ReorderableListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        itemCount: groups.length,
+        buildDefaultDragHandles: false,
+        onReorderItem: gap.onReorderItem((oldIndex, newIndex) {
+          if (reorder) _move(appState, oldIndex, newIndex);
+        }),
+        onReorderStart: gap.onReorderStart((_) => HapticFeedback.mediumImpact()),
+        proxyDecorator: (child, index, animation) => appReorderLiftDecorator(
           child,
-        ],
+          index,
+          animation,
+          slotPadding: const EdgeInsets.only(bottom: 8),
+        ),
+        itemBuilder: (context, index) {
+          final group = groups[index];
+          final row = Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: FeeGroupRow(
+              group: group,
+              models: modelsByGroup[group.id] ?? const <String>[],
+              phone: true,
+              handle: reorder ? FeeGroupHandle.always : FeeGroupHandle.none,
+              onTap: () => _openPhoneEditor(group),
+            ),
+          );
+          return gap.item(
+            key: ValueKey(group.id),
+            index: index,
+            child: reorder ? AppLongPressDragStartListener(index: index, child: row) : row,
+          );
+        },
+      ),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        list,
+        if (reorder)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpace.s4, 0, AppSpace.s4, AppSpace.s4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, size: AppSize.iconSm, color: scheme.onSurfaceVariant),
+                const SizedBox(width: AppSpace.s4),
+                Expanded(
+                  child: Text(
+                    l10n.feeGroupReorderHint,
+                    style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -201,71 +660,6 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
       }
     }
     return map;
-  }
-
-  void _confirmDelete(AppState appState, AppLocalizations l10n, PricingGroup group) {
-    AppDialog.show<void>(
-      context,
-      icon: Icons.delete_outline,
-      iconColor: Theme.of(context).colorScheme.error,
-      maxWidth: 440,
-      title: l10n.delete,
-      content: Text(l10n.deleteFeeGroupConfirm(group.name)),
-      actions: [
-        AppButton(
-          label: l10n.cancel,
-          variant: AppButtonVariant.text,
-          autofocus: true,
-          onPressed: () => Navigator.pop(context),
-        ),
-        AppButton(
-          label: l10n.delete,
-          variant: AppButtonVariant.destructive,
-          onPressed: () async {
-            await appState.deletePricingGroup(group.id!);
-            if (mounted) Navigator.pop(context);
-          },
-        ),
-      ],
-    );
-  }
-}
-
-/// The embedded heading: 「Fee Groups」 over what they are for, and Add.
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({required this.onAdd});
-
-  final VoidCallback onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final textTheme = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // `D2 · 1b`: the embedded list names itself with the tracked
-              // caption, not a second page title under the canvas tabs.
-              AppSectionLabel(l10n.feeGroups, padding: EdgeInsets.zero),
-              const SizedBox(height: AppSpace.s4),
-              Text(
-                l10n.feeGroupDesc,
-                style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        AppButton(label: l10n.addFeeGroup, icon: Icons.add, onPressed: onAdd),
-      ],
-    );
   }
 }
 
@@ -367,609 +761,141 @@ class _EmptyGroups extends StatelessWidget {
   }
 }
 
-/// One fee group at rest (`D1a · 1d` 组行). Tap anywhere to edit.
-class _GroupRow extends StatelessWidget {
-  const _GroupRow({
-    required this.group,
-    required this.models,
-    required this.onEdit,
+/// `1d` / `1g` 右栏占位卡: a dashed r14 frame holding the editor column's
+/// place so the two columns never move — 「选一组来编辑」, or in reorder mode
+/// what the grips do.
+class _Placeholder extends StatelessWidget {
+  const _Placeholder({required this.reorder});
+
+  final bool reorder;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return DashedBorder(
+      color: scheme.outlineVariant,
+      radius: AppRadius.lg,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 220),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(reorder ? Icons.swap_vert : Icons.payments_outlined, size: AppSpace.s28, color: scheme.outline),
+              const SizedBox(height: 8),
+              Text(
+                reorder ? l10n.feeGroupReorderTitle : l10n.feeGroupPickTitle,
+                textAlign: TextAlign.center,
+                style: textTheme.titleSmall?.copyWith(color: scheme.onSurface),
+              ),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 300),
+                child: Text(
+                  reorder ? l10n.feeGroupReorderText : l10n.feeGroupPickText,
+                  textAlign: TextAlign.center,
+                  style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// `1e` 编辑卡: the accent edge on the accent wash around the fields, and
+/// under it the footer — 「删除组」 on the left when the group exists, Cancel
+/// and Save on the right. Save is off until the draft has a name and its
+/// rates parse (`1f`).
+class _EditorCard extends StatelessWidget {
+  const _EditorCard({
+    super.key,
+    required this.draft,
+    required this.saving,
+    required this.onCancel,
+    required this.onSave,
     required this.onDelete,
   });
 
-  final PricingGroup group;
-  final List<String> models;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final FeeGroupDraft draft;
+  final bool saving;
+  final VoidCallback onCancel;
+  final VoidCallback onSave;
 
-  bool get _isToken => group.billingMode == 'token';
-
-  static String _rate(double price, String unit) => '\$${price.toStringAsFixed(4)}/$unit';
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    final prices = _isToken
-        ? [
-            _PriceTag(label: l10n.priceLabelInput, value: _rate(group.inputPrice, 'M')),
-            // Always shown, even when unset: an inherited rate is still the
-            // rate the user gets billed, so hiding it would just raise the
-            // question.
-            _PriceTag(
-              label: l10n.priceLabelCache,
-              value: _rate(group.effectiveCacheInputPrice, 'M'),
-              inherited: group.cacheInputPrice == null,
-              tooltip: group.cacheInputPrice == null ? l10n.cachePriceFollowsInput : null,
-            ),
-            _PriceTag(label: l10n.priceLabelOutput, value: _rate(group.outputPrice, 'M')),
-          ]
-        : group.isSpecBilled
-            // `D2b · 21e`: one summary tag however many rows the table has —
-            // eight tags would fold the card three deep and say nothing the
-            // summary does not; the full table is the tag's tooltip.
-            ? [
-                _PriceTag(value: feeGroupSummary(l10n, group), tooltip: feeGroupRateTable(l10n, group)),
-                if (feeGroupOtherSpecsAtZero(group))
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text(
-                      l10n.specOtherZero,
-                      style: textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
-                    ),
-                  ),
-              ]
-            : [_PriceTag(label: l10n.priceLabelRequest, value: _rate(group.requestPrice, 'Req'))];
-
-    return Material(
-      color: scheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onEdit,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, AppSpace.s10, 8, AppSpace.s10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      group.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleSmall?.copyWith(color: scheme.onSurface),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  _RowIconButton(icon: Icons.edit_outlined, tooltip: l10n.edit, onPressed: onEdit),
-                  const SizedBox(width: 2),
-                  _RowIconButton(
-                    icon: Icons.delete_outline,
-                    tooltip: l10n.delete,
-                    onPressed: onDelete,
-                    danger: true,
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.only(right: AppSpace.s4),
-                child: _buildConsumers(context, l10n),
-              ),
-              const SizedBox(height: 8),
-              Wrap(spacing: AppSpace.s6, runSpacing: AppSpace.s6, children: prices),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// The models this group bills — or, worth saying out loud, that it bills
-  /// none: an orphaned group prices nothing, and nothing else would tell you.
-  Widget _buildConsumers(BuildContext context, AppLocalizations l10n) {
-    final scheme = Theme.of(context).colorScheme;
-    final mono = Theme.of(context).textTheme.labelSmall?.mono;
-
-    if (models.isEmpty) {
-      return Text(
-        l10n.feeGroupUnused,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: mono?.copyWith(color: scheme.outline),
-      );
-    }
-
-    return Row(
-      children: [
-        Text(
-          l10n.feeGroupModelCount(models.length),
-          style: mono?.copyWith(color: scheme.onSurfaceVariant),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Tooltip(
-            message: models.join('\n'),
-            child: Text(
-              models.join(', '),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: mono?.copyWith(color: scheme.outline),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// A rate as `D1a` tags it: the rate's name beside the mono figure, r4 on the
-/// card tone. [inherited] renders the figure muted — it is not configured on
-/// this group, it follows the input price.
-class _PriceTag extends StatelessWidget {
-  const _PriceTag({this.label, required this.value, this.inherited = false, this.tooltip});
-
-  /// The rate's name; null for a tag that is all figure (the spec summary).
-  final String? label;
-  final String value;
-  final bool inherited;
-  final String? tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    final Widget tag = Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s6, vertical: 2),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(AppRadius.xs),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (label case final label?) ...[
-            Text(label, style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
-            const SizedBox(width: AppSpace.s4),
-          ],
-          // Flexible: the spec summary is the one long tag, and on a phone
-          // it ends in an ellipsis rather than past the card's edge.
-          Flexible(
-            child: Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.labelSmall?.mono.copyWith(
-                color: inherited ? scheme.outline : scheme.onSurface,
-                fontStyle: inherited ? FontStyle.italic : FontStyle.normal,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    return tooltip == null ? tag : Tooltip(message: tooltip!, child: tag);
-  }
-}
-
-class _RowIconButton extends StatelessWidget {
-  const _RowIconButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-    this.danger = false,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onPressed;
-  final bool danger;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return IconButton(
-      icon: Icon(icon, size: AppSize.iconMd),
-      tooltip: tooltip,
-      onPressed: onPressed,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints.tightFor(width: AppSize.compact, height: AppSize.compact),
-      style: IconButton.styleFrom(
-        minimumSize: const Size.square(AppSize.compact),
-        foregroundColor: danger ? scheme.error : scheme.onSurfaceVariant,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
-      ),
-    );
-  }
-}
-
-/// The editor, open in place of a row (`D1a · 1d` 内嵌编辑态卡): the accent
-/// edge on the accent wash, the name, the billing mode, and that mode's rates.
-class _GroupEditor extends StatefulWidget {
-  const _GroupEditor({
-    super.key,
-    required this.appState,
-    required this.group,
-    required this.onDone,
-  });
-
-  final AppState appState;
-  final PricingGroup? group;
-  final VoidCallback onDone;
-
-  @override
-  State<_GroupEditor> createState() => _GroupEditorState();
-}
-
-class _GroupEditorState extends State<_GroupEditor> {
-  late final TextEditingController nameCtrl;
-  late final TextEditingController inputPriceCtrl;
-  late final TextEditingController cacheInputPriceCtrl;
-  late final TextEditingController outputPriceCtrl;
-  late final TextEditingController requestPriceCtrl;
-  late String billingMode;
-  bool _saving = false;
-
-  /// Spec billing's draft (`D2b`): the unit, the ordinary rows and the
-  /// catch-all's price. Kept through mode switches so a table typed in and
-  /// then hidden behind 「按 token」 is still there when the user comes back.
-  late OutputUnit outputUnit;
-  final List<SpecRateDraft> specRows = [];
-  late final TextEditingController otherPriceCtrl;
-
-  /// Narrowest a rate field gets before the three stack instead of sharing a
-  /// row.
-  static const double _minRateField = 110;
-
-  static double? _parsePrice(String text) => parsePriceInput(text);
-
-  @override
-  void initState() {
-    super.initState();
-    final g = widget.group;
-    nameCtrl = TextEditingController(text: g?.name ?? '');
-    inputPriceCtrl = TextEditingController(text: (g?.inputPrice ?? 0.0).toString());
-    // Left blank when unset, which is what makes the field mean "follow the
-    // input price" rather than "free".
-    cacheInputPriceCtrl = TextEditingController(text: g?.cacheInputPrice?.toString() ?? '');
-    outputPriceCtrl = TextEditingController(text: (g?.outputPrice ?? 0.0).toString());
-    requestPriceCtrl = TextEditingController(text: (g?.requestPrice ?? 0.0).toString());
-    billingMode = g?.billingMode ?? 'token';
-
-    outputUnit = g?.outputUnit ?? OutputUnit.image;
-    final rates = g?.outputRates ?? const <SpecRate>[];
-    // The catch-all is the pinned bottom row; blank when the group has none
-    // (unlisted specs then bill at zero, which the editor says out loud).
-    final other = rates.where((r) => r.isCatchAll).firstOrNull;
-    otherPriceCtrl = TextEditingController(text: other == null ? '' : other.price.toStringAsFixed(4));
-    specRows.addAll(rates.where((r) => !r.isCatchAll).map(SpecRateDraft.of));
-
-    // Validation is live, and the cache field hints the value it would inherit
-    // from the input field as it is typed.
-    for (final ctrl in _priceFields) {
-      ctrl.addListener(_refresh);
-    }
-  }
-
-  List<TextEditingController> get _priceFields =>
-      [inputPriceCtrl, cacheInputPriceCtrl, outputPriceCtrl, requestPriceCtrl];
-
-  void _refresh() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  void dispose() {
-    for (final ctrl in _priceFields) {
-      ctrl.removeListener(_refresh);
-    }
-    nameCtrl.dispose();
-    inputPriceCtrl.dispose();
-    cacheInputPriceCtrl.dispose();
-    outputPriceCtrl.dispose();
-    requestPriceCtrl.dispose();
-    otherPriceCtrl.dispose();
-    for (final row in specRows) {
-      row.dispose();
-    }
-    super.dispose();
-  }
-
-  bool get _isToken => billingMode == 'token';
-  bool get _isSpec => billingMode == specBillingMode;
-
-  /// Whether [ctrl]'s text cannot be saved. A blank cache rate is a valid
-  /// "inherit"; every other rate must parse.
-  bool _invalid(TextEditingController ctrl) {
-    final text = ctrl.text.trim();
-    if (identical(ctrl, cacheInputPriceCtrl) && text.isEmpty) return false;
-    return _parsePrice(text) == null;
-  }
-
-  List<TextEditingController> get _activeFields =>
-      _isToken ? [inputPriceCtrl, cacheInputPriceCtrl, outputPriceCtrl] : [requestPriceCtrl];
-
-  /// A blank catch-all is allowed (it means zero, and the table says so);
-  /// anything typed there must parse.
-  bool get _otherPriceInvalid =>
-      otherPriceCtrl.text.trim().isNotEmpty && _parsePrice(otherPriceCtrl.text) == null;
-
-  bool get _canSave => _isSpec
-      ? !SpecTableIssues.of(specRows).blocksSave && !_otherPriceInvalid
-      : !_activeFields.any(_invalid);
-
-  void _addSpecRow() => setState(() => specRows.add(SpecRateDraft()));
-
-  void _removeSpecRow(int index) => setState(() => specRows.removeAt(index).dispose());
-
-  /// `21d` ④: a table that is only the catch-all is per-request billing in
-  /// disguise, so the editor offers to say so — the price goes with it.
-  void _switchToRequest() => setState(() {
-        billingMode = 'request';
-        if (otherPriceCtrl.text.trim().isNotEmpty) requestPriceCtrl.text = otherPriceCtrl.text.trim();
-      });
+  /// Null while adding: there is nothing to delete, and the slot stays empty.
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final isAdd = widget.group == null;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: scheme.accentTint,
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        border: Border.all(color: scheme.primary),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            isAdd ? l10n.addFeeGroup : l10n.editFeeGroup,
-            style: textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              letterSpacing: AppType.trackedLabelSpacing,
-              color: scheme.onAccentTint,
-            ),
-          ),
-          const SizedBox(height: AppSpace.s10),
-          TextField(
-            controller: nameCtrl,
-            style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-            decoration: _decoration(context).copyWith(hintText: l10n.groupName),
-          ),
-          const SizedBox(height: AppSpace.s10),
-          // Segmented rather than a dropdown: there are only three modes and
-          // each one rewrites the rate fields below, so the choice should be
-          // visible next to what it changes.
-          AppSegmentedControl<String>(
-            segments: [
-              AppSegment(value: 'token', label: l10n.perToken, icon: Icons.token_outlined),
-              AppSegment(value: 'request', label: l10n.perRequest, icon: Icons.ads_click),
-              AppSegment(value: specBillingMode, label: l10n.perSpec, icon: Icons.photo_size_select_large_outlined),
-            ],
-            value: billingMode,
-            onChanged: (mode) => setState(() => billingMode = mode),
-            expand: true,
-          ),
-          const SizedBox(height: 12),
-          // `D2b · 21a`: the lower half is swapped whole and the card grows
-          // from its top edge; the fields themselves do not slide.
-          AnimatedSize(
-            duration: AppMotion.durationOf(context, AppMotion.state),
-            curve: AppMotion.enter,
-            alignment: Alignment.topCenter,
-            child: _buildRates(context, l10n),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              AppButton(
-                label: l10n.cancel,
-                variant: AppButtonVariant.text,
-                onPressed: widget.onDone,
-              ),
-              const SizedBox(width: AppSpace.s6),
-              AppButton(
-                label: isAdd ? l10n.add : l10n.save,
-                icon: Icons.save,
-                loading: _saving,
-                onPressed: _canSave ? _save : null,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// The mode's rates: the three token prices, the one request price, or the
-  /// spec table.
-  Widget _buildRates(BuildContext context, AppLocalizations l10n) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    if (_isSpec) {
-      return SpecRateTableEditor(
-        key: const ValueKey('spec'),
-        unit: outputUnit,
-        onUnitChanged: (u) => setState(() => outputUnit = u),
-        rows: specRows,
-        otherPriceCtrl: otherPriceCtrl,
-        onAddRow: _addSpecRow,
-        onRemoveRow: _removeSpecRow,
-        onChanged: _refresh,
-        onSwitchToRequest: _switchToRequest,
-        narrow: Responsive.isMobile(context),
-      );
-    }
+    final isNew = draft.isNew;
 
     return Column(
-      key: ValueKey(billingMode),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-          if (_isToken)
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final fields = [
-                  _priceField(context, inputPriceCtrl, l10n.priceLabelInput, '\$/M'),
-                  _priceField(
-                    context,
-                    cacheInputPriceCtrl,
-                    l10n.priceLabelCache,
-                    '\$/M',
-                    // The rate a blank field inherits; with no input rate yet,
-                    // the rule itself.
-                    hintText: inputPriceCtrl.text.trim().isEmpty
-                        ? l10n.cachePriceBlankPlaceholder
-                        : inputPriceCtrl.text.trim(),
-                  ),
-                  _priceField(context, outputPriceCtrl, l10n.priceLabelOutput, '\$/M'),
-                ];
-                if (constraints.maxWidth >= 3 * _minRateField + 2 * 8) {
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final (i, field) in fields.indexed) ...[
-                        if (i > 0) const SizedBox(width: 8),
-                        Expanded(child: field),
-                      ],
-                    ],
-                  );
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (final (i, field) in fields.indexed) ...[
-                      if (i > 0) const SizedBox(height: AppSpace.s10),
-                      field,
-                    ],
-                  ],
-                );
-              },
-            )
-          else
-            _priceField(context, requestPriceCtrl, l10n.priceLabelRequest, '\$/Req'),
-          const SizedBox(height: AppSpace.s6),
-          // What the numbers are charged against: blank cache inherits the
-          // input rate; a request rate is per successful request. Per-token
-          // and per-request rates differ by six orders of magnitude.
-          Text(
-            _isToken ? l10n.cacheInputPriceHint : l10n.requestPriceHint,
-            style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.tightHeight),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: scheme.accentTint,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: scheme.primary),
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isNew ? l10n.newFeeGroup : l10n.editGroupTitle,
+                style: textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: AppType.trackedLabelSpacing,
+                  color: scheme.onAccentTint,
+                ),
+              ),
+              const SizedBox(height: AppSpace.s10),
+              FeeGroupEditorFields(draft: draft, narrow: Responsive.isMobile(context)),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpace.s10),
+        ListenableBuilder(
+          listenable: draft,
+          builder: (context, _) => Row(
+            children: [
+              if (onDelete case final onDelete?)
+                TextButton.icon(
+                  onPressed: onDelete,
+                  style: TextButton.styleFrom(
+                    foregroundColor: scheme.error,
+                    minimumSize: const Size(0, AppSize.control),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
+                  ),
+                  icon: const Icon(Icons.delete_outline, size: AppSize.iconMd),
+                  label: Text(l10n.deleteGroup),
+                ),
+              const Spacer(),
+              AppButton(label: l10n.cancel, variant: AppButtonVariant.text, onPressed: onCancel),
+              const SizedBox(width: AppSpace.s6),
+              AppButton(
+                label: l10n.save,
+                icon: Icons.save,
+                loading: saving,
+                onPressed: draft.canSave && !saving ? onSave : null,
+              ),
+            ],
+          ),
+        ),
       ],
     );
-  }
-
-  InputDecoration _decoration(BuildContext context) => InputDecoration(
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: 12),
-      );
-
-  Widget _priceField(
-    BuildContext context,
-    TextEditingController ctrl,
-    String label,
-    String suffix, {
-    String? hintText,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final invalid = _invalid(ctrl);
-
-    return TextField(
-      controller: ctrl,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: textTheme.bodyMedium?.mono,
-      decoration: _decoration(context).copyWith(
-        labelText: label,
-        // Always up, never sitting in the field: an empty cache field still
-        // says which rate it is empty of.
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        hintText: hintText,
-        hintStyle: textTheme.bodyMedium?.mono.copyWith(color: scheme.outline, fontStyle: FontStyle.italic),
-        suffixText: suffix,
-        suffixStyle: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
-        error: invalid
-            ? Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.error_outline, size: AppSize.iconSm - 2, color: scheme.onErrorContainer),
-                  const SizedBox(width: AppSpace.s4),
-                  Expanded(
-                    child: Text(
-                      l10n.invalidPriceValue,
-                      style: textTheme.labelSmall?.copyWith(color: scheme.onErrorContainer),
-                    ),
-                  ),
-                ],
-              )
-            : null,
-      ),
-    );
-  }
-
-  Future<void> _save() async {
-    // Rates are snapshotted onto every usage row at request time, so a rate
-    // that silently saved as 0.0 poisoned history irreversibly. Unparseable
-    // input blocks the save rather than being coerced.
-    if (!_canSave) {
-      setState(() {});
-      return;
-    }
-    final cacheText = cacheInputPriceCtrl.text.trim();
-
-    final data = {
-      'name': nameCtrl.text.trim().isEmpty ? "Unnamed Group" : nameCtrl.text.trim(),
-      'billing_mode': billingMode,
-      'input_price': _parsePrice(inputPriceCtrl.text) ?? 0.0,
-      // Blank stays null so the cost math falls back to the input price; an
-      // explicit 0 is kept as a real (free) cache rate.
-      'cache_input_price': cacheText.isEmpty ? null : _parsePrice(cacheText),
-      'output_price': _parsePrice(outputPriceCtrl.text) ?? 0.0,
-      'request_price': _parsePrice(requestPriceCtrl.text) ?? 0.0,
-      // Written whatever the mode, as the other modes' rates are: a table
-      // typed in and then parked behind 「按 token」 survives the save.
-      'output_unit': outputUnit.name,
-      'output_rates': SpecRate.encodeList(_specRates()),
-    };
-
-    setState(() => _saving = true);
-    if (widget.group == null) {
-      await widget.appState.addPricingGroup(data);
-    } else {
-      await widget.appState.updatePricingGroup(widget.group!.id!, data);
-    }
-    if (mounted) widget.onDone();
-  }
-
-  /// The table as it will be stored: the ordinary rows, then the catch-all
-  /// only when it has a price — a blank one is *no* catch-all, which is what
-  /// makes unlisted specs bill at zero and count as unmatched.
-  List<SpecRate> _specRates() {
-    final other = _parsePrice(otherPriceCtrl.text);
-    return [
-      for (final row in specRows) row.toRate(),
-      if (other != null) SpecRate(price: other),
-    ];
   }
 }

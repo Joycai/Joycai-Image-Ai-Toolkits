@@ -495,5 +495,29 @@
   },
   "specOtherZero": "其他规格按 0 计",
   "modelCardBilling": "计费",
-  "specUnitSuffixRequest": "/次"
+  "specUnitSuffixRequest": "/次",
+  "filterFeeGroups": "筛选费率组…",
+  "reorderFeeGroups": "排序",
+  "feeGroupPickTitle": "选一组来编辑",
+  "feeGroupPickText": "点组卡或它的编辑按钮，编辑卡在这里打开；「新建组」也在这里。",
+  "feeGroupReorderTitle": "拖动左侧把手调整顺序",
+  "feeGroupReorderText": "顺序同步到模型与渠道编辑框的费率组下拉。松手即保存。",
+  "feeGroupReorderNote": "筛选中不能排序；松手即保存顺序。",
+  "feeGroupReorderHint": "长按组卡拖动；松手即保存顺序。",
+  "deleteGroup": "删除组",
+  "deleteFeeGroupInUse": "{count} 个模型将变为无费率组。",
+  "@deleteFeeGroupInUse": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "editGroupTitle": "编辑组",
+  "feeGroupNamePlaceholder": "给这组起个名字",
+  "tokenPriceHint": "按百万 token 计价；缓存输入留空按输入价算。图片 / 视频模型请改用「按规格」。",
+  "discardChangesTitle": "放弃未保存的改动？",
+  "discardChangesBody": "切到另一组会丢掉这里的改动。",
+  "discard": "放弃",
+  "modelsUsingGroup": "使用它的模型"
 }

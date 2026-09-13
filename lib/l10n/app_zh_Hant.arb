@@ -1279,6 +1279,30 @@
   "specOtherZero": "其他規格以 0 計",
   "modelCardBilling": "計費",
   "specUnitSuffixRequest": "/次",
+  "filterFeeGroups": "篩選費用群組…",
+  "reorderFeeGroups": "排序",
+  "feeGroupPickTitle": "選一組來編輯",
+  "feeGroupPickText": "點組卡或它的編輯按鈕，編輯卡在這裡開啟；「新增組」也在這裡。",
+  "feeGroupReorderTitle": "拖曳左側把手調整順序",
+  "feeGroupReorderText": "順序同步到模型與通道編輯框的費用群組下拉。放開即儲存。",
+  "feeGroupReorderNote": "篩選中不能排序；放開即儲存順序。",
+  "feeGroupReorderHint": "長按組卡拖曳；放開即儲存順序。",
+  "deleteGroup": "刪除組",
+  "deleteFeeGroupInUse": "{count} 個模型將變為無費用群組。",
+  "@deleteFeeGroupInUse": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "editGroupTitle": "編輯組",
+  "feeGroupNamePlaceholder": "給這組取個名字",
+  "tokenPriceHint": "按百萬 token 計價；快取輸入留空按輸入價算。圖片 / 影片模型請改用「按規格」。",
+  "discardChangesTitle": "放棄未儲存的變更？",
+  "discardChangesBody": "切到另一組會丟掉這裡的變更。",
+  "discard": "放棄",
+  "modelsUsingGroup": "使用它的模型",
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",

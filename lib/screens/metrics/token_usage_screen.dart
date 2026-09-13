@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../../widgets/glass/app_glass.dart';
 import '../../widgets/glass/glass_controls.dart';
+import '../../widgets/models/fee_group_edit_page.dart';
 import '../../widgets/pricing_group_manager.dart';
 import 'widgets/usage_chrome.dart';
 import 'widgets/usage_controller.dart';
@@ -44,6 +45,10 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
   /// on first phone layout; the view loads it when it mounts.
   UsageController? _phoneController;
 
+  /// `D2 · 1h`: the phone's explicit reorder mode for the fee-group tab,
+  /// toggled from the header's swap_vert.
+  bool _phoneReorder = false;
+
   static const double _desktopTabRowHeight = 52;
   static const double _tabletTabRowHeight = 48;
   static const double _phoneTitleHeight = 52;
@@ -78,7 +83,15 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
           Expanded(
             child: _viewIndex == 0
                 ? UsageViewDesktop(onFixRates: (group) => _fixRates(group.id!))
-                : _buildFeeGroups(context, inset: inset, top: 12, cardPadding: desktop ? AppSpace.s22 : AppSpace.s16),
+                : _buildFeeGroups(
+                    context,
+                    inset: inset,
+                    top: 12,
+                    // `D2 · 1d` / `1h`: 16 20 20 on desktop, 14 16 16 on a tablet.
+                    cardPadding: desktop
+                        ? const EdgeInsets.fromLTRB(20, AppSpace.s16, 20, 20)
+                        : const EdgeInsets.fromLTRB(AppSpace.s16, 14, AppSpace.s16, AppSpace.s16),
+                  ),
           ),
         ],
       ),
@@ -86,23 +99,23 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
   }
 
   /// The fee-group editor, embedded in a card — the same component the fee
-  /// management dialog hosts.
+  /// management dialog hosts. On a phone (`1h`) the cards sit on the canvas
+  /// with no panel around them.
   Widget _buildFeeGroups(
     BuildContext context, {
     required double inset,
     required double top,
-    required double cardPadding,
+    EdgeInsetsGeometry? cardPadding,
   }) {
+    final manager = PricingGroupManager(
+      key: ValueKey('fee-groups-$_editRequest'),
+      mode: PricingGroupManagerMode.section,
+      initialEditGroupId: _editGroupId,
+      phoneReorder: _phoneReorder,
+    );
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(inset, top, inset, MediaQuery.paddingOf(context).bottom + inset),
-      child: UsagePanel(
-        padding: EdgeInsets.all(cardPadding),
-        child: PricingGroupManager(
-          key: ValueKey('fee-groups-$_editRequest'),
-          mode: PricingGroupManagerMode.section,
-          initialEditGroupId: _editGroupId,
-        ),
-      ),
+      child: cardPadding == null ? manager : UsagePanel(padding: cardPadding, child: manager),
     );
   }
 
@@ -124,12 +137,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
               child: TabBarView(
                 children: [
                   UsageViewMobile(controller: controller, topInset: headerHeight),
-                  _buildFeeGroups(
-                    context,
-                    inset: AppSpace.s16,
-                    top: headerHeight + 12,
-                    cardPadding: AppSpace.s16,
-                  ),
+                  _buildFeeGroups(context, inset: 12, top: headerHeight + 12),
                 ],
               ),
             ),
@@ -137,7 +145,13 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
               left: 0,
               top: 0,
               right: 0,
-              child: _PhoneHeader(controller: controller, topPadding: top),
+              child: _PhoneHeader(
+                controller: controller,
+                topPadding: top,
+                reorder: _phoneReorder,
+                onToggleReorder: () => setState(() => _phoneReorder = !_phoneReorder),
+                onAdd: () => FeeGroupEditPage.push(context),
+              ),
             ),
           ],
         ),
@@ -243,16 +257,26 @@ class _ViewTab extends StatelessWidget {
 }
 
 /// The phone's one full-width glass layer: title, refresh and Clear All over
-/// the two tabs.
+/// the two tabs — or, on the fee-group tab (`1h`), reorder and New.
 class _PhoneHeader extends StatelessWidget {
-  const _PhoneHeader({required this.controller, required this.topPadding});
+  const _PhoneHeader({
+    required this.controller,
+    required this.topPadding,
+    required this.reorder,
+    required this.onToggleReorder,
+    required this.onAdd,
+  });
 
   final UsageController controller;
   final double topPadding;
+  final bool reorder;
+  final VoidCallback onToggleReorder;
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final tabs = DefaultTabController.of(context);
 
     return AppGlass(
       grade: GlassGrade.bar,
@@ -282,23 +306,36 @@ class _PhoneHeader extends StatelessWidget {
                       ),
                     ),
                     ListenableBuilder(
-                      listenable: controller,
-                      builder: (context, _) => Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          GlassIconButton(
-                            icon: Icons.refresh,
-                            tooltip: l10n.refresh,
-                            onPressed: controller.isLoading ? null : () => controller.load(reset: true),
-                          ),
-                          GlassIconButton(
-                            icon: Icons.delete_sweep_outlined,
-                            tooltip: l10n.clearAll,
-                            danger: true,
-                            onPressed: () => showClearAllUsageDialog(context, controller),
-                          ),
-                        ],
-                      ),
+                      listenable: Listenable.merge([controller, tabs]),
+                      builder: (context, _) => tabs.index == 1
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GlassIconButton(
+                                  icon: Icons.swap_vert,
+                                  tooltip: l10n.reorderFeeGroups,
+                                  active: reorder,
+                                  onPressed: onToggleReorder,
+                                ),
+                                GlassIconButton(icon: Icons.add, tooltip: l10n.newFeeGroup, onPressed: onAdd),
+                              ],
+                            )
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GlassIconButton(
+                                  icon: Icons.refresh,
+                                  tooltip: l10n.refresh,
+                                  onPressed: controller.isLoading ? null : () => controller.load(reset: true),
+                                ),
+                                GlassIconButton(
+                                  icon: Icons.delete_sweep_outlined,
+                                  tooltip: l10n.clearAll,
+                                  danger: true,
+                                  onPressed: () => showClearAllUsageDialog(context, controller),
+                                ),
+                              ],
+                            ),
                     ),
                   ],
                 ),

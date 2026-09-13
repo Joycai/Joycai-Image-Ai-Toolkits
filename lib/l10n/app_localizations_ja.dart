@@ -2456,6 +2456,62 @@ class AppLocalizationsJa extends AppLocalizations {
   String get specUnitSuffixRequest => '/回';
 
   @override
+  String get filterFeeGroups => '料金グループを絞り込む…';
+
+  @override
+  String get reorderFeeGroups => '並べ替え';
+
+  @override
+  String get feeGroupPickTitle => '編集するグループを選択';
+
+  @override
+  String get feeGroupPickText =>
+      'グループカードか編集ボタンを押すと、ここにエディタが開きます。「新しいグループ」もここに開きます。';
+
+  @override
+  String get feeGroupReorderTitle => '左のハンドルをドラッグして並べ替え';
+
+  @override
+  String get feeGroupReorderText =>
+      '順序はモデル・チャンネル編集の料金グループ選択にも反映されます。離すと保存されます。';
+
+  @override
+  String get feeGroupReorderNote => '絞り込み中は並べ替えできません。離すと順序が保存されます。';
+
+  @override
+  String get feeGroupReorderHint => 'グループを長押ししてドラッグ。離すと順序が保存されます。';
+
+  @override
+  String get deleteGroup => 'グループを削除';
+
+  @override
+  String deleteFeeGroupInUse(int count) {
+    return '$count 個のモデルが料金グループなしになります。';
+  }
+
+  @override
+  String get editGroupTitle => 'グループを編集';
+
+  @override
+  String get feeGroupNamePlaceholder => 'グループ名を入力';
+
+  @override
+  String get tokenPriceHint =>
+      '100 万トークン単位で課金。キャッシュ入力が未入力なら入力価格で計算。画像 / 動画モデルは「仕様別」を使ってください。';
+
+  @override
+  String get discardChangesTitle => '未保存の変更を破棄しますか？';
+
+  @override
+  String get discardChangesBody => '別のグループに切り替えると、ここでの変更は失われます。';
+
+  @override
+  String get discard => '破棄';
+
+  @override
+  String get modelsUsingGroup => '使用中のモデル';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

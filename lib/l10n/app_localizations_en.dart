@@ -2538,6 +2538,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String get specUnitSuffixRequest => '/req';
 
   @override
+  String get filterFeeGroups => 'Filter fee groups…';
+
+  @override
+  String get reorderFeeGroups => 'Reorder';
+
+  @override
+  String get feeGroupPickTitle => 'Pick a group to edit';
+
+  @override
+  String get feeGroupPickText =>
+      'Tap a group or its edit button and the editor opens here. New groups start here too.';
+
+  @override
+  String get feeGroupReorderTitle => 'Drag the handles to reorder';
+
+  @override
+  String get feeGroupReorderText =>
+      'The order carries into the model and channel editors\' fee-group pickers. Saved on release.';
+
+  @override
+  String get feeGroupReorderNote =>
+      'Reordering is off while filtering; the order saves on release.';
+
+  @override
+  String get feeGroupReorderHint =>
+      'Hold a group to drag it; the order saves on release.';
+
+  @override
+  String get deleteGroup => 'Delete group';
+
+  @override
+  String deleteFeeGroupInUse(int count) {
+    return '$count models will be left with no fee group.';
+  }
+
+  @override
+  String get editGroupTitle => 'Edit group';
+
+  @override
+  String get feeGroupNamePlaceholder => 'Name this group';
+
+  @override
+  String get tokenPriceHint =>
+      'Priced per million tokens; a blank cache rate follows the input rate. For image and video models use Per spec.';
+
+  @override
+  String get discardChangesTitle => 'Discard unsaved changes?';
+
+  @override
+  String get discardChangesBody =>
+      'Switching to another group drops the edits made here.';
+
+  @override
+  String get discard => 'Discard';
+
+  @override
+  String get modelsUsingGroup => 'Models using it';
+
+  @override
   String get prompts => 'Prompts';
 
   @override
