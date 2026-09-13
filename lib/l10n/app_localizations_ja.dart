@@ -35,6 +35,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get renameExtensionLocked => '拡張子';
 
   @override
+  String get renameExtensionUnlock => 'ロックを解除して拡張子を編集';
+
+  @override
+  String get renameExtensionRelock => '拡張子をロック';
+
+  @override
   String renameConflict(String name) {
     return '$name はこのフォルダーに既にあります';
   }

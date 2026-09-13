@@ -35,6 +35,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get renameExtensionLocked => '扩展名';
 
   @override
+  String get renameExtensionUnlock => '解锁以修改扩展名';
+
+  @override
+  String get renameExtensionRelock => '锁定扩展名';
+
+  @override
   String renameConflict(String name) {
     return '该文件夹已有 $name';
   }
@@ -4466,6 +4472,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get renameExtensionLocked => '副檔名';
+
+  @override
+  String get renameExtensionUnlock => '解鎖以修改副檔名';
+
+  @override
+  String get renameExtensionRelock => '鎖定副檔名';
 
   @override
   String renameConflict(String name) {

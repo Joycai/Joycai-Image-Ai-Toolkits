@@ -35,6 +35,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get renameExtensionLocked => 'extension';
 
   @override
+  String get renameExtensionUnlock => 'Unlock to edit the extension';
+
+  @override
+  String get renameExtensionRelock => 'Lock the extension';
+
+  @override
   String renameConflict(String name) {
     return '$name already exists in this folder';
   }

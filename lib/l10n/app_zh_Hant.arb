@@ -7,6 +7,8 @@
   "renameFailed": "重新命名失敗: {error}",
   "renameHintKeys": "Enter 確認 · Esc 取消",
   "renameExtensionLocked": "副檔名",
+  "renameExtensionUnlock": "解鎖以修改副檔名",
+  "renameExtensionRelock": "鎖定副檔名",
   "renameConflict": "此資料夾已有 {name}",
   "@renameConflict": {
     "placeholders": {
