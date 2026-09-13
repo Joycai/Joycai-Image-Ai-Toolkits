@@ -7642,11 +7642,95 @@ abstract class AppLocalizations {
   /// **'What about this image misses the mark?'**
   String get optResultFeedbackHint;
 
-  /// No description provided for @optResultFeedbackHelper.
+  /// No description provided for @optFeedbackSatisfied.
   ///
   /// In en, this message translates to:
-  /// **'This result image joins the conversation with your feedback — the assistant iterates on v{version}.'**
-  String optResultFeedbackHelper(int version);
+  /// **'Satisfied'**
+  String get optFeedbackSatisfied;
+
+  /// No description provided for @optFeedbackUnsatisfied.
+  ///
+  /// In en, this message translates to:
+  /// **'Not satisfied'**
+  String get optFeedbackUnsatisfied;
+
+  /// No description provided for @optFeedbackReasonPromptMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Doesn\'t match the prompt'**
+  String get optFeedbackReasonPromptMismatch;
+
+  /// No description provided for @optFeedbackReasonComposition.
+  ///
+  /// In en, this message translates to:
+  /// **'Composition'**
+  String get optFeedbackReasonComposition;
+
+  /// No description provided for @optFeedbackReasonColorLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Color / lighting'**
+  String get optFeedbackReasonColorLight;
+
+  /// No description provided for @optFeedbackReasonDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Broken details'**
+  String get optFeedbackReasonDetail;
+
+  /// No description provided for @optFeedbackReasonStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style drift'**
+  String get optFeedbackReasonStyle;
+
+  /// No description provided for @optFeedbackHintSatisfied.
+  ///
+  /// In en, this message translates to:
+  /// **'What worked? Note it and the assistant keeps it next time (optional)'**
+  String get optFeedbackHintSatisfied;
+
+  /// No description provided for @optFeedbackHintUnsatisfied.
+  ///
+  /// In en, this message translates to:
+  /// **'What missed the mark? The more specific the better (optional)'**
+  String get optFeedbackHintUnsatisfied;
+
+  /// No description provided for @optFeedbackRunPromptLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt for this run'**
+  String get optFeedbackRunPromptLabel;
+
+  /// No description provided for @optFeedbackFooterNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to this prompt\'s run record; the assistant reads it when revising'**
+  String get optFeedbackFooterNote;
+
+  /// No description provided for @optSendFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get optSendFeedback;
+
+  /// No description provided for @optFeedbackSendShortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'{modifier}Enter to send'**
+  String optFeedbackSendShortcut(String modifier);
+
+  /// No description provided for @optFeedbackRunToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today {time}'**
+  String optFeedbackRunToday(String time);
+
+  /// No description provided for @optResultFeedbackSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback sent to the assistant'**
+  String get optResultFeedbackSent;
 
   /// No description provided for @optDistillAction.
   ///

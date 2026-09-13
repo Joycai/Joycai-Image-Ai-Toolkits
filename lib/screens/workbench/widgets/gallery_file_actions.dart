@@ -3,12 +3,16 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/constants.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
+import '../../../models/task_item.dart';
+import '../../../services/prompt_optimizer_agent.dart';
+import '../../../models/llm_model.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
@@ -159,37 +163,43 @@ Future<void> _deleteImageFile(
   }
 }
 
-/// Whether [image] can be fed back to the assistant right now (`20a`).
+/// Whether the result at [path] can be fed back to the assistant right now
+/// (`A1 · 3a`).
 ///
-/// There is nothing to give feedback *on* before the assistant has staged a
-/// prompt version, and the action is withdrawn while a turn is running so a
+/// Only a picture with a run on record — one the gallery badges `v{n}` —
+/// has a version to judge; an original or an import has none, so the row
+/// greys out on it. And the action is withdrawn while a turn is running so a
 /// click cannot land in the middle of one. The card's hover strip and the
 /// context menu both read this so they agree.
-bool canSendResultFeedback(WorkbenchUIState workbenchUIState) {
-  final session = workbenchUIState.optimizerSession;
-  return session.promptVersions > 0 && !session.isRunning;
-}
+bool canSendResultFeedback(WorkbenchUIState workbenchUIState, String path) =>
+    workbenchUIState.resultVersionByPath.containsKey(path) &&
+    !workbenchUIState.optimizerSession.isRunning;
 
-/// Collects a critique of [image], stages it on the assistant session (which
-/// latches an assistant-turn request the workbench screen consumes), and
-/// jumps to the assistant tab so the user lands where the conversation
-/// continues.
+/// Collects the verdict on [image] (`3b`) and stages it on the assistant
+/// session, which latches an assistant-turn request the workbench screen
+/// consumes. The user stays where they are — `3a`: 「不切换页面」 — and a
+/// toast says the report went through.
 ///
-/// Provenance first, latest version as the fallback: an image the task record
-/// ties to v2 gives feedback on v2 even after v3 was staged — that binding is
-/// the whole reason the tag exists.
+/// The version comes from provenance alone: an image the task record ties
+/// to v2 gives feedback on v2 even after v3 was staged — that binding is the
+/// whole reason the tag exists — and a picture without a record gets no
+/// dialog, as the gate above already says.
 Future<void> sendResultFeedbackFromGallery(BuildContext context, AppImage image) async {
   final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
   final appState = Provider.of<AppState>(context, listen: false);
-  final version = workbenchUIState.resultVersionByPath[image.path] ??
-      workbenchUIState.optimizerSession.promptVersions;
-  if (version < 1) return;
+  final version = workbenchUIState.resultVersionByPath[image.path];
+  if (version == null) return;
+  final task = await workbenchUIState.resultTaskForPath(image.path);
+  if (!context.mounted) return;
+  final l10n = AppLocalizations.of(context)!;
   final feedback = await showResultFeedbackDialog(
     context,
     image: image,
     promptVersion: version,
+    runMeta: task == null ? null : _describeRun(task, appState, l10n),
+    promptText: _promptFirstLine(workbenchUIState.optimizerSession, version),
   );
-  if (feedback == null || feedback.isEmpty) return;
+  if (feedback == null) return;
   if (!workbenchUIState.sendResultFeedback(
     image,
     feedback: feedback,
@@ -197,5 +207,30 @@ Future<void> sendResultFeedbackFromGallery(BuildContext context, AppImage image)
   )) {
     return;
   }
-  appState.setWorkbenchTab(4); // Prompt assistant
+  if (context.mounted) AppSnackBar.success(context, l10n.optResultFeedbackSent);
+}
+
+/// 「gpt-image-1 · 今天 14:02」: the model the run used and when it started.
+String _describeRun(TaskItem task, AppState appState, AppLocalizations l10n) {
+  final model = appState.allModels
+      .cast<LLMModel?>()
+      .firstWhere((m) => m?.id == task.modelDbId, orElse: () => null);
+  final modelLabel = model?.modelName ?? task.modelId;
+  final when = task.createdAt;
+  final now = DateTime.now();
+  final sameDay = when.year == now.year && when.month == now.month && when.day == now.day;
+  final clock = DateFormat('HH:mm').format(when);
+  final timeLabel = sameDay ? l10n.optFeedbackRunToday(clock) : DateFormat('MM-dd HH:mm').format(when);
+  return [if (modelLabel.isNotEmpty) modelLabel, timeLabel].join(' · ');
+}
+
+/// The first line of the prompt staged as [version], or null when the
+/// transcript no longer holds it.
+String? _promptFirstLine(PromptOptimizerSession session, int version) {
+  for (final e in session.transcript.reversed) {
+    if (e.kind != OptimizerEntryKind.prompt || e.version != version) continue;
+    final line = e.text.trim().split('\n').first.trim();
+    return line.isEmpty ? null : line;
+  }
+  return null;
 }

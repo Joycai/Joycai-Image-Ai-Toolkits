@@ -4190,9 +4190,53 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optResultFeedbackHint => '这张图哪里不符合预期？';
 
   @override
-  String optResultFeedbackHelper(int version) {
-    return '这张结果图会连同反馈一起进入会话，助手在 v$version 基础上继续调整。';
+  String get optFeedbackSatisfied => '满意';
+
+  @override
+  String get optFeedbackUnsatisfied => '不满意';
+
+  @override
+  String get optFeedbackReasonPromptMismatch => '与提示不符';
+
+  @override
+  String get optFeedbackReasonComposition => '构图';
+
+  @override
+  String get optFeedbackReasonColorLight => '色彩 / 光线';
+
+  @override
+  String get optFeedbackReasonDetail => '细节崩坏';
+
+  @override
+  String get optFeedbackReasonStyle => '风格偏离';
+
+  @override
+  String get optFeedbackHintSatisfied => '哪一点做对了？写下来，助手下次会保留这些处理（可选）';
+
+  @override
+  String get optFeedbackHintUnsatisfied => '哪里不符合预期？越具体越好（可选）';
+
+  @override
+  String get optFeedbackRunPromptLabel => '本次运行的提示词';
+
+  @override
+  String get optFeedbackFooterNote => '写入这条提示词的运行记录；助手修改提示词时会参考';
+
+  @override
+  String get optSendFeedback => '发送反馈';
+
+  @override
+  String optFeedbackSendShortcut(String modifier) {
+    return '${modifier}Enter 发送';
   }
+
+  @override
+  String optFeedbackRunToday(String time) {
+    return '今天 $time';
+  }
+
+  @override
+  String get optResultFeedbackSent => '已反馈给助手';
 
   @override
   String get optDistillAction => '总结本次经验';
@@ -8867,9 +8911,53 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optResultFeedbackHint => '這張圖哪裡不符合預期？';
 
   @override
-  String optResultFeedbackHelper(int version) {
-    return '這張結果圖會連同回饋一起進入會話，助手在 v$version 基礎上繼續調整。';
+  String get optFeedbackSatisfied => '滿意';
+
+  @override
+  String get optFeedbackUnsatisfied => '不滿意';
+
+  @override
+  String get optFeedbackReasonPromptMismatch => '與提示不符';
+
+  @override
+  String get optFeedbackReasonComposition => '構圖';
+
+  @override
+  String get optFeedbackReasonColorLight => '色彩 / 光線';
+
+  @override
+  String get optFeedbackReasonDetail => '細節崩壞';
+
+  @override
+  String get optFeedbackReasonStyle => '風格偏離';
+
+  @override
+  String get optFeedbackHintSatisfied => '哪一點做對了？寫下來，助手下次會保留這些處理（可選）';
+
+  @override
+  String get optFeedbackHintUnsatisfied => '哪裡不符合預期？越具體越好（可選）';
+
+  @override
+  String get optFeedbackRunPromptLabel => '本次執行的提示詞';
+
+  @override
+  String get optFeedbackFooterNote => '寫入這條提示詞的執行記錄；助手修改提示詞時會參考';
+
+  @override
+  String get optSendFeedback => '傳送回饋';
+
+  @override
+  String optFeedbackSendShortcut(String modifier) {
+    return '${modifier}Enter 傳送';
   }
+
+  @override
+  String optFeedbackRunToday(String time) {
+    return '今天 $time';
+  }
+
+  @override
+  String get optResultFeedbackSent => '已回饋給助手';
 
   @override
   String get optDistillAction => '總結本次經驗';

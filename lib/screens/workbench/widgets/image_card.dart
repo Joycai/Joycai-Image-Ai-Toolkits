@@ -502,13 +502,13 @@ class _ImageCardState extends State<ImageCard> {
   /// frame budget the glass grades exist to protect.
   Widget _buildHoverActions(BuildContext context, {required bool persistent}) {
     final l10n = AppLocalizations.of(context)!;
-    // The feedback action (`20a`) exists only once the assistant has staged a
-    // prompt version — there is nothing to give feedback *on* before that —
-    // and is withdrawn while a turn is running, so a click cannot land in the
-    // middle of one. Both `promptVersions` and `isRunning` live on the
-    // session, so the button is wrapped in a ListenableBuilder on it: reading
-    // once missed a version that staged while the cursor sat still, and
-    // offered feedback during a live turn.
+    // The feedback action (`20a` / `3a`) exists only on a result with a run
+    // on record — there is nothing to give feedback *on* otherwise — and is
+    // withdrawn while a turn is running, so a click cannot land in the middle
+    // of one. The provenance map lives on the state (a select, like the
+    // badge's) and `isRunning` on the session (a ListenableBuilder): reading
+    // either once missed a version that landed while the cursor sat still,
+    // and offered feedback during a live turn.
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final session = workbenchUIState.optimizerSession;
 
@@ -542,17 +542,24 @@ class _ImageCardState extends State<ImageCard> {
                 onPressed: () => _handleCrop(context),
                 tooltip: l10n.cropAndResize,
               ),
-              ListenableBuilder(
-                listenable: session,
-                builder: (context, _) {
-                  if (!canSendResultFeedback(workbenchUIState)) {
-                    return const SizedBox.shrink();
-                  }
-                  return _buildOverlayButton(
-                    context,
-                    icon: Icons.reply,
-                    onPressed: () => _handleFeedback(context),
-                    tooltip: l10n.optResultFeedbackAction,
+              Builder(
+                builder: (context) {
+                  final hasRun = context.select<WorkbenchUIState, bool>(
+                      (w) => w.resultVersionByPath.containsKey(widget.imageFile.path));
+                  if (!hasRun) return const SizedBox.shrink();
+                  return ListenableBuilder(
+                    listenable: session,
+                    builder: (context, _) {
+                      if (!canSendResultFeedback(workbenchUIState, widget.imageFile.path)) {
+                        return const SizedBox.shrink();
+                      }
+                      return _buildOverlayButton(
+                        context,
+                        icon: Icons.reply,
+                        onPressed: () => _handleFeedback(context),
+                        tooltip: l10n.optResultFeedbackAction,
+                      );
+                    },
                   );
                 },
               ),

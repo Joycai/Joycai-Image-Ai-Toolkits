@@ -4359,9 +4359,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optResultFeedbackHint => 'What about this image misses the mark?';
 
   @override
-  String optResultFeedbackHelper(int version) {
-    return 'This result image joins the conversation with your feedback — the assistant iterates on v$version.';
+  String get optFeedbackSatisfied => 'Satisfied';
+
+  @override
+  String get optFeedbackUnsatisfied => 'Not satisfied';
+
+  @override
+  String get optFeedbackReasonPromptMismatch => 'Doesn\'t match the prompt';
+
+  @override
+  String get optFeedbackReasonComposition => 'Composition';
+
+  @override
+  String get optFeedbackReasonColorLight => 'Color / lighting';
+
+  @override
+  String get optFeedbackReasonDetail => 'Broken details';
+
+  @override
+  String get optFeedbackReasonStyle => 'Style drift';
+
+  @override
+  String get optFeedbackHintSatisfied =>
+      'What worked? Note it and the assistant keeps it next time (optional)';
+
+  @override
+  String get optFeedbackHintUnsatisfied =>
+      'What missed the mark? The more specific the better (optional)';
+
+  @override
+  String get optFeedbackRunPromptLabel => 'Prompt for this run';
+
+  @override
+  String get optFeedbackFooterNote =>
+      'Saved to this prompt\'s run record; the assistant reads it when revising';
+
+  @override
+  String get optSendFeedback => 'Send feedback';
+
+  @override
+  String optFeedbackSendShortcut(String modifier) {
+    return '${modifier}Enter to send';
   }
+
+  @override
+  String optFeedbackRunToday(String time) {
+    return 'Today $time';
+  }
+
+  @override
+  String get optResultFeedbackSent => 'Feedback sent to the assistant';
 
   @override
   String get optDistillAction => 'Distill session lessons';

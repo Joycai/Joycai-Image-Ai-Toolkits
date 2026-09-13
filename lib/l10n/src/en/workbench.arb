@@ -499,14 +499,35 @@
   "optResultFeedbackAction": "Feedback to assistant",
   "optResultFeedbackChatLabel": "Result feedback",
   "optResultFeedbackHint": "What about this image misses the mark?",
-  "optResultFeedbackHelper": "This result image joins the conversation with your feedback — the assistant iterates on v{version}.",
-  "@optResultFeedbackHelper": {
+  "optFeedbackSatisfied": "Satisfied",
+  "optFeedbackUnsatisfied": "Not satisfied",
+  "optFeedbackReasonPromptMismatch": "Doesn't match the prompt",
+  "optFeedbackReasonComposition": "Composition",
+  "optFeedbackReasonColorLight": "Color / lighting",
+  "optFeedbackReasonDetail": "Broken details",
+  "optFeedbackReasonStyle": "Style drift",
+  "optFeedbackHintSatisfied": "What worked? Note it and the assistant keeps it next time (optional)",
+  "optFeedbackHintUnsatisfied": "What missed the mark? The more specific the better (optional)",
+  "optFeedbackRunPromptLabel": "Prompt for this run",
+  "optFeedbackFooterNote": "Saved to this prompt's run record; the assistant reads it when revising",
+  "optSendFeedback": "Send feedback",
+  "optFeedbackSendShortcut": "{modifier}Enter to send",
+  "@optFeedbackSendShortcut": {
     "placeholders": {
-      "version": {
-        "type": "int"
+      "modifier": {
+        "type": "String"
       }
     }
   },
+  "optFeedbackRunToday": "Today {time}",
+  "@optFeedbackRunToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "optResultFeedbackSent": "Feedback sent to the assistant",
   "optDistillAction": "Distill session lessons",
   "optDistillDisabledTooltip": "No prompt versions in this session yet — let the assistant optimize once first",
   "optDistillCounts": "{versions} versions · {feedbacks} feedback",

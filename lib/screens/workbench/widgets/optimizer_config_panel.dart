@@ -21,6 +21,7 @@ import '../../../widgets/app_switch.dart';
 import '../../../widgets/chat_model_selector.dart';
 import '../../../widgets/searchable_picker.dart';
 import 'optimizer_context_card.dart';
+import 'result_feedback_labels.dart';
 
 /// The Prompt Assistant's right column (`A3a 1a`, `A3b 1a`/`1b`/`1d`).
 ///
@@ -498,7 +499,7 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
         if (e.kind == OptimizerEntryKind.prompt)
           (e.kind, e.note ?? l10n.optPromptVersionLabel, e.version)
         else if (e.kind == OptimizerEntryKind.resultFeedback)
-          (e.kind, e.text, e.version),
+          (e.kind, resultFeedbackSummary(l10n, e), e.version),
     ];
     final versionCount = nodes.where((n) => n.$1 == OptimizerEntryKind.prompt).length;
     if (versionCount == 0) return null;

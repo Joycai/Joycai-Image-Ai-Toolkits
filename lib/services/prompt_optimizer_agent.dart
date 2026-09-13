@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
+import '../models/result_feedback.dart';
 import 'assistant_context_usage.dart';
 import 'database_service.dart';
 import 'knowledge_base_service.dart';
@@ -204,11 +205,21 @@ class OptimizerChatEntry {
   /// collapsed "answered" rendering).
   final List<AskUserAnswer>? askAnswers;
 
+  /// For [OptimizerEntryKind.resultFeedback]: the thumbs up/down (`3b`), or
+  /// null for a report written before ratings existed.
+  final bool? feedbackSatisfied;
+
+  /// For [OptimizerEntryKind.resultFeedback]: the reason tags behind a
+  /// thumbs down; empty for a thumbs up or an untagged report.
+  final List<ResultFeedbackReason> feedbackReasons;
+
   OptimizerChatEntry({
     required this.kind,
     required this.text,
     this.version,
     this.note,
+    this.feedbackSatisfied,
+    this.feedbackReasons = const [],
     this.toolName,
     this.editId,
     this.targetPath,
@@ -231,6 +242,8 @@ class OptimizerChatEntry {
         text: text,
         version: version,
         note: note,
+        feedbackSatisfied: feedbackSatisfied,
+        feedbackReasons: feedbackReasons,
         toolName: toolName,
         editId: editId,
         targetPath: targetPath,
@@ -423,12 +436,23 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// per turn, so a path would be the only stable alternative — and paths do
   /// not belong in content shipped to a provider. A same-named collision
   /// merely mislabels the listing metadata, never the feedback text.
+  ///
+  /// [satisfied] and [reasons] (`3b`) ride the JSON header, not the body:
+  /// the body stays the user's own words — possibly none, a rating alone is
+  /// a complete report — and the header is what every reader parses.
   void addResultFeedback({
     required String imageName,
     required int promptVersion,
     required String feedback,
+    bool? satisfied,
+    List<ResultFeedbackReason> reasons = const [],
   }) {
-    final header = jsonEncode({'prompt_version': promptVersion, 'image': imageName});
+    final header = jsonEncode({
+      'prompt_version': promptVersion,
+      'image': imageName,
+      if (satisfied != null) 'rating': satisfied ? 'satisfied' : 'unsatisfied',
+      if (reasons.isNotEmpty) 'reasons': [for (final r in reasons) r.wireId],
+    });
     history.add(LLMMessage(
       role: LLMRole.user,
       content: '${PromptOptimizerAgent.resultFeedbackMarker} $header\n${feedback.trim()}',
@@ -438,6 +462,8 @@ class PromptOptimizerSession extends ChangeNotifier {
       text: feedback.trim(),
       version: promptVersion,
       note: imageName,
+      feedbackSatisfied: satisfied,
+      feedbackReasons: reasons,
     ));
   }
 
@@ -667,6 +693,8 @@ class PromptOptimizerSession extends ChangeNotifier {
                     text: parsed.feedback,
                     version: parsed.promptVersion,
                     note: parsed.imageName,
+                    feedbackSatisfied: parsed.satisfied,
+                    feedbackReasons: parsed.reasons,
                   ));
           } else if (msg.content.startsWith(PromptOptimizerAgent.kbDistillMarker)) {
             entries.add(OptimizerChatEntry(
@@ -881,8 +909,13 @@ class PromptOptimizerAgent {
   /// the header line is not the JSON [PromptOptimizerSession.addResultFeedback]
   /// writes. Shared by transcript restore, the iteration ledger, and the
   /// result-image metadata in `list_reference_images` — one format, one parser.
-  static ({int? promptVersion, String imageName, String feedback})?
-      tryParseResultFeedback(String content) {
+  static ({
+    int? promptVersion,
+    String imageName,
+    String feedback,
+    bool? satisfied,
+    List<ResultFeedbackReason> reasons,
+  })? tryParseResultFeedback(String content) {
     if (!content.startsWith(resultFeedbackMarker)) return null;
     final rest = content.substring(resultFeedbackMarker.length);
     final newline = rest.indexOf('\n');
@@ -896,7 +929,25 @@ class PromptOptimizerAgent {
       final rawVersion = header['prompt_version'];
       final version =
           rawVersion is int ? rawVersion : int.tryParse(rawVersion?.toString() ?? '');
-      return (promptVersion: version, imageName: image, feedback: feedback);
+      // Absent on reports older than the rating (`3b`); an unknown value
+      // reads as unrated rather than as a verdict the user never gave.
+      final satisfied = switch (header['rating']) {
+        'satisfied' => true,
+        'unsatisfied' => false,
+        _ => null,
+      };
+      final rawReasons = header['reasons'];
+      final reasons = <ResultFeedbackReason>[
+        if (rawReasons is List)
+          for (final id in rawReasons) ?ResultFeedbackReason.fromWireId(id.toString()),
+      ];
+      return (
+        promptVersion: version,
+        imageName: image,
+        feedback: feedback,
+        satisfied: satisfied,
+        reasons: reasons,
+      );
     } catch (_) {
       return null;
     }
@@ -3323,7 +3374,11 @@ class PromptOptimizerAgent {
       '\nFeedback rounds: a user message starting with "$resultFeedbackMarker" '
       'reports what happened when the user generated with one of your '
       'submitted prompts. Its JSON header names the prompt version and the '
-      'result image; the text after it is the user\'s critique. The result '
+      'result image, and may carry "rating" ("satisfied" / "unsatisfied") '
+      'and "reasons" (tags such as prompt_mismatch, composition, '
+      'color_light, detail, style); the text after it, when present, is the '
+      'user\'s critique in their own words. A satisfied report means keep '
+      'what that version did; an unsatisfied one asks for a fix. The result '
       'image is in list_reference_images with kind "result" — view it when '
       'the critique concerns something visual, diagnose the gap against the '
       'references and the rules you are working from, and deliver a complete '
