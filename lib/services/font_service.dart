@@ -42,19 +42,39 @@ class DownloadableFont {
 
 /// Downloads, caches and registers on-demand fonts at runtime.
 ///
-/// The two CJK families offered here are ~16 MB each, so bundling them would
+/// The CJK families offered here are 16–21 MB each, so bundling them would
 /// bloat every install. Instead we fetch them from a CDN the first time the
 /// user picks one, cache the `.ttf` files under the app data directory, and
 /// register them with a [FontLoader] so [ThemeData.fontFamily] can resolve
-/// them just like the bundled NotoSansSC.
+/// them. Nothing is bundled; the default is the OS font.
 class FontService {
   FontService._();
   static final FontService instance = FontService._();
 
-  // jsDelivr mirrors of the vendors' open-source, commercial-use-permitted
-  // releases (HarmonyOS Sans / MiSans). Sizes are the authoritative blob
-  // sizes reported by GitHub.
+  // jsDelivr mirrors of open-source, commercial-use-permitted releases.
+  // HarmonyOS Sans / MiSans sizes are the blob sizes reported by GitHub.
+  // Noto Sans SC is Google Fonts' static cut via the pinned
+  // @expo-google-fonts npm package — byte-identical (SHA-256) to the files
+  // the app used to bundle, so switching to download changes no glyph.
   static const Map<String, DownloadableFont> _fonts = {
+    'NotoSansSC': DownloadableFont(
+      key: 'NotoSansSC',
+      displayName: 'Noto Sans SC',
+      assets: [
+        FontAsset(
+          url:
+              'https://cdn.jsdelivr.net/npm/@expo-google-fonts/noto-sans-sc@0.4.3/400Regular/NotoSansSC_400Regular.ttf',
+          filename: 'NotoSansSC-Regular.ttf',
+          approxBytes: 10559284,
+        ),
+        FontAsset(
+          url:
+              'https://cdn.jsdelivr.net/npm/@expo-google-fonts/noto-sans-sc@0.4.3/700Bold/NotoSansSC_700Bold.ttf',
+          filename: 'NotoSansSC-Bold.ttf',
+          approxBytes: 10549020,
+        ),
+      ],
+    ),
     'HarmonyOSSansSC': DownloadableFont(
       key: 'HarmonyOSSansSC',
       displayName: 'HarmonyOS Sans',

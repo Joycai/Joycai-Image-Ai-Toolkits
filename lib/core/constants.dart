@@ -124,7 +124,7 @@ class AppConstants {
   };
 
   // Font selection. [systemFontKey] is a sentinel meaning "use the platform
-  // default font"; every other key is a family name bundled in pubspec.yaml.
+  // default font"; every other key is an on-demand family in FontService.
   // Brand names are intentionally not localized.
   static const String systemFontKey = 'system';
   static const List<({String key, String label})> fontChoices = [

@@ -164,10 +164,10 @@ class AppState extends ChangeNotifier {
   // custom colour is stored as `custom:#RRGGBB` under the same `theme_accent`
   // key and re-derived on load (see `CustomAccent`).
   Color? customThemeSeed;
-  // Font family key. Defaults to the bundled NotoSansSC to preserve the
-  // existing look. The sentinel [AppConstants.systemFontKey] means "use the
-  // platform default", which maps to a null [ThemeData.fontFamily].
-  String fontFamily = 'NotoSansSC';
+  // Font family key. No font is bundled, so the default is the sentinel
+  // [AppConstants.systemFontKey] ("use the platform font"); every other key is
+  // an on-demand family from FontService.
+  String fontFamily = AppConstants.systemFontKey;
 
   /// The value to feed into [ThemeData.fontFamily]. For the "system" choice
   /// this resolves to the platform's installed UI font (e.g. Microsoft YaHei),
@@ -474,9 +474,17 @@ class AppState extends ChangeNotifier {
       themeAccent = savedAccent;
     }
 
-    fontFamily = await _db.getSetting('font_family') ?? 'NotoSansSC';
+    fontFamily = await _db.getSetting('font_family') ?? AppConstants.systemFontKey;
     // Register an on-demand font up front if it was previously downloaded, so
-    // the saved preference renders on launch instead of falling back.
+    // the saved preference renders on launch. A saved family that is not on
+    // disk (NotoSansSC from the releases that bundled it, or a cleared cache)
+    // shows as the system font for this session instead of silently rendering
+    // the engine default while the picker claims otherwise; the stored choice
+    // is left alone, and picking it again offers the download.
+    if (FontService.isDownloadable(fontFamily) &&
+        !await FontService.instance.isDownloaded(fontFamily)) {
+      fontFamily = AppConstants.systemFontKey;
+    }
     await FontService.instance.ensureLoadedIfPresent(fontFamily);
 
     // Load locale
