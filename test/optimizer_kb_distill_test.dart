@@ -3,6 +3,7 @@ import 'package:joycai_image_ai_toolkits/services/assistant_kb_distill.dart';
 import 'package:joycai_image_ai_toolkits/services/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/models/result_feedback.dart';
 
 /// The knowledge-base optimization loop, model-free: the feedback-message
 /// wire format, the derived pending-distill / write-escalation state, and the
@@ -60,6 +61,49 @@ void main() {
       expect(entry.version, 3);
       expect(entry.note, 'gen_42.png');
       expect(entry.text, '手部畸形，光线太平');
+    });
+
+    test('a rated report round-trips its verdict and reason tags', () {
+      final session = kbSession();
+      session.addUserTurn('go');
+      session.addResultFeedback(
+        imageName: 'gen_7.png',
+        promptVersion: 2,
+        feedback: '',
+        satisfied: false,
+        reasons: const [ResultFeedbackReason.composition, ResultFeedbackReason.detail],
+      );
+
+      final parsed = PromptOptimizerAgent.tryParseResultFeedback(session.history.last.content);
+      expect(parsed, isNotNull);
+      expect(parsed!.satisfied, isFalse);
+      expect(parsed.reasons, [ResultFeedbackReason.composition, ResultFeedbackReason.detail]);
+      expect(parsed.feedback, isEmpty, reason: 'a verdict alone is a complete report');
+
+      final entry = session.transcript.last;
+      expect(entry.feedbackSatisfied, isFalse);
+      expect(entry.feedbackReasons, [ResultFeedbackReason.composition, ResultFeedbackReason.detail]);
+
+      final restored = PromptOptimizerSession.fromStored(
+        id: session.id,
+        mode: AssistantMode.knowledgeBase,
+        history: List.of(session.history),
+      );
+      final back = restored.transcript.firstWhere((e) => e.kind == OptimizerEntryKind.resultFeedback);
+      expect(back.feedbackSatisfied, isFalse);
+      expect(back.feedbackReasons, [ResultFeedbackReason.composition, ResultFeedbackReason.detail]);
+    });
+
+    test('a report without a rating, or with an unknown tag, degrades to unrated', () {
+      final legacy = PromptOptimizerAgent.tryParseResultFeedback(
+          '${PromptOptimizerAgent.resultFeedbackMarker} {"prompt_version":1,"image":"a.png"}\ntext');
+      expect(legacy!.satisfied, isNull);
+      expect(legacy.reasons, isEmpty);
+
+      final odd = PromptOptimizerAgent.tryParseResultFeedback(
+          '${PromptOptimizerAgent.resultFeedbackMarker} {"prompt_version":1,"image":"a.png","rating":"meh","reasons":["composition","future_tag"]}\n');
+      expect(odd!.satisfied, isNull);
+      expect(odd.reasons, [ResultFeedbackReason.composition]);
     });
 
     test('a non-marker or malformed-header message parses to null', () {

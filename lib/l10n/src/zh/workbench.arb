@@ -499,14 +499,35 @@
   "optResultFeedbackAction": "反馈给助手",
   "optResultFeedbackChatLabel": "结果图反馈",
   "optResultFeedbackHint": "这张图哪里不符合预期？",
-  "optResultFeedbackHelper": "这张结果图会连同反馈一起进入会话，助手在 v{version} 基础上继续调整。",
-  "@optResultFeedbackHelper": {
+  "optFeedbackSatisfied": "满意",
+  "optFeedbackUnsatisfied": "不满意",
+  "optFeedbackReasonPromptMismatch": "与提示不符",
+  "optFeedbackReasonComposition": "构图",
+  "optFeedbackReasonColorLight": "色彩 / 光线",
+  "optFeedbackReasonDetail": "细节崩坏",
+  "optFeedbackReasonStyle": "风格偏离",
+  "optFeedbackHintSatisfied": "哪一点做对了？写下来，助手下次会保留这些处理（可选）",
+  "optFeedbackHintUnsatisfied": "哪里不符合预期？越具体越好（可选）",
+  "optFeedbackRunPromptLabel": "本次运行的提示词",
+  "optFeedbackFooterNote": "写入这条提示词的运行记录；助手修改提示词时会参考",
+  "optSendFeedback": "发送反馈",
+  "optFeedbackSendShortcut": "{modifier}Enter 发送",
+  "@optFeedbackSendShortcut": {
     "placeholders": {
-      "version": {
-        "type": "int"
+      "modifier": {
+        "type": "String"
       }
     }
   },
+  "optFeedbackRunToday": "今天 {time}",
+  "@optFeedbackRunToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "optResultFeedbackSent": "已反馈给助手",
   "optDistillAction": "总结本次经验",
   "optDistillDisabledTooltip": "本次会话还没有 prompt 版本，先让助手优化一次",
   "optDistillCounts": "{versions} 个版本 · {feedbacks} 条反馈",

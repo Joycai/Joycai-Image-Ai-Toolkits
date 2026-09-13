@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../models/app_image.dart';
+import '../models/result_feedback.dart';
 import '../models/task_item.dart';
 import '../services/assistant_kb_distill.dart';
 import '../services/prompt_optimizer_agent.dart';
@@ -253,16 +254,16 @@ class WorkbenchUIState extends ChangeNotifier {
 
   /// Feeds a generated result back to the assistant: the image joins the
   /// reference list (surfaced to the model as kind "result") and the user's
-  /// critique is appended as a feedback turn bound to [promptVersion]
-  /// (defaulting to the latest staged version — the one the workbench
-  /// generated with, in the closed-loop flow).
+  /// verdict (`3b`: thumbs up/down, reason tags, an optional note) is
+  /// appended as a feedback turn bound to [promptVersion] (defaulting to the
+  /// latest staged version — the one the workbench generated with, in the
+  /// closed-loop flow).
   ///
-  /// Returns false when there is no prompt version to give feedback on or
-  /// the critique is empty. The caller still enqueues the agent turn, exactly
-  /// as after a typed message.
+  /// Returns false when there is no prompt version to give feedback on. The
+  /// caller still enqueues the agent turn, exactly as after a typed message.
   bool sendResultFeedback(
     AppImage image, {
-    required String feedback,
+    required ResultFeedback feedback,
     int? promptVersion,
   }) {
     final session = optimizerSession;
@@ -273,7 +274,7 @@ class WorkbenchUIState extends ChangeNotifier {
     // contract as _handleAskUserAnswer / _handleOptimizerRetry.
     if (session.isRunning) return false;
     final version = promptVersion ?? session.promptVersions;
-    if (version < 1 || feedback.trim().isEmpty) return false;
+    if (version < 1) return false;
     // A feedback click while a question card is pending answers it the same
     // way free text does (mirrors _handleOptimizerSend).
     final pendingAsk = session.pendingAskUser;
@@ -287,7 +288,9 @@ class WorkbenchUIState extends ChangeNotifier {
     session.addResultFeedback(
       imageName: image.name,
       promptVersion: version,
-      feedback: feedback.trim(),
+      feedback: feedback.note,
+      satisfied: feedback.satisfied,
+      reasons: feedback.satisfied ? const [] : feedback.reasons,
     );
     _assistantTurnRequested = true;
     notifyListeners();
@@ -322,6 +325,32 @@ class WorkbenchUIState extends ChangeNotifier {
     if (optimizerSession.id != sessionId) return;
     resultVersionByPath = versions;
     notifyListeners();
+  }
+
+  /// The generation task that produced the result at [path] in the live
+  /// session, or null when none is on record (no database, or a picture
+  /// that came from elsewhere). The feedback dialog's heading (`3b`) names
+  /// the run from it — model and time — beside the version.
+  ///
+  /// Read from the tasks table on demand rather than cached beside
+  /// [resultVersionByPath]: it is one row per dialog open, and keeping a
+  /// second projection in step would cost more than the query.
+  Future<TaskItem?> resultTaskForPath(String path) async {
+    if (!resultVersionByPath.containsKey(path)) return null;
+    final sessionId = optimizerSession.id;
+    try {
+      final rows = await TaskRepository().getTasksForAssistantSession(sessionId);
+      TaskItem? found;
+      for (final row in rows) {
+        final task = TaskItem.fromMap(row);
+        if (task.parameters[PromptProvenance.sessionParamKey] != sessionId) continue;
+        // Later rows win, as they do in resultVersionsFromTasks.
+        if (task.resultPaths.contains(path)) found = task;
+      }
+      return found;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Records one freshly generated result, from the task-event stream.

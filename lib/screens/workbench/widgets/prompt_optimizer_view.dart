@@ -17,6 +17,7 @@ import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_breathing_dot.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_snackbar.dart';
+import 'result_feedback_labels.dart';
 
 /// One row of the transcript as drawn, which is not one-to-one with
 /// [OptimizerChatEntry]: a run of consecutive tool calls collapses into a
@@ -1599,14 +1600,42 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                           letterSpacing: AppType.trackedLabelSpacing,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      SelectableText(
-                        entry.text,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurface,
-                          height: AppType.looseHeight,
+                      // The verdict (`3b`) as a filled chip, its reason tags
+                      // as quiet ones; then the note, when there is one.
+                      if (entry.feedbackSatisfied case final satisfied?) ...[
+                        const SizedBox(height: 5),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            _feedbackChip(
+                              resultFeedbackVerdictLabel(l10n, satisfied),
+                              icon: satisfied ? Icons.thumb_up : Icons.thumb_down,
+                              fill: colorScheme.accentTint,
+                              ink: colorScheme.accentText,
+                              textTheme: textTheme,
+                            ),
+                            for (final reason in entry.feedbackReasons)
+                              _feedbackChip(
+                                resultFeedbackReasonLabel(l10n, reason),
+                                fill: colorScheme.surfaceContainerHigh,
+                                ink: colorScheme.onSurfaceVariant,
+                                textTheme: textTheme,
+                              ),
+                          ],
                         ),
-                      ),
+                      ],
+                      if (entry.text.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        SelectableText(
+                          entry.text,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface,
+                            height: AppType.looseHeight,
+                          ),
+                        ),
+                      ],
                       if (imageName != null || entry.version != null) ...[
                         const SizedBox(height: 4),
                         // Separate texts, not one joined string: the file name
@@ -1633,6 +1662,41 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// A 22px pill on the feedback card: the verdict in the accent tint, a
+  /// reason tag on the high container.
+  Widget _feedbackChip(
+    String label, {
+    IconData? icon,
+    required Color fill,
+    required Color ink,
+    required TextTheme textTheme,
+  }) {
+    return Container(
+      height: 22,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: AppSize.iconSm, color: ink),
+            const SizedBox(width: AppSpace.s4),
+          ],
+          Text(
+            label,
+            style: textTheme.labelSmall?.copyWith(
+              color: ink,
+              fontWeight: icon != null ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
         ],

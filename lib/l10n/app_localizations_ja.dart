@@ -4232,9 +4232,54 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optResultFeedbackHint => 'この画像のどこが期待と違いますか？';
 
   @override
-  String optResultFeedbackHelper(int version) {
-    return 'この結果画像は報告と一緒に会話へ送られ、アシスタントが v$version を基に調整を続けます。';
+  String get optFeedbackSatisfied => '満足';
+
+  @override
+  String get optFeedbackUnsatisfied => '不満';
+
+  @override
+  String get optFeedbackReasonPromptMismatch => 'プロンプトと不一致';
+
+  @override
+  String get optFeedbackReasonComposition => '構図';
+
+  @override
+  String get optFeedbackReasonColorLight => '色彩 / 光';
+
+  @override
+  String get optFeedbackReasonDetail => 'ディテール崩れ';
+
+  @override
+  String get optFeedbackReasonStyle => 'スタイルのずれ';
+
+  @override
+  String get optFeedbackHintSatisfied =>
+      'どこが良かったか書いておくと、アシスタントは次回もその処理を保ちます（任意）';
+
+  @override
+  String get optFeedbackHintUnsatisfied => 'どこが期待と違いましたか？具体的なほど助かります（任意）';
+
+  @override
+  String get optFeedbackRunPromptLabel => 'この実行のプロンプト';
+
+  @override
+  String get optFeedbackFooterNote => 'このプロンプトの実行記録に保存され、アシスタントが修正時に参照します';
+
+  @override
+  String get optSendFeedback => 'フィードバックを送信';
+
+  @override
+  String optFeedbackSendShortcut(String modifier) {
+    return '${modifier}Enter で送信';
   }
+
+  @override
+  String optFeedbackRunToday(String time) {
+    return '今日 $time';
+  }
+
+  @override
+  String get optResultFeedbackSent => 'アシスタントにフィードバックを送信しました';
 
   @override
   String get optDistillAction => '今回の知見をまとめる';

@@ -25,11 +25,12 @@ const double kImageCardMenuWidth = 240;
 /// The old menu was eighteen equal rows and five rules, some 550 tall, so a
 /// right-click in the lower half of an 860 window flipped it. This one is 240
 /// wide and eight rows: the four high-frequency actions (preview · mask ·
-/// crop · assistant, the card's hover strip one for one) are a block of four
-/// cells across the top; the four mutually exclusive 「设为 ×」 assignments are
-/// a 2×2 grid under a 「设为」 heading; rename · copy name · reveal fold into
-/// 「文件 ▸」 and save · share into 「导出 ▸」; the destructive rows stay at the
-/// bottom, delete in the error ink.
+/// crop · assistant) are a block of four cells across the top; the four
+/// mutually exclusive 「设为 ×」 assignments are a 2×2 grid under a 「设为」
+/// heading; 「反馈给助手」 (`3a`) closes the selection group, greyed on a
+/// picture without a run to judge;
+/// rename · copy name · reveal fold into 「文件 ▸」 and save · share into
+/// 「导出 ▸」; the destructive rows stay at the bottom, delete in the error ink.
 ///
 /// With several cards selected the quick block stays and the 「设为」 grid goes
 /// (an assignment takes one picture), and the share row carries the count.
@@ -147,6 +148,20 @@ Future<void> showImageCardContextMenu(
           appState.setWorkbenchTab(5); // Video Generation
         },
       ),
+      // `3a`: the verdict on one run, distinct from the quick block's
+      // 「助手」 (which hands the picture to the conversation). Greyed on an
+      // original or an import — nothing to judge — and gone under a
+      // multi-selection, since a verdict is about one picture.
+      if (!multi)
+        AppGlassMenuItem(
+          icon: Icons.rate_review_outlined,
+          label: l10n.optResultFeedbackAction,
+          enabled: canSendResultFeedback(workbenchUIState, imageFile.path),
+          onSelected: () {
+            if (!context.mounted) return;
+            sendResultFeedbackFromGallery(context, imageFile);
+          },
+        ),
       const AppGlassMenuDivider(),
     ],
     AppGlassMenuItem(

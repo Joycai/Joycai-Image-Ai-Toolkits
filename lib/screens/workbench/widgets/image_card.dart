@@ -19,9 +19,9 @@ import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/drag/app_drag_follower.dart';
 import '../../../widgets/drag/app_drag_session.dart';
 import '../../../widgets/glass/app_glass.dart';
+import 'gallery_file_actions.dart';
 import 'image_card_context_menu.dart';
 import 'preview/media_preview_dialog.dart' show previewHeroTag;
-import 'result_feedback_dialog.dart';
 
 /// The play glyph laid straight on a video frame (`A1 · 1a`:
 /// `rgba(255,255,255,.85)`).
@@ -502,15 +502,15 @@ class _ImageCardState extends State<ImageCard> {
   /// frame budget the glass grades exist to protect.
   Widget _buildHoverActions(BuildContext context, {required bool persistent}) {
     final l10n = AppLocalizations.of(context)!;
-    // The feedback action (`20a`) exists only once the assistant has staged a
-    // prompt version — there is nothing to give feedback *on* before that —
-    // and is withdrawn while a turn is running, so a click cannot land in the
-    // middle of one. Both `promptVersions` and `isRunning` live on the
-    // session, so the button is wrapped in a ListenableBuilder on it: reading
-    // once missed a version that staged while the cursor sat still, and
-    // offered feedback during a live turn.
-    final session =
-        Provider.of<WorkbenchUIState>(context, listen: false).optimizerSession;
+    // The feedback action (`20a` / `3a`) exists only on a result with a run
+    // on record — there is nothing to give feedback *on* otherwise — and is
+    // withdrawn while a turn is running, so a click cannot land in the middle
+    // of one. The provenance map lives on the state (a select, like the
+    // badge's) and `isRunning` on the session (a ListenableBuilder): reading
+    // either once missed a version that landed while the cursor sat still,
+    // and offered feedback during a live turn.
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final session = workbenchUIState.optimizerSession;
 
     Widget strip = AppGlass(
       grade: GlassGrade.lens,
@@ -542,17 +542,24 @@ class _ImageCardState extends State<ImageCard> {
                 onPressed: () => _handleCrop(context),
                 tooltip: l10n.cropAndResize,
               ),
-              ListenableBuilder(
-                listenable: session,
-                builder: (context, _) {
-                  if (session.promptVersions <= 0 || session.isRunning) {
-                    return const SizedBox.shrink();
-                  }
-                  return _buildOverlayButton(
-                    context,
-                    icon: Icons.reply,
-                    onPressed: () => _handleFeedback(context),
-                    tooltip: l10n.optResultFeedbackAction,
+              Builder(
+                builder: (context) {
+                  final hasRun = context.select<WorkbenchUIState, bool>(
+                      (w) => w.resultVersionByPath.containsKey(widget.imageFile.path));
+                  if (!hasRun) return const SizedBox.shrink();
+                  return ListenableBuilder(
+                    listenable: session,
+                    builder: (context, _) {
+                      if (!canSendResultFeedback(workbenchUIState, widget.imageFile.path)) {
+                        return const SizedBox.shrink();
+                      }
+                      return _buildOverlayButton(
+                        context,
+                        icon: Icons.reply,
+                        onPressed: () => _handleFeedback(context),
+                        tooltip: l10n.optResultFeedbackAction,
+                      );
+                    },
                   );
                 },
               ),
@@ -573,34 +580,8 @@ class _ImageCardState extends State<ImageCard> {
     return FittedBox(fit: BoxFit.scaleDown, child: strip);
   }
 
-  /// Collects the critique, stages it on the session (which latches an
-  /// assistant-turn request the workbench screen consumes), and jumps to the
-  /// assistant tab so the user lands where the conversation continues.
-  Future<void> _handleFeedback(BuildContext context) async {
-    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    final appState = Provider.of<AppState>(context, listen: false);
-    // Provenance first, latest version as the fallback: an image the task
-    // record ties to v2 gives feedback on v2 even after v3 was staged —
-    // that binding is the whole reason the tag exists.
-    final version =
-        workbenchUIState.resultVersionByPath[widget.imageFile.path] ??
-            workbenchUIState.optimizerSession.promptVersions;
-    if (version < 1) return;
-    final feedback = await showResultFeedbackDialog(
-      context,
-      image: widget.imageFile,
-      promptVersion: version,
-    );
-    if (feedback == null || feedback.isEmpty) return;
-    if (!workbenchUIState.sendResultFeedback(
-      widget.imageFile,
-      feedback: feedback,
-      promptVersion: version,
-    )) {
-      return;
-    }
-    appState.setWorkbenchTab(4); // Prompt assistant
-  }
+  Future<void> _handleFeedback(BuildContext context) =>
+      sendResultFeedbackFromGallery(context, widget.imageFile);
 
   /// A 16px glyph in a 26×26 hit box (`ms s` in a 26px span).
   ///
