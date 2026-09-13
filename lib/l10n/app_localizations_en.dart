@@ -3662,6 +3662,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qualityHigh => 'High';
 
   @override
+  String get qualityXhigh => 'Extra high';
+
+  @override
+  String get qualityMax => 'Max';
+
+  @override
   String get mjVersion => 'Version';
 
   @override

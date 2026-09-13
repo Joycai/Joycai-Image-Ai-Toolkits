@@ -346,8 +346,12 @@ class ModelCapabilities {
 
     // gpt-image-2 shares the OpenAI image transport with gpt-image-1 but accepts
     // a much larger size set (2K / 4K), so it resolves to its own table.
-    if (family == ModelFamily.openaiImage && id.contains('gpt-image-2')) {
-      return _openaiImage2;
+    // gpt-image-2.5 (flare / sunburst) keeps the 2 size rules and adds two
+    // quality rungs — its id also contains `gpt-image-2`, so it must be
+    // checked first.
+    if (family == ModelFamily.openaiImage) {
+      if (id.contains('gpt-image-2.5')) return _openaiImage25;
+      if (id.contains('gpt-image-2')) return _openaiImage2;
     }
 
     // Nano Banana variants share the gemini-*-image transport but expose wider
@@ -652,7 +656,9 @@ class ModelCapabilities {
     ],
   );
 
-  /// Quality control shared by every native OpenAI image model.
+  /// Quality control shared by the native OpenAI image models up to
+  /// gpt-image-2. OpenAI documents these as capped at `high`; the taller
+  /// ladder is [_openaiQuality25Param].
   static const _openaiQualityParam = ParamSpec(
     key: 'quality',
     labelKey: 'quality',
@@ -663,6 +669,24 @@ class ModelCapabilities {
       ParamOption('low'),
       ParamOption('medium'),
       ParamOption('high'),
+    ],
+  );
+
+  /// gpt-image-2.5's quality ladder: the 2.5 generation (`-flare` /
+  /// `-sunburst`) adds `xhigh` and `max` above `high`. Kept apart from
+  /// [_openaiQualityParam] because earlier models reject the two new rungs.
+  static const _openaiQuality25Param = ParamSpec(
+    key: 'quality',
+    labelKey: 'quality',
+    control: ParamControl.segmented,
+    defaultValue: 'auto',
+    options: [
+      ParamOption('auto'),
+      ParamOption('low'),
+      ParamOption('medium'),
+      ParamOption('high'),
+      ParamOption('xhigh'),
+      ParamOption('max'),
     ],
   );
 
@@ -1102,6 +1126,35 @@ class ModelCapabilities {
         customValidator: isValidOpenAIImage2Size,
       ),
       _openaiQualityParam,
+    ],
+  );
+
+  /// Native OpenAI image v2.5 (`gpt-image-2.5-flare` / `-sunburst`,
+  /// 2026-09-08). Same endpoints, size rules and reference-image cap as
+  /// [_openaiImage2]; the only visible difference is the quality ladder,
+  /// which gains `xhigh` and `max`.
+  static const _openaiImage25 = ModelCapabilities(
+    isImageGenerator: true,
+    maxReferenceImages: 16,
+    imageParams: [
+      ParamSpec(
+        key: 'imageSize',
+        labelKey: 'resolution',
+        control: ParamControl.customSize,
+        defaultValue: 'auto',
+        options: [
+          ParamOption('auto'),
+          ParamOption('1024x1024'),
+          ParamOption('1536x1024'),
+          ParamOption('1024x1536'),
+          ParamOption('2048x2048'),
+          ParamOption('2048x1152'),
+          ParamOption('3840x2160'),
+          ParamOption('2160x3840'),
+        ],
+        customValidator: isValidOpenAIImage2Size,
+      ),
+      _openaiQuality25Param,
     ],
   );
 

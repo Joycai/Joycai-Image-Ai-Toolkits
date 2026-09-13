@@ -1815,6 +1815,8 @@
   "qualityLow": "低",
   "qualityMedium": "中",
   "qualityHigh": "高",
+  "qualityXhigh": "超高",
+  "qualityMax": "最高",
   "mjVersion": "バージョン",
   "mjMode": "モード",
   "mjStylize": "スタイル化",

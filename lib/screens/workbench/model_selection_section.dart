@@ -437,6 +437,10 @@ class ModelSelectionSection extends StatelessWidget {
           return l10n.qualityMedium;
         case 'high':
           return l10n.qualityHigh;
+        case 'xhigh':
+          return l10n.qualityXhigh;
+        case 'max':
+          return l10n.qualityMax;
       }
     }
     return value;
