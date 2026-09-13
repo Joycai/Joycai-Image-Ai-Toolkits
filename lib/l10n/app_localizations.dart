@@ -1283,6 +1283,12 @@ abstract class AppLocalizations {
   /// **'{count} undecided'**
   String conflictUndecidedCount(int count);
 
+  /// No description provided for @browserGroupByFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Group by folder'**
+  String get browserGroupByFolder;
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
@@ -1816,6 +1822,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Drag onto a folder to move · hold ⌥ to copy'**
   String get browserDragFootnoteMac;
+
+  /// No description provided for @folderOutlineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder outline'**
+  String get folderOutlineLabel;
+
+  /// No description provided for @folderOutlineShowOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Show only this folder'**
+  String get folderOutlineShowOnly;
+
+  /// No description provided for @folderOutlineRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from view'**
+  String get folderOutlineRemove;
+
+  /// No description provided for @folderOutlineReveal.
+  ///
+  /// In en, this message translates to:
+  /// **'Reveal in folder tree'**
+  String get folderOutlineReveal;
+
+  /// No description provided for @folderOutlineReauthorize.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-authorize'**
+  String get folderOutlineReauthorize;
+
+  /// No description provided for @folderOutlineFilesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} files'**
+  String folderOutlineFilesCount(int count);
 
   /// No description provided for @downloader.
   ///

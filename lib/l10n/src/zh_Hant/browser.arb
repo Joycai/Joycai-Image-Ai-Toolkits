@@ -592,5 +592,6 @@
   "renameBatchFailedTitle": "第 {batch} 批失敗",
   "conflictIncoming": "寫入",
   "conflictAlreadyThere": "已存在",
-  "conflictUndecidedCount": "{count} 項未決定"
+  "conflictUndecidedCount": "{count} 項未決定",
+  "browserGroupByFolder": "按資料夾分組"
 }

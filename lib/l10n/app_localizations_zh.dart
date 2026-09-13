@@ -717,6 +717,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get browserGroupByFolder => '按文件夹分组';
+
+  @override
   String get appTitle => 'Joycai Image AI 工具集';
 
   @override
@@ -1012,6 +1015,26 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get browserDragFootnoteMac => '拖到文件夹上 = 移动 · 按住 ⌥ 改为复制';
+
+  @override
+  String get folderOutlineLabel => '目录导航';
+
+  @override
+  String get folderOutlineShowOnly => '只看这个文件夹';
+
+  @override
+  String get folderOutlineRemove => '从视图移除';
+
+  @override
+  String get folderOutlineReveal => '在目录树中定位';
+
+  @override
+  String get folderOutlineReauthorize => '重新授权';
+
+  @override
+  String folderOutlineFilesCount(int count) {
+    return '$count 个文件';
+  }
 
   @override
   String get downloader => '下载器';
@@ -5124,6 +5147,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
+  String get browserGroupByFolder => '按資料夾分組';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override
@@ -5419,6 +5445,26 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get browserDragFootnoteMac => '拖到資料夾上 = 移動 · 按住 ⌥ 改為複製';
+
+  @override
+  String get folderOutlineLabel => '目錄導覽';
+
+  @override
+  String get folderOutlineShowOnly => '只看這個資料夾';
+
+  @override
+  String get folderOutlineRemove => '從檢視移除';
+
+  @override
+  String get folderOutlineReveal => '在目錄樹中定位';
+
+  @override
+  String get folderOutlineReauthorize => '重新授權';
+
+  @override
+  String folderOutlineFilesCount(int count) {
+    return '$count 個檔案';
+  }
 
   @override
   String get downloader => '下載器';

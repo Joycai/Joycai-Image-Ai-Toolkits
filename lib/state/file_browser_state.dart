@@ -20,11 +20,35 @@ enum BrowserSortField { name, date, type }
 /// it open. `(path: null, …)` means nothing is owed.
 typedef FolderFlash = ({String? path, bool expanded});
 
+/// One folder's run of files inside [FileBrowserState.filteredFiles]: the
+/// folder, where its run starts, and how long it is.
+typedef FolderSection = ({String path, int start, int count});
+
 class FileBrowserState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
 
   List<BrowserFile> allFiles = [];
   List<BrowserFile> filteredFiles = [];
+
+  /// Whether a listing of several folders is laid out folder by folder.
+  ///
+  /// With it off, [filteredFiles] is one run sorted by [sortField] across
+  /// every active folder, so the folders interleave and "jump to folder b"
+  /// has no target. With it on and more than one folder active, the list is
+  /// sorted by folder first and by [sortField] within each — still one flat
+  /// list, because Shift-click ranges and select-all read its order — and
+  /// [folderSections] says where each folder's run is.
+  bool groupByFolder = true;
+
+  /// The folder runs of [filteredFiles], in list order; empty unless the
+  /// listing [isGrouped]. A fresh list on every recompute, like every other
+  /// list here — identity is what a `select` compares.
+  List<FolderSection> folderSections = const [];
+
+  /// Whether [filteredFiles] is currently folder-ordered: grouping is on and
+  /// more than one folder is active. A single folder never groups, so a
+  /// listing that never needed headers never gets them.
+  bool get isGrouped => groupByFolder && activeDirectories.length > 1;
   Set<BrowserFile> get selectedFiles => _selectedFiles;
   Set<BrowserFile> _selectedFiles = const {};
 
@@ -103,6 +127,11 @@ class FileBrowserState extends ChangeNotifier {
     final savedSortAsc = await _db.getSetting('browser_sort_ascending');
     if (savedSortAsc != null) {
       sortAscending = savedSortAsc == 'true';
+    }
+
+    final savedGroup = await _db.getSetting('browser_group_by_folder');
+    if (savedGroup != null) {
+      groupByFolder = savedGroup == 'true';
     }
 
     // Load browser-specific root directories
@@ -383,6 +412,41 @@ class FileBrowserState extends ChangeNotifier {
     _applyFilterAndSort();
   }
 
+  void setGroupByFolder(bool grouped) {
+    if (groupByFolder == grouped) return;
+    groupByFolder = grouped;
+    _db.saveSetting('browser_group_by_folder', grouped.toString());
+    _applyFilterAndSort();
+  }
+
+  /// Sort order within a folder (or across all of them when not grouped):
+  /// the user's field and direction.
+  int _compareFiles(BrowserFile a, BrowserFile b) {
+    int cmp;
+    switch (sortField) {
+      case BrowserSortField.name:
+        cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        break;
+      case BrowserSortField.date:
+        cmp = a.modified.compareTo(b.modified);
+        break;
+      case BrowserSortField.type:
+        cmp = a.category.index.compareTo(b.category.index);
+        if (cmp == 0) {
+          cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        }
+        break;
+    }
+    return sortAscending ? cmp : -cmp;
+  }
+
+  /// Folder order when grouped: by path, case-insensitively — the order the
+  /// gallery lists its sources in, and the order the tree shows siblings.
+  /// Not the user's sort direction: flipping "date descending" should reverse
+  /// the files, not shuffle which folder comes first.
+  static int _compareFolders(String a, String b) =>
+      a.toLowerCase().compareTo(b.toLowerCase());
+
   void _applyFilterAndSort() {
     if (currentFilter == FileCategory.all) {
       filteredFiles = List.from(allFiles);
@@ -399,25 +463,30 @@ class FileBrowserState extends ChangeNotifier {
           .toList();
     }
 
-    // Apply sorting
-    filteredFiles.sort((a, b) {
-      int cmp;
-      switch (sortField) {
-        case BrowserSortField.name:
-          cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
-          break;
-        case BrowserSortField.date:
-          cmp = a.modified.compareTo(b.modified);
-          break;
-        case BrowserSortField.type:
-          cmp = a.category.index.compareTo(b.category.index);
-          if (cmp == 0) {
-            cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
-          }
-          break;
+    if (isGrouped) {
+      // The scan is not recursive, so a file's folder is its parent — the
+      // same key the gallery groups on. Folder first, then the user's order.
+      final folderOf = {for (final f in filteredFiles) f.path: p.dirname(f.path)};
+      filteredFiles.sort((a, b) {
+        final cmp = _compareFolders(folderOf[a.path]!, folderOf[b.path]!);
+        return cmp != 0 ? cmp : _compareFiles(a, b);
+      });
+      final sections = <FolderSection>[];
+      for (var i = 0; i < filteredFiles.length; i++) {
+        final folder = folderOf[filteredFiles[i].path]!;
+        if (sections.isEmpty || sections.last.path != folder) {
+          sections.add((path: folder, start: i, count: 1));
+        } else {
+          final last = sections.last;
+          sections[sections.length - 1] =
+              (path: last.path, start: last.start, count: last.count + 1);
+        }
       }
-      return sortAscending ? cmp : -cmp;
-    });
+      folderSections = sections;
+    } else {
+      filteredFiles.sort(_compareFiles);
+      folderSections = const [];
+    }
 
     // Cleanup selection
     final Set<String> livePaths = {for (final f in allFiles) f.path};

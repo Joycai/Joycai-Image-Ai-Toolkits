@@ -592,5 +592,6 @@
   "renameBatchFailedTitle": "バッチ {batch} が失敗しました",
   "conflictIncoming": "移動元",
   "conflictAlreadyThere": "既存",
-  "conflictUndecidedCount": "未決定 {count} 件"
+  "conflictUndecidedCount": "未決定 {count} 件",
+  "browserGroupByFolder": "フォルダーごとにグループ化"
 }

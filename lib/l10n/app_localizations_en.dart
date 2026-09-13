@@ -727,6 +727,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get browserGroupByFolder => 'Group by folder';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override
@@ -1043,6 +1046,26 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get browserDragFootnoteMac =>
       'Drag onto a folder to move · hold ⌥ to copy';
+
+  @override
+  String get folderOutlineLabel => 'Folder outline';
+
+  @override
+  String get folderOutlineShowOnly => 'Show only this folder';
+
+  @override
+  String get folderOutlineRemove => 'Remove from view';
+
+  @override
+  String get folderOutlineReveal => 'Reveal in folder tree';
+
+  @override
+  String get folderOutlineReauthorize => 'Re-authorize';
+
+  @override
+  String folderOutlineFilesCount(int count) {
+    return '$count files';
+  }
 
   @override
   String get downloader => 'Downloader';

@@ -12,6 +12,7 @@ import '../core/thumbnail_decode.dart';
 import '../models/app_image.dart';
 import '../services/database_service.dart';
 import '../services/file_permission_service.dart';
+import 'file_browser_state.dart' show FolderFlash;
 
 /// Top-level function for background disk scanning to keep UI smooth.
 ///
@@ -201,6 +202,24 @@ class GalleryState extends ChangeNotifier {
   /// instead; [refreshCounter] stays for the one-shot reads inside this file.
   final ValueNotifier<int> refreshTick = ValueNotifier<int>(0);
   int get refreshCounter => refreshTick.value;
+
+  /// The one row the source tree owes a pulse, on its own notifier for the
+  /// same reason as [refreshTick]. Same shape as the browser's
+  /// `FileBrowserState.flashCue`, so the tree rows can listen to either.
+  final ValueNotifier<FolderFlash> flashCue =
+      ValueNotifier<FolderFlash>((path: null, expanded: false));
+  Timer? _flashTimer;
+
+  /// Asks the source tree to open to [path] and pulse its row — the folder
+  /// outline's "reveal in tree".
+  void flash(String path, {bool expand = false}) {
+    _flashTimer?.cancel();
+    flashCue.value = (path: path, expanded: expand);
+    _flashTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (!_disposed) flashCue.value = (path: null, expanded: false);
+    });
+  }
+
   int _sourceScanGeneration = 0;
   int _processedScanGeneration = 0;
   int _folderScanGeneration = 0;
@@ -227,7 +246,9 @@ class GalleryState extends ChangeNotifier {
     _outputWatcher?.cancel();
     _sourceScanTimer?.cancel();
     _outputScanTimer?.cancel();
+    _flashTimer?.cancel();
     refreshTick.dispose();
+    flashCue.dispose();
     super.dispose();
   }
 

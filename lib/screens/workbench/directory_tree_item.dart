@@ -214,17 +214,17 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     // listening `Provider.of` here put every row of the tree on all of the
     // browser's traffic — its selection, its scans, its size slider — to read
     // one cue that names at most one row.
-    if (widget.useFileBrowserState) {
-      final cue = Provider.of<FileBrowserState>(context, listen: false).flashCue;
-      if (!identical(cue, _flashCue)) {
-        _flashCue?.removeListener(_onFlash);
-        _flashCue = cue..addListener(_onFlash);
-        // Read what is already there. A row created by the very action that
-        // set the cue — a new folder, a rename — mounts after it fired, so a
-        // listener alone would never hear its own pulse. A build follows
-        // this, so nothing needs marking dirty.
-        _applyFlash(cue.value, notify: false);
-      }
+    final cue = widget.useFileBrowserState
+        ? Provider.of<FileBrowserState>(context, listen: false).flashCue
+        : Provider.of<GalleryState>(context, listen: false).flashCue;
+    if (!identical(cue, _flashCue)) {
+      _flashCue?.removeListener(_onFlash);
+      _flashCue = cue..addListener(_onFlash);
+      // Read what is already there. A row created by the very action that
+      // set the cue — a new folder, a rename — mounts after it fired, so a
+      // listener alone would never hear its own pulse. A build follows
+      // this, so nothing needs marking dirty.
+      _applyFlash(cue.value, notify: false);
     }
   }
 

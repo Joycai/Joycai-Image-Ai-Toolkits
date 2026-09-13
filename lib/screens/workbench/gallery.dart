@@ -5,7 +5,6 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
@@ -18,6 +17,11 @@ import 'widgets/image_card.dart';
 import 'widgets/preview/media_preview_dialog.dart';
 import 'widgets/workbench_glass_toolbar.dart';
 import 'workbench_layout.dart';
+import '../../core/folder_outline_geometry.dart';
+import '../../core/folder_outline_labels.dart';
+import '../../core/folder_outline_spy.dart';
+import '../../widgets/folder_group_header.dart';
+import '../../widgets/folder_outline_bar.dart';
 
 /// Everything the grid reads out of [GalleryState], gathered so the selector
 /// in `build` can compare it in one go.
@@ -91,10 +95,61 @@ class _GalleryState extends State<Gallery> {
   /// Grid gutter and inset (`A1` spec: 卡 gap 10).
   static const double _gap = AppSpace.s10;
 
+  /// The grid's scroll position and the folder outline that follows it
+  /// (`A1b`). The spy owns the section offset table; the bar reads its one
+  /// integer. Nothing in the grid subscribes to either.
+  final ScrollController _scroll = ScrollController();
+  final FolderOutlineSpy _outline = FolderOutlineSpy();
+
+  /// Above the group header row, so the header extent the spy is told is
+  /// the row plus this.
+  static const double _headerTopPad = AppSpace.s10;
+  static const double _headerExtent = _headerTopPad + FolderGroupHeader.height28;
+
+  /// The outline bar plus the gap under it — what the grid's top inset grows
+  /// by while the bar is up (`A1b`: 网格顶部留白同步 +46).
+  static const double _outlineClearance = FolderOutlineBar.height + AppSpace.s6;
+
+  @override
+  void initState() {
+    super.initState();
+    _outline.attach(_scroll);
+  }
+
   @override
   void dispose() {
     _confirmTimer?.cancel();
+    _outline.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  WorkbenchLayoutState? _layoutOf(BuildContext context) {
+    try {
+      return Provider.of<WorkbenchLayoutState>(context, listen: false);
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
+  /// Where the outline bar's top edge sits: under the floating toolbar with
+  /// 6 between them on a window, 10 under the phone's top bar.
+  double _outlineTop(bool phone) => phone
+      ? WorkbenchGlassToolbar.phoneHeight + AppSpace.s10
+      : WorkbenchGlassToolbar.inset + WorkbenchGlassToolbar.height + AppSpace.s6;
+
+  Future<void> _jumpTo(int index) => _outline.scrollTo(
+        index,
+        duration: AppMotion.sceneOf(context),
+        curve: AppMotion.emphasized,
+      );
+
+  void _revealInTree(String path) {
+    final layout = _layoutOf(context);
+    if (layout != null && layout.hasLeftPanel && layout.leftInDrawer) {
+      layout.openLeftPanel();
+    }
+    context.read<GalleryState>().flash(path, expand: true);
   }
 
   void _handleDrop(DropDoneDetails details, GalleryState galleryState) {
@@ -157,7 +212,22 @@ class _GalleryState extends State<Gallery> {
     final galleryState = context.read<GalleryState>();
     final grid = context.select<GalleryState, _GridInputs>(_gridInputs);
     final chrome = _chromeInsets(context);
-    final insets = chrome.copyWith(bottom: chrome.bottom + widget.extraBottomInset);
+    final layout = _layoutOf(context);
+    final phone = layout?.isMobile ?? false;
+
+    // The outline is up when the view has more than one folder to index —
+    // the same condition under which the grid draws its group headers.
+    final sortedPaths = grid.isTemp
+        ? const <String>[]
+        : (grid.isResult
+            ? galleryState.getGrouped(grid.images).keys.toList()
+            : galleryState.getSortedPaths(grid.images));
+    final showOutline = !grid.isTemp && sortedPaths.length > 1;
+    final outlineTop = _outlineTop(phone);
+    final insets = chrome.copyWith(
+      top: showOutline ? outlineTop + _outlineClearance : chrome.top,
+      bottom: chrome.bottom + widget.extraBottomInset,
+    );
 
     final l10n = AppLocalizations.of(context)!;
 
@@ -167,7 +237,29 @@ class _GalleryState extends State<Gallery> {
       onDragExited: (details) => setState(() => _isDragging = false),
       child: Stack(
         children: [
-          Positioned.fill(child: _buildImageGrid(context, galleryState, grid, insets)),
+          Positioned.fill(
+            child: _buildImageGrid(context, galleryState, grid, insets,
+                outlineLine: showOutline ? outlineTop + FolderOutlineBar.height : 0),
+          ),
+          // `A1b · 1a/1c`: the folder outline, a second glass under the
+          // toolbar (a small float on a phone). Always mounted while the
+          // view is grouped; it fades rather than pops (M2).
+          Positioned(
+            left: WorkbenchGlassToolbar.inset,
+            right: phone ? null : WorkbenchGlassToolbar.inset,
+            top: outlineTop,
+            child: IgnorePointer(
+              ignoring: !showOutline,
+              child: AnimatedOpacity(
+                opacity: showOutline ? 1 : 0,
+                duration: AppMotion.durationOf(context, AppMotion.state),
+                curve: AppMotion.enter,
+                child: showOutline
+                    ? _buildOutline(context, galleryState, grid, sortedPaths, phone: phone)
+                    : const SizedBox.shrink(),
+              ),
+            ),
+          ),
           // `00d · 1c` 整面投放: `--scrim` with no blur, between the floating
           // toolbar and the bar below — as the frame draws it, so the
           // chrome's glass never blurs a scrim.
@@ -205,12 +297,48 @@ class _GalleryState extends State<Gallery> {
     }
   }
 
+  Widget _buildOutline(
+    BuildContext context,
+    GalleryState state,
+    _GridInputs grid,
+    List<String> sortedPaths, {
+    required bool phone,
+  }) {
+    final grouped = state.getGrouped(grid.images);
+    final labels = folderOutlineLabels(sortedPaths);
+    final entries = [
+      for (var i = 0; i < sortedPaths.length; i++)
+        FolderOutlineEntry(
+          path: sortedPaths[i],
+          label: labels[i],
+          count: grouped[sortedPaths[i]]!.length,
+          unreachable: state.isPathUnreachable(sortedPaths[i]),
+        ),
+    ];
+    final isResult = grid.isResult;
+    final aggregate = grid.mode == GalleryViewMode.all;
+    return FolderOutlineBar(
+      entries: entries,
+      currentIndex: _outline.currentIndex,
+      onJump: _jumpTo,
+      host: phone ? FolderOutlineHost.glassFloat : FolderOutlineHost.glassBar,
+      forceCollapsed: phone,
+      onShowOnly: (path) => state.setViewFolder(path, isResult: isResult),
+      // Only the source aggregate has a checkbox to clear; a result folder
+      // is in the view because the output directory is.
+      onRemove: aggregate ? state.toggleDirectory : null,
+      onReveal: isResult ? null : _revealInTree,
+      onReAuthorize: (path) => _reAuthorize(context, state, path, isResult),
+    );
+  }
+
   Widget _buildImageGrid(
     BuildContext context,
     GalleryState state,
     _GridInputs grid,
-    EdgeInsets insets,
-  ) {
+    EdgeInsets insets, {
+    required double outlineLine,
+  }) {
     final images = grid.images;
     final isResult = grid.isResult;
     final isTemp = grid.isTemp;
@@ -242,8 +370,6 @@ class _GalleryState extends State<Gallery> {
     final globalIndexByPath = state.getGlobalIndex(images);
     final sortedPaths = isResult ? grouped.keys.toList() : state.getSortedPaths(images);
 
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -251,41 +377,51 @@ class _GalleryState extends State<Gallery> {
 
         final bool showHeaders = !isTemp && (grouped.length > 1 || grid.mode == GalleryViewMode.all);
 
+        // The spy's offset table, from the same numbers the delegate below
+        // lays out with. After the frame: a table change can move the
+        // current index, and its listeners must not be poked mid-build.
+        final columns = FolderOutlineGeometry.columnsFor(
+          crossAxisExtent: constraints.maxWidth - _gap * 2,
+          maxCrossAxisExtent: grid.thumbnailSize,
+          spacing: _gap,
+        );
+        final cell = FolderOutlineGeometry.cellExtentFor(
+          crossAxisExtent: constraints.maxWidth - _gap * 2,
+          columns: columns,
+          spacing: _gap,
+        );
+        final counts = [for (final path in sortedPaths) grouped[path]!.length];
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _outline.layout(
+            counts: counts,
+            columns: columns,
+            cellExtent: cell,
+            headerExtent: showHeaders ? _headerExtent : 0,
+            spacing: _gap,
+            topInset: insets.top,
+            line: outlineLine,
+          );
+        });
+
         return ExcludeSemantics(
           child: CustomScrollView(
+            controller: _scroll,
             primary: false,
             slivers: [
-              SliverToBoxAdapter(child: SizedBox(height: insets.top)),
+              SliverToBoxAdapter(
+                child: AnimatedContainer(
+                  duration: AppMotion.durationOf(context, AppMotion.state),
+                  curve: AppMotion.enter,
+                  height: insets.top,
+                ),
+              ),
               for (final path in sortedPaths) ...[
                 if (showHeaders)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(AppSpace.s16, AppSpace.s10, AppSpace.s16, 0),
-                      child: Row(
-                        children: [
-                          Icon(Icons.folder_outlined, size: AppSize.iconSm, color: scheme.onSurfaceVariant),
-                          const SizedBox(width: AppSpace.s6),
-                          Expanded(
-                            child: Text(
-                              path,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: textTheme.labelSmall!.mono.copyWith(
-                                color: scheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpace.s6),
-                          Text(
-                            '${grouped[path]!.length}',
-                            style: textTheme.labelSmall!.mono.copyWith(
-                              color: scheme.outline,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
+                      padding: const EdgeInsets.only(top: _headerTopPad),
+                      child: FolderGroupHeader(path: path, count: grouped[path]!.length),
                     ),
                   ),
                 SliverPadding(

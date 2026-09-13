@@ -635,6 +635,7 @@
       }
     }
   },
+  "browserGroupByFolder": "Group by folder",
   "appTitle": "Joycai Image AI Toolkits",
   "save": "Save",
   "update": "Update",
@@ -838,6 +839,19 @@
   "dropReplacesFrame": "Replaces the current frame",
   "dropRejectNameTaken": "A folder with this name is already here",
   "browserDragFootnoteMac": "Drag onto a folder to move · hold ⌥ to copy",
+  "folderOutlineLabel": "Folder outline",
+  "folderOutlineShowOnly": "Show only this folder",
+  "folderOutlineRemove": "Remove from view",
+  "folderOutlineReveal": "Reveal in folder tree",
+  "folderOutlineReauthorize": "Re-authorize",
+  "folderOutlineFilesCount": "{count} files",
+  "@folderOutlineFilesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "downloader": "Downloader",
   "imageDownloader": "Image Downloader",
   "url": "URL",

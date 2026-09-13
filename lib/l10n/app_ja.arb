@@ -593,6 +593,7 @@
   "conflictIncoming": "移動元",
   "conflictAlreadyThere": "既存",
   "conflictUndecidedCount": "未決定 {count} 件",
+  "browserGroupByFolder": "フォルダーごとにグループ化",
   "appTitle": "Joycai Image AI Toolkits",
   "save": "保存",
   "update": "更新",
@@ -682,6 +683,19 @@
   "dropReplacesFrame": "現在のフレームを置き換えます",
   "dropRejectNameTaken": "同じ名前のフォルダーがすでにあります",
   "browserDragFootnoteMac": "フォルダーにドラッグで移動 · ⌥ を押しながらでコピー",
+  "folderOutlineLabel": "フォルダーナビ",
+  "folderOutlineShowOnly": "このフォルダーのみ表示",
+  "folderOutlineRemove": "表示から外す",
+  "folderOutlineReveal": "フォルダーツリーで表示",
+  "folderOutlineReauthorize": "再認証",
+  "folderOutlineFilesCount": "{count} 件のファイル",
+  "@folderOutlineFilesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "downloader": "ダウンローダー",
   "imageDownloader": "画像ダウンローダー",
   "url": "URL",

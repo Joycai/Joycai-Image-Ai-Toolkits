@@ -28,6 +28,8 @@ typedef _FilterInputs = ({
   BrowserSortField sortField,
   bool sortAscending,
   double thumbnailSize,
+  bool groupByFolder,
+  bool canGroup,
 });
 
 _FilterInputs _filterInputs(FileBrowserState s) => (
@@ -36,7 +38,12 @@ _FilterInputs _filterInputs(FileBrowserState s) => (
       sortField: s.sortField,
       sortAscending: s.sortAscending,
       thumbnailSize: s.thumbnailSize,
+      groupByFolder: s.groupByFolder,
+      canGroup: s.activeDirectories.length > 1,
     );
+
+/// The sort menu's one row that is neither a field nor a direction.
+enum _SortMenuExtra { groupByFolder }
 
 class BrowserFilterBar extends StatelessWidget {
   final FileBrowserState state;
@@ -147,6 +154,8 @@ class BrowserFilterBar extends StatelessWidget {
           state.setSortField(value);
         } else if (value is bool) {
           state.setSortAscending(value);
+        } else if (value == _SortMenuExtra.groupByFolder) {
+          state.setGroupByFolder(!inputs.groupByFolder);
         }
       },
       itemBuilder: (context) => [
@@ -169,6 +178,20 @@ class BrowserFilterBar extends StatelessWidget {
           value: false,
           checked: !inputs.sortAscending,
           child: Text(l10n.sortDesc, style: Theme.of(context).textTheme.labelLarge),
+        ),
+        // `A1b · 1f`: folder by folder, or one interleaved run. The row
+        // stays with one folder listed — it only has nothing to do until a
+        // second is — so its text drops to the secondary ink then.
+        const PopupMenuDivider(),
+        CheckedPopupMenuItem(
+          value: _SortMenuExtra.groupByFolder,
+          checked: inputs.groupByFolder,
+          child: Text(
+            l10n.browserGroupByFolder,
+            style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                  color: inputs.canGroup ? null : Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
         ),
       ],
       child: _SortChip(
