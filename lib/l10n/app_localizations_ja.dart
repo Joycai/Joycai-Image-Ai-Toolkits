@@ -3454,6 +3454,36 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sendToOptimizer => 'プロンプトアシスタントに送信';
 
   @override
+  String get menuQuickMask => 'マスク';
+
+  @override
+  String get menuQuickCrop => '切り抜き';
+
+  @override
+  String get menuQuickAssistant => 'アシスタント';
+
+  @override
+  String get menuSetAs => '設定先';
+
+  @override
+  String get menuSetAsRaw => 'Before (RAW)';
+
+  @override
+  String get menuSetAsAfter => 'After';
+
+  @override
+  String get menuSetAsFirstFrame => '最初のフレーム';
+
+  @override
+  String get menuSetAsLastFrame => '最後のフレーム';
+
+  @override
+  String get menuFileGroup => 'ファイル';
+
+  @override
+  String get menuExportGroup => 'エクスポート';
+
+  @override
   String get selectFromLibrary => 'ライブラリから選択';
 
   @override

@@ -1,5 +1,5 @@
 // Screenshots of the workbench: the screen matrix, the image panel with a
-// selection live, and both model cards open. The other tabs are in
+// selection live, a card's context menu, and both model cards open. The other tabs are in
 // app_screens_workbench_tabs_test.dart. See docs/ui-screenshot-harness.md.
 //
 //   flutter test test/screenshots
@@ -8,9 +8,12 @@
 @Tags(<String>['screenshots'])
 library;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/image_card.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/fixture_seed.dart';
@@ -58,6 +61,38 @@ void main() {
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
           }
+        },
+      );
+    });
+  }
+
+  // A card's context menu (`A1 · 2a`): the quick block, the 「设为」 grid, the
+  // two submenu rows and the destructive tail — with 「文件 ▸」 opened, so the
+  // submenu's placement beside the panel, level with its row, is on film.
+  Finder menuItem(String label) => find.descendant(
+        of: find.byType(AppGlassMenu),
+        matching: find.text(label),
+      );
+
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('workbench · contextMenu @ desktop ${brightness.name}', (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.workbench,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'contextMenu',
+        before: (_) async {
+          AppState().setWorkbenchTab(0);
+          AppState().isConsoleExpanded = false;
+          AppState().clearImageSelection();
+        },
+        after: (WidgetTester tester) async {
+          await tester.tap(find.byType(ImageCard).first, buttons: kSecondaryButton);
+          await settle(tester);
+          await tester.tap(menuItem('文件'));
+          await settle(tester);
         },
       );
     });

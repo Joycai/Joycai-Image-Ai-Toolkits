@@ -6257,6 +6257,66 @@ abstract class AppLocalizations {
   /// **'Send to Prompt Assistant'**
   String get sendToOptimizer;
 
+  /// No description provided for @menuQuickMask.
+  ///
+  /// In en, this message translates to:
+  /// **'Mask'**
+  String get menuQuickMask;
+
+  /// No description provided for @menuQuickCrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop'**
+  String get menuQuickCrop;
+
+  /// No description provided for @menuQuickAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get menuQuickAssistant;
+
+  /// No description provided for @menuSetAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as'**
+  String get menuSetAs;
+
+  /// No description provided for @menuSetAsRaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Before (RAW)'**
+  String get menuSetAsRaw;
+
+  /// No description provided for @menuSetAsAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get menuSetAsAfter;
+
+  /// No description provided for @menuSetAsFirstFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'First frame'**
+  String get menuSetAsFirstFrame;
+
+  /// No description provided for @menuSetAsLastFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Last frame'**
+  String get menuSetAsLastFrame;
+
+  /// No description provided for @menuFileGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get menuFileGroup;
+
+  /// No description provided for @menuExportGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get menuExportGroup;
+
   /// No description provided for @selectFromLibrary.
   ///
   /// In en, this message translates to:
