@@ -521,15 +521,19 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
         : context.select<GalleryState, bool>(
             (state) => state.activeSourceDirectories.contains(widget.path));
 
-    // In the gallery, the checkbox controls aggregate inclusion while tapping
-    // the name browses just that folder — so the row highlight tracks "you are
-    // here" (viewing), distinct from the checkbox/inclusion state.
-    final isViewing = !widget.useFileBrowserState &&
-        context.select<GalleryState, bool>((state) =>
+    // Both trees work the same way: the checkbox adds a folder to or drops it
+    // from the merged view, and tapping the name browses just that folder. The
+    // row highlight tracks "you are here" (viewing), distinct from the
+    // checkbox — in the browser, that is being the only active folder.
+    final isViewing = widget.useFileBrowserState
+        ? context.select<FileBrowserState, bool>((state) =>
+            state.activeDirectories.length == 1 &&
+            state.activeDirectories.first == widget.path)
+        : context.select<GalleryState, bool>((state) =>
             state.viewMode == GalleryViewMode.folder &&
             !state.folderViewIsResult &&
             state.viewSourcePath == widget.path);
-    final highlight = widget.useFileBrowserState ? isSelected : isViewing;
+    final highlight = isViewing;
 
     final appState = Provider.of<AppState>(context, listen: false);
     final isUnreachable = widget.useFileBrowserState
@@ -595,10 +599,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       if (isUnreachable) {
         _reAuthorize(context, appState);
       } else if (widget.useFileBrowserState) {
-        // File Browser keeps tap-to-toggle.
-        appState.fileBrowserState.toggleDirectory(widget.path);
+        // Tapping the name browses just this folder, as in the gallery.
+        appState.fileBrowserState.setExclusiveDirectory(widget.path);
       } else {
-        // Gallery: tapping the name browses just this folder.
         appState.galleryState.setViewFolder(widget.path);
       }
     }
