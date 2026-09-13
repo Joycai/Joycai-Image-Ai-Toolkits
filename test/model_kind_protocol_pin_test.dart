@@ -69,6 +69,8 @@ void main() {
     const ids = [
       'gpt-image-1',
       'gpt-image-2',
+      'gpt-image-2.5-flare',
+      'gpt-image-2.5-sunburst',
       'gemini-2.5-flash-image',
       'imagen-4.0',
       'qwen-image-3.0',

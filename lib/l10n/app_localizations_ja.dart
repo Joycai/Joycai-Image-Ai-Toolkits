@@ -3547,6 +3547,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qualityHigh => '高';
 
   @override
+  String get qualityXhigh => '超高';
+
+  @override
+  String get qualityMax => '最高';
+
+  @override
   String get mjVersion => 'バージョン';
 
   @override

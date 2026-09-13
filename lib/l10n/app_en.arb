@@ -2282,6 +2282,8 @@
   "qualityLow": "Low",
   "qualityMedium": "Medium",
   "qualityHigh": "High",
+  "qualityXhigh": "Extra high",
+  "qualityMax": "Max",
   "mjVersion": "Version",
   "mjMode": "Mode",
   "mjStylize": "Stylize",

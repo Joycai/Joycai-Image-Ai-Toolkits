@@ -6419,6 +6419,18 @@ abstract class AppLocalizations {
   /// **'High'**
   String get qualityHigh;
 
+  /// No description provided for @qualityXhigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra high'**
+  String get qualityXhigh;
+
+  /// No description provided for @qualityMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get qualityMax;
+
   /// No description provided for @mjVersion.
   ///
   /// In en, this message translates to:

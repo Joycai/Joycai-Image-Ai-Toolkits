@@ -57,6 +57,27 @@ void main() {
       expect(v2, containsAll(['2048x2048', '3840x2160', '2160x3840']));
       // v1 must stay restricted to its documented size set.
       expect(sizesFor('gpt-image-1'), isNot(contains('3840x2160')));
+      // 2.5 keeps the 2 size rules — its id contains `gpt-image-2`, so the
+      // more specific branch must not lose the 2K/4K set.
+      expect(sizesFor('gpt-image-2.5-flare'), containsAll(['2048x2048', '3840x2160']));
+    });
+
+    test('only gpt-image-2.5 offers the xhigh / max quality rungs', () {
+      List<String> qualitiesFor(String modelId) => ModelCapabilities.forModel(modelId)
+          .imageParams
+          .firstWhere((p) => p.key == 'quality')
+          .options
+          .map((o) => o.value)
+          .toList();
+
+      // OpenAI: "gpt-image-2.5-sunburst and gpt-image-2.5-flare add xhigh and
+      // max quality settings. Earlier GPT Image models support quality
+      // settings up to high." Sending either to gpt-image-2 is a 400.
+      expect(qualitiesFor('gpt-image-2.5-flare'), containsAll(['xhigh', 'max']));
+      expect(qualitiesFor('gpt-image-2.5-sunburst'), containsAll(['xhigh', 'max']));
+      expect(qualitiesFor('gpt-image-2'), isNot(contains('xhigh')));
+      expect(qualitiesFor('gpt-image-2'), isNot(contains('max')));
+      expect(qualitiesFor('gpt-image-1'), isNot(contains('max')));
     });
 
     test('nano Banana variants expose wider aspect-ratio sets', () {

@@ -114,7 +114,7 @@ class SpecKnownValues {
       });
   }
 
-  static const _qualityOrder = ['low', 'medium', 'high', 'standard'];
+  static const _qualityOrder = ['low', 'medium', 'high', 'xhigh', 'max', 'standard'];
 
   static List<String> _sortQualities(Set<String> raw) => raw.toList()
     ..sort((a, b) {
