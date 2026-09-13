@@ -56,8 +56,9 @@ void main() {
         'cache_input_price': cachePrice,
         'output_price': 10.0,
       });
+      // Bracketed: the row shows 「MJ」 as a badge beside the name.
       await state.addPricingGroup({
-        'name': 'Midjourney Relax',
+        'name': 'Midjourney Relax [MJ]',
         'billing_mode': 'request',
         'request_price': 0.04,
       });
@@ -147,6 +148,16 @@ void main() {
     expect(find.text('\$0.0400/Req'), findsOneWidget); // the request-billed group
   });
 
+  testWidgets('a bracketed part of the name is shown as a badge', (tester) async {
+    final appState = await seedState(tester);
+    await pumpManager(tester, appState, const Size(1920, 1080));
+
+    // The name proper and the tag, with the brackets gone.
+    expect(find.text('Midjourney Relax'), findsOneWidget);
+    expect(find.text('MJ'), findsOneWidget);
+    expect(find.text('Midjourney Relax [MJ]'), findsNothing);
+  });
+
   testWidgets('a group reports the models it prices', (tester) async {
     final appState = await seedState(tester);
     await pumpManager(tester, appState, const Size(1920, 1080));
@@ -184,6 +195,26 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
   }
+
+  testWidgets('saving closes the editor and the row shows the new name', (tester) async {
+    final appState = await seedState(tester);
+    await pumpManager(tester, appState, const Size(1920, 1080));
+    await openEditor(tester, find.text('Veo 3 Video'));
+
+    await tester.enterText(find.widgetWithText(TextField, 'Veo 3 Video'), 'Veo 3.1 Video');
+    await tester.pump();
+    await tester.runAsync(() async {
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    });
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(find.text('Edit group'), findsNothing);
+    expect(find.text('Pick a group to edit'), findsOneWidget);
+    expect(find.text('Veo 3.1 Video'), findsOneWidget);
+  });
 
   testWidgets('opens the editor with the cache field blank when unset', (tester) async {
     final appState = await seedState(tester, cachePrice: null);
@@ -267,6 +298,8 @@ void main() {
     expect(find.text('1080p'), findsNWidgets(2));
     expect(find.text('720p'), findsOneWidget);
     expect(find.text('Other specs'), findsOneWidget);
+    // One dollar sign: the l10n string carries it, the code must not add its own.
+    expect(find.text('Price \$/s'), findsOneWidget);
     expect(find.widgetWithText(TextField, '0.1000'), findsOneWidget);
     expect(find.textContaining('Blank means "any"'), findsOneWidget);
     expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save')).onPressed, isNotNull);
@@ -395,7 +428,7 @@ void main() {
     await tester.runAsync(() => appState.refreshDataCache());
     final names = appState.allPricingGroups.map((g) => g.name).toList();
     expect(names.first, 'Veo 3 Video');
-    expect(names.last, 'Midjourney Relax');
+    expect(names.last, 'Midjourney Relax [MJ]');
   });
 
   testWidgets('on a phone a card opens the full-screen editor', (tester) async {

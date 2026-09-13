@@ -5,6 +5,32 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/pricing_group.dart';
 import 'fee_group_summary.dart';
+import 'model_tag_chip.dart';
+
+/// A group name split into the name proper and the labels the user wrote
+/// into it in brackets: 「[K]gemini-3.1」 → base `gemini-3.1`, tags `[K]`.
+typedef FeeGroupNameParts = ({String base, List<String> tags});
+
+final RegExp _bracketed = RegExp(r'[\(\[（【]([^\(\)\[\]（）【】]+)[\)\]）】]');
+
+/// Splits the bracketed parts out of a group name, in the order they
+/// appear. Half- and full-width round and square brackets count; nested or
+/// unbalanced ones are left in the name. A name that is nothing but brackets
+/// stays as typed, since a row with no name would say less than the
+/// punctuation did.
+FeeGroupNameParts parseFeeGroupName(String name) {
+  final tags = <String>[];
+  final base = name
+      .replaceAllMapped(_bracketed, (m) {
+        final tag = m.group(1)!.trim();
+        if (tag.isNotEmpty) tags.add(tag);
+        return ' ';
+      })
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+  if (base.isEmpty) return (base: name, tags: const <String>[]);
+  return (base: base, tags: tags);
+}
 
 /// Whether a fee-group row shows the reorder grip, and when.
 enum FeeGroupHandle {
@@ -74,16 +100,36 @@ class _FeeGroupRowState extends State<FeeGroupRow> {
             ? scheme.outline
             : scheme.onSurface;
 
+    final parts = parseFeeGroupName(group.name);
     final Widget identity = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          group.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: (widget.phone ? textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600) : textTheme.titleSmall)
-              ?.copyWith(color: nameColor),
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                parts.base,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: (widget.phone ? textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600) : textTheme.titleSmall)
+                    ?.copyWith(color: nameColor),
+              ),
+            ),
+            // A bracketed part of the name — 「[官方]」, 「(特价)」 — is the
+            // user's own label for the group, so it reads as a badge beside
+            // the name rather than as punctuation inside it.
+            for (final tag in parts.tags) ...[
+              const SizedBox(width: AppSpace.s6),
+              Flexible(
+                child: ModelTagChip(
+                  tag,
+                  color: selected ? scheme.primary : scheme.onSurfaceVariant,
+                  uppercase: false,
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 2),
         _buildConsumers(context, l10n),
