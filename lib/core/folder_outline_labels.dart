@@ -1,5 +1,3 @@
-import 'package:path/path.dart' as p;
-
 /// The chip text for each folder of an outline: the basename, and where two
 /// folders share one, as many parent segments as it takes to tell them apart
 /// — `out / a` beside `tmp / a`, then `x / out / a` beside `y / out / a`.
@@ -7,9 +5,12 @@ import 'package:path/path.dart' as p;
 /// One label per path, in the order given. Two identical paths stay
 /// identical: there is nothing left to disambiguate them with.
 List<String> folderOutlineLabels(List<String> paths) {
+  // Both separators, whatever the host: the paths come from the user's
+  // own disk, and a test on Linux CI still sees Windows paths.
+  final separators = RegExp(r'[\\/]+');
   final segments = [
     for (final path in paths)
-      p.split(path).where((s) => s.isNotEmpty).toList(growable: false),
+      path.split(separators).where((s) => s.isNotEmpty).toList(growable: false),
   ];
   // How many trailing segments each label shows; grows while it collides.
   final depth = List<int>.filled(paths.length, 1);
