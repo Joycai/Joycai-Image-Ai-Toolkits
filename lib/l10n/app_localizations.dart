@@ -1289,6 +1289,12 @@ abstract class AppLocalizations {
   /// **'Group by folder'**
   String get browserGroupByFolder;
 
+  /// No description provided for @browserGroupByFolderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies with 2 or more folders checked; files sort within each folder'**
+  String get browserGroupByFolderHint;
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:

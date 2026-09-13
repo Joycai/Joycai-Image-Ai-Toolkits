@@ -30,12 +30,28 @@ class AppGlassMenuItem extends AppGlassMenuEntry {
     this.children,
     this.trailing,
     this.note,
+    this.hint,
+    this.checked,
+    this.radio = false,
     this.enabled = true,
     this.danger = false,
-  }) : assert(onSelected == null || children == null, 'a submenu row has no action of its own');
+  })  : assert(onSelected == null || children == null, 'a submenu row has no action of its own'),
+        assert(icon == null || checked == null, 'a row is marked either by its icon or by its check');
 
   final IconData? icon;
   final String label;
+
+  /// A choice row (`B1a · 1f`): draws a radio ([radio]) or a checkbox in the
+  /// icon's place, filled with the accent when `true`. Null for a plain
+  /// action row. A checked checkbox row also sits on the 8% wash.
+  final bool? checked;
+  final bool radio;
+
+  /// A second line under the label that is always shown — what the choice
+  /// does, or when it applies (`1f`: 「勾选 ≥ 2 个目录时生效」). Two lines at
+  /// most; the row grows to hold them. Unlike [note], not tied to being
+  /// disabled.
+  final String? hint;
 
   /// Runs once the menu has been popped, so a dialog it opens is not stacked
   /// over a route on its way out. Null disables the row — unless the row
@@ -207,8 +223,11 @@ double appGlassMenuHeight(List<AppGlassMenuEntry> entries) {
   double height = AppSpace.s6 * 2;
   for (final AppGlassMenuEntry entry in entries) {
     height += switch (entry) {
-      AppGlassMenuItem(:final bool isEnabled, :final String? note) =>
-        !isEnabled && note != null ? _AppGlassMenuRow._noteHeight : AppSize.compact,
+      AppGlassMenuItem(:final bool isEnabled, :final String? note, :final String? hint) => hint != null
+          ? _AppGlassMenuRow._hintHeight
+          : !isEnabled && note != null
+              ? _AppGlassMenuRow._noteHeight
+              : AppSize.compact,
       AppGlassMenuQuickBlock() => _AppGlassMenuQuickBlock.height,
       AppGlassMenuHeading() => _AppGlassMenuHeading.height,
       AppGlassMenuGrid(:final List<AppGlassMenuItem> items, :final int columns) =>
@@ -793,6 +812,10 @@ class _AppGlassMenuRow extends StatelessWidget {
 
   static const double _noteHeight = 42;
 
+  /// A row carrying a two-line [AppGlassMenuItem.hint]: the label's 28 plus
+  /// two 11px lines and a breath under them.
+  static const double _hintHeight = 64;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -810,7 +833,18 @@ class _AppGlassMenuRow extends StatelessWidget {
     final Color labelColor = !enabled ? dim : (item.danger ? scheme.error : ink);
     final Color glyphColor = !enabled ? dim : (item.danger ? scheme.error : ink2);
     final note = !enabled ? item.note : null;
+    final hint = item.hint;
     final radius = BorderRadius.circular(AppRadius.sm);
+
+    // `1f`: a choice row's mark — a radio or a checkbox, the accent when on.
+    final bool? checked = item.checked;
+    final IconData? mark = checked == null
+        ? null
+        : item.radio
+            ? (checked ? Icons.radio_button_checked : Icons.radio_button_unchecked)
+            : (checked ? Icons.check_box : Icons.check_box_outline_blank);
+    final Color markColor = !enabled ? dim : (checked == true ? scheme.primary : ink2);
+    final bool washed = checked == true && !item.radio;
 
     void activate() {
       if (submenu) {
@@ -846,17 +880,31 @@ class _AppGlassMenuRow extends StatelessWidget {
             // A submenu row stays lit while its submenu is open, so the eye
             // can tell which row the panel beside the menu belongs to.
             decoration: BoxDecoration(
-              color: open ? ink.withValues(alpha: 0.08) : null,
+              color: open || washed ? ink.withValues(alpha: 0.08) : null,
               borderRadius: radius,
             ),
             child: SizedBox(
-              height: note == null ? AppSize.compact : _noteHeight,
+              height: hint != null
+                  ? _hintHeight
+                  : note == null
+                      ? AppSize.compact
+                      : _noteHeight,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
+                  // A hinted row keeps its mark on the label's line, not
+                  // centred against the hint under it.
+                  crossAxisAlignment: hint != null ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                   children: [
                     if (item.icon != null) ...[
                       Icon(item.icon, size: AppSize.iconMd, color: glyphColor),
+                      const SizedBox(width: 8),
+                    ],
+                    if (mark != null) ...[
+                      SizedBox(
+                        height: AppSize.compact,
+                        child: Center(child: Icon(mark, size: AppSize.iconMd, color: markColor)),
+                      ),
                       const SizedBox(width: 8),
                     ],
                     Expanded(
@@ -864,13 +912,29 @@ class _AppGlassMenuRow extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            item.label,
-                            maxLines: 1,
-                            softWrap: false,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.bodySmall!.metricsOnly.copyWith(color: labelColor),
+                          SizedBox(
+                            height: hint != null ? AppSize.compact : null,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                item.label,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                                style: textTheme.bodySmall!.metricsOnly.copyWith(color: labelColor),
+                              ),
+                            ),
                           ),
+                          if (hint != null)
+                            Text(
+                              hint,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.labelSmall!.metricsOnly.copyWith(
+                                fontWeight: FontWeight.w400,
+                                color: ink2,
+                              ),
+                            ),
                           if (note != null)
                             Text(
                               note,

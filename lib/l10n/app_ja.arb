@@ -594,6 +594,7 @@
   "conflictAlreadyThere": "既存",
   "conflictUndecidedCount": "未決定 {count} 件",
   "browserGroupByFolder": "フォルダーごとにグループ化",
+  "browserGroupByFolderHint": "2 つ以上のフォルダーを選択時に有効。フォルダー内で並べ替え",
   "appTitle": "Joycai Image AI Toolkits",
   "save": "保存",
   "update": "更新",

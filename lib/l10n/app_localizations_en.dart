@@ -730,6 +730,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get browserGroupByFolder => 'Group by folder';
 
   @override
+  String get browserGroupByFolderHint =>
+      'Applies with 2 or more folders checked; files sort within each folder';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override

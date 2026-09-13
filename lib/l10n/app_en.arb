@@ -636,6 +636,7 @@
     }
   },
   "browserGroupByFolder": "Group by folder",
+  "browserGroupByFolderHint": "Applies with 2 or more folders checked; files sort within each folder",
   "appTitle": "Joycai Image AI Toolkits",
   "save": "Save",
   "update": "Update",

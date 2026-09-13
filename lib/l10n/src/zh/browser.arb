@@ -34,10 +34,10 @@
   "noFilesFound": "未找到文件",
   "sortBy": "排序方式",
   "sortName": "文件名",
-  "sortDate": "修改日期",
+  "sortDate": "修改时间",
   "sortType": "文件类型",
-  "sortAsc": "正序",
-  "sortDesc": "倒序",
+  "sortAsc": "升序",
+  "sortDesc": "降序",
   "catAll": "全部",
   "catImages": "图片",
   "catVideos": "视频",
@@ -607,5 +607,6 @@
   "conflictIncoming": "写入",
   "conflictAlreadyThere": "已存在",
   "conflictUndecidedCount": "{count} 项未决定",
-  "browserGroupByFolder": "按文件夹分组"
+  "browserGroupByFolder": "按文件夹分组",
+  "browserGroupByFolderHint": "勾选 2 个以上目录时生效；开启后按组内排序"
 }

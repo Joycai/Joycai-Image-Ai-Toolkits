@@ -7,14 +7,16 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../state/file_browser_state.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
 import '../../../widgets/thumbnail_fit_toggle.dart';
 
 /// The 40px control row under the header — `B1a · 1a`.
 ///
 /// Category segments on the left (All / Images / Videos / Audio / Text /
-/// Other, 24 tall, the chosen one on the 12% wash), then the sort button, then
-/// — in grid view only — the thumbnail-size slider and the fit toggle.
+/// Other, 24 tall, the chosen one on the 12% wash), the sort button right
+/// beside them (`1f`), then — in grid view only, at the far right — the
+/// thumbnail-size slider and the fit toggle.
 ///
 /// When the row cannot hold the slider beside the categories and the sort
 /// button (measured, not a breakpoint), the slider gives way to a size button
@@ -42,8 +44,6 @@ _FilterInputs _filterInputs(FileBrowserState s) => (
       canGroup: s.activeDirectories.length > 1,
     );
 
-/// The sort menu's one row that is neither a field nor a direction.
-enum _SortMenuExtra { groupByFolder }
 
 class BrowserFilterBar extends StatelessWidget {
   final FileBrowserState state;
@@ -87,29 +87,29 @@ class BrowserFilterBar extends StatelessWidget {
 
           return Row(
             children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (final cat in FileCategory.values) ...[
-                          _CategoryChip(
-                            label: _categoryLabel(cat, l10n),
-                            selected: inputs.currentFilter == cat,
-                            onTap: () => state.setFilter(cat),
-                          ),
-                          const SizedBox(width: _chipGap),
-                        ],
+              // The categories take what they need and no more, so the sort
+              // button sits right after them rather than at the row's end.
+              Flexible(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final cat in FileCategory.values) ...[
+                        _CategoryChip(
+                          label: _categoryLabel(cat, l10n),
+                          selected: inputs.currentFilter == cat,
+                          onTap: () => state.setFilter(cat),
+                        ),
+                        const SizedBox(width: _chipGap),
                       ],
-                    ),
+                    ],
                   ),
                 ),
               ),
               const SizedBox(width: _groupGap),
-              _buildSortControl(context, l10n, inputs),
+              _SortButton(state: state, inputs: inputs),
+              const Spacer(),
               if (isGrid) ...[
                 const SizedBox(width: _groupGap),
                 if (showSlider)
@@ -135,68 +135,6 @@ class BrowserFilterBar extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-
-  /// Sort field and direction in one menu (Name / Modify Date / File Type,
-  /// then ascending / descending).
-  Widget _buildSortControl(
-    BuildContext context,
-    AppLocalizations l10n,
-    _FilterInputs inputs,
-  ) {
-    return PopupMenuButton<Object>(
-      tooltip: l10n.sortBy,
-      position: PopupMenuPosition.under,
-      onSelected: (value) {
-        if (value is BrowserSortField) {
-          state.setSortField(value);
-        } else if (value is bool) {
-          state.setSortAscending(value);
-        } else if (value == _SortMenuExtra.groupByFolder) {
-          state.setGroupByFolder(!inputs.groupByFolder);
-        }
-      },
-      itemBuilder: (context) => [
-        for (final field in BrowserSortField.values)
-          CheckedPopupMenuItem(
-            value: field,
-            checked: inputs.sortField == field,
-            child: Text(
-              _sortFieldLabel(field, l10n),
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-          ),
-        const PopupMenuDivider(),
-        CheckedPopupMenuItem(
-          value: true,
-          checked: inputs.sortAscending,
-          child: Text(l10n.sortAsc, style: Theme.of(context).textTheme.labelLarge),
-        ),
-        CheckedPopupMenuItem(
-          value: false,
-          checked: !inputs.sortAscending,
-          child: Text(l10n.sortDesc, style: Theme.of(context).textTheme.labelLarge),
-        ),
-        // `A1b · 1f`: folder by folder, or one interleaved run. The row
-        // stays with one folder listed — it only has nothing to do until a
-        // second is — so its text drops to the secondary ink then.
-        const PopupMenuDivider(),
-        CheckedPopupMenuItem(
-          value: _SortMenuExtra.groupByFolder,
-          checked: inputs.groupByFolder,
-          child: Text(
-            l10n.browserGroupByFolder,
-            style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                  color: inputs.canGroup ? null : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
-        ),
-      ],
-      child: _SortChip(
-        label: _sortFieldLabel(inputs.sortField, l10n),
-        ascending: inputs.sortAscending,
       ),
     );
   }
@@ -299,13 +237,110 @@ class _CategoryChipState extends State<_CategoryChip> {
   }
 }
 
+/// The sort button and its menu (`B1a · 1f`): field, direction and the
+/// folder grouping in one glass float, 220 wide, hanging off the button's
+/// left edge. Choice rows draw radios and a checkbox rather than Material's
+/// check marks, and the grouping row explains itself under its label.
+class _SortButton extends StatefulWidget {
+  const _SortButton({required this.state, required this.inputs});
+
+  final FileBrowserState state;
+  final _FilterInputs inputs;
+
+  static const double menuWidth = 220;
+
+  @override
+  State<_SortButton> createState() => _SortButtonState();
+}
+
+class _SortButtonState extends State<_SortButton> {
+  bool _open = false;
+
+  Future<void> _openMenu() async {
+    final l10n = AppLocalizations.of(context)!;
+    final state = widget.state;
+    final inputs = widget.inputs;
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+
+    setState(() => _open = true);
+    try {
+      await showAppGlassMenu(
+        context,
+        position: box.localToGlobal(Offset(0, box.size.height + AppSpace.s4)),
+        width: _SortButton.menuWidth,
+        entries: [
+          for (final field in BrowserSortField.values)
+            AppGlassMenuItem(
+              label: BrowserFilterBar._sortFieldLabel(field, l10n),
+              checked: inputs.sortField == field,
+              radio: true,
+              onSelected: () => state.setSortField(field),
+            ),
+          const AppGlassMenuDivider(),
+          AppGlassMenuItem(
+            label: l10n.sortAsc,
+            checked: inputs.sortAscending,
+            radio: true,
+            onSelected: () => state.setSortAscending(true),
+          ),
+          AppGlassMenuItem(
+            label: l10n.sortDesc,
+            checked: !inputs.sortAscending,
+            radio: true,
+            onSelected: () => state.setSortAscending(false),
+          ),
+          const AppGlassMenuDivider(),
+          // Folder by folder, or one interleaved run. The row stays with one
+          // folder listed — it has nothing to do until a second is — and
+          // the hint says so.
+          AppGlassMenuItem(
+            label: l10n.browserGroupByFolder,
+            hint: l10n.browserGroupByFolderHint,
+            checked: inputs.groupByFolder,
+            onSelected: () => state.setGroupByFolder(!inputs.groupByFolder),
+          ),
+        ],
+      );
+    } finally {
+      if (mounted) setState(() => _open = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Tooltip(
+      message: l10n.sortBy,
+      child: Semantics(
+        button: true,
+        expanded: _open,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _openMenu,
+            child: _SortChip(
+              label: BrowserFilterBar._sortFieldLabel(widget.inputs.sortField, l10n),
+              ascending: widget.inputs.sortAscending,
+              open: _open,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The sort button's face: 28 tall at r10 on the panel colour with a
-/// hairline — `sort`, the field, and the direction's arrow.
+/// hairline — `sort`, the field, and the direction's arrow. While its menu
+/// is open the hairline turns accent inside the 32% ring (`1f`).
 class _SortChip extends StatelessWidget {
-  const _SortChip({required this.label, required this.ascending});
+  const _SortChip({required this.label, required this.ascending, this.open = false});
 
   final String label;
   final bool ascending;
+  final bool open;
 
   static TextStyle _style(BuildContext context) => Theme.of(context).textTheme.bodySmall!;
 
@@ -317,13 +352,16 @@ class _SortChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
+    return AnimatedContainer(
+      duration: AppMotion.durationOf(context, AppMotion.hover),
+      curve: AppMotion.quick,
       height: AppSize.compact,
       padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
       decoration: BoxDecoration(
         color: scheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.control),
-        border: Border.all(color: scheme.outlineVariant),
+        border: Border.all(color: open ? scheme.primary : scheme.outlineVariant),
+        boxShadow: open ? [BoxShadow(color: scheme.accentRing, spreadRadius: 3)] : const [],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

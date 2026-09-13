@@ -635,5 +635,6 @@
       }
     }
   },
-  "browserGroupByFolder": "Group by folder"
+  "browserGroupByFolder": "Group by folder",
+  "browserGroupByFolderHint": "Applies with 2 or more folders checked; files sort within each folder"
 }

@@ -57,16 +57,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sortName => '文件名';
 
   @override
-  String get sortDate => '修改日期';
+  String get sortDate => '修改时间';
 
   @override
   String get sortType => '文件类型';
 
   @override
-  String get sortAsc => '正序';
+  String get sortAsc => '升序';
 
   @override
-  String get sortDesc => '倒序';
+  String get sortDesc => '降序';
 
   @override
   String get catAll => '全部';
@@ -718,6 +718,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get browserGroupByFolder => '按文件夹分组';
+
+  @override
+  String get browserGroupByFolderHint => '勾选 2 个以上目录时生效；开启后按组内排序';
 
   @override
   String get appTitle => 'Joycai Image AI 工具集';
@@ -5148,6 +5151,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get browserGroupByFolder => '按資料夾分組';
+
+  @override
+  String get browserGroupByFolderHint => '勾選 2 個以上目錄時生效；開啟後按組內排序';
 
   @override
   String get appTitle => 'Joycai Image AI Toolkits';
