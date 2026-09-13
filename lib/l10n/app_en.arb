@@ -12,6 +12,24 @@
       }
     }
   },
+  "renameHintKeys": "Enter to confirm · Esc to cancel",
+  "renameExtensionLocked": "extension",
+  "renameConflict": "{name} already exists in this folder",
+  "@renameConflict": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "renameTooLong": "Name is longer than {max} characters",
+  "@renameTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "fileAlreadyExists": "A file with this name already exists",
   "noFilesFound": "No files found",
   "sortBy": "Sort by",

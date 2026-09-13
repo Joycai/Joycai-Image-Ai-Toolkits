@@ -12,6 +12,24 @@
       }
     }
   },
+  "renameHintKeys": "Enter 确认 · Esc 取消",
+  "renameExtensionLocked": "扩展名",
+  "renameConflict": "该文件夹已有 {name}",
+  "@renameConflict": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "renameTooLong": "名称超过 {max} 个字符",
+  "@renameTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "fileAlreadyExists": "同名文件已存在",
   "noFilesFound": "未找到文件",
   "sortBy": "排序方式",

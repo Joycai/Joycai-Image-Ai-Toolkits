@@ -137,6 +137,30 @@ abstract class AppLocalizations {
   /// **'Failed to rename: {error}'**
   String renameFailed(String error);
 
+  /// No description provided for @renameHintKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter to confirm · Esc to cancel'**
+  String get renameHintKeys;
+
+  /// No description provided for @renameExtensionLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'extension'**
+  String get renameExtensionLocked;
+
+  /// No description provided for @renameConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} already exists in this folder'**
+  String renameConflict(String name);
+
+  /// No description provided for @renameTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is longer than {max} characters'**
+  String renameTooLong(int max);
+
   /// No description provided for @fileAlreadyExists.
   ///
   /// In en, this message translates to:
