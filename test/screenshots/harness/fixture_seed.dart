@@ -18,6 +18,7 @@ import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
+import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt_history_entry.dart';
 import 'package:joycai_image_ai_toolkits/models/tag.dart';
@@ -171,6 +172,19 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     requestPrice: 0.04,
   ).toMap(includeId: false));
 
+  // D2b: a spec-billed video group — per second, three tiers and a catch-all.
+  final int veoFee = await db.addPricingGroup(PricingGroup(
+    name: 'Veo 3 视频',
+    billingMode: 'spec',
+    outputUnit: OutputUnit.second,
+    outputRates: const <SpecRate>[
+      SpecRate(size: '1080p', quality: 'high', price: 0.5),
+      SpecRate(size: '1080p', price: 0.3),
+      SpecRate(size: '720p', price: 0.15),
+      SpecRate(price: 0.1),
+    ],
+  ).toMap(includeId: false));
+
   final List<LLMModel> models = <LLMModel>[
     LLMModel(
       modelId: 'gemini-2.5-flash-image',
@@ -204,7 +218,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
       modelName: 'Veo 3.1 视频生成',
       tag: ModelTag.video.value,
       channelId: googleId,
-      feeGroupId: perImageFee,
+      feeGroupId: veoFee,
       sortOrder: 3,
     ),
     LLMModel(
@@ -950,13 +964,43 @@ Future<void> _seedUsage(DatabaseService db, _Catalog catalog) async {
   for (int day = 29; day >= 0; day--) {
     final int rowsToday = 1 + next(3);
     for (int r = 0; r < rowsToday; r++) {
-      final int m = next(catalog.modelPks.length);
+      // The last week always carries some spec-billed video, so the usage
+      // page's quantities column and 「未匹配」 note are in every shot.
+      final int veo = catalog.modelIds.indexOf('veo-3.1-generate-preview');
+      final int m = day < 7 && r == 0 && veo >= 0 ? veo : next(catalog.modelPks.length);
       final DateTime ts = kSeedNow
           .subtract(Duration(days: day))
           .subtract(Duration(hours: next(10), minutes: next(60)));
       final int inputTokens = 800 + next(9000);
       final int cacheTokens = next(2) == 0 ? 0 : next(3000);
       final int outputTokens = 200 + next(2500);
+      if (catalog.modelIds[m] == 'veo-3.1-generate-preview') {
+        // The Veo model bills by spec: 8 s at one of its tiers, and now and
+        // then a 1440p request no rate row covers — the usage page's
+        // 「未匹配」 case.
+        final int tier = next(4);
+        final String size = tier == 3 ? '1440p' : (tier == 2 ? '720p' : '1080p');
+        final String? quality = tier == 0 ? 'high' : null;
+        final double price = tier == 0 ? 0.5 : (tier == 1 ? 0.3 : (tier == 2 ? 0.15 : 0.0));
+        await db.recordTokenUsage(<String, dynamic>{
+          'task_id': 'fixture-usage-$day-$r',
+          'model_id': catalog.modelIds[m],
+          'model_pk': catalog.modelPks[m],
+          'timestamp': ts.toIso8601String(),
+          'request_count': 1,
+          'billing_mode': 'spec',
+          'output_units': 8.0,
+          'output_unit_price': price,
+          'output_unit': 'second',
+          'output_spec': jsonEncode(<String, dynamic>{
+            'size': size,
+            'quality': ?quality,
+            'seconds': 8,
+            'matched': tier != 3,
+          }),
+        });
+        continue;
+      }
       await db.recordTokenUsage(<String, dynamic>{
         'task_id': 'fixture-usage-$day-$r',
         'model_id': catalog.modelIds[m],

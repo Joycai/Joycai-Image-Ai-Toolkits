@@ -10,6 +10,7 @@
   "thisYear": "This Year",
   "inputTokens": "Input Tokens",
   "cachedInputTokens": "Cached Input",
+  "specBilled": "By spec",
   "outputTokens": "Output Tokens",
   "cacheHitRate": "Cache Hit Rate",
   "cacheHitRateHint": "Share of input tokens served from the prompt cache",
@@ -70,5 +71,48 @@
         "type": "int"
       }
     }
-  }
+  },
+  "usageUnitsImage": "{n} images",
+  "@usageUnitsImage": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageUnitsSecond": "{n} s",
+  "@usageUnitsSecond": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageUnitsClip": "{n} clips",
+  "@usageUnitsClip": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageRequests": "{n} req",
+  "@usageRequests": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "usageSpecColumn": "Spec",
+  "usageUnmatched": "{n} requests matched no rate and were billed at 0",
+  "@usageUnmatched": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "usageGoFixRates": "Add rates",
+  "usageUnitPrice": "Unit price"
 }

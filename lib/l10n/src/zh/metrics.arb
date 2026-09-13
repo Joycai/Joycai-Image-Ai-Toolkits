@@ -10,6 +10,7 @@
   "thisYear": "今年",
   "inputTokens": "输入 Token",
   "cachedInputTokens": "缓存输入",
+  "specBilled": "按规格",
   "outputTokens": "输出 Token",
   "cacheHitRate": "缓存命中率",
   "cacheHitRateHint": "命中缓存的输入 Token 占全部输入 Token 的比例",
@@ -43,5 +44,48 @@
   "invalidPriceValue": "请输入有效的非负数字",
   "usageLoadingRecords": "正在汇总用量记录…",
   "noUsageInRangeHint": "换一个区间，或先跑一个任务。",
-  "usageLoadMoreStatus": "每页 {pageSize} · 已显示 {shown} / {total}"
+  "usageLoadMoreStatus": "每页 {pageSize} · 已显示 {shown} / {total}",
+  "usageUnitsImage": "{n} 张",
+  "@usageUnitsImage": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageUnitsSecond": "{n} 秒",
+  "@usageUnitsSecond": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageUnitsClip": "{n} 条",
+  "@usageUnitsClip": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageRequests": "{n} 次",
+  "@usageRequests": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "usageSpecColumn": "规格",
+  "usageUnmatched": "{n} 次请求未匹配任何档位，按 0 计",
+  "@usageUnmatched": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "usageGoFixRates": "去补档位",
+  "usageUnitPrice": "单价"
 }

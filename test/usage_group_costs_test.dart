@@ -17,20 +17,31 @@ void main() {
     PricingGroup(id: 3, name: 'Deleted Group'),
   ];
 
-  UsageStats stats(Map<int, double> costs, {double? total}) => UsageStats(
+  UsageStats stats(Map<int, double> costs, {double? total, Map<int, GroupUsage> usage = const {}}) => UsageStats(
         totalInput: 1000,
         totalCache: 0,
         totalOutput: 500,
         totalRequestCount: 4,
         totalCost: total ?? costs.values.fold(0.0, (a, b) => a + b),
         groupCosts: costs,
+        groupUsage: usage,
       );
+
+  /// A spec-billed group's usage: 126 seconds over 18 requests, 3 of which
+  /// no rate row priced.
+  const veoUsage = GroupUsage(
+    specCost: 6.2,
+    specUnits: {'second': 126},
+    unmatchedCount: 3,
+    requestCount: 18,
+  );
 
   Future<void> pumpCosts(
     WidgetTester tester,
     UsageStats data,
     Size size, {
     List<PricingGroup>? known,
+    ValueChanged<PricingGroup>? onFixRates,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -43,7 +54,7 @@ void main() {
         home: Scaffold(
           body: Align(
             alignment: Alignment.topCenter,
-            child: UsageGroupCosts(stats: data, groups: known ?? groups),
+            child: UsageGroupCosts(stats: data, groups: known ?? groups, onFixRates: onFixRates),
           ),
         ),
       ),
@@ -115,4 +126,56 @@ void main() {
     final bar = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
     expect(bar.value, 0);
   });
+
+  testWidgets('a spec-billed group states its units beside its requests', (tester) async {
+    await pumpCosts(tester, stats({1: 6.2, 2: 0.5}, usage: {1: veoUsage}), const Size(1920, 1080));
+
+    expect(find.text('126 s · 18 req'), findsOneWidget);
+  });
+
+  testWidgets('unpriced requests are counted under the group, with a way to fix them', (tester) async {
+    PricingGroup? asked;
+    await pumpCosts(
+      tester,
+      stats({1: 6.2, 2: 0.5}, usage: {1: veoUsage}),
+      const Size(1920, 1080),
+      onFixRates: (g) => asked = g,
+    );
+
+    expect(find.text('3 requests matched no rate and were billed at 0'), findsOneWidget);
+    await tester.tap(find.text('Add rates'));
+    await tester.pump();
+    expect(asked?.id, 1);
+  });
+
+  testWidgets('a matched group carries no note and no button', (tester) async {
+    await pumpCosts(
+      tester,
+      stats({1: 6.2}, usage: {1: const GroupUsage(specCost: 6.2, specUnits: {'image': 38}, requestCount: 31)}),
+      const Size(1920, 1080),
+      onFixRates: (_) {},
+    );
+
+    expect(find.text('38 images · 31 req'), findsOneWidget);
+    expect(find.textContaining('matched no rate'), findsNothing);
+    expect(find.text('Add rates'), findsNothing);
+  });
+
+  for (final entry in {
+    'Mobile': const Size(390, 844),
+    'Tablet': const Size(820, 1180),
+  }.entries) {
+    testWidgets('the unmatched note lays out without overflow on ${entry.key}', (tester) async {
+      await pumpCosts(
+        tester,
+        stats({1: 6.2, 2: 0.5}, usage: {1: veoUsage}),
+        entry.value,
+        onFixRates: (_) {},
+      );
+
+      expect(tester.takeException(), isNull, reason: 'Overflow on ${entry.key}');
+      expect(find.text('126 s · 18 req'), findsOneWidget);
+      expect(find.text('Add rates'), findsOneWidget);
+    });
+  }
 }

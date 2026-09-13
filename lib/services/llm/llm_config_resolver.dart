@@ -1,5 +1,6 @@
 import '../../models/llm_model.dart';
 import '../../models/pricing_group.dart';
+import '../../models/spec_rate.dart';
 import '../database_service.dart';
 import 'llm_types.dart';
 
@@ -31,6 +32,8 @@ class LLMConfigResolver {
     double outputFee = 0.0;
     String billingMode = 'token';
     double requestFee = 0.0;
+    OutputUnit outputUnit = OutputUnit.image;
+    List<SpecRate> outputRates = const [];
 
     if (pricingGroupId != null) {
       final pricingGroups = await _db.getPricingGroups();
@@ -41,6 +44,8 @@ class LLMConfigResolver {
         outputFee = group.outputPrice;
         billingMode = group.billingMode;
         requestFee = group.requestPrice;
+        outputUnit = group.outputUnit;
+        outputRates = group.outputRates;
       }
     }
 
@@ -82,6 +87,8 @@ class LLMConfigResolver {
       outputFee: outputFee,
       billingMode: billingMode,
       requestFee: requestFee,
+      outputUnit: outputUnit,
+      outputRates: outputRates,
       proxyEnabled: proxyEnabled,
       proxyUrl: proxyUrl,
       proxyUsername: proxyUsername,

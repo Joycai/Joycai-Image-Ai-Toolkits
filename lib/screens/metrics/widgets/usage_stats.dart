@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../../models/llm_model.dart';
 
 /// What one fee group's money went on over a range, and how many requests
@@ -15,6 +17,19 @@ class GroupUsage {
   /// Cost of request-billed rows, which bill no tokens at all.
   final double requestCost;
 
+  /// Cost of spec-billed rows (images by size, video by resolution and
+  /// length). Drawn in the same neutral as [requestCost] — both are money
+  /// that bought output rather than tokens — and told apart in text.
+  final double specCost;
+
+  /// Units the spec-billed rows used, by unit (`image` / `second` / `clip`),
+  /// for the "38 images · 126 s" line.
+  final Map<String, double> specUnits;
+
+  /// Spec-billed requests whose rate table had no row for their spec. They
+  /// cost zero, which is a configuration gap, not a free lunch.
+  final int unmatchedCount;
+
   final int requestCount;
 
   const GroupUsage({
@@ -22,16 +37,26 @@ class GroupUsage {
     this.cacheCost = 0,
     this.outputCost = 0,
     this.requestCost = 0,
+    this.specCost = 0,
+    this.specUnits = const {},
+    this.unmatchedCount = 0,
     this.requestCount = 0,
   });
 
-  double get totalCost => inputCost + cacheCost + outputCost + requestCost;
+  double get totalCost => inputCost + cacheCost + outputCost + requestCost + specCost;
 
   GroupUsage operator +(GroupUsage other) => GroupUsage(
         inputCost: inputCost + other.inputCost,
         cacheCost: cacheCost + other.cacheCost,
         outputCost: outputCost + other.outputCost,
         requestCost: requestCost + other.requestCost,
+        specCost: specCost + other.specCost,
+        specUnits: {
+          ...specUnits,
+          for (final e in other.specUnits.entries)
+            e.key: (specUnits[e.key] ?? 0) + e.value,
+        },
+        unmatchedCount: unmatchedCount + other.unmatchedCount,
         requestCount: requestCount + other.requestCount,
       );
 }
@@ -96,10 +121,16 @@ class UsageStats {
 /// `cache_price` is null on rows written before cache pricing existed, and on
 /// rows whose fee group leaves the cache rate unset — both fall back to the
 /// plain input rate.
-({double input, double cache, double output, double request}) usageRowCostParts(
+({double input, double cache, double output, double request, double spec}) usageRowCostParts(
   Map<String, dynamic> row,
 ) {
   final billingMode = row['billing_mode'] as String? ?? 'token';
+
+  if (billingMode == 'spec') {
+    final units = (row['output_units'] as num? ?? 0.0).toDouble();
+    final unitPrice = (row['output_unit_price'] as num? ?? 0.0).toDouble();
+    return (input: 0.0, cache: 0.0, output: 0.0, request: 0.0, spec: units * unitPrice);
+  }
 
   if (billingMode != 'token') {
     final reqPrice = (row['request_price'] as num? ?? 0.0).toDouble();
@@ -108,6 +139,7 @@ class UsageStats {
       cache: 0.0,
       output: 0.0,
       request: (row['request_count'] as int? ?? 1) * reqPrice,
+      spec: 0.0,
     );
   }
 
@@ -120,14 +152,47 @@ class UsageStats {
     cache: (row['cache_tokens'] as int? ?? 0) * cachePrice / 1000000,
     output: (row['output_tokens'] as int? ?? 0) * outPrice / 1000000,
     request: 0.0,
+    spec: 0.0,
   );
 }
 
 /// Cost of a single usage row — the sum of [usageRowCostParts].
 double calculateRowCost(Map<String, dynamic> row) {
   final parts = usageRowCostParts(row);
-  if ((row['billing_mode'] as String? ?? 'token') != 'token') return parts.request;
-  return parts.input + parts.cache + parts.output;
+  return parts.input + parts.cache + parts.output + parts.request + parts.spec;
+}
+
+/// The `output_spec` snapshot of a spec-billed row, decoded; null for the
+/// other modes, a missing snapshot, or one that does not parse.
+Map<String, dynamic>? usageRowSpec(Map<String, dynamic> row) {
+  if ((row['billing_mode'] as String? ?? 'token') != 'spec') return null;
+  final raw = row['output_spec'];
+  if (raw is! String || raw.isEmpty) return null;
+  try {
+    final decoded = jsonDecode(raw);
+    return decoded is Map ? decoded.cast<String, dynamic>() : null;
+  } on FormatException {
+    return null;
+  }
+}
+
+/// Whether a spec-billed row found no rate-table row for its spec. Rows of
+/// the other modes are never unmatched, and a row without the snapshot cannot
+/// say, so counts as matched.
+bool usageRowUnmatched(Map<String, dynamic> row) => usageRowSpec(row)?['matched'] == false;
+
+/// The spec a row was billed at, as the usage table's 「规格」 column spells
+/// it: `1080p · high · 8s`, the absent dimensions left out. Null for a row of
+/// another mode; empty for a spec row that carried no spec at all.
+String? usageRowSpecLabel(Map<String, dynamic> row) {
+  final spec = usageRowSpec(row);
+  if (spec == null) return null;
+  final seconds = spec['seconds'];
+  return [
+    if (spec['size'] is String) spec['size'] as String,
+    if (spec['quality'] is String) spec['quality'] as String,
+    if (seconds is num) '${seconds.toInt()}s',
+  ].join(' · ');
 }
 
 /// Computes totals and per-group costs from raw usage rows. Pure function so it
@@ -161,12 +226,18 @@ UsageStats calculateStats(List<Map<String, dynamic>> usageData, List<LLMModel> a
       groupCosts[groupId] = (groupCosts[groupId] ?? 0) + cost;
 
       final parts = usageRowCostParts(row);
+      final specUnit = row['output_unit'] as String?;
       groupUsage[groupId] = (groupUsage[groupId] ?? const GroupUsage()) +
           GroupUsage(
             inputCost: parts.input,
             cacheCost: parts.cache,
             outputCost: parts.output,
             requestCost: parts.request,
+            specCost: parts.spec,
+            specUnits: specUnit == null
+                ? const {}
+                : {specUnit: (row['output_units'] as num? ?? 0.0).toDouble()},
+            unmatchedCount: usageRowUnmatched(row) ? 1 : 0,
             requestCount: requests,
           );
     }

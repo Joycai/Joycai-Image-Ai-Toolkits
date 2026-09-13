@@ -1232,6 +1232,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cachedInputTokens => '缓存输入';
 
   @override
+  String get specBilled => '按规格';
+
+  @override
   String get outputTokens => '输出 Token';
 
   @override
@@ -1300,6 +1303,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String usageLoadMoreStatus(int pageSize, int shown, int total) {
     return '每页 $pageSize · 已显示 $shown / $total';
   }
+
+  @override
+  String usageUnitsImage(String n) {
+    return '$n 张';
+  }
+
+  @override
+  String usageUnitsSecond(String n) {
+    return '$n 秒';
+  }
+
+  @override
+  String usageUnitsClip(String n) {
+    return '$n 条';
+  }
+
+  @override
+  String usageRequests(int n) {
+    return '$n 次';
+  }
+
+  @override
+  String get usageSpecColumn => '规格';
+
+  @override
+  String usageUnmatched(int n) {
+    return '$n 次请求未匹配任何档位，按 0 计';
+  }
+
+  @override
+  String get usageGoFixRates => '去补档位';
+
+  @override
+  String get usageUnitPrice => '单价';
 
   @override
   String get models => '模型';
@@ -1419,10 +1456,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get billingMode => '计费模式';
 
   @override
-  String get perToken => '按 Token 计费 (每百万)';
+  String get perToken => '按 token';
 
   @override
-  String get perRequest => '按次计费';
+  String get perRequest => '按次';
 
   @override
   String get requestCount => '请求次数';
@@ -2277,6 +2314,121 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get modelIdTakenDesc => '同一个渠道里 ID 必须唯一。改 ID，或去编辑已存在的那一条。';
+
+  @override
+  String get perSpec => '按规格';
+
+  @override
+  String get specUnitImage => '按张';
+
+  @override
+  String get specUnitSecond => '按秒';
+
+  @override
+  String get specUnitClip => '按条';
+
+  @override
+  String get specUnitSuffixImage => '/张';
+
+  @override
+  String get specUnitSuffixSecond => '/秒';
+
+  @override
+  String get specUnitSuffixClip => '/条';
+
+  @override
+  String get specUnitNoteImage => '1 张 = 1 单位';
+
+  @override
+  String get specUnitNoteSecond => '1 秒 = 1 单位';
+
+  @override
+  String get specUnitNoteClip => '1 条 = 1 单位';
+
+  @override
+  String get specUnitLabel => '单位';
+
+  @override
+  String get specDimSize => '尺寸 / 分辨率';
+
+  @override
+  String get specDimQuality => '质量';
+
+  @override
+  String get specDimSeconds => '时长（秒）';
+
+  @override
+  String get specAnyValue => '任意';
+
+  @override
+  String get specGroupImageSizes => '图片尺寸';
+
+  @override
+  String get specGroupVideoRes => '视频分辨率';
+
+  @override
+  String get specOtherRates => '其他规格';
+
+  @override
+  String get specOtherRatesSub => '未列出的尺寸 · 质量 · 时长';
+
+  @override
+  String get specAddRate => '添加档位';
+
+  @override
+  String get specCustomValue => '自定义…';
+
+  @override
+  String get specCustomHint => '大小写会归一（2k → 2K）';
+
+  @override
+  String specPriceLabel(String suffix) {
+    return '单价 \$$suffix';
+  }
+
+  @override
+  String get specPricePlaceholder => '填单价';
+
+  @override
+  String get specPriorityRule => '条件留空即「任意」；命中多行时，条件填得越多越优先。';
+
+  @override
+  String specPriceMissing(int n) {
+    return '第 $n 行还没填单价，保存前补上。';
+  }
+
+  @override
+  String specDuplicateRow(int a, int b, String cond) {
+    return '第 $a、$b 行条件相同（$cond），删掉一行或改条件。';
+  }
+
+  @override
+  String get specOtherBlankHint => '留空则未列出的规格按 0 计。';
+
+  @override
+  String get specOnlyOtherHint => '只有「其他规格」一档时，效果与「按次」相同。';
+
+  @override
+  String get specSwitchToRequest => '改用按次';
+
+  @override
+  String specSummary(String unit, int n, String min, String max) {
+    return '$unit · $n 档 · $min–$max';
+  }
+
+  @override
+  String specSummaryEmpty(String unit) {
+    return '$unit · 0 档';
+  }
+
+  @override
+  String get specOtherZero => '其他规格按 0 计';
+
+  @override
+  String get modelCardBilling => '计费';
+
+  @override
+  String get specUnitSuffixRequest => '/次';
 
   @override
   String get prompts => '提示词';
@@ -5671,6 +5823,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get cachedInputTokens => '快取輸入';
 
   @override
+  String get specBilled => '按規格';
+
+  @override
   String get outputTokens => '輸出 Token';
 
   @override
@@ -5739,6 +5894,40 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String usageLoadMoreStatus(int pageSize, int shown, int total) {
     return '每頁 $pageSize · 已顯示 $shown / $total';
   }
+
+  @override
+  String usageUnitsImage(String n) {
+    return '$n 張';
+  }
+
+  @override
+  String usageUnitsSecond(String n) {
+    return '$n 秒';
+  }
+
+  @override
+  String usageUnitsClip(String n) {
+    return '$n 條';
+  }
+
+  @override
+  String usageRequests(int n) {
+    return '$n 次';
+  }
+
+  @override
+  String get usageSpecColumn => '規格';
+
+  @override
+  String usageUnmatched(int n) {
+    return '$n 次請求未符合任何檔位，以 0 計';
+  }
+
+  @override
+  String get usageGoFixRates => '去補檔位';
+
+  @override
+  String get usageUnitPrice => '單價';
 
   @override
   String get models => '模型';
@@ -5858,10 +6047,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get billingMode => '計費模式';
 
   @override
-  String get perToken => '每百萬 Token';
+  String get perToken => '按 token';
 
   @override
-  String get perRequest => '每次請求';
+  String get perRequest => '按次';
 
   @override
   String get requestCount => '請求次數';
@@ -6716,6 +6905,121 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get modelIdTakenDesc => '同一個通道裡 ID 必須唯一。改 ID，或去編輯已存在的那一筆。';
+
+  @override
+  String get perSpec => '按規格';
+
+  @override
+  String get specUnitImage => '按張';
+
+  @override
+  String get specUnitSecond => '按秒';
+
+  @override
+  String get specUnitClip => '按條';
+
+  @override
+  String get specUnitSuffixImage => '/張';
+
+  @override
+  String get specUnitSuffixSecond => '/秒';
+
+  @override
+  String get specUnitSuffixClip => '/條';
+
+  @override
+  String get specUnitNoteImage => '1 張 = 1 單位';
+
+  @override
+  String get specUnitNoteSecond => '1 秒 = 1 單位';
+
+  @override
+  String get specUnitNoteClip => '1 條 = 1 單位';
+
+  @override
+  String get specUnitLabel => '單位';
+
+  @override
+  String get specDimSize => '尺寸 / 解析度';
+
+  @override
+  String get specDimQuality => '品質';
+
+  @override
+  String get specDimSeconds => '時長（秒）';
+
+  @override
+  String get specAnyValue => '任意';
+
+  @override
+  String get specGroupImageSizes => '圖片尺寸';
+
+  @override
+  String get specGroupVideoRes => '影片解析度';
+
+  @override
+  String get specOtherRates => '其他規格';
+
+  @override
+  String get specOtherRatesSub => '未列出的尺寸 · 品質 · 時長';
+
+  @override
+  String get specAddRate => '新增檔位';
+
+  @override
+  String get specCustomValue => '自訂…';
+
+  @override
+  String get specCustomHint => '大小寫會統一（2k → 2K）';
+
+  @override
+  String specPriceLabel(String suffix) {
+    return '單價 \$$suffix';
+  }
+
+  @override
+  String get specPricePlaceholder => '填單價';
+
+  @override
+  String get specPriorityRule => '條件留空即「任意」；符合多行時，條件填得越多越優先。';
+
+  @override
+  String specPriceMissing(int n) {
+    return '第 $n 行還沒填單價，儲存前補上。';
+  }
+
+  @override
+  String specDuplicateRow(int a, int b, String cond) {
+    return '第 $a、$b 行條件相同（$cond），刪掉一行或改條件。';
+  }
+
+  @override
+  String get specOtherBlankHint => '留空則未列出的規格以 0 計。';
+
+  @override
+  String get specOnlyOtherHint => '只有「其他規格」一檔時，效果與「按次」相同。';
+
+  @override
+  String get specSwitchToRequest => '改用按次';
+
+  @override
+  String specSummary(String unit, int n, String min, String max) {
+    return '$unit · $n 檔 · $min–$max';
+  }
+
+  @override
+  String specSummaryEmpty(String unit) {
+    return '$unit · 0 檔';
+  }
+
+  @override
+  String get specOtherZero => '其他規格以 0 計';
+
+  @override
+  String get modelCardBilling => '計費';
+
+  @override
+  String get specUnitSuffixRequest => '/次';
 
   @override
   String get prompts => '提示';

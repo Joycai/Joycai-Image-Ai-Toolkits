@@ -45,6 +45,25 @@ void main() {
         'request_price': price,
       };
 
+  /// A spec-billed video row: 8 seconds of 1080p at $0.30 a second.
+  Map<String, dynamic> specRow({
+    required String timestamp,
+    String modelId = 'veo-3.0-generate-preview',
+    String spec = '{"size":"1080p","quality":"high","seconds":8,"matched":true}',
+    double units = 8,
+    double price = 0.3,
+  }) =>
+      {
+        'model_id': modelId,
+        'timestamp': timestamp,
+        'billing_mode': 'spec',
+        'request_count': 1,
+        'output_units': units,
+        'output_unit_price': price,
+        'output_unit': 'second',
+        'output_spec': spec,
+      };
+
   /// Today's date at [hour], so "Today" is a fact about the test run rather
   /// than a date baked into it.
   String todayAt(int hour, {int minute = 0}) {
@@ -188,4 +207,52 @@ void main() {
 
     expect(find.text('No usage data in the selected range.'), findsOneWidget);
   });
+
+  testWidgets('a spec-billed row states its spec in its own column, other rows a dash', (tester) async {
+    await pumpList(
+      tester,
+      [
+        specRow(timestamp: todayAt(14)),
+        tokenRow(timestamp: todayAt(13)),
+      ],
+      const Size(1920, 1080),
+    );
+
+    expect(find.text('SPEC'), findsOneWidget);
+    expect(find.text('1080p · high · 8s'), findsOneWidget);
+    // What it counted, in its unit — and the cost from the snapshot.
+    expect(find.text('8 s'), findsOneWidget);
+    expect(find.text('\$2.4000'), findsWidgets);
+    expect(find.text('—'), findsOneWidget);
+  });
+
+  testWidgets('an unmatched row keeps its spec and prices at zero', (tester) async {
+    await pumpList(
+      tester,
+      [
+        specRow(
+          timestamp: todayAt(14),
+          spec: '{"size":"1440p","seconds":8,"matched":false}',
+          price: 0,
+        ),
+      ],
+      const Size(1920, 1080),
+    );
+
+    // The spec is exactly what the user needs to copy into the rate table.
+    expect(find.text('1440p · 8s'), findsOneWidget);
+    expect(find.text('\$0.0000'), findsWidgets);
+  });
+
+  for (final entry in {
+    'Mobile': const Size(390, 844),
+    'Tablet': const Size(820, 1180),
+  }.entries) {
+    testWidgets('the spec joins the second line without overflow on ${entry.key}', (tester) async {
+      await pumpList(tester, [specRow(timestamp: todayAt(14)), tokenRow(timestamp: todayAt(13))], entry.value);
+
+      expect(tester.takeException(), isNull, reason: 'Overflow on ${entry.key}');
+      expect(find.text('1080p · high · 8s'), findsOneWidget);
+    });
+  }
 }

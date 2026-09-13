@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
+import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_stats.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
 import 'package:joycai_image_ai_toolkits/services/database_migrations.dart';
@@ -462,5 +463,93 @@ void main() {
     addTearDown(db.close);
 
     expect(await columnsOf(db, 'tasks'), contains('logs'));
+  });
+
+  group('v42 adds spec billing', () {
+    const groupColumns = ['output_unit', 'output_rates'];
+    const usageColumns = ['output_units', 'output_unit_price', 'output_unit', 'output_spec'];
+
+    test('existing groups gain the defaults and keep their mode and rates', () async {
+      final db = await openV29Db();
+      addTearDown(db.close);
+      await db.insert('fee_groups', {'name': 'Old', 'billing_mode': 'request', 'request_price': 0.02});
+
+      await DatabaseMigration.migrate(db, 41, 42);
+
+      expect(await columnsOf(db, 'fee_groups'), containsAll(groupColumns));
+      final g = PricingGroup.fromMap((await db.query('fee_groups')).single);
+      expect(g.billingMode, 'request');
+      expect(g.requestPrice, 0.02);
+      expect(g.outputUnit, OutputUnit.image);
+      expect(g.outputRates, isEmpty);
+    });
+
+    test('usage rows recorded before the upgrade still price unchanged', () async {
+      final db = await openV29Db();
+      addTearDown(db.close);
+      await db.insert('token_usage', {
+        'model_id': 'm',
+        'timestamp': '2026-01-01T00:00:00',
+        'billing_mode': 'request',
+        'request_count': 2,
+        'request_price': 0.05,
+      });
+
+      await DatabaseMigration.migrate(db, 41, 42);
+
+      expect(await columnsOf(db, 'token_usage'), containsAll(usageColumns));
+      final row = (await db.query('token_usage')).single;
+      expect(calculateRowCost(row), closeTo(0.10, 1e-9));
+      expect(row['output_units'], 0.0);
+    });
+
+    test('a spec-billed group and its usage round-trip through the new columns', () async {
+      final db = await openV29Db();
+      addTearDown(db.close);
+      // From 29, not 41: toMap writes every column a live group has, and
+      // the v29 fixture lacks the cache-price one v30 adds.
+      await DatabaseMigration.migrate(db, 29, 42);
+
+      final id = await db.insert(
+        'fee_groups',
+        PricingGroup(
+          name: 'Veo',
+          billingMode: 'spec',
+          outputUnit: OutputUnit.second,
+          outputRates: const [SpecRate(size: '1080p', price: 0.30), SpecRate(price: 0.10)],
+        ).toMap(includeId: false),
+      );
+      final g = PricingGroup.fromMap((await db.query('fee_groups', where: 'id = ?', whereArgs: [id])).single);
+      expect(g.outputUnit, OutputUnit.second);
+      expect(g.outputRates.map((r) => r.price), [0.30, 0.10]);
+
+      await db.insert('token_usage', {
+        'model_id': 'veo',
+        'timestamp': '2026-01-01T00:00:00',
+        'billing_mode': 'spec',
+        'output_units': 8.0,
+        'output_unit_price': 0.30,
+        'output_unit': 'second',
+        'output_spec': '{"size":"1080p","seconds":8,"matched":true}',
+      });
+      final row = (await db.query('token_usage')).single;
+      expect(calculateRowCost(row), closeTo(2.40, 1e-9));
+    });
+
+    test('the step is idempotent', () async {
+      final db = await openV29Db();
+      addTearDown(db.close);
+      await DatabaseMigration.migrate(db, 41, 42);
+      await DatabaseMigration.migrate(db, 41, 42);
+      expect(await columnsOf(db, 'fee_groups'), containsAll(groupColumns));
+    });
+
+    test('a fresh database is created with every column', () async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      addTearDown(db.close);
+      await DatabaseMigration.onCreate(db);
+      expect(await columnsOf(db, 'fee_groups'), containsAll(groupColumns));
+      expect(await columnsOf(db, 'token_usage'), containsAll(usageColumns));
+    });
   });
 }

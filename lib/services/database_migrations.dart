@@ -66,6 +66,7 @@ class DatabaseMigration {
     if (oldVersion < 39) await _createV39Columns(db);
     if (oldVersion < 40) await _migrateV40ThemeSeed(db);
     if (oldVersion < 41) await _createV41Columns(db);
+    if (oldVersion < 42) await _createV42Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -106,6 +107,7 @@ class DatabaseMigration {
     await _createV38Columns(db);
     await _createV39Columns(db);
     await _createV41Columns(db);
+    await _createV42Columns(db);
     // Presets are synchronized in DatabaseService
   }
 
@@ -195,6 +197,35 @@ class DatabaseMigration {
   static Future<void> _createV41Columns(Database db) async {
     if (!await _tableExists(db, 'llm_channels')) return;
     await _addColumnIfNotExists(db, 'llm_channels', 'default_fee_group_id', 'INTEGER');
+  }
+
+  /// Spec billing — the third `billing_mode`, for image and video models
+  /// priced by resolution (and duration) rather than by token or by request.
+  ///
+  /// On `fee_groups`: the unit a request counts as (`image` / `second` /
+  /// `clip`) and the rate table as JSON (`output_rates`, a list of
+  /// `{size?, quality?, seconds?, price}` rows — read only through
+  /// `SpecRate.decodeList`, never queried inside). Existing groups get the
+  /// defaults and keep pricing exactly as before; their mode is unchanged.
+  ///
+  /// On `token_usage`: the snapshot a spec-billed request leaves behind —
+  /// how many units it used, the unit price it matched, the unit, and the
+  /// spec it was matched with (JSON, plus a `matched` flag so unpriced
+  /// requests can be counted). Same discipline as the token and request
+  /// columns: cost is computed at read time from the row's own snapshot, so
+  /// editing the group never rewrites history. Rows written before this
+  /// version have the defaults and price as they did.
+  static Future<void> _createV42Columns(Database db) async {
+    if (await _tableExists(db, 'fee_groups')) {
+      await _addColumnIfNotExists(db, 'fee_groups', 'output_unit', "TEXT DEFAULT 'image'");
+      await _addColumnIfNotExists(db, 'fee_groups', 'output_rates', 'TEXT');
+    }
+    if (await _tableExists(db, 'token_usage')) {
+      await _addColumnIfNotExists(db, 'token_usage', 'output_units', 'REAL DEFAULT 0.0');
+      await _addColumnIfNotExists(db, 'token_usage', 'output_unit_price', 'REAL DEFAULT 0.0');
+      await _addColumnIfNotExists(db, 'token_usage', 'output_unit', 'TEXT');
+      await _addColumnIfNotExists(db, 'token_usage', 'output_spec', 'TEXT');
+    }
   }
 
   /// The Material seeds the theme presets were named after, as the pre-pair

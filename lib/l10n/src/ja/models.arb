@@ -36,8 +36,8 @@
   "type": "タイプ",
   "tag": "タグ",
   "billingMode": "請求モード",
-  "perToken": "100万トークンあたり",
-  "perRequest": "リクエストあたり",
+  "perToken": "トークン別",
+  "perRequest": "回数別",
   "requestCount": "リクエスト数",
   "requests": "リクエスト",
   "feeGroups": "料金グループ",
@@ -361,5 +361,90 @@
   "channelDefaultFeeGroup": "既定の料金グループ",
   "channelDefaultFeeGroupHint": "このチャンネルに追加したモデルは、最初にこのグループに入ります",
   "modelIdTakenTitle": "このチャンネルには同じ Model ID がすでにあります",
-  "modelIdTakenDesc": "Model ID はチャンネル内で一意である必要があります。ID を変えるか、すでにあるモデルを編集してください。"
+  "modelIdTakenDesc": "Model ID はチャンネル内で一意である必要があります。ID を変えるか、すでにあるモデルを編集してください。",
+  "perSpec": "仕様別",
+  "specUnitImage": "枚あたり",
+  "specUnitSecond": "秒あたり",
+  "specUnitClip": "本あたり",
+  "specUnitSuffixImage": "/枚",
+  "specUnitSuffixSecond": "/秒",
+  "specUnitSuffixClip": "/本",
+  "specUnitNoteImage": "1 枚 = 1 単位",
+  "specUnitNoteSecond": "1 秒 = 1 単位",
+  "specUnitNoteClip": "1 本 = 1 単位",
+  "specUnitLabel": "単位",
+  "specDimSize": "サイズ / 解像度",
+  "specDimQuality": "品質",
+  "specDimSeconds": "長さ（秒）",
+  "specAnyValue": "指定なし",
+  "specGroupImageSizes": "画像サイズ",
+  "specGroupVideoRes": "動画解像度",
+  "specOtherRates": "その他の仕様",
+  "specOtherRatesSub": "未掲載のサイズ · 品質 · 長さ",
+  "specAddRate": "料金を追加",
+  "specCustomValue": "カスタム…",
+  "specCustomHint": "大文字小文字は正規化されます（2k → 2K）",
+  "specPriceLabel": "単価 ${suffix}",
+  "@specPriceLabel": {
+    "placeholders": {
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "specPricePlaceholder": "単価を入力",
+  "specPriorityRule": "空欄は「指定なし」。複数行に一致する場合は条件の多い行を優先します。",
+  "specPriceMissing": "{n} 行目の単価が未入力です。保存前に入力してください。",
+  "@specPriceMissing": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "specDuplicateRow": "{a} 行目と {b} 行目の条件が同じです（{cond}）。1 行削除するか条件を変えてください。",
+  "@specDuplicateRow": {
+    "placeholders": {
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      },
+      "cond": {
+        "type": "String"
+      }
+    }
+  },
+  "specOtherBlankHint": "空欄の場合、未掲載の仕様は 0 として計算します。",
+  "specOnlyOtherHint": "「その他の仕様」だけの場合は「回数別」と同じ動作です。",
+  "specSwitchToRequest": "回数別に切り替え",
+  "specSummary": "{unit} · {n} 段階 · {min}–{max}",
+  "@specSummary": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "specSummaryEmpty": "{unit} · 0 段階",
+  "@specSummaryEmpty": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "specOtherZero": "その他の仕様は 0",
+  "modelCardBilling": "課金",
+  "specUnitSuffixRequest": "/回"
 }

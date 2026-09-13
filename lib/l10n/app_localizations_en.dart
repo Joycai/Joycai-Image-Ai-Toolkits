@@ -1272,6 +1272,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cachedInputTokens => 'Cached Input';
 
   @override
+  String get specBilled => 'By spec';
+
+  @override
   String get outputTokens => 'Output Tokens';
 
   @override
@@ -1341,6 +1344,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String usageLoadMoreStatus(int pageSize, int shown, int total) {
     return '$pageSize per page · $shown / $total shown';
   }
+
+  @override
+  String usageUnitsImage(String n) {
+    return '$n images';
+  }
+
+  @override
+  String usageUnitsSecond(String n) {
+    return '$n s';
+  }
+
+  @override
+  String usageUnitsClip(String n) {
+    return '$n clips';
+  }
+
+  @override
+  String usageRequests(int n) {
+    return '$n req';
+  }
+
+  @override
+  String get usageSpecColumn => 'Spec';
+
+  @override
+  String usageUnmatched(int n) {
+    return '$n requests matched no rate and were billed at 0';
+  }
+
+  @override
+  String get usageGoFixRates => 'Add rates';
+
+  @override
+  String get usageUnitPrice => 'Unit price';
 
   @override
   String get models => 'Models';
@@ -1464,10 +1501,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get billingMode => 'Billing Mode';
 
   @override
-  String get perToken => 'Per Million Tokens';
+  String get perToken => 'Per token';
 
   @override
-  String get perRequest => 'Per Request';
+  String get perRequest => 'Per request';
 
   @override
   String get requestCount => 'Request Count';
@@ -2381,6 +2418,124 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get modelIdTakenDesc =>
       'A Model ID must be unique within a channel. Change the ID, or edit the model that already has it.';
+
+  @override
+  String get perSpec => 'Per spec';
+
+  @override
+  String get specUnitImage => 'Per image';
+
+  @override
+  String get specUnitSecond => 'Per second';
+
+  @override
+  String get specUnitClip => 'Per clip';
+
+  @override
+  String get specUnitSuffixImage => '/image';
+
+  @override
+  String get specUnitSuffixSecond => '/s';
+
+  @override
+  String get specUnitSuffixClip => '/clip';
+
+  @override
+  String get specUnitNoteImage => '1 image = 1 unit';
+
+  @override
+  String get specUnitNoteSecond => '1 s = 1 unit';
+
+  @override
+  String get specUnitNoteClip => '1 clip = 1 unit';
+
+  @override
+  String get specUnitLabel => 'Unit';
+
+  @override
+  String get specDimSize => 'Size / resolution';
+
+  @override
+  String get specDimQuality => 'Quality';
+
+  @override
+  String get specDimSeconds => 'Duration (s)';
+
+  @override
+  String get specAnyValue => 'Any';
+
+  @override
+  String get specGroupImageSizes => 'Image sizes';
+
+  @override
+  String get specGroupVideoRes => 'Video resolutions';
+
+  @override
+  String get specOtherRates => 'Other specs';
+
+  @override
+  String get specOtherRatesSub => 'Any size · quality · duration not listed';
+
+  @override
+  String get specAddRate => 'Add rate';
+
+  @override
+  String get specCustomValue => 'Custom…';
+
+  @override
+  String get specCustomHint => 'Case is normalized (2k → 2K)';
+
+  @override
+  String specPriceLabel(String suffix) {
+    return 'Price \$$suffix';
+  }
+
+  @override
+  String get specPricePlaceholder => 'Enter price';
+
+  @override
+  String get specPriorityRule =>
+      'Blank means \"any\". When several rows match, the row with more conditions wins.';
+
+  @override
+  String specPriceMissing(int n) {
+    return 'Row $n has no price yet. Add one before saving.';
+  }
+
+  @override
+  String specDuplicateRow(int a, int b, String cond) {
+    return 'Rows $a and $b have the same conditions ($cond). Remove one or change a condition.';
+  }
+
+  @override
+  String get specOtherBlankHint =>
+      'Leave blank and unlisted specs are billed at 0.';
+
+  @override
+  String get specOnlyOtherHint =>
+      'With only \"Other specs\", this works the same as Per request.';
+
+  @override
+  String get specSwitchToRequest => 'Switch to Per request';
+
+  @override
+  String specSummary(String unit, int n, String min, String max) {
+    return '$unit · $n rates · $min–$max';
+  }
+
+  @override
+  String specSummaryEmpty(String unit) {
+    return '$unit · 0 rates';
+  }
+
+  @override
+  String get specOtherZero => 'Other specs at 0';
+
+  @override
+  String get modelCardBilling => 'Billing';
+
+  @override
+  String get specUnitSuffixRequest => '/req';
 
   @override
   String get prompts => 'Prompts';

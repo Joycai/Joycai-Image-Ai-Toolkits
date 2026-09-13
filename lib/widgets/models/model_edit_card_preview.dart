@@ -37,6 +37,8 @@ class ModelEditCardPreview extends StatelessWidget {
           model: model,
           channel: channel,
           feeGroup: feeGroup,
+          // `D2b · 21f`: the preview also says what the chosen group charges.
+          showBilling: true,
           // The phone density drops the chips, which are the point of a
           // preview; the phone form takes the tablet density instead.
           size: metrics.phone ? ModelCardSize.compact : ModelCardSize.regular,

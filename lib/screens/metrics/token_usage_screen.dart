@@ -28,6 +28,18 @@ class TokenUsageScreen extends StatefulWidget {
 class _TokenUsageScreenState extends State<TokenUsageScreen> {
   int _viewIndex = 0;
 
+  /// The group 「去补档位」 asked to open, handed to the fee-group tab as it
+  /// mounts. Bumped with each ask so the same group can be re-opened after
+  /// the user closed its editor.
+  int? _editGroupId;
+  int _editRequest = 0;
+
+  void _fixRates(int groupId) => setState(() {
+        _viewIndex = 1;
+        _editGroupId = groupId;
+        _editRequest++;
+      });
+
   /// The phone header and the phone usage tab act on the same data. Created
   /// on first phone layout; the view loads it when it mounts.
   UsageController? _phoneController;
@@ -65,7 +77,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
           ),
           Expanded(
             child: _viewIndex == 0
-                ? const UsageViewDesktop()
+                ? UsageViewDesktop(onFixRates: (group) => _fixRates(group.id!))
                 : _buildFeeGroups(context, inset: inset, top: 12, cardPadding: desktop ? AppSpace.s22 : AppSpace.s16),
           ),
         ],
@@ -85,7 +97,11 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
       padding: EdgeInsets.fromLTRB(inset, top, inset, MediaQuery.paddingOf(context).bottom + inset),
       child: UsagePanel(
         padding: EdgeInsets.all(cardPadding),
-        child: const PricingGroupManager(mode: PricingGroupManagerMode.section),
+        child: PricingGroupManager(
+          key: ValueKey('fee-groups-$_editRequest'),
+          mode: PricingGroupManagerMode.section,
+          initialEditGroupId: _editGroupId,
+        ),
       ),
     );
   }
