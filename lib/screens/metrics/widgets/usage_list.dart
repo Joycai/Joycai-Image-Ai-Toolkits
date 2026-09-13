@@ -55,6 +55,7 @@ class UsageList extends StatelessWidget {
 
   /// Desktop column widths, as drawn.
   static const double modelWidth = 230;
+  static const double specWidth = 170;
   static const double timeWidth = 120;
   static const double costWidth = 90;
   static const double chevronWidth = 28;
@@ -161,6 +162,8 @@ class UsageList extends StatelessWidget {
           SizedBox(width: modelWidth, child: caption(l10n.model)),
           const SizedBox(width: columnGap),
           Expanded(child: caption(l10n.usageColumnDetail)),
+          const SizedBox(width: columnGap),
+          SizedBox(width: specWidth, child: caption(l10n.usageSpecColumn)),
           const SizedBox(width: columnGap),
           SizedBox(width: timeWidth, child: caption(l10n.usageColumnTime)),
           const SizedBox(width: columnGap),
@@ -372,6 +375,10 @@ class _UsageRowState extends State<_UsageRow> {
 
   Map<String, dynamic> get _row => widget.row;
   bool get _isTokenRow => (_row['billing_mode'] as String? ?? 'token') == 'token';
+  bool get _isSpecRow => (_row['billing_mode'] as String? ?? 'token') == 'spec';
+
+  /// The 「规格」 cell's text: null for a row of another mode.
+  String? get _specLabel => usageRowSpecLabel(_row);
 
   @override
   Widget build(BuildContext context) {
@@ -440,6 +447,8 @@ class _UsageRowState extends State<_UsageRow> {
           ),
         ),
         const SizedBox(width: UsageList.columnGap),
+        SizedBox(width: UsageList.specWidth, child: _spec(context)),
+        const SizedBox(width: UsageList.columnGap),
         SizedBox(width: UsageList.timeWidth, child: _time(context)),
         const SizedBox(width: UsageList.columnGap),
         SizedBox(width: UsageList.costWidth, child: _cost(context, textTheme.bodySmall)),
@@ -467,6 +476,13 @@ class _UsageRowState extends State<_UsageRow> {
               Row(
                 children: [
                   Flexible(child: _detail(context, textTheme.labelSmall)),
+                  if (_specLabel case final spec? when spec.isNotEmpty) ...[
+                    Text(
+                      ' · ',
+                      style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
+                    Flexible(child: _spec(context)),
+                  ],
                   Text(
                     ' · ',
                     style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
@@ -499,7 +515,21 @@ class _UsageRowState extends State<_UsageRow> {
             children: [
               _modelName(context),
               const SizedBox(height: 3),
-              _time(context),
+              // `21i`: the phone's second line is 「规格 · 时间」.
+              Row(
+                children: [
+                  if (_specLabel case final spec? when spec.isNotEmpty) ...[
+                    Flexible(child: _spec(context)),
+                    Text(
+                      ' · ',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                  _time(context),
+                ],
+              ),
             ],
           ),
         ),
@@ -592,6 +622,17 @@ class _UsageRowState extends State<_UsageRow> {
     final l10n = AppLocalizations.of(context)!;
     final style = base?.copyWith(color: colorScheme.onSurfaceVariant);
 
+    if (_isSpecRow) {
+      // What the row counted, in its unit: 「2 张」 / 「8 秒」 / 「1 条」.
+      final units = NumberFormat.decimalPattern().format(((_row['output_units'] as num?) ?? 0).round());
+      final text = switch (_row['output_unit'] as String?) {
+        'second' => l10n.usageUnitsSecond(units),
+        'clip' => l10n.usageUnitsClip(units),
+        _ => l10n.usageUnitsImage(units),
+      };
+      return Text(text, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
+    }
+
     if (!_isTokenRow) {
       return Text(
         l10n.usageItemCount(_row['request_count'] as int? ?? 1),
@@ -640,6 +681,29 @@ class _UsageRowState extends State<_UsageRow> {
         const SizedBox(width: AppSpace.s4),
         Text(_abbreviate((tokens as int?) ?? 0), style: style?.mono),
       ],
+    );
+  }
+
+  /// The 「规格」 column (`D2b · 21g`): the spec the row was billed at, the
+  /// absent dimensions left out; 「—」 in the outline colour for a row of
+  /// another mode. An unmatched row's spec is stated in full — it is exactly
+  /// what the user needs to copy into the rate table.
+  Widget _spec(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final mono = Theme.of(context).textTheme.labelSmall?.mono;
+    final spec = _specLabel;
+    if (spec == null || spec.isEmpty) {
+      return Text('—', maxLines: 1, style: mono?.copyWith(color: colorScheme.outline));
+    }
+    return Tooltip(
+      message: spec,
+      waitDuration: const Duration(milliseconds: 600),
+      child: Text(
+        spec,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: mono?.copyWith(color: colorScheme.onSurface),
+      ),
     );
   }
 
@@ -692,22 +756,29 @@ class _UsageRowState extends State<_UsageRow> {
     final labelStyle = textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant);
     final valueStyle = textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurface);
 
-    final pairs = <(String, Object?)>[
-      (l10n.requests, _row['request_count'] ?? 1),
+    final pairs = <(String, String)>[
+      (l10n.requests, _exact(_row['request_count'] ?? 1)),
       if (_isTokenRow) ...[
-        (l10n.inputTokens, _row['input_tokens']),
-        (l10n.cachedInputTokens, _row['cache_tokens']),
-        (l10n.outputTokens, _row['output_tokens']),
+        (l10n.inputTokens, _exact(_row['input_tokens'])),
+        (l10n.cachedInputTokens, _exact(_row['cache_tokens'])),
+        (l10n.outputTokens, _exact(_row['output_tokens'])),
+      ],
+      if (_isSpecRow) ...[
+        (l10n.usageSpecColumn, _specLabel?.isNotEmpty == true ? _specLabel! : '—'),
+        (
+          l10n.usageUnitPrice,
+          '\$${((_row['output_unit_price'] as num?) ?? 0).toDouble().toStringAsFixed(4)}',
+        ),
       ],
     ];
 
-    Widget pair((String, Object?) entry) => Row(
+    Widget pair((String, String) entry) => Row(
           children: [
             Expanded(
               child: Text(entry.$1, style: labelStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
             const SizedBox(width: 8),
-            Text(_exact(entry.$2), style: valueStyle),
+            Text(entry.$2, style: valueStyle),
           ],
         );
 

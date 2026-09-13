@@ -25,6 +25,7 @@ import '../app_section_label.dart';
 import '../glass/app_glass.dart';
 import '../searchable_picker.dart';
 import 'model_edit_card_preview.dart';
+import 'fee_group_summary.dart';
 import 'model_edit_controls.dart';
 import 'model_picker_options.dart';
 import 'model_protocol_section.dart';
@@ -755,7 +756,11 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           items: [
             // A real answer — no group — drawn as the absence it is.
             AppDropdownItem(value: null, label: l10n.noFeeGroup, muted: true),
-            for (final g in widget.appState.allPricingGroups) AppDropdownItem(value: g.id!, label: g.name),
+            // `D2b · 21f`: each group's charge in the same shape whatever
+            // its mode, so the user reads the price without first reading
+            // the mode.
+            for (final g in widget.appState.allPricingGroups)
+              AppDropdownItem(value: g.id!, label: g.name, trailing: feeGroupSummary(l10n, g)),
           ],
           onChanged: (v) => setState(() {
             feeGroupId = v;

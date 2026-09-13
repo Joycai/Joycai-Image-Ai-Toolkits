@@ -221,10 +221,25 @@ final List<_FeeGroupShot> _feeGroupShots = <_FeeGroupShot>[
   // one, and the only place the new "billed per request" hint appears.
   _FeeGroupShot('addRequest', (_, tapText) async {
     await tapText('添加费率组');
-    await tapText('按次计费', of: find.byType(AppSegmentedControl<String>));
+    await tapText('按次', of: find.byType(AppSegmentedControl<String>));
+  }),
+  // D2b 21d ④: adding in spec mode — the initial state is the pinned
+  // 「其他规格」 row alone, with the hint and the 「改用按次」 offer.
+  _FeeGroupShot('addSpec', (_, tapText) async {
+    await tapText('添加费率组');
+    await tapText('按规格', of: find.byType(AppSegmentedControl<String>));
   }),
   // 10k: editing, with data. The seeded groups are named in fixture_seed.
   _FeeGroupShot('edit', (_, tapText) async {
     await tapText('Gemini Flash');
+  }),
+  // D2b 21b: the spec editor over a seeded four-row table.
+  _FeeGroupShot('editSpec', (tester, tapText) async {
+    await tapText('Veo 3 视频');
+    // The editor opens below three group rows; bring its table into frame.
+    await tester.drag(find.byType(SingleChildScrollView).first, const Offset(0, -420));
+    for (int i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
   }),
 ];

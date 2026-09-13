@@ -767,6 +767,7 @@
   "thisYear": "今年",
   "inputTokens": "輸入 Token",
   "cachedInputTokens": "快取輸入",
+  "specBilled": "按規格",
   "outputTokens": "輸出 Token",
   "cacheHitRate": "快取命中率",
   "cacheHitRateHint": "命中快取的輸入 Token 佔全部輸入 Token 的比例",
@@ -787,6 +788,49 @@
   "usageLoadingRecords": "正在彙總用量紀錄…",
   "noUsageInRangeHint": "換一個區間，或先跑一個任務。",
   "usageLoadMoreStatus": "每頁 {pageSize} · 已顯示 {shown} / {total}",
+  "usageUnitsImage": "{n} 張",
+  "@usageUnitsImage": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageUnitsSecond": "{n} 秒",
+  "@usageUnitsSecond": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageUnitsClip": "{n} 條",
+  "@usageUnitsClip": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageRequests": "{n} 次",
+  "@usageRequests": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "usageSpecColumn": "規格",
+  "usageUnmatched": "{n} 次請求未符合任何檔位，以 0 計",
+  "@usageUnmatched": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "usageGoFixRates": "去補檔位",
+  "usageUnitPrice": "單價",
   "models": "模型",
   "feeManagement": "費用管理",
   "modelsTab": "模型",
@@ -824,8 +868,8 @@
   "type": "類型",
   "tag": "標籤",
   "billingMode": "計費模式",
-  "perToken": "每百萬 Token",
-  "perRequest": "每次請求",
+  "perToken": "按 token",
+  "perRequest": "按次",
   "requestCount": "請求次數",
   "requests": "請求",
   "feeGroups": "費用群組",
@@ -1150,6 +1194,91 @@
   "channelDefaultFeeGroupHint": "這個通道新加的模型預設歸到這個群組",
   "modelIdTakenTitle": "該通道下已有同名 Model ID",
   "modelIdTakenDesc": "同一個通道裡 ID 必須唯一。改 ID，或去編輯已存在的那一筆。",
+  "perSpec": "按規格",
+  "specUnitImage": "按張",
+  "specUnitSecond": "按秒",
+  "specUnitClip": "按條",
+  "specUnitSuffixImage": "/張",
+  "specUnitSuffixSecond": "/秒",
+  "specUnitSuffixClip": "/條",
+  "specUnitNoteImage": "1 張 = 1 單位",
+  "specUnitNoteSecond": "1 秒 = 1 單位",
+  "specUnitNoteClip": "1 條 = 1 單位",
+  "specUnitLabel": "單位",
+  "specDimSize": "尺寸 / 解析度",
+  "specDimQuality": "品質",
+  "specDimSeconds": "時長（秒）",
+  "specAnyValue": "任意",
+  "specGroupImageSizes": "圖片尺寸",
+  "specGroupVideoRes": "影片解析度",
+  "specOtherRates": "其他規格",
+  "specOtherRatesSub": "未列出的尺寸 · 品質 · 時長",
+  "specAddRate": "新增檔位",
+  "specCustomValue": "自訂…",
+  "specCustomHint": "大小寫會統一（2k → 2K）",
+  "specPriceLabel": "單價 ${suffix}",
+  "@specPriceLabel": {
+    "placeholders": {
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "specPricePlaceholder": "填單價",
+  "specPriorityRule": "條件留空即「任意」；符合多行時，條件填得越多越優先。",
+  "specPriceMissing": "第 {n} 行還沒填單價，儲存前補上。",
+  "@specPriceMissing": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "specDuplicateRow": "第 {a}、{b} 行條件相同（{cond}），刪掉一行或改條件。",
+  "@specDuplicateRow": {
+    "placeholders": {
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      },
+      "cond": {
+        "type": "String"
+      }
+    }
+  },
+  "specOtherBlankHint": "留空則未列出的規格以 0 計。",
+  "specOnlyOtherHint": "只有「其他規格」一檔時，效果與「按次」相同。",
+  "specSwitchToRequest": "改用按次",
+  "specSummary": "{unit} · {n} 檔 · {min}–{max}",
+  "@specSummary": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "specSummaryEmpty": "{unit} · 0 檔",
+  "@specSummaryEmpty": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "specOtherZero": "其他規格以 0 計",
+  "modelCardBilling": "計費",
+  "specUnitSuffixRequest": "/次",
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",

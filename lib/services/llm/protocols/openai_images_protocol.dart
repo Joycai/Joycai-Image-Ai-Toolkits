@@ -181,9 +181,16 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         generatedImages: images,
         // gpt-image-1 reports `input_tokens`/`output_tokens` here, not the
         // chat spelling — see LLMService._recordUsage, which reads both.
-        metadata: data['usage'] is Map
-            ? (data['usage'] as Map).cast<String, dynamic>()
-            : const {},
+        metadata: {
+          if (data['usage'] is Map)
+            ...(data['usage'] as Map).cast<String, dynamic>(),
+          // The size and quality the endpoint settled on. A request that
+          // said `auto` has no spec of its own, and a spec-billed fee group
+          // prices by exactly this — see `OutputSpec.from`, which prefers
+          // these echoes over what was asked for. Facts only: no price here.
+          if (data['size'] is String) 'output_size': data['size'],
+          if (data['quality'] is String) 'output_quality': data['quality'],
+        },
       );
     } finally {
       client.close();

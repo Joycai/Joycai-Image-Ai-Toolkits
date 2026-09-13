@@ -6,11 +6,15 @@ import '../core/design_tokens.dart';
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../models/pricing_group.dart';
+import '../models/spec_rate.dart';
+import '../services/billing/spec_billing.dart';
 import '../state/app_state.dart';
 import 'app_button.dart';
 import 'app_dialog.dart';
 import 'app_section_label.dart';
 import 'app_segmented_control.dart';
+import 'models/fee_group_summary.dart';
+import 'spec_rate_table.dart';
 
 enum PricingGroupManagerMode {
   /// Embedded in a page that scrolls it — the usage screen's fee-group tab. A
@@ -37,9 +41,14 @@ enum PricingGroupManagerMode {
 class PricingGroupManager extends StatefulWidget {
   final PricingGroupManagerMode mode;
 
+  /// A group to open in its editor as soon as the list mounts — the usage
+  /// page's 「去补档位」 lands here with the group whose rates fell short.
+  final int? initialEditGroupId;
+
   const PricingGroupManager({
     super.key,
     this.mode = PricingGroupManagerMode.section,
+    this.initialEditGroupId,
   });
 
   @override
@@ -52,6 +61,12 @@ const Object _newGroup = Object();
 class _PricingGroupManagerState extends State<PricingGroupManager> {
   /// Null, [_newGroup], or the id of the group open in the editor.
   Object? _editing;
+
+  @override
+  void initState() {
+    super.initState();
+    _editing = widget.initialEditGroupId;
+  }
 
   void _startAdd() => setState(() => _editing = _newGroup);
 
@@ -390,7 +405,22 @@ class _GroupRow extends StatelessWidget {
             ),
             _PriceTag(label: l10n.priceLabelOutput, value: _rate(group.outputPrice, 'M')),
           ]
-        : [_PriceTag(label: l10n.priceLabelRequest, value: _rate(group.requestPrice, 'Req'))];
+        : group.isSpecBilled
+            // `D2b · 21e`: one summary tag however many rows the table has —
+            // eight tags would fold the card three deep and say nothing the
+            // summary does not; the full table is the tag's tooltip.
+            ? [
+                _PriceTag(value: feeGroupSummary(l10n, group), tooltip: feeGroupRateTable(l10n, group)),
+                if (feeGroupOtherSpecsAtZero(group))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Text(
+                      l10n.specOtherZero,
+                      style: textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
+                    ),
+                  ),
+              ]
+            : [_PriceTag(label: l10n.priceLabelRequest, value: _rate(group.requestPrice, 'Req'))];
 
     return Material(
       color: scheme.surfaceContainerLow,
@@ -483,9 +513,10 @@ class _GroupRow extends StatelessWidget {
 /// card tone. [inherited] renders the figure muted — it is not configured on
 /// this group, it follows the input price.
 class _PriceTag extends StatelessWidget {
-  const _PriceTag({required this.label, required this.value, this.inherited = false, this.tooltip});
+  const _PriceTag({this.label, required this.value, this.inherited = false, this.tooltip});
 
-  final String label;
+  /// The rate's name; null for a tag that is all figure (the spec summary).
+  final String? label;
   final String value;
   final bool inherited;
   final String? tooltip;
@@ -504,13 +535,21 @@ class _PriceTag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
-          const SizedBox(width: AppSpace.s4),
-          Text(
-            value,
-            style: textTheme.labelSmall?.mono.copyWith(
-              color: inherited ? scheme.outline : scheme.onSurface,
-              fontStyle: inherited ? FontStyle.italic : FontStyle.normal,
+          if (label case final label?) ...[
+            Text(label, style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
+            const SizedBox(width: AppSpace.s4),
+          ],
+          // Flexible: the spec summary is the one long tag, and on a phone
+          // it ends in an ellipsis rather than past the card's edge.
+          Flexible(
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelSmall?.mono.copyWith(
+                color: inherited ? scheme.outline : scheme.onSurface,
+                fontStyle: inherited ? FontStyle.italic : FontStyle.normal,
+              ),
             ),
           ),
         ],
@@ -580,21 +619,18 @@ class _GroupEditorState extends State<_GroupEditor> {
   late String billingMode;
   bool _saving = false;
 
+  /// Spec billing's draft (`D2b`): the unit, the ordinary rows and the
+  /// catch-all's price. Kept through mode switches so a table typed in and
+  /// then hidden behind 「按 token」 is still there when the user comes back.
+  late OutputUnit outputUnit;
+  final List<SpecRateDraft> specRows = [];
+  late final TextEditingController otherPriceCtrl;
+
   /// Narrowest a rate field gets before the three stack instead of sharing a
   /// row.
   static const double _minRateField = 110;
 
-  /// Parses a price the way users type them, not just the way Dart does:
-  /// accepts a decimal comma ('1,25'), rejects garbage and negatives.
-  /// Returns null when the text is not a usable price.
-  static double? _parsePrice(String text) {
-    final normalized = text.trim().replaceAll(',', '.');
-    final value = double.tryParse(normalized);
-    if (value == null || value.isNaN || value.isInfinite || value < 0) {
-      return null;
-    }
-    return value;
-  }
+  static double? _parsePrice(String text) => parsePriceInput(text);
 
   @override
   void initState() {
@@ -608,6 +644,14 @@ class _GroupEditorState extends State<_GroupEditor> {
     outputPriceCtrl = TextEditingController(text: (g?.outputPrice ?? 0.0).toString());
     requestPriceCtrl = TextEditingController(text: (g?.requestPrice ?? 0.0).toString());
     billingMode = g?.billingMode ?? 'token';
+
+    outputUnit = g?.outputUnit ?? OutputUnit.image;
+    final rates = g?.outputRates ?? const <SpecRate>[];
+    // The catch-all is the pinned bottom row; blank when the group has none
+    // (unlisted specs then bill at zero, which the editor says out loud).
+    final other = rates.where((r) => r.isCatchAll).firstOrNull;
+    otherPriceCtrl = TextEditingController(text: other == null ? '' : other.price.toStringAsFixed(4));
+    specRows.addAll(rates.where((r) => !r.isCatchAll).map(SpecRateDraft.of));
 
     // Validation is live, and the cache field hints the value it would inherit
     // from the input field as it is typed.
@@ -633,10 +677,15 @@ class _GroupEditorState extends State<_GroupEditor> {
     cacheInputPriceCtrl.dispose();
     outputPriceCtrl.dispose();
     requestPriceCtrl.dispose();
+    otherPriceCtrl.dispose();
+    for (final row in specRows) {
+      row.dispose();
+    }
     super.dispose();
   }
 
   bool get _isToken => billingMode == 'token';
+  bool get _isSpec => billingMode == specBillingMode;
 
   /// Whether [ctrl]'s text cannot be saved. A blank cache rate is a valid
   /// "inherit"; every other rate must parse.
@@ -649,7 +698,25 @@ class _GroupEditorState extends State<_GroupEditor> {
   List<TextEditingController> get _activeFields =>
       _isToken ? [inputPriceCtrl, cacheInputPriceCtrl, outputPriceCtrl] : [requestPriceCtrl];
 
-  bool get _canSave => !_activeFields.any(_invalid);
+  /// A blank catch-all is allowed (it means zero, and the table says so);
+  /// anything typed there must parse.
+  bool get _otherPriceInvalid =>
+      otherPriceCtrl.text.trim().isNotEmpty && _parsePrice(otherPriceCtrl.text) == null;
+
+  bool get _canSave => _isSpec
+      ? !SpecTableIssues.of(specRows).blocksSave && !_otherPriceInvalid
+      : !_activeFields.any(_invalid);
+
+  void _addSpecRow() => setState(() => specRows.add(SpecRateDraft()));
+
+  void _removeSpecRow(int index) => setState(() => specRows.removeAt(index).dispose());
+
+  /// `21d` ④: a table that is only the catch-all is per-request billing in
+  /// disguise, so the editor offers to say so — the price goes with it.
+  void _switchToRequest() => setState(() {
+        billingMode = 'request';
+        if (otherPriceCtrl.text.trim().isNotEmpty) requestPriceCtrl.text = otherPriceCtrl.text.trim();
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -684,19 +751,77 @@ class _GroupEditorState extends State<_GroupEditor> {
             decoration: _decoration(context).copyWith(hintText: l10n.groupName),
           ),
           const SizedBox(height: AppSpace.s10),
-          // Segmented rather than a dropdown: there are only two modes and
+          // Segmented rather than a dropdown: there are only three modes and
           // each one rewrites the rate fields below, so the choice should be
           // visible next to what it changes.
           AppSegmentedControl<String>(
             segments: [
               AppSegment(value: 'token', label: l10n.perToken, icon: Icons.token_outlined),
               AppSegment(value: 'request', label: l10n.perRequest, icon: Icons.ads_click),
+              AppSegment(value: specBillingMode, label: l10n.perSpec, icon: Icons.photo_size_select_large_outlined),
             ],
             value: billingMode,
             onChanged: (mode) => setState(() => billingMode = mode),
             expand: true,
           ),
           const SizedBox(height: 12),
+          // `D2b · 21a`: the lower half is swapped whole and the card grows
+          // from its top edge; the fields themselves do not slide.
+          AnimatedSize(
+            duration: AppMotion.durationOf(context, AppMotion.state),
+            curve: AppMotion.enter,
+            alignment: Alignment.topCenter,
+            child: _buildRates(context, l10n),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              AppButton(
+                label: l10n.cancel,
+                variant: AppButtonVariant.text,
+                onPressed: widget.onDone,
+              ),
+              const SizedBox(width: AppSpace.s6),
+              AppButton(
+                label: isAdd ? l10n.add : l10n.save,
+                icon: Icons.save,
+                loading: _saving,
+                onPressed: _canSave ? _save : null,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The mode's rates: the three token prices, the one request price, or the
+  /// spec table.
+  Widget _buildRates(BuildContext context, AppLocalizations l10n) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    if (_isSpec) {
+      return SpecRateTableEditor(
+        key: const ValueKey('spec'),
+        unit: outputUnit,
+        onUnitChanged: (u) => setState(() => outputUnit = u),
+        rows: specRows,
+        otherPriceCtrl: otherPriceCtrl,
+        onAddRow: _addSpecRow,
+        onRemoveRow: _removeSpecRow,
+        onChanged: _refresh,
+        onSwitchToRequest: _switchToRequest,
+        narrow: Responsive.isMobile(context),
+      );
+    }
+
+    return Column(
+      key: ValueKey(billingMode),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
           if (_isToken)
             LayoutBuilder(
               builder: (context, constraints) {
@@ -748,26 +873,7 @@ class _GroupEditorState extends State<_GroupEditor> {
             _isToken ? l10n.cacheInputPriceHint : l10n.requestPriceHint,
             style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.tightHeight),
           ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              AppButton(
-                label: l10n.cancel,
-                variant: AppButtonVariant.text,
-                onPressed: widget.onDone,
-              ),
-              const SizedBox(width: AppSpace.s6),
-              AppButton(
-                label: isAdd ? l10n.add : l10n.save,
-                icon: Icons.save,
-                loading: _saving,
-                onPressed: _canSave ? _save : null,
-              ),
-            ],
-          ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -841,6 +947,10 @@ class _GroupEditorState extends State<_GroupEditor> {
       'cache_input_price': cacheText.isEmpty ? null : _parsePrice(cacheText),
       'output_price': _parsePrice(outputPriceCtrl.text) ?? 0.0,
       'request_price': _parsePrice(requestPriceCtrl.text) ?? 0.0,
+      // Written whatever the mode, as the other modes' rates are: a table
+      // typed in and then parked behind 「按 token」 survives the save.
+      'output_unit': outputUnit.name,
+      'output_rates': SpecRate.encodeList(_specRates()),
     };
 
     setState(() => _saving = true);
@@ -850,5 +960,16 @@ class _GroupEditorState extends State<_GroupEditor> {
       await widget.appState.updatePricingGroup(widget.group!.id!, data);
     }
     if (mounted) widget.onDone();
+  }
+
+  /// The table as it will be stored: the ordinary rows, then the catch-all
+  /// only when it has a price — a blank one is *no* catch-all, which is what
+  /// makes unlisted specs bill at zero and count as unmatched.
+  List<SpecRate> _specRates() {
+    final other = _parsePrice(otherPriceCtrl.text);
+    return [
+      for (final row in specRows) row.toRate(),
+      if (other != null) SpecRate(price: other),
+    ];
   }
 }

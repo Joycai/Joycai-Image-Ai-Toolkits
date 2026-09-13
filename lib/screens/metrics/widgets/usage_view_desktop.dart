@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/pricing_group.dart';
 import '../../../state/app_state.dart';
 import 'usage_chrome.dart';
 import 'usage_controller.dart';
@@ -22,7 +23,10 @@ import 'usage_toolbar.dart';
 /// hero included. Inside one card's header it would have looked like that
 /// card's filter.
 class UsageViewDesktop extends StatefulWidget {
-  const UsageViewDesktop({super.key});
+  const UsageViewDesktop({super.key, this.onFixRates});
+
+  /// 「去补档位」 on a group with unpriced requests — see [UsageGroupCosts].
+  final ValueChanged<PricingGroup>? onFixRates;
 
   @override
   State<UsageViewDesktop> createState() => _UsageViewDesktopState();
@@ -90,7 +94,11 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
               if (c.isLoading)
                 const UsageLoadingCard()
               else ...[
-                UsageGroupCosts(stats: c.stats, groups: appState.allPricingGroups),
+                UsageGroupCosts(
+                  stats: c.stats,
+                  groups: appState.allPricingGroups,
+                  onFixRates: widget.onFixRates,
+                ),
                 if (c.stats.groupCosts.isNotEmpty) const SizedBox(height: _gap),
                 UsagePanel(
                   child: UsageList(

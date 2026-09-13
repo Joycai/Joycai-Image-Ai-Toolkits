@@ -98,6 +98,76 @@ void main() {
 
       expect(cost, closeTo(9.0, 1e-9));
     });
+
+    test('spec-billed rows price units × unit price and nothing else', () {
+      final cost = calculateRowCost({
+        'billing_mode': 'spec',
+        'input_tokens': 5000,
+        'input_price': 99.0,
+        'request_count': 1,
+        'request_price': 0.02,
+        'output_units': 8.0,
+        'output_unit_price': 0.30,
+        'output_unit': 'second',
+      });
+
+      expect(cost, closeTo(2.40, 1e-9));
+    });
+
+    test('a spec-billed row missing its columns prices zero, not a crash', () {
+      expect(calculateRowCost({'billing_mode': 'spec'}), 0.0);
+    });
+  });
+
+  group('spec-billed rows in calculateStats', () {
+    Map<String, dynamic> specRow({
+      required String unit,
+      required double units,
+      required double price,
+      bool matched = true,
+      int? modelPk,
+    }) =>
+        {
+          'billing_mode': 'spec',
+          'request_count': 1,
+          'output_units': units,
+          'output_unit_price': price,
+          'output_unit': unit,
+          'output_spec': '{"size":"1080p","matched":${matched ? 'true' : 'false'}}',
+          'model_pk': modelPk,
+        };
+
+    test('cost lands in the group\'s spec bucket with its unit count', () {
+      final stats = calculateStats([
+        specRow(unit: 'second', units: 8, price: 0.30, modelPk: 1),
+        specRow(unit: 'second', units: 5, price: 0.30, modelPk: 1),
+        specRow(unit: 'image', units: 2, price: 0.03, modelPk: 1),
+      ], [
+        model(1, 42)
+      ]);
+
+      final usage = stats.groupUsage[42]!;
+      expect(usage.specCost, closeTo(3.96, 1e-9));
+      expect(usage.requestCost, 0.0);
+      expect(usage.totalCost, closeTo(3.96, 1e-9));
+      expect(usage.specUnits, {'second': 13.0, 'image': 2.0});
+      expect(usage.unmatchedCount, 0);
+      expect(stats.groupCosts[42], closeTo(3.96, 1e-9));
+      expect(stats.totalRequestCount, 3);
+    });
+
+    test('requests no rate row covered are counted, not hidden in a zero', () {
+      final stats = calculateStats([
+        specRow(unit: 'image', units: 1, price: 0.0, matched: false, modelPk: 1),
+        specRow(unit: 'image', units: 1, price: 0.03, modelPk: 1),
+      ], [
+        model(1, 42)
+      ]);
+
+      expect(stats.groupUsage[42]!.unmatchedCount, 1);
+      expect(usageRowUnmatched({'billing_mode': 'request'}), isFalse);
+      expect(usageRowUnmatched({'billing_mode': 'spec', 'output_spec': 'junk'}), isFalse);
+    });
   });
 
   group('calculateStats', () {

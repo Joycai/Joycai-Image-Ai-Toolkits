@@ -6,6 +6,7 @@ import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/pricing_group.dart';
+import '../../../widgets/app_button.dart';
 import 'usage_chrome.dart';
 import 'usage_palette.dart';
 import 'usage_stats.dart';
@@ -22,12 +23,17 @@ class UsageGroupCosts extends StatelessWidget {
   final UsageStats stats;
   final List<PricingGroup> groups;
 
-  const UsageGroupCosts({super.key, required this.stats, required this.groups});
+  /// `D2b · 21g`: 「去补档位」 under a group whose rate table left requests
+  /// unpriced — opens that group's editor. Null hides the button; the count
+  /// is still stated.
+  final ValueChanged<PricingGroup>? onFixRates;
+
+  const UsageGroupCosts({super.key, required this.stats, required this.groups, this.onFixRates});
 
   /// Column widths of the desktop row, as drawn.
   static const double _nameWidth = 150;
   static const double _costWidth = 90;
-  static const double _requestsWidth = 110;
+  static const double _requestsWidth = 130;
   static const double _gap = 12;
   static const double _rowGap = AppSpace.s10;
 
@@ -77,7 +83,7 @@ class UsageGroupCosts extends StatelessWidget {
     double cost,
     GroupUsage? usage,
   ) {
-    return Row(
+    final row = Row(
       children: [
         SizedBox(width: _nameWidth, child: _name(context, group)),
         const SizedBox(width: _gap),
@@ -89,6 +95,51 @@ class UsageGroupCosts extends StatelessWidget {
           width: _requestsWidth,
           child: usage == null ? null : _requests(context, l10n, usage, TextAlign.end),
         ),
+      ],
+    );
+    if (usage == null || usage.unmatchedCount == 0) return row;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        row,
+        const SizedBox(height: AppSpace.s4),
+        // Indented to the bar's start: the note belongs to the group, and
+        // its fix lives in the group's editor, not in any one record.
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: _nameWidth + _gap),
+          child: _unmatched(context, l10n, group, usage),
+        ),
+      ],
+    );
+  }
+
+  /// 「n 次请求未匹配任何档位，按 0 计 · 去补档位」.
+  Widget _unmatched(BuildContext context, AppLocalizations l10n, PricingGroup group, GroupUsage usage) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final onFix = onFixRates;
+    return Row(
+      children: [
+        Icon(Icons.info_outline, size: AppSize.iconSm, color: scheme.onSurfaceVariant),
+        const SizedBox(width: AppSpace.s4),
+        Flexible(
+          child: Text(
+            l10n.usageUnmatched(usage.unmatchedCount),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ),
+        if (onFix != null) ...[
+          const SizedBox(width: AppSpace.s4),
+          AppButton(
+            label: l10n.usageGoFixRates,
+            variant: AppButtonVariant.text,
+            size: AppButtonSize.compact,
+            onPressed: () => onFix(group),
+          ),
+        ],
       ],
     );
   }
@@ -104,21 +155,50 @@ class UsageGroupCosts extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // `21i`: name and cost on one line, the bar and the quantities on
+        // the next, so the quantities are never truncated.
         Row(
           children: [
             Expanded(child: _name(context, group)),
             const SizedBox(width: AppSpace.s10),
             _cost(context, cost, TextAlign.end),
+          ],
+        ),
+        const SizedBox(height: AppSpace.s6),
+        Row(
+          children: [
+            Expanded(child: _GroupBar(share: _shareOf(cost), usage: usage)),
             if (usage != null) ...[
               const SizedBox(width: AppSpace.s10),
               _requests(context, l10n, usage, TextAlign.end),
             ],
           ],
         ),
-        const SizedBox(height: AppSpace.s6),
-        _GroupBar(share: _shareOf(cost), usage: usage),
+        if (usage != null && usage.unmatchedCount > 0) ...[
+          const SizedBox(height: AppSpace.s4),
+          _unmatched(context, l10n, group, usage),
+        ],
       ],
     );
+  }
+
+  /// The quantities column: what the spec-billed rows counted (「126 秒」,
+  /// 「38 张」), then the request count.
+  static String quantityText(AppLocalizations l10n, GroupUsage usage) {
+    String units(String unit, double n) {
+      final text = NumberFormat.decimalPattern().format(n.round());
+      return switch (unit) {
+        'second' => l10n.usageUnitsSecond(text),
+        'clip' => l10n.usageUnitsClip(text),
+        _ => l10n.usageUnitsImage(text),
+      };
+    }
+
+    return [
+      for (final e in usage.specUnits.entries)
+        if (e.value > 0) units(e.key, e.value),
+      l10n.usageRequests(usage.requestCount),
+    ].join(' · ');
   }
 
   Widget _name(BuildContext context, PricingGroup group) {
@@ -143,7 +223,7 @@ class UsageGroupCosts extends StatelessWidget {
 
   Widget _requests(BuildContext context, AppLocalizations l10n, GroupUsage usage, TextAlign align) {
     return Text(
-      '${NumberFormat.decimalPattern().format(usage.requestCount)} ${l10n.requests}',
+      quantityText(l10n, usage),
       textAlign: align,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -180,7 +260,9 @@ class _GroupBar extends StatelessWidget {
         (usage.inputCost, UsageToken.input.colorOf(context)),
         (usage.cacheCost, UsageToken.cache.colorOf(context)),
         (usage.outputCost, UsageToken.output.colorOf(context)),
-        (usage.requestCost, neutral),
+        // Request- and spec-billed money share the neutral: both bought
+        // output rather than tokens. The tooltip tells them apart.
+        (usage.requestCost + usage.specCost, neutral),
       ],
     ].where((s) => s.$1 > 0).toList();
 
@@ -192,6 +274,7 @@ class _GroupBar extends StatelessWidget {
         if (usage.cacheCost > 0) '${l10n.cachedInputTokens}: ${money(usage.cacheCost)}',
         if (usage.outputCost > 0) '${l10n.outputTokens}: ${money(usage.outputCost)}',
         if (usage.requestCost > 0) '${l10n.requests}: ${money(usage.requestCost)}',
+        if (usage.specCost > 0) '${l10n.specBilled}: ${money(usage.specCost)}',
       ],
     ].join('\n');
 

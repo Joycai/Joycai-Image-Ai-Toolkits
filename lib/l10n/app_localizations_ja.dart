@@ -1236,6 +1236,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cachedInputTokens => 'キャッシュ入力';
 
   @override
+  String get specBilled => '仕様別';
+
+  @override
   String get outputTokens => '出力トークン';
 
   @override
@@ -1304,6 +1307,40 @@ class AppLocalizationsJa extends AppLocalizations {
   String usageLoadMoreStatus(int pageSize, int shown, int total) {
     return '1 ページ $pageSize 件 · $shown / $total 件表示';
   }
+
+  @override
+  String usageUnitsImage(String n) {
+    return '$n 枚';
+  }
+
+  @override
+  String usageUnitsSecond(String n) {
+    return '$n 秒';
+  }
+
+  @override
+  String usageUnitsClip(String n) {
+    return '$n 本';
+  }
+
+  @override
+  String usageRequests(int n) {
+    return '$n 回';
+  }
+
+  @override
+  String get usageSpecColumn => '仕様';
+
+  @override
+  String usageUnmatched(int n) {
+    return '$n 件のリクエストがどの料金にも一致せず、0 として計算';
+  }
+
+  @override
+  String get usageGoFixRates => '料金を追加';
+
+  @override
+  String get usageUnitPrice => '単価';
 
   @override
   String get models => 'モデル';
@@ -1425,10 +1462,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get billingMode => '請求モード';
 
   @override
-  String get perToken => '100万トークンあたり';
+  String get perToken => 'トークン別';
 
   @override
-  String get perRequest => 'リクエストあたり';
+  String get perRequest => '回数別';
 
   @override
   String get requestCount => 'リクエスト数';
@@ -2302,6 +2339,121 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get modelIdTakenDesc =>
       'Model ID はチャンネル内で一意である必要があります。ID を変えるか、すでにあるモデルを編集してください。';
+
+  @override
+  String get perSpec => '仕様別';
+
+  @override
+  String get specUnitImage => '枚あたり';
+
+  @override
+  String get specUnitSecond => '秒あたり';
+
+  @override
+  String get specUnitClip => '本あたり';
+
+  @override
+  String get specUnitSuffixImage => '/枚';
+
+  @override
+  String get specUnitSuffixSecond => '/秒';
+
+  @override
+  String get specUnitSuffixClip => '/本';
+
+  @override
+  String get specUnitNoteImage => '1 枚 = 1 単位';
+
+  @override
+  String get specUnitNoteSecond => '1 秒 = 1 単位';
+
+  @override
+  String get specUnitNoteClip => '1 本 = 1 単位';
+
+  @override
+  String get specUnitLabel => '単位';
+
+  @override
+  String get specDimSize => 'サイズ / 解像度';
+
+  @override
+  String get specDimQuality => '品質';
+
+  @override
+  String get specDimSeconds => '長さ（秒）';
+
+  @override
+  String get specAnyValue => '指定なし';
+
+  @override
+  String get specGroupImageSizes => '画像サイズ';
+
+  @override
+  String get specGroupVideoRes => '動画解像度';
+
+  @override
+  String get specOtherRates => 'その他の仕様';
+
+  @override
+  String get specOtherRatesSub => '未掲載のサイズ · 品質 · 長さ';
+
+  @override
+  String get specAddRate => '料金を追加';
+
+  @override
+  String get specCustomValue => 'カスタム…';
+
+  @override
+  String get specCustomHint => '大文字小文字は正規化されます（2k → 2K）';
+
+  @override
+  String specPriceLabel(String suffix) {
+    return '単価 \$$suffix';
+  }
+
+  @override
+  String get specPricePlaceholder => '単価を入力';
+
+  @override
+  String get specPriorityRule => '空欄は「指定なし」。複数行に一致する場合は条件の多い行を優先します。';
+
+  @override
+  String specPriceMissing(int n) {
+    return '$n 行目の単価が未入力です。保存前に入力してください。';
+  }
+
+  @override
+  String specDuplicateRow(int a, int b, String cond) {
+    return '$a 行目と $b 行目の条件が同じです（$cond）。1 行削除するか条件を変えてください。';
+  }
+
+  @override
+  String get specOtherBlankHint => '空欄の場合、未掲載の仕様は 0 として計算します。';
+
+  @override
+  String get specOnlyOtherHint => '「その他の仕様」だけの場合は「回数別」と同じ動作です。';
+
+  @override
+  String get specSwitchToRequest => '回数別に切り替え';
+
+  @override
+  String specSummary(String unit, int n, String min, String max) {
+    return '$unit · $n 段階 · $min–$max';
+  }
+
+  @override
+  String specSummaryEmpty(String unit) {
+    return '$unit · 0 段階';
+  }
+
+  @override
+  String get specOtherZero => 'その他の仕様は 0';
+
+  @override
+  String get modelCardBilling => '課金';
+
+  @override
+  String get specUnitSuffixRequest => '/回';
 
   @override
   String get prompts => 'プロンプト';

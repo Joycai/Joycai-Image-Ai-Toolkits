@@ -57,8 +57,8 @@
   "type": "类型",
   "tag": "标签",
   "billingMode": "计费模式",
-  "perToken": "按 Token 计费 (每百万)",
-  "perRequest": "按次计费",
+  "perToken": "按 token",
+  "perRequest": "按次",
   "requestCount": "请求次数",
   "requests": "请求数",
   "feeGroups": "费率组",
@@ -410,5 +410,90 @@
   "channelDefaultFeeGroup": "默认费率组",
   "channelDefaultFeeGroupHint": "这个渠道新加的模型默认归到这个组",
   "modelIdTakenTitle": "该渠道下已有同名 Model ID",
-  "modelIdTakenDesc": "同一个渠道里 ID 必须唯一。改 ID，或去编辑已存在的那一条。"
+  "modelIdTakenDesc": "同一个渠道里 ID 必须唯一。改 ID，或去编辑已存在的那一条。",
+  "perSpec": "按规格",
+  "specUnitImage": "按张",
+  "specUnitSecond": "按秒",
+  "specUnitClip": "按条",
+  "specUnitSuffixImage": "/张",
+  "specUnitSuffixSecond": "/秒",
+  "specUnitSuffixClip": "/条",
+  "specUnitNoteImage": "1 张 = 1 单位",
+  "specUnitNoteSecond": "1 秒 = 1 单位",
+  "specUnitNoteClip": "1 条 = 1 单位",
+  "specUnitLabel": "单位",
+  "specDimSize": "尺寸 / 分辨率",
+  "specDimQuality": "质量",
+  "specDimSeconds": "时长（秒）",
+  "specAnyValue": "任意",
+  "specGroupImageSizes": "图片尺寸",
+  "specGroupVideoRes": "视频分辨率",
+  "specOtherRates": "其他规格",
+  "specOtherRatesSub": "未列出的尺寸 · 质量 · 时长",
+  "specAddRate": "添加档位",
+  "specCustomValue": "自定义…",
+  "specCustomHint": "大小写会归一（2k → 2K）",
+  "specPriceLabel": "单价 ${suffix}",
+  "@specPriceLabel": {
+    "placeholders": {
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "specPricePlaceholder": "填单价",
+  "specPriorityRule": "条件留空即「任意」；命中多行时，条件填得越多越优先。",
+  "specPriceMissing": "第 {n} 行还没填单价，保存前补上。",
+  "@specPriceMissing": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "specDuplicateRow": "第 {a}、{b} 行条件相同（{cond}），删掉一行或改条件。",
+  "@specDuplicateRow": {
+    "placeholders": {
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      },
+      "cond": {
+        "type": "String"
+      }
+    }
+  },
+  "specOtherBlankHint": "留空则未列出的规格按 0 计。",
+  "specOnlyOtherHint": "只有「其他规格」一档时，效果与「按次」相同。",
+  "specSwitchToRequest": "改用按次",
+  "specSummary": "{unit} · {n} 档 · {min}–{max}",
+  "@specSummary": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "specSummaryEmpty": "{unit} · 0 档",
+  "@specSummaryEmpty": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "specOtherZero": "其他规格按 0 计",
+  "modelCardBilling": "计费",
+  "specUnitSuffixRequest": "/次"
 }

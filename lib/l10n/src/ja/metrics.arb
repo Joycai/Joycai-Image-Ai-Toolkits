@@ -10,6 +10,7 @@
   "thisYear": "今年",
   "inputTokens": "入力トークン",
   "cachedInputTokens": "キャッシュ入力",
+  "specBilled": "仕様別",
   "outputTokens": "出力トークン",
   "cacheHitRate": "キャッシュヒット率",
   "cacheHitRateHint": "入力トークンのうちプロンプトキャッシュから提供された割合",
@@ -29,5 +30,48 @@
   "invalidPriceValue": "0以上の有効な数値を入力してください",
   "usageLoadingRecords": "使用記録を集計中…",
   "noUsageInRangeHint": "別の期間を選ぶか、先にタスクを実行してください。",
-  "usageLoadMoreStatus": "1 ページ {pageSize} 件 · {shown} / {total} 件表示"
+  "usageLoadMoreStatus": "1 ページ {pageSize} 件 · {shown} / {total} 件表示",
+  "usageUnitsImage": "{n} 枚",
+  "@usageUnitsImage": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageUnitsSecond": "{n} 秒",
+  "@usageUnitsSecond": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageUnitsClip": "{n} 本",
+  "@usageUnitsClip": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "usageRequests": "{n} 回",
+  "@usageRequests": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "usageSpecColumn": "仕様",
+  "usageUnmatched": "{n} 件のリクエストがどの料金にも一致せず、0 として計算",
+  "@usageUnmatched": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "usageGoFixRates": "料金を追加",
+  "usageUnitPrice": "単価"
 }

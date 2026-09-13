@@ -57,8 +57,8 @@
   "type": "Type",
   "tag": "Tag",
   "billingMode": "Billing Mode",
-  "perToken": "Per Million Tokens",
-  "perRequest": "Per Request",
+  "perToken": "Per token",
+  "perRequest": "Per request",
   "requestCount": "Request Count",
   "requests": "Requests",
   "feeGroups": "Fee Groups",
@@ -538,5 +538,90 @@
   "channelDefaultFeeGroup": "Default fee group",
   "channelDefaultFeeGroupHint": "Models added to this channel start in this group",
   "modelIdTakenTitle": "This channel already has this Model ID",
-  "modelIdTakenDesc": "A Model ID must be unique within a channel. Change the ID, or edit the model that already has it."
+  "modelIdTakenDesc": "A Model ID must be unique within a channel. Change the ID, or edit the model that already has it.",
+  "perSpec": "Per spec",
+  "specUnitImage": "Per image",
+  "specUnitSecond": "Per second",
+  "specUnitClip": "Per clip",
+  "specUnitSuffixImage": "/image",
+  "specUnitSuffixSecond": "/s",
+  "specUnitSuffixClip": "/clip",
+  "specUnitNoteImage": "1 image = 1 unit",
+  "specUnitNoteSecond": "1 s = 1 unit",
+  "specUnitNoteClip": "1 clip = 1 unit",
+  "specUnitLabel": "Unit",
+  "specDimSize": "Size / resolution",
+  "specDimQuality": "Quality",
+  "specDimSeconds": "Duration (s)",
+  "specAnyValue": "Any",
+  "specGroupImageSizes": "Image sizes",
+  "specGroupVideoRes": "Video resolutions",
+  "specOtherRates": "Other specs",
+  "specOtherRatesSub": "Any size · quality · duration not listed",
+  "specAddRate": "Add rate",
+  "specCustomValue": "Custom…",
+  "specCustomHint": "Case is normalized (2k → 2K)",
+  "specPriceLabel": "Price ${suffix}",
+  "@specPriceLabel": {
+    "placeholders": {
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "specPricePlaceholder": "Enter price",
+  "specPriorityRule": "Blank means \"any\". When several rows match, the row with more conditions wins.",
+  "specPriceMissing": "Row {n} has no price yet. Add one before saving.",
+  "@specPriceMissing": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "specDuplicateRow": "Rows {a} and {b} have the same conditions ({cond}). Remove one or change a condition.",
+  "@specDuplicateRow": {
+    "placeholders": {
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      },
+      "cond": {
+        "type": "String"
+      }
+    }
+  },
+  "specOtherBlankHint": "Leave blank and unlisted specs are billed at 0.",
+  "specOnlyOtherHint": "With only \"Other specs\", this works the same as Per request.",
+  "specSwitchToRequest": "Switch to Per request",
+  "specSummary": "{unit} · {n} rates · {min}–{max}",
+  "@specSummary": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "specSummaryEmpty": "{unit} · 0 rates",
+  "@specSummaryEmpty": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "specOtherZero": "Other specs at 0",
+  "modelCardBilling": "Billing",
+  "specUnitSuffixRequest": "/req"
 }

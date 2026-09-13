@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
+import '../../models/spec_rate.dart';
+
 enum LLMRole { system, user, assistant, tool }
 
 /// The app's own reasoning-intensity vocabulary (playbook 03: never let one
@@ -454,8 +456,14 @@ class LLMModelConfig {
   final double? cacheInputFee;
 
   final double outputFee;
-  final String billingMode; // 'token' or 'request'
+  final String billingMode; // 'token', 'request' or 'spec'
   final double requestFee;
+
+  /// Spec billing: what a request counts as and the rate table it is priced
+  /// against — see `services/billing/spec_billing.dart`. Empty unless the
+  /// fee group's mode is `spec`.
+  final OutputUnit outputUnit;
+  final List<SpecRate> outputRates;
 
   // Proxy settings
   final bool proxyEnabled;
@@ -479,6 +487,8 @@ class LLMModelConfig {
     this.outputFee = 0.0,
     this.billingMode = 'token',
     this.requestFee = 0.0,
+    this.outputUnit = OutputUnit.image,
+    this.outputRates = const [],
     this.proxyEnabled = false,
     this.proxyUrl,
     this.proxyUsername,
@@ -506,6 +516,8 @@ class LLMModelConfig {
         outputFee: outputFee,
         billingMode: billingMode,
         requestFee: requestFee,
+        outputUnit: outputUnit,
+        outputRates: outputRates,
         proxyEnabled: proxyEnabled,
         proxyUrl: proxyUrl,
         proxyUsername: proxyUsername,

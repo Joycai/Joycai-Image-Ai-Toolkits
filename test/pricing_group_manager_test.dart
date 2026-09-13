@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/pricing_group_manager.dart';
+import 'package:joycai_image_ai_toolkits/widgets/spec_rate_table.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -58,6 +60,20 @@ void main() {
         'name': 'Midjourney Relax',
         'billing_mode': 'request',
         'request_price': 0.04,
+      });
+      // A spec-billed video group (`D2b`): per second, three rows and a
+      // catch-all — the shape the summary chip and the editor's table are
+      // pinned against below.
+      await state.addPricingGroup({
+        'name': 'Veo 3 Video',
+        'billing_mode': 'spec',
+        'output_unit': 'second',
+        'output_rates': SpecRate.encodeList(const [
+          SpecRate(size: '1080p', quality: 'high', price: 0.5),
+          SpecRate(size: '1080p', price: 0.3),
+          SpecRate(size: '720p', price: 0.15),
+          SpecRate(price: 0.1),
+        ]),
       });
       // Attached to a real channel: a model with a null channel is not a state
       // the app can produce.
@@ -144,8 +160,9 @@ void main() {
     await pumpManager(tester, appState, const Size(1920, 1080));
 
     // An orphaned group prices nothing, and nothing else on this screen would
-    // ever tell you — the request-billed group has no models pointing at it.
-    expect(find.text('Not used by any model'), findsOneWidget);
+    // ever tell you — the request-billed and the spec-billed groups have no
+    // models pointing at them.
+    expect(find.text('Not used by any model'), findsNWidgets(2));
   });
 
   testWidgets('an unset cache rate is shown inheriting the input rate', (tester) async {
@@ -187,8 +204,9 @@ void main() {
     expect(find.text('Add Fee Group'), findsWidgets);
     // The redesigned shell, not the old AlertDialog: both billing modes on show
     // at once, short accent-labelled price fields, and a blank name to fill in.
-    expect(find.text('Per Million Tokens'), findsOneWidget);
-    expect(find.text('Per Request'), findsOneWidget);
+    expect(find.text('Per token'), findsOneWidget);
+    expect(find.text('Per request'), findsOneWidget);
+    expect(find.text('Per spec'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Input'), findsOneWidget);
     expect(find.byType(AlertDialog), findsNothing);
 
@@ -212,7 +230,7 @@ void main() {
 
       // Switching to per-request billing swaps the three token fields for the
       // single request one.
-      await tester.tap(find.text('Per Request'));
+      await tester.tap(find.text('Per request'));
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -222,4 +240,78 @@ void main() {
       expect(find.widgetWithText(TextField, 'Cache'), findsNothing);
     });
   }
+
+  testWidgets('a spec-billed group is summarised in one tag, with the table a hover away', (tester) async {
+    final appState = await seedState(tester);
+    await pumpManager(tester, appState, const Size(1920, 1080));
+
+    // One summary however many rows: unit, priced rows, price range.
+    expect(find.text('Per second · 4 rates · \$0.10–0.50'), findsOneWidget);
+    final tooltip = tester.widget<Tooltip>(
+      find.ancestor(of: find.text('Per second · 4 rates · \$0.10–0.50'), matching: find.byType(Tooltip)).first,
+    );
+    expect(tooltip.message, contains('1080p · high  \$0.5000/s'));
+    expect(tooltip.message, contains('Other specs  \$0.1000/s'));
+  });
+
+  testWidgets('the spec editor opens on the rate table, and a new row blocks saving until priced', (tester) async {
+    final appState = await seedState(tester);
+    await pumpManager(tester, appState, const Size(1920, 1080));
+    await openEditor(tester, find.text('Veo 3 Video'));
+
+    // Three ordinary rows (two say 1080p), the pinned catch-all, the rule.
+    expect(find.text('1080p'), findsNWidgets(2));
+    expect(find.text('720p'), findsOneWidget);
+    expect(find.text('Other specs'), findsOneWidget);
+    expect(find.widgetWithText(TextField, '0.1000'), findsOneWidget);
+    expect(find.textContaining('Blank means "any"'), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save')).onPressed, isNotNull);
+
+    await tester.tap(find.text('Add rate'));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    // The new row is all 「Any」 with an empty price, and the table says which
+    // row is unpriced rather than outlining the field red.
+    expect(find.text('Row 4 has no price yet. Add one before saving.'), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save')).onPressed, isNull);
+  });
+
+  for (final entry in {
+    'Mobile': const Size(390, 844),
+    'Tablet': const Size(820, 1180),
+    'Desktop': const Size(1920, 1080),
+  }.entries) {
+    testWidgets('the spec editor lays out without overflow on ${entry.key}', (tester) async {
+      final appState = await seedState(tester);
+      await pumpManager(tester, appState, entry.value);
+      await openEditor(tester, find.text('Veo 3 Video'));
+
+      expect(tester.takeException(), isNull, reason: 'Overflow detected on ${entry.key}');
+      expect(find.text('Other specs'), findsOneWidget);
+    });
+  }
+
+  group('SpecTableIssues', () {
+    test('names the first unpriced row, 1-based', () {
+      final rows = [SpecRateDraft(size: '1K', price: '0.03'), SpecRateDraft(size: '2K'), SpecRateDraft(size: '4K')];
+      expect(SpecTableIssues.of(rows).missingPriceRow, 2);
+      expect(SpecTableIssues.of(rows).blocksSave, isTrue);
+    });
+
+    test('names the first pair of rows with the same conditions', () {
+      final rows = [
+        SpecRateDraft(size: '1080p', quality: 'high', price: '0.5'),
+        SpecRateDraft(size: '720p', price: '0.15'),
+        SpecRateDraft(size: '1080p', quality: 'high', price: '0.45'),
+      ];
+      expect(SpecTableIssues.of(rows).duplicate, (a: 1, b: 3));
+    });
+
+    test('a clean table blocks nothing, and an empty one is clean', () {
+      expect(SpecTableIssues.of([SpecRateDraft(size: '1K', price: '0.03')]).blocksSave, isFalse);
+      expect(SpecTableIssues.of([]).blocksSave, isFalse);
+    });
+  });
 }

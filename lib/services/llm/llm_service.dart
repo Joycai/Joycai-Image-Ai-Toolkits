@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../billing/spec_billing.dart';
 import '../database_service.dart';
 import 'llm_config_resolver.dart';
 import 'llm_dispatcher.dart';
 import 'llm_types.dart';
+import 'output_spec.dart';
 import 'turn_continuation.dart';
 
 class LLMService {
@@ -132,13 +135,22 @@ class LLMService {
         // Record usage per part, before anything else: whatever the provider
         // generated was billed, whether or not the turn goes on or the caller
         // is still there.
-        if (response.metadata.isNotEmpty) {
+        //
+        // A spec-billed group prices the pictures, not the usage payload, so
+        // for it a response that carried images is recorded even when the
+        // provider reported no usage at all — relays that draw through the
+        // chat surface commonly report none.
+        final specBilled = config.billingMode == specBillingMode;
+        if (response.metadata.isNotEmpty ||
+            (specBilled && response.generatedImages.isNotEmpty)) {
           await _recordUsage(
             config.modelId,
             config,
             response.metadata,
             modelDbId: modelIdentifier is int ? modelIdentifier : null,
             taskTag: options?['usageTag']?.toString(),
+            options: options,
+            imageCount: response.generatedImages.length,
           );
         }
 
@@ -523,8 +535,11 @@ class LLMService {
           contextId: contextId,
         );
 
-        // Unified Token Usage Recording
-        if (finalMetadata != null) {
+        // Unified Token Usage Recording. Same rule as request(): a
+        // spec-billed group bills the pictures whether or not the stream
+        // ended with a usage payload.
+        final specBilled = config.billingMode == specBillingMode;
+        if (finalMetadata != null || (specBilled && imageCount > 0)) {
           onLogAdded?.call(
             'Recording token usage...',
             level: 'DEBUG',
@@ -533,8 +548,10 @@ class LLMService {
           await _recordUsage(
             config.modelId,
             config,
-            finalMetadata,
+            finalMetadata ?? const {},
             modelDbId: modelIdentifier is int ? modelIdentifier : null,
+            options: options,
+            imageCount: imageCount,
           );
         }
 
@@ -554,14 +571,22 @@ class LLMService {
     }
   }
 
+  /// [options] and [imageCount] feed spec billing: the request's output
+  /// spec (size / quality / seconds) is read off the options — or off the
+  /// provider's echo in [metadata] where there is one — and priced against
+  /// the group's rate table; the units are the pictures the response
+  /// carried, the seconds requested, or one per job. See [specUsageFor].
   Future<void> _recordUsage(
     String modelId,
     LLMModelConfig config,
     Map<String, dynamic> metadata, {
     int? modelDbId,
     String? taskTag,
+    Map<String, dynamic>? options,
+    int imageCount = 0,
   }) async {
     final db = DatabaseService();
+    final spec = specUsageFor(config, options, metadata, imageCount: imageCount);
 
     // Standardize metadata keys. Three spellings are in play: Google
     // (`promptTokenCount`), OpenAI chat (`prompt_tokens`) and the OpenAI
@@ -596,7 +621,33 @@ class LLMService {
       'request_count': 1,
       'request_price': config.requestFee,
       'billing_mode': config.billingMode,
+      // Null on the other two modes: the columns then carry their defaults
+      // and the row prices exactly as it did before spec billing existed.
+      'output_units': spec?.units,
+      'output_unit_price': spec?.unitPrice,
+      'output_unit': spec?.unit.name,
+      'output_spec': spec == null ? null : jsonEncode(spec.toJson()),
     });
+  }
+
+  /// The spec-billing snapshot for one request, or null when [config]'s fee
+  /// group is not spec-billed. Pure, so the three recording paths (request,
+  /// stream, long-running submit) can be pinned by one test each without a
+  /// database.
+  @visibleForTesting
+  static SpecUsage? specUsageFor(
+    LLMModelConfig config,
+    Map<String, dynamic>? options,
+    Map<String, dynamic> metadata, {
+    required int imageCount,
+  }) {
+    if (config.billingMode != specBillingMode) return null;
+    return SpecUsage.price(
+      unit: config.outputUnit,
+      rates: config.outputRates,
+      spec: OutputSpec.from(options, metadata: metadata),
+      imageCount: imageCount,
+    );
   }
 
   /// Cache-hit tokens from a usage payload: `cachedContentTokenCount` (Google),
@@ -698,9 +749,18 @@ class LLMService {
     // without this every Veo/Sora/xAI generation was invisible to the metrics
     // page and to request-billed channels. Providers report no token usage at
     // submit time; the row records the request itself (tokens 0).
-    await _recordUsage(config.modelId, config, const {
-      'operation': 'submit',
-    }, modelDbId: modelIdentifier is int ? modelIdentifier : null);
+    //
+    // A spec-billed group prices the submission by what was asked for —
+    // resolution and seconds are in the options, and no provider reports
+    // the length it actually rendered — so a job that later fails is still
+    // billed here, exactly as a request-billed one is.
+    await _recordUsage(
+      config.modelId,
+      config,
+      const {'operation': 'submit'},
+      modelDbId: modelIdentifier is int ? modelIdentifier : null,
+      options: options,
+    );
     return ticket;
   }
 

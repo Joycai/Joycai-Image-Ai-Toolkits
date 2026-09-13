@@ -9,6 +9,7 @@ import '../../../models/llm_model.dart';
 import '../../../models/pricing_group.dart';
 import '../../../services/llm/context_budget.dart';
 import '../../../services/llm/llm_dispatcher.dart';
+import '../../../widgets/models/fee_group_summary.dart';
 import '../../../widgets/models/model_tag_chip.dart';
 import '../../../widgets/models/wire_protocol_labels.dart';
 import 'models_controls.dart';
@@ -44,12 +45,18 @@ class ModelCard extends StatelessWidget {
     this.channel,
     this.feeGroup,
     this.size = ModelCardSize.regular,
+    this.showBilling = false,
     this.onTap,
     this.onEdit,
     this.onDelete,
   });
 
   final LLMModel model;
+
+  /// `D2b · 21f`: a 「计费 · summary」 line under the chips, stating what
+  /// [feeGroup] charges. On for the editor's preview, where the fee group is
+  /// a choice being made; off in the list, where the chip's name suffices.
+  final bool showBilling;
 
   /// The channel the model belongs to. Only used to tell whether a pinned
   /// protocol is stale; without it the pin is shown as valid.
@@ -129,6 +136,11 @@ class ModelCard extends StatelessWidget {
             runSpacing: AppSpace.s6,
             children: _chips(context, l10n, stale),
           ),
+          // Absent, not 「—」, when there is no group to summarise.
+          if (showBilling && feeGroup != null) ...[
+            const SizedBox(height: AppSpace.s6),
+            _billingLine(context, l10n, feeGroup!),
+          ],
         ],
       ],
     );
@@ -224,6 +236,40 @@ class ModelCard extends StatelessWidget {
         ),
       if (group != null) _FeeGroupChip(group.name) else _CapabilityChip(l10n.noFeeGroup, faint: true),
     ];
+  }
+
+  /// 「计费」 in the secondary ink, the mono summary, and for a spec group with
+  /// no catch-all the outline-coloured 「其他规格按 0 计」.
+  Widget _billingLine(BuildContext context, AppLocalizations l10n, PricingGroup group) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final label = textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant);
+
+    return Row(
+      children: [
+        Text(l10n.modelCardBilling, style: label),
+        const SizedBox(width: AppSpace.s6),
+        Flexible(
+          child: Text(
+            feeGroupSummary(l10n, group),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: label?.mono,
+          ),
+        ),
+        if (feeGroupOtherSpecsAtZero(group)) ...[
+          const SizedBox(width: AppSpace.s6),
+          Flexible(
+            child: Text(
+              '· ${l10n.specOtherZero}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelSmall?.copyWith(color: scheme.outline),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 
   static String _formatTokens(int tokens) {

@@ -2225,6 +2225,12 @@ abstract class AppLocalizations {
   /// **'Cached Input'**
   String get cachedInputTokens;
 
+  /// No description provided for @specBilled.
+  ///
+  /// In en, this message translates to:
+  /// **'By spec'**
+  String get specBilled;
+
   /// No description provided for @outputTokens.
   ///
   /// In en, this message translates to:
@@ -2344,6 +2350,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{pageSize} per page · {shown} / {total} shown'**
   String usageLoadMoreStatus(int pageSize, int shown, int total);
+
+  /// No description provided for @usageUnitsImage.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} images'**
+  String usageUnitsImage(String n);
+
+  /// No description provided for @usageUnitsSecond.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} s'**
+  String usageUnitsSecond(String n);
+
+  /// No description provided for @usageUnitsClip.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} clips'**
+  String usageUnitsClip(String n);
+
+  /// No description provided for @usageRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} req'**
+  String usageRequests(int n);
+
+  /// No description provided for @usageSpecColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Spec'**
+  String get usageSpecColumn;
+
+  /// No description provided for @usageUnmatched.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} requests matched no rate and were billed at 0'**
+  String usageUnmatched(int n);
+
+  /// No description provided for @usageGoFixRates.
+  ///
+  /// In en, this message translates to:
+  /// **'Add rates'**
+  String get usageGoFixRates;
+
+  /// No description provided for @usageUnitPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit price'**
+  String get usageUnitPrice;
 
   /// No description provided for @models.
   ///
@@ -2570,13 +2624,13 @@ abstract class AppLocalizations {
   /// No description provided for @perToken.
   ///
   /// In en, this message translates to:
-  /// **'Per Million Tokens'**
+  /// **'Per token'**
   String get perToken;
 
   /// No description provided for @perRequest.
   ///
   /// In en, this message translates to:
-  /// **'Per Request'**
+  /// **'Per request'**
   String get perRequest;
 
   /// No description provided for @requestCount.
@@ -4150,6 +4204,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A Model ID must be unique within a channel. Change the ID, or edit the model that already has it.'**
   String get modelIdTakenDesc;
+
+  /// No description provided for @perSpec.
+  ///
+  /// In en, this message translates to:
+  /// **'Per spec'**
+  String get perSpec;
+
+  /// No description provided for @specUnitImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Per image'**
+  String get specUnitImage;
+
+  /// No description provided for @specUnitSecond.
+  ///
+  /// In en, this message translates to:
+  /// **'Per second'**
+  String get specUnitSecond;
+
+  /// No description provided for @specUnitClip.
+  ///
+  /// In en, this message translates to:
+  /// **'Per clip'**
+  String get specUnitClip;
+
+  /// No description provided for @specUnitSuffixImage.
+  ///
+  /// In en, this message translates to:
+  /// **'/image'**
+  String get specUnitSuffixImage;
+
+  /// No description provided for @specUnitSuffixSecond.
+  ///
+  /// In en, this message translates to:
+  /// **'/s'**
+  String get specUnitSuffixSecond;
+
+  /// No description provided for @specUnitSuffixClip.
+  ///
+  /// In en, this message translates to:
+  /// **'/clip'**
+  String get specUnitSuffixClip;
+
+  /// No description provided for @specUnitNoteImage.
+  ///
+  /// In en, this message translates to:
+  /// **'1 image = 1 unit'**
+  String get specUnitNoteImage;
+
+  /// No description provided for @specUnitNoteSecond.
+  ///
+  /// In en, this message translates to:
+  /// **'1 s = 1 unit'**
+  String get specUnitNoteSecond;
+
+  /// No description provided for @specUnitNoteClip.
+  ///
+  /// In en, this message translates to:
+  /// **'1 clip = 1 unit'**
+  String get specUnitNoteClip;
+
+  /// No description provided for @specUnitLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get specUnitLabel;
+
+  /// No description provided for @specDimSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size / resolution'**
+  String get specDimSize;
+
+  /// No description provided for @specDimQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality'**
+  String get specDimQuality;
+
+  /// No description provided for @specDimSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration (s)'**
+  String get specDimSeconds;
+
+  /// No description provided for @specAnyValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Any'**
+  String get specAnyValue;
+
+  /// No description provided for @specGroupImageSizes.
+  ///
+  /// In en, this message translates to:
+  /// **'Image sizes'**
+  String get specGroupImageSizes;
+
+  /// No description provided for @specGroupVideoRes.
+  ///
+  /// In en, this message translates to:
+  /// **'Video resolutions'**
+  String get specGroupVideoRes;
+
+  /// No description provided for @specOtherRates.
+  ///
+  /// In en, this message translates to:
+  /// **'Other specs'**
+  String get specOtherRates;
+
+  /// No description provided for @specOtherRatesSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Any size · quality · duration not listed'**
+  String get specOtherRatesSub;
+
+  /// No description provided for @specAddRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add rate'**
+  String get specAddRate;
+
+  /// No description provided for @specCustomValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom…'**
+  String get specCustomValue;
+
+  /// No description provided for @specCustomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Case is normalized (2k → 2K)'**
+  String get specCustomHint;
+
+  /// No description provided for @specPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Price \${suffix}'**
+  String specPriceLabel(String suffix);
+
+  /// No description provided for @specPricePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter price'**
+  String get specPricePlaceholder;
+
+  /// No description provided for @specPriorityRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Blank means \"any\". When several rows match, the row with more conditions wins.'**
+  String get specPriorityRule;
+
+  /// No description provided for @specPriceMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Row {n} has no price yet. Add one before saving.'**
+  String specPriceMissing(int n);
+
+  /// No description provided for @specDuplicateRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Rows {a} and {b} have the same conditions ({cond}). Remove one or change a condition.'**
+  String specDuplicateRow(int a, int b, String cond);
+
+  /// No description provided for @specOtherBlankHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank and unlisted specs are billed at 0.'**
+  String get specOtherBlankHint;
+
+  /// No description provided for @specOnlyOtherHint.
+  ///
+  /// In en, this message translates to:
+  /// **'With only \"Other specs\", this works the same as Per request.'**
+  String get specOnlyOtherHint;
+
+  /// No description provided for @specSwitchToRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to Per request'**
+  String get specSwitchToRequest;
+
+  /// No description provided for @specSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{unit} · {n} rates · {min}–{max}'**
+  String specSummary(String unit, int n, String min, String max);
+
+  /// No description provided for @specSummaryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'{unit} · 0 rates'**
+  String specSummaryEmpty(String unit);
+
+  /// No description provided for @specOtherZero.
+  ///
+  /// In en, this message translates to:
+  /// **'Other specs at 0'**
+  String get specOtherZero;
+
+  /// No description provided for @modelCardBilling.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing'**
+  String get modelCardBilling;
+
+  /// No description provided for @specUnitSuffixRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'/req'**
+  String get specUnitSuffixRequest;
 
   /// No description provided for @prompts.
   ///
