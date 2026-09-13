@@ -75,7 +75,7 @@
   "stagingEmptyDesc": "选中文件后点「加入暂存区」，把要搬运的文件先记在这里 —— 只做标记，不移动任何文件。切换目录、筛选或重启应用都不会丢。",
   "stagingTarget": "目标目录",
   "stagingNoTarget": "未指定",
-  "stagingTargetHint": "在左栏文件夹上右键「移动 / 复制到此」，或把文件直接拖到文件夹上。",
+  "stagingTargetHint": "在左栏勾选要浏览的文件夹，它就会成为目标目录；也可以在文件夹上右键「移动 / 复制到此」，或把文件直接拖到文件夹上。",
   "stagingRestored": "已从上次会话恢复 {count} 项",
   "@stagingRestored": {
     "placeholders": {

@@ -167,7 +167,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stagingTargetHint =>
-      'Right-click a folder in the left column and choose Move / Copy here, or drag files onto a folder.';
+      'Tick a folder in the left column to browse it and it becomes the destination; you can also right-click a folder and choose Move / Copy here, or drag files onto a folder.';
 
   @override
   String stagingRestored(int count) {

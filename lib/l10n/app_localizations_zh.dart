@@ -163,7 +163,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stagingNoTarget => '未指定';
 
   @override
-  String get stagingTargetHint => '在左栏文件夹上右键「移动 / 复制到此」，或把文件直接拖到文件夹上。';
+  String get stagingTargetHint =>
+      '在左栏勾选要浏览的文件夹，它就会成为目标目录；也可以在文件夹上右键「移动 / 复制到此」，或把文件直接拖到文件夹上。';
 
   @override
   String stagingRestored(int count) {
@@ -4569,7 +4570,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get stagingNoTarget => '未指定';
 
   @override
-  String get stagingTargetHint => '在左欄資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。';
+  String get stagingTargetHint =>
+      '在左欄勾選要瀏覽的資料夾，它就會成為目標目錄；也可以在資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。';
 
   @override
   String stagingRestored(int count) {
