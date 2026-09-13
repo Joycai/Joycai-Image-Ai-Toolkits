@@ -159,24 +159,34 @@ Future<void> showAppGlassMenu(
 }) async {
   final navigator = Navigator.of(context);
   final MediaQueryData media = MediaQuery.of(context);
+  // [position] is a global point — a pointer's `globalPosition`, or a
+  // button's `localToGlobal` — but the menu is laid out inside the
+  // navigator's overlay, which is not the window: the custom window frame
+  // wraps the navigator (`MaterialApp.builder`), so the overlay starts under
+  // the title bar. Laying a global point out in overlay space put every menu
+  // one title bar lower than the thing it hung off.
+  final RenderBox? overlayBox = navigator.overlay?.context.findRenderObject() as RenderBox?;
+  final bool hasOverlay = overlayBox != null && overlayBox.hasSize;
+  final Offset local = hasOverlay ? overlayBox.globalToLocal(position) : position;
+  final Size hostSize = hasOverlay ? overlayBox.size : media.size;
   // Measured the way the delegate will constrain it, so a menu longer than the
   // window is measured at the height it will actually get.
   final double maxHeight = math.max(
     0,
-    media.size.height - media.padding.vertical - _AppGlassMenuLayout._margin * 2,
+    hostSize.height - media.padding.vertical - _AppGlassMenuLayout._margin * 2,
   );
   final action = await navigator.push<VoidCallback>(
     _AppGlassMenuRoute(
-      position: position,
+      position: local,
       entries: entries,
       width: width,
       themes: InheritedTheme.capture(from: context, to: navigator.context),
       duration: AppMotion.durationOf(context, AppMotion.state),
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
       origin: _menuOrigin(
-        position: position,
+        position: local,
         childSize: Size(width, math.min(appGlassMenuHeight(entries), maxHeight)),
-        screenSize: media.size,
+        screenSize: hostSize,
         padding: media.padding,
         anchor: anchor,
       ),
