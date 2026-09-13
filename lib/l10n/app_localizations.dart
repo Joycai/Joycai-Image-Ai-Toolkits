@@ -149,6 +149,18 @@ abstract class AppLocalizations {
   /// **'extension'**
   String get renameExtensionLocked;
 
+  /// No description provided for @renameExtensionUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock to edit the extension'**
+  String get renameExtensionUnlock;
+
+  /// No description provided for @renameExtensionRelock.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock the extension'**
+  String get renameExtensionRelock;
+
   /// No description provided for @renameConflict.
   ///
   /// In en, this message translates to:

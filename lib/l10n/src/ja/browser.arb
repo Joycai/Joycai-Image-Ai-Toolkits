@@ -7,6 +7,8 @@
   "renameFailed": "名前の変更に失敗しました: {error}",
   "renameHintKeys": "Enter で確定 · Esc でキャンセル",
   "renameExtensionLocked": "拡張子",
+  "renameExtensionUnlock": "ロックを解除して拡張子を編集",
+  "renameExtensionRelock": "拡張子をロック",
   "renameConflict": "{name} はこのフォルダーに既にあります",
   "@renameConflict": {
     "placeholders": {

@@ -153,6 +153,115 @@ void main() {
     expect(succeeded, isTrue);
   });
 
+  testWidgets('the lock sits at the right edge of the field', (tester) async {
+    // A short name leaves the field mostly empty, which is where the lock
+    // used to float off the edge: a spacer shared the room with the text.
+    target = p.join(dir.path, 'a.png');
+    File(target).writeAsStringSync('a');
+    await pumpHost(tester);
+    await open(tester);
+
+    final Rect field = tester.getRect(
+      find.ancestor(
+        of: find.byType(EditableText),
+        matching: find.byType(AnimatedContainer),
+      ),
+    );
+    final Rect lock = tester.getRect(find.byIcon(Icons.lock_outline));
+    final Rect label = tester.getRect(find.text('extension'));
+    expect(lock.left, greaterThan(field.center.dx));
+    // Only the field's border and the toggle's own padding past the label.
+    expect(field.right - label.right, lessThanOrEqualTo(12));
+  });
+
+  testWidgets(
+    'tapping the lock puts the extension in the field and renames it too',
+    (tester) async {
+      await pumpHost(tester);
+      await open(tester);
+
+      await tester.tap(find.byIcon(Icons.lock_outline));
+      await tester.pump();
+
+      final EditableText field = tester.widget(find.byType(EditableText));
+      expect(field.controller.text, 'IMG_2041.png');
+      // The extension is selected, the dot left out.
+      expect(
+        field.controller.selection,
+        const TextSelection(baseOffset: 9, extentOffset: 12),
+      );
+      expect(find.text('.png'), findsNothing);
+      expect(find.byIcon(Icons.lock_open), findsOneWidget);
+      // Still the same name, so still nothing to do.
+      expect(renameEnabled(tester), isFalse);
+
+      await tester.enterText(find.byType(EditableText), 'cover.jpg');
+      await tester.pump();
+      expect(find.text('9 / $kFileRenameMaxLength'), findsOneWidget);
+      expect(renameEnabled(tester), isTrue);
+
+      await tester.runAsync(() async {
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pump();
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+      await tester.pumpAndSettle();
+
+      expect(File(p.join(dir.path, 'cover.jpg')).existsSync(), isTrue);
+      expect(File(target).existsSync(), isFalse);
+    },
+  );
+
+  testWidgets('locking again splits the typed extension back out', (
+    tester,
+  ) async {
+    await pumpHost(tester);
+    await open(tester);
+
+    await tester.tap(find.byIcon(Icons.lock_outline));
+    await tester.pump();
+    await tester.enterText(find.byType(EditableText), 'hero_final.webp');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.lock_open));
+    await tester.pump();
+
+    final EditableText field = tester.widget(find.byType(EditableText));
+    expect(field.controller.text, 'hero_final');
+    expect(find.text('.webp'), findsOneWidget);
+    expect(renameEnabled(tester), isTrue);
+  });
+
+  testWidgets('Cancel and Rename are the same width', (tester) async {
+    for (final locale in const [Locale('en'), Locale('zh')]) {
+      await pumpHost(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: locale,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                host = context;
+                return const SizedBox.expand();
+              },
+            ),
+          ),
+        ),
+      );
+      await open(tester);
+
+      final buttons = find.byType(AppButton);
+      expect(buttons, findsNWidgets(2));
+      expect(
+        tester.getSize(buttons.at(0)).width,
+        tester.getSize(buttons.at(1)).width,
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+    }
+  });
+
   testWidgets('Cancel and Escape leave the file alone', (tester) async {
     await pumpHost(tester);
     await open(tester);

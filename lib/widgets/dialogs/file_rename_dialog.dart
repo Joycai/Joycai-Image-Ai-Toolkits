@@ -39,7 +39,7 @@ Future<void> showFileRenameDialog({
   final l10n = AppLocalizations.of(context)!;
   final scheme = Theme.of(context).colorScheme;
 
-  final String? newStem = await showDialog<String>(
+  final String? newName = await showDialog<String>(
     context: context,
     animationStyle: appDialogAnimation(context),
     // `2b`: the scrim at 60% — a rename is not the kind of decision the full
@@ -47,13 +47,10 @@ Future<void> showFileRenameDialog({
     barrierColor: scheme.scrim.withValues(alpha: scheme.scrim.a * 0.6),
     builder: (_) => FileRenameDialog(filePath: filePath),
   );
-  if (newStem == null) return;
+  if (newName == null) return;
 
   final file = File(filePath);
-  final newPath = p.join(
-    p.dirname(filePath),
-    '$newStem${p.extension(filePath)}',
-  );
+  final newPath = p.join(p.dirname(filePath), newName);
   try {
     await file.rename(newPath);
     onSuccess();
@@ -65,7 +62,7 @@ Future<void> showFileRenameDialog({
   }
 }
 
-/// The dialog itself; pops with the new stem, or null. Public so tests can
+/// The dialog itself; pops with the new file name, or null. Public so tests can
 /// find it — open it with [showFileRenameDialog].
 class FileRenameDialog extends StatefulWidget {
   const FileRenameDialog({super.key, required this.filePath});
@@ -81,8 +78,12 @@ class FileRenameDialog extends StatefulWidget {
 
 class _FileRenameDialogState extends State<FileRenameDialog> {
   late final String _dir = p.dirname(widget.filePath);
-  late final String _extension = p.extension(widget.filePath);
   late final String _stem = p.basenameWithoutExtension(widget.filePath);
+
+  /// The extension shown beside the field while [_extensionLocked]; while
+  /// unlocked it lives inside the field text instead.
+  late String _extension = p.extension(widget.filePath);
+  bool _extensionLocked = true;
   late final TextEditingController
   _controller = TextEditingController(text: _stem)
     // Opened with the stem selected: the common rename replaces the name
@@ -108,10 +109,10 @@ class _FileRenameDialogState extends State<FileRenameDialog> {
 
   String get _clean => FolderOperationsService.sanitize(_controller.text);
 
-  /// The full name the stem would produce, what the disk will be asked for.
-  String get _candidate => '$_clean$_extension';
+  /// The full name the field would produce, what the disk will be asked for.
+  String get _candidate => _extensionLocked ? '$_clean$_extension' : _clean;
 
-  bool get _unchanged => _clean == _stem;
+  bool get _unchanged => _candidate == p.basename(widget.filePath);
 
   bool get _tooLong => _candidate.length > kFileRenameMaxLength;
 
@@ -145,7 +146,33 @@ class _FileRenameDialogState extends State<FileRenameDialog> {
   }
 
   void _submit() {
-    if (_canRename) Navigator.of(context).pop<String>(_clean);
+    if (_canRename) Navigator.of(context).pop<String>(_candidate);
+  }
+
+  /// Unlocking folds the extension into the field and selects it (the dot
+  /// kept out), since changing it is why the lock was opened; locking splits
+  /// whatever extension the text now ends in back out beside the field.
+  void _toggleExtensionLock() {
+    final String text = _controller.text;
+    if (_extensionLocked) {
+      final String full = '$text$_extension';
+      final int start = _extension.isEmpty ? full.length : text.length + 1;
+      _extensionLocked = false;
+      _controller.value = TextEditingValue(
+        text: full,
+        selection: TextSelection(baseOffset: start, extentOffset: full.length),
+      );
+    } else {
+      final String extension = p.extension(text);
+      final String stem = text.substring(0, text.length - extension.length);
+      _extensionLocked = true;
+      _extension = extension;
+      _controller.value = TextEditingValue(
+        text: stem,
+        selection: TextSelection.collapsed(offset: stem.length),
+      );
+    }
+    _focus.requestFocus();
   }
 
   @override
@@ -186,9 +213,14 @@ class _FileRenameDialogState extends State<FileRenameDialog> {
                   controller: _controller,
                   focusNode: _focus,
                   extension: _extension,
+                  extensionLocked: _extensionLocked,
+                  onToggleLock: _toggleExtensionLock,
                   error: problem != null,
                   onSubmitted: _submit,
                   lockLabel: l10n.renameExtensionLocked,
+                  lockTooltip: _extensionLocked
+                      ? l10n.renameExtensionUnlock
+                      : l10n.renameExtensionRelock,
                 ),
                 const SizedBox(height: 12),
                 _HintRow(
@@ -200,20 +232,31 @@ class _FileRenameDialogState extends State<FileRenameDialog> {
                 const SizedBox(height: 12),
                 const _Rule(),
                 const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    AppButton(
-                      label: l10n.cancel,
-                      variant: AppButtonVariant.text,
-                      onPressed: () => Navigator.of(context).pop<String>(null),
+                // One width for both buttons — the wider label's — so the
+                // pair reads as a set whatever each language's words measure.
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IntrinsicWidth(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: AppButton(
+                            label: l10n.cancel,
+                            variant: AppButtonVariant.text,
+                            onPressed: () =>
+                                Navigator.of(context).pop<String>(null),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpace.s4),
+                        Expanded(
+                          child: AppButton(
+                            label: l10n.rename,
+                            onPressed: _canRename ? _submit : null,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: AppSpace.s4),
-                    AppButton(
-                      label: l10n.rename,
-                      onPressed: _canRename ? _submit : null,
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -301,23 +344,29 @@ class _Heading extends StatelessWidget {
 /// `2b`: 36 tall at r10, the glass ink at 8% for a fill, a 2px ring in the
 /// accent while focused — the error ink instead when the name is unusable —
 /// the stem editable in mono, the extension dimmed beside it and a lock at
-/// the end saying it stays.
+/// the right edge saying it stays — tap the lock to edit the extension too.
 class _NameField extends StatelessWidget {
   const _NameField({
     required this.controller,
     required this.focusNode,
     required this.extension,
+    required this.extensionLocked,
+    required this.onToggleLock,
     required this.error,
     required this.onSubmitted,
     required this.lockLabel,
+    required this.lockTooltip,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
   final String extension;
+  final bool extensionLocked;
+  final VoidCallback onToggleLock;
   final bool error;
   final VoidCallback onSubmitted;
   final String lockLabel;
+  final String lockTooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -344,50 +393,111 @@ class _NameField extends StatelessWidget {
               color: ringed ? accent : Colors.transparent,
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.only(left: 8, right: 2),
           child: Row(
             children: [
-              // As wide as its text, so the extension sits right after the
-              // stem the way the name reads; shrinks before the lock does.
-              Flexible(
-                child: IntrinsicWidth(
-                  child: TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    autofocus: true,
-                    maxLines: 1,
-                    cursorColor: accent,
-                    cursorWidth: 1.5,
-                    style: mono.copyWith(color: ink),
-                    textAlignVertical: TextAlignVertical.center,
-                    // No decorator at all: the box, fill and ring are this
-                    // container's, and even a collapsed decoration still drew
-                    // the theme's outline inside them.
-                    decoration: null,
-                    inputFormatters: [
-                      // Newlines never belong in a name; Enter is the confirm.
-                      FilteringTextInputFormatter.deny(RegExp(r'[\r\n]')),
-                    ],
-                    onSubmitted: (_) => onSubmitted(),
-                  ),
+              Expanded(
+                child: Row(
+                  children: [
+                    // As wide as its text, so the extension sits right after the
+                    // stem the way the name reads; shrinks before the lock does.
+                    Flexible(
+                      child: IntrinsicWidth(
+                        child: TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          autofocus: true,
+                          maxLines: 1,
+                          cursorColor: accent,
+                          cursorWidth: 1.5,
+                          style: mono.copyWith(color: ink),
+                          textAlignVertical: TextAlignVertical.center,
+                          // No decorator at all: the box, fill and ring are this
+                          // container's, and even a collapsed decoration still drew
+                          // the theme's outline inside them.
+                          decoration: null,
+                          inputFormatters: [
+                            // Newlines never belong in a name; Enter is the confirm.
+                            FilteringTextInputFormatter.deny(RegExp(r'[\r\n]')),
+                          ],
+                          onSubmitted: (_) => onSubmitted(),
+                        ),
+                      ),
+                    ),
+                    if (extensionLocked)
+                      Text(extension, style: mono.copyWith(color: ink2)),
+                  ],
                 ),
               ),
-              Text(extension, style: mono.copyWith(color: ink2)),
-              const Spacer(),
               const SizedBox(width: AppSpace.s10),
-              Icon(Icons.lock_outline, size: AppSize.iconSm, color: ink2),
-              const SizedBox(width: AppSpace.s4),
-              Text(
-                lockLabel,
-                style: textTheme.labelSmall!.mono.metricsOnly.copyWith(
-                  fontWeight: FontWeight.w400,
-                  color: ink2,
-                ),
+              _LockToggle(
+                locked: extensionLocked,
+                label: lockLabel,
+                tooltip: lockTooltip,
+                onTap: onToggleLock,
               ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+/// The lock at the field's right edge. Dim while the extension is held
+/// fixed; open and in the accent once it has been unlocked for editing.
+class _LockToggle extends StatelessWidget {
+  const _LockToggle({
+    required this.locked,
+    required this.label,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final bool locked;
+  final String label;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final glass = GlassInk.maybeOf(context);
+    final Color color = locked
+        ? (glass?.ink2 ?? scheme.onSurfaceVariant)
+        : scheme.primary;
+
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        // The field keeps focus; the lock is reached by pointer, and toggling
+        // hands focus straight back to the text.
+        canRequestFocus: false,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                locked ? Icons.lock_outline : Icons.lock_open,
+                size: AppSize.iconSm,
+                color: color,
+              ),
+              const SizedBox(width: AppSpace.s4),
+              Text(
+                label,
+                style: textTheme.labelSmall!.mono.metricsOnly.copyWith(
+                  fontWeight: FontWeight.w400,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

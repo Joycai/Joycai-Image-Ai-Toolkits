@@ -14,6 +14,8 @@
   },
   "renameHintKeys": "Enter 确认 · Esc 取消",
   "renameExtensionLocked": "扩展名",
+  "renameExtensionUnlock": "解锁以修改扩展名",
+  "renameExtensionRelock": "锁定扩展名",
   "renameConflict": "该文件夹已有 {name}",
   "@renameConflict": {
     "placeholders": {
