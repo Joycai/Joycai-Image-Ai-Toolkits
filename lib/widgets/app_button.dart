@@ -76,9 +76,10 @@ enum AppButtonVariant {
 /// `visualDensity` to get there — the same drift the component exists to
 /// stop. Three sizes cover every one of them.
 enum AppButtonSize {
-  /// ~30px and tight. For a button inside a popup, a slim toolbar strip or
-  /// a card footer, where [normal] would force the row taller than the
-  /// controls it sits among.
+  /// 28px and tight — `E1`'s row button (更改 / 打开 / 导出). For a button
+  /// inside a setting row, a popup, a slim toolbar strip or a card footer,
+  /// where [normal] would force the row taller than the controls it sits
+  /// among.
   compact,
 
   /// The default, matching [AppIconButton] and the segmented control.
@@ -194,19 +195,21 @@ class AppButton extends StatelessWidget {
   ButtonStyle? _sizeStyle(TextTheme textTheme) {
     if (size == AppButtonSize.normal && !fullWidth) return null;
 
-    final (height, density, padding, textStyle) = switch (size) {
+    final (height, padding, textStyle) = switch (size) {
+      // `E1`'s row button: 28 high, 10 in from each edge, 12/500 label. The
+      // height is the minimum size itself — under `VisualDensity.compact` it
+      // was 20, and the button came out as tall as its label, a 22px pill
+      // that changed height with the glyph beside it (`1c` 更改 vs `2a` 查看).
       AppButtonSize.compact => (
           AppSize.compact,
-          VisualDensity.compact,
           const EdgeInsets.symmetric(horizontal: 10),
           textTheme.labelMedium,
         ),
-      AppButtonSize.normal => (AppSize.control, null, null, null),
+      AppButtonSize.normal => (AppSize.control, null, null),
       // A screen's main action carries a little more weight than the buttons
       // beside it; several of these had spelled that out as a bold label.
       AppButtonSize.large => (
           AppSize.large,
-          null,
           const EdgeInsets.symmetric(horizontal: 20),
           textTheme.titleMedium,
         ),
@@ -214,7 +217,11 @@ class AppButton extends StatelessWidget {
 
     return ButtonStyle(
       minimumSize: WidgetStatePropertyAll(Size(fullWidth ? double.infinity : 0, height)),
-      visualDensity: density,
+      // A compact button lays out at its own 28, not the 48 Material pads a
+      // touch target to: it sits inside a row that is already ≥48 (`E1`'s
+      // setting rows are 48 and 56), and the padding was pushing every such
+      // row 8px taller than the spec on a phone.
+      tapTargetSize: size == AppButtonSize.compact ? MaterialTapTargetSize.shrinkWrap : null,
       padding: padding == null ? null : WidgetStatePropertyAll(padding),
       textStyle: textStyle == null ? null : WidgetStatePropertyAll(textStyle),
     );
@@ -240,7 +247,18 @@ class AppButton extends StatelessWidget {
     }
 
     if (icon != null) {
-      return _iconButton(style: style, onPressed: effectiveOnPressed, icon: icon!, label: _label());
+      return _button(
+        style: style,
+        onPressed: effectiveOnPressed,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: _iconSize),
+            SizedBox(width: _iconGap),
+            Flexible(child: _label()),
+          ],
+        ),
+      );
     }
 
     return _button(style: style, onPressed: effectiveOnPressed, child: _label());
@@ -261,48 +279,19 @@ class AppButton extends StatelessWidget {
     }
   }
 
-  Widget _iconButton({
-    required ButtonStyle? style,
-    required VoidCallback? onPressed,
-    required IconData icon,
-    required Widget label,
-  }) {
-    switch (variant) {
-      case AppButtonVariant.primary:
-      case AppButtonVariant.destructive:
-        return FilledButton.icon(
-          style: style,
-          onPressed: onPressed,
-          autofocus: autofocus,
-          icon: Icon(icon, size: _iconSize),
-          label: label,
-        );
-      case AppButtonVariant.text:
-      case AppButtonVariant.destructiveText:
-        return TextButton.icon(
-          style: style,
-          onPressed: onPressed,
-          autofocus: autofocus,
-          icon: Icon(icon, size: _iconSize),
-          label: label,
-        );
-      case AppButtonVariant.secondary:
-      case AppButtonVariant.tonal:
-      case AppButtonVariant.destructiveOutline:
-        return OutlinedButton.icon(
-          style: style,
-          onPressed: onPressed,
-          autofocus: autofocus,
-          icon: Icon(icon, size: _iconSize),
-          label: label,
-        );
-    }
-  }
-
   double get _iconSize => switch (size) {
         AppButtonSize.compact => AppSize.iconSm,
         AppButtonSize.normal => AppSize.iconMd,
         AppButtonSize.large => AppSize.iconLg,
+      };
+
+  /// Between the glyph and the label. Composed here rather than through the
+  /// `.icon` constructors, which fix it at Material's 8: the compact skin
+  /// (`E1` row buttons) closes it to 6, and the label's leading edge is the
+  /// one thing a row of these buttons has to agree on.
+  double get _iconGap => switch (size) {
+        AppButtonSize.compact => AppSpace.s6,
+        AppButtonSize.normal || AppButtonSize.large => 8,
       };
 
   ButtonStyle? _styleFor(BuildContext context, ColorScheme colorScheme) {

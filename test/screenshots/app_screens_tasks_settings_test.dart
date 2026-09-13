@@ -79,6 +79,33 @@ void main() {
     });
   }
 
+  // The application and data pages are each a level down as well (`E1 · 1c`
+  // and `1d`); their row buttons — 更改 / 打开 / 导出 / 清理 — are the ones the
+  // spec pins to one 28px skin, and the matrix never saw either page.
+  for (final (String category, String suffix) in <(String, String)>[
+    ('应用设置', 'application'),
+    ('数据管理', 'data'),
+  ]) {
+    testWidgets('settings · $suffix @ desktop light', (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.settings,
+        size: kShotSizes.last,
+        brightness: Brightness.light,
+        suffix: suffix,
+        after: (WidgetTester tester) async {
+          await tester.tap(find.text(category).first);
+          await settle(tester);
+          // Both pages read the disk on mount (the GPU name, the temp-folder
+          // size); give the real loop a moment so the rows show values.
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+          await settle(tester);
+        },
+      );
+    });
+  }
+
   // A queue row opened. `C1 10i` is most of what a row can show — the log, the
   // parameters, the outputs, the way out — and all of it is behind a tap, so
   // the matrix only ever photographs the collapsed third of this screen.
