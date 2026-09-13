@@ -287,12 +287,16 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
     // The column earns its width the moment there is something in it, and
     // only the first time — reopening it after the user closed it would be
-    // the app arguing with them.
+    // the app arguing with them. What opened on its own closes on its own:
+    // once the list is emptied the column gives the grid its 320px back, and
+    // the next staged file opens it again. A column the user opened by hand
+    // (or kept open) while it was empty is theirs and stays.
     if (staging.count > 0 && !_stagingAutoOpened) {
       _stagingAutoOpened = true;
       _stagingOpen = true;
     } else if (staging.count == 0 && _stagingAutoOpened) {
       _stagingAutoOpened = false;
+      _stagingOpen = false;
     }
 
     // Below 1000 the grid cannot spare the column, so staging slides out from
