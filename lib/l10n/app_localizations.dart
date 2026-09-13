@@ -392,7 +392,7 @@ abstract class AppLocalizations {
   /// No description provided for @stagingTargetHint.
   ///
   /// In en, this message translates to:
-  /// **'Right-click a folder in the left column and choose Move / Copy here, or drag files onto a folder.'**
+  /// **'Tick a folder in the left column to browse it and it becomes the destination; you can also right-click a folder and choose Move / Copy here, or drag files onto a folder.'**
   String get stagingTargetHint;
 
   /// No description provided for @stagingRestored.

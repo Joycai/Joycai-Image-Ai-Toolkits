@@ -227,8 +227,7 @@ void main() {
 
   group('destination', () {
     test('starts unset and notifies when named', () async {
-      // Unset is the honest starting value: the browser shows several folders
-      // merged, so there is no current one to default to.
+      // Unset until the browser reports an active folder or one is named.
       final state = await freshState();
       expect(state.destination, isNull);
 
@@ -261,6 +260,61 @@ void main() {
       final restored = await freshState();
 
       expect(restored.destination, isNull);
+    });
+
+    group('follows the browsed folder', () {
+      final a = p.join('base', 'a');
+      final b = p.join('base', 'b');
+      final c = p.join('base', 'c');
+
+      test('restored active directories name the last one', () async {
+        final state = await freshState();
+        state.followActiveDirectories(const [], [a, b]);
+
+        expect(state.destination, b);
+      });
+
+      test('a folder just ticked takes over from a named one', () async {
+        // The reported bug: a destination named from a folder menu stayed put
+        // while the user browsed elsewhere.
+        final state = await freshState();
+        state.followActiveDirectories(const [], [a]);
+        state.setDestination(c);
+
+        state.followActiveDirectories([a], [a, b]);
+        expect(state.destination, b);
+
+        state.followActiveDirectories([a, b], [b]);
+        expect(state.destination, b, reason: 'unticking another folder leaves it');
+      });
+
+      test('switching to one folder exclusively moves it there', () async {
+        final state = await freshState();
+        state.followActiveDirectories(const [], [a, b]);
+
+        state.followActiveDirectories([a, b], [c]);
+        expect(state.destination, c);
+      });
+
+      test('unticking the destination falls back, then clears', () async {
+        final state = await freshState();
+        state.followActiveDirectories(const [], [a, b]);
+
+        state.followActiveDirectories([a, b], [a]);
+        expect(state.destination, a);
+
+        state.followActiveDirectories([a], const []);
+        expect(state.destination, isNull);
+      });
+
+      test('a named folder outside the active set survives unrelated unticks', () async {
+        final state = await freshState();
+        state.followActiveDirectories(const [], [a, b]);
+        state.setDestination(c);
+
+        state.followActiveDirectories([a, b], [a]);
+        expect(state.destination, c);
+      });
     });
   });
 }

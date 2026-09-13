@@ -114,6 +114,19 @@ class AppState extends ChangeNotifier {
     LLMService().onLogAdded = (msg, {level = 'INFO', contextId}) {
       addLog(msg, level: level, taskId: contextId);
     };
+
+    // The staging destination follows the folder being browsed. Not a
+    // rebroadcast (see the note above): one identity check per browser
+    // notification, and staging notifies only when the destination moves.
+    // [FileBrowserState] replaces `activeDirectories` on every change, so a
+    // new list is the whole signal.
+    var lastActive = fileBrowserState.activeDirectories;
+    fileBrowserState.addListener(() {
+      final active = fileBrowserState.activeDirectories;
+      if (identical(active, lastActive)) return;
+      fileStagingState.followActiveDirectories(lastActive, active);
+      lastActive = active;
+    });
   }
 
   bool settingsLoaded = false;

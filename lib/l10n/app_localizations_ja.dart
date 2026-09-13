@@ -164,7 +164,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get stagingTargetHint =>
-      '左カラムのフォルダーを右クリックして「ここへ移動 / コピー」を選ぶか、ファイルをフォルダーへドラッグします。';
+      '左カラムで閲覧するフォルダーにチェックを入れると、そこが対象フォルダーになります。フォルダーを右クリックして「ここへ移動 / コピー」を選ぶか、ファイルをフォルダーへドラッグすることもできます。';
 
   @override
   String stagingRestored(int count) {

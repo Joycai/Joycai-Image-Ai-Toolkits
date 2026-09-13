@@ -33,8 +33,9 @@ const double kStagingPanelWidth = 320;
 /// Fills whatever width it is given; only an unbounded parent (a bare row)
 /// gets [kStagingPanelWidth].
 class BrowserStagingPanel extends StatelessWidget {
-  /// Where a paste would land. Null until the user names one — see
-  /// [FileStagingState] for why this screen cannot infer it.
+  /// Where a paste would land: the folder being browsed, or one named
+  /// outright. Null while no folder is active — see
+  /// [FileStagingState.destination].
   final String? destination;
 
   final void Function(FileTransferMode mode) onPaste;
@@ -218,9 +219,9 @@ class _EmptyState extends StatelessWidget {
 /// Where a paste lands, echoed back permanently — `1a` DESTINATION.
 ///
 /// The one control this feature cannot do without. The browser lists several
-/// active directories merged, so there is no "current folder" to paste into —
-/// the destination has to be named, and named visibly, or the user is
-/// guessing where their files went.
+/// active directories merged, so the folder a paste lands in — the one last
+/// activated, or one named from a folder's menu — has to be shown, or the
+/// user is guessing where their files went.
 class _DestinationSection extends StatelessWidget {
   final String? destination;
   final int restoredCount;

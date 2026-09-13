@@ -70,12 +70,13 @@ class FileStagingState extends ChangeNotifier {
   /// line has stopped being true.
   int get restoredCount => _restoredCount;
 
-  /// Where a paste would land, or null until the user names one.
+  /// Where a paste would land, or null while no folder is being browsed.
   ///
-  /// Deliberately not inferred and deliberately not persisted. The browser
-  /// lists several active directories merged, so there is no "current folder"
-  /// to fall back on — and a destination carried over from a previous session
-  /// would be a stale answer to a question the user has not asked yet.
+  /// Follows the folder the user is browsing — see [followActiveDirectories].
+  /// Naming a folder outright (its context menu, a drop onto it) goes through
+  /// [setDestination] and holds until the browsing changes again. Not
+  /// persisted: on restart it is derived afresh from the restored active
+  /// directories.
   String? get destination => _destination;
   String? _destination;
 
@@ -83,6 +84,29 @@ class FileStagingState extends ChangeNotifier {
     if (_destination == path) return;
     _destination = path;
     notifyListeners();
+  }
+
+  /// Moves [destination] along with the browser's active directories, given
+  /// the list before and after one change.
+  ///
+  /// The browser shows several folders merged, so "the current folder" is the
+  /// one the user reached for last: a folder that just became active takes
+  /// the destination. Deactivating the destination hands it to the most
+  /// recently activated folder still on, or clears it when none is. Any other
+  /// change — deactivating some other folder — leaves it alone, including a
+  /// destination named outright that is not among the active ones.
+  void followActiveDirectories(List<String> previous, List<String> current) {
+    bool isIn(List<String> list, String path) => list.any((d) => p.equals(d, path));
+
+    final added = current.where((d) => !isIn(previous, d)).toList();
+    if (added.isNotEmpty) {
+      setDestination(added.last);
+      return;
+    }
+    final target = _destination;
+    if (target != null && isIn(previous, target) && !isIn(current, target)) {
+      setDestination(current.isEmpty ? null : current.last);
+    }
   }
 
   int get count => _items.length;

@@ -61,7 +61,7 @@
   "stagingEmptyDesc": "選取檔案後點「加入暫存區」，把要搬運的檔案先記在這裡 —— 只做標記，不移動任何檔案。切換目錄、篩選或重新啟動應用都不會丟。",
   "stagingTarget": "目標目錄",
   "stagingNoTarget": "未指定",
-  "stagingTargetHint": "在左欄資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。",
+  "stagingTargetHint": "在左欄勾選要瀏覽的資料夾，它就會成為目標目錄；也可以在資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。",
   "stagingRestored": "已從上次工作階段恢復 {count} 項",
   "@stagingRestored": {
     "placeholders": {
