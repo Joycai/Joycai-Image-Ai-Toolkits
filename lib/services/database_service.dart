@@ -53,7 +53,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 42;
+  static const int dbVersion = 43;
 
   /// Settings holding absolute paths from the machine that made the backup.
   /// Excluded when the user opts out of directories.
@@ -312,6 +312,7 @@ class DatabaseService {
   Future<void> updatePricingGroup(int id, Map<String, dynamic> group) => ModelRepository().updatePricingGroup(id, PricingGroup.fromMap(group));
   Future<void> deletePricingGroup(int id) => ModelRepository().deletePricingGroup(id);
   Future<List<PricingGroup>> getPricingGroups() => ModelRepository().getPricingGroups();
+  Future<void> updatePricingGroupOrder(List<int> orderedIds) => ModelRepository().updatePricingGroupOrder(orderedIds);
 
   // LLM Channels Methods
   Future<int> addChannel(Map<String, dynamic> channel) => ModelRepository().addChannel(LLMChannel.fromMap(channel));

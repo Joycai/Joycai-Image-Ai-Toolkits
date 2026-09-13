@@ -152,7 +152,10 @@ void main() {
     await pumpManager(tester, appState, const Size(1920, 1080));
 
     expect(find.text('2 models'), findsOneWidget);
-    expect(find.text('claude-sonnet-5, claude-opus-4-6'), findsOneWidget);
+    final tooltip = tester.widget<Tooltip>(
+      find.ancestor(of: find.text('2 models'), matching: find.byType(Tooltip)).first,
+    );
+    expect(tooltip.message, 'claude-sonnet-5\nclaude-opus-4-6');
   });
 
   testWidgets('a group no model uses says so', (tester) async {
@@ -191,7 +194,7 @@ void main() {
     // pre-filling a zero here would quietly turn the cache free on next save.
     final field = tester.widget<TextField>(find.widgetWithText(TextField, 'Cache'));
     expect(field.controller?.text, isEmpty);
-    expect(find.text('Leave empty to bill cache hits at the input price'), findsOneWidget);
+    expect(find.textContaining('a blank cache rate follows the input rate'), findsOneWidget);
     // The blank field hints the rate it would inherit from the input field.
     expect(field.decoration?.hintText, '1.25');
   });
@@ -199,9 +202,10 @@ void main() {
   testWidgets('the add button opens the same editor the rows do', (tester) async {
     final appState = await seedState(tester);
     await pumpManager(tester, appState, const Size(1920, 1080));
-    await openEditor(tester, find.widgetWithText(FilledButton, 'Add Fee Group'));
+    await openEditor(tester, find.widgetWithText(FilledButton, 'New Group'));
 
-    expect(find.text('Add Fee Group'), findsWidgets);
+    // Once as the header's button (now tint-selected), once as the card's title.
+    expect(find.text('New Group'), findsNWidgets(2));
     // The redesigned shell, not the old AlertDialog: both billing modes on show
     // at once, short accent-labelled price fields, and a blank name to fill in.
     expect(find.text('Per token'), findsOneWidget);
@@ -210,7 +214,7 @@ void main() {
     expect(find.widgetWithText(TextField, 'Input'), findsOneWidget);
     expect(find.byType(AlertDialog), findsNothing);
 
-    final name = tester.widget<TextField>(find.widgetWithText(TextField, 'Group Name'));
+    final name = tester.widget<TextField>(find.widgetWithText(TextField, 'Name this group'));
     expect(name.controller?.text, isEmpty);
   });
 
@@ -225,8 +229,8 @@ void main() {
       await openEditor(tester, find.textContaining('Gemini 2.5 Pro'));
 
       expect(tester.takeException(), isNull, reason: 'Overflow detected on ${entry.key}');
-      expect(find.text('Edit Fee Group'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Group Name'), findsOneWidget);
+      expect(find.text('Edit group'), findsOneWidget);
+      expect(find.text('Group Name'), findsOneWidget);
 
       // Switching to per-request billing swaps the three token fields for the
       // single request one.
@@ -292,6 +296,124 @@ void main() {
       expect(find.text('Other specs'), findsOneWidget);
     });
   }
+
+  testWidgets('the editor opens in the right column and the list does not move', (tester) async {
+    final appState = await seedState(tester);
+    await pumpManager(tester, appState, const Size(1920, 1080));
+
+    // `D2 · 1d`: the right column holds a placeholder until a group is picked.
+    expect(find.text('Pick a group to edit'), findsOneWidget);
+    final before = tester.getRect(find.text('Midjourney Relax'));
+
+    await openEditor(tester, find.text('Veo 3 Video'));
+
+    expect(find.text('Pick a group to edit'), findsNothing);
+    expect(find.text('Edit group'), findsOneWidget);
+    expect(find.text('Delete group'), findsOneWidget);
+    // The two columns keep their places whatever the right one shows, and the
+    // editor is beside the list, not under it.
+    expect(tester.getRect(find.text('Midjourney Relax')), before);
+    expect(
+      tester.getRect(find.text('Edit group')).left,
+      greaterThan(tester.getRect(find.text('Veo 3 Video').first).right),
+    );
+  });
+
+  testWidgets('a new group cannot be saved until it has a name', (tester) async {
+    final appState = await seedState(tester);
+    await pumpManager(tester, appState, const Size(1920, 1080));
+    await openEditor(tester, find.widgetWithText(FilledButton, 'New Group'));
+
+    // `1f`: no delete for a group that does not exist yet; Save waits for a name.
+    expect(find.text('Delete group'), findsNothing);
+    FilledButton save() => tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save'));
+    expect(save().onPressed, isNull);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Name this group'), 'Flash tier');
+    await tester.pump();
+
+    expect(save().onPressed, isNotNull);
+  });
+
+  testWidgets('on a tablet the editor opens under the tapped row', (tester) async {
+    final appState = await seedState(tester);
+    await pumpManager(tester, appState, const Size(820, 1180));
+    final relaxBefore = tester.getRect(find.text('Midjourney Relax'));
+
+    await openEditor(tester, find.textContaining('Gemini 2.5 Pro'));
+
+    // `1h`: no placeholder column below desktop — the card is inlined between
+    // the edited row and the next, which moves down for it.
+    expect(find.text('Pick a group to edit'), findsNothing);
+    final title = tester.getRect(find.text('Edit group'));
+    expect(title.top, greaterThan(tester.getRect(find.textContaining('Gemini 2.5 Pro').first).bottom));
+    expect(title.bottom, lessThan(tester.getRect(find.text('Midjourney Relax')).top));
+    expect(tester.getRect(find.text('Midjourney Relax')).top, greaterThan(relaxBefore.top));
+  });
+
+  testWidgets('filtering narrows the list and turns reordering off', (tester) async {
+    final appState = await seedState(tester);
+    await pumpManager(tester, appState, const Size(1920, 1080));
+
+    await tester.enterText(find.widgetWithText(TextField, 'Filter fee groups…'), 'veo');
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(find.text('Midjourney Relax'), findsNothing);
+    expect(find.text('Veo 3 Video'), findsOneWidget);
+    // `1g`: a filtered list cannot be reordered, and says so.
+    expect(find.text('Reordering is off while filtering; the order saves on release.'), findsOneWidget);
+    final sort = tester.widget<IconButton>(
+      find.ancestor(of: find.byTooltip('Reorder'), matching: find.byType(IconButton)),
+    );
+    expect(sort.onPressed, isNull);
+  });
+
+  testWidgets('reorder mode shows every grip, and a move is stored', (tester) async {
+    final appState = await seedState(tester);
+    await pumpManager(tester, appState, const Size(1920, 1080));
+
+    await tester.tap(find.byTooltip('Reorder'));
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    // `1g`: grips on every row without hovering, and the placeholder explains.
+    expect(find.byIcon(Icons.drag_indicator), findsNWidgets(3));
+    expect(find.text('Drag the handles to reorder'), findsOneWidget);
+
+    // The drag itself is the framework's; what is ours is that the move lands
+    // in storage and comes back in that order.
+    await tester.runAsync(() => appState.reorderPricingGroups(2, 0));
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(appState.allPricingGroups.first.name, 'Veo 3 Video');
+    expect(tester.getRect(find.text('Veo 3 Video')).top, lessThan(tester.getRect(find.text('Midjourney Relax')).top));
+
+    await tester.runAsync(() => appState.refreshDataCache());
+    final names = appState.allPricingGroups.map((g) => g.name).toList();
+    expect(names.first, 'Veo 3 Video');
+    expect(names.last, 'Midjourney Relax');
+  });
+
+  testWidgets('on a phone a card opens the full-screen editor', (tester) async {
+    final appState = await seedState(tester);
+    await pumpManager(tester, appState, const Size(390, 844));
+
+    // `1h`: two-line cards, no header of their own.
+    expect(find.text('Pick a group to edit'), findsNothing);
+    expect(find.text('New Group'), findsNothing);
+
+    await openEditor(tester, find.text('Veo 3 Video'));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Edit group'), findsOneWidget);
+    expect(find.text('Other specs'), findsOneWidget);
+    expect(find.text('Models using it'), findsOneWidget);
+    expect(find.text('Save'), findsOneWidget);
+  });
 
   group('SpecTableIssues', () {
     test('names the first unpriced row, 1-based', () {

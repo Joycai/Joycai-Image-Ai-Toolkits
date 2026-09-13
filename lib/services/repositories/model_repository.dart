@@ -120,7 +120,26 @@ class ModelRepository {
   // Pricing Groups Methods
   Future<int> addPricingGroup(PricingGroup group) async {
     final db = await _db;
-    return await db.insert('fee_groups', group.toMap(includeId: false));
+    // Appended, as channels are: `PricingGroup.toMap` omits `sort_order`
+    // (owned by [updatePricingGroupOrder] alone), and the column default of
+    // 0 would put every new group at the top of the list.
+    final maxRow = await db.rawQuery('SELECT MAX(sort_order) AS m FROM fee_groups');
+    final maxOrder = maxRow.first['m'] as int?;
+    return await db.insert('fee_groups', {
+      ...group.toMap(includeId: false),
+      'sort_order': (maxOrder ?? -1) + 1,
+    });
+  }
+
+  /// Persists the fee-group page's arrangement: [orderedIds] is every group
+  /// in its new order, rewritten to a dense 0..N-1 range in one batch.
+  Future<void> updatePricingGroupOrder(List<int> orderedIds) async {
+    final db = await _db;
+    final batch = db.batch();
+    for (var i = 0; i < orderedIds.length; i++) {
+      batch.update('fee_groups', {'sort_order': i}, where: 'id = ?', whereArgs: [orderedIds[i]]);
+    }
+    await batch.commit(noResult: true);
   }
 
   Future<void> updatePricingGroup(int id, PricingGroup group) async {
@@ -138,7 +157,9 @@ class ModelRepository {
 
   Future<List<PricingGroup>> getPricingGroups() async {
     final db = await _db;
-    final maps = await db.query('fee_groups');
+    // `sort_order` is the user's arrangement; `id` breaks ties so a backup
+    // written before the column existed still lists in creation order.
+    final maps = await db.query('fee_groups', orderBy: 'sort_order ASC, id ASC');
     return maps.map((m) => PricingGroup.fromMap(m)).toList();
   }
 }

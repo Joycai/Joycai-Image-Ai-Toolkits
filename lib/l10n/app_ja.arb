@@ -1279,6 +1279,30 @@
   "specOtherZero": "その他の仕様は 0",
   "modelCardBilling": "課金",
   "specUnitSuffixRequest": "/回",
+  "filterFeeGroups": "料金グループを絞り込む…",
+  "reorderFeeGroups": "並べ替え",
+  "feeGroupPickTitle": "編集するグループを選択",
+  "feeGroupPickText": "グループカードか編集ボタンを押すと、ここにエディタが開きます。「新しいグループ」もここに開きます。",
+  "feeGroupReorderTitle": "左のハンドルをドラッグして並べ替え",
+  "feeGroupReorderText": "順序はモデル・チャンネル編集の料金グループ選択にも反映されます。離すと保存されます。",
+  "feeGroupReorderNote": "絞り込み中は並べ替えできません。離すと順序が保存されます。",
+  "feeGroupReorderHint": "グループを長押ししてドラッグ。離すと順序が保存されます。",
+  "deleteGroup": "グループを削除",
+  "deleteFeeGroupInUse": "{count} 個のモデルが料金グループなしになります。",
+  "@deleteFeeGroupInUse": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "editGroupTitle": "グループを編集",
+  "feeGroupNamePlaceholder": "グループ名を入力",
+  "tokenPriceHint": "100 万トークン単位で課金。キャッシュ入力が未入力なら入力価格で計算。画像 / 動画モデルは「仕様別」を使ってください。",
+  "discardChangesTitle": "未保存の変更を破棄しますか？",
+  "discardChangesBody": "別のグループに切り替えると、ここでの変更は失われます。",
+  "discard": "破棄",
+  "modelsUsingGroup": "使用中のモデル",
   "prompts": "プロンプト",
   "promptLibrary": "プロンプトライブラリ",
   "newPrompt": "新しいプロンプト",

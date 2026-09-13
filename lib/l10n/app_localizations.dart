@@ -4415,6 +4415,108 @@ abstract class AppLocalizations {
   /// **'/req'**
   String get specUnitSuffixRequest;
 
+  /// No description provided for @filterFeeGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter fee groups…'**
+  String get filterFeeGroups;
+
+  /// No description provided for @reorderFeeGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder'**
+  String get reorderFeeGroups;
+
+  /// No description provided for @feeGroupPickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a group to edit'**
+  String get feeGroupPickTitle;
+
+  /// No description provided for @feeGroupPickText.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a group or its edit button and the editor opens here. New groups start here too.'**
+  String get feeGroupPickText;
+
+  /// No description provided for @feeGroupReorderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the handles to reorder'**
+  String get feeGroupReorderTitle;
+
+  /// No description provided for @feeGroupReorderText.
+  ///
+  /// In en, this message translates to:
+  /// **'The order carries into the model and channel editors\' fee-group pickers. Saved on release.'**
+  String get feeGroupReorderText;
+
+  /// No description provided for @feeGroupReorderNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Reordering is off while filtering; the order saves on release.'**
+  String get feeGroupReorderNote;
+
+  /// No description provided for @feeGroupReorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold a group to drag it; the order saves on release.'**
+  String get feeGroupReorderHint;
+
+  /// No description provided for @deleteGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete group'**
+  String get deleteGroup;
+
+  /// No description provided for @deleteFeeGroupInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} models will be left with no fee group.'**
+  String deleteFeeGroupInUse(int count);
+
+  /// No description provided for @editGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit group'**
+  String get editGroupTitle;
+
+  /// No description provided for @feeGroupNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Name this group'**
+  String get feeGroupNamePlaceholder;
+
+  /// No description provided for @tokenPriceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Priced per million tokens; a blank cache rate follows the input rate. For image and video models use Per spec.'**
+  String get tokenPriceHint;
+
+  /// No description provided for @discardChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard unsaved changes?'**
+  String get discardChangesTitle;
+
+  /// No description provided for @discardChangesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching to another group drops the edits made here.'**
+  String get discardChangesBody;
+
+  /// No description provided for @discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discard;
+
+  /// No description provided for @modelsUsingGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Models using it'**
+  String get modelsUsingGroup;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

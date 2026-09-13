@@ -78,7 +78,7 @@ void main() {
       expect(tester.takeException(), isNull, reason: 'Overflow after switch on ${entry.key}');
       // The fee-groups body replaced the usage body, and the tabs survived the
       // swap so there is a way back.
-      expect(find.text('Add Fee Group'), findsWidgets);
+      expect(find.text('New Group'), findsWidgets);
       expect(find.text('Usage'), findsOneWidget);
     });
   }

@@ -211,4 +211,37 @@ extension AppStateData on AppState {
     await _db.deletePricingGroup(id);
     await refreshDataCache();
   }
+
+  /// Moves the group at [oldIndex] to [newIndex] (`D2 · 1g`), the same
+  /// contract as [reorderChannels]: optimistic, index already adjusted for
+  /// the lifted row, a failed write reloading from storage.
+  Future<bool> reorderPricingGroups(int oldIndex, int newIndex) async {
+    final reordered = [...allPricingGroups];
+    if (oldIndex == newIndex ||
+        oldIndex < 0 ||
+        oldIndex >= reordered.length ||
+        newIndex < 0 ||
+        newIndex >= reordered.length) {
+      return true;
+    }
+
+    reordered.insert(newIndex, reordered.removeAt(oldIndex));
+    _cacheData(
+      models: allModels,
+      channels: allChannels,
+      pricingGroups: reordered,
+    );
+    notify();
+
+    try {
+      await _db.updatePricingGroupOrder([
+        for (final g in reordered)
+          if (g.id != null) g.id!,
+      ]);
+      return true;
+    } catch (_) {
+      await refreshDataCache();
+      return false;
+    }
+  }
 }

@@ -2431,6 +2431,59 @@ class AppLocalizationsZh extends AppLocalizations {
   String get specUnitSuffixRequest => '/次';
 
   @override
+  String get filterFeeGroups => '筛选费率组…';
+
+  @override
+  String get reorderFeeGroups => '排序';
+
+  @override
+  String get feeGroupPickTitle => '选一组来编辑';
+
+  @override
+  String get feeGroupPickText => '点组卡或它的编辑按钮，编辑卡在这里打开；「新建组」也在这里。';
+
+  @override
+  String get feeGroupReorderTitle => '拖动左侧把手调整顺序';
+
+  @override
+  String get feeGroupReorderText => '顺序同步到模型与渠道编辑框的费率组下拉。松手即保存。';
+
+  @override
+  String get feeGroupReorderNote => '筛选中不能排序；松手即保存顺序。';
+
+  @override
+  String get feeGroupReorderHint => '长按组卡拖动；松手即保存顺序。';
+
+  @override
+  String get deleteGroup => '删除组';
+
+  @override
+  String deleteFeeGroupInUse(int count) {
+    return '$count 个模型将变为无费率组。';
+  }
+
+  @override
+  String get editGroupTitle => '编辑组';
+
+  @override
+  String get feeGroupNamePlaceholder => '给这组起个名字';
+
+  @override
+  String get tokenPriceHint => '按百万 token 计价；缓存输入留空按输入价算。图片 / 视频模型请改用「按规格」。';
+
+  @override
+  String get discardChangesTitle => '放弃未保存的改动？';
+
+  @override
+  String get discardChangesBody => '切到另一组会丢掉这里的改动。';
+
+  @override
+  String get discard => '放弃';
+
+  @override
+  String get modelsUsingGroup => '使用它的模型';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -7020,6 +7073,59 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get specUnitSuffixRequest => '/次';
+
+  @override
+  String get filterFeeGroups => '篩選費用群組…';
+
+  @override
+  String get reorderFeeGroups => '排序';
+
+  @override
+  String get feeGroupPickTitle => '選一組來編輯';
+
+  @override
+  String get feeGroupPickText => '點組卡或它的編輯按鈕，編輯卡在這裡開啟；「新增組」也在這裡。';
+
+  @override
+  String get feeGroupReorderTitle => '拖曳左側把手調整順序';
+
+  @override
+  String get feeGroupReorderText => '順序同步到模型與通道編輯框的費用群組下拉。放開即儲存。';
+
+  @override
+  String get feeGroupReorderNote => '篩選中不能排序；放開即儲存順序。';
+
+  @override
+  String get feeGroupReorderHint => '長按組卡拖曳；放開即儲存順序。';
+
+  @override
+  String get deleteGroup => '刪除組';
+
+  @override
+  String deleteFeeGroupInUse(int count) {
+    return '$count 個模型將變為無費用群組。';
+  }
+
+  @override
+  String get editGroupTitle => '編輯組';
+
+  @override
+  String get feeGroupNamePlaceholder => '給這組取個名字';
+
+  @override
+  String get tokenPriceHint => '按百萬 token 計價；快取輸入留空按輸入價算。圖片 / 影片模型請改用「按規格」。';
+
+  @override
+  String get discardChangesTitle => '放棄未儲存的變更？';
+
+  @override
+  String get discardChangesBody => '切到另一組會丟掉這裡的變更。';
+
+  @override
+  String get discard => '放棄';
+
+  @override
+  String get modelsUsingGroup => '使用它的模型';
 
   @override
   String get prompts => '提示';

@@ -1688,6 +1688,30 @@
   "specOtherZero": "Other specs at 0",
   "modelCardBilling": "Billing",
   "specUnitSuffixRequest": "/req",
+  "filterFeeGroups": "Filter fee groups…",
+  "reorderFeeGroups": "Reorder",
+  "feeGroupPickTitle": "Pick a group to edit",
+  "feeGroupPickText": "Tap a group or its edit button and the editor opens here. New groups start here too.",
+  "feeGroupReorderTitle": "Drag the handles to reorder",
+  "feeGroupReorderText": "The order carries into the model and channel editors' fee-group pickers. Saved on release.",
+  "feeGroupReorderNote": "Reordering is off while filtering; the order saves on release.",
+  "feeGroupReorderHint": "Hold a group to drag it; the order saves on release.",
+  "deleteGroup": "Delete group",
+  "deleteFeeGroupInUse": "{count} models will be left with no fee group.",
+  "@deleteFeeGroupInUse": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "editGroupTitle": "Edit group",
+  "feeGroupNamePlaceholder": "Name this group",
+  "tokenPriceHint": "Priced per million tokens; a blank cache rate follows the input rate. For image and video models use Per spec.",
+  "discardChangesTitle": "Discard unsaved changes?",
+  "discardChangesBody": "Switching to another group drops the edits made here.",
+  "discard": "Discard",
+  "modelsUsingGroup": "Models using it",
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",

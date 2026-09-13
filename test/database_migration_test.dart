@@ -552,4 +552,44 @@ void main() {
       expect(await columnsOf(db, 'token_usage'), containsAll(usageColumns));
     });
   });
+
+  group('v43 adds the fee-group order', () {
+    test('existing groups keep their creation order', () async {
+      final db = await openV29Db();
+      addTearDown(db.close);
+      await db.insert('fee_groups', {'name': 'First', 'billing_mode': 'token'});
+      await db.insert('fee_groups', {'name': 'Second', 'billing_mode': 'token'});
+
+      await DatabaseMigration.migrate(db, 42, 43);
+
+      expect(await columnsOf(db, 'fee_groups'), contains('sort_order'));
+      // Backfilled from the id, so the upgraded list reads as it always did
+      // rather than every row tying at the column default.
+      final rows = await db.query('fee_groups', orderBy: 'sort_order ASC, id ASC');
+      expect(rows.map((r) => r['name']), ['First', 'Second']);
+      expect(rows.map((r) => r['sort_order']), rows.map((r) => r['id']));
+    });
+
+    test('the step is idempotent and does not reset an arranged order', () async {
+      final db = await openV29Db();
+      addTearDown(db.close);
+      await db.insert('fee_groups', {'name': 'A', 'billing_mode': 'token'});
+      await db.insert('fee_groups', {'name': 'B', 'billing_mode': 'token'});
+      await DatabaseMigration.migrate(db, 42, 43);
+      await db.update('fee_groups', {'sort_order': 0}, where: 'name = ?', whereArgs: ['B']);
+      await db.update('fee_groups', {'sort_order': 1}, where: 'name = ?', whereArgs: ['A']);
+
+      await DatabaseMigration.migrate(db, 42, 43);
+
+      final rows = await db.query('fee_groups', orderBy: 'sort_order ASC');
+      expect(rows.map((r) => r['name']), ['B', 'A']);
+    });
+
+    test('a fresh database is created with the column', () async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      addTearDown(db.close);
+      await DatabaseMigration.onCreate(db);
+      expect(await columnsOf(db, 'fee_groups'), contains('sort_order'));
+    });
+  });
 }

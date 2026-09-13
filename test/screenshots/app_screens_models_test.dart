@@ -30,15 +30,16 @@ void main() {
   // reach it — which is how a dialog the spec devotes two of its twelve frames
   // to went unphotographed. Driven the way a user reaches it instead.
   for (final _FeeGroupShot shot in _feeGroupShots) {
-    for (final Brightness brightness in Brightness.values) {
-      testWidgets('feeGroupEditor · ${shot.name} @ desktop ${brightness.name}', (
+    for (final String sizeLabel in shot.sizes) {
+      for (final Brightness brightness in Brightness.values) {
+      testWidgets('feeGroupEditor · ${shot.name} @ $sizeLabel ${brightness.name}', (
         WidgetTester tester,
       ) async {
         await shoot(
           tester,
           env: env,
           screen: AppScreen.usage,
-          size: kShotSizes.last,
+          size: kShotSizes.firstWhere((ShotSize s) => s.label == sizeLabel),
           brightness: brightness,
           suffix: shot.name,
           after: (WidgetTester tester) async {
@@ -53,7 +54,9 @@ void main() {
                   : find.descendant(of: of, matching: find.text(label));
               if (finder.evaluate().isEmpty) return;
               await tester.tap(finder.first, warnIfMissed: false);
-              for (int i = 0; i < 4; i++) {
+              // Six, not four: the phone's tab switch is still sliding at
+              // 400ms, and a tap that lands mid-slide opens nothing.
+              for (int i = 0; i < 6; i++) {
                 await tester.pump(const Duration(milliseconds: 100));
               }
             }
@@ -63,6 +66,7 @@ void main() {
           },
         );
       });
+      }
     }
   }
 
@@ -199,8 +203,12 @@ void main() {
 }
 
 class _FeeGroupShot {
-  const _FeeGroupShot(this.name, this.open);
+  const _FeeGroupShot(this.name, this.open, {this.sizes = const <String>['desktop']});
   final String name;
+
+  /// Which [kShotSizes] labels to render at. Desktop unless the shot is about
+  /// a narrower layout (`D2 · 1h`).
+  final List<String> sizes;
 
   /// Runs on the fee-group tab. `tapText` taps a label and settles; it is a
   /// no-op when the label is absent, so a shot degrades to the state before it
@@ -213,33 +221,46 @@ class _FeeGroupShot {
 }
 
 final List<_FeeGroupShot> _feeGroupShots = <_FeeGroupShot>[
-  // 10j: adding, empty, token mode.
+  // D2 1d: the default view — the list beside the dashed placeholder; on a
+  // phone (1h) the two-line cards on the canvas.
+  _FeeGroupShot('list', (_, _) async {}, sizes: const <String>['desktop', 'mobile']),
+  // D2 1f: adding, empty, token mode — the New button tint-selected, Save off.
   _FeeGroupShot('add', (_, tapText) async {
-    await tapText('添加费率组');
+    await tapText('新建组');
   }),
   // 10j, per-request mode — the branch that swaps all three price fields for
   // one, and the only place the new "billed per request" hint appears.
   _FeeGroupShot('addRequest', (_, tapText) async {
-    await tapText('添加费率组');
+    await tapText('新建组');
     await tapText('按次', of: find.byType(AppSegmentedControl<String>));
   }),
   // D2b 21d ④: adding in spec mode — the initial state is the pinned
   // 「其他规格」 row alone, with the hint and the 「改用按次」 offer.
   _FeeGroupShot('addSpec', (_, tapText) async {
-    await tapText('添加费率组');
+    await tapText('新建组');
     await tapText('按规格', of: find.byType(AppSegmentedControl<String>));
   }),
   // 10k: editing, with data. The seeded groups are named in fixture_seed.
   _FeeGroupShot('edit', (_, tapText) async {
     await tapText('Gemini Flash');
   }),
-  // D2b 21b: the spec editor over a seeded four-row table.
-  _FeeGroupShot('editSpec', (tester, tapText) async {
+  // D2 1e / D2b 21b: the selected Veo card and the spec editor beside it.
+  _FeeGroupShot('editSpec', (_, tapText) async {
     await tapText('Veo 3 视频');
-    // The editor opens below three group rows; bring its table into frame.
-    await tester.drag(find.byType(SingleChildScrollView).first, const Offset(0, -420));
+  }),
+  // D2 1g: reorder mode — every grip on show, the placeholder explaining.
+  _FeeGroupShot('reorder', (tester, _) async {
+    await tester.tap(find.byTooltip('排序'), warnIfMissed: false);
     for (int i = 0; i < 4; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
   }),
+  // D2 1h: the tablet's single column with the editor under the tapped row.
+  _FeeGroupShot('narrow', (_, tapText) async {
+    await tapText('Gemini Pro');
+  }, sizes: const <String>['tablet']),
+  // D2 1h right: the phone's full-screen editor page.
+  _FeeGroupShot('page', (_, tapText) async {
+    await tapText('Gemini Pro');
+  }, sizes: const <String>['mobile']),
 ];
