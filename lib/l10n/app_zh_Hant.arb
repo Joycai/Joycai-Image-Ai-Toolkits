@@ -593,6 +593,7 @@
   "conflictIncoming": "寫入",
   "conflictAlreadyThere": "已存在",
   "conflictUndecidedCount": "{count} 項未決定",
+  "browserGroupByFolder": "按資料夾分組",
   "appTitle": "Joycai Image AI Toolkits",
   "save": "儲存",
   "update": "更新",
@@ -682,6 +683,19 @@
   "dropReplacesFrame": "取代目前的幀",
   "dropRejectNameTaken": "這裡已有同名資料夾",
   "browserDragFootnoteMac": "拖到資料夾上 = 移動 · 按住 ⌥ 改為複製",
+  "folderOutlineLabel": "目錄導覽",
+  "folderOutlineShowOnly": "只看這個資料夾",
+  "folderOutlineRemove": "從檢視移除",
+  "folderOutlineReveal": "在目錄樹中定位",
+  "folderOutlineReauthorize": "重新授權",
+  "folderOutlineFilesCount": "{count} 個檔案",
+  "@folderOutlineFilesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "downloader": "下載器",
   "imageDownloader": "圖片下載器",
   "url": "網址",

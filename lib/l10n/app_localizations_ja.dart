@@ -717,6 +717,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get browserGroupByFolder => 'フォルダーごとにグループ化';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override
@@ -1014,6 +1017,26 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get browserDragFootnoteMac => 'フォルダーにドラッグで移動 · ⌥ を押しながらでコピー';
+
+  @override
+  String get folderOutlineLabel => 'フォルダーナビ';
+
+  @override
+  String get folderOutlineShowOnly => 'このフォルダーのみ表示';
+
+  @override
+  String get folderOutlineRemove => '表示から外す';
+
+  @override
+  String get folderOutlineReveal => 'フォルダーツリーで表示';
+
+  @override
+  String get folderOutlineReauthorize => '再認証';
+
+  @override
+  String folderOutlineFilesCount(int count) {
+    return '$count 件のファイル';
+  }
 
   @override
   String get downloader => 'ダウンローダー';

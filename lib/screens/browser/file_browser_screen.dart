@@ -8,11 +8,15 @@ import 'package:provider/provider.dart';
 import '../../core/app_semantic_colors.dart';
 import '../../core/design_tokens.dart';
 import '../../core/file_utils.dart';
+import '../../core/folder_outline_geometry.dart';
+import '../../core/folder_outline_labels.dart';
+import '../../core/folder_outline_spy.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/browser_file.dart';
 import '../../services/database_service.dart';
+import '../../services/file_permission_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/file_staging_state.dart';
@@ -20,6 +24,8 @@ import '../../state/workbench_ui_state.dart';
 import '../../widgets/app_run_console.dart';
 import '../../widgets/app_window_frame.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
+import '../../widgets/folder_group_header.dart';
+import '../../widgets/folder_outline_bar.dart';
 import '../../widgets/panel_resizer.dart';
 import '../../widgets/shell/app_destinations.dart';
 import '../../widgets/unified_sidebar.dart';
@@ -87,6 +93,12 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   /// state over an empty file area keys on.
   int _pendingRefreshes = 0;
 
+  /// The file area's scroll position and the folder outline that follows it
+  /// (`A1b · 1d`). The area lays the spy's offset table; the bar under the
+  /// filter row reads its one integer.
+  final ScrollController _scroll = ScrollController();
+  final FolderOutlineSpy _outline = FolderOutlineSpy();
+
   /// Drag accumulator, allowed [_kDragSlack] past the limits so the handle
   /// re-engages where the pointer actually is after a drag past the end,
   /// instead of the instant the pointer reverses. Null when no drag is live.
@@ -98,6 +110,28 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     super.initState();
     _loadSidebarWidth();
     _searchFocusNode.addListener(_onSearchFocusChanged);
+    _outline.attach(_scroll);
+  }
+
+  Future<void> _jumpToSection(int index) => _outline.scrollTo(
+        index,
+        duration: AppMotion.sceneOf(context),
+        curve: AppMotion.emphasized,
+      );
+
+  /// Opens the tree to [path] and pulses its row; on a narrow window the
+  /// tree is the drawer, so that opens first.
+  void _revealFolder(FileBrowserState browser, String path) {
+    if (Responsive.isNarrow(context)) _scaffoldKey.currentState?.openDrawer();
+    browser.flash(path, expand: true);
+  }
+
+  Future<void> _reAuthorizeFolder(FileBrowserState browser, String path) async {
+    final String? newPath = await FilePermissionService().reAuthorize(
+      path,
+      title: "Authorize Access to: $path",
+    );
+    if (newPath != null) browser.refresh();
   }
 
   Future<void> _loadSidebarWidth() async {
@@ -113,6 +147,8 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     _searchFocusNode.removeListener(_onSearchFocusChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _outline.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -388,12 +424,22 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                       onOpenDrawer: isNarrow ? () => _scaffoldKey.currentState?.openDrawer() : null,
                     ),
                     BrowserFilterBar(state: browser),
+                    _BrowserOutline(
+                      spy: _outline,
+                      onJump: _jumpToSection,
+                      onShowOnly: browser.setExclusiveDirectory,
+                      onRemove: browser.toggleDirectory,
+                      onReveal: (path) => _revealFolder(browser, path),
+                      onReAuthorize: (path) => _reAuthorizeFolder(browser, path),
+                    ),
                     Expanded(
                       child: Stack(
                         children: [
                           Positioned.fill(
                             child: _FileArea(
                               pendingRefreshes: _pendingRefreshes,
+                              scrollController: _scroll,
+                              outline: _outline,
                               onTap: (file) => _handleSelectionTap(browser, file),
                               onDoubleTap: (file) =>
                                   _openWithPreview(context, file, browser),
@@ -512,6 +558,7 @@ _StagingInputs _stagingInputs(FileStagingState s) =>
 
 typedef _AreaInputs = ({
   List<BrowserFile> files,
+  List<FolderSection> sections,
   BrowserViewMode viewMode,
   double thumbnailSize,
   bool isScanning,
@@ -520,11 +567,78 @@ typedef _AreaInputs = ({
 
 _AreaInputs _areaInputs(FileBrowserState s) => (
       files: s.filteredFiles,
+      sections: s.folderSections,
       viewMode: s.viewMode,
       thumbnailSize: s.thumbnailSize,
       isScanning: s.isScanning,
       hasFolders: s.sourceDirectories.isNotEmpty,
     );
+
+/// What the outline bar draws: the folder runs and which of them the last
+/// scan could not read. Not the files, not the selection.
+typedef _OutlineInputs = ({List<FolderSection> sections, Set<String> unreachable});
+
+_OutlineInputs _outlineInputs(FileBrowserState s) =>
+    (sections: s.folderSections, unreachable: s.unreachableDirectories);
+
+/// The folder outline under the filter row (`A1b · 1d`): fixed chrome on the
+/// column colour, up while the listing has more than one folder to index,
+/// and folding away (M2) when it does not.
+class _BrowserOutline extends StatelessWidget {
+  const _BrowserOutline({
+    required this.spy,
+    required this.onJump,
+    required this.onShowOnly,
+    required this.onRemove,
+    required this.onReveal,
+    required this.onReAuthorize,
+  });
+
+  final FolderOutlineSpy spy;
+  final ValueChanged<int> onJump;
+  final ValueChanged<String> onShowOnly;
+  final ValueChanged<String> onRemove;
+  final ValueChanged<String> onReveal;
+  final ValueChanged<String> onReAuthorize;
+
+  @override
+  Widget build(BuildContext context) {
+    final inputs = context.select<FileBrowserState, _OutlineInputs>(_outlineInputs);
+    final show = inputs.sections.length > 1;
+    Widget child = const SizedBox(width: double.infinity, height: 0);
+    if (show) {
+      final paths = [for (final s in inputs.sections) s.path];
+      final labels = folderOutlineLabels(paths);
+      child = FolderOutlineBar(
+        entries: [
+          for (var i = 0; i < paths.length; i++)
+            FolderOutlineEntry(
+              path: paths[i],
+              label: labels[i],
+              count: inputs.sections[i].count,
+              unreachable: inputs.unreachable.contains(paths[i]),
+            ),
+        ],
+        currentIndex: spy.currentIndex,
+        onJump: onJump,
+        host: FolderOutlineHost.opaque,
+        forceCollapsed: Responsive.isMobile(context),
+        onShowOnly: onShowOnly,
+        onRemove: onRemove,
+        onReveal: onReveal,
+        onReAuthorize: onReAuthorize,
+      );
+    }
+    return ClipRect(
+      child: AnimatedSize(
+        duration: AppMotion.durationOf(context, AppMotion.state),
+        curve: AppMotion.enter,
+        alignment: Alignment.topCenter,
+        child: child,
+      ),
+    );
+  }
+}
 
 /// What one tile reads. [payloadCount] is what its drag chip would say — the
 /// whole selection when the tile is in it, one otherwise — so an *unselected*
@@ -535,18 +649,51 @@ typedef _TileFlags = ({bool selected, bool staged, int payloadCount});
 class _FileArea extends StatelessWidget {
   const _FileArea({
     required this.pendingRefreshes,
+    required this.scrollController,
+    required this.outline,
     required this.onTap,
     required this.onDoubleTap,
     required this.onSecondaryTap,
   });
 
   final int pendingRefreshes;
+  final ScrollController scrollController;
+  final FolderOutlineSpy outline;
   final void Function(BrowserFile) onTap;
   final void Function(BrowserFile) onDoubleTap;
   final void Function(BrowserFile, Offset) onSecondaryTap;
 
   /// The grid's gutter, both ways (`1a`).
   static const double _gap = 12;
+
+  /// Above a group header in the grid; the header's extent to the spy is
+  /// the row plus this. In the list the header is a 32 row with no gap.
+  static const double _headerTopPad = AppSpace.s10;
+  static const double _gridHeaderExtent = _headerTopPad + FolderGroupHeader.height28;
+
+  /// Hands the spy this frame's section geometry, after the frame — a table
+  /// change can move the current index, whose listeners must not be poked
+  /// mid-build. Empty counts clear it, so an ungrouped listing lights no chip.
+  void _layoutOutline({
+    required List<FolderSection> sections,
+    required int columns,
+    required double cellExtent,
+    required double headerExtent,
+    required double spacing,
+  }) {
+    final counts = [for (final s in sections) s.count];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      outline.layout(
+        counts: counts,
+        columns: columns,
+        cellExtent: cellExtent,
+        headerExtent: headerExtent,
+        spacing: spacing,
+        leading: spacing,
+        trailing: spacing,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -603,65 +750,148 @@ class _FileArea extends StatelessWidget {
         // The width each card actually gets, computed the way the delegate
         // below will, so its height can follow it.
         final double usable = math.max(0, constraints.maxWidth - AppSpace.s16 * 2);
-        final int columns =
-            math.max(1, (usable / (area.thumbnailSize + _gap)).ceil());
-        final double cardWidth = math.max(1, (usable - _gap * (columns - 1)) / columns);
+        final int columns = FolderOutlineGeometry.columnsFor(
+          crossAxisExtent: usable,
+          maxCrossAxisExtent: area.thumbnailSize,
+          spacing: _gap,
+        );
+        final double cardWidth = math.max(
+          1,
+          FolderOutlineGeometry.cellExtentFor(crossAxisExtent: usable, columns: columns, spacing: _gap),
+        );
+        final double cardHeight = FileCard.mainAxisExtentFor(context, cardWidth);
+        final gridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: area.thumbnailSize,
+          mainAxisSpacing: _gap,
+          crossAxisSpacing: _gap,
+          mainAxisExtent: cardHeight,
+        );
 
-        return GridView.builder(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpace.s16,
-            _gap,
-            AppSpace.s16,
-            _gap + BrowserSelectionBar.clearance,
-          ),
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: area.thumbnailSize,
-            mainAxisSpacing: _gap,
-            crossAxisSpacing: _gap,
-            mainAxisExtent: FileCard.mainAxisExtentFor(context, cardWidth),
-          ),
-          itemCount: area.files.length,
-          itemBuilder: (context, index) {
-            final BrowserFile file = area.files[index];
-            return _tile(file, (context, flags, payload) => FileCard(
-                  file: file,
-                  isSelected: flags.selected,
-                  isStaged: flags.staged,
-                  // Dragging a card inside the selection drags the whole
-                  // selection; dragging one outside it drags only that file.
-                  // Same rule the context menu uses, so the count in the drag
-                  // chip and the count in the menu never disagree.
-                  dragPayload: payload,
-                  thumbnailSize: area.thumbnailSize,
-                  heroScope: kBrowserPreviewHeroScope,
-                  onTap: () => onTap(file),
-                  onDoubleTap: () => onDoubleTap(file),
-                  onSecondaryTap: (pos) => onSecondaryTap(file, pos),
-                ));
-          },
+        Widget card(BrowserFile file) => _tile(file, (context, flags, payload) => FileCard(
+              file: file,
+              isSelected: flags.selected,
+              isStaged: flags.staged,
+              // Dragging a card inside the selection drags the whole
+              // selection; dragging one outside it drags only that file.
+              // Same rule the context menu uses, so the count in the drag
+              // chip and the count in the menu never disagree.
+              dragPayload: payload,
+              thumbnailSize: area.thumbnailSize,
+              heroScope: kBrowserPreviewHeroScope,
+              onTap: () => onTap(file),
+              onDoubleTap: () => onDoubleTap(file),
+              onSecondaryTap: (pos) => onSecondaryTap(file, pos),
+            ));
+
+        _layoutOutline(
+          sections: area.sections,
+          columns: columns,
+          cellExtent: cardHeight,
+          headerExtent: _gridHeaderExtent,
+          spacing: _gap,
+        );
+
+        if (area.sections.isEmpty) {
+          return GridView.builder(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.s16,
+              _gap,
+              AppSpace.s16,
+              _gap + BrowserSelectionBar.clearance,
+            ),
+            gridDelegate: gridDelegate,
+            itemCount: area.files.length,
+            itemBuilder: (context, index) => card(area.files[index]),
+          );
+        }
+
+        // `A1b · 1d`: folder by folder — a header row, then that folder's
+        // run of the same grid. The geometry is what the spy was told above.
+        return CustomScrollView(
+          controller: scrollController,
+          slivers: [
+            for (final section in area.sections) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: _headerTopPad),
+                  child: FolderGroupHeader(path: section.path, count: section.count),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(AppSpace.s16, _gap, AppSpace.s16, _gap),
+                sliver: SliverGrid(
+                  gridDelegate: gridDelegate,
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => card(area.files[section.start + index]),
+                    childCount: section.count,
+                    addAutomaticKeepAlives: false,
+                  ),
+                ),
+              ),
+            ],
+            const SliverToBoxAdapter(child: SizedBox(height: BrowserSelectionBar.clearance)),
+          ],
         );
       },
     );
   }
 
   Widget _buildList(BuildContext context, _AreaInputs area) {
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: BrowserSelectionBar.clearance),
-      itemExtent: BrowserFileListRow.height,
-      itemCount: area.files.length,
-      itemBuilder: (context, index) {
-        final BrowserFile file = area.files[index];
-        return _tile(file, (context, flags, payload) => BrowserFileListRow(
-              key: ValueKey(file.path),
-              file: file,
-              isSelected: flags.selected,
-              isStaged: flags.staged,
-              dragPayload: payload,
-              onTap: () => onTap(file),
-              onDoubleTap: () => onDoubleTap(file),
-              onSecondaryTap: (pos) => onSecondaryTap(file, pos),
-            ));
-      },
+    Widget row(BrowserFile file) => _tile(file, (context, flags, payload) => BrowserFileListRow(
+          key: ValueKey(file.path),
+          file: file,
+          isSelected: flags.selected,
+          isStaged: flags.staged,
+          dragPayload: payload,
+          onTap: () => onTap(file),
+          onDoubleTap: () => onDoubleTap(file),
+          onSecondaryTap: (pos) => onSecondaryTap(file, pos),
+        ));
+
+    _layoutOutline(
+      sections: area.sections,
+      columns: 1,
+      cellExtent: BrowserFileListRow.height,
+      headerExtent: FolderGroupHeader.height32,
+      spacing: 0,
+    );
+
+    if (area.sections.isEmpty) {
+      return ListView.builder(
+        controller: scrollController,
+        padding: const EdgeInsets.only(bottom: BrowserSelectionBar.clearance),
+        itemExtent: BrowserFileListRow.height,
+        itemCount: area.files.length,
+        itemBuilder: (context, index) => row(area.files[index]),
+      );
+    }
+
+    // `A1b · 1e`: the header as a 32 row between the file rows, its glyph
+    // on the rows' icon column (left 20).
+    return CustomScrollView(
+      controller: scrollController,
+      slivers: [
+        for (final section in area.sections) ...[
+          SliverToBoxAdapter(
+            child: FolderGroupHeader(
+              path: section.path,
+              count: section.count,
+              height: FolderGroupHeader.height32,
+              padding: const EdgeInsets.only(left: 20, right: AppSpace.s16),
+            ),
+          ),
+          SliverFixedExtentList(
+            itemExtent: BrowserFileListRow.height,
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => row(area.files[section.start + index]),
+              childCount: section.count,
+              addAutomaticKeepAlives: false,
+            ),
+          ),
+        ],
+        const SliverToBoxAdapter(child: SizedBox(height: BrowserSelectionBar.clearance)),
+      ],
     );
   }
 }

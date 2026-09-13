@@ -606,5 +606,6 @@
   "renameBatchFailedTitle": "第 {batch} 批失败",
   "conflictIncoming": "写入",
   "conflictAlreadyThere": "已存在",
-  "conflictUndecidedCount": "{count} 项未决定"
+  "conflictUndecidedCount": "{count} 项未决定",
+  "browserGroupByFolder": "按文件夹分组"
 }
