@@ -10,9 +10,11 @@ import '../../../core/constants.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
+import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_snackbar.dart';
+import 'result_feedback_dialog.dart';
 
 /// File-system side effects for gallery items (save / share / delete).
 ///
@@ -155,4 +157,45 @@ Future<void> _deleteImageFile(
       AppSnackBar.error(context, l10n.deleteFailed(e.toString()));
     }
   }
+}
+
+/// Whether [image] can be fed back to the assistant right now (`20a`).
+///
+/// There is nothing to give feedback *on* before the assistant has staged a
+/// prompt version, and the action is withdrawn while a turn is running so a
+/// click cannot land in the middle of one. The card's hover strip and the
+/// context menu both read this so they agree.
+bool canSendResultFeedback(WorkbenchUIState workbenchUIState) {
+  final session = workbenchUIState.optimizerSession;
+  return session.promptVersions > 0 && !session.isRunning;
+}
+
+/// Collects a critique of [image], stages it on the assistant session (which
+/// latches an assistant-turn request the workbench screen consumes), and
+/// jumps to the assistant tab so the user lands where the conversation
+/// continues.
+///
+/// Provenance first, latest version as the fallback: an image the task record
+/// ties to v2 gives feedback on v2 even after v3 was staged — that binding is
+/// the whole reason the tag exists.
+Future<void> sendResultFeedbackFromGallery(BuildContext context, AppImage image) async {
+  final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+  final appState = Provider.of<AppState>(context, listen: false);
+  final version = workbenchUIState.resultVersionByPath[image.path] ??
+      workbenchUIState.optimizerSession.promptVersions;
+  if (version < 1) return;
+  final feedback = await showResultFeedbackDialog(
+    context,
+    image: image,
+    promptVersion: version,
+  );
+  if (feedback == null || feedback.isEmpty) return;
+  if (!workbenchUIState.sendResultFeedback(
+    image,
+    feedback: feedback,
+    promptVersion: version,
+  )) {
+    return;
+  }
+  appState.setWorkbenchTab(4); // Prompt assistant
 }

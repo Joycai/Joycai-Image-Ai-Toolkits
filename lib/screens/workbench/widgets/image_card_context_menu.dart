@@ -25,11 +25,12 @@ const double kImageCardMenuWidth = 240;
 /// The old menu was eighteen equal rows and five rules, some 550 tall, so a
 /// right-click in the lower half of an 860 window flipped it. This one is 240
 /// wide and eight rows: the four high-frequency actions (preview · mask ·
-/// crop · assistant, the card's hover strip one for one) are a block of four
-/// cells across the top; the four mutually exclusive 「设为 ×」 assignments are
-/// a 2×2 grid under a 「设为」 heading; rename · copy name · reveal fold into
-/// 「文件 ▸」 and save · share into 「导出 ▸」; the destructive rows stay at the
-/// bottom, delete in the error ink.
+/// crop · assistant) are a block of four cells across the top; the four
+/// mutually exclusive 「设为 ×」 assignments are a 2×2 grid under a 「设为」
+/// heading; the hover strip's feedback-to-assistant is a row beside the
+/// selection actions, shown only once there is a version to critique;
+/// rename · copy name · reveal fold into 「文件 ▸」 and save · share into
+/// 「导出 ▸」; the destructive rows stay at the bottom, delete in the error ink.
 ///
 /// With several cards selected the quick block stays and the 「设为」 grid goes
 /// (an assignment takes one picture), and the share row carries the count.
@@ -147,6 +148,18 @@ Future<void> showImageCardContextMenu(
           appState.setWorkbenchTab(5); // Video Generation
         },
       ),
+      // The `20a` feedback action, the same one the card's hover strip
+      // carries: a critique of one picture, so it goes with the multi-select
+      // and appears only once there is a prompt version to critique.
+      if (!multi && canSendResultFeedback(workbenchUIState))
+        AppGlassMenuItem(
+          icon: Icons.reply_outlined,
+          label: l10n.optResultFeedbackAction,
+          onSelected: () {
+            if (!context.mounted) return;
+            sendResultFeedbackFromGallery(context, imageFile);
+          },
+        ),
       const AppGlassMenuDivider(),
     ],
     AppGlassMenuItem(
