@@ -161,14 +161,14 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
     final draft = _draft;
     if (draft == null || _saving || !draft.canSave) return;
     setState(() => _saving = true);
-    final id = await draft.save(appState);
+    await draft.save(appState);
     if (!mounted) return;
-    // `1f`: a saved group stays selected — a new one has just joined the end
-    // of the list, and the card now shows it as stored.
+    // Saving is the end of the edit: the card closes and the list shows the
+    // group as stored (a new one at the end of the list).
     setState(() {
       _saving = false;
       _dropDraft();
-      _editing = id;
+      _editing = null;
     });
   }
 

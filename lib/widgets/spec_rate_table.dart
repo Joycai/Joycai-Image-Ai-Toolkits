@@ -227,7 +227,7 @@ class SpecRateTableEditor extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('${l10n.specUnitLabel} · ${l10n.specPriceLabel('\$$suffix')}', style: labelStyle),
+          Text('${l10n.specUnitLabel} · ${l10n.specPriceLabel(suffix)}', style: labelStyle),
           const SizedBox(height: AppSpace.s4),
           Row(
             children: [
@@ -283,7 +283,7 @@ class SpecRateTableEditor extends StatelessWidget {
         Expanded(child: cell(l10n.specDimSeconds)),
         if (!narrow) ...[
           const SizedBox(width: _gap),
-          SizedBox(width: _priceWidth, child: cell(l10n.specPriceLabel('\$$suffix'))),
+          SizedBox(width: _priceWidth, child: cell(l10n.specPriceLabel(suffix))),
           const SizedBox(width: _gap + _deleteWidth),
         ],
       ],

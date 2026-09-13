@@ -167,7 +167,8 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
   ).toMap(includeId: false));
 
   final int perImageFee = await db.addPricingGroup(PricingGroup(
-    name: '按次计费 · 图片',
+    // Bracketed on purpose: the fee-group row shows 「中转」 as a badge.
+    name: '[中转] 按次计费 · 图片',
     billingMode: 'request',
     requestPrice: 0.04,
   ).toMap(includeId: false));
