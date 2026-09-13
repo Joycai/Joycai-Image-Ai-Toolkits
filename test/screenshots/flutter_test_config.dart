@@ -68,22 +68,25 @@ class _ScreenshotWriter extends GoldenFileComparator {
 // ---------------------------------------------------------------------------
 
 Future<void> _loadFonts() async {
-  // NotoSansSC first, and it is the one that matters: AppState.fontFamily
-  // defaults to 'NotoSansSC' and MyApp feeds that into ThemeData.fontFamily, so
-  // nearly all app text asks for it. It covers Latin *and* CJK, which is why a
-  // missing SDK Roboto degrades gracefully rather than ruining the shot.
-  final List<ByteData> noto = await _loadFromBundle(<String>[
-    'assets/fonts/NotoSansSC-Regular.ttf',
-    'assets/fonts/NotoSansSC-Bold.ttf',
+  // NotoSansSC first, and it is the one that matters: it covers Latin *and*
+  // CJK, which is why a missing SDK Roboto degrades gracefully rather than
+  // ruining the shot. The app downloads it at runtime (FontService) rather
+  // than bundling it, so the harness keeps its own copy next to this file —
+  // byte-identical to what the download fetches.
+  final List<ByteData> noto = _loadFromFiles(<String>[
+    'test/screenshots/fonts/NotoSansSC-Regular.ttf',
+    'test/screenshots/fonts/NotoSansSC-Bold.ttf',
   ]);
   await _register('NotoSansSC', noto);
 
-  // Families the app names but does not bundle: the nav rail task badge asks
-  // for 'monospace' (main.dart:637), the settings font picker previews each
-  // option in its own family, and FontService.systemFontFamily is whatever the
-  // OS provides. None of them resolve inside flutter_test, so their labels
-  // would photograph as boxes and read as a broken harness. Alias them all to
-  // NotoSansSC — the point is legibility, not typographic accuracy.
+  // Families the app names but that never resolve inside flutter_test: the
+  // nav rail task badge asks for 'monospace' (main.dart:637), the settings
+  // font picker previews each option in its own family, and
+  // FontService.systemFontFamily — what AppState's default 'system' choice
+  // feeds ThemeData, so nearly all app text — is whatever the OS provides.
+  // Their labels would photograph as boxes and read as a broken harness.
+  // Alias them all to NotoSansSC — the point is legibility, not typographic
+  // accuracy.
   if (noto.isNotEmpty) {
     for (final String alias in <String>[
       'monospace',
@@ -139,6 +142,17 @@ Future<List<ByteData>> _loadFromBundle(List<String> keys) async {
     } catch (_) {
       // Missing from the bundle; the caller decides whether that is fatal.
     }
+  }
+  return out;
+}
+
+/// Reads [paths] relative to the package root (`flutter test`'s cwd).
+List<ByteData> _loadFromFiles(List<String> paths) {
+  final List<ByteData> out = <ByteData>[];
+  for (final String path in paths) {
+    final File file = File(path);
+    if (!file.existsSync()) continue;
+    out.add(ByteData.sublistView(file.readAsBytesSync()));
   }
   return out;
 }

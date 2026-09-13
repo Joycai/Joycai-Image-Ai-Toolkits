@@ -59,15 +59,7 @@ flutter:
   generate: true
   assets:
     - assets/icon/icon.png
-    - assets/fonts/
     - assets/presets/prompts/
-
-  fonts:
-    - family: NotoSansSC
-      fonts:
-        - asset: assets/fonts/NotoSansSC-Regular.ttf
-        - asset: assets/fonts/NotoSansSC-Bold.ttf
-          weight: 700
 
 flutter_launcher_icons:
   image_path: "assets/icon/icon.png"
