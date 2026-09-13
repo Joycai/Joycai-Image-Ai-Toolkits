@@ -296,6 +296,12 @@ class _NavRowState extends State<_NavRow> {
         child: InkWell(
           onTap: widget.onTap,
           onHover: (v) => setState(() => _hovered = v),
+          // The hover ground is the container below, faded in over
+          // `AppMotion.hover`. Without this the InkWell's own highlight —
+          // Material's 8% onSurface, and instant — lands first on the card
+          // underneath, and the row flashes a darker grey for the 100ms it
+          // takes the real ground to cover it.
+          hoverColor: Colors.transparent,
           borderRadius: BorderRadius.circular(AppRadius.control),
           child: AnimatedContainer(
             duration: AppMotion.durationOf(context, AppMotion.hover),
