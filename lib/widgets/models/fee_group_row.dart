@@ -82,6 +82,10 @@ class FeeGroupRow extends StatefulWidget {
 }
 
 class _FeeGroupRowState extends State<FeeGroupRow> {
+  /// A name badge wider than this ends in an ellipsis rather than eating
+  /// the name it sits beside.
+  static const double _badgeMaxWidth = 120;
+
   bool _hovering = false;
   bool _handleHovering = false;
 
@@ -118,10 +122,14 @@ class _FeeGroupRowState extends State<FeeGroupRow> {
             ),
             // A bracketed part of the name — 「[官方]」, 「(特价)」 — is the
             // user's own label for the group, so it reads as a badge beside
-            // the name rather than as punctuation inside it.
+            // the name rather than as punctuation inside it. The badge keeps
+            // its own width (capped) and the name takes what is left: as a
+            // second Flexible it would claim half the column and the name
+            // would end in an ellipsis with room to spare beside it.
             for (final tag in parts.tags) ...[
               const SizedBox(width: AppSpace.s6),
-              Flexible(
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: _badgeMaxWidth),
                 child: ModelTagChip(
                   tag,
                   color: selected ? scheme.primary : scheme.onSurfaceVariant,
@@ -168,7 +176,11 @@ class _FeeGroupRowState extends State<FeeGroupRow> {
               // read is a worse loss than a name that ends in an ellipsis.
               Expanded(flex: 2, child: identity),
               const SizedBox(width: 8),
-              Flexible(
+              // Expanded, not Flexible: a Flexible that stops at the tags'
+              // own width hands its slack back to the row's end, and the
+              // buttons after it end up floating mid-row instead of at the
+              // right edge. The tags right-align inside their share instead.
+              Expanded(
                 flex: 3,
                 child: Wrap(
                   alignment: WrapAlignment.end,
@@ -396,6 +408,10 @@ class FeeRowIconButton extends StatelessWidget {
       constraints: const BoxConstraints.tightFor(width: AppSize.compact, height: AppSize.compact),
       style: IconButton.styleFrom(
         minimumSize: const Size.square(AppSize.compact),
+        // The row places the glyph itself at its edge; the 48 tap target
+        // Material would pad around it pushes the button 10px in from the
+        // row's end and opens the same 10px between edit and delete.
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         foregroundColor: danger ? scheme.error : scheme.onSurfaceVariant,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
       ),

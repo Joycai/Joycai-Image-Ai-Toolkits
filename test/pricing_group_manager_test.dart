@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/fee_group_row.dart';
 import 'package:joycai_image_ai_toolkits/widgets/pricing_group_manager.dart';
 import 'package:joycai_image_ai_toolkits/widgets/spec_rate_table.dart';
 import 'package:provider/provider.dart';
@@ -156,6 +159,27 @@ void main() {
     expect(find.text('Midjourney Relax'), findsOneWidget);
     expect(find.text('MJ'), findsOneWidget);
     expect(find.text('Midjourney Relax [MJ]'), findsNothing);
+  });
+
+  testWidgets('edit and delete sit at the row\'s right edge, whatever the tags need', (tester) async {
+    final appState = await seedState(tester);
+    await pumpManager(tester, appState, const Size(1920, 1080));
+
+    // The request-billed group has one tag, the token-billed one three; the
+    // buttons end at the row's inner edge on both rather than trailing the
+    // tags wherever they stop.
+    for (final name in ['Midjourney Relax', 'Gemini 2.5 Pro']) {
+      final row = find.ancestor(of: find.textContaining(name), matching: find.byType(FeeGroupRow)).first;
+      final delete = find.descendant(of: row, matching: find.byTooltip('Delete'));
+      expect(
+        tester.getRect(row).right - tester.getRect(delete).right,
+        closeTo(AppSpace.s6, 0.5),
+        reason: name,
+      );
+    }
+    // The badge does not take half the name column: the name is whole.
+    final painter = tester.renderObject<RenderParagraph>(find.text('Midjourney Relax'));
+    expect(painter.didExceedMaxLines, isFalse);
   });
 
   testWidgets('a group reports the models it prices', (tester) async {
