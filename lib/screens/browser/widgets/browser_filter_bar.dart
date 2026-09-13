@@ -87,29 +87,44 @@ class BrowserFilterBar extends StatelessWidget {
 
           return Row(
             children: [
-              // The categories take what they need and no more, so the sort
-              // button sits right after them rather than at the row's end.
-              Flexible(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (final cat in FileCategory.values) ...[
-                        _CategoryChip(
-                          label: _categoryLabel(cat, l10n),
-                          selected: inputs.currentFilter == cat,
-                          onTap: () => state.setFilter(cat),
+              // Categories and sort share one Expanded, so the size controls
+              // are pinned to the row's end. A Flexible beside a Spacer would
+              // split the spare room with it and leave them short of the edge
+              // on a wide window.
+              Expanded(
+                child: Row(
+                  children: [
+                    // The categories take what they need and no more, so the sort
+                    // button sits right after them rather than at the row's end.
+                    // Capped at the chips' measured width: a horizontal scroll
+                    // view sizes to all it is offered, which would push the
+                    // sort button to the far end of the Expanded.
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: chipsWidth),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (final cat in FileCategory.values) ...[
+                                _CategoryChip(
+                                  label: _categoryLabel(cat, l10n),
+                                  selected: inputs.currentFilter == cat,
+                                  onTap: () => state.setFilter(cat),
+                                ),
+                                const SizedBox(width: _chipGap),
+                              ],
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: _chipGap),
-                      ],
-                    ],
-                  ),
+                      ),
+                    ),
+                    const SizedBox(width: _groupGap),
+                    _SortButton(state: state, inputs: inputs),
+                  ],
                 ),
               ),
-              const SizedBox(width: _groupGap),
-              _SortButton(state: state, inputs: inputs),
-              const Spacer(),
               if (isGrid) ...[
                 const SizedBox(width: _groupGap),
                 if (showSlider)
