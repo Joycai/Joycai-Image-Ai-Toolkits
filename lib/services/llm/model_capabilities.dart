@@ -675,10 +675,15 @@ class ModelCapabilities {
   /// gpt-image-2.5's quality ladder: the 2.5 generation (`-flare` /
   /// `-sunburst`) adds `xhigh` and `max` above `high`. Kept apart from
   /// [_openaiQualityParam] because earlier models reject the two new rungs.
+  ///
+  /// A dropdown, not the segmented track the four-rung ladder uses: six
+  /// slots on the workbench's 300px panel leave ~24px per label, and the
+  /// two-character ones (「超高」, "Extra high") elide to nothing there — the
+  /// track showed 低 / 中 / 高 with three blank slots around them.
   static const _openaiQuality25Param = ParamSpec(
     key: 'quality',
     labelKey: 'quality',
-    control: ParamControl.segmented,
+    control: ParamControl.dropdown,
     defaultValue: 'auto',
     options: [
       ParamOption('auto'),
