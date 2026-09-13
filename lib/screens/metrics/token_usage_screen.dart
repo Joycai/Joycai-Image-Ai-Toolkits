@@ -101,20 +101,31 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
   /// The fee-group editor, embedded in a card — the same component the fee
   /// management dialog hosts. On a phone (`1h`) the cards sit on the canvas
   /// with no panel around them.
+  ///
+  /// On a desktop the card fills the tab and its list scrolls inside the
+  /// card, beside an editor that stays where it is: with the page scrolling,
+  /// opening a row below the fold put the editor off the top. The tablet
+  /// still scrolls the page — its editor inlines under the row it belongs to.
   Widget _buildFeeGroups(
     BuildContext context, {
     required double inset,
     required double top,
     EdgeInsetsGeometry? cardPadding,
   }) {
+    final desktop = Responsive.isDesktop(context);
     final manager = PricingGroupManager(
       key: ValueKey('fee-groups-$_editRequest'),
       mode: PricingGroupManagerMode.section,
       initialEditGroupId: _editGroupId,
       phoneReorder: _phoneReorder,
+      fill: desktop,
     );
+    final padding = EdgeInsets.fromLTRB(inset, top, inset, MediaQuery.paddingOf(context).bottom + inset);
+    if (desktop && cardPadding != null) {
+      return Padding(padding: padding, child: UsagePanel(padding: cardPadding, child: manager));
+    }
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(inset, top, inset, MediaQuery.paddingOf(context).bottom + inset),
+      padding: padding,
       child: cardPadding == null ? manager : UsagePanel(padding: cardPadding, child: manager),
     );
   }

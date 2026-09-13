@@ -105,19 +105,29 @@ void main() {
   /// Pumps a bounded number of frames rather than `pumpAndSettle()`: the shared
   /// AppState keeps scheduling work in a headless test, so the tree never
   /// reaches a fully idle state and settling would spin until it times out.
-  Future<void> pumpManager(WidgetTester tester, AppState appState, Size size) async {
+  ///
+  /// [fill] hosts the manager the way the usage page does on a desktop: given
+  /// the whole height, no page scroll, its list scrolling in its own column.
+  Future<void> pumpManager(
+    WidgetTester tester,
+    AppState appState,
+    Size size, {
+    bool fill = false,
+    int? initialEditGroupId,
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
+    final manager = PricingGroupManager(fill: fill, initialEditGroupId: initialEditGroupId);
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
         value: appState,
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const Scaffold(
-            body: SingleChildScrollView(child: PricingGroupManager()),
+          home: Scaffold(
+            body: fill ? manager : SingleChildScrollView(child: manager),
           ),
         ),
       ),
@@ -453,6 +463,60 @@ void main() {
     final names = appState.allPricingGroups.map((g) => g.name).toList();
     expect(names.first, 'Veo 3 Video');
     expect(names.last, 'Midjourney Relax [MJ]');
+  });
+
+  /// Enough groups to run past a 1080 window, so the list has to scroll.
+  Future<int> seedManyGroups(WidgetTester tester, AppState appState) async {
+    final ids = await tester.runAsync(() async {
+      final ids = <int>[];
+      for (var i = 0; i < 30; i++) {
+        ids.add(await appState.addPricingGroup({
+          'name': 'Extra Group $i',
+          'billing_mode': 'request',
+          'request_price': 0.01 * (i + 1),
+        }));
+      }
+      return ids;
+    });
+    return ids!.last;
+  }
+
+  testWidgets('on a desktop the list scrolls in its column and the editor stays in view', (tester) async {
+    final appState = await seedState(tester);
+    await seedManyGroups(tester, appState);
+    await pumpManager(tester, appState, const Size(1920, 1080), fill: true);
+
+    final heading = tester.getRect(find.text('New Group'));
+    final placeholder = tester.getRect(find.text('Pick a group to edit'));
+    expect(tester.getRect(find.text('Extra Group 29')).top, greaterThan(1080), reason: 'the last group starts below the fold');
+
+    // Scroll the list column — the outer scrollable, not the reorder list's
+    // own inert one — until the last row is on screen, and open it.
+    final column = find.descendant(of: find.byType(SingleChildScrollView).first, matching: find.byType(Scrollable)).first;
+    await tester.scrollUntilVisible(find.text('Extra Group 29'), 400, scrollable: column);
+    await tester.pump();
+    await openEditor(tester, find.text('Extra Group 29'));
+
+    // The heading has not moved, the editor sits where the placeholder was
+    // — at the top of its column, in view — and the list stays scrolled.
+    expect(tester.getRect(find.text('New Group')), heading);
+    expect(tester.getRect(find.text('Edit group')).top, lessThan(placeholder.top + 40));
+    expect(find.text('Extra Group 29'), findsWidgets);
+    expect(tester.getRect(find.text('Extra Group 29').first).bottom, lessThanOrEqualTo(1080));
+  });
+
+  testWidgets('a group opened from elsewhere is scrolled into view', (tester) async {
+    final appState = await seedState(tester);
+    final lastId = await seedManyGroups(tester, appState);
+    await pumpManager(tester, appState, const Size(1920, 1080), fill: true, initialEditGroupId: lastId);
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(find.text('Edit group'), findsOneWidget);
+    final row = tester.getRect(find.text('Extra Group 29').first);
+    expect(row.top, greaterThan(0));
+    expect(row.bottom, lessThanOrEqualTo(1080));
   });
 
   testWidgets('on a phone a card opens the full-screen editor', (tester) async {

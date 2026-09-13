@@ -64,11 +64,22 @@ class PricingGroupManager extends StatefulWidget {
   /// header: rows show the grip and lift on a long press.
   final bool phoneReorder;
 
+  /// [PricingGroupManagerMode.section] on a desktop, given a bounded height:
+  /// the heading stays put and the two columns scroll on their own, so the
+  /// editor card is in view whichever row opened it. Scrolling the page
+  /// instead carried the card off the top for any row below the fold, and
+  /// editing became a trip up and down for every field.
+  ///
+  /// Off (the default) the section is sized to its content for a host that
+  /// scrolls it — the tablet, where the editor inlines under its row.
+  final bool fill;
+
   const PricingGroupManager({
     super.key,
     this.mode = PricingGroupManagerMode.section,
     this.initialEditGroupId,
     this.phoneReorder = false,
+    this.fill = false,
   });
 
   @override
@@ -94,17 +105,36 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
   /// `1g`: the header's reorder mode — grips always on show.
   bool _reorderMode = false;
 
+  /// The list column's own scroll when [PricingGroupManager.fill] is on.
+  final ScrollController _listScroll = ScrollController();
+
+  /// The selected row, so a group opened from elsewhere (`initialEditGroupId`)
+  /// or moved by Alt+↑/↓ can be scrolled into view in the list column.
+  final GlobalKey _selectedRowKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
     _editing = widget.initialEditGroupId;
+    if (_editing != null) _revealSelected();
   }
 
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _listScroll.dispose();
     _draft?.dispose();
     super.dispose();
+  }
+
+  /// After the next frame, scrolls the selected row into the list column's
+  /// view. A no-op wherever the row is already visible or the page scrolls.
+  void _revealSelected() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _selectedRowKey.currentContext;
+      if (!mounted || context == null) return;
+      Scrollable.ensureVisible(context, alignment: 0.5, duration: AppMotion.durationOf(context, AppMotion.hover));
+    });
   }
 
   bool get _adding => identical(_editing, _newGroup);
@@ -190,6 +220,7 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
     final index = appState.allPricingGroups.indexWhere((g) => g.id == id);
     if (index < 0) return;
     _move(appState, index, index + delta);
+    _revealSelected();
   }
 
   Future<void> _openPhoneEditor(PricingGroup? group) async {
@@ -262,15 +293,19 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
         );
       case PricingGroupManagerMode.section:
         if (phone) return _buildPhoneList(context, appState, l10n, groups);
+        final fill = widget.fill && Responsive.isDesktop(context);
         return _shortcuts(
           appState,
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
             children: [
               _buildHeading(context, appState, l10n, groups),
               const SizedBox(height: 14),
-              _buildBody(context, appState, l10n, groups),
+              if (fill)
+                Expanded(child: _buildBody(context, appState, l10n, groups, fill: true))
+              else
+                _buildBody(context, appState, l10n, groups),
             ],
           ),
         );
@@ -359,20 +394,28 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
   /// Desktop: the list beside the editor or its placeholder, `1fr 1fr gap
   /// 20`; the two columns never move for each other. Below desktop: the
   /// list with the editor inlined under the edited row.
-  Widget _buildBody(BuildContext context, AppState appState, AppLocalizations l10n, List<PricingGroup> groups) {
+  ///
+  /// [fill]: the body has the height, and each column scrolls its own
+  /// content — the list under the fixed heading, the editor (a spec table
+  /// can outgrow a short window) beside it.
+  Widget _buildBody(
+    BuildContext context,
+    AppState appState,
+    AppLocalizations l10n,
+    List<PricingGroup> groups, {
+    bool fill = false,
+  }) {
     if (!Responsive.isDesktop(context)) {
       return _buildList(context, appState, l10n, groups, inlineEditor: true);
     }
+    final Widget list = _buildList(context, appState, l10n, groups, inlineEditor: false);
+    final Widget editor = _editing == null ? _Placeholder(reorder: _reorderMode) : _buildEditor(context, appState, l10n, groups);
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: fill ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
       children: [
-        Expanded(child: _buildList(context, appState, l10n, groups, inlineEditor: false)),
+        Expanded(child: fill ? SingleChildScrollView(controller: _listScroll, child: list) : list),
         const SizedBox(width: 20),
-        Expanded(
-          child: _editing == null
-              ? _Placeholder(reorder: _reorderMode)
-              : _buildEditor(context, appState, l10n, groups),
-        ),
+        Expanded(child: fill ? SingleChildScrollView(child: editor) : editor),
       ],
     );
   }
@@ -451,10 +494,12 @@ class _PricingGroupManagerState extends State<PricingGroupManager> {
           final models = modelsByGroup[group.id] ?? const <String>[];
           final storedIndex = groups.indexWhere((g) => g.id == group.id);
 
+          final selected = _editing == group.id;
           final row = FeeGroupRow(
+            key: selected ? _selectedRowKey : null,
             group: group,
             models: models,
-            selected: _editing == group.id,
+            selected: selected,
             handle: handle,
             onTap: () => _open(group.id!),
             onDelete: () => _delete(appState, group, models.length),
