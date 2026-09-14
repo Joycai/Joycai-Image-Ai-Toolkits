@@ -249,15 +249,11 @@ class LLMDebugLogger {
   /// The same threshold [_sanitize] truncates request strings at.
   static const int base64RunThreshold = _maxStringChars;
 
-  /// `data:` URL prefix (optional) + an unbroken run of base64 / base64url
-  /// characters of at least [base64RunThreshold], with its padding.
-  static final RegExp _base64Run = RegExp(
-    '(?:data:[A-Za-z0-9.+/-]+;base64,)?'
-    '[A-Za-z0-9+/_-]{$base64RunThreshold,}={0,2}',
-  );
-
   /// [line] with every base64 payload of [base64RunThreshold] characters or
   /// more — bare, or as a `data:` URL — collapsed to `<base64 N chars>`.
+  /// A payload is an unbroken run of base64 / base64url characters with up to
+  /// two `=` of padding; a `data:<mime>;base64,` directly in front of it is
+  /// collapsed with it.
   ///
   /// Response lines are written raw: the image surfaces log `Body:` with
   /// `b64_json` / `bytesBase64Encoded` inside, and a Gemini image stream logs
@@ -267,10 +263,78 @@ class LLMDebugLogger {
   /// remembering a "safe body" helper; [_sanitize] covers the request map the
   /// same way structurally. Prose never matches — it has spaces and
   /// punctuation long before 2048 characters.
+  ///
+  /// A hand-written scan, not a RegExp: `[A-Za-z0-9+/_-]{2048,}` over one
+  /// streamed Gemini image — a single SSE line of 5+ million characters —
+  /// threw `StackOverflowError` inside the VM's regexp engine, and that threw
+  /// out of the stream loop and failed a generation that had succeeded.
   static String sanitizeLine(String line) {
-    if (line.length < base64RunThreshold) return line;
-    return line.replaceAllMapped(
-        _base64Run, (m) => '<base64 ${m[0]!.length} chars>');
+    final n = line.length;
+    if (n < base64RunThreshold) return line;
+    StringBuffer? out;
+    var copied = 0;
+    var i = 0;
+    while (i < n) {
+      if (!_isBase64Char(line.codeUnitAt(i))) {
+        i++;
+        continue;
+      }
+      var end = i + 1;
+      while (end < n && _isBase64Char(line.codeUnitAt(end))) {
+        end++;
+      }
+      if (end - i >= base64RunThreshold) {
+        for (var pad = 0; pad < 2 && end < n && line.codeUnitAt(end) == 0x3D; pad++) {
+          end++;
+        }
+        final prefix = _dataUrlPrefixStart(line, i);
+        final start = prefix != null && prefix >= copied ? prefix : i;
+        (out ??= StringBuffer())
+          ..write(line.substring(copied, start))
+          ..write('<base64 ${end - start} chars>');
+        copied = end;
+      }
+      i = end;
+    }
+    if (out == null) return line;
+    out.write(line.substring(copied));
+    return out.toString();
+  }
+
+  /// `A-Z a-z 0-9 + / _ -` — base64 and base64url together.
+  static bool _isBase64Char(int c) =>
+      (c >= 0x41 && c <= 0x5A) ||
+      (c >= 0x61 && c <= 0x7A) ||
+      (c >= 0x30 && c <= 0x39) ||
+      c == 0x2B ||
+      c == 0x2F ||
+      c == 0x5F ||
+      c == 0x2D;
+
+  /// `A-Z a-z 0-9 . + / -` — the characters a `data:` URL's mime type may use.
+  static bool _isMimeChar(int c) =>
+      (c >= 0x41 && c <= 0x5A) ||
+      (c >= 0x61 && c <= 0x7A) ||
+      (c >= 0x30 && c <= 0x39) ||
+      c == 0x2E ||
+      c == 0x2B ||
+      c == 0x2F ||
+      c == 0x2D;
+
+  /// Where `data:<mime>;base64,` starts when it ends right before [runStart],
+  /// otherwise null.
+  static int? _dataUrlPrefixStart(String line, int runStart) {
+    const marker = ';base64,';
+    final markerStart = runStart - marker.length;
+    if (markerStart < 1 || !line.startsWith(marker, markerStart)) return null;
+    var mimeStart = markerStart;
+    while (mimeStart > 0 && _isMimeChar(line.codeUnitAt(mimeStart - 1))) {
+      mimeStart--;
+    }
+    if (mimeStart == markerStart) return null;
+    final prefixStart = mimeStart - 'data:'.length;
+    if (prefixStart < 0 || !line.startsWith('data:', prefixStart)) return null;
+    return prefixStart;
   }
 
   /// Buffer size above which [appendStreamLine] writes through.
@@ -286,10 +350,15 @@ class LLMDebugLogger {
   /// in a `finally`.
   static Future<void> appendStreamLine(LLMDebugLog? log, String line) async {
     if (log == null) return;
-    log.pending.writeln(sanitizeLine(line));
-    if (log.pending.length >= _flushThresholdChars) {
-      await _flush(log);
-    }
+    // Every SSE loop awaits this before it parses the line, so anything
+    // escaping here fails the request itself. A debug log may lose a line;
+    // it may never cost the user a generation. Same contract as [appendLine].
+    try {
+      log.pending.writeln(sanitizeLine(line));
+      if (log.pending.length >= _flushThresholdChars) {
+        await _flush(log);
+      }
+    } catch (_) {}
   }
 
   static Future<void> _flush(LLMDebugLog log) async {
