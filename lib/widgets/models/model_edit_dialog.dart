@@ -1190,6 +1190,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           supported ? l10n.reasoningEffortDesc : l10n.reasoningEffortUnsupported,
           muted: !supported,
         ),
+        // The Responses ladder is not trimmed per model, so the one known
+        // guaranteed 400 is said here instead (reasoning 03 §7.1).
+        if (supported && _onResponsesFace) ...[
+          const SizedBox(height: AppSpace.s6),
+          ModelEditHelperText(l10n.reasoningEffortResponsesHint),
+        ],
       ],
     );
   }
@@ -1319,6 +1325,20 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   /// wire consumes it (the dispatcher's answer, not a copy), and the kind
   /// sends the model down that chat wire at all.
   bool get _reasoningSupported => _reasoningLadder.isNotEmpty;
+
+  /// Whether the model's requests take the Responses face — the dispatcher's
+  /// resolution, not a copy of it.
+  bool get _onResponsesFace {
+    final channel = _selectedChannel;
+    if (channel == null) return false;
+    return LLMDispatcher.resolvedChatFace(
+          channelType: channel.type,
+          modelId: idCtrl.text.trim(),
+          tag: tag,
+          wireProtocol: wireProtocol,
+        ) ==
+        WireProtocol.openaiResponses;
+  }
 
   /// The rungs that each send a different request on this channel for this
   /// id and kind: the dispatcher's answer, empty where none reaches the wire.

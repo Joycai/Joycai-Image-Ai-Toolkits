@@ -123,6 +123,7 @@ class ModelDescriptor {
             const [ModelFamily.geminiImage, ModelFamily.midjourney],
             _chatSibling(id));
       case WireProtocol.openaiChat:
+      case WireProtocol.openaiResponses:
       case WireProtocol.anthropicChat:
       case WireProtocol.geminiChat:
       case WireProtocol.dashscopeChat:

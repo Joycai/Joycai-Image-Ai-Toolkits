@@ -2075,6 +2075,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get protocolOpenAICompat => 'OpenAI 互換';
 
   @override
+  String get protocolOpenAIResponses => 'OpenAI Responses';
+
+  @override
+  String get protocolOpenAIResponsesDesc =>
+      '同じアドレスとキーで使える OpenAI の新しいインターフェース。ツール呼び出しの間もモデルの推論を保持します。';
+
+  @override
+  String get reasoningEffortResponsesHint =>
+      'reasoning.effort として送信されます。Grok 4.5 と 4.6 は推論をオフにできず「オフ」は拒否されます。どの Grok も「最大」は受け付けません。レベルを名指しした 400 が返ったら別のレベルを選んでください。';
+
+  @override
   String get protocolAnthropicCompat => 'Anthropic 互換';
 
   @override

@@ -14,6 +14,8 @@ String wireProtocolLabel(AppLocalizations l10n, WireProtocol protocol) {
   switch (protocol) {
     case WireProtocol.openaiChat:
       return l10n.protocolOpenAICompat;
+    case WireProtocol.openaiResponses:
+      return l10n.protocolOpenAIResponses;
     case WireProtocol.anthropicChat:
       return l10n.protocolAnthropicCompat;
     case WireProtocol.dashscopeChat:
@@ -56,6 +58,8 @@ String? wireProtocolDescription(AppLocalizations l10n, WireProtocol protocol) {
   switch (protocol) {
     case WireProtocol.dashscopeChat:
       return l10n.protocolDashScopeNativeDesc;
+    case WireProtocol.openaiResponses:
+      return l10n.protocolOpenAIResponsesDesc;
     case WireProtocol.dashscopeImagesSync:
       return l10n.protocolImageSyncDesc;
     case WireProtocol.dashscopeImagesAsync:
@@ -89,6 +93,8 @@ String? wireProtocolPath(WireProtocol protocol, ProtocolFamily channelFamily) {
   switch (protocol) {
     case WireProtocol.openaiChat:
       return '/v1/chat/completions';
+    case WireProtocol.openaiResponses:
+      return '/v1/responses';
     case WireProtocol.anthropicChat:
       return '/v1/messages';
     case WireProtocol.geminiChat:

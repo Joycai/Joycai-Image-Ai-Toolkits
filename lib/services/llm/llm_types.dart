@@ -460,6 +460,22 @@ class LLMMessage {
   /// would re-send what the rewrite removed.
   final List<Map<String, dynamic>>? rawModelParts;
 
+  /// The Responses API's output **items** of this turn verbatim — `reasoning`
+  /// (with its `encrypted_content`), `message` and `function_call`, in
+  /// output order — kept only for a turn that called tools. Null for every
+  /// other turn.
+  ///
+  /// Under `store: false` the next request's `input` is the history plus
+  /// these items plus the `function_call_output`s (protocol 02 §7.3). A
+  /// replay that rebuilds bare `function_call`s instead still answers 200
+  /// and still answers correctly — the missing reasoning costs quality, never
+  /// an error — so this is the one place it is kept. Replayed verbatim only
+  /// to the model named by [rawThinkingModelId], and *instead of* the rebuilt
+  /// calls, never beside them; any other model gets the bare calls. Dropped
+  /// wherever history rewrites a turn's tool calls, like [rawModelParts].
+  /// Server-tool items (`web_search_call` …) are never in it.
+  final List<Map<String, dynamic>>? rawResponseItems;
+
   /// Tool calls carried by an assistant message (echoed back into history
   /// during an agent loop).
   final List<LLMToolCall> toolCalls;
@@ -482,6 +498,7 @@ class LLMMessage {
     this.rawThinkingModelId,
     this.rawContentBlocks,
     this.rawModelParts,
+    this.rawResponseItems,
     this.toolCalls = const [],
     this.toolCallId,
     this.toolName,
@@ -503,6 +520,9 @@ class LLMMessage {
         // ③'s signatures must survive restarts like ④'s blocks do.
         if (rawModelParts != null && rawModelParts!.isNotEmpty)
           'rawModelParts': rawModelParts,
+        // ②'s items carry the encrypted reasoning a restart must not lose.
+        if (rawResponseItems != null && rawResponseItems!.isNotEmpty)
+          'rawResponseItems': rawResponseItems,
         if (attachments.isNotEmpty)
           'attachments': attachments.map((a) => a.toJson()).whereType<Map<String, dynamic>>().toList(),
         if (toolCalls.isNotEmpty) 'toolCalls': toolCalls.map((c) => c.toJson()).toList(),
@@ -533,6 +553,12 @@ class LLMMessage {
             ? [
                 for (final p in json['rawModelParts'] as List)
                   if (p is Map) p.cast<String, dynamic>(),
+              ]
+            : null,
+        rawResponseItems: json['rawResponseItems'] is List
+            ? [
+                for (final item in json['rawResponseItems'] as List)
+                  if (item is Map) item.cast<String, dynamic>(),
               ]
             : null,
         attachments: [
@@ -1009,6 +1035,10 @@ class LLMResponse {
   /// [LLMMessage.rawModelParts]. Scoped by [rawThinkingModelId].
   final List<Map<String, dynamic>>? rawModelParts;
 
+  /// ②'s output items verbatim for a tool-calling turn — see
+  /// [LLMMessage.rawResponseItems]. Scoped by [rawThinkingModelId].
+  final List<Map<String, dynamic>>? rawResponseItems;
+
   /// Tool calls requested by the model (empty when it answered directly).
   final List<LLMToolCall> toolCalls;
 
@@ -1025,6 +1055,7 @@ class LLMResponse {
     this.rawThinkingModelId,
     this.rawContentBlocks,
     this.rawModelParts,
+    this.rawResponseItems,
     this.toolCalls = const [],
   });
 }
@@ -1082,6 +1113,11 @@ class LLMResponseChunk {
   /// [LLMMessage.rawModelParts].
   final List<Map<String, dynamic>>? rawModelParts;
 
+  /// ②'s output items, collected from `response.output_item.done` and
+  /// emitted once at stream end when the turn called a tool — see
+  /// [LLMMessage.rawResponseItems].
+  final List<Map<String, dynamic>>? rawResponseItems;
+
   final bool isDone;
 
   LLMResponseChunk({
@@ -1095,6 +1131,7 @@ class LLMResponseChunk {
     this.reasoningSignature,
     this.rawContentBlocks,
     this.rawModelParts,
+    this.rawResponseItems,
     this.isDone = false,
   });
 }

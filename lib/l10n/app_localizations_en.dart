@@ -2133,6 +2133,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get protocolOpenAICompat => 'OpenAI-compatible';
 
   @override
+  String get protocolOpenAIResponses => 'OpenAI Responses';
+
+  @override
+  String get protocolOpenAIResponsesDesc =>
+      'The newer OpenAI interface on the same address and key. Keeps the model\'s reasoning between tool calls.';
+
+  @override
+  String get reasoningEffortResponsesHint =>
+      'Sent as reasoning.effort. Grok 4.5 and 4.6 cannot turn reasoning off and reject Off; no Grok model accepts Max. A 400 naming the level means pick another one.';
+
+  @override
   String get protocolAnthropicCompat => 'Anthropic-compatible';
 
   @override

@@ -270,14 +270,22 @@ void main() {
 
     test('everyone else keeps empty menus (family defaults)', () {
       for (final id in [
-        Vendors.openAIRest,
-        Vendors.newApiOpenAI,
         Vendors.deepseek,
         Vendors.anthropicRest,
         Vendors.ollama,
       ]) {
         final v = Vendors.byId(id);
         expect(v.chatMenu, isEmpty, reason: id);
+        expect(v.imageMenu, isEmpty, reason: id);
+        expect(v.videoProtocol, isNull, reason: id);
+      }
+      // The generic OpenAI hosts declare the Responses face as an alternate
+      // (2026-09-14); Chat Completions stays first, so auto is unchanged.
+      for (final id in [Vendors.openAIRest, Vendors.newApiOpenAI]) {
+        final v = Vendors.byId(id);
+        expect(v.chatMenu,
+            [WireProtocol.openaiChat, WireProtocol.openaiResponses],
+            reason: id);
         expect(v.imageMenu, isEmpty, reason: id);
         expect(v.videoProtocol, isNull, reason: id);
       }

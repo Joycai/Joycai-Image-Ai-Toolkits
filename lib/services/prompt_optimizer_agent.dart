@@ -1910,6 +1910,7 @@ class PromptOptimizerAgent {
               rawThinkingModelId: response.rawThinkingModelId,
               rawContentBlocks: response.rawContentBlocks,
               rawModelParts: response.rawModelParts,
+              rawResponseItems: response.rawResponseItems,
             ));
             session._addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.assistant, text: text));
           }
@@ -1931,6 +1932,7 @@ class PromptOptimizerAgent {
           rawThinkingModelId: response.rawThinkingModelId,
           rawContentBlocks: response.rawContentBlocks,
           rawModelParts: response.rawModelParts,
+          rawResponseItems: response.rawResponseItems,
           toolCalls: response.toolCalls,
         ));
         if (response.text.trim().isNotEmpty) {
@@ -2696,9 +2698,11 @@ class PromptOptimizerAgent {
         // large file loses its search blocks on replay, which is the cheaper
         // of the two losses. ③'s verbatim parts hold the same file body in
         // their functionCall args, so they go for the same reason; the
-        // rebuilt turn keeps each call's own thoughtSignature.
+        // rebuilt turn keeps each call's own thoughtSignature. ②'s verbatim
+        // items carry the same body in their function_call arguments.
         rawContentBlocks: null,
         rawModelParts: null,
+        rawResponseItems: null,
         toolCalls: [
           for (final c in m.toolCalls)
             if (c.name == 'write_knowledge_file' &&
@@ -3748,8 +3752,10 @@ class PromptOptimizerAgent {
               reasoningSignature: m.reasoningSignature,
               rawThinkingBlocks: m.rawThinkingBlocks,
               rawThinkingModelId: m.rawThinkingModelId,
-              // The verbatim copy names the stripped calls.
+              // The verbatim copies name the stripped calls.
               rawContentBlocks: null,
+              rawModelParts: null,
+              rawResponseItems: null,
               toolCalls: calls,
             );
       out.add((message: assistant, origin: i));
@@ -3841,9 +3847,11 @@ class PromptOptimizerAgent {
         // Stripping a call rewrites the tool_use list, so the verbatim copy
         // can no longer stand for this turn — it is dropped and the turn is
         // rebuilt from the fields, like any pre-capture history. ③'s verbatim
-        // parts carry the removed call too, and go for the same reason.
+        // parts and ②'s verbatim items carry the removed call too, and go for
+        // the same reason.
         rawContentBlocks: null,
         rawModelParts: null,
+        rawResponseItems: null,
         toolCalls: [
           for (final c in owning.toolCalls)
             if (c.id != callId) c,

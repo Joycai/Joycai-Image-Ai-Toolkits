@@ -3737,6 +3737,24 @@ abstract class AppLocalizations {
   /// **'OpenAI-compatible'**
   String get protocolOpenAICompat;
 
+  /// No description provided for @protocolOpenAIResponses.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI Responses'**
+  String get protocolOpenAIResponses;
+
+  /// No description provided for @protocolOpenAIResponsesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The newer OpenAI interface on the same address and key. Keeps the model\'s reasoning between tool calls.'**
+  String get protocolOpenAIResponsesDesc;
+
+  /// No description provided for @reasoningEffortResponsesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent as reasoning.effort. Grok 4.5 and 4.6 cannot turn reasoning off and reject Off; no Grok model accepts Max. A 400 naming the level means pick another one.'**
+  String get reasoningEffortResponsesHint;
+
   /// No description provided for @protocolAnthropicCompat.
   ///
   /// In en, this message translates to:

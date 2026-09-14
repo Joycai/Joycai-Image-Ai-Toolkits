@@ -301,6 +301,7 @@ class AiRenameAgent {
         rawThinkingModelId: response.rawThinkingModelId,
         rawContentBlocks: response.rawContentBlocks,
         rawModelParts: response.rawModelParts,
+        rawResponseItems: response.rawResponseItems,
         toolCalls: response.toolCalls,
       ));
 
