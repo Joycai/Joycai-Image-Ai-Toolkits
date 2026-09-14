@@ -511,6 +511,32 @@ Future<List<Uint8List>> resolveImageRefs(
   return images;
 }
 
+/// The prompt the provider actually drew from, when it rewrote the one it
+/// was sent — or `''` when none of [items] carries one.
+///
+/// Image surfaces that rewrite prompts say so per result item, under a key
+/// the surface names ([key]): OpenAI's Images API `data[].revised_prompt`
+/// (dall-e-3), DashScope's async task `output.results[].actual_prompt` (only
+/// when `prompt_extend` is on). Returned as the response's text so the
+/// executor's log shows what was really generated (standard 13 §1) — the
+/// saved image is unaffected. Distinct values are joined by a blank line; a
+/// batch that rewrote every picture the same way reads as one prompt.
+String revisedPromptFrom(Object? items, {String key = 'revised_prompt'}) {
+  if (items is! List) return '';
+  final prompts = <String>[];
+  for (final item in items) {
+    if (item is! Map) continue;
+    final value = item[key];
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isNotEmpty && !prompts.contains(trimmed)) {
+        prompts.add(trimmed);
+      }
+    }
+  }
+  return prompts.join('\n\n');
+}
+
 /// One image as a multipart part, with the `Content-Type` the bytes actually
 /// are.
 ///

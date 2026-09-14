@@ -137,12 +137,19 @@ class XaiImagesProtocol implements ImageGenProtocol {
 
       logger?.call('xAI Images parse complete. Images: ${images.length}', level: 'DEBUG');
 
+      // Read tolerantly: xAI's current docs do not list `revised_prompt`,
+      // but its Images API follows OpenAI's item shape, and a rewrite the
+      // endpoint does report should reach the log (standard 13 §1).
+      final revised = revisedPromptFrom(items);
+
       return LLMResponse(
-        text: '',
+        text: revised,
         generatedImages: images,
-        metadata: data['usage'] is Map
-            ? (data['usage'] as Map).cast<String, dynamic>()
-            : const {},
+        metadata: {
+          if (data['usage'] is Map)
+            ...(data['usage'] as Map).cast<String, dynamic>(),
+          if (revised.isNotEmpty) 'revised_prompt': revised,
+        },
       );
     } finally {
       client.close();

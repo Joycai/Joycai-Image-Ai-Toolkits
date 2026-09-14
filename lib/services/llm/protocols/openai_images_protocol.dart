@@ -169,12 +169,17 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
 
       logger?.call('Images parse complete. Images: ${images.length}', level: 'DEBUG');
 
+      // dall-e-3 rewrites the prompt and says so per item; gpt-image-1 does
+      // not. What was actually drawn goes in the text (standard 13 §1).
+      final revised = revisedPromptFrom(items);
+
       return LLMResponse(
-        text: '',
+        text: revised,
         generatedImages: images,
         // gpt-image-1 reports `input_tokens`/`output_tokens` here, not the
         // chat spelling — see LLMService._recordUsage, which reads both.
         metadata: {
+          if (revised.isNotEmpty) 'revised_prompt': revised,
           if (data['usage'] is Map)
             ...(data['usage'] as Map).cast<String, dynamic>(),
           // The size and quality the endpoint settled on. A request that
