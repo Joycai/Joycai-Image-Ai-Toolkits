@@ -77,7 +77,7 @@ git show f709059:docs/reviews/2026-08-ai-capability-review.md
 **明确留作后续的**：
 
 - 视频提交、Midjourney 提交与各轮询 GET 未走 `sendJsonRequest`，取消不能中止在途请求。
-- ② Responses 未接 `text.format` 结构化输出、内置 web search、`previous_response_id`；xAI 默认面仍是 ①（xAI 已标 ① 为 Deprecated，切默认是一行菜单顺序）。
+- ② Responses 未接 `text.format` 结构化输出、内置 web search、`previous_response_id`。（xAI 默认面已于 2026-09-15 切到 Responses；OpenAI / NewAPI 的渠道级 Responses 预设见 #271。）
 - 百炼 ① 面按 vendor 声明走 `enable_thinking`，Qwen 3.7+ 因此失去强度档；要保留需要模型级方言列。
 - ③ 协议类停止原因（`MISSING_THOUGHT_SIGNATURE` 等）有部分内容时仍按成功交付 + WARN。
 - 旧存的 `enable_web_search` 标记在百炼 ④ 面上仍会发 `web_search` 工具（编辑器已不再提供该开关）。

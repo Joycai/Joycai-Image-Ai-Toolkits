@@ -196,10 +196,10 @@ class Vendors {
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
       // xAI marks Responses as its recommended interface and Chat
-      // Completions as legacy (provider layering 01 §9.1). ① stays the
-      // default here so existing channels do not move; flipping it is a
-      // separate decision.
-      chatMenu: _openaiChatFaces,
+      // Completions as deprecated (provider layering 01 §9.1), so Responses
+      // leads: every unpinned chat model on an xAI channel rides it, and
+      // Chat Completions stays a per-model pin for anything that needs it.
+      chatMenu: _responsesLedChatFaces,
       // Without it xAI's reasoning items carry no `encrypted_content`, and a
       // replay without it still answers — the reasoning just stops carrying
       // over (reasoning 03 §7.3).

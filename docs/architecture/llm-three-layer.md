@@ -608,10 +608,12 @@ dispatcher 的 anthropic 分支从"整族抛 UnsupportedError"改成先看 vendo
 （`openai-responses`）是 **`openai` 家族的一个 chat 面**，不是新家族：base、
 bearer、`/models` 与 ① 完全相同，所以没有 `protocolBases` 项、discovery 不变
 （standard 01 §3.1 的判据是 auth/发现形状，这两样没变）。它出现在
-`openAIRest` / `newApiOpenAI` / `xaiApi` 的 `chatMenu` 里，**排在 ① 之后**——
-① 仍是 auto，存量渠道一个字节都不动；xAI 官方推荐 Responses，把它设为 xAI 默认
-是单独的决定，本轮没做。菜单 >1 项，模型编辑器的点单下拉因此在这三家的 chat 模型
-上出现。
+`openAIRest` / `newApiOpenAI` 的 `chatMenu` 里**排在 ① 之后**——① 仍是 auto，
+存量渠道一个字节都不动。`xaiApi` 例外，**Responses 排第一**（2026-09-15）：xAI
+官方把 Responses 标为推荐、Chat Completions 标为 Deprecated（01 §9.1），所以 xAI
+渠道上未点单的 chat 模型改走 Responses，① 留作点单。这是有意移动存量路由的一次：
+Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示随之默认出现。菜单 >1
+项，模型编辑器的点单下拉因此在这三家的 chat 模型上出现。
 
 **渠道级默认（分行，01 §8.3）**：`openAIResponsesRest`（`openai-responses-rest`）与
 `newApiOpenAIResponses`（`newapi-openai-responses`）是同一对 host/key 的第二行，
