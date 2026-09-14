@@ -189,6 +189,18 @@ nothing throws, the numbers just quietly stop meaning what they claim.
    turn-killer. `_pairDanglingAskUser` additionally checks adjacency at pairing
    time and, for a history written before this rail existed, strips the call
    rather than appending a misplaced tool message.
+10. **A replayed history is repaired before it is trusted.** Stored rows can be
+    dropped one by one (corrupt JSON, an unknown role — `loadMessages` skips
+    both) and a crash can land between an assistant message and its results.
+    `repairToolCallPairing` stubs every unanswered call with a `[not run]`
+    result at the end of its batch, drops tool messages that answer nothing in
+    their batch, strips empty-id calls and drops an assistant message left
+    empty. It runs in `fromStored` and at the top of `runTurn` (after the
+    ask_user guard, so invariant 8's own repair still decides that case), and
+    exempts exactly one call: a valid `ask_user` at the very end of the
+    history. The repair is deterministic, so the stored rows keep their old
+    shape and every restore derives the same list; `persistedCount` is rebased
+    to the first message that was never persisted.
 
 ## Accepted limits
 
@@ -296,6 +308,7 @@ Pure functions are pinned directly; prefer adding to these over end-to-end runs.
 | `test/optimizer_context_usage_test.dart` | the readout: role split, trimmed-not-raw history, window tri-state, unmeasured slices |
 | `test/optimizer_context_card_test.dart` | the card's four states (unmeasured / configured / assumed / unlimited) at both panel widths |
 | `test/optimizer_kb_liveness_test.dart` | the three deadlock scenarios (elided / compacted / in-flight) |
+| `test/optimizer_history_repair_test.dart` | invariant 10: stubs, orphan/duplicate drops, empty ids, the trailing ask_user exemption, idempotence, restore |
 | `test/knowledge_base_paging_test.dart` | boundary snapping, determinism, degenerate input |
 | `test/knowledge_base_read_cap_test.dart` | whole-file vs paged, undersized windows |
 | `test/optimizer_image_liveness_test.dart` | image re-view liveness: fresh / elided / compacted; the two windows' different sizes; `_elide` and `_liveViewedPaths` agreeing at every distance |

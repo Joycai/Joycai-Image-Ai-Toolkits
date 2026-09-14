@@ -637,6 +637,35 @@ class PromptOptimizerSession extends ChangeNotifier {
     return null;
   }
 
+  /// Applies [PromptOptimizerAgent.repairToolCallPairing] to the live history.
+  ///
+  /// [persistedCount] is rebased rather than reset: everything before the
+  /// first message that was not yet persisted stays "persisted" — stubs placed
+  /// there are not written, and every later restore re-derives them the same
+  /// way — while the unpersisted tail is still appended at the next sync.
+  /// Returns whether anything changed.
+  bool _repairToolCallPairing() {
+    final repaired = PromptOptimizerAgent._repairPairingWithOrigins(history);
+    final unchanged = repaired.length == history.length &&
+        [for (int i = 0; i < repaired.length; i++) identical(repaired[i].message, history[i])]
+            .every((same) => same);
+    if (unchanged) return false;
+
+    var rebased = repaired.length;
+    for (int k = 0; k < repaired.length; k++) {
+      final origin = repaired[k].origin;
+      if (origin != null && origin >= persistedCount) {
+        rebased = k;
+        break;
+      }
+    }
+    history
+      ..clear()
+      ..addAll([for (final e in repaired) e.message]);
+    persistedCount = rebased;
+    return true;
+  }
+
   void _setRunning(bool running) {
     if (_isRunning == running) return;
     _isRunning = running;
@@ -659,16 +688,24 @@ class PromptOptimizerSession extends ChangeNotifier {
   }) {
     final session = PromptOptimizerSession(mode: mode, id: id);
     session.title = title;
-    session.history.addAll(history);
-    session.persistedCount = history.length;
+    // Stored rows can be individually dropped (corrupt JSON, an unknown role)
+    // and a crash can land between an assistant message and its results, so
+    // the replayed history is not trusted to be pairable: an unanswered call
+    // or an orphan result would 400 every later request of the session. The
+    // repair is deterministic, so the stored rows keep their old shape and
+    // every restore derives the same repaired list — which is why all of it
+    // counts as persisted.
+    final restored = PromptOptimizerAgent.repairToolCallPairing(history);
+    session.history.addAll(restored);
+    session.persistedCount = restored.length;
 
     final entries = <OptimizerChatEntry>[];
     if (hasCompactedHistory && compactedNoticeText != null) {
       entries.add(OptimizerChatEntry(kind: OptimizerEntryKind.notice, text: compactedNoticeText));
     }
     bool anyImageMissing = false;
-    for (int msgIndex = 0; msgIndex < history.length; msgIndex++) {
-      final msg = history[msgIndex];
+    for (int msgIndex = 0; msgIndex < restored.length; msgIndex++) {
+      final msg = restored[msgIndex];
       switch (msg.role) {
         case LLMRole.user:
           if (msg.content.startsWith(PromptOptimizerAgent.viewResultMarker)) {
@@ -795,8 +832,8 @@ class PromptOptimizerSession extends ChangeNotifier {
                 // kbEdit (inert, could clobber newer disk content), answering
                 // only appends a message, so it is safe to keep live.
                 LLMMessage? result;
-                for (int j = msgIndex + 1; j < history.length; j++) {
-                  final r = history[j];
+                for (int j = msgIndex + 1; j < restored.length; j++) {
+                  final r = restored[j];
                   if (r.role == LLMRole.tool && r.toolCallId == call.id) {
                     result = r;
                     break;
@@ -1490,6 +1527,14 @@ class PromptOptimizerAgent {
     }
 
     try {
+      // Make the history sendable before anything else reads it. The dangling
+      // ask_user guard runs first so its own semantics (pair in place, or strip
+      // a pre-rail call) decide that case; the generic repair then covers
+      // everything else a restore or an interrupted write can leave behind.
+      _cancelDanglingAskUser(session);
+      if (session._repairToolCallPairing()) {
+        onLog?.call('Repaired tool-call pairing in the conversation history.');
+      }
       // Persist the pending user turn, then compact if the history has grown
       // past the context budget. Persistence failures never block the turn.
       try {
@@ -1514,7 +1559,6 @@ class PromptOptimizerAgent {
       } catch (e) {
         onLog?.call('Session persistence failed (continuing without it): $e');
       }
-      _cancelDanglingAskUser(session);
       for (int turn = 0; turn < maxTurns; turn++) {
         if (isCancelled?.call() ?? false) return;
 
@@ -3238,6 +3282,106 @@ class PromptOptimizerAgent {
   /// the next iteration of the same turn.
   @visibleForTesting
   static bool canStageAskUser(List<LLMToolCall> batch) => batch.length == 1;
+
+  /// Content of the stub result [repairToolCallPairing] gives a call whose
+  /// real result is missing.
+  static const String notRunStubMessage =
+      '[not run] No result was recorded for this tool call — treat it as not executed.';
+
+  /// Makes [history] pairable again (standard 07 §3.2, 10 §4.3).
+  ///
+  /// Returns a new list; retained messages are the same objects. Rules:
+  ///  * a call with no result in the contiguous tool run after its assistant
+  ///    message gets a `[not run]` stub at the end of that run, so the batch
+  ///    stays one block;
+  ///  * a tool message outside such a run, answering no call of its batch, or
+  ///    answering one twice, is dropped;
+  ///  * calls with an empty id cannot be answered and are stripped; an
+  ///    assistant message left with neither text nor calls is dropped.
+  ///
+  /// The one call left dangling on purpose is a valid `ask_user` at the very
+  /// end of the history — the suspended question of invariant 8, which
+  /// [pendingAskUser] derives and the next turn pairs.
+  static List<LLMMessage> repairToolCallPairing(List<LLMMessage> history) =>
+      [for (final e in _repairPairingWithOrigins(history)) e.message];
+
+  /// [repairToolCallPairing], with each output's index in the input (null for
+  /// a stub) so a caller can rebase indices it holds.
+  static List<({LLMMessage message, int? origin})> _repairPairingWithOrigins(
+      List<LLMMessage> history) {
+    final out = <({LLMMessage message, int? origin})>[];
+    int i = 0;
+    while (i < history.length) {
+      final m = history[i];
+      if (m.role == LLMRole.tool) {
+        // Every legitimate result is consumed by its batch below.
+        i++;
+        continue;
+      }
+      if (m.role != LLMRole.assistant) {
+        out.add((message: m, origin: i));
+        i++;
+        continue;
+      }
+
+      final seen = <String>{};
+      final calls = [
+        for (final c in m.toolCalls)
+          if (c.id.isNotEmpty && seen.add(c.id)) c,
+      ];
+      if (calls.isEmpty && m.content.trim().isEmpty) {
+        // Nothing to send. Its results, if any, fall through as orphans.
+        i++;
+        continue;
+      }
+      final assistant = calls.length == m.toolCalls.length
+          ? m
+          : LLMMessage(
+              role: LLMRole.assistant,
+              content: m.content,
+              reasoningContent: m.reasoningContent,
+              reasoningFieldName: m.reasoningFieldName,
+              reasoningSignature: m.reasoningSignature,
+              rawThinkingBlocks: m.rawThinkingBlocks,
+              rawThinkingModelId: m.rawThinkingModelId,
+              // The verbatim copy names the stripped calls.
+              rawContentBlocks: null,
+              toolCalls: calls,
+            );
+      out.add((message: assistant, origin: i));
+      i++;
+
+      final ids = {for (final c in calls) c.id};
+      final answered = <String>{};
+      while (i < history.length && history[i].role == LLMRole.tool) {
+        final t = history[i];
+        final id = t.toolCallId;
+        if (id != null && ids.contains(id) && answered.add(id)) {
+          out.add((message: t, origin: i));
+        }
+        i++;
+      }
+      final atEnd = i >= history.length;
+      for (final c in calls) {
+        if (answered.contains(c.id)) continue;
+        if (atEnd &&
+            c.name == 'ask_user' &&
+            AskUserQuestion.tryParse(c.arguments['questions']) != null) {
+          continue; // The suspended question — see the dartdoc above.
+        }
+        out.add((
+          message: LLMMessage(
+            role: LLMRole.tool,
+            content: jsonEncode({'status': 'not_run', 'message': notRunStubMessage}),
+            toolCallId: c.id,
+            toolName: c.name,
+          ),
+          origin: null,
+        ));
+      }
+    }
+    return out;
+  }
 
   /// Pairs the dangling `ask_user` call [callId] with [result].
   ///
