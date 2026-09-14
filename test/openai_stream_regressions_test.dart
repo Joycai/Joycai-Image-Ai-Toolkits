@@ -253,6 +253,66 @@ void main() {
       expect(response.reasoningContent, 'native thought');
     });
 
+    test('an empty reasoning_content does not hide a non-empty reasoning',
+        () async {
+      // `reasoning_content ?? reasoning` picked "" because "" is not null;
+      // the thought was dropped and the echo key was wrong.
+      sseLines = [
+        '{"choices":[{"message":{"role":"assistant","reasoning_content":"",'
+            '"reasoning":"real thought","content":"answer"},'
+            '"finish_reason":"stop"}]}',
+      ];
+      final response = await OpenAIChatProtocol().generate(
+          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      expect(response.reasoningContent, 'real thought');
+      expect(response.reasoningFieldName, 'reasoning');
+
+      sseLines = [
+        'data: {"choices":[{"delta":{"reasoning_content":"","reasoning":"hmm"}}]}',
+        'data: {"choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}]}',
+        'data: [DONE]',
+      ];
+      final streamed = (await run()).singleWhere((c) => c.reasoningPart != null);
+      expect(streamed.reasoningPart, 'hmm');
+      expect(streamed.reasoningFieldName, 'reasoning');
+    });
+
+    test('DeepSeek cache hits reach the cached-token field', () async {
+      // DeepSeek reports them as top-level `prompt_cache_hit_tokens`, which
+      // the usage recorder does not read — every hit was billed as full input.
+      sseLines = [
+        '{"choices":[{"message":{"role":"assistant","content":"answer"},'
+            '"finish_reason":"stop"}],"usage":{"prompt_tokens":100,'
+            '"completion_tokens":5,"prompt_cache_hit_tokens":80,'
+            '"prompt_cache_miss_tokens":20}}',
+      ];
+      final response = await OpenAIChatProtocol().generate(
+          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      expect(response.metadata['prompt_tokens_details'], {'cached_tokens': 80});
+      expect(response.metadata['prompt_cache_hit_tokens'], 80,
+          reason: 'the raw field rides along untouched');
+
+      sseLines = [
+        'data: {"choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}]}',
+        'data: {"choices":[],"usage":{"prompt_tokens":50,"completion_tokens":1,'
+            '"prompt_cache_hit_tokens":30}}',
+        'data: [DONE]',
+      ];
+      final metadata = (await run()).map((c) => c.metadata).nonNulls.single;
+      expect(metadata['prompt_tokens_details'], {'cached_tokens': 30});
+
+      // A host that already reports the OpenAI spelling keeps its own value.
+      sseLines = [
+        '{"choices":[{"message":{"role":"assistant","content":"answer"},'
+            '"finish_reason":"stop"}],"usage":{"prompt_tokens":100,'
+            '"prompt_tokens_details":{"cached_tokens":64},'
+            '"prompt_cache_hit_tokens":80}}',
+      ];
+      final both = await OpenAIChatProtocol().generate(
+          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      expect(both.metadata['prompt_tokens_details'], {'cached_tokens': 64});
+    });
+
     test('a reasoning field records the model that produced it', () async {
       // The replay scope: the payload builder echoes the field only to this
       // model (reasoning 03 §5).

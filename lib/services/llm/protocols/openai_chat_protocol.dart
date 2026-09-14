@@ -333,6 +333,49 @@ Map<String, dynamic>? firstChoice(Map<String, dynamic> chunk) {
   return first is Map ? first.cast<String, dynamic>() : null;
 }
 
+/// The first reasoning field of a `message` / `delta` that carries text, with
+/// the field's name, or null when none does.
+///
+/// ① has no standard spelling (DeepSeek `reasoning_content`, OpenRouter
+/// `reasoning`), so the known candidates are probed in order — and "carries
+/// text" is the test, not "present": `reasoning_content ?? reasoning` picked
+/// a relay's empty `reasoning_content: ""` over a non-empty `reasoning`,
+/// dropping the thought and remembering the wrong key for the echo.
+({String text, String field})? pickReasoningField(
+  Map<String, dynamic> source,
+) {
+  for (final field in const ['reasoning_content', 'reasoning']) {
+    final value = source[field];
+    if (value is String && value.isNotEmpty) return (text: value, field: field);
+  }
+  return null;
+}
+
+/// A ① `usage` block in the shape `LLMService` reads, or null when [raw] is
+/// not one.
+///
+/// DeepSeek reports cache hits as top-level `prompt_cache_hit_tokens` rather
+/// than `prompt_tokens_details.cached_tokens`, the one spelling the usage
+/// recorder reads for ① — so every hit was recorded as full-price input. Its
+/// `prompt_tokens` already includes the hits, so the count is republished
+/// under the OpenAI spelling when the host did not send one; the raw fields
+/// ride along untouched.
+Map<String, dynamic>? normalizeOpenAIUsage(Object? raw) {
+  if (raw is! Map) return null;
+  final usage = raw.cast<String, dynamic>();
+  final hits = usage['prompt_cache_hit_tokens'];
+  final details = usage['prompt_tokens_details'];
+  final hasCached = details is Map && details['cached_tokens'] != null;
+  if (hits is! num || hasCached) return usage;
+  return {
+    ...usage,
+    'prompt_tokens_details': {
+      if (details is Map) ...details.cast<String, dynamic>(),
+      'cached_tokens': hits,
+    },
+  };
+}
+
 /// Result of separating inline `<think>…</think>` chain-of-thought from
 /// model text.
 class InlineThinkResult {
@@ -765,13 +808,10 @@ class OpenAIChatProtocol implements ChatProtocol {
         // ① family chain-of-thought: field-based (DeepSeek reasoning_content,
         // OpenRouter reasoning — no standard spelling exists, so probe the
         // known candidates and remember which one answered)...
-        final rawReasoning =
-            message['reasoning_content'] ?? message['reasoning'];
-        if (rawReasoning is String && rawReasoning.isNotEmpty) {
-          reasoningContent = rawReasoning;
-          reasoningFieldName = message['reasoning_content'] != null
-              ? 'reasoning_content'
-              : 'reasoning';
+        final picked = pickReasoningField(message);
+        if (picked != null) {
+          reasoningContent = picked.text;
+          reasoningFieldName = picked.field;
         }
         // ...or inline <think> spans glued into content (MiniMax default).
         // Inline reasoning is display/accounting-only — it carries no echo
@@ -848,7 +888,7 @@ class OpenAIChatProtocol implements ChatProtocol {
       );
 
       final metadata = <String, dynamic>{
-        ...?(data['usage'] as Map?)?.cast<String, dynamic>(),
+        ...?normalizeOpenAIUsage(data['usage']),
       };
       final finishReason = choice?['finish_reason'];
       if (finishReason != null) metadata['finish_reason'] = finishReason;
@@ -1042,7 +1082,7 @@ class OpenAIChatProtocol implements ChatProtocol {
         // Same: usage is the whole point of the choices-less tail chunk, so it
         // is read before any parsing that is allowed to fail.
         final usage = chunkData['usage'];
-        if (usage is Map) usageMetadata = usage.cast<String, dynamic>();
+        if (usage is Map) usageMetadata = normalizeOpenAIUsage(usage);
 
         final choice = firstChoice(chunkData);
         if (choice == null) continue;
@@ -1095,10 +1135,9 @@ class OpenAIChatProtocol implements ChatProtocol {
           // array would otherwise throw into the catch below and be dropped as
           // "parse noise", losing the reply one chunk at a time.
           final text = contentToText(delta?['content']);
-          final rawReasoningContent = delta?['reasoning_content'];
-          final reasoning = rawReasoningContent ?? delta?['reasoning'];
+          final picked = delta == null ? null : pickReasoningField(delta);
 
-          if (reasoning is String && reasoning.isNotEmpty) {
+          if (picked != null) {
             sawOutput = true;
             // Dedicated channel: consumers that accumulate textPart into a
             // deliverable must never glue the thinking into it. The field
@@ -1107,10 +1146,8 @@ class OpenAIChatProtocol implements ChatProtocol {
             // key it arrived with (reasoning.md §3), and the stream consumer
             // cannot recover the name from the text alone.
             yield LLMResponseChunk(
-              reasoningPart: reasoning,
-              reasoningFieldName: rawReasoningContent != null
-                  ? 'reasoning_content'
-                  : 'reasoning',
+              reasoningPart: picked.text,
+              reasoningFieldName: picked.field,
             );
           }
 
