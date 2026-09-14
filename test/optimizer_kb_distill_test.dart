@@ -219,6 +219,65 @@ void main() {
       expect(session.hasPendingKbDistill, isTrue);
     });
 
+    test('a stopped distill turn does not lend its write access to the next message',
+        () {
+      // Standard 08 §3.5. A mid-batch stop (or the round limit, or a failed
+      // request after a tool round) also leaves the history ending on a tool
+      // result. Only the ask_user free-text reply continues the turn; an
+      // ordinary message after any other tool result is a new request.
+      for (final trailing in [
+        LLMMessage(
+          role: LLMRole.tool,
+          content: '{"status":"cancelled","message":"The user cancelled the task before this tool ran."}',
+          toolCallId: 'r1',
+          toolName: 'read_knowledge_file',
+        ),
+        LLMMessage(
+          role: LLMRole.tool,
+          content: '{"path":"a.md","page":1,"total_pages":1,"content":"rules"}',
+          toolCallId: 'r1',
+          toolName: 'read_knowledge_file',
+        ),
+      ]) {
+        final session = kbSession();
+        session.addKbDistillTurn('${PromptOptimizerAgent.kbDistillMarker} go');
+        session.history.add(LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          toolCalls: [
+            LLMToolCall(id: 'r1', name: 'read_knowledge_file', arguments: const {'path': 'a.md'}),
+          ],
+        ));
+        session.history.add(trailing);
+        expect(session.hasPendingKbDistill, isTrue);
+
+        session.addUserTurn('换个话题：把背景改成夜景');
+        expect(session.hasPendingKbDistill, isFalse, reason: trailing.content);
+        expect(session.canWriteKnowledge, isFalse, reason: trailing.content);
+      }
+    });
+
+    test('a structured ask_user answer followed by a new message ends the distill turn',
+        () {
+      // The card path appends a tool result carrying `answers`, and the turn
+      // resumes without a user message. A message typed after that is new.
+      final session = kbSession();
+      session.addKbDistillTurn('${PromptOptimizerAgent.kbDistillMarker} go');
+      session.history.add(LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        toolCalls: [LLMToolCall(id: 'ask1', name: 'ask_user', arguments: const {})],
+      ));
+      session.history.add(LLMMessage(
+        role: LLMRole.tool,
+        content: '{"status":"ok","answers":[{"header":"Rule","selected":["new"]}]}',
+        toolCallId: 'ask1',
+        toolName: 'ask_user',
+      ));
+      session.addUserTurn('另一个问题');
+      expect(session.hasPendingKbDistill, isFalse);
+    });
+
     test('a pending distill escalates canWriteKnowledge in knowledgeBase mode, policy permitting', () {
       final session = kbSession();
       session.addUserTurn('优化');

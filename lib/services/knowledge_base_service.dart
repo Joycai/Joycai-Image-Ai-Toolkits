@@ -80,6 +80,10 @@ class KbWritePolicy {
   /// The defaults, spelled out: the agent may propose, nothing lands without
   /// approval, and no backups are kept — because with approval on there is
   /// nothing to recover from that the user did not read first.
+  ///
+  /// The corollary is enforced, not just implied: with [confirmEachWrite] off,
+  /// `PromptOptimizerAgent.applyStagedKbEdit` backs up before overwriting
+  /// whatever [backupBeforeOverwrite] says.
   static const KbWritePolicy defaults = KbWritePolicy();
 
   KbWritePolicy copyWith({
@@ -119,6 +123,17 @@ class KbPathException implements Exception {
   KbPathException(this.message);
   @override
   String toString() => message;
+}
+
+/// Thrown when a staged edit's target no longer matches the content the edit
+/// was proposed against — the file changed on disk after the card was staged
+/// (a hand edit, or another card for the same file applied first). Nothing is
+/// written. A [KbPathException] so every existing catch hands the message to
+/// the model, which is exactly who needs to re-read the file.
+class KbEditConflictException extends KbPathException {
+  KbEditConflictException(String relPath)
+      : super('$relPath changed on disk after this edit was proposed, so it '
+            'was NOT written. Re-read the file and propose the edit again.');
 }
 
 /// Local-file access to the user's prompt-engineering knowledge base.
@@ -362,9 +377,14 @@ class KnowledgeBaseService {
   ///
   /// A no-op when the file does not exist yet: a create has no previous
   /// version, and writing an empty `.bak` would invent one. Any existing
-  /// backup is replaced — the point is to be able to undo *this* write, and a
-  /// chain of numbered copies inside a folder the agent reads from is litter
-  /// the user did not ask for.
+  /// backup is replaced — a chain of numbered copies inside a folder the agent
+  /// reads from is litter the user did not ask for.
+  ///
+  /// Replacing is safe only because of how it is called:
+  /// `PromptOptimizerAgent.applyStagedKbEdit` backs a file up once per
+  /// session, before its first write. Called on every write, the single copy
+  /// would hold the agent's previous draft after the second edit and never
+  /// the user's own version again.
   Future<void> backupFile(String root, String relPath) async {
     final resolved = resolvePath(root, relPath);
     final file = File(resolved);
@@ -413,6 +433,13 @@ class KnowledgeBaseService {
       probe = parent;
     }
     _requireInsideRootResolvingLinks(root, probe, relPath);
+    // The ancestor check cannot see a link at the target itself: an existing
+    // `a.md` that is a symlink pointing outside the root would be written
+    // straight through. A dangling link fails to resolve and is refused too.
+    if (FileSystemEntity.typeSync(resolved, followLinks: false) !=
+        FileSystemEntityType.notFound) {
+      _requireInsideRootResolvingLinks(root, resolved, relPath);
+    }
     final file = File(resolved);
     await file.parent.create(recursive: true);
     await file.writeAsString(content);

@@ -4231,6 +4231,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optCompactedNotice => 'コンテキスト節約のため、以前のメッセージは要約に圧縮されました。';
 
   @override
+  String get optRoundLimitNotice =>
+      'アシスタントはこのメッセージのステップ上限に達し、最終的な回答を出す前に停止しました。続けるには「続けて」などのメッセージを送ってください。';
+
+  @override
   String get optKbDistillRequested => 'リクエスト済み：今回の調整で得た知見をナレッジベースへ整理します。';
 
   @override

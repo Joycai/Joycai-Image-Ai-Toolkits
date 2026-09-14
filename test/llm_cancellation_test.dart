@@ -79,10 +79,12 @@ void main() {
       expect(turns, 1, reason: 'the loop must not try another turn');
     });
 
-    test('work already delivered survives the cancellation', () async {
-      // A delegate that answered once and was stopped on its second turn has
-      // produced something worth keeping — the parent gets the partial note
-      // rather than an empty string.
+    test('narration from a tool round is not kept as output on cancellation', () async {
+      // A delegate stopped on its second turn is still a cancelled result
+      // after one full turn. Its only text so far rode along with a tool call,
+      // and that is narration, not findings (standard 07 §2, 09 §2.3): output
+      // is set by a tool-free reply alone, so the parent is told the run was
+      // cancelled rather than handed "Let me read x.md first" as a note.
       var turn = 0;
       final result = await SubAgentRunner.run(
         modelIdentifier: 'm',
@@ -101,7 +103,7 @@ void main() {
         },
       );
       expect(result.cancelled, isTrue);
-      expect(result.output, 'partial findings');
+      expect(result.output, isEmpty);
       expect(result.turnsUsed, 1);
     });
 
