@@ -1670,6 +1670,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerNewApiOpenAI => 'New API (OpenAI format)';
 
   @override
+  String get providerNewApiOpenAIResponses =>
+      'New API (OpenAI Responses format)';
+
+  @override
   String get providerNewApiGemini => 'New API (Gemini format)';
 
   @override
@@ -2019,8 +2023,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get variantTitleGeneric => 'Access method';
 
   @override
+  String get variantTitleOpenAI => 'Chat interface';
+
+  @override
   String get variantHintGoogle =>
       'Google serves the same models two ways. Switching rewrites the address below.';
+
+  @override
+  String get variantHintOpenAI =>
+      'Same address and key. This sets which interface the channel\'s chat models use by default; a single model can still switch in the model editor.';
 
   @override
   String get variantHintMiniMax =>
@@ -2046,7 +2057,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get variantMiniMaxAnthropic => 'Anthropic interface';
 
   @override
+  String get variantOpenAIChat => 'Chat Completions';
+
+  @override
+  String get variantOpenAIResponses => 'Responses';
+
+  @override
   String get variantNewApiOpenAI => 'OpenAI format';
+
+  @override
+  String get variantNewApiOpenAIResponses => 'OpenAI Responses format';
 
   @override
   String get variantNewApiGemini => 'Gemini format';

@@ -1628,6 +1628,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get providerNewApiOpenAI => 'New API（OpenAI 形式）';
 
   @override
+  String get providerNewApiOpenAIResponses => 'New API（OpenAI Responses 形式）';
+
+  @override
   String get providerNewApiGemini => 'New API（Gemini 形式）';
 
   @override
@@ -1963,8 +1966,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get variantTitleGeneric => '接続方式';
 
   @override
+  String get variantTitleOpenAI => 'チャットインターフェース';
+
+  @override
   String get variantHintGoogle =>
       'Google は同じモデルを 2 通りで提供します。切り替えると下のアドレスが書き換わります。';
+
+  @override
+  String get variantHintOpenAI =>
+      'アドレスとキーは同じです。このチャンネルのチャットモデルが既定で使うインターフェースを決めます。個別のモデルはモデル編集で切り替えられます。';
 
   @override
   String get variantHintMiniMax =>
@@ -1989,7 +1999,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get variantMiniMaxAnthropic => 'Anthropic 面';
 
   @override
+  String get variantOpenAIChat => 'Chat Completions';
+
+  @override
+  String get variantOpenAIResponses => 'Responses';
+
+  @override
   String get variantNewApiOpenAI => 'OpenAI 形式';
+
+  @override
+  String get variantNewApiOpenAIResponses => 'OpenAI Responses 形式';
 
   @override
   String get variantNewApiGemini => 'Gemini 形式';

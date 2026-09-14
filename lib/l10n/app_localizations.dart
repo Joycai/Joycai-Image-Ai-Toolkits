@@ -2927,6 +2927,12 @@ abstract class AppLocalizations {
   /// **'New API (OpenAI format)'**
   String get providerNewApiOpenAI;
 
+  /// No description provided for @providerNewApiOpenAIResponses.
+  ///
+  /// In en, this message translates to:
+  /// **'New API (OpenAI Responses format)'**
+  String get providerNewApiOpenAIResponses;
+
   /// No description provided for @providerNewApiGemini.
   ///
   /// In en, this message translates to:
@@ -3539,11 +3545,23 @@ abstract class AppLocalizations {
   /// **'Access method'**
   String get variantTitleGeneric;
 
+  /// No description provided for @variantTitleOpenAI.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat interface'**
+  String get variantTitleOpenAI;
+
   /// No description provided for @variantHintGoogle.
   ///
   /// In en, this message translates to:
   /// **'Google serves the same models two ways. Switching rewrites the address below.'**
   String get variantHintGoogle;
+
+  /// No description provided for @variantHintOpenAI.
+  ///
+  /// In en, this message translates to:
+  /// **'Same address and key. This sets which interface the channel\'s chat models use by default; a single model can still switch in the model editor.'**
+  String get variantHintOpenAI;
 
   /// No description provided for @variantHintMiniMax.
   ///
@@ -3587,11 +3605,29 @@ abstract class AppLocalizations {
   /// **'Anthropic interface'**
   String get variantMiniMaxAnthropic;
 
+  /// No description provided for @variantOpenAIChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat Completions'**
+  String get variantOpenAIChat;
+
+  /// No description provided for @variantOpenAIResponses.
+  ///
+  /// In en, this message translates to:
+  /// **'Responses'**
+  String get variantOpenAIResponses;
+
   /// No description provided for @variantNewApiOpenAI.
   ///
   /// In en, this message translates to:
   /// **'OpenAI format'**
   String get variantNewApiOpenAI;
+
+  /// No description provided for @variantNewApiOpenAIResponses.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI Responses format'**
+  String get variantNewApiOpenAIResponses;
 
   /// No description provided for @variantNewApiGemini.
   ///

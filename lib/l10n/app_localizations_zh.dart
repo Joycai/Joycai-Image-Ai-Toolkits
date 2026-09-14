@@ -1620,6 +1620,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerNewApiOpenAI => 'New API（OpenAI 格式）';
 
   @override
+  String get providerNewApiOpenAIResponses => 'New API（OpenAI Responses 格式）';
+
+  @override
   String get providerNewApiGemini => 'New API（Gemini 格式）';
 
   @override
@@ -1949,7 +1952,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get variantTitleGeneric => '接入方式';
 
   @override
+  String get variantTitleOpenAI => '对话接口';
+
+  @override
   String get variantHintGoogle => 'Google 同一批模型提供两种接入方式，切换会改写下面的接口地址。';
+
+  @override
+  String get variantHintOpenAI => '地址和密钥不变，只决定这个渠道下对话模型默认走哪个接口；单个模型仍可在模型编辑里改。';
 
   @override
   String get variantHintMiniMax => 'MiniMax 同时提供两套接口，选一套即可，之后仍可改。';
@@ -1973,7 +1982,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get variantMiniMaxAnthropic => 'Anthropic 面';
 
   @override
+  String get variantOpenAIChat => 'Chat Completions';
+
+  @override
+  String get variantOpenAIResponses => 'Responses';
+
+  @override
   String get variantNewApiOpenAI => 'OpenAI 格式';
+
+  @override
+  String get variantNewApiOpenAIResponses => 'OpenAI Responses 格式';
 
   @override
   String get variantNewApiGemini => 'Gemini 格式';
@@ -6365,6 +6383,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get providerNewApiOpenAI => 'New API（OpenAI 格式）';
 
   @override
+  String get providerNewApiOpenAIResponses => 'New API（OpenAI Responses 格式）';
+
+  @override
   String get providerNewApiGemini => 'New API（Gemini 格式）';
 
   @override
@@ -6694,7 +6715,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get variantTitleGeneric => '接入方式';
 
   @override
+  String get variantTitleOpenAI => '對話介面';
+
+  @override
   String get variantHintGoogle => 'Google 同一批模型提供兩種接入方式，切換會改寫下面的介面位址。';
+
+  @override
+  String get variantHintOpenAI => '位址和金鑰不變，只決定這個通道下對話模型預設走哪個介面；單一模型仍可在模型編輯裡改。';
 
   @override
   String get variantHintMiniMax => 'MiniMax 同時提供兩套介面，選一套即可，之後仍可改。';
@@ -6718,7 +6745,16 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get variantMiniMaxAnthropic => 'Anthropic 面';
 
   @override
+  String get variantOpenAIChat => 'Chat Completions';
+
+  @override
+  String get variantOpenAIResponses => 'Responses';
+
+  @override
   String get variantNewApiOpenAI => 'OpenAI 格式';
+
+  @override
+  String get variantNewApiOpenAIResponses => 'OpenAI Responses 格式';
 
   @override
   String get variantNewApiGemini => 'Gemini 格式';
