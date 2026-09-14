@@ -611,7 +611,18 @@ bearer、`/models` 与 ① 完全相同，所以没有 `protocolBases` 项、dis
 `openAIRest` / `newApiOpenAI` / `xaiApi` 的 `chatMenu` 里，**排在 ① 之后**——
 ① 仍是 auto，存量渠道一个字节都不动；xAI 官方推荐 Responses，把它设为 xAI 默认
 是单独的决定，本轮没做。菜单 >1 项，模型编辑器的点单下拉因此在这三家的 chat 模型
-上出现。以下几条都**不报错**，改动时逐条对照：
+上出现。
+
+**渠道级默认（分行，01 §8.3）**：`openAIResponsesRest`（`openai-responses-rest`）与
+`newApiOpenAIResponses`（`newapi-openai-responses`）是同一对 host/key 的第二行，
+`chatMenu` 为 `[openaiResponses, openaiChat]`——Responses 排第一即渠道 auto，① 留作
+点单。"整个中转只跑 GPT-5.x"是渠道的事，不该逐个模型点单；但 Responses-only 模型
+与 ① 共存于一个渠道也是常态，所以两种表达并存。预设上是 OpenAI 官方的「对话接口」
+切换与 NewAPI 的第四种格式，切换不改写地址。`_familyRoute` 的 chat 分支读
+`menuFor(chat).first`，所以 id 自身路由在这两行上就是 Responses，`_servedBy`
+为 null，descriptor 与 id 的一致（`model_kind_protocol_pin_test` 的全 vendor 回归门）。
+
+以下几条都**不报错**，改动时逐条对照：
 
 1. **`instructions` 恒发，空串也发。** 全部 system 消息 hoist 并以空行连接。
    New API 中转在它缺失时注入几千 token 的 Codex 系统提示，只在账单上可见

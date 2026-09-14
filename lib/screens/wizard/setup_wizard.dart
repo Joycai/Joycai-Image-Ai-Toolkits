@@ -79,9 +79,11 @@ class _SetupWizardState extends State<SetupWizard> {
   void _updateDefaultEndpoint() {
     switch (_channelType) {
       case Vendors.openAIRest:
+      case Vendors.openAIResponsesRest:
         _endpointController.text = 'https://api.openai.com/v1';
         break;
       case Vendors.newApiOpenAI:
+      case Vendors.newApiOpenAIResponses:
         // New API is a self-hosted relay; only the path suffix is known.
         _endpointController.text = 'https://your-newapi-host.com/v1';
         break;

@@ -170,12 +170,28 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
     searchAliases: ['gemini', 'genai'],
     icon: Icons.auto_awesome,
   ),
+  // One host, two chat wires: Chat Completions and the Responses API share
+  // the base URL and the key, so the switch rewrites no address — it only
+  // decides which wire this channel's models ride unless one pins the other
+  // in the model editor.
   ChannelProviderPreset(
     id: 'openai-official',
     channelType: Vendors.openAIRest,
     group: ChannelProviderGroup.vendor,
     defaultEndpoint: 'https://api.openai.com/v1',
-    searchAliases: ['gpt', 'chatgpt'],
+    variants: [
+      ChannelProviderVariant(
+        id: 'chat',
+        channelType: Vendors.openAIRest,
+        defaultEndpoint: 'https://api.openai.com/v1',
+      ),
+      ChannelProviderVariant(
+        id: 'responses',
+        channelType: Vendors.openAIResponsesRest,
+        defaultEndpoint: 'https://api.openai.com/v1',
+      ),
+    ],
+    searchAliases: ['gpt', 'chatgpt', 'responses'],
     icon: Icons.api,
   ),
   ChannelProviderPreset(
@@ -294,6 +310,13 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
       ChannelProviderVariant(
         id: 'openai',
         channelType: Vendors.newApiOpenAI,
+        endpointSuffix: '/v1',
+      ),
+      // New API relays `/v1/responses` beside `/v1/chat/completions` — same
+      // suffix, the chat default is the only difference.
+      ChannelProviderVariant(
+        id: 'openai-responses',
+        channelType: Vendors.newApiOpenAIResponses,
         endpointSuffix: '/v1',
       ),
       ChannelProviderVariant(
@@ -592,6 +615,8 @@ String channelProviderVariantTitle(AppLocalizations l10n, String presetId) {
       return l10n.variantTitleMiniMax;
     case 'newapi':
       return l10n.variantTitleNewApi;
+    case 'openai-official':
+      return l10n.variantTitleOpenAI;
     default:
       return l10n.variantTitleGeneric;
   }
@@ -606,6 +631,8 @@ String channelProviderVariantHint(AppLocalizations l10n, String presetId) {
       return l10n.variantHintMiniMax;
     case 'newapi':
       return l10n.variantHintNewApi;
+    case 'openai-official':
+      return l10n.variantHintOpenAI;
     default:
       return l10n.variantHintGeneric;
   }
@@ -625,8 +652,14 @@ String channelProviderVariantLabel(
       return l10n.variantMiniMaxOpenAI;
     case 'minimax/anthropic':
       return l10n.variantMiniMaxAnthropic;
+    case 'openai-official/chat':
+      return l10n.variantOpenAIChat;
+    case 'openai-official/responses':
+      return l10n.variantOpenAIResponses;
     case 'newapi/openai':
       return l10n.variantNewApiOpenAI;
+    case 'newapi/openai-responses':
+      return l10n.variantNewApiOpenAIResponses;
     case 'newapi/gemini':
       return l10n.variantNewApiGemini;
     case 'newapi/anthropic':
@@ -699,8 +732,12 @@ String channelTypeLabel(AppLocalizations l10n, String type) {
       return protocolFamilyLabel(l10n, ProtocolFamily.anthropic);
     case Vendors.midjourneyProxy:
       return protocolFamilyLabel(l10n, ProtocolFamily.midjourney);
+    case Vendors.openAIResponsesRest:
+      return 'OpenAI · responses';
     case Vendors.newApiOpenAI:
       return l10n.providerNewApiOpenAI;
+    case Vendors.newApiOpenAIResponses:
+      return l10n.providerNewApiOpenAIResponses;
     case Vendors.newApiGemini:
       return l10n.providerNewApiGemini;
     case Vendors.newApiAnthropic:

@@ -27,6 +27,19 @@ class Vendors {
   /// kept distinct so channels record which supplier they point at.
   static const String newApiOpenAI = 'newapi-openai';
 
+  /// [openAIRest] led by the **Responses** face (`POST /responses`) instead of
+  /// Chat Completions. Same host, key, discovery and media surfaces; the only
+  /// difference is which chat wire a model rides when it has no pin, and a
+  /// model can still pin Chat Completions. A channel-level choice because a
+  /// user whose host serves only GPT-5.x wants every model on Responses
+  /// without pinning each one (provider layering 01 §8.3: split rows when
+  /// the choice belongs to the channel).
+  static const String openAIResponsesRest = 'openai-responses-rest';
+
+  /// [newApiOpenAI] led by the Responses face — the relay counterpart of
+  /// [openAIResponsesRest].
+  static const String newApiOpenAIResponses = 'newapi-openai-responses';
+
   /// xAI native REST (`https://api.x.ai/v1`). Chat is OpenAI-compatible;
   /// image and video generation use xAI's own JSON surfaces.
   static const String xaiApi = 'xai-api-rest';
@@ -160,6 +173,22 @@ class Vendors {
       // New API relays `/v1/responses` beside `/v1/chat/completions`
       // (provider layering 01 §9.2).
       chatMenu: _openaiChatFaces,
+      offersFamilyMediaSurfaces: true,
+    ),
+    VendorProfile(
+      id: openAIResponsesRest,
+      family: ProtocolFamily.openai,
+      auth: AuthScheme.bearer,
+      // The same menu as [openAIRest], Responses first: the first entry is
+      // the chat default, the other stays a per-model alternate.
+      chatMenu: _responsesLedChatFaces,
+      offersFamilyMediaSurfaces: true,
+    ),
+    VendorProfile(
+      id: newApiOpenAIResponses,
+      family: ProtocolFamily.openai,
+      auth: AuthScheme.bearer,
+      chatMenu: _responsesLedChatFaces,
       offersFamilyMediaSurfaces: true,
     ),
     VendorProfile(
@@ -396,6 +425,13 @@ class Vendors {
   static const List<WireProtocol> _openaiChatFaces = [
     WireProtocol.openaiChat,
     WireProtocol.openaiResponses,
+  ];
+
+  /// The same two faces, Responses first — for the channel types a user picks
+  /// when the whole channel should default to the Responses API.
+  static const List<WireProtocol> _responsesLedChatFaces = [
+    WireProtocol.openaiResponses,
+    WireProtocol.openaiChat,
   ];
 
   /// The models behind MiniMax's two native surfaces, which neither chat
