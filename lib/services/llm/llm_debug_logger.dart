@@ -1,9 +1,47 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
 import '../../core/app_paths.dart';
+
+/// Which request, continuation leg and retry attempt one debug log belongs
+/// to (errors 06 §4: request-body entries carry their leg).
+///
+/// Without it every retry, continuation leg and agent tool round opened an
+/// unrelated file, and "which of these fifty logs was the second attempt of
+/// that turn" could only be answered by comparing timestamps. `LLMService`
+/// makes one per attempt and runs the attempt inside it
+/// ([LLMDebugLogger.runCorrelated] / [LLMDebugLogger.correlatedStream]);
+/// [LLMDebugLogger.startLog] reads it from the zone, so no protocol has to
+/// forward anything. It also collects the logs the attempt opened, so the
+/// service can append the normalised response summary to each.
+class LLMLogCorrelation {
+  final String? contextId;
+
+  /// Serial of the `LLMService` call — shared by its legs and attempts.
+  final int request;
+
+  /// Continuation leg within the call, from 0.
+  final int leg;
+
+  /// Retry attempt within the leg, from 0.
+  final int attempt;
+
+  /// The logs opened while this correlation was current.
+  final List<LLMDebugLog> opened = [];
+
+  LLMLogCorrelation({
+    required this.contextId,
+    required this.request,
+    required this.leg,
+    required this.attempt,
+  });
+
+  String get header => 'Correlation: context=${contextId ?? '-'} '
+      'request=#$request leg=$leg attempt=$attempt';
+}
 
 /// One open debug log: the file, plus when the request that owns it started.
 ///
@@ -42,6 +80,107 @@ class LLMDebugLogger {
     return logDir.path;
   }
 
+  static const Symbol _correlationZoneKey = #llmDebugLogCorrelation;
+
+  /// The correlation of the attempt running in the current zone, or null
+  /// outside any `LLMService` attempt.
+  static LLMLogCorrelation? get currentCorrelation {
+    final value = Zone.current[_correlationZoneKey];
+    return value is LLMLogCorrelation ? value : null;
+  }
+
+  /// Runs [body] with [correlation] current for everything it starts —
+  /// awaited continuations included, since they keep their zone.
+  static R runCorrelated<R>(LLMLogCorrelation correlation, R Function() body) =>
+      runZoned(body, zoneValues: {_correlationZoneKey: correlation});
+
+  /// [open]'s stream, opened *and listened to* inside [correlation]'s zone.
+  ///
+  /// For a caller that is itself an `async*` generator: it cannot wrap its
+  /// own `await for` in [runCorrelated], so the protocol's stream is created
+  /// and subscribed here instead, where the zone value is visible to the
+  /// protocol's body. Pause, resume and cancel pass straight through, so an
+  /// idle guard tearing the subscription down still drops the connection.
+  static Stream<T> correlatedStream<T>(
+    LLMLogCorrelation correlation,
+    Stream<T> Function() open,
+  ) {
+    late final StreamController<T> controller;
+    StreamSubscription<T>? subscription;
+    controller = StreamController<T>(
+      onListen: () {
+        runCorrelated(correlation, () {
+          subscription = open().listen(
+            controller.add,
+            onError: controller.addError,
+            onDone: controller.close,
+          );
+        });
+      },
+      onPause: () => subscription?.pause(),
+      onResume: () => subscription?.resume(),
+      onCancel: () => subscription?.cancel(),
+    );
+    return controller.stream;
+  }
+
+  /// The one-line normalised outcome appended to every log an attempt
+  /// opened: finish reason, usage, and `wire_rewrites` when the response
+  /// reported any — or the failure, when there was no response.
+  ///
+  /// "The answer just stopped" is the question these logs exist to answer
+  /// (errors 06 §4), and only the finish reason tells a length cut from a
+  /// tool turn from a model that thought it was done. Written by the service
+  /// from the merged metadata, so it reads the same on every wire.
+  static String responseSummary(Map<String, dynamic>? metadata,
+      {Object? error}) {
+    if (error != null) {
+      final text = error.toString().replaceAll('\n', ' ');
+      return 'Summary: error=${error.runtimeType} '
+          '${text.length > 300 ? '${text.substring(0, 300)}…' : text}';
+    }
+    final m = metadata ?? const <String, dynamic>{};
+    final parts = <String>['finish_reason=${m['finish_reason'] ?? '-'}'];
+    const usageKeys = [
+      'prompt_tokens',
+      'completion_tokens',
+      'input_tokens',
+      'output_tokens',
+      'promptTokenCount',
+      'candidatesTokenCount',
+      'thoughtsTokenCount',
+      'cache_read_input_tokens',
+      'total_tokens',
+    ];
+    final usage = [
+      for (final key in usageKeys)
+        if (m[key] != null) '$key=${m[key]}',
+    ];
+    parts.add(usage.isEmpty ? 'usage=none' : 'usage{${usage.join(' ')}}');
+    if (m['stream_incomplete'] == true) parts.add('stream_incomplete');
+    if (m['continuations'] != null) {
+      parts.add('continuations=${m['continuations']}');
+    }
+    final rewrites = m['wire_rewrites'];
+    if (rewrites != null) parts.add('wire_rewrites=${jsonEncode(rewrites)}');
+    return 'Summary: ${parts.join(' ')}';
+  }
+
+  /// Appends [responseSummary] to every log [correlation] opened.
+  /// Best-effort like every write here; a no-op when debug logging is off,
+  /// because then nothing was opened.
+  static Future<void> appendSummaries(
+    LLMLogCorrelation correlation,
+    Map<String, dynamic>? metadata, {
+    Object? error,
+  }) async {
+    if (correlation.opened.isEmpty) return;
+    final line = responseSummary(metadata, error: error);
+    for (final log in correlation.opened) {
+      await appendLine(log, line);
+    }
+  }
+
   static Future<LLMDebugLog?> startLog(
       String modelId, String type, Map<String, dynamic> request) async {
     try {
@@ -60,6 +199,8 @@ class LLMDebugLogger {
       buffer.writeln('Timestamp: ${startedAt.toIso8601String()}');
       buffer.writeln('Model: $modelId');
       buffer.writeln('Type: $type');
+      final correlation = currentCorrelation;
+      if (correlation != null) buffer.writeln(correlation.header);
       // What actually goes on the wire, before any of it is truncated for
       // readability below. Base64 attachments are invisible in a truncated
       // log, and "this request is 8 MB" is the single most useful line in it
@@ -74,7 +215,9 @@ class LLMDebugLogger {
       buffer.writeln('--- RESPONSE ---');
 
       await file.writeAsString(buffer.toString());
-      return LLMDebugLog(file, startedAt);
+      final log = LLMDebugLog(file, startedAt);
+      correlation?.opened.add(log);
+      return log;
     } catch (_) {
       return null;
     }

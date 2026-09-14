@@ -8,6 +8,7 @@ import '../billing/spec_billing.dart';
 import '../database_service.dart';
 import 'context_budget.dart';
 import 'llm_config_resolver.dart';
+import 'llm_debug_logger.dart';
 import 'job_poll.dart' show cancellableSleep, cancellationProbeOf;
 import 'llm_dispatcher.dart';
 import 'llm_types.dart';
@@ -21,6 +22,10 @@ class LLMService {
 
   final LLMConfigResolver _configResolver = LLMConfigResolver();
   final LLMDispatcher _dispatcher = LLMDispatcher();
+
+  /// Serial of `request` / `requestStream` calls, for the debug log's
+  /// correlation header ([LLMLogCorrelation.request]).
+  static int _requestSerial = 0;
 
   /// Everyone listening to this service's execution log.
   ///
@@ -129,6 +134,7 @@ class LLMService {
     // §H72). Protocols that poll (job_poll) and the abort watcher read it.
     final requestOptions = chainCancellationProbe(options, isCancelled);
     final cancelProbe = cancellationProbeOf(requestOptions);
+    final requestSerial = ++_requestSerial;
 
     var turnHistory = messages;
     final parts = <LLMResponse>[];
@@ -146,6 +152,14 @@ class LLMService {
       // response has fully arrived has no effect.
       final abort = Completer<void>();
       final cancelWatch = _abortWhenCancelled(cancelProbe, abort);
+      // Every debug log this attempt opens is stamped with it, and gets the
+      // normalised outcome appended (errors 06 §4).
+      final correlation = LLMLogCorrelation(
+        contextId: contextId,
+        request: requestSerial,
+        leg: parts.length,
+        attempt: attempt,
+      );
       final attemptOptions = <String, dynamic>{
         ...?requestOptions,
         llmAbortTriggerKey: abort.future,
@@ -158,14 +172,17 @@ class LLMService {
             'Connecting to ${config.channelType} (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}',
             level: 'DEBUG',
           );
-          final streamed = await _streamOnce(
-            config,
-            turnHistory,
-            options: attemptOptions,
-            tools: tools,
-            toolBearing: toolBearing,
-            isCancelled: isCancelled,
-            log: log,
+          final streamed = await LLMDebugLogger.runCorrelated(
+            correlation,
+            () => _streamOnce(
+              config,
+              turnHistory,
+              options: attemptOptions,
+              tools: tools,
+              toolBearing: toolBearing,
+              isCancelled: isCancelled,
+              log: log,
+            ),
           );
           response = streamed.response;
           cancelledMidStream = streamed.cancelled;
@@ -178,8 +195,9 @@ class LLMService {
             config,
             options: options,
           );
-          response = await _dispatcher
-              .generate(
+          response = await LLMDebugLogger.runCorrelated(
+              correlation,
+              () => _dispatcher.generate(
                 config,
                 turnHistory,
                 options: attemptOptions,
@@ -189,7 +207,7 @@ class LLMService {
                 // supplies, so the retry decision can tell "the generation ran
                 // long" apart from "the connection died" — see
                 // [LLMDeadlineExceeded].
-              )
+              ))
               .timeout(
                 deadline,
                 onTimeout: () => throw LLMDeadlineExceeded(deadline),
@@ -198,6 +216,8 @@ class LLMService {
             log('[AI]: ${response.text}');
           }
         }
+
+        await LLMDebugLogger.appendSummaries(correlation, response.metadata);
 
         // Record usage per part, before anything else: whatever the provider
         // generated was billed, whether or not the turn goes on or the caller
@@ -266,6 +286,7 @@ class LLMService {
 
         return mergeTurnParts(parts);
       } catch (e) {
+        await LLMDebugLogger.appendSummaries(correlation, null, error: e);
         // An abort the cancellation fired is a cancellation, not a transport
         // failure — and an aborted attempt is never retried.
         if (e is http.RequestAbortedException) {
@@ -833,10 +854,17 @@ class LLMService {
 
     // The executor's probe rides in the options; nothing to chain here.
     final streamProbe = cancellationProbeOf(options);
+    final requestSerial = ++_requestSerial;
 
     while (true) {
       final abort = Completer<void>();
       final cancelWatch = _abortWhenCancelled(streamProbe, abort);
+      final correlation = LLMLogCorrelation(
+        contextId: contextId,
+        request: requestSerial,
+        leg: 0,
+        attempt: attempt,
+      );
       final attemptOptions = <String, dynamic>{
         ...?options,
         llmAbortTriggerKey: abort.future,
@@ -845,12 +873,17 @@ class LLMService {
         int imageCount = 0;
         Map<String, dynamic>? finalMetadata;
 
-        final stream = _dispatcher.generateStream(
-          config,
-          messages,
-          options: attemptOptions,
-          logger: (msg, {level = 'INFO'}) =>
-              _emitLog(msg, level: level, contextId: contextId),
+        // Opened and listened to inside the correlation's zone: this method
+        // is itself a generator and cannot wrap its own `await for`.
+        final stream = LLMDebugLogger.correlatedStream(
+          correlation,
+          () => _dispatcher.generateStream(
+            config,
+            messages,
+            options: attemptOptions,
+            logger: (msg, {level = 'INFO'}) =>
+                _emitLog(msg, level: level, contextId: contextId),
+          ),
         );
 
         await for (final chunk in _idleGuarded(
@@ -911,6 +944,8 @@ class LLMService {
           );
         }
 
+        await LLMDebugLogger.appendSummaries(correlation, finalMetadata);
+
         if (usageMissing(config, finalMetadata ?? const {})) {
           _emitLog(_missingUsageWarning(config),
               level: 'WARN', contextId: contextId);
@@ -923,6 +958,7 @@ class LLMService {
 
         return; // Success, exit retry loop
       } catch (e) {
+        await LLMDebugLogger.appendSummaries(correlation, null, error: e);
         if (e is http.RequestAbortedException) {
           if (streamProbe?.call() ?? false) throw const LLMCancelled();
           rethrow;
