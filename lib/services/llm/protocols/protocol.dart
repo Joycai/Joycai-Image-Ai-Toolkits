@@ -240,22 +240,25 @@ Map<String, dynamic> decodeJsonBody(http.Response response,
             '${err['status'] != null ? ' (${err['status']})' : ''}';
       }
     }
-    throw LLMApiException('$apiName request failed: $status - $detail',
+    throw LLMApiException(
+        '$apiName request failed: $status${_requestUrlNote(response)} - '
+        '$detail',
         statusCode: status);
   }
 
   final decoded = _tryJsonDecode(response.body);
   if (decoded == null) {
     throw LLMApiException(
-        '$apiName returned a non-JSON body (HTML error page?) — the base URL '
-        'may point at something that is not this API. Body: '
-        '${_bodyExcerpt(response.body)}',
+        '$apiName returned a non-JSON body (HTML error page?)'
+        '${_requestUrlNote(response)} — the base URL may point at something '
+        'that is not this API. Body: ${_bodyExcerpt(response.body)}',
         isNonJsonBody: true);
   }
   if (decoded is! Map) {
     throw LLMApiException(
         '$apiName returned an unexpected body shape '
-        '(${decoded.runtimeType}): ${_bodyExcerpt(response.body)}');
+        '(${decoded.runtimeType})${_requestUrlNote(response)}: '
+        '${_bodyExcerpt(response.body)}');
   }
 
   final data = decoded.cast<String, dynamic>();
@@ -269,6 +272,18 @@ Object? _tryJsonDecode(String body) {
   } on FormatException {
     return null;
   }
+}
+
+/// ` (<url>)` for the request [response] answered, redacted — or empty when
+/// the response carries no request (tests build bare ones).
+///
+/// Errors name the URL because the commonest third-party failure is a base
+/// URL that resolved somewhere unexpected, and a bare `404: <html>` gives the
+/// user nothing to compare against what they pasted (errors 06 §2). Never the
+/// key: [redactUrl] masks `?key=`, and auth headers are not part of the URL.
+String _requestUrlNote(http.Response response) {
+  final url = response.request?.url;
+  return url == null ? '' : ' (${redactUrl(url)})';
 }
 
 String _bodyExcerpt(String body) {

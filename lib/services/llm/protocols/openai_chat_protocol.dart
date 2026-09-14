@@ -958,7 +958,8 @@ class OpenAIChatProtocol implements ChatProtocol {
       );
       client.close();
       throw LLMApiException(
-        'OpenAI API Stream Request failed: ${response.statusCode} - '
+        'OpenAI API Stream Request failed: ${response.statusCode} '
+        '(${redactUrl(url)}) - '
         '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
         statusCode: response.statusCode,
       );

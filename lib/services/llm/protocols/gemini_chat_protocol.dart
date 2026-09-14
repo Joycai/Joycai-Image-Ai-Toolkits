@@ -210,7 +210,8 @@ class GeminiChatProtocol implements ChatProtocol {
       // The shared decoder owns the message shape (provider error text when
       // the body is JSON, excerpt otherwise) and always throws on non-2xx.
       decodeJsonBody(
-        http.Response(body, response.statusCode),
+        // The request rides along so the message names the URL it failed on.
+        http.Response(body, response.statusCode, request: response.request),
         apiName: 'Google GenAI stream',
       );
       throw LLMApiException(

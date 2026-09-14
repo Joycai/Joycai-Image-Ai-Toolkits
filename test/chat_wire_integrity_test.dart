@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_payload.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 
 /// Pins the chat-wire correctness rules of the 2026-09-14 audit round (batch
 /// A): every one of them is a failure that used to arrive as a success.
@@ -55,6 +57,52 @@ void main() {
       }
       expect(contentBlockedFailure(null), isNull);
       expect(contentBlockedFailure(const {}), isNull);
+    });
+  });
+
+  group('error messages name the request URL (errors 06 §2)', () {
+    // The commonest third-party failure is a base URL that resolved somewhere
+    // unexpected; a bare "404: <html>" gives the user nothing to compare
+    // against what they pasted. The key must never ride along.
+    final request = http.Request(
+      'POST',
+      Uri.parse('https://relay.example.com/v1beta/models/m:generateContent'
+          '?key=SECRET-KEY'),
+    );
+
+    test('a non-2xx status carries the redacted URL', () {
+      expect(
+        () => decodeJsonBody(
+          http.Response('<html>nope</html>', 404, request: request),
+          apiName: 'Test API',
+        ),
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.message, 'message',
+                contains('relay.example.com/v1beta/models/m:generateContent'))
+            .having((e) => e.message, 'message', isNot(contains('SECRET-KEY')))
+            .having((e) => e.statusCode, 'statusCode', 404)),
+      );
+    });
+
+    test('a non-JSON 200 carries it too', () {
+      expect(
+        () => decodeJsonBody(
+          http.Response('<html>login</html>', 200, request: request),
+          apiName: 'Test API',
+        ),
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.message, 'message', contains('relay.example.com'))
+            .having(
+                (e) => e.message, 'message', isNot(contains('SECRET-KEY')))),
+      );
+    });
+
+    test('a response built without a request still decodes its error', () {
+      expect(
+        () => decodeJsonBody(http.Response('oops', 502), apiName: 'Test API'),
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.message, 'message', startsWith('Test API request failed: 502 - '))),
+      );
     });
   });
 }
