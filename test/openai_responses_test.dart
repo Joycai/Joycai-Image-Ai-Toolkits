@@ -548,8 +548,9 @@ void main() {
   });
 
   group('routing', () {
-    test('the Responses face is an alternate after ① on the three hosts', () {
-      for (final id in [Vendors.openAIRest, Vendors.newApiOpenAI, Vendors.xaiApi]) {
+    test('the Responses face is an alternate after ① on the generic OpenAI hosts',
+        () {
+      for (final id in [Vendors.openAIRest, Vendors.newApiOpenAI]) {
         final menu = LLMDispatcher.protocolMenu(id, 'gpt-5.5');
         expect(menu.options,
             [WireProtocol.openaiChat, WireProtocol.openaiResponses], reason: id);
@@ -557,6 +558,18 @@ void main() {
         expect(protocolSectionForm(menu, pinIsStale: false),
             ProtocolSectionForm.dropdown, reason: id);
       }
+      // xAI leads with Responses: it marks Chat Completions deprecated, so an
+      // unpinned Grok chat model rides Responses and ① stays a pin.
+      final xai = LLMDispatcher.protocolMenu(Vendors.xaiApi, 'grok-4.5');
+      expect(xai.options,
+          [WireProtocol.openaiResponses, WireProtocol.openaiChat]);
+      expect(xai.auto, WireProtocol.openaiResponses);
+      expect(protocolSectionForm(xai, pinIsStale: false),
+          ProtocolSectionForm.dropdown);
+      expect(
+          LLMDispatcher.isStaleProtocolSelection(
+              Vendors.xaiApi, 'grok-4.5', WireProtocol.openaiChat.id),
+          isFalse);
       expect(LLMDispatcher.protocolMenu(Vendors.deepseek, 'deepseek-chat').options,
           [WireProtocol.openaiChat]);
       expect(
@@ -569,21 +582,35 @@ void main() {
           isFalse);
     });
 
-    test('a pinned model streams tools on the Responses face', () {
+    test('a Responses model streams tools; the face follows default and pin',
+        () {
       final dispatcher = LLMDispatcher();
       final config = target(channelType: Vendors.xaiApi, modelId: 'grok-4.5').config;
       expect(dispatcher.streamSupportsTools(config), isTrue);
       expect(dispatcher.streamIsSingleShot(config), isFalse);
+      // Unpinned on xAI: Responses, the vendor's chat default.
+      expect(
+          LLMDispatcher.resolvedChatFace(
+              channelType: Vendors.xaiApi, modelId: 'grok-4.5'),
+          WireProtocol.openaiResponses);
+      // A Chat Completions pin still wins.
       expect(
           LLMDispatcher.resolvedChatFace(
               channelType: Vendors.xaiApi,
               modelId: 'grok-4.5',
-              wireProtocol: WireProtocol.openaiResponses.id),
-          WireProtocol.openaiResponses);
+              wireProtocol: WireProtocol.openaiChat.id),
+          WireProtocol.openaiChat);
+      // And the generic host keeps ① unless pinned.
       expect(
           LLMDispatcher.resolvedChatFace(
-              channelType: Vendors.xaiApi, modelId: 'grok-4.5'),
+              channelType: Vendors.openAIRest, modelId: 'gpt-5.5'),
           WireProtocol.openaiChat);
+      expect(
+          LLMDispatcher.resolvedChatFace(
+              channelType: Vendors.openAIRest,
+              modelId: 'gpt-5.5',
+              wireProtocol: WireProtocol.openaiResponses.id),
+          WireProtocol.openaiResponses);
     });
 
     test('the ladder has six rungs and is not trimmed per model', () {
