@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/turn_continuation.dart';
 
@@ -123,24 +124,35 @@ void main() {
       expect(merged.metadata['continuations'], 1);
     });
 
-    test('usage is summed — every part was billed', () {
+    test('outputs are summed; inputs are the last leg, not a sum', () {
+      // Every leg is billed on its own row before the merge; the merged
+      // figure feeds ContextBudget.calibrate. Each continuation re-sends the
+      // whole history, so a summed input counted the context once per leg.
       final merged = mergeTurnParts([
         LLMResponse(text: 'a', metadata: {
           'input_tokens': 100,
           'output_tokens': 10,
           'prompt_tokens': 120,
+          'completion_tokens': 10,
           'cache_read_input_tokens': 20,
+          'total_tokens': 130,
         }),
         LLMResponse(text: 'b', metadata: {
           'input_tokens': 200,
           'output_tokens': 30,
           'prompt_tokens': 200,
+          'completion_tokens': 30,
+          'total_tokens': 230,
         }),
       ]);
-      expect(merged.metadata['input_tokens'], 300);
       expect(merged.metadata['output_tokens'], 40);
-      expect(merged.metadata['prompt_tokens'], 320);
-      expect(merged.metadata['cache_read_input_tokens'], 20);
+      expect(merged.metadata['completion_tokens'], 40);
+      expect(merged.metadata['input_tokens'], 200);
+      expect(merged.metadata['prompt_tokens'], 200);
+      expect(LLMService.promptTokensOf(merged.metadata), 200);
+      expect(merged.metadata['total_tokens'], 240);
+      // The last leg reported no cache hit, so neither does the merge.
+      expect(merged.metadata.containsKey('cache_read_input_tokens'), isFalse);
     });
 
     test('the content arrays concatenate so the whole turn replays as one message', () {
