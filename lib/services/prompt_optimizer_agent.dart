@@ -1757,6 +1757,9 @@ class PromptOptimizerAgent {
           contextExhausted: contextExhausted,
         );
 
+        // What this request actually offers. Dispatch is gated on it below.
+        final offered = {for (final t in activeTools) t.name};
+
         final trimmedHistory =
             _trimForSend(session.history, keepCurrentTurnImages: effectiveForceView);
         // knowledgeEntryContent is captured once per task, but staging means no
@@ -1924,6 +1927,20 @@ class PromptOptimizerAgent {
             result = {
               'status': 'cancelled',
               'message': 'The user cancelled the task before this tool ran.',
+            };
+          } else if (!offered.contains(call.name)) {
+            // Standard 07 §4.6 rule 3: only a tool offered in this request
+            // may run. A model can name any tool it has ever seen — a
+            // delegate it was never given, a write tool in a read-only
+            // session, a tool withdrawn when the window filled — and every
+            // executor below would otherwise act on it. The executors keep
+            // their own precondition checks as defence in depth.
+            onLog?.call('Tool call rejected: "${call.name}" was not offered in this request.');
+            result = {
+              'status': 'error',
+              'message': 'Tool "${call.name}" was not offered in this request, so it '
+                  'did not run. '
+                  '${offered.isEmpty ? 'No tools are available right now — answer in plain text.' : 'Available tools: ${offered.join(', ')}.'}',
             };
           } else if (call.name == 'ask_user') {
             if (!canStageAskUser(response.toolCalls)) {
