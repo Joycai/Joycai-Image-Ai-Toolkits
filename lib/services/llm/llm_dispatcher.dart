@@ -872,6 +872,47 @@ class LLMDispatcher {
     }
   }
 
+  /// Whether this (channel, model, kind, pinned face) can switch on the
+  /// host's own web search, and whether the reply then shows what it read.
+  ///
+  /// The editor's single question, answered from the chat face routing
+  /// resolves — the same resolution [reasoningLadder] uses — so the switch is
+  /// shown exactly where a request would carry it, instead of the editor
+  /// guessing from the channel's family (which hid it on every Bailian
+  /// channel, and would have shown it on Bailian's ④ face, where nothing is
+  /// declared).
+  ///
+  /// * ④ ([WireProtocol.anthropicChat]) on a ④ vendor: the protocol declares
+  ///   the `web_search` server tool, whose sources come back.
+  /// * ① and DashScope native on a vendor that lists the face in
+  ///   [VendorProfile.serverWebSearchFaces]: the traceless `enable_search`.
+  /// * Everything else: unsupported.
+  static ServerWebSearch serverWebSearch({
+    required String channelType,
+    required String modelId,
+    String? tag,
+    String? wireProtocol,
+  }) {
+    final menu = protocolMenu(channelType, modelId, tag: tag);
+    if (menu.surface != Surface.chat) return ServerWebSearch.unsupported;
+    final face = _validPin(menu, wireProtocol) ?? menu.auto;
+    if (face == null) return ServerWebSearch.unsupported;
+    final vendor = Vendors.byId(channelType);
+    switch (face) {
+      case WireProtocol.anthropicChat:
+        return vendor.family == ProtocolFamily.anthropic
+            ? ServerWebSearch.withSources
+            : ServerWebSearch.unsupported;
+      case WireProtocol.openaiChat:
+      case WireProtocol.dashscopeChat:
+        return vendor.serverWebSearchFaces.contains(face)
+            ? ServerWebSearch.traceless
+            : ServerWebSearch.unsupported;
+      default:
+        return ServerWebSearch.unsupported;
+    }
+  }
+
   Stream<LLMResponseChunk> generateStream(
     LLMModelConfig config,
     List<LLMMessage> history, {

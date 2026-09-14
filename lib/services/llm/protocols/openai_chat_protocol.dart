@@ -1556,6 +1556,17 @@ class OpenAIChatProtocol implements ChatProtocol {
       payload["tool_choice"] = "auto";
     }
 
+    // The host's own web search, as a top-level flag — only on a vendor that
+    // declares it for this face (tools 05 §5). A stored switch that has
+    // travelled to any other ① host must not reach it: official OpenAI 400s
+    // an unknown top-level field. The search is traceless on this wire (no
+    // sources come back), so nothing is parsed or logged for it (pitfalls 11
+    // §A10).
+    if (target.config.enableWebSearch &&
+        target.vendor.serverWebSearchFaces.contains(WireProtocol.openaiChat)) {
+      payload["enable_search"] = true;
+    }
+
     if (isStreaming) {
       payload["stream_options"] = {"include_usage": true};
     }

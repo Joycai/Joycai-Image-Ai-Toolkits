@@ -548,8 +548,16 @@ thinking / server tool 一起加。
 两个开关都是**按模型**存的（v33 迁移的 `llm_models.enable_thinking` /
 `enable_web_search`，默认关），由 `LLMConfigResolver` 解析进 `LLMModelConfig`
 —— 不是请求 option。这样助手、提示词精修、AI 重命名三条路自动都认，不必各自记得
-传；同时一条渠道下"支持思考的模型"和"发了就 400 的模型"可以分别设置。UI 只在
-④ 渠道下显示这两个开关。
+传；同时一条渠道下"支持思考的模型"和"发了就 400 的模型"可以分别设置。UI 上思考开关行
+只在 ④ 渠道下显示；**联网搜索开关**（2026-09-14）改问
+`LLMDispatcher.serverWebSearch(channelType:, modelId:, tag:, wireProtocol:)`，
+与推理挡位同一套面解析：④ 厂商的 ④ 面是带来源的 `web_search` server tool；
+声明在 `VendorProfile.serverWebSearchFaces` 里的面（百炼两个 vendor 的 ① 与原生面）
+是无痕的 `enable_search`——① 发顶层、原生发 `parameters.enable_search`，都不返回
+来源，协议不解析也不伪造任何事件（pitfalls 11 §A10），编辑器在开关下写明
+「搜索无痕」。① 适配器发之前再查一次声明：模型行上存着的开关会随导入、改渠道
+类型旅行到 api.openai.com，那里未知顶层字段直接 400（tools 05 §5）。百炼的 ④ 面
+未声明，开关不出现。
 
 三个 ④ vendor（`anthropicRest` / `newApiAnthropic` / `minimaxAnthropic`）
 除 thinking 方言外 chat 行为一致，分开还为记录供货方。**MiniMax 是唯一 base path

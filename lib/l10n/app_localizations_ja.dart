@@ -1845,6 +1845,10 @@ class AppLocalizationsJa extends AppLocalizations {
       '回答中にプロバイダー自身がウェブ検索を実行します。追加トークンとして課金され、代理でページを取得します。';
 
   @override
+  String get enableWebSearchTracelessHint =>
+      'このプロトコルでは検索の痕跡が残りません。出典や引用は返されず、実際に検索が行われたかも確認できません。';
+
+  @override
   String get noProviderMatch => '一致するプロバイダーがありません';
 
   @override

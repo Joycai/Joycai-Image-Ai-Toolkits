@@ -300,6 +300,7 @@ class Vendors {
       // The ① face spells thinking as the `enable_thinking` switch rather
       // than `reasoning_effort` — see [ThinkingDialect.openaiEnableThinking].
       thinkingByProtocol: _dashscopeThinkingByFace,
+      serverWebSearchFaces: _dashscopeSearchFaces,
     ),
     VendorProfile(
       id: dashscopeNative,
@@ -329,6 +330,7 @@ class Vendors {
       // wire a model rides decides the spelling, not which one the channel
       // leads with.
       thinkingByProtocol: _dashscopeThinkingByFace,
+      serverWebSearchFaces: _dashscopeSearchFaces,
     ),
     VendorProfile(
       id: midjourneyProxy,
@@ -383,6 +385,15 @@ class Vendors {
   /// `parameters.enable_thinking` itself.
   static const Map<WireProtocol, ThinkingDialect> _dashscopeThinkingByFace = {
     WireProtocol.openaiChat: ThinkingDialect.openaiEnableThinking,
+  };
+
+  /// The Bailian chat faces that take the traceless `enable_search` switch:
+  /// top level on the compatible face, `parameters` on the native one
+  /// (help.aliyun.com Model Studio web search). Not the ④ face — nothing is
+  /// documented for it there.
+  static const Set<WireProtocol> _dashscopeSearchFaces = {
+    WireProtocol.openaiChat,
+    WireProtocol.dashscopeChat,
   };
 
   static const List<UnlistedModel> _minimaxNativeModels = [

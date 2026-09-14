@@ -249,7 +249,38 @@ enum ThinkingDialect {
   openaiEnableThinking,
 }
 
+/// What switching on the host's own web search does for a (channel, model,
+/// kind, face), as `LLMDispatcher.serverWebSearch` resolves it — the model
+/// editor's one source for whether to show the switch and what to say.
+enum ServerWebSearch {
+  /// The wire has no switch this app sends: nothing to show.
+  unsupported,
+
+  /// ④'s `web_search` server tool: the searches and their sources come back
+  /// as blocks and are logged (tools 05 §5).
+  withSources,
+
+  /// DashScope's `enable_search` flag (① top level, native `parameters`):
+  /// the answer absorbs the results and nothing in the response says a
+  /// search ran (pitfalls 11 §A10). Nothing is invented on the response side;
+  /// the editor says so instead.
+  traceless,
+}
+
 class VendorProfile {
+  /// The chat faces on which this vendor accepts a host-run web search
+  /// *switch* — DashScope's `enable_search`, spelled at the top level on ①
+  /// and under `parameters` on its native face.
+  ///
+  /// A declaration, never inferred: `enable_search` is a private extension,
+  /// and official OpenAI answers an unknown top-level field with a 400. The ①
+  /// adapter checks this set before sending the flag, because a stored
+  /// `enable_web_search` travels with the model row (imports, channel-type
+  /// changes) to hosts that never had it (tools 05 §5). Empty for every
+  /// vendor but Bailian's two. ④'s server tool is not listed here: that
+  /// protocol declares it for every ④ vendor.
+  final Set<WireProtocol> serverWebSearchFaces;
+
   /// Stable id, stored verbatim in `llm_channels.type`.
   final String id;
 
@@ -383,6 +414,7 @@ class VendorProfile {
     this.unlistedModels = const [],
     this.thinking = ThinkingDialect.none,
     this.thinkingByProtocol = const {},
+    this.serverWebSearchFaces = const {},
     this.promptCaching = false,
     this.keyOptional = false,
     this.offersFamilyMediaSurfaces = false,

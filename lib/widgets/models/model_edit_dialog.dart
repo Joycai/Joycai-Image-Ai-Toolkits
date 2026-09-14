@@ -539,7 +539,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             _contextSection(context),
             _agentSection(context),
             _reasoningSection(context),
-            if (_isAnthropicChannel) _providerSection(context),
+            if (_isAnthropicChannel || _webSearch != ServerWebSearch.unsupported) _providerSection(context),
           ]),
         ),
       ],
@@ -554,7 +554,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       _contextSection(context),
       _agentSection(context),
       _reasoningSection(context),
-      if (_isAnthropicChannel) _providerSection(context),
+      if (_isAnthropicChannel || _webSearch != ServerWebSearch.unsupported) _providerSection(context),
       _previewSection(context),
     ]);
   }
@@ -1194,8 +1194,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     );
   }
 
-  /// `1d`'s provider card: extended thinking and host web search, both
-  /// Anthropic-format only.
+  /// `1d`'s provider card: extended thinking (Anthropic-format channels) and
+  /// host web search (wherever the resolved chat face can switch it on).
   ///
   /// Extended thinking is a view of [reasoningEffort], not a column of its
   /// own: on this wire Off and Default both send nothing, so "on" is any
@@ -1204,36 +1204,59 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     final l10n = widget.l10n;
     final supported = _reasoningSupported;
     final thinkingOn = reasoningEffort != null && reasoningEffort != 'off';
+    final search = _webSearch;
+    final showThinking = _isAnthropicChannel;
+    final showSearch = search != ServerWebSearch.unsupported;
 
     return ModelEditCard(
       padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpace.s6),
-            child: ModelEditToggleRow(
-              title: l10n.enableThinking,
-              description: l10n.enableThinkingDesc,
-              value: thinkingOn,
-              dimmed: !supported,
-              onChanged: !supported
-                  ? null
-                  : (v) => setState(() => reasoningEffort = v ? (thinkingOn ? reasoningEffort : 'medium') : null),
+          if (showThinking)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpace.s6),
+              child: ModelEditToggleRow(
+                title: l10n.enableThinking,
+                description: l10n.enableThinkingDesc,
+                value: thinkingOn,
+                dimmed: !supported,
+                onChanged: !supported
+                    ? null
+                    : (v) => setState(() => reasoningEffort = v ? (thinkingOn ? reasoningEffort : 'medium') : null),
+              ),
             ),
-          ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpace.s6),
-            child: ModelEditToggleRow(
-              title: l10n.enableWebSearch,
-              description: l10n.enableWebSearchDesc,
-              value: enableWebSearch,
-              onChanged: (v) => setState(() => enableWebSearch = v),
+          if (showThinking && showSearch) const Divider(height: 1),
+          if (showSearch)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpace.s6),
+              child: ModelEditToggleRow(
+                title: l10n.enableWebSearch,
+                // A traceless switch says so where it is turned on: the reply
+                // carries no sources, and nothing shows whether it searched.
+                description: search == ServerWebSearch.traceless
+                    ? '${l10n.enableWebSearchDesc} ${l10n.enableWebSearchTracelessHint}'
+                    : l10n.enableWebSearchDesc,
+                value: enableWebSearch,
+                onChanged: (v) => setState(() => enableWebSearch = v),
+              ),
             ),
-          ),
         ],
       ),
+    );
+  }
+
+  /// What host web search does for the current channel, id, kind and
+  /// protocol selection: the dispatcher's answer, never a family check here.
+  ServerWebSearch get _webSearch {
+    final channel = _selectedChannel;
+    final id = idCtrl.text.trim();
+    if (channel == null || id.isEmpty) return ServerWebSearch.unsupported;
+    return LLMDispatcher.serverWebSearch(
+      channelType: channel.type,
+      modelId: id,
+      tag: tag,
+      wireProtocol: wireProtocol,
     );
   }
 

@@ -6,6 +6,7 @@ import '../../../state/app_state.dart';
 import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
+import '../vendors/vendor_profile.dart' show WireProtocol;
 import 'dashscope_payload.dart';
 import 'openai_chat_protocol.dart'
     show
@@ -550,6 +551,16 @@ Map<String, dynamic> buildDashScopeChatPayload(
     target.config.effectiveReasoningEffort,
   );
   if (thinking != null) parameters['enable_thinking'] = thinking;
+
+  // The host's own web search: `parameters.enable_search` on this face
+  // (help.aliyun.com Model Studio web-search, native HTTP body). Guarded by
+  // the vendor's declaration like the ① flag. No `enable_source` is asked
+  // for, so no sources come back and nothing is parsed for them (pitfalls 11
+  // §A10).
+  if (target.config.enableWebSearch &&
+      target.vendor.serverWebSearchFaces.contains(WireProtocol.dashscopeChat)) {
+    parameters['enable_search'] = true;
+  }
 
   if (tools != null && tools.isNotEmpty) {
     parameters['tools'] = [
