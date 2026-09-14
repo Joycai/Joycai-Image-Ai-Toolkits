@@ -963,6 +963,14 @@ class PromptOptimizerSession extends ChangeNotifier {
   }
 }
 
+/// The request [PromptOptimizerAgent] makes, as tests replace it — see
+/// [PromptOptimizerAgent.debugRequestOverride].
+typedef AgentRequestFn = Future<LLMResponse> Function(
+  List<LLMMessage> messages,
+  List<LLMTool>? tools,
+  Map<String, dynamic> options,
+);
+
 /// Interactive prompt-optimization agent (tool-use loop).
 ///
 /// The model is given three tools:
@@ -1140,6 +1148,34 @@ class PromptOptimizerAgent {
     required int messageCount,
   }) =>
       occupied >= budgetChars || messageCount > _compactMaxMessages;
+
+  /// Replaces every model request the agent makes — the turn loop's and
+  /// compaction's — so the loop's invariants can be pinned without a network.
+  /// Null in production.
+  @visibleForTesting
+  static AgentRequestFn? debugRequestOverride;
+
+  static Future<LLMResponse> _request({
+    required dynamic modelIdentifier,
+    required List<LLMMessage> messages,
+    List<LLMTool>? tools,
+    String? contextId,
+    required Map<String, dynamic> options,
+    required bool useStream,
+    bool Function()? isCancelled,
+  }) {
+    final override = debugRequestOverride;
+    if (override != null) return override(messages, tools, options);
+    return LLMService().request(
+      modelIdentifier: modelIdentifier,
+      messages: messages,
+      tools: tools,
+      contextId: contextId,
+      options: options,
+      useStream: useStream,
+      isCancelled: isCancelled,
+    );
+  }
 
   /// Live sessions by id, so the task-queue executor can resolve the session
   /// referenced by a queued task.
@@ -1658,7 +1694,7 @@ class PromptOptimizerAgent {
 
         final LLMResponse response;
         try {
-          response = await LLMService().request(
+          response = await _request(
             modelIdentifier: modelIdentifier,
             messages: [
               LLMMessage(role: LLMRole.system, content: systemPromptText),
@@ -2469,7 +2505,8 @@ class PromptOptimizerAgent {
 
   /// Layer-2 fallback compaction: when even the trimmed history exceeds the
   /// context budget, the conversation before the recent window is replaced by
-  /// a single summary message (LLM-generated; hard truncation as fallback).
+  /// a single LLM-generated summary message. If the summary cannot be made,
+  /// nothing is replaced and the next turn tries again.
   /// The database keeps the original rows flagged `compacted` and re-appends
   /// the new active history, so the full record stays inspectable.
   static Future<void> _maybeCompact(
@@ -2520,7 +2557,7 @@ class PromptOptimizerAgent {
         '${head.length} early messages.');
     String summaryText;
     try {
-      final response = await LLMService().request(
+      final response = await _request(
         modelIdentifier: modelIdentifier,
         messages: [
           LLMMessage(
@@ -2551,10 +2588,15 @@ class PromptOptimizerAgent {
       // parting gift from a cancelled turn.
       rethrow;
     } catch (e) {
-      onLog?.call('Summary generation failed ($e) — falling back to hard truncation.');
-      summaryText = 'Earlier conversation was truncated to save context. '
-          'Latest staged prompt (v${session.promptVersions}): '
-          '${session.refinedPrompt ?? '(none yet)'}';
+      // Failure atomicity (standard 10 §3.4): a failed or empty summary
+      // changes nothing — not the history, not the stored rows. The old
+      // fallback replaced the head with a one-line truncation note, turning a
+      // single network blip into permanently lost context. This turn runs on
+      // the uncompacted history (layer 1 still elides), and because the
+      // trigger is re-evaluated at the top of every turn, the next one retries.
+      onLog?.call('Summary generation failed ($e) — the history was left as '
+          'it was; compaction will be retried next turn.');
+      return;
     }
 
     final at = session.history.indexWhere((m) => identical(m, boundaryMsg));

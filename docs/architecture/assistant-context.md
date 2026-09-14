@@ -241,6 +241,13 @@ nothing throws, the numbers just quietly stop meaning what they claim.
   old `Set` pattern until 2026-08** — `viewedImagePaths` gated re-views without
   anything invalidating it — and exhibited exactly this deadlock before moving
   to the same derivation (`_liveViewedPaths`).
+- **Hard truncation as the compaction fallback.** Until 2026-09 a failed or
+  empty summary replaced everything before the recent window with a one-line
+  "earlier conversation was truncated" note, and flagged the rows compacted.
+  One network blip permanently discarded the early context. A failed summary
+  now changes nothing (standard 10 §3.4): the turn runs uncompacted, layer 1
+  still elides, and the trigger fires again next turn. Pinned by
+  `optimizer_compaction_test.dart`.
 - **History indexes as markers.** `knowledgeStaleAt` stored the history length
   at each write until 2026-09. Compaction shrinks the history and the pairing
   repair (invariant 10) inserts stubs, and neither rebased the index — after
