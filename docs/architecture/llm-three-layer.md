@@ -304,7 +304,27 @@ review 时用下面的模式全仓库 grep 一遍即可：
   `geminiChunksFromSseLine` 的 dartdoc）。
 - **`redactUrl(url)`**（经 `protocol.dart` 转出口）—— 任何写进 debug 日志的
   请求 URL 必须先过它：Google 系 vendor 的 URL 带 `?key=`，靠日志落盘层的
-  正则兜底等于把一个机制的 bug 变成凭证泄漏。
+  正则兜底等于把一个机制的 bug 变成凭证泄漏。抛出的错误消息同样要带上脱敏后的
+  请求 URL（errors 06 §2）：`decodeJsonBody` 从 `http.Response.request` 取，
+  自己拼错误的流式分支用 `redactUrl(url)`。
+- **内容拦截只在一处判定（2026-09-14）。** 协议只**发布**
+  `finish_reason: content_filter`（① 原样；④ `refusal`；③ 拦截类
+  `finishReason` 与 `promptFeedback.blockReason`，**有无已产出文本都一样**）；
+  `LLMService` 在 `request` 与 `requestStream` 流末各做一次
+  `contentBlockedFailure`，**先记用量再抛**不可重试的
+  `LLMApiException(isContentBlocked: true)`。协议里不许再自己抛拦截错误——那会
+  跳过计费，也会让"半截文本 + 拦截"重新变回成功（pitfalls 11 §A7）。
+- **流的完整性由流末检查兜底，不靠调用方猜（2026-09-14）。** ① 流：结尾的
+  metadata chunk **无条件**发出（很多中转不发 usage，只按 usage 发会丢
+  `finish_reason`）；流干净关闭却没有 `finish_reason` 时，有待拼的工具调用 → 抛
+  截断错误（半截参数绝不交给 agent 循环执行），纯文本 → 标 `length` +
+  `stream_incomplete`；块都到了却什么内容都没有（无文本、推理、调用、图片）→ 抛，
+  `length` / `content_filter` 例外。③ 流补上与 ①④C2 同款的"一个 chunk 都没有"
+  守卫；④ 的 `AnthropicStreamAssembler.finish()` 在 `tool_use` 块未收到
+  `content_block_stop` 时抛。③ 自造的调用 id 是 `gtc_<nonce>_<n>`
+  （`GeminiToolCallIds`，一条流共用一个实例）——按候选按 chunk 从 0 计的旧 id
+  会在流内与跨轮撞车。① 的内联 `<think>` 只认回复**开头**那一个（reasoning 03
+  §6），正文里出现的标签是作者的文字。
 - **`imageMimeFromBytes` / `imageExtensionFromBytes` / `resolveImageMime`**
   （`core/image_magic.dart`）—— 图片的类型**读字节，不信声明**。中转的
   `inlineData.mimeType` 写 `image/png` 给过 JPEG 字节，`b64_json` 根本没有
