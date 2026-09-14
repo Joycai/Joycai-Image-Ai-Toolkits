@@ -97,10 +97,12 @@ class XaiImagesProtocol implements ImageGenProtocol {
 
     final client = config.createClient();
     try {
-      final response = await client.post(
+      final response = await sendJsonRequest(
+        client,
         url,
         headers: target.headers(),
         body: jsonEncode(payload),
+        options: options,
       );
 
       if (debugFile != null) {

@@ -109,13 +109,15 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
 
       final started = DateTime.now();
 
-      final submitResponse = await client.post(
+      final submitResponse = await sendJsonRequest(
+        client,
         submitUrl,
         headers: {
           ...target.headers(),
           'X-DashScope-Async': 'enable',
         },
         body: jsonEncode(payload),
+        options: options,
       );
       final submitData = decodeJsonBody(submitResponse,
           apiName: 'DashScope image task submit');

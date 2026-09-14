@@ -248,13 +248,19 @@ then wrote the answer into the conversation as if nothing had happened.
 | between stream chunks | leaving the `await for` cancels the subscription: **the only real interruption available** |
 | after the reply is complete | a withdrawn caller is never handed the answer (throws `LLMCancelled`) |
 
-**The streaming abort is real; the non-streaming one is not.** The HTTP client
-is pooled per endpoint (`LLMModelConfig.createClient`) and its `close()` is a
-deliberate no-op — closing the inner one would tear down every other request
-sharing that connection. So a non-streaming request cannot be interrupted
-mid-flight; all that is guaranteed is that its answer is not delivered. This
-is acceptable because the assistant always streams in practice (all four chat
-wires declare tools now), so the real path is the one with the real abort.
+**Both aborts are real (2026-09-14).** The HTTP client is pooled per endpoint
+(`LLMModelConfig.createClient`) and its `close()` only releases a lease —
+closing the inner one would tear down every other request sharing that
+connection. So instead of closing anything, `LLMService` gives each attempt an
+abort trigger in its options (`llmAbortTriggerKey`), and the protocols'
+non-streaming sends go through `sendJsonRequest`, an abortable request wired to
+it. A 250 ms watcher completes the trigger when the hook (chained with any
+probe the caller put in the options — never replacing it) turns true, and the
+attempt's `finally` completes it whenever the attempt ends, which is what
+stops a timed-out non-streaming request from running on upstream. An aborted
+attempt is never retried; aborted by a cancel it surfaces as `LLMCancelled`.
+The streaming abort is unchanged: leaving the `await for` cancels the
+subscription.
 
 `LLMCancelled` is its own type because three places must tell it apart from a
 failure: `isRetryable` has to answer false (otherwise a cancel buys two more

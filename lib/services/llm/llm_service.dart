@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../billing/spec_billing.dart';
 import '../database_service.dart';
@@ -58,12 +59,16 @@ class LLMService {
   /// otherwise keep working for a caller that has already withdrawn: before
   /// each attempt, between stream chunks, and once the reply is complete.
   ///
-  /// It cannot abort a *non-streaming* request in flight. The HTTP client is
-  /// pooled and shared per endpoint ([LLMModelConfig.createClient]), so its
-  /// `close()` is a deliberate no-op and closing the inner one would tear
-  /// down every other request sharing that connection. On the streaming path
-  /// there is a real abort: abandoning the subscription cancels the response
-  /// stream, which drops the connection for this request alone.
+  /// Both paths abort the request itself. The HTTP client is pooled and
+  /// shared per endpoint ([LLMModelConfig.createClient]), so it cannot be
+  /// closed for one request; instead each attempt carries an abort trigger in
+  /// its options ([llmAbortTriggerKey]), which the protocols' shared
+  /// non-streaming send (`sendJsonRequest`) wires to an abortable request. It
+  /// fires when [isCancelled] (or a probe the caller already put in
+  /// [options]) turns true, and whenever an attempt ends without a response —
+  /// the non-streaming deadline included, which used to leave the request
+  /// running and billing upstream. On the streaming path abandoning the
+  /// subscription still cancels the response stream as before.
   ///
   /// One call may take more than one request. A host running a server-side
   /// tool can stop a turn halfway — ④'s `pause_turn`, or MiniMax's `end_turn`
@@ -110,6 +115,12 @@ class LLMService {
     // The turn so far: the history this request is asked against (grows by
     // one continuation at a time) and the partial replies collected on the
     // way to a finished one.
+    // The caller's own probe (an executor passes one in the options) and the
+    // isCancelled hook, chained — never one replacing the other (pitfalls 11
+    // §H72). Protocols that poll (job_poll) and the abort watcher read it.
+    final requestOptions = chainCancellationProbe(options, isCancelled);
+    final cancelProbe = cancellationProbeOf(requestOptions);
+
     var turnHistory = messages;
     final parts = <LLMResponse>[];
     // [usageMissing] is warned about once per call, not once per leg.
@@ -121,6 +132,15 @@ class LLMService {
       // next attempt is exactly where a cancelled turn used to spend another
       // full request.
       if (isCancelled?.call() ?? false) throw const LLMCancelled();
+      // One trigger per attempt, fired by the watcher on cancel and by the
+      // `finally` below whenever the attempt ends — completing it after the
+      // response has fully arrived has no effect.
+      final abort = Completer<void>();
+      final cancelWatch = _abortWhenCancelled(cancelProbe, abort);
+      final attemptOptions = <String, dynamic>{
+        ...?requestOptions,
+        llmAbortTriggerKey: abort.future,
+      };
       try {
         final LLMResponse response;
         var cancelledMidStream = false;
@@ -132,7 +152,7 @@ class LLMService {
           final streamed = await _streamOnce(
             config,
             turnHistory,
-            options: options,
+            options: attemptOptions,
             tools: tools,
             toolBearing: toolBearing,
             isCancelled: isCancelled,
@@ -153,7 +173,7 @@ class LLMService {
               .generate(
                 config,
                 turnHistory,
-                options: options,
+                options: attemptOptions,
                 tools: tools,
                 logger: log,
                 // Its own type rather than the bare TimeoutException Future
@@ -237,6 +257,12 @@ class LLMService {
 
         return mergeTurnParts(parts);
       } catch (e) {
+        // An abort the cancellation fired is a cancellation, not a transport
+        // failure — and an aborted attempt is never retried.
+        if (e is http.RequestAbortedException) {
+          if (cancelProbe?.call() ?? false) throw const LLMCancelled();
+          rethrow;
+        }
         attempt++;
         if (attempt > maxRetries ||
             !shouldRetry(e, billedOnSubmit: billedOnSubmit)) {
@@ -262,6 +288,12 @@ class LLMService {
         // turn within half a second instead of after the whole wait.
         await cancellableSleep(delay, isCancelled);
         if (isCancelled?.call() ?? false) throw const LLMCancelled();
+      } finally {
+        cancelWatch?.cancel();
+        // Ends whatever this attempt still has in flight — a timed-out
+        // non-streaming request, a single-shot generation behind a stream
+        // whose first-chunk guard expired. No effect on a finished one.
+        if (!abort.isCompleted) abort.complete();
       }
     }
   }
@@ -608,6 +640,40 @@ class LLMService {
   static bool shouldRetry(Object e, {required bool billedOnSubmit}) =>
       billedOnSubmit ? isRetryableBeforeAcceptance(e) : isRetryable(e);
 
+  /// [options] with a cancellation probe that asks both the caller's own
+  /// probe ([llmCancellationProbeKey], an executor's) and [isCancelled].
+  ///
+  /// Chained, never replaced (pitfalls 11 §H72, errors 06 §4.2): a wrapper
+  /// that installs its own hook over the caller's silently disconnects the
+  /// caller. Returns [options] itself when there is nothing to chain, and a
+  /// new map otherwise — the caller's map is never mutated (it may be const,
+  /// and it may be shared).
+  @visibleForTesting
+  static Map<String, dynamic>? chainCancellationProbe(
+    Map<String, dynamic>? options,
+    bool Function()? isCancelled,
+  ) {
+    final caller = cancellationProbeOf(options);
+    if (isCancelled == null) return options;
+    bool chained() => (caller?.call() ?? false) || isCancelled();
+    return {...?options, llmCancellationProbeKey: chained};
+  }
+
+  /// A watcher that completes [abort] once [probe] turns true, or null when
+  /// there is no probe to watch. Cancelled by the attempt's `finally`.
+  static Timer? _abortWhenCancelled(
+    bool Function()? probe,
+    Completer<void> abort,
+  ) {
+    if (probe == null) return null;
+    return Timer.periodic(const Duration(milliseconds: 250), (timer) {
+      if (probe()) {
+        timer.cancel();
+        if (!abort.isCompleted) abort.complete();
+      }
+    });
+  }
+
   /// The longest server-requested wait ([LLMApiException.retryAfter]) this
   /// service will sit out before a retry. A provider asking for more — a
   /// quota window measured in minutes or hours — is not a transient blip, and
@@ -697,7 +763,16 @@ class LLMService {
     // only covers failures that happen before any chunk was delivered.
     var deliveredAnyChunk = false;
 
+    // The executor's probe rides in the options; nothing to chain here.
+    final streamProbe = cancellationProbeOf(options);
+
     while (true) {
+      final abort = Completer<void>();
+      final cancelWatch = _abortWhenCancelled(streamProbe, abort);
+      final attemptOptions = <String, dynamic>{
+        ...?options,
+        llmAbortTriggerKey: abort.future,
+      };
       try {
         int imageCount = 0;
         Map<String, dynamic>? finalMetadata;
@@ -705,7 +780,7 @@ class LLMService {
         final stream = _dispatcher.generateStream(
           config,
           messages,
-          options: options,
+          options: attemptOptions,
           logger: (msg, {level = 'INFO'}) =>
               _emitLog(msg, level: level, contextId: contextId),
         );
@@ -780,6 +855,10 @@ class LLMService {
 
         return; // Success, exit retry loop
       } catch (e) {
+        if (e is http.RequestAbortedException) {
+          if (streamProbe?.call() ?? false) throw const LLMCancelled();
+          rethrow;
+        }
         attempt++;
         if (deliveredAnyChunk ||
             attempt > maxRetries ||
@@ -804,9 +883,14 @@ class LLMService {
         // This surface has no isCancelled parameter; the executor's probe
         // rides in the options, and a stopped task must not sit out a long
         // Retry-After before noticing.
-        final probe = cancellationProbeOf(options);
-        await cancellableSleep(delay, probe);
-        if (probe?.call() ?? false) throw const LLMCancelled();
+        await cancellableSleep(delay, streamProbe);
+        if (streamProbe?.call() ?? false) throw const LLMCancelled();
+      } finally {
+        cancelWatch?.cancel();
+        // Also runs when the consumer stops listening (an executor breaking
+        // out on cancel): a single-shot generation still in flight behind
+        // the stream is aborted instead of finishing, and billing, unseen.
+        if (!abort.isCompleted) abort.complete();
       }
     }
   }

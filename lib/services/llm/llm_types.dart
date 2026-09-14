@@ -61,6 +61,19 @@ enum ReasoningEffort {
 /// call site).
 const String llmCancellationProbeKey = 'isCancelled';
 
+/// Option key for the request's abort trigger: a `Future<void>` whose
+/// completion aborts the HTTP request in flight (`package:http`'s
+/// `Abortable.abortTrigger`).
+///
+/// Set by `LLMService` per attempt — completed when the caller cancels or the
+/// non-streaming deadline expires — and read by the protocols' shared send
+/// helper (`sendJsonRequest`). It exists because the HTTP client is pooled:
+/// closing it would tear down every other request on the connection, so
+/// before this a cancelled or timed-out non-streaming request kept running
+/// (and billing) upstream until it finished on its own. Like the probe, the
+/// value is not data: the map carrying it must never be persisted.
+const String llmAbortTriggerKey = 'abortTrigger';
+
 /// Key inside a video poll's done envelope (`…generatedSamples[].video`):
 /// whether downloading its `uri` needs the channel's credentials.
 ///

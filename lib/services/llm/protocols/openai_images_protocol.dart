@@ -66,7 +66,9 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       http.Response response;
 
       if (isEdit) {
-        final request = http.MultipartRequest('POST', url);
+        // Abortable like every non-streaming send (see sendJsonRequest).
+        final request = http.AbortableMultipartRequest('POST', url,
+            abortTrigger: abortTriggerOf(options));
         // Auth comes from the vendor profile (layer 2) like every other
         // surface — a hardcoded bearer header worked only because today's
         // OpenAI-family vendors all happen to use one, and would have failed

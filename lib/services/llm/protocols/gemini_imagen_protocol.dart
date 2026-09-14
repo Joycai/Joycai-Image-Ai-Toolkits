@@ -53,7 +53,8 @@ class GeminiImagenProtocol implements ImageGenProtocol {
         });
       }
 
-      final response = await client.post(url, headers: headers, body: jsonEncode(payload));
+      final response = await sendJsonRequest(client, url,
+          headers: headers, body: jsonEncode(payload), options: options);
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');

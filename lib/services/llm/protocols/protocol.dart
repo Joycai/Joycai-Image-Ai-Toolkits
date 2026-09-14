@@ -511,6 +511,41 @@ Future<List<Uint8List>> resolveImageRefs(
   return images;
 }
 
+/// The abort trigger `LLMService` put in [options] ([llmAbortTriggerKey]),
+/// or null when the caller supplied none.
+Future<void>? abortTriggerOf(Map<String, dynamic>? options) {
+  final trigger = options?[llmAbortTriggerKey];
+  return trigger is Future<void> ? trigger : null;
+}
+
+/// One non-streaming request that `LLMService` can abort while it is in
+/// flight — the shared send path for JSON request/submit surfaces.
+///
+/// Byte-for-byte what `client.post(url, headers:, body:)` sends (headers
+/// first, then the string body, so a declared `Content-Type` is kept and
+/// only gains a charset), but as an [http.AbortableRequest] wired to
+/// [abortTriggerOf] `options`. The client is pooled per endpoint and its
+/// `close()` is a lease release, so closing it cannot stop one request; the
+/// trigger can, and only this one.
+///
+/// Aborting throws [http.RequestAbortedException]. A billed submit aborted
+/// after upstream accepted it is still billed — the user asked to stop, and
+/// `LLMService` never retries an aborted attempt.
+Future<http.Response> sendJsonRequest(
+  http.Client client,
+  Uri url, {
+  required Map<String, String> headers,
+  required String body,
+  Map<String, dynamic>? options,
+  String method = 'POST',
+}) async {
+  final request = http.AbortableRequest(method, url,
+      abortTrigger: abortTriggerOf(options));
+  request.headers.addAll(headers);
+  request.body = body;
+  return http.Response.fromStream(await client.send(request));
+}
+
 /// The prompt the provider actually drew from, when it rewrote the one it
 /// was sent — or `''` when none of [items] carries one.
 ///
