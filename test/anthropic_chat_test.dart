@@ -641,7 +641,9 @@ void main() {
           'max_uses': anthropicWebSearchMaxUses,
         }
       ]);
-      expect(p['tool_choice'], {'type': 'auto'});
+      // No tool_choice with server tools alone: `auto` would be the caller
+      // voicing an opinion on the host's own decision (tools 05 §2).
+      expect(p.containsKey('tool_choice'), isFalse);
     });
 
     test('it rides alongside the caller\'s own tools', () {

@@ -457,9 +457,13 @@ Map<String, dynamic> prepareAnthropicPayload(
 
   if (declared.isNotEmpty) {
     payload['tools'] = declared;
-    // `auto` only. The forcing modes (`any` / `tool`) are the first thing ④
-    // compat layers drop — MiniMax's endpoint has neither — and nothing here
-    // needs them.
+  }
+  // Only when the caller declared tools of its own (tools 05 §2): with server
+  // tools alone, `auto` is this app voicing an opinion on the host's internal
+  // decision. `auto` only, even then — the forcing modes (`any` / `tool`) are
+  // the first thing ④ compat layers drop (MiniMax's endpoint has neither),
+  // and nothing here needs them.
+  if (tools != null && tools.isNotEmpty) {
     payload['tool_choice'] = {'type': 'auto'};
   }
 
