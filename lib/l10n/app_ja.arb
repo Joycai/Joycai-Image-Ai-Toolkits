@@ -2239,6 +2239,7 @@
   "optDeleteSessionConfirm": "この会話を完全に削除しますか？",
   "optKbEntryTooLarge": "ナレッジベースの README.md がこのモデルのコンテキストウィンドウの大部分を占めています。毎回のリクエストで再送され、要約でも縮められません。内容を減らすか、より大きなウィンドウのモデルを選んでください。",
   "optCompactedNotice": "コンテキスト節約のため、以前のメッセージは要約に圧縮されました。",
+  "optRoundLimitNotice": "アシスタントはこのメッセージのステップ上限に達し、最終的な回答を出す前に停止しました。続けるには「続けて」などのメッセージを送ってください。",
   "optKbDistillRequested": "リクエスト済み：今回の調整で得た知見をナレッジベースへ整理します。",
   "optResultFeedbackAction": "アシスタントに報告",
   "optResultFeedbackChatLabel": "生成結果の報告",

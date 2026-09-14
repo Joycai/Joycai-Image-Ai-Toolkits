@@ -8,14 +8,16 @@ import 'llm/llm_types.dart';
 
 /// How one sub-agent run ended.
 class SubAgentResult {
-  /// The last plain-text reply the model produced — the deliverable. Empty
-  /// when the run produced nothing (the caller must treat that as an error
-  /// result, not a silent success).
+  /// The run's final plain-text reply — the one reply that carried no tool
+  /// calls, which is what ends a run normally. Empty on every other exit (a
+  /// cancellation, or the turn limit reached while the model still called
+  /// tools): text that rode along with a tool round is narration ("Let me read
+  /// x.md first"), not findings, and the caller must treat empty output as an
+  /// error result, not a silent success.
   final String output;
 
   /// True when the run stopped because [SubAgentRunner.run]'s `isCancelled`
-  /// flipped. The partial [output] (if any) is still returned; the caller
-  /// decides whether a cancelled run's partial findings are worth anything.
+  /// flipped. [output] is empty then — see its dartdoc.
   final bool cancelled;
 
   final int turnsUsed;
@@ -65,16 +67,41 @@ typedef SubAgentToolFn = Map<String, dynamic> Function(
 ///    run that would otherwise keep browsing is forced to write its findings
 ///    down. A sub-agent never asks the user for more rounds — it wraps up
 ///    (playbook: sub-runs do not interrupt the author).
-///  * **Output = last plain text.** This loop is synchronous per turn, so the
-///    final text reply is simply the return value of the last request. (In a
-///    streaming runtime the finishing turn's text never enters the history
-///    and must be captured from a callback — if this loop ever goes
-///    streaming, that trap is documented in the playbook, 09 §output.)
+///  * **Output = the tool-free final reply, and nothing else** (standard 07
+///    §2, 09 §2.3). The text of a reply that also calls tools is never kept
+///    as output, so a run that ends any other way delivers nothing rather than
+///    its last piece of narration. (In a streaming runtime the finishing
+///    turn's text never enters the history and must be captured from a
+///    callback — if this loop ever goes streaming, that trap is documented in
+///    the playbook, 09 §output.)
 ///  * **Echo obligations ride along.** The assistant echo carries the ①
 ///    reasoning fields, ③ thoughtSignatures (inside the tool calls) and ④
 ///    raw thinking blocks, same as every other loop in the app.
 class SubAgentRunner {
   static const int _defaultMaxTurns = 6;
+
+  /// The occupancy a run is measured with when the caller supplies none:
+  /// message text, replayed reasoning, and tool-call arguments.
+  ///
+  /// Arguments count because they are not small — a call carrying a path list
+  /// or a long brief sits in the assistant echo and is re-sent every turn. It
+  /// cannot price attachments, which have no characters; a caller that sends
+  /// them passes its own measure (the Prompt Assistant passes
+  /// `PromptOptimizerAgent.occupiedChars`, which does).
+  static int defaultOccupiedChars(List<LLMMessage> messages) {
+    var total = 0;
+    for (final m in messages) {
+      total += m.content.length;
+      total += m.reasoningContent?.length ?? 0;
+      for (final call in m.toolCalls) {
+        total += call.name.length;
+        for (final entry in call.arguments.entries) {
+          total += entry.key.length + entry.value.toString().length;
+        }
+      }
+    }
+    return total;
+  }
 
   static Future<SubAgentResult> run({
     required dynamic modelIdentifier,
@@ -95,6 +122,10 @@ class SubAgentRunner {
     /// Tags this run's usage rows (e.g. `subagent:knowledge`) so delegated
     /// spend stays attributable in the usage table.
     String? usageTag,
+
+    /// How the occupancy handed to [executeTool] is measured. Defaults to
+    /// [defaultOccupiedChars].
+    int Function(List<LLMMessage> messages)? measureOccupancy,
     @visibleForTesting SubAgentRequestFn? request,
   }) async {
     final requestFn = request ??
@@ -120,17 +151,16 @@ class SubAgentRunner {
               // by however long the generation takes, retries included.
               isCancelled: isCancelled,
             );
+    final measure = measureOccupancy ?? defaultOccupiedChars;
 
     final messages = <LLMMessage>[
       LLMMessage(role: LLMRole.system, content: systemPrompt),
       LLMMessage(role: LLMRole.user, content: task, attachments: attachments),
     ];
 
-    var lastText = '';
     for (var turn = 0; turn < maxTurns; turn++) {
       if (isCancelled?.call() ?? false) {
-        return SubAgentResult(
-            output: lastText, cancelled: true, turnsUsed: turn);
+        return SubAgentResult(output: '', cancelled: true, turnsUsed: turn);
       }
 
       final isLastTurn = turn == maxTurns - 1;
@@ -143,16 +173,14 @@ class SubAgentRunner {
         // between-turns check produces — the caller reads `cancelled` to
         // decide what to tell the parent agent, and an exception escaping
         // here would instead surface as a failed delegation.
-        return SubAgentResult(
-            output: lastText, cancelled: true, turnsUsed: turn);
+        return SubAgentResult(output: '', cancelled: true, turnsUsed: turn);
       }
 
-      final text = response.text.trim();
-      if (text.isNotEmpty) lastText = text;
-
       if (response.toolCalls.isEmpty) {
+        // The only place output is ever taken from: a reply with no tool
+        // calls is the deliverable. Text beside a tool call is narration.
         return SubAgentResult(
-            output: lastText, cancelled: false, turnsUsed: turn + 1);
+            output: response.text.trim(), cancelled: false, turnsUsed: turn + 1);
       }
 
       messages.add(LLMMessage(
@@ -178,12 +206,10 @@ class SubAgentRunner {
           };
         } else {
           try {
-            // Occupancy folds over the *current* messages, so a result
+            // Occupancy is measured over the *current* messages, so a result
             // paired earlier in this same batch already counts against the
             // next call's budget.
-            final occupied =
-                messages.fold<int>(0, (sum, m) => sum + m.content.length);
-            result = executeTool(call, occupied);
+            result = executeTool(call, measure(messages));
           } catch (e) {
             onLog?.call('Tool ${call.name} failed: $e');
             result = {
@@ -200,18 +226,16 @@ class SubAgentRunner {
         ));
       }
       if (cancelledMidBatch) {
-        return SubAgentResult(
-            output: lastText, cancelled: true, turnsUsed: turn + 1);
+        return SubAgentResult(output: '', cancelled: true, turnsUsed: turn + 1);
       }
     }
 
     // Only reachable if the force-text turn still answered with tool calls
     // (a misbehaving endpoint that invents calls with no tools declared).
-    // The calls above were paired, so the history stayed valid; deliver
-    // whatever text exists.
+    // The calls above were paired, so the history stayed valid — but there is
+    // no deliverable, and the caller reports that rather than narration.
     onLog?.call('Sub-agent hit the $maxTurns-turn limit without a text '
         'deliverable.');
-    return SubAgentResult(
-        output: lastText, cancelled: false, turnsUsed: maxTurns);
+    return SubAgentResult(output: '', cancelled: false, turnsUsed: maxTurns);
   }
 }

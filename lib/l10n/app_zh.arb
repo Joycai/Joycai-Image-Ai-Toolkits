@@ -2372,6 +2372,7 @@
   "optDeleteSessionConfirm": "确定永久删除该会话？",
   "optKbEntryTooLarge": "知识库的 README.md 占用了该模型上下文窗口的很大一部分。它每次请求都会重发，且摘要无法压缩它——请精简它，或改用窗口更大的模型。",
   "optCompactedNotice": "较早的对话已压缩为摘要，以节省上下文。",
+  "optRoundLimitNotice": "助手在这条消息上已用完步骤上限，尚未给出最终答复。发送一条后续消息（例如“继续”）即可让它接着做。",
   "optKbDistillRequested": "已请求：将本次调优经验总结进知识库。",
   "optResultFeedbackAction": "反馈给助手",
   "optResultFeedbackChatLabel": "结果图反馈",

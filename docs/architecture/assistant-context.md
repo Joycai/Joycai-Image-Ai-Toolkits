@@ -21,8 +21,13 @@ Two layers and one gate. All three measure the same way, with
 | **Gate — read cap** | Before every `read_knowledge_file` call | n/a — it bounds what enters | `_readCapNow` → `ContextBudget.readCapChars` |
 
 Layer 1 protects the last `_keepRecentTurns` **user** turns and stubs out bulky
-knowledge reads before them. Layer 2 folds everything before that boundary into
-a summary. The gate is what keeps a single turn from overflowing on its own,
+knowledge reads before them. Layer 2 folds the turns before that boundary into
+a summary — and, when size tripped the trigger, further: toward a retention
+target below the trigger (0.45/0.7 of the budget), never keeping fewer than
+two turns, and not at all when the head is just an earlier summary plus one
+turn (`compactionBoundary`, standard 10 §3.1). The gap between trigger and
+target is what stops a long turn from re-summarizing — and invalidating the
+prompt cache — on every turn that follows it. The gate is what keeps a single turn from overflowing on its own,
 because neither layer can help mid-loop (see *Accepted limits*).
 
 **Layer 1 runs two windows, not one.** Image attachments leave after
@@ -34,6 +39,14 @@ turn in an agent loop, which is how one session came to upload 55 MB
 (`docs/plans/2026-08-assistant-timeout.md`). Eliding early is cheap precisely
 because it is reversible: liveness is derived (invariant 4), so the model can
 call `view_image` again and pay for the picture only in the turn that needs it.
+
+Inside that window a request still carries at most the newest `_maxLiveImages`
+(3) images (standard 07 §3.6): one turn can view every reference, and the
+window alone would re-upload all of them on every request of that turn. With
+the per-model force-view-all flag the current turn keeps all of its images —
+the flag promises the model saw every one before `submit_prompt` — and the cap
+applies to older rounds only. Window and cap are one rule,
+`_liveAttachmentIndices`.
 
 Both boundaries come from `_boundaryOf`, and **`_elide` and `_liveViewedPaths`
 must read the same one** — see invariant 4.
@@ -154,7 +167,7 @@ nothing throws, the numbers just quietly stop meaning what they claim.
    the model may view the image again. `viewedImagePaths` survives only as the
    UI's "has been looked at" badge and gates nothing the model asks for.
    **`_elide` and `_liveViewedPaths` must use the same boundary**
-   (`_attachmentBoundary`, not `_recentBoundary`) — they are two halves of one
+   (`_liveAttachmentIndices` — the attachment window and the image cap — never `_recentBoundary`) — they are two halves of one
    rule: one decides whether the attachment is still in the request, the other
    whether the model may ask for it again. Point them at different windows and
    the model is refused a re-view of a picture it can no longer see, which is
@@ -189,13 +202,39 @@ nothing throws, the numbers just quietly stop meaning what they claim.
    turn-killer. `_pairDanglingAskUser` additionally checks adjacency at pairing
    time and, for a history written before this rail existed, strips the call
    rather than appending a misplaced tool message.
+10. **A replayed history is repaired before it is trusted.** Stored rows can be
+    dropped one by one (corrupt JSON, an unknown role — `loadMessages` skips
+    both) and a crash can land between an assistant message and its results.
+    `repairToolCallPairing` stubs every unanswered call with a `[not run]`
+    result at the end of its batch, drops tool messages that answer nothing in
+    their batch, strips empty-id calls and drops an assistant message left
+    empty. It runs in `fromStored` and at the top of `runTurn` (after the
+    ask_user guard, so invariant 8's own repair still decides that case), and
+    exempts exactly one call: a valid `ask_user` at the very end of the
+    history. The repair is deterministic, so the stored rows keep their old
+    shape and every restore derives the same list; `persistedCount` is rebased
+    to the first message that was never persisted.
+11. **Edit outcomes reach the model as a record, once.** Staged
+    `write_knowledge_file` cards do not block the turn, so the model cannot see
+    what the user did with them. At the start of each turn `runTurn` appends one
+    synthetic user message marked `[kb_edit_outcomes]` listing the edits decided
+    since the last report — applied, rejected, or failed and why. It is
+    persisted, so later requests keep the same prefix, and it states facts
+    rather than giving instructions, so it cannot harden into a standing
+    directive (standard 08 §3.6, 11 §21). It is not a real user turn
+    (`_isRealUserTurn` excludes the marker): boundaries, titles and the distill
+    escalation ignore it, and restore does not render it as a chat line. Edits
+    applied with confirmation off are marked reported at once — their tool
+    result already said what happened. Which edits were reported is tracked in
+    memory; a restored session's cards are inert chips, so nothing is left to
+    report after a restart.
 
 ## Accepted limits
 
 - **No mid-loop compaction, structurally.** `_maybeCompact` runs outside the
   tool loop, `_recentBoundary` counts only user messages (so the current turn's
-  tool results are always inside the protected window), and `_maybeCompact`
-  early-returns at `boundary <= 1` anyway. **A single turn can pin the context at
+  tool results are always inside the protected window), and `compactionBoundary`
+  never folds the last two turns anyway. **A single turn can pin the context at
   `window − reserve` until it ends.** The read cap and dropping
   `read_knowledge_file` from the tool list once exhausted are the only brakes.
 - **Compaction can never rescue the system prompt** — it only folds history. The
@@ -229,6 +268,22 @@ nothing throws, the numbers just quietly stop meaning what they claim.
   old `Set` pattern until 2026-08** — `viewedImagePaths` gated re-views without
   anything invalidating it — and exhibited exactly this deadlock before moving
   to the same derivation (`_liveViewedPaths`).
+- **Hard truncation as the compaction fallback.** Until 2026-09 a failed or
+  empty summary replaced everything before the recent window with a one-line
+  "earlier conversation was truncated" note, and flagged the rows compacted.
+  One network blip permanently discarded the early context. A failed summary
+  now changes nothing (standard 10 §3.4): the turn runs uncompacted, layer 1
+  still elides, and the trigger fires again next turn. Pinned by
+  `optimizer_compaction_test.dart`.
+- **History indexes as markers.** `knowledgeStaleAt` stored the history length
+  at each write until 2026-09. Compaction shrinks the history and the pairing
+  repair (invariant 10) inserts stubs, and neither rebased the index — after
+  one compaction it pointed past the end of the history, no re-read of that
+  file ever counted again, and the read-before-write rail refused the file for
+  the rest of the session. The marker is now the message object itself
+  (standard 10 §3.2); a marker no longer in the history was folded away, so
+  every surviving read came after the write. `_maybeCompact` holds its
+  boundary message across the summary `await` for the same reason.
 
 ## Cancellation (what the stop button actually stops)
 
@@ -293,12 +348,16 @@ Pure functions are pinned directly; prefer adding to these over end-to-end runs.
 |---|---|
 | `test/context_budget_test.dart` | tri-state, ratio math, reserve scaling, `budgetChars < window` for every preset |
 | `test/optimizer_context_budget_test.dart` | `shouldCompact`, `occupiedChars`, per-call cap, exhaustion |
+| `test/optimizer_compaction_boundary_test.dart` | fold to the retention target, the two-turn floor, the summary-plus-one skip, no re-compaction the next turn, the `compaction` usage tag |
+| `test/optimizer_compaction_test.dart` | a failed or empty summary leaves the history untouched; the next turn retries |
 | `test/optimizer_context_usage_test.dart` | the readout: role split, trimmed-not-raw history, window tri-state, unmeasured slices |
 | `test/optimizer_context_card_test.dart` | the card's four states (unmeasured / configured / assumed / unlimited) at both panel widths |
 | `test/optimizer_kb_liveness_test.dart` | the three deadlock scenarios (elided / compacted / in-flight) |
+| `test/optimizer_history_repair_test.dart` | invariant 10: stubs, orphan/duplicate drops, empty ids, the trailing ask_user exemption, idempotence, restore |
 | `test/knowledge_base_paging_test.dart` | boundary snapping, determinism, degenerate input |
 | `test/knowledge_base_read_cap_test.dart` | whole-file vs paged, undersized windows |
 | `test/optimizer_image_liveness_test.dart` | image re-view liveness: fresh / elided / compacted; the two windows' different sizes; `_elide` and `_liveViewedPaths` agreeing at every distance |
+| `test/optimizer_image_cap_test.dart` | the newest-three cap across turns; re-view after the cap drops an image; force-view-all keeping the current turn; cap and liveness agreeing at every count |
 | `test/llm_cancellation_test.dart` | `LLMCancelled` classification, and the sub-agent turning it into a cancelled result rather than a failure |
 | `test/openai_chat_payload_test.dart` | reasoning echo-back, inline `<think>` split (sync + cross-chunk), in-body error envelopes |
 

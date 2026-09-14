@@ -2239,6 +2239,7 @@
   "optDeleteSessionConfirm": "確定永久刪除該對話？",
   "optKbEntryTooLarge": "知識庫的 README.md 佔用了該模型上下文視窗的很大一部分。它每次請求都會重送，且摘要無法壓縮它——請精簡它，或改用視窗更大的模型。",
   "optCompactedNotice": "較早的對話已壓縮為摘要，以節省上下文。",
+  "optRoundLimitNotice": "助手在這則訊息上已用完步驟上限，尚未給出最終答覆。傳送一則後續訊息（例如「繼續」）即可讓它接著做。",
   "optKbDistillRequested": "已請求：將本次調優經驗總結進知識庫。",
   "optResultFeedbackAction": "回饋給助手",
   "optResultFeedbackChatLabel": "結果圖回饋",

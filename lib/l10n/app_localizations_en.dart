@@ -4354,6 +4354,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Earlier messages were compacted into a summary to save context.';
 
   @override
+  String get optRoundLimitNotice =>
+      'The assistant hit its step limit for this message before giving a final answer. Send a follow-up such as “continue” to let it carry on.';
+
+  @override
   String get optKbDistillRequested =>
       'Requested: distill this session\'s lessons into the knowledge base.';
 
