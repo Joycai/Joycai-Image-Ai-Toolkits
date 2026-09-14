@@ -333,6 +333,49 @@ Map<String, dynamic>? firstChoice(Map<String, dynamic> chunk) {
   return first is Map ? first.cast<String, dynamic>() : null;
 }
 
+/// The first reasoning field of a `message` / `delta` that carries text, with
+/// the field's name, or null when none does.
+///
+/// ① has no standard spelling (DeepSeek `reasoning_content`, OpenRouter
+/// `reasoning`), so the known candidates are probed in order — and "carries
+/// text" is the test, not "present": `reasoning_content ?? reasoning` picked
+/// a relay's empty `reasoning_content: ""` over a non-empty `reasoning`,
+/// dropping the thought and remembering the wrong key for the echo.
+({String text, String field})? pickReasoningField(
+  Map<String, dynamic> source,
+) {
+  for (final field in const ['reasoning_content', 'reasoning']) {
+    final value = source[field];
+    if (value is String && value.isNotEmpty) return (text: value, field: field);
+  }
+  return null;
+}
+
+/// A ① `usage` block in the shape `LLMService` reads, or null when [raw] is
+/// not one.
+///
+/// DeepSeek reports cache hits as top-level `prompt_cache_hit_tokens` rather
+/// than `prompt_tokens_details.cached_tokens`, the one spelling the usage
+/// recorder reads for ① — so every hit was recorded as full-price input. Its
+/// `prompt_tokens` already includes the hits, so the count is republished
+/// under the OpenAI spelling when the host did not send one; the raw fields
+/// ride along untouched.
+Map<String, dynamic>? normalizeOpenAIUsage(Object? raw) {
+  if (raw is! Map) return null;
+  final usage = raw.cast<String, dynamic>();
+  final hits = usage['prompt_cache_hit_tokens'];
+  final details = usage['prompt_tokens_details'];
+  final hasCached = details is Map && details['cached_tokens'] != null;
+  if (hits is! num || hasCached) return usage;
+  return {
+    ...usage,
+    'prompt_tokens_details': {
+      if (details is Map) ...details.cast<String, dynamic>(),
+      'cached_tokens': hits,
+    },
+  };
+}
+
 /// Result of separating inline `<think>…</think>` chain-of-thought from
 /// model text.
 class InlineThinkResult {
@@ -341,52 +384,66 @@ class InlineThinkResult {
   const InlineThinkResult(this.text, this.reasoning);
 }
 
-/// Separates inline `<think>…</think>` spans from [raw].
+const String _thinkOpenTag = '<think>';
+const String _thinkCloseTag = '</think>';
+
+/// Separates a leading inline `<think>…</think>` span from [raw].
 ///
 /// Some ①-family compat endpoints (MiniMax by default, various relays fronting
 /// DeepSeek-style models) put the chain of thought straight into `content` as
 /// `<think>…</think>\n\n<answer>`. Any consumer that treats `content` as the
 /// answer collects the thinking with it — into the transcript, into history
-/// re-sent every turn, into compaction summaries. A trailing unterminated
-/// `<think>` (truncated response) swallows the rest of the string as
-/// reasoning rather than leaking it as text.
+/// re-sent every turn, into compaction summaries.
+///
+/// **Only a tag at the very start counts** (leading whitespace allowed —
+/// reasoning 03 §6 rule 1). A `<think>` anywhere later is the author's or the
+/// model's own text: this app writes prompts, and a reply that explains the
+/// tag used to have the explanation silently moved into reasoning. Missing a
+/// split leaves a tag in the draft; a wrong split eats part of it, which is
+/// the worse failure. An unterminated leading span (a truncated response)
+/// swallows the rest as reasoning rather than leaking it as text.
 InlineThinkResult stripInlineThink(String raw) {
-  if (!raw.contains('<think>')) return InlineThinkResult(raw, null);
-  final reasoning = StringBuffer();
-  final text = StringBuffer();
-  int cursor = 0;
-  while (true) {
-    final open = raw.indexOf('<think>', cursor);
-    if (open == -1) {
-      text.write(raw.substring(cursor));
-      break;
-    }
-    text.write(raw.substring(cursor, open));
-    final close = raw.indexOf('</think>', open + 7);
-    if (close == -1) {
-      reasoning.write(raw.substring(open + 7));
-      break;
-    }
-    reasoning.write(raw.substring(open + 7, close));
-    cursor = close + 8;
-  }
-  final cleaned = text.toString().trimLeft();
-  final thought = reasoning.toString().trim();
-  return InlineThinkResult(cleaned, thought.isEmpty ? null : thought);
+  final body = raw.trimLeft();
+  if (!body.startsWith(_thinkOpenTag)) return InlineThinkResult(raw, null);
+  final close = body.indexOf(_thinkCloseTag, _thinkOpenTag.length);
+  final thought = (close == -1
+          ? body.substring(_thinkOpenTag.length)
+          : body.substring(_thinkOpenTag.length, close))
+      .trim();
+  final text = close == -1
+      ? ''
+      : body.substring(close + _thinkCloseTag.length).trimLeft();
+  return InlineThinkResult(text, thought.isEmpty ? null : thought);
 }
 
-/// Cross-chunk `<think>` separator for the streaming path.
+/// Where an [InlineThinkStreamFilter] is in the reply.
+enum _ThinkPhase {
+  /// Nothing but whitespace (or a partial opening tag) seen so far.
+  start,
+
+  /// Inside the leading `<think>` span.
+  thinking,
+
+  /// The answer. Nothing is detected from here on.
+  body,
+}
+
+/// Cross-chunk `<think>` separator for the streaming path — the same rule as
+/// [stripInlineThink], as a start / thinking / body state machine.
 ///
 /// Tags arrive split across SSE chunks (`<thi` + `nk>` is normal), so a
-/// per-chunk regex cannot work. The filter holds back the longest trailing
-/// fragment that could still become a tag and classifies everything else as
-/// text or reasoning as soon as its side of the tag boundary is known.
+/// per-chunk regex cannot work. At the start the filter holds back leading
+/// whitespace and any fragment that could still become the opening tag;
+/// inside the span it holds back a fragment that could still become the
+/// closing tag. Once the first non-whitespace answer text has been decided,
+/// everything passes straight through: a tag in the body is text.
 class InlineThinkStreamFilter {
   final StringBuffer _pending = StringBuffer();
-  bool _inThink = false;
+  _ThinkPhase _phase = _ThinkPhase.start;
 
-  static const String _openTag = '<think>';
-  static const String _closeTag = '</think>';
+  /// True right after the closing tag: the blank line models put between
+  /// thinking and answer is dropped, as the synchronous path trims it.
+  bool _trimBodyStart = false;
 
   /// Feeds one delta; returns what can be classified so far.
   ({String text, String reasoning}) feed(String delta) {
@@ -397,31 +454,57 @@ class InlineThinkStreamFilter {
     _pending.clear();
 
     while (buf.isNotEmpty) {
-      final tag = _inThink ? _closeTag : _openTag;
-      final idx = buf.indexOf(tag);
-      if (idx != -1) {
-        (_inThink ? reasoning : text).write(buf.substring(0, idx));
-        buf = buf.substring(idx + tag.length);
-        _inThink = !_inThink;
-        continue;
+      switch (_phase) {
+        case _ThinkPhase.start:
+          final lead = buf.trimLeft();
+          if (lead.startsWith(_thinkOpenTag)) {
+            _phase = _ThinkPhase.thinking;
+            buf = lead.substring(_thinkOpenTag.length);
+          } else if (lead.isEmpty || _thinkOpenTag.startsWith(lead)) {
+            // Whitespace alone, or `<thi…`: undecided until more arrives.
+            _pending.write(buf);
+            buf = '';
+          } else {
+            // Not a thinking reply. The buffer, leading whitespace included,
+            // is answer text.
+            _phase = _ThinkPhase.body;
+          }
+        case _ThinkPhase.thinking:
+          final idx = buf.indexOf(_thinkCloseTag);
+          if (idx != -1) {
+            reasoning.write(buf.substring(0, idx));
+            buf = buf.substring(idx + _thinkCloseTag.length);
+            _phase = _ThinkPhase.body;
+            _trimBodyStart = true;
+          } else {
+            final hold = _partialTagSuffix(buf, _thinkCloseTag);
+            reasoning.write(buf.substring(0, buf.length - hold));
+            _pending.write(buf.substring(buf.length - hold));
+            buf = '';
+          }
+        case _ThinkPhase.body:
+          if (_trimBodyStart) {
+            buf = buf.trimLeft();
+            if (buf.isEmpty) break;
+            _trimBodyStart = false;
+          }
+          text.write(buf);
+          buf = '';
       }
-      // No full tag: hold back a trailing partial-tag fragment, flush the rest.
-      final hold = _partialTagSuffix(buf, tag);
-      final flush = buf.substring(0, buf.length - hold);
-      (_inThink ? reasoning : text).write(flush);
-      _pending.write(buf.substring(buf.length - hold));
-      buf = '';
     }
     return (text: text.toString(), reasoning: reasoning.toString());
   }
 
   /// Flushes whatever is still held back at stream end. An unterminated think
-  /// span counts as reasoning, mirroring [stripInlineThink].
+  /// span counts as reasoning, mirroring [stripInlineThink]; held-back
+  /// whitespace or a lone `<thi` at the start is text.
   ({String text, String reasoning}) flush() {
     final rest = _pending.toString();
     _pending.clear();
     if (rest.isEmpty) return (text: '', reasoning: '');
-    return _inThink ? (text: '', reasoning: rest) : (text: rest, reasoning: '');
+    return _phase == _ThinkPhase.thinking
+        ? (text: '', reasoning: rest)
+        : (text: rest, reasoning: '');
   }
 
   /// Length of the longest suffix of [buf] that is a proper prefix of [tag].
@@ -623,6 +706,13 @@ List<String> imageUrlsInText(String text) {
   return urls.toList();
 }
 
+/// The system line the ① chat wire sends when the conversation has none.
+///
+/// Deliberately neutral and short: its only job is to be *present*. A New API
+/// relay that receives a chat request without a system message injects its
+/// own multi-thousand-token Codex prompt instead (provider layering 01 §9.2).
+const String openaiDefaultSystemPrompt = 'You are a helpful assistant.';
+
 /// OpenAI `POST /chat/completions` — JSON request, JSON or SSE response.
 ///
 /// The base envelope is identical for every model. Gemini-family models
@@ -718,23 +808,29 @@ class OpenAIChatProtocol implements ChatProtocol {
         // ① family chain-of-thought: field-based (DeepSeek reasoning_content,
         // OpenRouter reasoning — no standard spelling exists, so probe the
         // known candidates and remember which one answered)...
-        final rawReasoning =
-            message['reasoning_content'] ?? message['reasoning'];
-        if (rawReasoning is String && rawReasoning.isNotEmpty) {
-          reasoningContent = rawReasoning;
-          reasoningFieldName = message['reasoning_content'] != null
-              ? 'reasoning_content'
-              : 'reasoning';
+        final picked = pickReasoningField(message);
+        if (picked != null) {
+          reasoningContent = picked.text;
+          reasoningFieldName = picked.field;
         }
         // ...or inline <think> spans glued into content (MiniMax default).
         // Inline reasoning is display/accounting-only — it carries no echo
-        // obligation, hence no field name.
+        // obligation, hence no field name. It is never merged into a native
+        // field's text: that text is echoed back under the field's name, and
+        // the inline span would ride along into a key the host reads as its
+        // own (reasoning 03 §6 rule 3). With both present, the native one
+        // is what the response carries.
         final inline = stripInlineThink(text);
         if (inline.reasoning != null) {
           text = inline.text;
-          reasoningContent = reasoningContent == null
-              ? inline.reasoning
-              : '$reasoningContent\n${inline.reasoning}';
+          if (reasoningContent == null) {
+            reasoningContent = inline.reasoning;
+          } else {
+            logger?.call(
+              'Inline <think> reasoning (not echoed): ${inline.reasoning}',
+              level: 'DEBUG',
+            );
+          }
         }
 
         // Native tool/function calls.
@@ -792,10 +888,28 @@ class OpenAIChatProtocol implements ChatProtocol {
       );
 
       final metadata = <String, dynamic>{
-        ...?(data['usage'] as Map?)?.cast<String, dynamic>(),
+        ...?normalizeOpenAIUsage(data['usage']),
       };
       final finishReason = choice?['finish_reason'];
       if (finishReason != null) metadata['finish_reason'] = finishReason;
+
+      // A message with nothing in it — no text, reasoning, tool calls or
+      // images — is not "the model chose to say nothing" (pitfalls 11 §A6).
+      // `length` and `content_filter` are real endings with their own
+      // handling downstream, so they pass through.
+      if (text.isEmpty &&
+          reasoningContent == null &&
+          toolCalls.isEmpty &&
+          images.isEmpty &&
+          finishReason != 'length' &&
+          finishReason != contentFilterFinishReason) {
+        throw LLMApiException(
+          'OpenAI API (${redactUrl(url)}) returned no content — no text, '
+          'reasoning, tool calls or images '
+          '(finish_reason: ${finishReason ?? 'none'}, '
+          'usage: ${data['usage'] ?? 'none'}).',
+        );
+      }
 
       return LLMResponse(
         text: text,
@@ -803,6 +917,8 @@ class OpenAIChatProtocol implements ChatProtocol {
         metadata: metadata,
         reasoningContent: reasoningContent,
         reasoningFieldName: reasoningFieldName,
+        // The replay scope of the field — see the payload builder's echo rule.
+        rawThinkingModelId: reasoningFieldName == null ? null : config.modelId,
         toolCalls: toolCalls,
       );
     } finally {
@@ -891,7 +1007,8 @@ class OpenAIChatProtocol implements ChatProtocol {
       );
       client.close();
       throw LLMApiException(
-        'OpenAI API Stream Request failed: ${response.statusCode} - '
+        'OpenAI API Stream Request failed: ${response.statusCode} '
+        '(${redactUrl(url)}) - '
         '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
         statusCode: response.statusCode,
       );
@@ -931,6 +1048,10 @@ class OpenAIChatProtocol implements ChatProtocol {
     // to no chunk at all and used to end as a successful empty reply — the
     // synchronous path throws "returned no choices" for the same body.
     var sawChunk = false;
+    // Whether any of those chunks carried something: text (base64 included),
+    // reasoning, a tool-call fragment or an image. Separate from [sawChunk]
+    // because a relay can stream well-formed chunks that hold nothing.
+    var sawOutput = false;
 
     try {
       await for (final line
@@ -961,7 +1082,7 @@ class OpenAIChatProtocol implements ChatProtocol {
         // Same: usage is the whole point of the choices-less tail chunk, so it
         // is read before any parsing that is allowed to fail.
         final usage = chunkData['usage'];
-        if (usage is Map) usageMetadata = usage.cast<String, dynamic>();
+        if (usage is Map) usageMetadata = normalizeOpenAIUsage(usage);
 
         final choice = firstChoice(chunkData);
         if (choice == null) continue;
@@ -985,6 +1106,7 @@ class OpenAIChatProtocol implements ChatProtocol {
           final rawToolCalls = delta['tool_calls'];
           streamedToolCalls.feed(rawToolCalls);
           if (rawToolCalls is List && rawToolCalls.isNotEmpty) {
+            sawOutput = true;
             // Keepalive. Fragments buffer silently until the flush after the
             // loop, but the consumer's idle guard resets only on chunks it
             // receives — a model answering with one long tool call and no
@@ -997,11 +1119,13 @@ class OpenAIChatProtocol implements ChatProtocol {
 
           final structured = extractStructuredImages(delta);
           for (final img in dedupe.filter(structured.bytes)) {
+            sawOutput = true;
             yield LLMResponseChunk(imagePart: img);
           }
           for (final img in dedupe.filter(
             await _fetchImageUrls(structured.urls, config, logger),
           )) {
+            sawOutput = true;
             yield LLMResponseChunk(imagePart: img);
           }
         }
@@ -1011,10 +1135,10 @@ class OpenAIChatProtocol implements ChatProtocol {
           // array would otherwise throw into the catch below and be dropped as
           // "parse noise", losing the reply one chunk at a time.
           final text = contentToText(delta?['content']);
-          final rawReasoningContent = delta?['reasoning_content'];
-          final reasoning = rawReasoningContent ?? delta?['reasoning'];
+          final picked = delta == null ? null : pickReasoningField(delta);
 
-          if (reasoning is String && reasoning.isNotEmpty) {
+          if (picked != null) {
+            sawOutput = true;
             // Dedicated channel: consumers that accumulate textPart into a
             // deliverable must never glue the thinking into it. The field
             // *name* rides along — same probe as the sync path — because a
@@ -1022,14 +1146,13 @@ class OpenAIChatProtocol implements ChatProtocol {
             // key it arrived with (reasoning.md §3), and the stream consumer
             // cannot recover the name from the text alone.
             yield LLMResponseChunk(
-              reasoningPart: reasoning,
-              reasoningFieldName: rawReasoningContent != null
-                  ? 'reasoning_content'
-                  : 'reasoning',
+              reasoningPart: picked.text,
+              reasoningFieldName: picked.field,
             );
           }
 
           if (text.isNotEmpty) {
+            sawOutput = true;
             final split = thinkFilter.feed(text);
             if (split.reasoning.isNotEmpty) {
               yield LLMResponseChunk(reasoningPart: split.reasoning);
@@ -1100,6 +1223,47 @@ class OpenAIChatProtocol implements ChatProtocol {
       );
     }
 
+    // Chunks arrived, but nothing in them: no text, no reasoning, no tool
+    // call, no image. A 200 like that used to end as a successful empty
+    // reply (pitfalls 11 §A6). `length` and `content_filter` are exempt —
+    // those are real endings with their own handling downstream (the
+    // truncation warning, [contentBlockedFailure]).
+    if (!sawOutput &&
+        finishReason != 'length' &&
+        finishReason != contentFilterFinishReason) {
+      throw LLMApiException(
+        'OpenAI API stream (${redactUrl(url)}) returned no content — no '
+        'text, reasoning, tool calls or images '
+        '(finish_reason: ${finishReason ?? 'none'}, '
+        'usage: ${usageMetadata ?? 'none'}).',
+      );
+    }
+
+    // A stream that closes cleanly without ever sending a finish_reason was
+    // cut off: every ① host sends one on the last choice chunk. With tool
+    // fragments pending that is a hard failure — [flush] would decode the
+    // cut-off arguments to `{}` with a WARN and the agent loop would execute
+    // the call. Text alone is delivered, marked `length` (the one truncation
+    // signal every caller already honours) and flagged `stream_incomplete`.
+    var streamIncomplete = false;
+    if (finishReason == null) {
+      if (!streamedToolCalls.isEmpty) {
+        throw LLMApiException(
+          'OpenAI API stream (${redactUrl(url)}) closed without a '
+          'finish_reason while tool call arguments were still arriving — '
+          'the stream was truncated, and a call with cut-off arguments must '
+          'not be executed.',
+        );
+      }
+      logger?.call(
+        'The stream closed without a finish_reason — the reply was probably '
+        'cut off in transit. Treating it as truncated.',
+        level: 'WARN',
+      );
+      finishReason = 'length';
+      streamIncomplete = true;
+    }
+
     // After the loop, never inside it: a call is whole only once the last
     // fragment has arrived, and [LLMResponseChunk.toolCallPart] promises
     // consumers they can act on whatever reaches them. Deliberately outside
@@ -1119,11 +1283,19 @@ class OpenAIChatProtocol implements ChatProtocol {
     // Last, so it wins over any metadata attached to an earlier chunk. Without
     // it a streamed request recorded no token usage at all — the sync path's
     // `usage` + `finish_reason` are reported here in the same shape.
-    if (usageMetadata != null) {
-      yield LLMResponseChunk(
-        metadata: {...usageMetadata, 'finish_reason': ?finishReason},
-      );
-    }
+    //
+    // Unconditional: llama.cpp, LM Studio and many relays send no usage
+    // block at all, and gating this chunk on usage meant `length` and
+    // `content_filter` never reached the truncation warning or the
+    // content-block check on exactly those hosts. A finish reason is always
+    // known by now — a stream that sent none was resolved above.
+    yield LLMResponseChunk(
+      metadata: {
+        ...?usageMetadata,
+        'finish_reason': finishReason,
+        if (streamIncomplete) 'stream_incomplete': true,
+      },
+    );
 
     yield LLMResponseChunk(isDone: true);
   }
@@ -1260,7 +1432,15 @@ class OpenAIChatProtocol implements ChatProtocol {
           // replayed. Echo under the exact field name it arrived with —
           // vendors that don't require it simply ignore the field. Inline
           // (<think>) reasoning has no field name and no obligation.
-          if (msg.reasoningContent != null && msg.reasoningFieldName != null)
+          //
+          // Model-scoped (reasoning 03 §5 rule 2): only to the model that
+          // produced it. Another model's official host 400s the unknown
+          // field and a relay bills it. A turn with no recorded producer —
+          // persisted before one was recorded — is still echoed.
+          if (msg.reasoningContent != null &&
+              msg.reasoningFieldName != null &&
+              (msg.rawThinkingModelId == null ||
+                  msg.rawThinkingModelId == target.config.modelId))
             msg.reasoningFieldName!: msg.reasoningContent,
           "tool_calls": msg.toolCalls
               .map(
@@ -1314,6 +1494,22 @@ class OpenAIChatProtocol implements ChatProtocol {
 
       return {"role": msg.role.name, "content": content};
     }).toList();
+
+    // Never without a system message (provider layering 01 §9.2, pitfalls 11
+    // §62). A New API relay that receives a chat request with none injects
+    // its own Codex system prompt — 4–9 K input tokens on every request, and
+    // nothing anywhere says so but the bill. One short neutral line is the
+    // whole cure. Vendor-blind on purpose: the relays that do it are not
+    // identifiable from the channel, and a system line costs the rest
+    // nothing. An image generator on the chat route is exempt — the relay is
+    // translating that call into an images request.
+    if (!history.any((m) => m.role == LLMRole.system) &&
+        !target.model.capabilities.isImageGenerator) {
+      messages.insert(0, {
+        "role": "system",
+        "content": openaiDefaultSystemPrompt,
+      });
+    }
 
     final effort = target.config.effectiveReasoningEffort;
     final payload = <String, dynamic>{

@@ -314,7 +314,27 @@ review 时用下面的模式全仓库 grep 一遍即可：
   `geminiChunksFromSseLine` 的 dartdoc）。
 - **`redactUrl(url)`**（经 `protocol.dart` 转出口）—— 任何写进 debug 日志的
   请求 URL 必须先过它：Google 系 vendor 的 URL 带 `?key=`，靠日志落盘层的
-  正则兜底等于把一个机制的 bug 变成凭证泄漏。
+  正则兜底等于把一个机制的 bug 变成凭证泄漏。抛出的错误消息同样要带上脱敏后的
+  请求 URL（errors 06 §2）：`decodeJsonBody` 从 `http.Response.request` 取，
+  自己拼错误的流式分支用 `redactUrl(url)`。
+- **内容拦截只在一处判定（2026-09-14）。** 协议只**发布**
+  `finish_reason: content_filter`（① 原样；④ `refusal`；③ 拦截类
+  `finishReason` 与 `promptFeedback.blockReason`，**有无已产出文本都一样**）；
+  `LLMService` 在 `request` 与 `requestStream` 流末各做一次
+  `contentBlockedFailure`，**先记用量再抛**不可重试的
+  `LLMApiException(isContentBlocked: true)`。协议里不许再自己抛拦截错误——那会
+  跳过计费，也会让"半截文本 + 拦截"重新变回成功（pitfalls 11 §A7）。
+- **流的完整性由流末检查兜底，不靠调用方猜（2026-09-14）。** ① 流：结尾的
+  metadata chunk **无条件**发出（很多中转不发 usage，只按 usage 发会丢
+  `finish_reason`）；流干净关闭却没有 `finish_reason` 时，有待拼的工具调用 → 抛
+  截断错误（半截参数绝不交给 agent 循环执行），纯文本 → 标 `length` +
+  `stream_incomplete`；块都到了却什么内容都没有（无文本、推理、调用、图片）→ 抛，
+  `length` / `content_filter` 例外。③ 流补上与 ①④C2 同款的"一个 chunk 都没有"
+  守卫；④ 的 `AnthropicStreamAssembler.finish()` 在 `tool_use` 块未收到
+  `content_block_stop` 时抛。③ 自造的调用 id 是 `gtc_<nonce>_<n>`
+  （`GeminiToolCallIds`，一条流共用一个实例）——按候选按 chunk 从 0 计的旧 id
+  会在流内与跨轮撞车。① 的内联 `<think>` 只认回复**开头**那一个（reasoning 03
+  §6），正文里出现的标签是作者的文字。
 - **`imageMimeFromBytes` / `imageExtensionFromBytes` / `resolveImageMime`**
   （`core/image_magic.dart`）—— 图片的类型**读字节，不信声明**。中转的
   `inlineData.mimeType` 写 `image/png` 给过 JPEG 字节，`b64_json` 根本没有
@@ -406,6 +426,13 @@ thinking / server tool 一起加。
    注意这与 ① 的机制不同：① 回传的是一个**字段**（名字记在
    `reasoningFieldName`），④ 回传的是一整个**块**，所以 ④ 路径上
    `reasoningFieldName` 永远是 null，① 的 payload builder 才不会替它编一个字段名。
+   **三族的回传载体都按产出模型限定**（2026-09-14）：`rawThinkingModelId` 记录
+   产出者——④ 的块、①/百炼原生的推理字段、③ 调用上的 `thoughtSignature`
+   一视同仁（同步路径由协议记，流式路径由 `LLMService._streamOnce` 记），
+   payload builder 只回传给同一个模型：换了模型，① 官方对未知字段 400，中转照
+   input 计费。④ 的原始块要求匹配；其余载体在 `rawThinkingModelId` 为 null 时
+   照旧回传，这是记录产出者之前持久化的旧会话能继续用的原因。内联 `<think>`
+   切出来的推理从不并入这个字段（reasoning 03 §6 第三条）。
 6. **server tool 不是 tool call。** `web_search_20250305` 由服务端自己执行、
    自己回答，响应里的 `server_tool_use` + `web_search_tool_result` 是**已完成的
    事实**。把它当 `LLMToolCall` 交给 agent 循环，等于让本地去跑一个没人要求的

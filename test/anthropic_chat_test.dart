@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_chat_protocol.dart';
@@ -136,6 +137,52 @@ void main() {
           {'type': 'tool_result', 'tool_use_id': 'toolu_2', 'content': 'rb'},
         ]
       });
+    });
+
+    test('author text merged into a tool_result message is labelled', () {
+      // After a stop mid-batch the user's "continue" lands in the same user
+      // message as the results, where the model reads it as tool output — and
+      // it is replayed every later turn as a standing instruction
+      // (protocol 02 §2.1 rule 4, pitfalls 11 §21).
+      final p = uncachedPayload([
+        LLMMessage(role: LLMRole.user, content: 'do it'),
+        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
+          LLMToolCall(id: 'toolu_1', name: 'a', arguments: const {}),
+        ]),
+        LLMMessage(role: LLMRole.tool, content: 'ra', toolCallId: 'toolu_1'),
+        LLMMessage(role: LLMRole.user, content: 'continue'),
+      ]);
+      final blocks = (p['messages'] as List).last['content'] as List;
+      expect(blocks.first['type'], 'tool_result');
+      expect(blocks.last, {
+        'type': 'text',
+        'text': '$anthropicAuthorTextLabel\ncontinue',
+      });
+    });
+
+    test('a message that already names itself is not labelled again', () {
+      // The assistant's own `[view_image result]` message is self-describing.
+      expect(PromptOptimizerAgent.viewResultMarker, startsWith('['));
+      final note =
+          '${PromptOptimizerAgent.viewResultMarker} Reference image #1 is attached.';
+      final p = uncachedPayload([
+        LLMMessage(role: LLMRole.user, content: 'look'),
+        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
+          LLMToolCall(id: 'toolu_1', name: 'view_image', arguments: const {}),
+        ]),
+        LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: 'toolu_1'),
+        LLMMessage(role: LLMRole.user, content: note),
+      ]);
+      final blocks = (p['messages'] as List).last['content'] as List;
+      expect(blocks.last, {'type': 'text', 'text': note});
+    });
+
+    test('a user turn that follows no tool result is never labelled', () {
+      final p = uncachedPayload([
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ]);
+      final blocks = (p['messages'] as List).single['content'] as List;
+      expect(blocks.single, {'type': 'text', 'text': 'hi'});
     });
 
     test('a tool that returned nothing still sends a non-empty block', () {
@@ -641,7 +688,9 @@ void main() {
           'max_uses': anthropicWebSearchMaxUses,
         }
       ]);
-      expect(p['tool_choice'], {'type': 'auto'});
+      // No tool_choice with server tools alone: `auto` would be the caller
+      // voicing an opinion on the host's own decision (tools 05 §2).
+      expect(p.containsKey('tool_choice'), isFalse);
     });
 
     test('it rides alongside the caller\'s own tools', () {
@@ -1132,6 +1181,24 @@ void main() {
       });
     });
 
+    test('a reconstructed legacy block from another model is dropped too', () {
+      final p = payload([
+        LLMMessage(role: LLMRole.user, content: 'go'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          reasoningContent: 'old turn',
+          reasoningSignature: 'sig-old',
+          rawThinkingModelId: 'claude-haiku-4-5',
+          toolCalls: [LLMToolCall(id: 't1', name: 'f', arguments: {})],
+        ),
+      ]);
+      final assistant = (p['messages'] as List)[1] as Map;
+      final types =
+          [for (final b in assistant['content'] as List) (b as Map)['type']];
+      expect(types, isNot(contains('thinking')));
+    });
+
     test('raw blocks survive an LLMMessage JSON round-trip', () {
       final msg = LLMMessage(
         role: LLMRole.assistant,
@@ -1189,15 +1256,34 @@ void main() {
           {'path': '07_footwear/07a1.md', 'page': 2});
     });
 
-    test('nothing escapes before content_block_stop', () {
+    test('nothing escapes before content_block_stop — and a cut there fails',
+        () {
       // Half the deltas seen, no stop: the call is still under construction
-      // and must not reach a consumer that is promised whole values.
-      final chunks = run([
-        start(0, {'type': 'tool_use', 'id': 'toolu_1', 'name': 'x'}),
-        delta(0, {'type': 'input_json_delta', 'partial_json': '{"a": 1'}),
-      ]);
+      // and must not reach a consumer that is promised whole values. Nor may
+      // the stream end quietly: the call used to sit in the pending map
+      // forever, and the loop read the turn as "answered without a tool".
+      final assembler = AnthropicStreamAssembler();
+      final chunks = [
+        ...assembler.accept(
+            start(0, {'type': 'tool_use', 'id': 'toolu_1', 'name': 'x'})),
+        ...assembler.accept(
+            delta(0, {'type': 'input_json_delta', 'partial_json': '{"a": 1'})),
+      ];
 
       expect(chunks.map((c) => c.toolCallPart).nonNulls, isEmpty);
+      expect(
+        assembler.finish,
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.message, 'message', contains('x'))),
+      );
+    });
+
+    test('an unclosed text block at the end is not a tool failure', () {
+      final chunks = run([
+        start(0, {'type': 'text'}),
+        delta(0, {'type': 'text_delta', 'text': 'partial'}),
+      ]);
+      expect(chunks.map((c) => c.textPart).nonNulls.join(), 'partial');
     });
 
     test('a tool taking no arguments sends no deltas and still arrives', () {

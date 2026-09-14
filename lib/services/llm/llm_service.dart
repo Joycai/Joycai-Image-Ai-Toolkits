@@ -166,6 +166,11 @@ class LLMService {
           throw const LLMCancelled();
         }
 
+        // Also after [_recordUsage]: a content-filter stop voids the reply
+        // even when text had already arrived (see [contentBlockedFailure]).
+        final blocked = contentBlockedFailure(response.metadata);
+        if (blocked != null) throw blocked;
+
         parts.add(response);
 
         // A turn the host stopped halfway is asked to go on — up to the cap.
@@ -225,6 +230,7 @@ class LLMService {
   }) async {
     String accumulatedText = "";
     String accumulatedReasoning = "";
+    String fieldReasoning = "";
     String? reasoningFieldName;
     List<Uint8List> accumulatedImages = [];
     List<LLMToolCall> accumulatedToolCalls = [];
@@ -260,6 +266,13 @@ class LLMService {
         // into the deliverable — that must not contain the chain of
         // thought.
         accumulatedReasoning += chunk.reasoningPart!;
+        // The part that arrived under a wire field is kept apart: it is the
+        // only reasoning with an echo obligation, and inline `<think>` text
+        // folded into it would be sent back under that field's name
+        // (reasoning 03 §6 rule 3).
+        if (chunk.reasoningFieldName != null) {
+          fieldReasoning += chunk.reasoningPart!;
+        }
         log('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG');
       }
       // The ①/C2 echo-back key, carried per chunk — losing it here is
@@ -317,18 +330,28 @@ class LLMService {
       generatedImages: accumulatedImages,
       metadata: finalMetadata ?? {},
       toolCalls: accumulatedToolCalls,
-      reasoningContent: accumulatedReasoning.isEmpty
-          ? null
-          : accumulatedReasoning,
-      reasoningFieldName: accumulatedReasoning.isEmpty
-          ? null
-          : reasoningFieldName,
+      // With a native reasoning field present, the response carries that
+      // field's text alone — it is what the next request echoes under
+      // [reasoningFieldName]. Inline `<think>` reasoning is then console-only.
+      reasoningContent: fieldReasoning.isNotEmpty
+          ? fieldReasoning
+          : (accumulatedReasoning.isEmpty ? null : accumulatedReasoning),
+      reasoningFieldName: fieldReasoning.isEmpty ? null : reasoningFieldName,
       reasoningSignature: reasoningSignature,
       rawThinkingBlocks: rawThinkingBlocks,
       rawContentBlocks: rawContentBlocks,
-      rawThinkingModelId: rawThinkingBlocks == null && rawContentBlocks == null
-          ? null
-          : config.modelId,
+      // The producer of every replay carrier this turn captured: ④'s blocks,
+      // a ①/DashScope reasoning field, ③'s thought signatures. The payload
+      // builders echo them only to the same model (reasoning 03 §5 rule 2) —
+      // a DeepSeek `reasoning_content` sent on to official OpenAI is a 400,
+      // to a relay a bill.
+      rawThinkingModelId:
+          rawThinkingBlocks != null ||
+              rawContentBlocks != null ||
+              fieldReasoning.isNotEmpty ||
+              accumulatedToolCalls.any((c) => c.thoughtSignature != null)
+          ? config.modelId
+          : null,
     );
 
     return (response: response, cancelled: cancelledMidStream);
@@ -627,6 +650,11 @@ class LLMService {
             imageCount: imageCount,
           );
         }
+
+        // After usage, same as request(): the chunks already delivered were
+        // blocked output, and the consumer must see a failure, not a success.
+        final blocked = contentBlockedFailure(finalMetadata);
+        if (blocked != null) throw blocked;
 
         return; // Success, exit retry loop
       } catch (e) {

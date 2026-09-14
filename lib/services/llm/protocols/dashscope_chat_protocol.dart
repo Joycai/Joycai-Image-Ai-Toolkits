@@ -150,6 +150,8 @@ class DashScopeChatProtocol implements ChatProtocol {
         // face — the native surface uses the same `reasoning_content`
         // spelling and the same replay obligation for tool-calling turns.
         reasoningFieldName: reasoning == null ? null : 'reasoning_content',
+        // The replay scope — see the payload builder's echo rule.
+        rawThinkingModelId: reasoning == null ? null : config.modelId,
         toolCalls: toolCalls,
       );
     } finally {
@@ -496,7 +498,12 @@ Map<String, dynamic> buildDashScopeChatPayload(
   required bool isStreaming,
 }) {
   final messages = [
-    for (final msg in history) _dashscopeMessage(msg, multimodal: multimodal),
+    for (final msg in history)
+      _dashscopeMessage(
+        msg,
+        multimodal: multimodal,
+        modelId: target.config.modelId,
+      ),
   ];
 
   final parameters = <String, dynamic>{
@@ -567,9 +574,13 @@ Object _dashscopeContent(String text, {required bool multimodal}) => multimodal
       ]
     : text;
 
+/// [modelId] is the model this request goes to. A tool-calling turn's
+/// reasoning is echoed only to the model that produced it — or when no
+/// producer was recorded (histories persisted before it was).
 Map<String, dynamic> _dashscopeMessage(
   LLMMessage msg, {
   required bool multimodal,
+  String? modelId,
 }) {
   // Tool result. `tool_call_id` is the current pairing key and `name` the
   // one older Qwen builds read; both go out because they cost nothing and a
@@ -589,7 +600,11 @@ Map<String, dynamic> _dashscopeMessage(
       // Empty string rather than null: the native surface validates the
       // field's type where the compatible face tolerates a null.
       'content': _dashscopeContent(msg.content, multimodal: multimodal),
-      if (msg.reasoningContent != null && msg.reasoningFieldName != null)
+      if (msg.reasoningContent != null &&
+          msg.reasoningFieldName != null &&
+          (msg.rawThinkingModelId == null ||
+              modelId == null ||
+              msg.rawThinkingModelId == modelId))
         msg.reasoningFieldName!: msg.reasoningContent,
       'tool_calls': [
         for (final tc in msg.toolCalls)

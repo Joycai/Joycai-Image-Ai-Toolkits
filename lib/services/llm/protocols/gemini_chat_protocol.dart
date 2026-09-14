@@ -38,6 +38,7 @@ class GeminiChatProtocol implements ChatProtocol {
       config.endpoint,
       tools: tools,
       emitsImages: target.model.capabilities.isImageGenerator,
+      modelId: config.modelId,
     );
     logger?.call(
       'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',
@@ -82,7 +83,12 @@ class GeminiChatProtocol implements ChatProtocol {
       // carrying nothing but usageMetadata is perfectly normal, so
       // parseGoogleChunks must stay tolerant of it.
       final candidates = data['candidates'];
-      if (candidates is! List || candidates.isEmpty) {
+      // A prompt-level block also has no candidates, but it is not a malformed
+      // body: parseGoogleChunks publishes it as `content_filter` and
+      // LLMService fails the request after recording usage.
+      final feedback = data['promptFeedback'];
+      final promptBlocked = feedback is Map && feedback['blockReason'] != null;
+      if (!promptBlocked && (candidates is! List || candidates.isEmpty)) {
         final body = response.body;
         throw Exception(
           'Google GenAI returned no candidates: '
@@ -116,6 +122,11 @@ class GeminiChatProtocol implements ChatProtocol {
         // ③'s thought summaries, kept off the deliverable. No field name: ③'s
         // replay obligation is the thoughtSignature on the call, not this.
         reasoningContent: reasoning.isEmpty ? null : reasoning,
+        // The producer of the calls' thought signatures, which are replayed
+        // only to the same model (prepareGooglePayload).
+        rawThinkingModelId: toolCalls.any((c) => c.thoughtSignature != null)
+            ? config.modelId
+            : null,
         toolCalls: toolCalls,
       );
     } finally {
@@ -158,6 +169,7 @@ class GeminiChatProtocol implements ChatProtocol {
       config.endpoint,
       tools: tools,
       emitsImages: target.model.capabilities.isImageGenerator,
+      modelId: config.modelId,
     );
     logger?.call(
       'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',
@@ -205,7 +217,8 @@ class GeminiChatProtocol implements ChatProtocol {
       // The shared decoder owns the message shape (provider error text when
       // the body is JSON, excerpt otherwise) and always throws on non-2xx.
       decodeJsonBody(
-        http.Response(body, response.statusCode),
+        // The request rides along so the message names the URL it failed on.
+        http.Response(body, response.statusCode, request: response.request),
         apiName: 'Google GenAI stream',
       );
       throw LLMApiException(
@@ -218,6 +231,13 @@ class GeminiChatProtocol implements ChatProtocol {
       'Stream connection established, waiting for chunks...',
       level: 'DEBUG',
     );
+
+    // Whether a single protocol-shaped chunk arrived — see the guard after
+    // the loop.
+    var sawChunk = false;
+    // One id generator for the whole stream: ③ sends each functionCall whole
+    // in its own chunk, and ids restarted per chunk used to collide.
+    final callIds = GeminiToolCallIds();
 
     try {
       if (debugFile != null) {
@@ -236,15 +256,33 @@ class GeminiChatProtocol implements ChatProtocol {
           await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
 
-        yield* Stream.fromIterable(
-          geminiChunksFromSseLine(line, logger: logger),
-        );
+        for (final chunk in geminiChunksFromSseLine(
+          line,
+          logger: logger,
+          callIds: callIds,
+        )) {
+          sawChunk = true;
+          yield chunk;
+        }
       }
     } finally {
       client.close();
       // In the finally so a stream that failed mid-flight still records how
       // long it ran before it did.
       await LLMDebugLogger.finish(debugFile);
+    }
+
+    // The guard ① (`sawChunk`), ④ (`sawMessage`) and DashScope (`sawFrame`)
+    // already had: a 200 whose body is an HTML page, or nothing but
+    // keep-alives, decodes to no chunk and used to end as a successful empty
+    // reply (pitfalls 11 §A6).
+    if (!sawChunk) {
+      throw LLMApiException(
+        'Google GenAI stream (${redactUrl(url)}) ended without a single '
+        'chunk — the base URL may point at something that is not this API, '
+        'or the relay answered with an empty stream.',
+        isNonJsonBody: true,
+      );
     }
 
     yield LLMResponseChunk(isDone: true);
@@ -265,10 +303,13 @@ class GeminiChatProtocol implements ChatProtocol {
 ///
 /// An in-chunk error envelope still throws: that is the request failing, not
 /// the line being noise, so it is checked *after* the tolerant decode.
+///
+/// [callIds] is the stream's shared id generator — see [GeminiToolCallIds].
 @visibleForTesting
 Iterable<LLMResponseChunk> geminiChunksFromSseLine(
   String line, {
   LLMLogger? logger,
+  GeminiToolCallIds? callIds,
 }) {
   if (line.startsWith('event:')) return const [];
   final payload = sseDataPayload(line);
@@ -290,7 +331,7 @@ Iterable<LLMResponseChunk> geminiChunksFromSseLine(
     throw LLMApiException('Google GenAI stream error: $msg', isEnvelope: true);
   }
 
-  return parseGoogleChunks(chunkData, logger: logger);
+  return parseGoogleChunks(chunkData, logger: logger, callIds: callIds);
 }
 
 /// Gemini `GET /models` discovery listing.
