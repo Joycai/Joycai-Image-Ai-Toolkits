@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_chat_protocol.dart';
@@ -136,6 +137,52 @@ void main() {
           {'type': 'tool_result', 'tool_use_id': 'toolu_2', 'content': 'rb'},
         ]
       });
+    });
+
+    test('author text merged into a tool_result message is labelled', () {
+      // After a stop mid-batch the user's "continue" lands in the same user
+      // message as the results, where the model reads it as tool output — and
+      // it is replayed every later turn as a standing instruction
+      // (protocol 02 §2.1 rule 4, pitfalls 11 §21).
+      final p = uncachedPayload([
+        LLMMessage(role: LLMRole.user, content: 'do it'),
+        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
+          LLMToolCall(id: 'toolu_1', name: 'a', arguments: const {}),
+        ]),
+        LLMMessage(role: LLMRole.tool, content: 'ra', toolCallId: 'toolu_1'),
+        LLMMessage(role: LLMRole.user, content: 'continue'),
+      ]);
+      final blocks = (p['messages'] as List).last['content'] as List;
+      expect(blocks.first['type'], 'tool_result');
+      expect(blocks.last, {
+        'type': 'text',
+        'text': '$anthropicAuthorTextLabel\ncontinue',
+      });
+    });
+
+    test('a message that already names itself is not labelled again', () {
+      // The assistant's own `[view_image result]` message is self-describing.
+      expect(PromptOptimizerAgent.viewResultMarker, startsWith('['));
+      final note =
+          '${PromptOptimizerAgent.viewResultMarker} Reference image #1 is attached.';
+      final p = uncachedPayload([
+        LLMMessage(role: LLMRole.user, content: 'look'),
+        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
+          LLMToolCall(id: 'toolu_1', name: 'view_image', arguments: const {}),
+        ]),
+        LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: 'toolu_1'),
+        LLMMessage(role: LLMRole.user, content: note),
+      ]);
+      final blocks = (p['messages'] as List).last['content'] as List;
+      expect(blocks.last, {'type': 'text', 'text': note});
+    });
+
+    test('a user turn that follows no tool result is never labelled', () {
+      final p = uncachedPayload([
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ]);
+      final blocks = (p['messages'] as List).single['content'] as List;
+      expect(blocks.single, {'type': 'text', 'text': 'hi'});
     });
 
     test('a tool that returned nothing still sends a non-empty block', () {
