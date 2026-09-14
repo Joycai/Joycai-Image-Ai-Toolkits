@@ -1166,6 +1166,8 @@
   "probeAuthFailedNext": "檢查是否複製完整、是否過期。",
   "probeNotAnApiNext": "回傳了 HTML 頁面。多半填了主控台網址，API 端點通常以 /v1 或 /v1beta 結尾。",
   "probeUnreachableNext": "DNS 解析失敗或逾時。檢查網址、代理設定與網路。",
+  "probeUpstreamError": "端點有回應，但暫時拒絕請求",
+  "probeUpstreamErrorNext": "被限流（429）或伺服器出錯（5xx）。網址與金鑰看起來沒問題，稍後再試。",
   "probeNotSupportedNext": "該協定沒有模型清單介面，只能提交任務後才知道是否可用。",
   "previewEmptyKeyNote": "暫未填寫金鑰，之後可在編輯渠道裡補上。",
   "presetShortHint": "一鍵填入端點與協定",

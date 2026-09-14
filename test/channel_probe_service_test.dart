@@ -17,6 +17,7 @@ class _FakeDispatcher extends LLMDispatcher {
   int discoverCalls = 0;
   int generateCalls = 0;
   String? generateModelId;
+  Map<String, dynamic>? generateOptions;
 
   @override
   Future<List<DiscoveredModel>> discoverModels(LLMModelConfig config) {
@@ -34,6 +35,7 @@ class _FakeDispatcher extends LLMDispatcher {
   }) {
     generateCalls++;
     generateModelId = config.modelId;
+    generateOptions = options;
     return onGenerate!();
   }
 }
@@ -137,6 +139,50 @@ void main() {
     final r = await probe.probe(config());
     expect(r.status, ChannelProbeStatus.unreachable);
     expect(r.detail, contains('refused'));
+  });
+
+  test('the completion probe caps output at one token (B13)', () async {
+    // A relay that routes the impossible model name to a default model
+    // would otherwise bill a full generation for a connection test.
+    final fake = _FakeDispatcher(
+      onDiscover: () async => throw LLMApiException('gone', statusCode: 404),
+      onGenerate: () async => LLMResponse(text: 'h'),
+    );
+    await ChannelProbeService(dispatcher: fake).probe(config());
+    expect(fake.generateOptions?['maxTokens'], 1);
+  });
+
+  test('429 / 5xx is a busy upstream, not an unreachable host (B13)',
+      () async {
+    for (final code in [429, 500, 502, 503]) {
+      final onModels = ChannelProbeService(
+          dispatcher: _FakeDispatcher(
+              onDiscover: () async =>
+                  throw LLMApiException('busy $code', statusCode: code)));
+      final r = await onModels.probe(config());
+      expect(r.status, ChannelProbeStatus.upstreamError, reason: '$code');
+      expect(r.detail, contains('busy'));
+
+      final onCompletion = ChannelProbeService(
+          dispatcher: _FakeDispatcher(
+        onDiscover: () async => throw LLMApiException('gone', statusCode: 404),
+        onGenerate: () async =>
+            throw LLMApiException('busy $code', statusCode: code),
+      ));
+      expect((await onCompletion.probe(config())).status,
+          ChannelProbeStatus.upstreamError,
+          reason: 'completion $code');
+    }
+    // 501 still means "no such path" and falls back to the completion probe.
+    final notImplemented = _FakeDispatcher(
+      onDiscover: () async => throw LLMApiException('nope', statusCode: 501),
+      onGenerate: () async =>
+          throw LLMApiException('unknown model', statusCode: 400),
+    );
+    expect(
+        (await ChannelProbeService(dispatcher: notImplemented).probe(config()))
+            .status,
+        ChannelProbeStatus.connectedNoModels);
   });
 
   test('midjourney channels are not probed at all', () async {
