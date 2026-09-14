@@ -21,8 +21,13 @@ Two layers and one gate. All three measure the same way, with
 | **Gate — read cap** | Before every `read_knowledge_file` call | n/a — it bounds what enters | `_readCapNow` → `ContextBudget.readCapChars` |
 
 Layer 1 protects the last `_keepRecentTurns` **user** turns and stubs out bulky
-knowledge reads before them. Layer 2 folds everything before that boundary into
-a summary. The gate is what keeps a single turn from overflowing on its own,
+knowledge reads before them. Layer 2 folds the turns before that boundary into
+a summary — and, when size tripped the trigger, further: toward a retention
+target below the trigger (0.45/0.7 of the budget), never keeping fewer than
+two turns, and not at all when the head is just an earlier summary plus one
+turn (`compactionBoundary`, standard 10 §3.1). The gap between trigger and
+target is what stops a long turn from re-summarizing — and invalidating the
+prompt cache — on every turn that follows it. The gate is what keeps a single turn from overflowing on its own,
 because neither layer can help mid-loop (see *Accepted limits*).
 
 **Layer 1 runs two windows, not one.** Image attachments leave after
@@ -206,8 +211,8 @@ nothing throws, the numbers just quietly stop meaning what they claim.
 
 - **No mid-loop compaction, structurally.** `_maybeCompact` runs outside the
   tool loop, `_recentBoundary` counts only user messages (so the current turn's
-  tool results are always inside the protected window), and `_maybeCompact`
-  early-returns at `boundary <= 1` anyway. **A single turn can pin the context at
+  tool results are always inside the protected window), and `compactionBoundary`
+  never folds the last two turns anyway. **A single turn can pin the context at
   `window − reserve` until it ends.** The read cap and dropping
   `read_knowledge_file` from the tool list once exhausted are the only brakes.
 - **Compaction can never rescue the system prompt** — it only folds history. The
@@ -321,6 +326,8 @@ Pure functions are pinned directly; prefer adding to these over end-to-end runs.
 |---|---|
 | `test/context_budget_test.dart` | tri-state, ratio math, reserve scaling, `budgetChars < window` for every preset |
 | `test/optimizer_context_budget_test.dart` | `shouldCompact`, `occupiedChars`, per-call cap, exhaustion |
+| `test/optimizer_compaction_boundary_test.dart` | fold to the retention target, the two-turn floor, the summary-plus-one skip, no re-compaction the next turn, the `compaction` usage tag |
+| `test/optimizer_compaction_test.dart` | a failed or empty summary leaves the history untouched; the next turn retries |
 | `test/optimizer_context_usage_test.dart` | the readout: role split, trimmed-not-raw history, window tri-state, unmeasured slices |
 | `test/optimizer_context_card_test.dart` | the card's four states (unmeasured / configured / assumed / unlimited) at both panel widths |
 | `test/optimizer_kb_liveness_test.dart` | the three deadlock scenarios (elided / compacted / in-flight) |

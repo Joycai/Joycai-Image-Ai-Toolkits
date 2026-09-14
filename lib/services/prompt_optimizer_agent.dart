@@ -1149,6 +1149,76 @@ class PromptOptimizerAgent {
   }) =>
       occupied >= budgetChars || messageCount > _compactMaxMessages;
 
+  /// Retention target as a share of the trigger budget: standard 10 §3.1's
+  /// RETAIN_TARGET / COMPACT_TRIGGER (0.45 / 0.7). The gap between the two is
+  /// what keeps the turn after a compaction from compacting again.
+  static const double _retainTargetShare = 0.45 / 0.7;
+
+  /// Turns kept verbatim however far over budget the history is (10 §3.1).
+  static const int _minKeepTurns = 2;
+
+  /// Worst-case size charged for the summary a fold will produce — 10 §3.1's
+  /// 1000-token summary budget, in the character domain.
+  static final int _summaryAllowanceChars = (1000 * ContextBudget.charsPerToken).round();
+
+  /// Where to fold: the history before the returned index becomes the
+  /// summary. Null means do not compact this turn.
+  ///
+  /// When only the message count tripped the trigger ([sizeTriggered] false),
+  /// the fold is to the recent window, exactly as before — occupancy is not
+  /// the problem, so there is no target to reach. When size tripped it, the
+  /// fold keeps the most recent turns whose projected occupancy — the tail as
+  /// [_trimForSend] will send it, plus [_summaryAllowanceChars] — fits under
+  /// [_retainTargetShare] of [budgetChars]: never more than [_keepRecentTurns],
+  /// never fewer than [_minKeepTurns], and down to that floor anyway when
+  /// nothing fits (freeing most of the room beats freeing none).
+  ///
+  /// Skipped when the head would be just an existing summary plus at most one
+  /// turn. Re-summarizing a summary to reclaim a single turn is the
+  /// compact-every-turn loop, and each pass invalidates the prompt-cache prefix.
+  @visibleForTesting
+  static int? compactionBoundary(
+    List<LLMMessage> history, {
+    required String systemPrompt,
+    required int budgetChars,
+    required bool sizeTriggered,
+  }) {
+    final starts = [
+      for (int i = 0; i < history.length; i++)
+        if (_isRealUserTurn(history[i])) i,
+    ];
+
+    final int keep;
+    if (!sizeTriggered) {
+      if (starts.length <= _keepRecentTurns) return null;
+      keep = _keepRecentTurns;
+    } else {
+      if (starts.length <= _minKeepTurns) return null;
+      final maxKeep =
+          starts.length - 1 < _keepRecentTurns ? starts.length - 1 : _keepRecentTurns;
+      final target = (budgetChars * _retainTargetShare).floor();
+      var fits = _minKeepTurns;
+      for (int k = maxKeep; k >= _minKeepTurns; k--) {
+        final tail = history.sublist(starts[starts.length - k]);
+        final projected =
+            occupiedChars(systemPrompt, _trimForSend(tail)) + _summaryAllowanceChars;
+        if (projected <= target) {
+          fits = k;
+          break;
+        }
+      }
+      keep = fits;
+    }
+
+    final boundary = starts[starts.length - keep];
+    if (boundary <= 1) return null;
+    final foldedTurns = starts.length - keep;
+    final headIsSummary = history.first.role == LLMRole.user &&
+        history.first.content.startsWith(summaryMarker);
+    if (headIsSummary && foldedTurns <= 1) return null;
+    return boundary;
+  }
+
   /// Replaces every model request the agent makes — the turn loop's and
   /// compaction's — so the loop's invariants can be pinned without a network.
   /// Null in production.
@@ -2534,16 +2604,22 @@ class PromptOptimizerAgent {
     )) {
       return;
     }
-    final boundary = _recentBoundary(session.history);
-    if (boundary <= 1) {
-      // Nothing meaningful to fold. Worth saying out loud when it is the size
+    final boundary = compactionBoundary(
+      session.history,
+      systemPrompt: systemPrompt,
+      budgetChars: budget,
+      sizeTriggered: occupied >= budget,
+    );
+    if (boundary == null) {
+      // Nothing worth folding. Worth saying out loud when it is the size
       // that triggered this: compaction only folds history, so it can never
-      // shrink an oversized system prompt, and the request is about to fail
-      // with nothing but the provider's own error to explain why.
+      // shrink an oversized system prompt or the turns it always keeps, and
+      // the request may fail with nothing but the provider's own error to
+      // explain why.
       if (occupied >= budget) {
         onLog?.call('Context is over budget ($occupied/$budget chars) but there '
-            'is nothing to summarize yet — the system prompt or the current '
-            'turn alone exceeds the budget.');
+            'is nothing worth summarizing this turn — the system prompt or the '
+            'most recent turns alone exceed the budget.');
       }
       return;
     }
@@ -2575,7 +2651,7 @@ class PromptOptimizerAgent {
           LLMMessage(role: LLMRole.user, content: _serializeForSummary(head)),
         ],
         contextId: contextId,
-        options: const {'retryCount': 2},
+        options: const {'retryCount': 2, 'usageTag': 'compaction'},
         useStream: false,
         isCancelled: isCancelled,
       );
