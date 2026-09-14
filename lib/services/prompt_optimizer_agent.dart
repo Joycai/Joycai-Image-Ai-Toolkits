@@ -192,6 +192,15 @@ class OptimizerChatEntry {
   /// For [OptimizerEntryKind.kbEdit]: approval state.
   final KbEditState? editState;
 
+  /// For [OptimizerEntryKind.kbEdit]: the knowledge-base root the edit was
+  /// staged against. Apply writes there rather than re-reading the setting,
+  /// which can be switched while the card waits.
+  final String? knowledgeRoot;
+
+  /// For [OptimizerEntryKind.kbEdit]: why a [KbEditState.failed] edit was not
+  /// written.
+  final String? editError;
+
   /// For [OptimizerEntryKind.askUser]: the tool-call id this card must answer.
   final String? askCallId;
 
@@ -226,6 +235,8 @@ class OptimizerChatEntry {
     this.newContent,
     this.oldContent,
     this.editState,
+    this.knowledgeRoot,
+    this.editError,
     this.askCallId,
     this.askQuestions,
     this.askState,
@@ -234,6 +245,7 @@ class OptimizerChatEntry {
 
   OptimizerChatEntry copyWith({
     KbEditState? editState,
+    String? editError,
     AskUserState? askState,
     List<AskUserAnswer>? askAnswers,
   }) =>
@@ -250,6 +262,8 @@ class OptimizerChatEntry {
         newContent: newContent,
         oldContent: oldContent,
         editState: editState ?? this.editState,
+        knowledgeRoot: knowledgeRoot,
+        editError: editError ?? this.editError,
         askCallId: askCallId,
         askQuestions: askQuestions,
         askState: askState ?? this.askState,
@@ -516,12 +530,19 @@ class PromptOptimizerSession extends ChangeNotifier {
 
   int _kbEditCounter = 0;
 
+  /// `root|relPath` of every knowledge file already backed up this session.
+  /// Only the first write of a file is backed up, so its `.bak` keeps the
+  /// version from before the session touched it. In memory: a restored session
+  /// starts over, and its first write backs up again.
+  final Set<String> _backedUpPaths = {};
+
   /// Stages a proposed knowledge-file edit for the user to approve. Nothing
   /// touches disk here — same contract as [_stagePrompt].
   String _stageKbEdit({
     required String relPath,
     required String newContent,
     required String? oldContent,
+    String? knowledgeRoot,
     String? note,
   }) {
     final editId = 'kbedit_${id}_${_kbEditCounter++}';
@@ -532,6 +553,7 @@ class PromptOptimizerSession extends ChangeNotifier {
       targetPath: relPath,
       newContent: newContent,
       oldContent: oldContent,
+      knowledgeRoot: knowledgeRoot,
       editState: KbEditState.pending,
       note: (note == null || note.trim().isEmpty) ? null : note.trim(),
     ));
@@ -541,11 +563,11 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// Flips a staged edit to its terminal state. Rebuilds the transcript rather
   /// than mutating the entry in place; because the length is unchanged, the
   /// chat view re-renders without yanking the user's scroll position.
-  void _resolveKbEdit(String editId, KbEditState state) {
+  void _resolveKbEdit(String editId, KbEditState state, {String? error}) {
     _transcript = [
       for (final e in _transcript)
         (e.kind == OptimizerEntryKind.kbEdit && e.editId == editId)
-            ? e.copyWith(editState: state)
+            ? e.copyWith(editState: state, editError: error)
             : e,
     ];
     notifyListeners();
@@ -571,12 +593,14 @@ class PromptOptimizerSession extends ChangeNotifier {
     required String relPath,
     required String newContent,
     String? oldContent,
+    String? knowledgeRoot,
     String? note,
   }) =>
       _stageKbEdit(
         relPath: relPath,
         newContent: newContent,
         oldContent: oldContent,
+        knowledgeRoot: knowledgeRoot,
         note: note,
       );
 
@@ -3058,6 +3082,7 @@ class PromptOptimizerAgent {
         relPath: writePath,
         newContent: writeContent,
         oldContent: existing,
+        knowledgeRoot: knowledgeRoot,
         note: call.arguments['note']?.toString(),
       );
       // Staged either way, then applied here when the user has turned per-edit
@@ -3300,6 +3325,10 @@ class PromptOptimizerAgent {
   /// Writes a staged edit to disk after the user approved it, and flips the
   /// transcript card to its terminal state. This is the only path that mutates
   /// the knowledge base — the agent never writes directly.
+  ///
+  /// Throws [KbEditConflictException] — card marked failed, nothing written —
+  /// when the file on disk no longer matches the content the edit was proposed
+  /// against.
   static Future<void> applyStagedKbEdit({
     required PromptOptimizerSession session,
     required String editId,
@@ -3309,13 +3338,31 @@ class PromptOptimizerAgent {
     final relPath = entry.targetPath!;
     try {
       final kb = KnowledgeBaseService();
-      final root = await kb.getRoot();
+      // The root the edit was staged against, not whatever Settings says now:
+      // a card can wait a long time, and the folder can be switched meanwhile.
+      final root = entry.knowledgeRoot ?? await kb.getRoot();
       if (root == null) throw KbPathException('The knowledge base folder is not configured.');
+      // Re-verify against disk (standard 08 §3.6). The card previews a diff
+      // from oldContent; if the file no longer holds that — a hand edit while
+      // the card waited, or another card for the same file applied first —
+      // writing would silently discard changes nobody reviewed. A create
+      // (oldContent == null) conflicts with a file that appeared meanwhile.
+      if (kb.readFullFile(root, relPath) != entry.oldContent) {
+        throw KbEditConflictException(relPath);
+      }
       // Before the write, not after: the point of the copy is the content that
-      // is about to stop existing. A create has nothing to copy, and
-      // [KnowledgeBaseService.backupFile] says so by doing nothing.
-      if (session.writePolicy.backupBeforeOverwrite) {
+      // is about to stop existing (standard 08 §3.2 — a failed backup fails the
+      // write). Forced when the write skips confirmation: nobody read it before
+      // it landed. Only a file's first write of the session is backed up, so
+      // the .bak holds the user's own version rather than being rewritten to
+      // the agent's previous draft on every edit. A create has nothing to copy.
+      final policy = session.writePolicy;
+      final backupKey = '$root|$relPath';
+      if ((policy.backupBeforeOverwrite || !policy.confirmEachWrite) &&
+          entry.oldContent != null &&
+          !session._backedUpPaths.contains(backupKey)) {
         await kb.backupFile(root, relPath);
+        session._backedUpPaths.add(backupKey);
       }
       await kb.writeFile(root, relPath, entry.newContent!);
       // The file changed, so every read of it recorded so far describes content
@@ -3326,8 +3373,8 @@ class PromptOptimizerAgent {
       session.knowledgeStaleAt[relPath] =
           session.history.isEmpty ? null : session.history.last;
       session._resolveKbEdit(editId, KbEditState.applied);
-    } catch (_) {
-      session._resolveKbEdit(editId, KbEditState.failed);
+    } catch (e) {
+      session._resolveKbEdit(editId, KbEditState.failed, error: '$e');
       rethrow;
     }
   }
