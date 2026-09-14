@@ -97,10 +97,12 @@ class XaiImagesProtocol implements ImageGenProtocol {
 
     final client = config.createClient();
     try {
-      final response = await client.post(
+      final response = await sendJsonRequest(
+        client,
         url,
         headers: target.headers(),
         body: jsonEncode(payload),
+        options: options,
       );
 
       if (debugFile != null) {
@@ -137,12 +139,19 @@ class XaiImagesProtocol implements ImageGenProtocol {
 
       logger?.call('xAI Images parse complete. Images: ${images.length}', level: 'DEBUG');
 
+      // Read tolerantly: xAI's current docs do not list `revised_prompt`,
+      // but its Images API follows OpenAI's item shape, and a rewrite the
+      // endpoint does report should reach the log (standard 13 §1).
+      final revised = revisedPromptFrom(items);
+
       return LLMResponse(
-        text: '',
+        text: revised,
         generatedImages: images,
-        metadata: data['usage'] is Map
-            ? (data['usage'] as Map).cast<String, dynamic>()
-            : const {},
+        metadata: {
+          if (data['usage'] is Map)
+            ...(data['usage'] as Map).cast<String, dynamic>(),
+          if (revised.isNotEmpty) 'revised_prompt': revised,
+        },
       );
     } finally {
       client.close();

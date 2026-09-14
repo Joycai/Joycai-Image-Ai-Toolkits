@@ -165,22 +165,25 @@ LLMResponse mergeTurnParts(List<LLMResponse> parts) {
   );
 }
 
-/// The last part's metadata with every token counter replaced by the sum
-/// across parts, and the server-tool runs of every part concatenated. The
-/// pause/incomplete markers come from the last part alone — it is the one
-/// that finished.
+/// The last part's metadata with the output counters summed across parts,
+/// and the server-tool runs of every part concatenated. The pause/incomplete
+/// markers come from the last part alone — it is the one that finished.
+///
+/// **Input counters are the last part's, not a sum.** Each continuation
+/// re-sends the whole history so far, so summing `prompt_tokens` counted the
+/// conversation once per leg — and `LLMService.promptTokensOf(merged)` is
+/// what `ContextBudget.calibrate` divides by, which read a three-leg turn as
+/// three times the context it really was and shrank the session's budget
+/// accordingly. The last leg's input is the largest context the model saw.
+/// Billing is untouched: every leg is recorded as its own usage row before
+/// the merge.
+///
+/// `total_tokens`, when reported, is rebuilt from the two so it stays their
+/// sum rather than a third, inconsistent figure.
 Map<String, dynamic> _mergeUsage(List<Map<String, dynamic>> all) {
-  const counters = {
-    'input_tokens',
-    'output_tokens',
-    'prompt_tokens',
-    'completion_tokens',
-    'cache_read_input_tokens',
-    'cache_creation_input_tokens',
-    'total_tokens',
-  };
+  const outputCounters = {'output_tokens', 'completion_tokens'};
   final merged = Map<String, dynamic>.of(all.last);
-  for (final key in counters) {
+  for (final key in outputCounters) {
     var sum = 0;
     var seen = false;
     for (final m in all) {
@@ -191,6 +194,13 @@ Map<String, dynamic> _mergeUsage(List<Map<String, dynamic>> all) {
       }
     }
     if (seen) merged[key] = sum;
+  }
+  if (merged['total_tokens'] is num) {
+    final input = merged['prompt_tokens'] ?? merged['input_tokens'];
+    final output = merged['completion_tokens'] ?? merged['output_tokens'];
+    if (input is num && output is num) {
+      merged['total_tokens'] = input.toInt() + output.toInt();
+    }
   }
   final runs = [
     for (final m in all)

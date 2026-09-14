@@ -308,6 +308,29 @@ review 时用下面的模式全仓库 grep 一遍即可：
   id），两者都永不重试；
   抛裸 `Exception` 的老路径靠一条锚定 `failed: <status>` 的 legacy 正则兜底，
   新代码不许依赖它。
+- **`sendJsonRequest(client, url, headers:, body:, options:)`**（2026-09-14）——
+  非流式请求/提交面的唯一发送口：与 `client.post` 发出同样的字节，但是
+  `http.AbortableRequest`，接 `options[llmAbortTriggerKey]`。连接池里的
+  client 不能为一个请求关闭，所以取消与非流式超时以前只是"不交付"，请求在
+  上游照跑照计费；现在 `LLMService` 每次 attempt 发一个触发器（取消时由
+  watcher 触发、attempt 结束时由 `finally` 触发），经它真正中断。
+  `request()` 设置 `llmCancellationProbeKey` 时**串联**调用方已放的探针
+  （`LLMService.chainCancellationProbe`，pitfalls 11 §H72），不许覆盖。
+  multipart 用 `http.AbortableMultipartRequest` + `abortTriggerOf(options)`。
+  新的非流式发送点照此写，不要再直接 `client.post`。
+- **`LLMApiException.retryAfter`**（2026-09-14）—— `decodeJsonBody` 与各族
+  流式非 200 分支用 `parseRetryAfter(headers)` 通用读取（`retry-after-ms` /
+  秒数 / HTTP-date），不按 vendor 分支。`LLMService` 在 `shouldRetry` 放行
+  **之后**才读：等待 = max(Retry-After, 2s×attempt)，超过
+  `maxRetryAfter`（60s）不重试直接报错，睡眠可被取消打断。计费路由规则不变。
+- **API 调试日志（`llm_debug_logger.dart`，2026-09-14）** —— `appendLine` /
+  `appendStreamLine` 对每行做 `sanitizeLine`：≥2048 字符的 base64（含 `data:`
+  URL）折叠成 `<base64 N chars>`，协议无需各写 safe-body。`LLMService` 每个
+  attempt 建一个 `LLMLogCorrelation`（context / request 序号 / leg / attempt），
+  用 zone 值传递（`runCorrelated`；`requestStream` 自身是生成器，用
+  `correlatedStream` 在 zone 内打开并订阅），`startLog` 写进文件头，结束时
+  `appendSummaries` 追加一行归一化的 `Summary:`（finish_reason / usage /
+  `wire_rewrites`，失败则是错误类型）。协议不必转发任何东西。
 - **`sseDataPayload(line)`** —— SSE 行解析（`data:` 后空格可选、注释行、
   `[DONE]`）。调用前自行跳过 `event:` 行；解析失败的行**忽略**，不许把
   `FormatException` 重抛成整条流的死刑（gemini 踩过，见

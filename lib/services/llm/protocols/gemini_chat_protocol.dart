@@ -58,10 +58,14 @@ class GeminiChatProtocol implements ChatProtocol {
         );
       }
 
-      final response = await client.post(
+      // Abortable: LLMService cancels or times out a non-streaming request
+      // through the options' trigger (sendJsonRequest).
+      final response = await sendJsonRequest(
+        client,
         url,
         headers: headers,
         body: jsonEncode(payload),
+        options: options,
       );
 
       if (debugFile != null) {
@@ -218,7 +222,9 @@ class GeminiChatProtocol implements ChatProtocol {
       // the body is JSON, excerpt otherwise) and always throws on non-2xx.
       decodeJsonBody(
         // The request rides along so the message names the URL it failed on.
-        http.Response(body, response.statusCode, request: response.request),
+        // Headers too, so a 429's Retry-After reaches the retry loop.
+        http.Response(body, response.statusCode,
+            request: response.request, headers: response.headers),
         apiName: 'Google GenAI stream',
       );
       throw LLMApiException(

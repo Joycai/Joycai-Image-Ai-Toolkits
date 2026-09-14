@@ -111,9 +111,11 @@ class AppState extends ChangeNotifier {
       addLog(msg, level: level, taskId: taskId);
     };
 
-    LLMService().onLogAdded = (msg, {level = 'INFO', contextId}) {
+    // Added, not assigned: the service keeps a listener list so another
+    // subscriber cannot silently replace the console sink.
+    LLMService().addLogListener((msg, {level = 'INFO', contextId}) {
       addLog(msg, level: level, taskId: contextId);
-    };
+    });
 
     // The staging destination follows the folder being browsed. Not a
     // rebroadcast (see the note above): one identity check per browser

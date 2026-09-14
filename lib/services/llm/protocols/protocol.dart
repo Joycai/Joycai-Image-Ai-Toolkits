@@ -248,7 +248,8 @@ Map<String, dynamic> decodeJsonBody(http.Response response,
     throw LLMApiException(
         '$apiName request failed: $status${_requestUrlNote(response)} - '
         '$detail',
-        statusCode: status);
+        statusCode: status,
+        retryAfter: parseRetryAfter(response.headers));
   }
 
   final decoded = _tryJsonDecode(response.body);
@@ -269,6 +270,52 @@ Map<String, dynamic> decodeJsonBody(http.Response response,
   final data = decoded.cast<String, dynamic>();
   if (checkEnvelope) throwIfEnvelopeError(data);
   return data;
+}
+
+/// The wait a failed response asked for, read off its headers, or null when
+/// it named none (or named one that does not parse).
+///
+/// Three spellings, checked in this order:
+///  * `retry-after-ms` — milliseconds, fractional allowed (OpenAI and several
+///    relays send it beside `retry-after` with more precision);
+///  * `retry-after` as delay-seconds (RFC 9110 §10.2.3);
+///  * `retry-after` as an HTTP-date, turned into a delay from [now]; a date
+///    already past means "now" ([Duration.zero]).
+///
+/// Transport facts, so they live here and are read on every surface alike —
+/// no vendor branch decides whether a 429 is honoured.
+Duration? parseRetryAfter(Map<String, String> headers, {DateTime? now}) {
+  String? header(String name) {
+    for (final entry in headers.entries) {
+      if (entry.key.toLowerCase() == name) return entry.value.trim();
+    }
+    return null;
+  }
+
+  final ms = header('retry-after-ms');
+  if (ms != null) {
+    final value = double.tryParse(ms);
+    if (value != null && value >= 0 && value.isFinite) {
+      return Duration(microseconds: (value * 1000).round());
+    }
+  }
+
+  final raw = header('retry-after');
+  if (raw == null || raw.isEmpty) return null;
+  final seconds = double.tryParse(raw);
+  if (seconds != null) {
+    if (seconds < 0 || !seconds.isFinite) return null;
+    return Duration(milliseconds: (seconds * 1000).round());
+  }
+  try {
+    final at = HttpDate.parse(raw);
+    final delay = at.difference(now ?? DateTime.now());
+    return delay.isNegative ? Duration.zero : delay;
+  } on HttpException {
+    return null;
+  } on FormatException {
+    return null;
+  }
 }
 
 Object? _tryJsonDecode(String body) {
@@ -462,6 +509,67 @@ Future<List<Uint8List>> resolveImageRefs(
         level: 'WARN');
   }
   return images;
+}
+
+/// The abort trigger `LLMService` put in [options] ([llmAbortTriggerKey]),
+/// or null when the caller supplied none.
+Future<void>? abortTriggerOf(Map<String, dynamic>? options) {
+  final trigger = options?[llmAbortTriggerKey];
+  return trigger is Future<void> ? trigger : null;
+}
+
+/// One non-streaming request that `LLMService` can abort while it is in
+/// flight — the shared send path for JSON request/submit surfaces.
+///
+/// Byte-for-byte what `client.post(url, headers:, body:)` sends (headers
+/// first, then the string body, so a declared `Content-Type` is kept and
+/// only gains a charset), but as an [http.AbortableRequest] wired to
+/// [abortTriggerOf] `options`. The client is pooled per endpoint and its
+/// `close()` is a lease release, so closing it cannot stop one request; the
+/// trigger can, and only this one.
+///
+/// Aborting throws [http.RequestAbortedException]. A billed submit aborted
+/// after upstream accepted it is still billed — the user asked to stop, and
+/// `LLMService` never retries an aborted attempt.
+Future<http.Response> sendJsonRequest(
+  http.Client client,
+  Uri url, {
+  required Map<String, String> headers,
+  required String body,
+  Map<String, dynamic>? options,
+  String method = 'POST',
+}) async {
+  final request = http.AbortableRequest(method, url,
+      abortTrigger: abortTriggerOf(options));
+  request.headers.addAll(headers);
+  request.body = body;
+  return http.Response.fromStream(await client.send(request));
+}
+
+/// The prompt the provider actually drew from, when it rewrote the one it
+/// was sent — or `''` when none of [items] carries one.
+///
+/// Image surfaces that rewrite prompts say so per result item, under a key
+/// the surface names ([key]): OpenAI's Images API `data[].revised_prompt`
+/// (dall-e-3), DashScope's async task `output.results[].actual_prompt` (only
+/// when `prompt_extend` is on). Returned as the response's text so the
+/// executor's log shows what was really generated (standard 13 §1) — the
+/// saved image is unaffected. Distinct values are joined by a blank line; a
+/// batch that rewrote every picture the same way reads as one prompt.
+String revisedPromptFrom(Object? items, {String key = 'revised_prompt'}) {
+  if (items is! List) return '';
+  final prompts = <String>[];
+  for (final item in items) {
+    if (item is! Map) continue;
+    final value = item[key];
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isNotEmpty && !prompts.contains(trimmed)) {
+        prompts.add(trimmed);
+      }
+    }
+  }
+  return prompts.join('\n\n');
 }
 
 /// One image as a multipart part, with the `Content-Type` the bytes actually

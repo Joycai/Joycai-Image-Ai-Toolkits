@@ -20,10 +20,9 @@ void main() {
     LLMService.usageSinkOverride = (_) async => throw StateError('db locked');
     final logs = <(String, String)>[];
     final service = LLMService();
-    final previous = service.onLogAdded;
-    service.onLogAdded = (msg, {level = 'INFO', contextId}) =>
-        logs.add((msg, level));
-    addTearDown(() => service.onLogAdded = previous);
+    final listener = service.addLogListener(
+        (msg, {level = 'INFO', contextId}) => logs.add((msg, level)));
+    addTearDown(() => service.removeLogListener(listener));
 
     await expectLater(
       service.recordUsageForTest(config(), const {'prompt_tokens': 3}),
