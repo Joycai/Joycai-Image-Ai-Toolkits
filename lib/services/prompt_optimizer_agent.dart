@@ -383,13 +383,21 @@ class PromptOptimizerSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// [history] length at the moment each knowledge file was last written, so
-  /// reads recorded before the write stop counting as current.
+  /// For each knowledge file written this session, the last [history] message
+  /// at the moment of the write (null when the history was empty): reads
+  /// strictly after it are current, reads at or before it are not.
   ///
   /// A plain "is stale" flag would be unsatisfiable: the read-before-write
   /// rail would reject the very re-read that is supposed to clear it, and the
   /// model could never edit the same file twice in one session.
-  final Map<String, int> knowledgeStaleAt = {};
+  ///
+  /// Keyed by message identity, never by index (standard 10 §3.2): compaction
+  /// shrinks the history and the pairing repair inserts stubs, and an index
+  /// survives neither — after a compaction it pointed past the end of the
+  /// history, so no re-read of the file ever counted again. A marker that is
+  /// no longer in the history was folded into a summary, which means every
+  /// read still present came after the write.
+  final Map<String, LLMMessage?> knowledgeStaleAt = {};
 
   List<OptimizerChatEntry> _transcript = [];
   List<OptimizerChatEntry> get transcript => _transcript;
@@ -663,11 +671,40 @@ class PromptOptimizerSession extends ChangeNotifier {
         break;
       }
     }
+    // Stale markers point at message objects. A rewritten message hands its
+    // marker to its replacement; a dropped one to the nearest message kept
+    // before it — "reads after the marker" still names the same reads.
+    final byOrigin = <int, LLMMessage>{
+      for (final e in repaired)
+        if (e.origin != null) e.origin!: e.message,
+    };
+    for (int i = 0; i < history.length; i++) {
+      final old = history[i];
+      if (!knowledgeStaleAt.values.any((v) => identical(v, old))) continue;
+      LLMMessage? to;
+      for (int j = i; j >= 0; j--) {
+        final kept = byOrigin[j];
+        if (kept != null) {
+          to = kept;
+          break;
+        }
+      }
+      if (!identical(to, old)) _carryStaleMarker(old, to);
+    }
+
     history
       ..clear()
       ..addAll([for (final e in repaired) e.message]);
     persistedCount = rebased;
     return true;
+  }
+
+  /// Re-points every [knowledgeStaleAt] marker at [from] to [to] — for the
+  /// places that replace a history message with a rewritten copy.
+  void _carryStaleMarker(LLMMessage from, LLMMessage? to) {
+    for (final key in [...knowledgeStaleAt.keys]) {
+      if (identical(knowledgeStaleAt[key], from)) knowledgeStaleAt[key] = to;
+    }
   }
 
   void _setRunning(bool running) {
@@ -791,7 +828,7 @@ class PromptOptimizerSession extends ChangeNotifier {
                 // it while diffing against pre-edit content; the cost of being
                 // wrong is one redundant re-read.
                 if (writtenPath.isNotEmpty) {
-                  session.knowledgeStaleAt[writtenPath] = msgIndex;
+                  session.knowledgeStaleAt[writtenPath] = msg;
                 }
                 entries.add(OptimizerChatEntry(
                   kind: OptimizerEntryKind.tool,
@@ -2213,7 +2250,7 @@ class PromptOptimizerAgent {
     // Reads before the recent boundary are elided by _trimForSend; reads
     // before the file was last written no longer describe what is on disk.
     final boundary = _recentBoundary(history);
-    final staleAt = session.knowledgeStaleAt[relPath] ?? 0;
+    final staleAt = _staleFrom(session, relPath);
     final from = boundary > staleAt ? boundary : staleAt;
     final pages = <int>{};
     for (int i = from; i < history.length; i++) {
@@ -2239,6 +2276,17 @@ class PromptOptimizerAgent {
   @visibleForTesting
   static Set<int> liveReadPagesForTest(PromptOptimizerSession session, String relPath) =>
       _liveReadPages(session, relPath);
+
+  /// First history index whose reads of [relPath] still describe the file on
+  /// disk — see [PromptOptimizerSession.knowledgeStaleAt].
+  static int _staleFrom(PromptOptimizerSession session, String relPath) {
+    if (!session.knowledgeStaleAt.containsKey(relPath)) return 0;
+    final marker = session.knowledgeStaleAt[relPath];
+    if (marker == null) return 0;
+    final at = session.history.lastIndexWhere((m) => identical(m, marker));
+    // Gone means compaction folded it: whatever survived came after the write.
+    return at < 0 ? 0 : at + 1;
+  }
 
   /// Reference-image paths whose attachment is still part of what will be sent
   /// next — i.e. the synthetic `view_image` message sits inside the recent
@@ -2440,6 +2488,9 @@ class PromptOptimizerAgent {
     }
 
     final head = session.history.sublist(0, boundary);
+    // Held as an object, not an index: the summary request below is awaited,
+    // and nothing guarantees the history keeps its shape until it returns.
+    final boundaryMsg = session.history[boundary];
     onLog?.call('Context budget reached ($occupied/$budget chars, '
         '${(contextRatio * 100).round()}% of the window) — summarizing '
         '${head.length} early messages.');
@@ -2482,8 +2533,14 @@ class PromptOptimizerAgent {
           '${session.refinedPrompt ?? '(none yet)'}';
     }
 
+    final at = session.history.indexWhere((m) => identical(m, boundaryMsg));
+    if (at < 0) {
+      onLog?.call('History changed while the summary was generated — '
+          'skipping this compaction.');
+      return;
+    }
     final summaryMsg = LLMMessage(role: LLMRole.user, content: '$summaryMarker\n$summaryText');
-    final tail = session.history.sublist(boundary);
+    final tail = session.history.sublist(at);
     session.history
       ..clear()
       ..addAll([summaryMsg, ...tail]);
@@ -3263,7 +3320,8 @@ class PromptOptimizerAgent {
       // invalidating single pages would be meaningless. Marking the point in
       // history rather than dropping a flag keeps the re-read that follows
       // able to satisfy the read-before-write rail again.
-      session.knowledgeStaleAt[relPath] = session.history.length;
+      session.knowledgeStaleAt[relPath] =
+          session.history.isEmpty ? null : session.history.last;
       session._resolveKbEdit(editId, KbEditState.applied);
     } catch (_) {
       session._resolveKbEdit(editId, KbEditState.failed);
@@ -3464,6 +3522,7 @@ class PromptOptimizerAgent {
             if (c.id != callId) c,
         ],
       );
+      session._carryStaleMarker(owning, history[owner]);
       if (fallback != null) {
         history.add(LLMMessage(role: LLMRole.user, content: fallback));
       }

@@ -421,4 +421,71 @@ void main() {
           KbEditState.failed);
     });
   });
+
+  group('read-before-write survives compaction (standard 10 §3.2)', () {
+    /// What _maybeCompact leaves behind: everything before [keepFrom] replaced
+    /// by one summary message, the tail kept as the same objects.
+    void compactBefore(PromptOptimizerSession session, int keepFrom) {
+      final tail = session.history.sublist(keepFrom);
+      session.history
+        ..clear()
+        ..add(LLMMessage(
+          role: LLMRole.user,
+          content: '${PromptOptimizerAgent.summaryMarker}\nEarlier work on a.md.',
+        ))
+        ..addAll(tail);
+    }
+
+    test('a re-read after the write counts once the write has been folded away', () async {
+      await kb.setRoot(root.path);
+      await kb.writeFile(root.path, 'a.md', 'old');
+
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      session.addUserTurn('turn 1');
+      recordRead(session, 'a.md', 1, content: 'old');
+      // Enough history that the write's position is far past where a
+      // compacted history will end.
+      for (int i = 2; i <= 9; i++) {
+        session.addUserTurn('turn $i');
+        recordRead(session, 'b.md', i);
+      }
+      final id = session.stageKbEditForTest(
+          relPath: 'a.md', newContent: 'new', oldContent: 'old');
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
+
+      session.addUserTurn('turn 10');
+      compactBefore(session, session.history.length - 1);
+      recordRead(session, 'a.md', 1, content: 'new');
+
+      expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), {1},
+          reason: 'an index recorded before compaction points past the end of '
+              'the shorter history, so the re-read never counts and the '
+              'read-before-write rail refuses this file for the rest of the session');
+    });
+
+    test('a read from before the write stays stale when compaction keeps it', () async {
+      await kb.setRoot(root.path);
+      await kb.writeFile(root.path, 'a.md', 'old');
+
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      for (int i = 1; i <= 6; i++) {
+        session.addUserTurn('turn $i');
+        recordRead(session, 'b.md', i);
+      }
+      final keepFrom = session.history.length;
+      session.addUserTurn('turn 7');
+      // Page 2 read before the write: it describes content that no longer exists.
+      recordRead(session, 'a.md', 2, content: 'old page 2');
+      final id = session.stageKbEditForTest(
+          relPath: 'a.md', newContent: 'new', oldContent: 'old');
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
+
+      compactBefore(session, keepFrom);
+      recordRead(session, 'a.md', 1, content: 'new');
+
+      expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), {1},
+          reason: 'the pre-write read of page 2 stays stale; the post-write '
+              're-read of page 1 counts');
+    });
+  });
 }

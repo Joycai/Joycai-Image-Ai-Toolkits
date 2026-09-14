@@ -241,6 +241,15 @@ nothing throws, the numbers just quietly stop meaning what they claim.
   old `Set` pattern until 2026-08** — `viewedImagePaths` gated re-views without
   anything invalidating it — and exhibited exactly this deadlock before moving
   to the same derivation (`_liveViewedPaths`).
+- **History indexes as markers.** `knowledgeStaleAt` stored the history length
+  at each write until 2026-09. Compaction shrinks the history and the pairing
+  repair (invariant 10) inserts stubs, and neither rebased the index — after
+  one compaction it pointed past the end of the history, no re-read of that
+  file ever counted again, and the read-before-write rail refused the file for
+  the rest of the session. The marker is now the message object itself
+  (standard 10 §3.2); a marker no longer in the history was folded away, so
+  every surviving read came after the write. `_maybeCompact` holds its
+  boundary message across the summary `await` for the same reason.
 
 ## Cancellation (what the stop button actually stops)
 
