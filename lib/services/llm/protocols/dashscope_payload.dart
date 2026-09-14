@@ -89,8 +89,10 @@ String? dashscopeSize(Map<String, dynamic>? options) {
   final raw = readStringOption(options, 'imageSize');
   if (raw == null || raw == 'not_set' || raw == 'auto') return null;
 
-  final wxh = RegExp(r'^(\d+)[x*×](\d+)$').firstMatch(raw);
-  if (wxh != null) return '${wxh.group(1)}*${wxh.group(2)}';
+  // The shared parser (every size spelling the app meets: `x`, `X`, `*`,
+  // `×`, stray spaces) — a private regex here used to miss `1024X1024`.
+  final wxh = parseWxH(raw);
+  if (wxh != null) return '${wxh.width}*${wxh.height}';
 
   final preset = raw.toUpperCase();
   if (preset == '1K' || preset == '2K' || preset == '4K') return preset;

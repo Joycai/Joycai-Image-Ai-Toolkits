@@ -354,6 +354,31 @@ class DashScopeChatProtocol implements ChatProtocol {
       );
     }
 
+    // The same end-of-stream rule as the ① face: a stream that closes
+    // cleanly without a finish reason was cut off in transit. With tool-call
+    // fragments pending that is a hard failure — [flush] would decode the
+    // cut-off arguments to `{}` and the agent loop would execute the call.
+    // Text alone is delivered, marked `length` and flagged
+    // `stream_incomplete`.
+    var streamIncomplete = false;
+    if (finishReason == null) {
+      if (!streamedToolCalls.isEmpty) {
+        throw LLMApiException(
+          'DashScope Chat API stream (${redactUrl(url)}) closed without a '
+          'finish_reason while tool call arguments were still arriving — '
+          'the stream was truncated, and a call with cut-off arguments must '
+          'not be executed.',
+        );
+      }
+      logger?.call(
+        'The stream closed without a finish_reason — the reply was probably '
+        'cut off in transit. Treating it as truncated.',
+        level: 'WARN',
+      );
+      finishReason = 'length';
+      streamIncomplete = true;
+    }
+
     // Outside the `finally`: a stream that died mid-arguments must fail
     // rather than hand over a half-built call.
     final assembled = streamedToolCalls.flush(logger: logger);
@@ -367,11 +392,15 @@ class DashScopeChatProtocol implements ChatProtocol {
       yield LLMResponseChunk(toolCallPart: call);
     }
 
-    if (usageMetadata != null || finishReason != null) {
-      yield LLMResponseChunk(
-        metadata: {...?usageMetadata, 'finish_reason': ?finishReason},
-      );
-    }
+    // Unconditional: a finish reason is always known by now (a stream that
+    // sent none was resolved above).
+    yield LLMResponseChunk(
+      metadata: {
+        ...?usageMetadata,
+        'finish_reason': finishReason,
+        if (streamIncomplete) 'stream_incomplete': true,
+      },
+    );
     yield LLMResponseChunk(isDone: true);
   }
 }

@@ -317,7 +317,14 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
       // that stopped for a missing signature is a failed request, not an
       // empty reply. With content, the content is kept.
       if (protocol && (parts == null || parts.isEmpty)) {
-        throw Exception('Google GenAI ended the generation: $finishReason');
+        // Typed and non-retryable (no status code): the same history meets
+        // the same broken replay or the same undeclared tool, and every
+        // attempt is billed.
+        throw LLMApiException(
+          'Google GenAI ended the generation with finishReason '
+          '$finishReason and no content'
+          '${finishReason == 'MISSING_THOUGHT_SIGNATURE' ? ' — a replayed tool-calling turn lacked its thoughtSignature' : ''}.',
+        );
       }
     }
 
