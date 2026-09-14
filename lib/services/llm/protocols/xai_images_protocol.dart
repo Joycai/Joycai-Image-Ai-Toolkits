@@ -71,7 +71,7 @@ class XaiImagesProtocol implements ImageGenProtocol {
       for (final att in inputImages) {
         final bytes = await readAttachmentBytes(att);
         if (bytes != null) {
-          entries.add({'url': 'data:${att.mimeType};base64,${base64Encode(bytes)}'});
+          entries.add({'url': imageDataUrl(bytes, att.mimeType)});
         }
       }
       encodedCount = entries.length;

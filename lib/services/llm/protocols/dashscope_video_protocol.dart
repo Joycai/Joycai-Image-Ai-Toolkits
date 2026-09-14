@@ -48,7 +48,7 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
       }
       media.add({
         'type': role,
-        'url': 'data:${att.mimeType};base64,${base64Encode(bytes)}',
+        'url': imageDataUrl(bytes, att.mimeType),
       });
     }
 

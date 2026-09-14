@@ -55,7 +55,7 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
     for (final att in inputImages) {
       final bytes = await readAttachmentBytes(att);
       if (bytes == null) continue;
-      subjectRefs.add('data:${att.mimeType};base64,${base64Encode(bytes)}');
+      subjectRefs.add(imageDataUrl(bytes, att.mimeType));
     }
     if (subjectRefs.isNotEmpty) {
       logger?.call(minimaxSubjectReferenceNote, level: 'WARN');

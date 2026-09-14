@@ -323,7 +323,7 @@ class MidjourneyProtocol implements ChatProtocol {
     for (final att in attachments) {
       final bytes = await readAttachmentBytes(att);
       if (bytes != null) {
-        out.add('data:${att.mimeType};base64,${base64Encode(bytes)}');
+        out.add(imageDataUrl(bytes, att.mimeType));
       }
     }
     return out;

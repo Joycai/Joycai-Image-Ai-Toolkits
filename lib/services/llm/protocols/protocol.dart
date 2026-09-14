@@ -475,6 +475,18 @@ http.MultipartFile imageMultipartFile(
   );
 }
 
+/// An input image as a `data:` URL whose MIME type is what the bytes are.
+///
+/// The declared type is the attachment's *file extension* (the executor
+/// labels a `.png` as `image/png` whatever it holds), and renamed downloads
+/// or relay output saved under the wrong name are ordinary. Hosts that
+/// validate the declaration against the bytes reject the whole request; the
+/// lenient ones decode by content and bill the same. [resolveImageMime] keeps
+/// the declaration only for bytes it cannot recognise — the rule the
+/// multipart path ([imageMultipartFile]) already follows.
+String imageDataUrl(Uint8List bytes, String declaredMime) =>
+    'data:${resolveImageMime(bytes, declaredMime)};base64,${base64Encode(bytes)}';
+
 Future<Uint8List?> readAttachmentBytes(LLMAttachment att) async {
   if (att.path != null) return File(att.path!).readAsBytes();
   if (att.bytes != null) return att.bytes;

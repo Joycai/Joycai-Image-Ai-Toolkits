@@ -49,7 +49,7 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
           role = MiniMaxVideoRole.referenceImage;
       }
       media.add(MiniMaxVideoMedia(
-          role, 'data:${att.mimeType};base64,${base64Encode(bytes)}'));
+          role, imageDataUrl(bytes, att.mimeType)));
     }
 
     // Upstream rejects a request that mixes the image-based modality with the

@@ -73,7 +73,7 @@ class XaiVideosProtocol implements VideoJobProtocol {
       final bytes = await readAttachmentBytes(firstFrame);
       if (bytes != null) {
         payload['image'] = {
-          'url': 'data:${firstFrame.mimeType};base64,${base64Encode(bytes)}',
+          'url': imageDataUrl(bytes, firstFrame.mimeType),
         };
       }
       if (references.isNotEmpty) {
@@ -88,7 +88,7 @@ class XaiVideosProtocol implements VideoJobProtocol {
       for (final att in references) {
         final bytes = await readAttachmentBytes(att);
         if (bytes != null) {
-          encoded.add({'url': 'data:${att.mimeType};base64,${base64Encode(bytes)}'});
+          encoded.add({'url': imageDataUrl(bytes, att.mimeType)});
         }
       }
       if (encoded.isNotEmpty) payload['reference_images'] = encoded;
