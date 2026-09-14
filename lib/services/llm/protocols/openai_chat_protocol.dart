@@ -663,6 +663,13 @@ List<String> imageUrlsInText(String text) {
   return urls.toList();
 }
 
+/// The system line the ① chat wire sends when the conversation has none.
+///
+/// Deliberately neutral and short: its only job is to be *present*. A New API
+/// relay that receives a chat request without a system message injects its
+/// own multi-thousand-token Codex prompt instead (provider layering 01 §9.2).
+const String openaiDefaultSystemPrompt = 'You are a helpful assistant.';
+
 /// OpenAI `POST /chat/completions` — JSON request, JSON or SSE response.
 ///
 /// The base envelope is identical for every model. Gemini-family models
@@ -1450,6 +1457,22 @@ class OpenAIChatProtocol implements ChatProtocol {
 
       return {"role": msg.role.name, "content": content};
     }).toList();
+
+    // Never without a system message (provider layering 01 §9.2, pitfalls 11
+    // §62). A New API relay that receives a chat request with none injects
+    // its own Codex system prompt — 4–9 K input tokens on every request, and
+    // nothing anywhere says so but the bill. One short neutral line is the
+    // whole cure. Vendor-blind on purpose: the relays that do it are not
+    // identifiable from the channel, and a system line costs the rest
+    // nothing. An image generator on the chat route is exempt — the relay is
+    // translating that call into an images request.
+    if (!history.any((m) => m.role == LLMRole.system) &&
+        !target.model.capabilities.isImageGenerator) {
+      messages.insert(0, {
+        "role": "system",
+        "content": openaiDefaultSystemPrompt,
+      });
+    }
 
     final effort = target.config.effectiveReasoningEffort;
     final payload = <String, dynamic>{

@@ -151,7 +151,8 @@ void main() {
         [LLMMessage(role: LLMRole.user, content: 'hi')],
         isStreaming: false,
       );
-      expect((payload['messages'] as List).single['content'], 'hi');
+      // `.last`: a chat model also gets the default system line first.
+      expect((payload['messages'] as List).last['content'], 'hi');
     });
   });
 

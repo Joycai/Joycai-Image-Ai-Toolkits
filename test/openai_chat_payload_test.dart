@@ -287,7 +287,8 @@ void main() {
         isStreaming: false,
       );
 
-      final assistant = (payload['messages'] as List)[1] as Map;
+      final assistant = (payload['messages'] as List)
+          .lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
       expect(assistant['reasoning_content'], 'thought hard');
       // The nested tool shape and the nullable-but-present content survive.
       expect(assistant.containsKey('content'), isTrue);
@@ -309,7 +310,8 @@ void main() {
         ],
         isStreaming: false,
       );
-      final assistant = (payload['messages'] as List)[0] as Map;
+      final assistant = (payload['messages'] as List)
+          .lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
       expect(assistant['reasoning'], 'r');
       expect(assistant.containsKey('reasoning_content'), isFalse);
     });
@@ -328,7 +330,8 @@ void main() {
         ],
         isStreaming: false,
       );
-      final assistant = (payload['messages'] as List)[0] as Map;
+      final assistant = (payload['messages'] as List)
+          .lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
       expect(assistant.containsKey('reasoning_content'), isFalse);
       expect(assistant.containsKey('reasoning'), isFalse);
     });
@@ -395,8 +398,44 @@ void main() {
         ],
         isStreaming: false,
       );
-      final assistant = (payload['messages'] as List)[0] as Map;
+      final assistant = (payload['messages'] as List)
+          .lastWhere((m) => (m as Map)['role'] == 'assistant') as Map;
       expect(assistant.containsKey('reasoning_content'), isFalse);
+    });
+  });
+
+  group('a system message is always present (layering 01 §9.2)', () {
+    // New API relays inject a 4–9 K-token Codex system prompt into any chat
+    // request that carries none — silently, on every request.
+    final protocol = OpenAIChatProtocol();
+
+    List<Map> messagesOf(String modelId, List<LLMMessage> history) =>
+        (protocol.buildChatPayloadForTest(target(modelId), history,
+                isStreaming: false)['messages'] as List)
+            .cast<Map>();
+
+    test('a conversation without one gets the neutral line first', () {
+      final messages = messagesOf(
+          'gpt-5-chat', [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      expect(messages.first,
+          {'role': 'system', 'content': openaiDefaultSystemPrompt});
+      expect(messages.last['content'], 'hi');
+    });
+
+    test('the caller\'s own system prompt is not doubled', () {
+      final messages = messagesOf('gpt-5-chat', [
+        LLMMessage(role: LLMRole.system, content: 'be terse'),
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+      ]);
+      expect(messages.where((m) => m['role'] == 'system'), hasLength(1));
+      expect(messages.first['content'], 'be terse');
+    });
+
+    test('an image generator on the chat route is left alone', () {
+      // The relay turns that call into an images request.
+      final messages = messagesOf('gemini-2.5-flash-image',
+          [LLMMessage(role: LLMRole.user, content: 'a red apple')]);
+      expect(messages.any((m) => m['role'] == 'system'), isFalse);
     });
   });
 
