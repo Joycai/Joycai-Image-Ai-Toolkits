@@ -118,16 +118,22 @@ class GeminiChatProtocol implements ChatProtocol {
         level: 'DEBUG',
       );
 
+      // ③'s replay carrier: the model turn's parts verbatim, only when it
+      // called tools ([LLMMessage.rawModelParts]).
+      final rawParts = (GeminiModelPartsCollector()..feed(data)).toolTurnParts;
+
       return LLMResponse(
         text: text,
         generatedImages: images,
         metadata: metadata,
         // ③'s thought summaries, kept off the deliverable. No field name: ③'s
-        // replay obligation is the thoughtSignature on the call, not this.
+        // replay obligation is the raw parts and their signatures, not this.
         reasoningContent: reasoning.isEmpty ? null : reasoning,
-        // The producer of the calls' thought signatures, which are replayed
-        // only to the same model (prepareGooglePayload).
-        rawThinkingModelId: toolCalls.any((c) => c.thoughtSignature != null)
+        rawModelParts: rawParts,
+        // The producer of the raw parts and the calls' thought signatures,
+        // which are replayed only to the same model (prepareGooglePayload).
+        rawThinkingModelId: rawParts != null ||
+                toolCalls.any((c) => c.thoughtSignature != null)
             ? config.modelId
             : null,
         toolCalls: toolCalls,
@@ -244,6 +250,8 @@ class GeminiChatProtocol implements ChatProtocol {
     // One id generator for the whole stream: ③ sends each functionCall whole
     // in its own chunk, and ids restarted per chunk used to collide.
     final callIds = GeminiToolCallIds();
+    // The turn's parts across every chunk, for verbatim replay.
+    final modelParts = GeminiModelPartsCollector();
 
     try {
       if (debugFile != null) {
@@ -266,6 +274,7 @@ class GeminiChatProtocol implements ChatProtocol {
           line,
           logger: logger,
           callIds: callIds,
+          modelParts: modelParts,
         )) {
           sawChunk = true;
           yield chunk;
@@ -289,6 +298,12 @@ class GeminiChatProtocol implements ChatProtocol {
         'or the relay answered with an empty stream.',
         isNonJsonBody: true,
       );
+    }
+
+    // Once, whole, at the end — the same arrangement as ④'s raw blocks.
+    final rawParts = modelParts.toolTurnParts;
+    if (rawParts != null) {
+      yield LLMResponseChunk(rawModelParts: rawParts);
     }
 
     yield LLMResponseChunk(isDone: true);
@@ -316,6 +331,7 @@ Iterable<LLMResponseChunk> geminiChunksFromSseLine(
   String line, {
   LLMLogger? logger,
   GeminiToolCallIds? callIds,
+  GeminiModelPartsCollector? modelParts,
 }) {
   if (line.startsWith('event:')) return const [];
   final payload = sseDataPayload(line);
@@ -337,6 +353,10 @@ Iterable<LLMResponseChunk> geminiChunksFromSseLine(
     throw LLMApiException('Google GenAI stream error: $msg', isEnvelope: true);
   }
 
+  // Fed here, eagerly, rather than inside the lazy parser below: the stream's
+  // parts are collected in arrival order whether or not a consumer drains
+  // every chunk ([GeminiModelPartsCollector]).
+  modelParts?.feed(chunkData);
   return parseGoogleChunks(chunkData, logger: logger, callIds: callIds);
 }
 

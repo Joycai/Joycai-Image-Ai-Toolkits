@@ -441,7 +441,16 @@ thinking / server tool 一起加。
    一视同仁（同步路径由协议记，流式路径由 `LLMService._streamOnce` 记），
    payload builder 只回传给同一个模型：换了模型，① 官方对未知字段 400，中转照
    input 计费。④ 的原始块要求匹配；其余载体在 `rawThinkingModelId` 为 null 时
-   照旧回传，这是记录产出者之前持久化的旧会话能继续用的原因。内联 `<think>`
+   照旧回传，这是记录产出者之前持久化的旧会话能继续用的原因。
+   ③ 的载体是整组原始 `parts`（`LLMMessage.rawModelParts`，2026-09-14，
+   protocol 02 §2.2 第 3 条）：只挂在带工具调用的模型轮上，thought part、每个
+   `thoughtSignature`（包括流末尾挂在空文本 part 上的那个）与顺序一并原样留存——
+   只重建 text + functionCall 会丢掉不在调用 part 上的签名，③ 对此回
+   `MISSING_THOUGHT_SIGNATURE`。流式路径由 `GeminiModelPartsCollector` 按到达顺序
+   跨 chunk 收集（③ 的每个 chunk 都是完整对象），流末一次性发出。与 ④ 原始块同样
+   **要求匹配**产出模型才原样回放；换了模型就重建且不带签名。改写工具调用参数的
+   上下文省略（助手的 `write_knowledge_file` 省略、`ask_user` 剥调用）与
+   `rawContentBlocks` 一起丢掉它。内联 `<think>`
    切出来的推理从不并入这个字段（reasoning 03 §6 第三条）。
 6. **server tool 不是 tool call。** `web_search_20250305` 由服务端自己执行、
    自己回答，响应里的 `server_tool_use` + `web_search_tool_result` 是**已完成的

@@ -274,6 +274,48 @@ class GeminiToolCallIds {
   String next() => 'gtc_${_nonce}_${_next++}';
 }
 
+/// Collects a ③ model turn's `parts` verbatim — the carrier behind
+/// [LLMMessage.rawModelParts].
+///
+/// Fed every decoded chunk of a stream in order (or the single body of a
+/// synchronous response). Each ③ chunk is a complete JSON object carrying
+/// whole parts, so collecting them in arrival order *is* the turn: a text
+/// part split across chunks stays as several text parts, and a
+/// `thoughtSignature` that arrives on an empty trailing text part is kept
+/// where it came. Only the first candidate is read — the one every consumer
+/// of this wire uses.
+///
+/// [toolTurnParts] answers only for a turn that called a function: a turn
+/// without calls carries no replay obligation, and keeping its parts would
+/// re-send them as input for nothing (reasoning 03 §5 rule 1).
+class GeminiModelPartsCollector {
+  final List<Map<String, dynamic>> _parts = [];
+  bool _sawCall = false;
+
+  void feed(Map<String, dynamic> chunkData) {
+    final candidates = chunkData['candidates'];
+    if (candidates is! List || candidates.isEmpty) return;
+    final first = candidates.first;
+    if (first is! Map) return;
+    final content = first['content'];
+    final parts = content is Map ? content['parts'] : null;
+    if (parts is! List) return;
+    for (final part in parts) {
+      if (part is! Map) continue;
+      final copy = Map<String, dynamic>.from(part);
+      if (copy.containsKey('functionCall') ||
+          copy.containsKey('function_call')) {
+        _sawCall = true;
+      }
+      _parts.add(copy);
+    }
+  }
+
+  /// The turn's parts when it called a tool, else null.
+  List<Map<String, dynamic>>? get toolTurnParts =>
+      _sawCall && _parts.isNotEmpty ? List.of(_parts) : null;
+}
+
 /// Parses one `generateContent`/stream chunk into [LLMResponseChunk]s, handling
 /// prompt blocking, finish reasons and safety ratings via [logger].
 ///
@@ -529,27 +571,45 @@ Map<String, dynamic> prepareGooglePayload(
 
     final parts = <Map<String, dynamic>>[];
 
-    if (msg.content.isNotEmpty) {
-      parts.add({"text": msg.content});
-    }
+    // A tool-calling model turn goes back as the parts it arrived as, when
+    // the model it goes to is the one that produced them (protocol 02 §2.2
+    // rule 3, reasoning 03 §5): thought parts, every signature, the order.
+    // "Understand and rebuild" keeps only the signatures on functionCall
+    // parts, and ③ answers the gap with MISSING_THOUGHT_SIGNATURE. A copy, so
+    // nothing downstream of the payload can write into stored history.
+    final raw = msg.rawModelParts;
+    final replayRaw = msg.role == LLMRole.assistant &&
+        msg.toolCalls.isNotEmpty &&
+        raw != null &&
+        raw.isNotEmpty &&
+        (modelId == null || msg.rawThinkingModelId == modelId);
+    if (replayRaw) {
+      for (final part in raw) {
+        parts.add((jsonDecode(jsonEncode(part)) as Map).cast<String, dynamic>());
+      }
+    } else {
+      if (msg.content.isNotEmpty) {
+        parts.add({"text": msg.content});
+      }
 
-    // Assistant tool calls echoed back into history → functionCall parts.
-    // Gemini requires the thoughtSignature captured from the original response
-    // to be replayed verbatim on the same part.
-    for (final tc in msg.toolCalls) {
-      parts.add({
-        "functionCall": {
-          "name": tc.name,
-          "args": tc.arguments,
-        },
-        // Only to the model that produced it: another model has no use for
-        // the signature and it still travels as input.
-        if (tc.thoughtSignature != null &&
-            (msg.rawThinkingModelId == null ||
-                modelId == null ||
-                msg.rawThinkingModelId == modelId))
-          "thoughtSignature": tc.thoughtSignature,
-      });
+      // Rebuilt: assistant tool calls → functionCall parts. Gemini requires
+      // the thoughtSignature captured from the original response to be
+      // replayed verbatim on the same part.
+      for (final tc in msg.toolCalls) {
+        parts.add({
+          "functionCall": {
+            "name": tc.name,
+            "args": tc.arguments,
+          },
+          // Only to the model that produced it: another model has no use
+          // for the signature and it still travels as input.
+          if (tc.thoughtSignature != null &&
+              (msg.rawThinkingModelId == null ||
+                  modelId == null ||
+                  msg.rawThinkingModelId == modelId))
+            "thoughtSignature": tc.thoughtSignature,
+        });
+      }
     }
 
     for (var attachment in msg.attachments) {

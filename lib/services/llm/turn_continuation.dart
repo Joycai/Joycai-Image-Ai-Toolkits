@@ -161,6 +161,8 @@ LLMResponse mergeTurnParts(List<LLMResponse> parts) {
     rawThinkingBlocks: rawThinking.isEmpty ? null : rawThinking,
     rawThinkingModelId: last.rawThinkingModelId,
     rawContentBlocks: anyRawContent ? rawContent : null,
+    // ③'s parts belong to the part that called the tools, like the calls.
+    rawModelParts: last.rawModelParts,
     toolCalls: last.toolCalls,
   );
 }
