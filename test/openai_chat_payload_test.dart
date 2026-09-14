@@ -557,7 +557,7 @@ void main() {
     test('every other ① vendor never sees the thinking object', () {
       // It is an unknown field there, and an unknown field is a 400 on the
       // official host.
-      for (final id in [Vendors.openAIRest, Vendors.newApiOpenAI, Vendors.minimax, Vendors.dashscope]) {
+      for (final id in [Vendors.openAIRest, Vendors.newApiOpenAI, Vendors.minimax]) {
         final config = LLMModelConfig(
           modelId: 'm',
           channelType: id,
@@ -571,8 +571,73 @@ void main() {
           model: ModelDescriptor.of('m'),
         ));
         expect(p.containsKey('thinking'), isFalse, reason: id);
+        expect(p.containsKey('enable_thinking'), isFalse, reason: id);
         expect(p['reasoning_effort'], 'none', reason: id);
       }
+    });
+
+    group("DashScope's compatible face declares the enable_thinking switch", () {
+      // 03 §3 / pitfalls 11 §A9: Qwen3-Max/Plus think only when told, and
+      // reasoning_effort does not tell them. The declared switch is sent
+      // *instead of* reasoning_effort, on both Bailian vendors' ① face.
+      LLMTarget bailian(String channelType, ReasoningEffort? effort) {
+        final config = LLMModelConfig(
+          modelId: 'qwen3-max',
+          channelType: channelType,
+          endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+          apiKey: 'k',
+          reasoningEffort: effort,
+        );
+        return LLMTarget(
+          config: config,
+          vendor: Vendors.byId(channelType),
+          model: ModelDescriptor.of(config.modelId),
+        );
+      }
+
+      for (final vendor in [Vendors.dashscope, Vendors.dashscopeNative]) {
+        test('$vendor: off, on, and default', () {
+          final off = payloadFor(bailian(vendor, ReasoningEffort.off));
+          expect(off['enable_thinking'], isFalse);
+          expect(off.containsKey('reasoning_effort'), isFalse);
+          expect(off.containsKey('thinking'), isFalse);
+
+          for (final level in [
+            ReasoningEffort.low,
+            ReasoningEffort.medium,
+            ReasoningEffort.high,
+            ReasoningEffort.max,
+          ]) {
+            final on = payloadFor(bailian(vendor, level));
+            expect(on['enable_thinking'], isTrue, reason: level.name);
+            expect(on.containsKey('reasoning_effort'), isFalse,
+                reason: level.name);
+          }
+
+          final byDefault = payloadFor(bailian(vendor, null));
+          expect(byDefault.containsKey('enable_thinking'), isFalse);
+          expect(byDefault.containsKey('reasoning_effort'), isFalse);
+        });
+      }
+
+      test('tools stay on auto while thinking is on', () {
+        // Qwen accepts only auto|none as tool_choice with thinking enabled
+        // (pitfalls 11 §A13, tools 04 §4). This wire never forces a tool, so
+        // the downgrade the rule asks for is already the only behaviour.
+        final p = protocol.buildChatPayloadForTest(
+          bailian(Vendors.dashscope, ReasoningEffort.high),
+          [LLMMessage(role: LLMRole.user, content: 'hi')],
+          isStreaming: false,
+          tools: [
+            LLMTool(
+                name: 'f',
+                description: 'd',
+                parameters: const {'type': 'object'}),
+          ],
+        );
+        expect(p['enable_thinking'], isTrue);
+        expect(p['tool_choice'], 'auto');
+      });
     });
 
     test('an explicit level beats the legacy flag', () {

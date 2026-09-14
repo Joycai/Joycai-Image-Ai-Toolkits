@@ -1306,6 +1306,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       channelType: channel.type,
       modelId: idCtrl.text.trim(),
       tag: tag,
+      // The face the model rides decides the spelling, and so the rungs: a
+      // Bailian model pinned to ④ has two, on ① three, never six.
+      wireProtocol: wireProtocol,
     );
   }
 

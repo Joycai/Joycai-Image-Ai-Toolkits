@@ -196,13 +196,26 @@ surface 开关"表达不了它。绑定关系升级为：
   `AppState.descriptorForModel(model)`**。工作台的参数面板、参考图上限、参数记忆
   命名空间都从这里读；`ModelCapabilities.forModel(model.modelId)` 在
   `services/llm/` 之外出现，就是把点单绕过去了。
-- **推理强度的挡位只问 `LLMDispatcher.reasoningLadder(channelType:, modelId:, tag:)`**
-  （2026-09，模型编辑器的推理滑块）。每条 wire 只给它分得开的档，发出去一样的
+- **推理强度的挡位只问 `LLMDispatcher.reasoningLadder(channelType:, modelId:, tag:, wireProtocol:)`**
+  （2026-09，模型编辑器的推理滑块）。**按解析出的 chat 面分派，不按 vendor 的
+  family**（2026-09-14）：面 = 合法点单，否则 auto，与路由的 `_chatFace` 同一套
+  解析。按 family 分派时，兼容面渠道点单到 ④ 的百炼模型会被给出 ① 的六档（而 ④
+  budget 拼法只分得开两档），原生渠道点单到 ① 的模型会被给出原生开关。
+  每条 wire 只给它分得开的档，发出去一样的
   两档就是一个没有效果的旋钮：① 六档全有（DeepSeek 的关闭走 `thinking` 对象，
   仍是另一种请求）；④ adaptive 没有「关闭」——它和「默认」一样不发 `thinking`；
   ④ budget（Claude 4.5 及更早、百炼 ④ 面）与 MiniMax 的裸 adaptive 没有强度，
   只有「默认 / 开启」（开启存为 medium）；百炼原生是「默认 / 关闭 / 开启」；
-  MJ 与非 chat surface 返回空。③ Gemini（2026-09-14）发
+  百炼两个 vendor 的 **① 面**同样是「默认 / 关闭 / 开启」：它声明了
+  `enable_thinking` 开关方言（`ThinkingDialect.openaiEnableThinking`，reasoning
+  03 §3 switch 方言的 ① 拼法），发顶层 `enable_thinking: bool` 并**停发**
+  `reasoning_effort`——商业款 Qwen3-Max/Plus 默认不思考，而 `reasoning_effort`
+  叫不醒它（pitfalls 11 §A9）。方言按面声明：`VendorProfile.thinkingByProtocol`
+  覆盖 `thinking` 默认值，读取一律经 `thinkingFor(face)`，协议与挡位读的是同一处；
+  没有声明的 vendor 请求逐字节不变。该面的 `tool_choice` 恒为 `auto`，恰好满足
+  「思考开启时只接受 auto|none」（pitfalls 11 §A13）。代价：3.7+ 的新款 Qwen 本
+  可接受 `reasoning_effort` 的深度档，在 ① 面上只剩开关；本仓没有模型级方言列，
+  未加。MJ 与非 chat surface 返回空。③ Gemini（2026-09-14）发
   `generationConfig.thinkingConfig`，**只发一代字段**、恒带
   `includeThoughts: true`：代次由 Layer 3 声明
   （`ModelDescriptor.geminiThinking` → `ModelFamilyClassifier.geminiThinkingGeneration`）

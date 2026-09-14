@@ -10,7 +10,7 @@ import '../../../state/app_state.dart';
 import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
-import '../vendors/vendor_profile.dart' show ThinkingDialect;
+import '../vendors/vendor_profile.dart' show ThinkingDialect, WireProtocol;
 import 'protocol.dart';
 
 /// Recovers a `function.arguments` string that is several JSON objects
@@ -1528,7 +1528,13 @@ class OpenAIChatProtocol implements ChatProtocol {
       // still travels as `reasoning_effort` there (DeepSeek reads it); only
       // "off" changes spelling, and the field is withheld so a value the host
       // does not know is not sent alongside the one it does.
-      ...openaiThinkingFields(target.vendor.thinking, effort),
+      //
+      // Read per face: a multi-face vendor can spell thinking differently
+      // on ① than on its other faces (Bailian's ① switch).
+      ...openaiThinkingFields(
+        target.vendor.thinkingFor(WireProtocol.openaiChat),
+        effort,
+      ),
     };
 
     if (tools != null && tools.isNotEmpty) {
@@ -1544,6 +1550,9 @@ class OpenAIChatProtocol implements ChatProtocol {
             },
           )
           .toList();
+      // Always auto, never a forced tool. That is also what keeps a declared
+      // `enable_thinking: true` valid: Qwen accepts only auto|none as
+      // tool_choice while thinking is on (pitfalls 11 §A13).
       payload["tool_choice"] = "auto";
     }
 
@@ -1577,12 +1586,20 @@ class OpenAIChatProtocol implements ChatProtocol {
   /// The reasoning fields for [dialect] at [effort]: `reasoning_effort` on
   /// the generic ① wire, plus — or instead, for "off" — the top-level
   /// `thinking` object on a vendor that declares
-  /// [ThinkingDialect.openaiThinkingObject]. Empty for the default level.
+  /// [ThinkingDialect.openaiThinkingObject], or the top-level
+  /// `enable_thinking` switch **instead of** `reasoning_effort` on a face
+  /// that declares [ThinkingDialect.openaiEnableThinking]. Empty for the
+  /// default level on every dialect.
   static Map<String, dynamic> openaiThinkingFields(
     ThinkingDialect dialect,
     ReasoningEffort? effort,
   ) {
     if (effort == null) return const {};
+    if (dialect == ThinkingDialect.openaiEnableThinking) {
+      // 03 §3 switch dialect, ① spelling: a boolean, and no reasoning_effort
+      // beside it (Qwen documents the two controls as exclusive).
+      return {'enable_thinking': effort != ReasoningEffort.off};
+    }
     if (dialect != ThinkingDialect.openaiThinkingObject) {
       return {'reasoning_effort': ?openaiReasoningEffortWire(effort)};
     }

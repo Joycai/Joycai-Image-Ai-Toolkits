@@ -295,8 +295,11 @@ class Vendors {
         WireProtocol.anthropicChat: dashscopeAnthropicBase,
       },
       // For the ④ face: Bailian documents the official
-      // `{type: enabled, budget_tokens}` spelling. Ignored on the ① face.
+      // `{type: enabled, budget_tokens}` spelling.
       thinking: ThinkingDialect.anthropicBudget,
+      // The ① face spells thinking as the `enable_thinking` switch rather
+      // than `reasoning_effort` — see [ThinkingDialect.openaiEnableThinking].
+      thinkingByProtocol: _dashscopeThinkingByFace,
     ),
     VendorProfile(
       id: dashscopeNative,
@@ -322,6 +325,10 @@ class Vendors {
         WireProtocol.anthropicChat: dashscopeAnthropicBase,
       },
       thinking: ThinkingDialect.anthropicBudget,
+      // The same per-face declaration as its compatible sibling: which chat
+      // wire a model rides decides the spelling, not which one the channel
+      // leads with.
+      thinkingByProtocol: _dashscopeThinkingByFace,
     ),
     VendorProfile(
       id: midjourneyProxy,
@@ -370,6 +377,14 @@ class Vendors {
   ///
   /// Shared by both MiniMax profiles on purpose: which chat face a channel
   /// stores decides nothing about what the image and video endpoints serve.
+  /// Bailian's per-face thinking spellings, shared by both of its vendors:
+  /// the ① face takes the `enable_thinking` switch. The ④ face keeps the
+  /// vendor default (the manual budget form), and the native face spells
+  /// `parameters.enable_thinking` itself.
+  static const Map<WireProtocol, ThinkingDialect> _dashscopeThinkingByFace = {
+    WireProtocol.openaiChat: ThinkingDialect.openaiEnableThinking,
+  };
+
   static const List<UnlistedModel> _minimaxNativeModels = [
     UnlistedModel('MiniMax-H3',
         description: 'Video generation (MiniMax /v2 task surface)'),
