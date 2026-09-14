@@ -202,20 +202,22 @@ String? geminiFinishReason(String? finishReason) {
 Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Function(String, {String level})? logger}) sync* {
   Map<String, dynamic>? metadata = chunkData['usageMetadata'];
 
-  // Check for prompt blocking (e.g. prohibited content)
-  if (chunkData['promptFeedback'] != null) {
-    final feedback = chunkData['promptFeedback'] as Map<String, dynamic>;
-    final blockReason = feedback['blockReason'];
-    if (blockReason != null) {
-      final msg = 'Google GenAI Blocked: $blockReason';
-      logger?.call(msg, level: 'ERROR');
-
-      // If we have metadata, yield it before throwing so tokens can be recorded if needed
-      if (metadata != null) {
-        yield LLMResponseChunk(metadata: metadata);
-      }
-      throw Exception(msg);
-    }
+  // Prompt-level block (e.g. prohibited content). Published, not thrown:
+  // the one content-filter check lives in LLMService
+  // ([contentBlockedFailure]), after the usage this request was billed for
+  // has been recorded — a throw from here reached the caller before that.
+  final feedback = chunkData['promptFeedback'];
+  if (feedback is Map && feedback['blockReason'] != null) {
+    final blockReason = feedback['blockReason'].toString();
+    logger?.call('Google GenAI Blocked: $blockReason', level: 'ERROR');
+    yield LLMResponseChunk(
+      metadata: {
+        ...?metadata,
+        'finish_reason_raw': blockReason,
+        'finish_reason': contentFilterFinishReason,
+      },
+    );
+    return;
   }
 
   final candidates = chunkData['candidates'] as List?;
@@ -270,16 +272,16 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
         }
       }
 
-      // A block that left nothing behind is a failure, not a quiet success.
-      // Image generation is where this bites: the candidate carries no parts
-      // at all, so the caller collected zero images and the task reported
-      // "done" with no output and only a log line to explain it. When the
-      // candidate *does* carry content (a truncated MAX_TOKENS answer, or a
-      // block that arrived after text streamed), the content is kept. The
-      // protocol reasons get the same treatment: a turn that stopped for a
-      // missing signature and said nothing is a failed request, not an
-      // empty reply.
-      if ((blocked || protocol) && (parts == null || parts.isEmpty)) {
+      // A policy block is a failure whether or not text arrived first — it
+      // used to throw only when the candidate was empty, so a block landing
+      // after streamed text was kept as a successful short answer. It is
+      // published as `finish_reason: content_filter` (above) and failed by
+      // LLMService's single check, which records the billed usage first.
+      //
+      // The protocol reasons still fail here when nothing was said: a turn
+      // that stopped for a missing signature is a failed request, not an
+      // empty reply. With content, the content is kept.
+      if (protocol && (parts == null || parts.isEmpty)) {
         throw Exception('Google GenAI ended the generation: $finishReason');
       }
     }

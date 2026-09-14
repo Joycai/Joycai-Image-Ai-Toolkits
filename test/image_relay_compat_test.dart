@@ -390,14 +390,28 @@ void main() {
     test('a block that produced nothing is a failure, not an empty success', () {
       // IMAGE_SAFETY and PROHIBITED_CONTENT are what the image models return;
       // both used to be logged at INFO and reported as a completed task with
-      // no picture in it.
+      // no picture in it. The parser publishes; LLMService's single check
+      // (contentBlockedFailure) fails the request after recording usage.
       for (final reason in ['IMAGE_SAFETY', 'PROHIBITED_CONTENT', 'SAFETY']) {
-        expect(
-          () => parseGoogleChunks(candidate(reason)).toList(),
-          throwsA(predicate((e) => e.toString().contains(reason))),
-          reason: reason,
-        );
+        final metadata =
+            parseGoogleChunks(candidate(reason)).single.metadata;
+        expect(metadata!['finish_reason'], 'content_filter', reason: reason);
+        final failure = contentBlockedFailure(metadata);
+        expect(failure, isNotNull, reason: reason);
+        expect(failure!.isContentBlocked, isTrue);
+        expect(failure.toString(), contains(reason));
       }
+    });
+
+    test('a prompt-level block is published the same way, usage included', () {
+      final chunks = parseGoogleChunks({
+        'promptFeedback': {'blockReason': 'PROHIBITED_CONTENT'},
+        'usageMetadata': {'promptTokenCount': 12},
+      }).toList();
+      final metadata = chunks.single.metadata!;
+      expect(metadata['promptTokenCount'], 12);
+      expect(metadata['finish_reason'], 'content_filter');
+      expect(contentBlockedFailure(metadata), isNotNull);
     });
 
     test('a truncated answer is still an answer', () {
@@ -407,11 +421,15 @@ void main() {
       expect(chunks.single.textPart, 'as far as I got');
     });
 
-    test('content that arrived before the block is kept', () {
+    test('a block after partial text still fails — the text is voided', () {
+      // It used to be kept as a successful short answer: the parser threw
+      // only when the candidate was empty (errors 06 §2.3).
       final chunks = parseGoogleChunks(
         candidate('SAFETY', parts: [{'text': 'partial'}]),
       ).toList();
       expect(chunks.single.textPart, 'partial');
+      expect(chunks.single.metadata!['finish_reason'], 'content_filter');
+      expect(contentBlockedFailure(chunks.single.metadata), isNotNull);
     });
 
     test('the finish reason reaches metadata in ①\'s vocabulary, raw value alongside', () {

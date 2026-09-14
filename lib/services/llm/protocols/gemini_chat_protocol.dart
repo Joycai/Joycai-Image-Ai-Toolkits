@@ -82,7 +82,12 @@ class GeminiChatProtocol implements ChatProtocol {
       // carrying nothing but usageMetadata is perfectly normal, so
       // parseGoogleChunks must stay tolerant of it.
       final candidates = data['candidates'];
-      if (candidates is! List || candidates.isEmpty) {
+      // A prompt-level block also has no candidates, but it is not a malformed
+      // body: parseGoogleChunks publishes it as `content_filter` and
+      // LLMService fails the request after recording usage.
+      final feedback = data['promptFeedback'];
+      final promptBlocked = feedback is Map && feedback['blockReason'] != null;
+      if (!promptBlocked && (candidates is! List || candidates.isEmpty)) {
         final body = response.body;
         throw Exception(
           'Google GenAI returned no candidates: '

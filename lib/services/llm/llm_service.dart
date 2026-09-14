@@ -163,6 +163,11 @@ class LLMService {
           throw const LLMCancelled();
         }
 
+        // Also after [_recordUsage]: a content-filter stop voids the reply
+        // even when text had already arrived (see [contentBlockedFailure]).
+        final blocked = contentBlockedFailure(response.metadata);
+        if (blocked != null) throw blocked;
+
         parts.add(response);
 
         // A turn the host stopped halfway is asked to go on — up to the cap.
@@ -554,6 +559,11 @@ class LLMService {
             imageCount: imageCount,
           );
         }
+
+        // After usage, same as request(): the chunks already delivered were
+        // blocked output, and the consumer must see a failure, not a success.
+        final blocked = contentBlockedFailure(finalMetadata);
+        if (blocked != null) throw blocked;
 
         return; // Success, exit retry loop
       } catch (e) {

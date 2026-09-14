@@ -74,8 +74,18 @@ class LLMApiException implements Exception {
   /// probe can classify it without matching message prose.
   final bool isNonJsonBody;
 
+  /// True when the provider's content filter stopped the generation — a
+  /// response published with `finish_reason: content_filter` (① verbatim,
+  /// ④ `stop_reason: refusal`, ③ a blocking `finishReason` or
+  /// `promptFeedback.blockReason`). Never retried: the same request meets the
+  /// same filter, and every attempt is billed. See [contentBlockedFailure].
+  final bool isContentBlocked;
+
   LLMApiException(this.message,
-      {this.statusCode, this.isEnvelope = false, this.isNonJsonBody = false});
+      {this.statusCode,
+      this.isEnvelope = false,
+      this.isNonJsonBody = false,
+      this.isContentBlocked = false});
 
   bool get isTransient =>
       statusCode != null &&
@@ -83,6 +93,39 @@ class LLMApiException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// The `finish_reason` every chat wire publishes when the provider's content
+/// filter intercepted the generation. ① sends it natively; ④ and ③ translate
+/// their own vocabularies into it (`anthropicFinishReason`,
+/// `geminiFinishReason`).
+const String contentFilterFinishReason = 'content_filter';
+
+/// The failure a response carrying [metadata] stands for, or null when it was
+/// not content-blocked.
+///
+/// Interception can arrive *after* text has streamed (a Gemini `SAFETY`
+/// finish on the last chunk, an Azure-style `content_filter` on ①, ④'s
+/// `refusal`), and a response that ends that way is not a short answer: the
+/// delivered text has to be voided (pitfalls 11 §A7, errors 06 §2.3). The
+/// protocols therefore only *publish* the reason, and `LLMService` makes this
+/// one check — after recording usage, since the tokens were billed either
+/// way — on both the request and the stream path. Before it existed nothing
+/// read `content_filter` at all and every wire returned the partial reply as a
+/// success.
+LLMApiException? contentBlockedFailure(Map<String, dynamic>? metadata) {
+  if (metadata == null ||
+      metadata['finish_reason'] != contentFilterFinishReason) {
+    return null;
+  }
+  final raw = metadata['finish_reason_raw'] ?? metadata['stop_reason'];
+  return LLMApiException(
+    'Blocked by the provider\'s content filter '
+    '(finish_reason: $contentFilterFinishReason'
+    '${raw == null ? '' : ', reported as $raw'}). '
+    'Any partial output from this request was discarded.',
+    isContentBlocked: true,
+  );
 }
 
 /// The whole-request deadline on the **non-streaming** path expired.
