@@ -154,6 +154,8 @@ class LLMConfigResolver {
       enableWebSearch: modelData.enableWebSearch,
       wireProtocol: modelData.wireProtocol,
       tag: modelData.tag,
+      // Raw tri-state; ContextBudget alone decodes it (preflight size check).
+      contextWindow: modelData.contextWindow,
       inputFee: inputFee,
       cacheInputFee: cacheInputFee,
       outputFee: outputFee,

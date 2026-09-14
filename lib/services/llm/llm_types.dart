@@ -229,6 +229,32 @@ class LLMJobAbandoned implements Exception {
   String toString() => message;
 }
 
+/// A request that is clearly larger than the model's configured context
+/// window, refused **before** it is sent (provider layering 01 §6, pitfalls
+/// 11 §A5, errors 06 §3).
+///
+/// Local stacks (Ollama's default `num_ctx`, llama.cpp) do not reject an
+/// oversized prompt: they silently drop its head — the system prompt first —
+/// and answer 200, so the model replies to a conversation it never saw whole.
+/// Checked only against an explicit window, with a permissive estimate and a
+/// margin (see `ContextBudget.exceedsWindow`): a backstop for an obviously
+/// oversized request, not a second budget. Never retried — nothing was sent,
+/// and the same request is the same size. Carries both numbers for display.
+class LLMContextSizeError implements Exception {
+  final int estimatedTokens;
+  final int contextWindow;
+
+  const LLMContextSizeError(this.estimatedTokens, this.contextWindow);
+
+  @override
+  String toString() =>
+      'This request is about $estimatedTokens tokens, more than the '
+      '$contextWindow-token context window configured for the model, so it '
+      'was not sent — a server that accepted it would silently drop the start '
+      'of the conversation. Shorten the input, or raise the context window in '
+      'the model settings if the model really supports more.';
+}
+
 class LLMDeadlineExceeded implements Exception {
   final Duration deadline;
 
@@ -565,6 +591,13 @@ class LLMModelConfig {
   /// rule as [wireProtocol]: only [LLMConfigResolver] reads the column.
   final String? tag;
 
+  /// The model's configured context window (`llm_models.context_window`
+  /// verbatim — the tri-state `ContextBudget.modeOf` decodes), or null when
+  /// unset or when the caller has no model row. Carried for the pre-send
+  /// size check (`LLMService.preflightContextSize`); only `ContextBudget`
+  /// interprets it.
+  final int? contextWindow;
+
   final double inputFee;
 
   /// Rate for cached input tokens, or null when the fee group leaves it unset —
@@ -598,6 +631,7 @@ class LLMModelConfig {
     this.enableWebSearch = false,
     this.wireProtocol,
     this.tag,
+    this.contextWindow,
     this.inputFee = 0.0,
     this.cacheInputFee,
     this.outputFee = 0.0,
@@ -627,6 +661,7 @@ class LLMModelConfig {
         enableWebSearch: enableWebSearch,
         wireProtocol: wireProtocol,
         tag: tag,
+        contextWindow: contextWindow,
         inputFee: inputFee,
         cacheInputFee: cacheInputFee,
         outputFee: outputFee,

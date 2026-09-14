@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../billing/spec_billing.dart';
 import '../database_service.dart';
+import 'context_budget.dart';
 import 'llm_config_resolver.dart';
 import 'job_poll.dart' show cancellableSleep, cancellationProbeOf;
 import 'llm_dispatcher.dart';
@@ -111,6 +112,14 @@ class LLMService {
     int attempt = 0;
     void log(String msg, {String level = 'INFO'}) =>
         _emitLog(msg, level: level, contextId: contextId);
+
+    // Before anything is sent, and outside the retry loop: an oversized
+    // request fails the same way every time.
+    final oversized = preflightContextSize(config, messages, tools);
+    if (oversized != null) {
+      log(oversized.toString(), level: 'ERROR');
+      throw oversized;
+    }
 
     // The turn so far: the history this request is asked against (grows by
     // one continuation at a time) and the partial replies collected on the
@@ -640,6 +649,59 @@ class LLMService {
   static bool shouldRetry(Object e, {required bool billedOnSubmit}) =>
       billedOnSubmit ? isRetryableBeforeAcceptance(e) : isRetryable(e);
 
+  /// The pre-send size failure for [messages] + [tools] on [config], or null
+  /// when the request may go out (provider layering 01 §6, pitfalls 11 §A5).
+  ///
+  /// Counts what a request carries — message text, replayed reasoning,
+  /// tool-call arguments, one flat cost per attachment, and the tool schemas
+  /// — and asks [ContextBudget] (the only reader of the window tri-state)
+  /// whether that is clearly over. An unset or unlimited window is never
+  /// checked. The estimate is deliberately a floor, so this is a backstop for
+  /// the silent head-truncation local servers do, not a budget: the Prompt
+  /// Assistant compacts against a budget this check cannot pre-empt.
+  @visibleForTesting
+  static LLMContextSizeError? preflightContextSize(
+    LLMModelConfig config,
+    List<LLMMessage> messages,
+    List<LLMTool>? tools,
+  ) {
+    final window = config.contextWindow;
+    if (ContextBudget.modeOf(window) != ContextWindowMode.specified) {
+      return null;
+    }
+    var chars = 0;
+    var images = 0;
+    for (final m in messages) {
+      chars += m.content.length + (m.reasoningContent?.length ?? 0);
+      images += m.attachments.length;
+      for (final call in m.toolCalls) {
+        chars += call.name.length + _jsonLength(call.arguments);
+      }
+    }
+    var schemaChars = 0;
+    for (final tool in tools ?? const <LLMTool>[]) {
+      schemaChars += tool.name.length +
+          tool.description.length +
+          _jsonLength(tool.parameters);
+    }
+    final estimate = ContextBudget.estimateRequestTokens(
+      chars: chars,
+      toolSchemaChars: schemaChars,
+      images: images,
+    );
+    return ContextBudget.exceedsWindow(estimate, window)
+        ? LLMContextSizeError(estimate, window!)
+        : null;
+  }
+
+  static int _jsonLength(Object? value) {
+    try {
+      return jsonEncode(value).length;
+    } catch (_) {
+      return value.toString().length;
+    }
+  }
+
   /// [options] with a cancellation probe that asks both the caller's own
   /// probe ([llmCancellationProbeKey], an executor's) and [isCancelled].
   ///
@@ -762,6 +824,12 @@ class LLMService {
     // downstream (doubled text, duplicate images written to disk). So retry
     // only covers failures that happen before any chunk was delivered.
     var deliveredAnyChunk = false;
+
+    final oversized = preflightContextSize(config, messages, null);
+    if (oversized != null) {
+      _emitLog(oversized.toString(), level: 'ERROR', contextId: contextId);
+      throw oversized;
+    }
 
     // The executor's probe rides in the options; nothing to chain here.
     final streamProbe = cancellationProbeOf(options);

@@ -56,6 +56,31 @@ in `web_scraper_service.dart`) must not drift on what `null` or `0` mean.
 
 Use `ContextBudget.modeOf` / `.store` rather than comparing to `0` by hand.
 
+### The pre-send size check is a backstop, not a third layer (2026-09-14)
+
+`LLMService.request` / `requestStream` refuse a request with a typed
+`LLMContextSizeError(estimatedTokens, contextWindow)` before sending it, because
+local servers (Ollama's default `num_ctx`, llama.cpp) answer an oversized prompt
+by silently dropping its head — system prompt first — and returning 200. The
+window reaches the service as `LLMModelConfig.contextWindow` via the resolver;
+the decision is `ContextBudget.estimateRequestTokens` + `exceedsWindow`.
+
+It is built so that it **cannot fire on a turn this agent budgeted**:
+
+- only a `specified` window is checked — unset and unlimited never are;
+- the estimate divides by `preflightCharsPerToken` = 6.0, the most permissive
+  ratio `calibrate` accepts, counts images at 258 tokens (the lowest provider
+  cost) — a floor, the opposite bias of `charsPerToken`, which is right for
+  budgeting and wrong for a hard refusal;
+- it fires only past the window × `preflightMargin` (1.1).
+
+Occupancy is kept under `window × perToken` chars by layer 2 and the read cap,
+with `perToken ≤ 6`, so the estimate of any request the agent assembled stays
+at or below the window. What it catches is what no budget produced: an
+oversized single prompt from a refine/rename task, or a system prompt already
+past the window (invariant 7 still only *warns* about a large one — the check
+fires only when it is clearly beyond the whole window).
+
 ## Why characters, not tokens
 
 Budgets are computed in the character domain and converted with
