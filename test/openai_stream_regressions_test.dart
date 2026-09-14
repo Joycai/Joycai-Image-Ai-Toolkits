@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
@@ -22,6 +23,11 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 ///   assembles the LLMResponse, and without the name the ① payload builder
 ///   drops tool-turn reasoning from replayed history — which DeepSeek
 ///   rejects with a 400 on the next request of the conversation.
+///
+/// And the end-of-stream integrity rules of the 2026-09-14 audit (batch A):
+/// the finish reason reaches metadata without usage, a stream cut before its
+/// finish reason never executes a half-built call, and a stream of empty
+/// chunks is not a successful reply.
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -61,6 +67,10 @@ void main() {
     );
   }
 
+  Future<List<LLMResponseChunk>> run() => OpenAIChatProtocol()
+      .generateStream(target(), [LLMMessage(role: LLMRole.user, content: 'hi')])
+      .toList();
+
   setUp(() async {
     binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
@@ -92,12 +102,11 @@ void main() {
           '"function":{"name":"submit_prompt","arguments":"{\\"p"}}]}}]}',
       'data: {"choices":[{"delta":{"tool_calls":[{"index":0,'
           '"function":{"arguments":"\\":1}"}}]}}]}',
+      'data: {"choices":[{"delta":{},"finish_reason":"tool_calls"}]}',
       'data: [DONE]',
     ];
 
-    final chunks = await OpenAIChatProtocol()
-        .generateStream(target(), [LLMMessage(role: LLMRole.user, content: 'hi')])
-        .toList();
+    final chunks = await run();
 
     // One keepalive per tool-bearing frame: no text, no call yet — just a
     // pulse for the idle guard.
@@ -121,13 +130,11 @@ void main() {
   test('the reasoning field name survives the streaming path', () async {
     sseLines = [
       'data: {"choices":[{"delta":{"reasoning_content":"thinking"}}]}',
-      'data: {"choices":[{"delta":{"content":"answer"}}]}',
+      'data: {"choices":[{"delta":{"content":"answer"},"finish_reason":"stop"}]}',
       'data: [DONE]',
     ];
 
-    final chunks = await OpenAIChatProtocol()
-        .generateStream(target(), [LLMMessage(role: LLMRole.user, content: 'hi')])
-        .toList();
+    final chunks = await run();
 
     final reasoning = chunks.singleWhere((c) => c.reasoningPart != null);
     expect(reasoning.reasoningPart, 'thinking');
@@ -138,13 +145,10 @@ void main() {
 
     // The alternate spelling is remembered as itself, not normalized.
     sseLines = [
-      'data: {"choices":[{"delta":{"reasoning":"hmm"}}]}',
+      'data: {"choices":[{"delta":{"reasoning":"hmm"},"finish_reason":"stop"}]}',
       'data: [DONE]',
     ];
-    final alt = (await OpenAIChatProtocol()
-            .generateStream(target(), [LLMMessage(role: LLMRole.user, content: 'hi')])
-            .toList())
-        .singleWhere((c) => c.reasoningPart != null);
+    final alt = (await run()).singleWhere((c) => c.reasoningPart != null);
     expect(alt.reasoningFieldName, 'reasoning');
   });
 
@@ -152,16 +156,141 @@ void main() {
     // Inline reasoning has no echo obligation — a field name here would make
     // the payload builder invent a key DeepSeek never sent.
     sseLines = [
-      'data: {"choices":[{"delta":{"content":"<think>pondering</think>done"}}]}',
+      'data: {"choices":[{"delta":{"content":"<think>pondering</think>done"},'
+          '"finish_reason":"stop"}]}',
       'data: [DONE]',
     ];
 
-    final chunks = await OpenAIChatProtocol()
-        .generateStream(target(), [LLMMessage(role: LLMRole.user, content: 'hi')])
-        .toList();
+    final chunks = await run();
 
     final reasoning = chunks.where((c) => c.reasoningPart != null);
     expect(reasoning, isNotEmpty);
     expect(reasoning.every((c) => c.reasoningFieldName == null), isTrue);
+  });
+
+  group('end-of-stream integrity', () {
+    test('a finish reason reaches metadata even when no usage was sent',
+        () async {
+      // llama.cpp, LM Studio and many relays send no usage block; the
+      // metadata chunk used to be gated on usage alone, so `length` never
+      // reached the truncation warning on exactly those hosts.
+      sseLines = [
+        'data: {"choices":[{"delta":{"content":"as far as I got"},'
+            '"finish_reason":"length"}]}',
+        'data: [DONE]',
+      ];
+      final metadata = (await run()).map((c) => c.metadata).nonNulls.single;
+      expect(metadata, {'finish_reason': 'length'});
+    });
+
+    test('content_filter without usage reaches the content-block check',
+        () async {
+      sseLines = [
+        'data: {"choices":[{"delta":{"content":"partial"},'
+            '"finish_reason":"content_filter"}]}',
+        'data: [DONE]',
+      ];
+      final metadata = (await run()).map((c) => c.metadata).nonNulls.single;
+      expect(contentBlockedFailure(metadata), isNotNull);
+    });
+
+    test('a stream cut mid tool call fails instead of executing it', () async {
+      // No finish_reason, arguments cut mid-JSON: flush() would decode them
+      // to {} with a WARN and the agent loop would run the call.
+      sseLines = [
+        'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1",'
+            '"function":{"name":"submit_prompt","arguments":"{\\"prompt\\": \\"half"}}]}}]}',
+      ];
+      await expectLater(
+        run(),
+        throwsA(isA<LLMApiException>().having(
+            (e) => e.message, 'message', contains('truncated'))),
+      );
+    });
+
+    test('text cut before its finish reason is delivered as truncated',
+        () async {
+      sseLines = [
+        'data: {"choices":[{"delta":{"content":"the answer so f"}}]}',
+      ];
+      final chunks = await run();
+      expect(chunks.map((c) => c.textPart).nonNulls.join(), 'the answer so f');
+      final metadata = chunks.map((c) => c.metadata).nonNulls.single;
+      expect(metadata['finish_reason'], 'length');
+      expect(metadata['stream_incomplete'], isTrue);
+    });
+
+    test('chunks with nothing in them are not a successful empty reply',
+        () async {
+      sseLines = [
+        'data: {"choices":[{"delta":{"role":"assistant"}}]}',
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}',
+        'data: {"choices":[],"usage":{"prompt_tokens":9,"completion_tokens":0}}',
+        'data: [DONE]',
+      ];
+      await expectLater(
+        run(),
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.message, 'message', contains('no content'))
+            .having((e) => e.message, 'message', contains('stop'))),
+      );
+    });
+
+    test('the synchronous path refuses an empty message too', () async {
+      sseLines = [
+        '{"choices":[{"message":{"role":"assistant","content":""},'
+            '"finish_reason":"stop"}],"usage":{"prompt_tokens":4}}',
+      ];
+      await expectLater(
+        OpenAIChatProtocol().generate(
+            target(), [LLMMessage(role: LLMRole.user, content: 'hi')]),
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.message, 'message', contains('no content'))),
+      );
+
+      // …while an empty `length` ending is still delivered.
+      sseLines = [
+        '{"choices":[{"message":{"role":"assistant","content":""},'
+            '"finish_reason":"length"}]}',
+      ];
+      final truncated = await OpenAIChatProtocol().generate(
+          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      expect(truncated.metadata['finish_reason'], 'length');
+    });
+
+    test('③ a stream that decodes to no chunk at all is a failure', () async {
+      // ① had `sawChunk`, ④ `sawMessage`, DashScope `sawFrame`; ③ ended an
+      // HTML-behind-200 or keep-alive-only stream as a successful empty reply.
+      sseLines = [': keep-alive', '<html>not the API</html>'];
+      final config = LLMModelConfig(
+        modelId: 'gemini-2.5-flash',
+        channelType: Vendors.googleRest,
+        endpoint: 'http://${server.address.host}:${server.port}/v1beta',
+        apiKey: 'k',
+      );
+      final gemini = LLMTarget(
+        config: config,
+        vendor: Vendors.byId(config.channelType),
+        model: ModelDescriptor.of(config.modelId),
+      );
+      await expectLater(
+        GeminiChatProtocol().generateStream(
+            gemini, [LLMMessage(role: LLMRole.user, content: 'hi')]).toList(),
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.isNonJsonBody, 'isNonJsonBody', isTrue)),
+      );
+    });
+
+    test('an empty reply that ran out of tokens is still a length ending',
+        () async {
+      // All budget spent elsewhere: routed to the truncation handling, not
+      // reported as a broken endpoint.
+      sseLines = [
+        'data: {"choices":[{"delta":{},"finish_reason":"length"}]}',
+        'data: [DONE]',
+      ];
+      final metadata = (await run()).map((c) => c.metadata).nonNulls.single;
+      expect(metadata['finish_reason'], 'length');
+    });
   });
 }

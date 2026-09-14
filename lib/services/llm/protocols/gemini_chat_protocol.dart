@@ -224,6 +224,10 @@ class GeminiChatProtocol implements ChatProtocol {
       level: 'DEBUG',
     );
 
+    // Whether a single protocol-shaped chunk arrived — see the guard after
+    // the loop.
+    var sawChunk = false;
+
     try {
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(
@@ -241,15 +245,29 @@ class GeminiChatProtocol implements ChatProtocol {
           await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
 
-        yield* Stream.fromIterable(
-          geminiChunksFromSseLine(line, logger: logger),
-        );
+        for (final chunk in geminiChunksFromSseLine(line, logger: logger)) {
+          sawChunk = true;
+          yield chunk;
+        }
       }
     } finally {
       client.close();
       // In the finally so a stream that failed mid-flight still records how
       // long it ran before it did.
       await LLMDebugLogger.finish(debugFile);
+    }
+
+    // The guard ① (`sawChunk`), ④ (`sawMessage`) and DashScope (`sawFrame`)
+    // already had: a 200 whose body is an HTML page, or nothing but
+    // keep-alives, decodes to no chunk and used to end as a successful empty
+    // reply (pitfalls 11 §A6).
+    if (!sawChunk) {
+      throw LLMApiException(
+        'Google GenAI stream (${redactUrl(url)}) ended without a single '
+        'chunk — the base URL may point at something that is not this API, '
+        'or the relay answered with an empty stream.',
+        isNonJsonBody: true,
+      );
     }
 
     yield LLMResponseChunk(isDone: true);

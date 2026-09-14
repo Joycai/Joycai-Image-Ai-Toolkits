@@ -797,6 +797,24 @@ class OpenAIChatProtocol implements ChatProtocol {
       final finishReason = choice?['finish_reason'];
       if (finishReason != null) metadata['finish_reason'] = finishReason;
 
+      // A message with nothing in it — no text, reasoning, tool calls or
+      // images — is not "the model chose to say nothing" (pitfalls 11 §A6).
+      // `length` and `content_filter` are real endings with their own
+      // handling downstream, so they pass through.
+      if (text.isEmpty &&
+          reasoningContent == null &&
+          toolCalls.isEmpty &&
+          images.isEmpty &&
+          finishReason != 'length' &&
+          finishReason != contentFilterFinishReason) {
+        throw LLMApiException(
+          'OpenAI API (${redactUrl(url)}) returned no content — no text, '
+          'reasoning, tool calls or images '
+          '(finish_reason: ${finishReason ?? 'none'}, '
+          'usage: ${data['usage'] ?? 'none'}).',
+        );
+      }
+
       return LLMResponse(
         text: text,
         generatedImages: images,
@@ -931,6 +949,10 @@ class OpenAIChatProtocol implements ChatProtocol {
     // to no chunk at all and used to end as a successful empty reply — the
     // synchronous path throws "returned no choices" for the same body.
     var sawChunk = false;
+    // Whether any of those chunks carried something: text (base64 included),
+    // reasoning, a tool-call fragment or an image. Separate from [sawChunk]
+    // because a relay can stream well-formed chunks that hold nothing.
+    var sawOutput = false;
 
     try {
       await for (final line
@@ -985,6 +1007,7 @@ class OpenAIChatProtocol implements ChatProtocol {
           final rawToolCalls = delta['tool_calls'];
           streamedToolCalls.feed(rawToolCalls);
           if (rawToolCalls is List && rawToolCalls.isNotEmpty) {
+            sawOutput = true;
             // Keepalive. Fragments buffer silently until the flush after the
             // loop, but the consumer's idle guard resets only on chunks it
             // receives — a model answering with one long tool call and no
@@ -997,11 +1020,13 @@ class OpenAIChatProtocol implements ChatProtocol {
 
           final structured = extractStructuredImages(delta);
           for (final img in dedupe.filter(structured.bytes)) {
+            sawOutput = true;
             yield LLMResponseChunk(imagePart: img);
           }
           for (final img in dedupe.filter(
             await _fetchImageUrls(structured.urls, config, logger),
           )) {
+            sawOutput = true;
             yield LLMResponseChunk(imagePart: img);
           }
         }
@@ -1015,6 +1040,7 @@ class OpenAIChatProtocol implements ChatProtocol {
           final reasoning = rawReasoningContent ?? delta?['reasoning'];
 
           if (reasoning is String && reasoning.isNotEmpty) {
+            sawOutput = true;
             // Dedicated channel: consumers that accumulate textPart into a
             // deliverable must never glue the thinking into it. The field
             // *name* rides along — same probe as the sync path — because a
@@ -1030,6 +1056,7 @@ class OpenAIChatProtocol implements ChatProtocol {
           }
 
           if (text.isNotEmpty) {
+            sawOutput = true;
             final split = thinkFilter.feed(text);
             if (split.reasoning.isNotEmpty) {
               yield LLMResponseChunk(reasoningPart: split.reasoning);
@@ -1100,6 +1127,47 @@ class OpenAIChatProtocol implements ChatProtocol {
       );
     }
 
+    // Chunks arrived, but nothing in them: no text, no reasoning, no tool
+    // call, no image. A 200 like that used to end as a successful empty
+    // reply (pitfalls 11 §A6). `length` and `content_filter` are exempt —
+    // those are real endings with their own handling downstream (the
+    // truncation warning, [contentBlockedFailure]).
+    if (!sawOutput &&
+        finishReason != 'length' &&
+        finishReason != contentFilterFinishReason) {
+      throw LLMApiException(
+        'OpenAI API stream (${redactUrl(url)}) returned no content — no '
+        'text, reasoning, tool calls or images '
+        '(finish_reason: ${finishReason ?? 'none'}, '
+        'usage: ${usageMetadata ?? 'none'}).',
+      );
+    }
+
+    // A stream that closes cleanly without ever sending a finish_reason was
+    // cut off: every ① host sends one on the last choice chunk. With tool
+    // fragments pending that is a hard failure — [flush] would decode the
+    // cut-off arguments to `{}` with a WARN and the agent loop would execute
+    // the call. Text alone is delivered, marked `length` (the one truncation
+    // signal every caller already honours) and flagged `stream_incomplete`.
+    var streamIncomplete = false;
+    if (finishReason == null) {
+      if (!streamedToolCalls.isEmpty) {
+        throw LLMApiException(
+          'OpenAI API stream (${redactUrl(url)}) closed without a '
+          'finish_reason while tool call arguments were still arriving — '
+          'the stream was truncated, and a call with cut-off arguments must '
+          'not be executed.',
+        );
+      }
+      logger?.call(
+        'The stream closed without a finish_reason — the reply was probably '
+        'cut off in transit. Treating it as truncated.',
+        level: 'WARN',
+      );
+      finishReason = 'length';
+      streamIncomplete = true;
+    }
+
     // After the loop, never inside it: a call is whole only once the last
     // fragment has arrived, and [LLMResponseChunk.toolCallPart] promises
     // consumers they can act on whatever reaches them. Deliberately outside
@@ -1119,11 +1187,19 @@ class OpenAIChatProtocol implements ChatProtocol {
     // Last, so it wins over any metadata attached to an earlier chunk. Without
     // it a streamed request recorded no token usage at all — the sync path's
     // `usage` + `finish_reason` are reported here in the same shape.
-    if (usageMetadata != null) {
-      yield LLMResponseChunk(
-        metadata: {...usageMetadata, 'finish_reason': ?finishReason},
-      );
-    }
+    //
+    // Unconditional: llama.cpp, LM Studio and many relays send no usage
+    // block at all, and gating this chunk on usage meant `length` and
+    // `content_filter` never reached the truncation warning or the
+    // content-block check on exactly those hosts. A finish reason is always
+    // known by now — a stream that sent none was resolved above.
+    yield LLMResponseChunk(
+      metadata: {
+        ...?usageMetadata,
+        'finish_reason': finishReason,
+        if (streamIncomplete) 'stream_incomplete': true,
+      },
+    );
 
     yield LLMResponseChunk(isDone: true);
   }
