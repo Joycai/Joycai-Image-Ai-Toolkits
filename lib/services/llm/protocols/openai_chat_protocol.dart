@@ -876,6 +876,7 @@ class OpenAIChatProtocol implements ChatProtocol {
             text,
             config,
             imageReply: target.model.capabilities.isImageGenerator,
+            logger: logger,
           );
           text = result.text;
           images.addAll(dedupe.filter(result.images));
@@ -1194,6 +1195,7 @@ class OpenAIChatProtocol implements ChatProtocol {
           accumulatedText,
           config,
           imageReply: target.model.capabilities.isImageGenerator,
+          logger: logger,
         );
         // If the text was mostly images, don't yield the messy leftover text
         if (result.text.length < accumulatedText.length * 0.1 ||
@@ -1302,36 +1304,25 @@ class OpenAIChatProtocol implements ChatProtocol {
   }
 
   /// Downloads images a relay returned by reference rather than by value.
-  /// A failed fetch is logged and skipped — one dead link must not lose the
-  /// images that did arrive.
+  ///
+  /// Through the shared [resolveImageRefs]: the bytes must be an image (a
+  /// relay's `200` + HTML page for an expired link used to be kept as a
+  /// picture), a link gets one retry, and a partial result is warned about.
+  /// A failed fetch is still skipped — one dead link must not lose the images
+  /// that did arrive.
   Future<List<Uint8List>> _fetchImageUrls(
     List<String> urls,
     LLMModelConfig config,
     LLMLogger? logger,
   ) async {
     if (urls.isEmpty) return const [];
-    final images = <Uint8List>[];
     final client = config.createClient();
     try {
-      for (final url in urls) {
-        try {
-          final resp = await client.get(Uri.parse(url));
-          if (resp.statusCode == 200) {
-            images.add(resp.bodyBytes);
-          } else {
-            logger?.call(
-              'Image URL returned ${resp.statusCode}: $url',
-              level: 'WARN',
-            );
-          }
-        } catch (e) {
-          logger?.call('Failed to fetch image URL $url: $e', level: 'WARN');
-        }
-      }
+      return await resolveImageRefs(urls, client, logger,
+          source: 'OpenAI chat image links');
     } finally {
       client.close();
     }
-    return images;
   }
 
   bool _isBase64Heuristic(String text) {
@@ -1348,61 +1339,71 @@ class OpenAIChatProtocol implements ChatProtocol {
     String text,
     LLMModelConfig config, {
     required bool imageReply,
+    LLMLogger? logger,
   }) async {
-    final List<Uint8List> images = [];
-    String cleanText = text;
     final client = config.createClient();
-
     try {
-      // 0. The whole reply *is* the image: bare base64, or (for an image
-      //    model) a bare link. Both are relay shapes with no markdown and no
-      //    `data:` prefix, which the two scans below cannot see.
-      final whole = wholeContentImage(text, imageReply: imageReply);
-      if (whole != null) {
-        if (whole.bytes != null) {
-          images.add(whole.bytes!);
-        } else if (whole.url != null) {
-          try {
-            final response = await client.get(Uri.parse(whole.url!));
-            if (response.statusCode == 200 &&
-                imageMimeFromBytes(response.bodyBytes) != null) {
-              images.add(response.bodyBytes);
-            }
-          } catch (e) {
-            /* ignore */
-          }
-        }
-        if (images.isNotEmpty) return _TextProcessResult('', images);
-      }
-
-      // 1. Extract and remove Inline Base64
-      final base64Regex = RegExp(r'data:image/[^;]+;base64,([a-zA-Z0-9+/=]+)');
-      final b64Matches = base64Regex.allMatches(text);
-      for (var match in b64Matches) {
-        try {
-          images.add(base64Decode(match.group(1)!));
-          cleanText = cleanText.replaceFirst(match.group(0)!, '[Image Data]');
-        } catch (e) {
-          /* ignore */
-        }
-      }
-
-      // 2. Fetch images the text points at rather than embeds.
-      for (final url in imageUrlsInText(text)) {
-        try {
-          final response = await client.get(Uri.parse(url));
-          if (response.statusCode == 200) {
-            images.add(response.bodyBytes);
-          }
-        } catch (e) {
-          /* ignore */
-        }
-      }
+      final result = await extractTextImages(text, client,
+          imageReply: imageReply, logger: logger);
+      return _TextProcessResult(result.text, result.images);
     } finally {
       client.close();
     }
+  }
 
-    return _TextProcessResult(cleanText.trim(), images);
+  /// Images carried by a chat reply's *text*, and the text left over.
+  ///
+  /// Both link spellings — the whole reply being one link, and links inside
+  /// markdown / Google storage URLs ([imageUrlsInText]) — are fetched through
+  /// the shared [resolveImageRef] / [resolveImageRefs]: the bytes must be an
+  /// image, a link gets one retry, and a failure is logged instead of the old
+  /// silent `/* ignore */` (a text link answered with an HTML page used to be
+  /// kept as a picture). Inline `data:` payloads are decoded as before.
+  ///
+  /// Static and handed its [client] so it can be pinned without a socket.
+  @visibleForTesting
+  static Future<({String text, List<Uint8List> images})> extractTextImages(
+    String text,
+    http.Client client, {
+    required bool imageReply,
+    LLMLogger? logger,
+    Duration retryDelay = const Duration(seconds: 1),
+  }) async {
+    final List<Uint8List> images = [];
+    String cleanText = text;
+
+    // 0. The whole reply *is* the image: bare base64, or (for an image
+    //    model) a bare link. Both are relay shapes with no markdown and no
+    //    `data:` prefix, which the two scans below cannot see.
+    final whole = wholeContentImage(text, imageReply: imageReply);
+    if (whole != null) {
+      if (whole.bytes != null) {
+        images.add(whole.bytes!);
+      } else if (whole.url != null) {
+        final bytes = await resolveImageRef(whole.url!, client, logger,
+            retryDelay: retryDelay);
+        if (bytes != null) images.add(bytes);
+      }
+      if (images.isNotEmpty) return (text: '', images: images);
+    }
+
+    // 1. Extract and remove Inline Base64
+    final base64Regex = RegExp(r'data:image/[^;]+;base64,([a-zA-Z0-9+/=]+)');
+    final b64Matches = base64Regex.allMatches(text);
+    for (var match in b64Matches) {
+      try {
+        images.add(base64Decode(match.group(1)!));
+        cleanText = cleanText.replaceFirst(match.group(0)!, '[Image Data]');
+      } catch (e) {
+        /* ignore */
+      }
+    }
+
+    // 2. Fetch images the text points at rather than embeds.
+    images.addAll(await resolveImageRefs(imageUrlsInText(text), client, logger,
+        source: 'OpenAI chat reply links', retryDelay: retryDelay));
+
+    return (text: cleanText.trim(), images: images);
   }
 
   /// Build a chat/completions payload for [target].
