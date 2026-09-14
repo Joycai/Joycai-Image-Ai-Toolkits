@@ -112,6 +112,8 @@ class LLMService {
     // way to a finished one.
     var turnHistory = messages;
     final parts = <LLMResponse>[];
+    // [usageMissing] is warned about once per call, not once per leg.
+    var warnedMissingUsage = false;
 
     while (true) {
       // Checked before opening a connection rather than only after: the
@@ -188,6 +190,11 @@ class LLMService {
             options: options,
             imageCount: response.generatedImages.length,
           );
+        }
+
+        if (!warnedMissingUsage && usageMissing(config, response.metadata)) {
+          warnedMissingUsage = true;
+          log(_missingUsageWarning(config), level: 'WARN');
         }
 
         // Deliberately after [_recordUsage] and before the session is
@@ -761,6 +768,11 @@ class LLMService {
           );
         }
 
+        if (usageMissing(config, finalMetadata ?? const {})) {
+          _emitLog(_missingUsageWarning(config),
+              level: 'WARN', contextId: contextId);
+        }
+
         // After usage, same as request(): the chunks already delivered were
         // blocked output, and the consumer must see a failure, not a success.
         final blocked = contentBlockedFailure(finalMetadata);
@@ -798,6 +810,30 @@ class LLMService {
       }
     }
   }
+
+  /// Whether a response on a **token-billed** route reported no usage at all
+  /// — no prompt count and no output count.
+  ///
+  /// Such a call is recorded (when it is recorded at all) as a row of zeros,
+  /// which on the metrics page is indistinguishable from a genuinely free
+  /// request (pitfalls 11 §A8). Many local runtimes and relays simply omit
+  /// `usage`; the cost is real either way. Request- and spec-billed groups
+  /// price something other than tokens, so an absent usage payload is not a
+  /// gap there. Warned, never thrown — and no schema change: the row stays
+  /// as it is.
+  @visibleForTesting
+  static bool usageMissing(
+    LLMModelConfig config,
+    Map<String, dynamic> metadata,
+  ) =>
+      config.billingMode == 'token' &&
+      promptTokensOf(metadata) == null &&
+      outputTokensOf(metadata) == 0;
+
+  static String _missingUsageWarning(LLMModelConfig config) =>
+      'The provider reported no token usage for ${config.modelId} on a '
+      'token-billed channel; this request is recorded as 0 tokens although '
+      'it was probably billed.';
 
   /// Where usage rows are written. Null means the real database; tests swap
   /// in a sink that throws to pin that recording is best-effort.
