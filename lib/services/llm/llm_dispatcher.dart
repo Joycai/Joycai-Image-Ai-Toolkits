@@ -761,8 +761,8 @@ class LLMDispatcher {
       case ProtocolFamily.openai: // reasoning_effort
       case ProtocolFamily.anthropic: // thinking budget tiers
       case ProtocolFamily.dashscope: // enable_thinking / thinking_budget
+      case ProtocolFamily.gemini: // generationConfig.thinkingConfig
         return true;
-      case ProtocolFamily.gemini:
       case ProtocolFamily.midjourney:
         return false;
     }
@@ -824,6 +824,21 @@ class LLMDispatcher {
           ThinkingDialect.none || ThinkingDialect.openaiThinkingObject => const [],
         };
       case ProtocolFamily.gemini:
+        // thinkingConfig: Max and High both send the top of the scale, so
+        // Max is not a rung of its own. A model that takes no thinkingConfig
+        // (a pre-2.5 Gemini) has none — the field would be an error there.
+        return switch (ModelDescriptor.of(modelId).geminiThinking) {
+          GeminiThinkingGeneration.none => const [],
+          GeminiThinkingGeneration.level ||
+          GeminiThinkingGeneration.budget =>
+            const [
+              null,
+              ReasoningEffort.off,
+              ReasoningEffort.low,
+              ReasoningEffort.medium,
+              ReasoningEffort.high,
+            ],
+        };
       case ProtocolFamily.midjourney:
         return const [];
     }

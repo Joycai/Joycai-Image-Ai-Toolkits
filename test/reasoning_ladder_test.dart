@@ -55,9 +55,25 @@ void main() {
         <ReasoningEffort?>[null, ReasoningEffort.off, ReasoningEffort.medium]);
   });
 
-  test('wires that ignore reasoning offer no rung', () {
-    expect(ladder(Vendors.googleRest, 'gemini-2.5-pro'), isEmpty);
-    expect(ladder(Vendors.newApiGemini, 'gemini-2.5-flash'), isEmpty);
+  test('Gemini offers the rungs thinkingConfig tells apart: Max is High', () {
+    const gemini = <ReasoningEffort?>[
+      null,
+      ReasoningEffort.off,
+      ReasoningEffort.low,
+      ReasoningEffort.medium,
+      ReasoningEffort.high,
+    ];
+    // thinkingLevel (Gemini 3+), and the guess for an id with no version.
+    expect(ladder(Vendors.officialGoogle, 'gemini-3-pro-preview'), gemini);
+    expect(ladder(Vendors.newApiGemini, 'my-relay-model'), gemini);
+    // thinkingBudget (Gemini 2.5).
+    expect(ladder(Vendors.googleRest, 'gemini-2.5-pro'), gemini);
+    expect(ladder(Vendors.newApiGemini, 'gemini-2.5-flash'), gemini);
+  });
+
+  test('wires and models that ignore reasoning offer no rung', () {
+    // A Gemini that does not think takes no thinkingConfig at all.
+    expect(ladder(Vendors.officialGoogle, 'gemini-2.0-flash'), isEmpty);
     expect(ladder(Vendors.midjourneyProxy, 'midjourney'), isEmpty);
   });
 

@@ -65,7 +65,49 @@ enum ModelFamily {
   other,
 }
 
+/// Which generation of ③'s `generationConfig.thinkingConfig` a Gemini model
+/// takes. The two fields sit side by side in one object and are told apart
+/// only by the error the wrong model returns (docs/api/reasoning.md §1.5), so
+/// exactly one is ever sent.
+enum GeminiThinkingGeneration {
+  /// No `thinkingConfig` at all: a model that does not think. The API
+  /// reference: "An error will be returned if this field is set for models
+  /// that don't support thinking."
+  none,
+
+  /// `thinkingBudget` (Gemini 2.5).
+  budget,
+
+  /// `thinkingLevel` (Gemini 3 and later) — "Use with earlier models results
+  /// in an error."
+  level,
+}
+
 class ModelFamilyClassifier {
+  /// The `thinkingConfig` generation for [modelId].
+  ///
+  /// Reads the first version after `gemini-`: 3+ → [GeminiThinkingGeneration
+  /// .level], 2.5 → [GeminiThinkingGeneration.budget], anything older (2.0,
+  /// 1.5, 1.0) → [GeminiThinkingGeneration.none].
+  ///
+  /// An id with no readable Gemini version — a relay's free-text name, an
+  /// alias like `gemini-flash-latest` — gets [GeminiThinkingGeneration.level],
+  /// the current generation. The guess is optimistic on purpose (reasoning 03
+  /// §3): every way it can be wrong is loud (a 2.5 model or a non-thinking
+  /// model answers the field with an error naming it), while guessing "none"
+  /// would silently make the reasoning control do nothing. It also costs
+  /// nothing at the default effort, which sends no field at all.
+  static GeminiThinkingGeneration geminiThinkingGeneration(String modelId) {
+    final m = RegExp(r'gemini-(\d+)(?:\.(\d+))?')
+        .firstMatch(modelId.toLowerCase());
+    if (m == null) return GeminiThinkingGeneration.level;
+    final major = int.parse(m.group(1)!);
+    final minor = int.tryParse(m.group(2) ?? '') ?? 0;
+    if (major >= 3) return GeminiThinkingGeneration.level;
+    if (major == 2 && minor >= 5) return GeminiThinkingGeneration.budget;
+    return GeminiThinkingGeneration.none;
+  }
+
   /// Classify a raw model id (case-insensitive).
   static ModelFamily classify(String modelId) {
     final id = modelId.toLowerCase();

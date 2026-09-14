@@ -39,6 +39,9 @@ class GeminiChatProtocol implements ChatProtocol {
       tools: tools,
       emitsImages: target.model.capabilities.isImageGenerator,
       modelId: config.modelId,
+      // Layer 3 says which field generation; the config says how hard.
+      thinking: target.model.geminiThinking,
+      reasoningEffort: config.effectiveReasoningEffort,
     );
     logger?.call(
       'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',
@@ -170,6 +173,9 @@ class GeminiChatProtocol implements ChatProtocol {
       tools: tools,
       emitsImages: target.model.capabilities.isImageGenerator,
       modelId: config.modelId,
+      // Layer 3 says which field generation; the config says how hard.
+      thinking: target.model.geminiThinking,
+      reasoningEffort: config.effectiveReasoningEffort,
     );
     logger?.call(
       'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',

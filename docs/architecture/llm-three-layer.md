@@ -202,7 +202,17 @@ surface 开关"表达不了它。绑定关系升级为：
   仍是另一种请求）；④ adaptive 没有「关闭」——它和「默认」一样不发 `thinking`；
   ④ budget（Claude 4.5 及更早、百炼 ④ 面）与 MiniMax 的裸 adaptive 没有强度，
   只有「默认 / 开启」（开启存为 medium）；百炼原生是「默认 / 关闭 / 开启」；
-  Gemini、MJ 与非 chat surface 返回空。④ 的 dialect 判定与请求共用
+  MJ 与非 chat surface 返回空。③ Gemini（2026-09-14）发
+  `generationConfig.thinkingConfig`，**只发一代字段**、恒带
+  `includeThoughts: true`：代次由 Layer 3 声明
+  （`ModelDescriptor.geminiThinking` → `ModelFamilyClassifier.geminiThinkingGeneration`）
+  —— 3+ 走 `thinkingLevel`（全大写，off → `MINIMAL`，max → `HIGH`），2.5 走
+  `thinkingBudget`（0 / 1024 / 8192 / 24576，max 同 high），2.0 及更早与一切
+  图像/视频生成模型不发；读不出版本号的自由文本 id 猜 `thinkingLevel`——错的方式
+  都会响（对面报错点名字段），猜「不发」则是旋钮静默无效。Max 与 High 发出同一个
+  请求，所以 ③ 的挡位是「默认 / 关闭 / 低 / 中 / 高」。默认档不发字段，与改动前逐字节
+  相同。3.1 Pro 没有 `MINIMAL`、2.5 Pro 不接受预算 0：「关闭」在这两款上会 400，
+  这是端点自己的声明，不做降级。④ 的 dialect 判定与请求共用
   `declaredAnthropicThinkingDialect`，编辑器看到的就是请求会用的。测试：
   `test/reasoning_ladder_test.dart`。
 - **测试**：`test/model_kind_protocol_pin_test.dart` 钉住中转图像/视频、无通用面的

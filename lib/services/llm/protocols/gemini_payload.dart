@@ -4,6 +4,62 @@ import 'dart:io';
 import '../../../core/safety_settings.dart';
 import '../image_compression.dart';
 import '../llm_types.dart';
+import '../model_descriptor.dart' show GeminiThinkingGeneration;
+
+/// ③'s `thinkingBudget` for each rung on a [GeminiThinkingGeneration.budget]
+/// model (Gemini 2.5). Off is `0`; High is 24576, the Flash / Flash-Lite
+/// ceiling and inside Pro's; Max has nowhere further to go on every 2.5
+/// model at once and is sent as High. No clamp against `maxOutputTokens`:
+/// this wire never sends one.
+const Map<ReasoningEffort, int> geminiThinkingBudgets = {
+  ReasoningEffort.off: 0,
+  ReasoningEffort.low: 1024,
+  ReasoningEffort.medium: 8192,
+  ReasoningEffort.high: 24576,
+  ReasoningEffort.max: 24576,
+};
+
+/// `generationConfig.thinkingConfig` for [effort] on a model of
+/// [generation], or null for "send nothing" (reasoning 03 §2).
+///
+/// * Default (null) and [GeminiThinkingGeneration.none] send nothing — the
+///   request stays byte-identical to one built before this existed.
+/// * [GeminiThinkingGeneration.level] (Gemini 3+): the UPPERCASE enum.
+///   Off is `MINIMAL` — ③ cannot turn thinking off, and the models without
+///   `MINIMAL` (Gemini 3.1 Pro) answer it with an error, which is the
+///   endpoint's own statement and stays audible. Max is `HIGH`, the top of
+///   the enum.
+/// * [GeminiThinkingGeneration.budget] (Gemini 2.5): [geminiThinkingBudgets].
+///   Off is `0`, which 2.5 Pro (it cannot stop thinking) rejects audibly.
+///
+/// Only one generation's field is ever present, and it always travels with
+/// `includeThoughts: true`: the thinking runs and bills either way, and
+/// without it official Gemini returns no thought parts at all.
+Map<String, dynamic>? geminiThinkingConfig(
+  GeminiThinkingGeneration generation,
+  ReasoningEffort? effort,
+) {
+  if (effort == null) return null;
+  switch (generation) {
+    case GeminiThinkingGeneration.none:
+      return null;
+    case GeminiThinkingGeneration.level:
+      return {
+        'thinkingLevel': switch (effort) {
+          ReasoningEffort.off => 'MINIMAL',
+          ReasoningEffort.low => 'LOW',
+          ReasoningEffort.medium => 'MEDIUM',
+          ReasoningEffort.high || ReasoningEffort.max => 'HIGH',
+        },
+        'includeThoughts': true,
+      };
+    case GeminiThinkingGeneration.budget:
+      return {
+        'thinkingBudget': geminiThinkingBudgets[effort],
+        'includeThoughts': true,
+      };
+  }
+}
 
 /// Pure request-payload builders and response parsing for the Gemini wire
 /// format (layer 1). Isolated from network orchestration so the logic can be
@@ -408,6 +464,8 @@ Map<String, dynamic> prepareGooglePayload(
   List<LLMTool>? tools,
   bool emitsImages = false,
   String? modelId,
+  GeminiThinkingGeneration thinking = GeminiThinkingGeneration.none,
+  ReasoningEffort? reasoningEffort,
 }) {
   final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
   final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
@@ -523,6 +581,13 @@ Map<String, dynamic> prepareGooglePayload(
   final generationConfig = <String, dynamic>{};
   if (emitsImages) {
     generationConfig['responseModalities'] = ['TEXT', 'IMAGE'];
+  }
+  // Absent at the default effort and for a model that does not think, so
+  // those requests are byte-identical to before (reasoning 03 §2). camelCase
+  // like every other key here.
+  final thinkingConfig = geminiThinkingConfig(thinking, reasoningEffort);
+  if (thinkingConfig != null) {
+    generationConfig['thinkingConfig'] = thinkingConfig;
   }
   if (options != null) {
     final imageConfig = <String, dynamic>{};
