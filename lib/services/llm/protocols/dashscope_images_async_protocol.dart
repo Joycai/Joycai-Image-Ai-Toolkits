@@ -109,13 +109,15 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
 
       final started = DateTime.now();
 
-      final submitResponse = await client.post(
+      final submitResponse = await sendJsonRequest(
+        client,
         submitUrl,
         headers: {
           ...target.headers(),
           'X-DashScope-Async': 'enable',
         },
         body: jsonEncode(payload),
+        options: options,
       );
       final submitData = decodeJsonBody(submitResponse,
           apiName: 'DashScope image task submit');
@@ -223,17 +225,28 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
         '(downloaded inline; upstream URLs expire in 24h)',
         level: 'DEBUG');
 
+    // With `prompt_extend` on, the task result carries the rewritten prompt
+    // as `output.results[].actual_prompt` (documented for async calls only —
+    // the synchronous surface returns none). Standard 13 §1.
+    final output = data['output'];
+    final revised = revisedPromptFrom(
+        output is Map ? output['results'] : null,
+        key: 'actual_prompt');
+
     return LLMResponse(
-      text: '',
+      text: revised,
       generatedImages: images,
       // Same facts as the synchronous surface: the rendered size for spec
       // billing, and an image count so a result without `usage` is still
       // recorded.
-      metadata: dashscopeImageMetadata(
-        data: data,
-        imageCount: images.length,
-        sentSize: sentSize,
-      ),
+      metadata: {
+        ...dashscopeImageMetadata(
+          data: data,
+          imageCount: images.length,
+          sentSize: sentSize,
+        ),
+        if (revised.isNotEmpty) 'revised_prompt': revised,
+      },
     );
   }
 

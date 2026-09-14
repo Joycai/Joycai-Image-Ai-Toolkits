@@ -2,10 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../billing/spec_billing.dart';
 import '../database_service.dart';
+import 'context_budget.dart';
 import 'llm_config_resolver.dart';
+import 'llm_debug_logger.dart';
+import 'job_poll.dart' show cancellableSleep, cancellationProbeOf;
 import 'llm_dispatcher.dart';
 import 'llm_types.dart';
 import 'output_spec.dart';
@@ -19,18 +23,58 @@ class LLMService {
   final LLMConfigResolver _configResolver = LLMConfigResolver();
   final LLMDispatcher _dispatcher = LLMDispatcher();
 
-  Function(String, {String level, String? contextId})? onLogAdded;
+  /// Serial of `request` / `requestStream` calls, for the debug log's
+  /// correlation header ([LLMLogCorrelation.request]).
+  static int _requestSerial = 0;
+
+  /// Everyone listening to this service's execution log.
+  ///
+  /// A list, not one assignable field (pitfalls 11 §H72, errors 06 §4.2): a
+  /// second consumer that *assigned* the old `onLogAdded` silently replaced
+  /// the app's console sink, and whichever ran last won. Listeners are called
+  /// in registration order over a snapshot, so one that removes itself while
+  /// being called does not skip its neighbour.
+  final List<LLMLogListener> _logListeners = [];
+
+  /// Registers [listener]; returns it so a caller can keep the handle for
+  /// [removeLogListener]. Adding the same function twice is a no-op.
+  LLMLogListener addLogListener(LLMLogListener listener) {
+    if (!_logListeners.contains(listener)) _logListeners.add(listener);
+    return listener;
+  }
+
+  void removeLogListener(LLMLogListener listener) =>
+      _logListeners.remove(listener);
+
+  /// Delivers one log line to every listener. A listener that throws is
+  /// skipped rather than allowed to break the request it is observing.
+  void _emitLog(String msg, {String level = 'INFO', String? contextId}) {
+    for (final listener in List.of(_logListeners)) {
+      try {
+        listener(msg, level: level, contextId: contextId);
+      } catch (_) {}
+    }
+  }
+
+  /// Test door onto [_emitLog].
+  @visibleForTesting
+  void emitLogForTest(String msg, {String level = 'INFO', String? contextId}) =>
+      _emitLog(msg, level: level, contextId: contextId);
 
   /// [isCancelled] is polled at the points where this method would
   /// otherwise keep working for a caller that has already withdrawn: before
   /// each attempt, between stream chunks, and once the reply is complete.
   ///
-  /// It cannot abort a *non-streaming* request in flight. The HTTP client is
-  /// pooled and shared per endpoint ([LLMModelConfig.createClient]), so its
-  /// `close()` is a deliberate no-op and closing the inner one would tear
-  /// down every other request sharing that connection. On the streaming path
-  /// there is a real abort: abandoning the subscription cancels the response
-  /// stream, which drops the connection for this request alone.
+  /// Both paths abort the request itself. The HTTP client is pooled and
+  /// shared per endpoint ([LLMModelConfig.createClient]), so it cannot be
+  /// closed for one request; instead each attempt carries an abort trigger in
+  /// its options ([llmAbortTriggerKey]), which the protocols' shared
+  /// non-streaming send (`sendJsonRequest`) wires to an abortable request. It
+  /// fires when [isCancelled] (or a probe the caller already put in
+  /// [options]) turns true, and whenever an attempt ends without a response —
+  /// the non-streaming deadline included, which used to leave the request
+  /// running and billing upstream. On the streaming path abandoning the
+  /// subscription still cancels the response stream as before.
   ///
   /// One call may take more than one request. A host running a server-side
   /// tool can stop a turn halfway — ④'s `pause_turn`, or MiniMax's `end_turn`
@@ -50,7 +94,7 @@ class LLMService {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
     // Tool calling reaches the streaming surface only where the protocol
     // assembles calls out of deltas — every chat family does now, but
@@ -72,13 +116,30 @@ class LLMService {
     final billedOnSubmit = _dispatcher.isBilledOnSubmit(config);
     int attempt = 0;
     void log(String msg, {String level = 'INFO'}) =>
-        onLogAdded?.call(msg, level: level, contextId: contextId);
+        _emitLog(msg, level: level, contextId: contextId);
+
+    // Before anything is sent, and outside the retry loop: an oversized
+    // request fails the same way every time.
+    final oversized = preflightContextSize(config, messages, tools);
+    if (oversized != null) {
+      log(oversized.toString(), level: 'ERROR');
+      throw oversized;
+    }
 
     // The turn so far: the history this request is asked against (grows by
     // one continuation at a time) and the partial replies collected on the
     // way to a finished one.
+    // The caller's own probe (an executor passes one in the options) and the
+    // isCancelled hook, chained — never one replacing the other (pitfalls 11
+    // §H72). Protocols that poll (job_poll) and the abort watcher read it.
+    final requestOptions = chainCancellationProbe(options, isCancelled);
+    final cancelProbe = cancellationProbeOf(requestOptions);
+    final requestSerial = ++_requestSerial;
+
     var turnHistory = messages;
     final parts = <LLMResponse>[];
+    // [usageMissing] is warned about once per call, not once per leg.
+    var warnedMissingUsage = false;
 
     while (true) {
       // Checked before opening a connection rather than only after: the
@@ -86,6 +147,23 @@ class LLMService {
       // next attempt is exactly where a cancelled turn used to spend another
       // full request.
       if (isCancelled?.call() ?? false) throw const LLMCancelled();
+      // One trigger per attempt, fired by the watcher on cancel and by the
+      // `finally` below whenever the attempt ends — completing it after the
+      // response has fully arrived has no effect.
+      final abort = Completer<void>();
+      final cancelWatch = _abortWhenCancelled(cancelProbe, abort);
+      // Every debug log this attempt opens is stamped with it, and gets the
+      // normalised outcome appended (errors 06 §4).
+      final correlation = LLMLogCorrelation(
+        contextId: contextId,
+        request: requestSerial,
+        leg: parts.length,
+        attempt: attempt,
+      );
+      final attemptOptions = <String, dynamic>{
+        ...?requestOptions,
+        llmAbortTriggerKey: abort.future,
+      };
       try {
         final LLMResponse response;
         var cancelledMidStream = false;
@@ -94,14 +172,17 @@ class LLMService {
             'Connecting to ${config.channelType} (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}',
             level: 'DEBUG',
           );
-          final streamed = await _streamOnce(
-            config,
-            turnHistory,
-            options: options,
-            tools: tools,
-            toolBearing: toolBearing,
-            isCancelled: isCancelled,
-            log: log,
+          final streamed = await LLMDebugLogger.runCorrelated(
+            correlation,
+            () => _streamOnce(
+              config,
+              turnHistory,
+              options: attemptOptions,
+              tools: tools,
+              toolBearing: toolBearing,
+              isCancelled: isCancelled,
+              log: log,
+            ),
           );
           response = streamed.response;
           cancelledMidStream = streamed.cancelled;
@@ -114,18 +195,19 @@ class LLMService {
             config,
             options: options,
           );
-          response = await _dispatcher
-              .generate(
+          response = await LLMDebugLogger.runCorrelated(
+              correlation,
+              () => _dispatcher.generate(
                 config,
                 turnHistory,
-                options: options,
+                options: attemptOptions,
                 tools: tools,
                 logger: log,
                 // Its own type rather than the bare TimeoutException Future
                 // supplies, so the retry decision can tell "the generation ran
                 // long" apart from "the connection died" — see
                 // [LLMDeadlineExceeded].
-              )
+              ))
               .timeout(
                 deadline,
                 onTimeout: () => throw LLMDeadlineExceeded(deadline),
@@ -134,6 +216,8 @@ class LLMService {
             log('[AI]: ${response.text}');
           }
         }
+
+        await LLMDebugLogger.appendSummaries(correlation, response.metadata);
 
         // Record usage per part, before anything else: whatever the provider
         // generated was billed, whether or not the turn goes on or the caller
@@ -155,6 +239,11 @@ class LLMService {
             options: options,
             imageCount: response.generatedImages.length,
           );
+        }
+
+        if (!warnedMissingUsage && usageMissing(config, response.metadata)) {
+          warnedMissingUsage = true;
+          log(_missingUsageWarning(config), level: 'WARN');
         }
 
         // Deliberately after [_recordUsage] and before the session is
@@ -197,18 +286,44 @@ class LLMService {
 
         return mergeTurnParts(parts);
       } catch (e) {
+        await LLMDebugLogger.appendSummaries(correlation, null, error: e);
+        // An abort the cancellation fired is a cancellation, not a transport
+        // failure — and an aborted attempt is never retried.
+        if (e is http.RequestAbortedException) {
+          if (cancelProbe?.call() ?? false) throw const LLMCancelled();
+          rethrow;
+        }
         attempt++;
         if (attempt > maxRetries ||
             !shouldRetry(e, billedOnSubmit: billedOnSubmit)) {
           rethrow;
         }
         // Asked again here, not just at the top: the failure may well *be*
-        // the cancellation tearing the connection down, and the two-second
-        // sleep below is time a stopped turn should not spend waiting to
-        // re-send a request nobody is waiting for.
+        // the cancellation tearing the connection down, and the sleep below
+        // is time a stopped turn should not spend waiting to re-send a
+        // request nobody is waiting for.
         if (isCancelled?.call() ?? false) throw const LLMCancelled();
-        log('Request failed: $e. Retrying in 2 seconds...', level: 'WARN');
-        await Future.delayed(const Duration(seconds: 2));
+        final delay = retryDelayFor(e, attempt);
+        if (delay == null) {
+          log(
+            'Request failed: $e. The server asked to wait longer than '
+            '${maxRetryAfter.inSeconds}s before retrying; not retrying.',
+            level: 'WARN',
+          );
+          rethrow;
+        }
+        log('Request failed: $e. Retrying in ${_describeDelay(delay)}...',
+            level: 'WARN');
+        // Sliced, so pressing stop during a long Retry-After wait ends the
+        // turn within half a second instead of after the whole wait.
+        await cancellableSleep(delay, isCancelled);
+        if (isCancelled?.call() ?? false) throw const LLMCancelled();
+      } finally {
+        cancelWatch?.cancel();
+        // Ends whatever this attempt still has in flight — a timed-out
+        // non-streaming request, a single-shot generation behind a stream
+        // whose first-chunk guard expired. No effect on a finished one.
+        if (!abort.isCompleted) abort.complete();
       }
     }
   }
@@ -322,7 +437,10 @@ class LLMService {
       if (chunk.reasoningSignature != null) {
         reasoningSignature = chunk.reasoningSignature;
       }
-      if (chunk.metadata != null) finalMetadata = chunk.metadata;
+      // Merged, not replaced: ③ can send a trailing usage-only chunk after
+      // the one that carried `finishReason`, and replacing lost the finish —
+      // a `content_filter` among them, which then passed as success.
+      finalMetadata = mergeChunkMetadata(finalMetadata, chunk.metadata);
     }
 
     if (toolBearing && accumulatedText.isNotEmpty) {
@@ -361,6 +479,35 @@ class LLMService {
     );
 
     return (response: response, cancelled: cancelledMidStream);
+  }
+
+  /// [previous] metadata with [next]'s folded in, as one stream's chunks
+  /// arrive.
+  ///
+  /// Later non-null values win — usage counters grow as a stream goes on, and
+  /// the last report is the complete one. Two things are never lost to a
+  /// later chunk: a key the later chunk simply does not carry (a ③ usage-only
+  /// chunk has no `finishReason`), and a `content_filter` finish once seen —
+  /// interception is sticky, and a later `STOP` must not turn blocked output
+  /// back into a success (errors 06 §2.3).
+  @visibleForTesting
+  static Map<String, dynamic>? mergeChunkMetadata(
+    Map<String, dynamic>? previous,
+    Map<String, dynamic>? next,
+  ) {
+    if (next == null) return previous;
+    if (previous == null) return Map<String, dynamic>.of(next);
+    final merged = Map<String, dynamic>.of(previous);
+    final blocked = previous['finish_reason'] == contentFilterFinishReason;
+    next.forEach((key, value) {
+      if (value == null) return;
+      if (blocked &&
+          (key == 'finish_reason' || key == 'finish_reason_raw')) {
+        return;
+      }
+      merged[key] = value;
+    });
+    return merged;
   }
 
   /// How long the *first* chunk may take.
@@ -529,6 +676,125 @@ class LLMService {
   static bool shouldRetry(Object e, {required bool billedOnSubmit}) =>
       billedOnSubmit ? isRetryableBeforeAcceptance(e) : isRetryable(e);
 
+  /// The pre-send size failure for [messages] + [tools] on [config], or null
+  /// when the request may go out (provider layering 01 §6, pitfalls 11 §A5).
+  ///
+  /// Counts what a request carries — message text, replayed reasoning,
+  /// tool-call arguments, one flat cost per attachment, and the tool schemas
+  /// — and asks [ContextBudget] (the only reader of the window tri-state)
+  /// whether that is clearly over. An unset or unlimited window is never
+  /// checked. The estimate is deliberately a floor, so this is a backstop for
+  /// the silent head-truncation local servers do, not a budget: the Prompt
+  /// Assistant compacts against a budget this check cannot pre-empt.
+  @visibleForTesting
+  static LLMContextSizeError? preflightContextSize(
+    LLMModelConfig config,
+    List<LLMMessage> messages,
+    List<LLMTool>? tools,
+  ) {
+    final window = config.contextWindow;
+    if (ContextBudget.modeOf(window) != ContextWindowMode.specified) {
+      return null;
+    }
+    var chars = 0;
+    var images = 0;
+    for (final m in messages) {
+      chars += m.content.length + (m.reasoningContent?.length ?? 0);
+      images += m.attachments.length;
+      for (final call in m.toolCalls) {
+        chars += call.name.length + _jsonLength(call.arguments);
+      }
+    }
+    var schemaChars = 0;
+    for (final tool in tools ?? const <LLMTool>[]) {
+      schemaChars += tool.name.length +
+          tool.description.length +
+          _jsonLength(tool.parameters);
+    }
+    final estimate = ContextBudget.estimateRequestTokens(
+      chars: chars,
+      toolSchemaChars: schemaChars,
+      images: images,
+    );
+    return ContextBudget.exceedsWindow(estimate, window)
+        ? LLMContextSizeError(estimate, window!)
+        : null;
+  }
+
+  static int _jsonLength(Object? value) {
+    try {
+      return jsonEncode(value).length;
+    } catch (_) {
+      return value.toString().length;
+    }
+  }
+
+  /// [options] with a cancellation probe that asks both the caller's own
+  /// probe ([llmCancellationProbeKey], an executor's) and [isCancelled].
+  ///
+  /// Chained, never replaced (pitfalls 11 §H72, errors 06 §4.2): a wrapper
+  /// that installs its own hook over the caller's silently disconnects the
+  /// caller. Returns [options] itself when there is nothing to chain, and a
+  /// new map otherwise — the caller's map is never mutated (it may be const,
+  /// and it may be shared).
+  @visibleForTesting
+  static Map<String, dynamic>? chainCancellationProbe(
+    Map<String, dynamic>? options,
+    bool Function()? isCancelled,
+  ) {
+    final caller = cancellationProbeOf(options);
+    if (isCancelled == null) return options;
+    bool chained() => (caller?.call() ?? false) || isCancelled();
+    return {...?options, llmCancellationProbeKey: chained};
+  }
+
+  /// A watcher that completes [abort] once [probe] turns true, or null when
+  /// there is no probe to watch. Cancelled by the attempt's `finally`.
+  static Timer? _abortWhenCancelled(
+    bool Function()? probe,
+    Completer<void> abort,
+  ) {
+    if (probe == null) return null;
+    return Timer.periodic(const Duration(milliseconds: 250), (timer) {
+      if (probe()) {
+        timer.cancel();
+        if (!abort.isCompleted) abort.complete();
+      }
+    });
+  }
+
+  /// The longest server-requested wait ([LLMApiException.retryAfter]) this
+  /// service will sit out before a retry. A provider asking for more — a
+  /// quota window measured in minutes or hours — is not a transient blip, and
+  /// a turn silently parked that long reads as a hang; the error surfaces
+  /// instead, naming the wait.
+  static const Duration maxRetryAfter = Duration(seconds: 60);
+
+  /// One step of the linear backoff: attempt n waits at least n × this.
+  static const Duration retryBackoffStep = Duration(seconds: 2);
+
+  /// How long to wait before retry number [attempt] (1-based) after [e], or
+  /// null when [e] carries a server wait above [maxRetryAfter] and so must
+  /// not be retried at all.
+  ///
+  /// Asked only *after* [shouldRetry] said yes, so it can never widen what is
+  /// retried — the billed-route rule stays where it is. The wait is the larger
+  /// of the linear backoff and the server's `Retry-After`: retrying a 429
+  /// sooner than asked is a guaranteed second 429, and the old flat two
+  /// seconds did exactly that.
+  @visibleForTesting
+  static Duration? retryDelayFor(Object e, int attempt) {
+    final backoff = retryBackoffStep * (attempt < 1 ? 1 : attempt);
+    final asked = e is LLMApiException ? e.retryAfter : null;
+    if (asked == null) return backoff;
+    if (asked > maxRetryAfter) return null;
+    return asked > backoff ? asked : backoff;
+  }
+
+  static String _describeDelay(Duration d) => d.inMilliseconds % 1000 == 0
+      ? '${d.inSeconds} seconds'
+      : '${(d.inMilliseconds / 1000).toStringAsFixed(1)} seconds';
+
   /// Failures that provably happened before any upstream accepted the
   /// request: a rate limit (429 is decided at the door), a refused connection,
   /// or a host name that did not resolve. Nothing else — not a 5xx, not a
@@ -558,7 +824,7 @@ class LLMService {
     String? contextId,
     Map<String, dynamic>? options,
   }) async* {
-    onLogAdded?.call(
+    _emitLog(
       'Preparing request for model: $modelIdentifier',
       level: 'DEBUG',
       contextId: contextId,
@@ -566,9 +832,9 @@ class LLMService {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
-    onLogAdded?.call(
+    _emitLog(
       'Connecting to ${config.channelType}...',
       level: 'DEBUG',
       contextId: contextId,
@@ -586,17 +852,44 @@ class LLMService {
     // only covers failures that happen before any chunk was delivered.
     var deliveredAnyChunk = false;
 
+    final oversized = preflightContextSize(config, messages, null);
+    if (oversized != null) {
+      _emitLog(oversized.toString(), level: 'ERROR', contextId: contextId);
+      throw oversized;
+    }
+
+    // The executor's probe rides in the options; nothing to chain here.
+    final streamProbe = cancellationProbeOf(options);
+    final requestSerial = ++_requestSerial;
+
     while (true) {
+      final abort = Completer<void>();
+      final cancelWatch = _abortWhenCancelled(streamProbe, abort);
+      final correlation = LLMLogCorrelation(
+        contextId: contextId,
+        request: requestSerial,
+        leg: 0,
+        attempt: attempt,
+      );
+      final attemptOptions = <String, dynamic>{
+        ...?options,
+        llmAbortTriggerKey: abort.future,
+      };
       try {
         int imageCount = 0;
         Map<String, dynamic>? finalMetadata;
 
-        final stream = _dispatcher.generateStream(
-          config,
-          messages,
-          options: options,
-          logger: (msg, {level = 'INFO'}) =>
-              onLogAdded?.call(msg, level: level, contextId: contextId),
+        // Opened and listened to inside the correlation's zone: this method
+        // is itself a generator and cannot wrap its own `await for`.
+        final stream = LLMDebugLogger.correlatedStream(
+          correlation,
+          () => _dispatcher.generateStream(
+            config,
+            messages,
+            options: attemptOptions,
+            logger: (msg, {level = 'INFO'}) =>
+                _emitLog(msg, level: level, contextId: contextId),
+          ),
         );
 
         await for (final chunk in _idleGuarded(
@@ -605,14 +898,14 @@ class LLMService {
           firstIsDeadline: _dispatcher.streamIsSingleShot(config),
         )) {
           if (chunk.reasoningPart != null) {
-            onLogAdded?.call(
+            _emitLog(
               '[AI thinking]: ${chunk.reasoningPart}',
               level: 'DEBUG',
               contextId: contextId,
             );
           }
           if (chunk.textPart != null) {
-            onLogAdded?.call(
+            _emitLog(
               '[AI]: ${chunk.textPart}',
               level: 'INFO',
               contextId: contextId,
@@ -620,18 +913,18 @@ class LLMService {
           }
           if (chunk.imagePart != null) {
             imageCount++;
-            onLogAdded?.call(
+            _emitLog(
               'Received image part ($imageCount)',
               level: 'DEBUG',
               contextId: contextId,
             );
           }
-          if (chunk.metadata != null) finalMetadata = chunk.metadata;
+          finalMetadata = mergeChunkMetadata(finalMetadata, chunk.metadata);
           deliveredAnyChunk = true;
           yield chunk;
         }
 
-        onLogAdded?.call(
+        _emitLog(
           'Stream completed. Total images: $imageCount',
           level: 'DEBUG',
           contextId: contextId,
@@ -642,7 +935,7 @@ class LLMService {
         // ended with a usage payload.
         final specBilled = config.billingMode == specBillingMode;
         if (finalMetadata != null || (specBilled && imageCount > 0)) {
-          onLogAdded?.call(
+          _emitLog(
             'Recording token usage...',
             level: 'DEBUG',
             contextId: contextId,
@@ -657,6 +950,13 @@ class LLMService {
           );
         }
 
+        await LLMDebugLogger.appendSummaries(correlation, finalMetadata);
+
+        if (usageMissing(config, finalMetadata ?? const {})) {
+          _emitLog(_missingUsageWarning(config),
+              level: 'WARN', contextId: contextId);
+        }
+
         // After usage, same as request(): the chunks already delivered were
         // blocked output, and the consumer must see a failure, not a success.
         final blocked = contentBlockedFailure(finalMetadata);
@@ -664,21 +964,70 @@ class LLMService {
 
         return; // Success, exit retry loop
       } catch (e) {
+        await LLMDebugLogger.appendSummaries(correlation, null, error: e);
+        if (e is http.RequestAbortedException) {
+          if (streamProbe?.call() ?? false) throw const LLMCancelled();
+          rethrow;
+        }
         attempt++;
         if (deliveredAnyChunk ||
             attempt > maxRetries ||
             !shouldRetry(e, billedOnSubmit: billedOnSubmit)) {
           rethrow;
         }
-        onLogAdded?.call(
-          'Stream failed: $e. Retrying in 2 seconds...',
+        final delay = retryDelayFor(e, attempt);
+        if (delay == null) {
+          _emitLog(
+            'Stream failed: $e. The server asked to wait longer than '
+            '${maxRetryAfter.inSeconds}s before retrying; not retrying.',
+            level: 'WARN',
+            contextId: contextId,
+          );
+          rethrow;
+        }
+        _emitLog(
+          'Stream failed: $e. Retrying in ${_describeDelay(delay)}...',
           level: 'WARN',
           contextId: contextId,
         );
-        await Future.delayed(const Duration(seconds: 2));
+        // This surface has no isCancelled parameter; the executor's probe
+        // rides in the options, and a stopped task must not sit out a long
+        // Retry-After before noticing.
+        await cancellableSleep(delay, streamProbe);
+        if (streamProbe?.call() ?? false) throw const LLMCancelled();
+      } finally {
+        cancelWatch?.cancel();
+        // Also runs when the consumer stops listening (an executor breaking
+        // out on cancel): a single-shot generation still in flight behind
+        // the stream is aborted instead of finishing, and billing, unseen.
+        if (!abort.isCompleted) abort.complete();
       }
     }
   }
+
+  /// Whether a response on a **token-billed** route reported no usage at all
+  /// — no prompt count and no output count.
+  ///
+  /// Such a call is recorded (when it is recorded at all) as a row of zeros,
+  /// which on the metrics page is indistinguishable from a genuinely free
+  /// request (pitfalls 11 §A8). Many local runtimes and relays simply omit
+  /// `usage`; the cost is real either way. Request- and spec-billed groups
+  /// price something other than tokens, so an absent usage payload is not a
+  /// gap there. Warned, never thrown — and no schema change: the row stays
+  /// as it is.
+  @visibleForTesting
+  static bool usageMissing(
+    LLMModelConfig config,
+    Map<String, dynamic> metadata,
+  ) =>
+      config.billingMode == 'token' &&
+      promptTokensOf(metadata) == null &&
+      outputTokensOf(metadata) == 0;
+
+  static String _missingUsageWarning(LLMModelConfig config) =>
+      'The provider reported no token usage for ${config.modelId} on a '
+      'token-billed channel; this request is recorded as 0 tokens although '
+      'it was probably billed.';
 
   /// Where usage rows are written. Null means the real database; tests swap
   /// in a sink that throws to pin that recording is best-effort.
@@ -723,7 +1072,7 @@ class LLMService {
           options: options,
           imageCount: imageCount);
     } catch (e) {
-      onLogAdded?.call(
+      _emitLog(
         'Usage for $modelId could not be recorded (the response itself is '
         'unaffected): $e',
         level: 'WARN',
@@ -890,14 +1239,14 @@ class LLMService {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
     final ticket = await _dispatcher.startLongRunning(
       config,
       messages,
       options: options,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
     // Video jobs never flow back through request()/requestStream(), so the
     // accepted submission is the only moment they can be billed at all —
@@ -928,14 +1277,14 @@ class LLMService {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
     return await _dispatcher.checkOperation(
       config,
       operationName,
       surfaceId: operationSurface,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
   }
 
@@ -949,7 +1298,7 @@ class LLMService {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
     return _dispatcher.downloadHeaders(config);
   }
@@ -975,7 +1324,7 @@ class LLMService {
       final config = await _configResolver.resolveConfig(
         modelIdentifier,
         logger: (msg, {level = 'INFO'}) =>
-            onLogAdded?.call(msg, level: level, contextId: contextId),
+            _emitLog(msg, level: level, contextId: contextId),
       );
       // Bounded, unlike the poll it replaces. This runs on a user pressing
       // cancel, and the caller cannot finalize the task until it returns —
@@ -988,11 +1337,11 @@ class LLMService {
             operationName,
             surfaceId: operationSurface,
             logger: (msg, {level = 'INFO'}) =>
-                onLogAdded?.call(msg, level: level, contextId: contextId),
+                _emitLog(msg, level: level, contextId: contextId),
           )
           .timeout(_cancelTimeout);
     } catch (e) {
-      onLogAdded?.call(
+      _emitLog(
         'Upstream cancel failed for $operationName: $e',
         level: 'WARN',
         contextId: contextId,

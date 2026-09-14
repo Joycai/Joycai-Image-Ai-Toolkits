@@ -69,6 +69,31 @@ in `web_scraper_service.dart`) must not drift on what `null` or `0` mean.
 
 Use `ContextBudget.modeOf` / `.store` rather than comparing to `0` by hand.
 
+### The pre-send size check is a backstop, not a third layer (2026-09-14)
+
+`LLMService.request` / `requestStream` refuse a request with a typed
+`LLMContextSizeError(estimatedTokens, contextWindow)` before sending it, because
+local servers (Ollama's default `num_ctx`, llama.cpp) answer an oversized prompt
+by silently dropping its head — system prompt first — and returning 200. The
+window reaches the service as `LLMModelConfig.contextWindow` via the resolver;
+the decision is `ContextBudget.estimateRequestTokens` + `exceedsWindow`.
+
+It is built so that it **cannot fire on a turn this agent budgeted**:
+
+- only a `specified` window is checked — unset and unlimited never are;
+- the estimate divides by `preflightCharsPerToken` = 6.0, the most permissive
+  ratio `calibrate` accepts, counts images at 258 tokens (the lowest provider
+  cost) — a floor, the opposite bias of `charsPerToken`, which is right for
+  budgeting and wrong for a hard refusal;
+- it fires only past the window × `preflightMargin` (1.1).
+
+Occupancy is kept under `window × perToken` chars by layer 2 and the read cap,
+with `perToken ≤ 6`, so the estimate of any request the agent assembled stays
+at or below the window. What it catches is what no budget produced: an
+oversized single prompt from a refine/rename task, or a system prompt already
+past the window (invariant 7 still only *warns* about a large one — the check
+fires only when it is clearly beyond the whole window).
+
 ## Why characters, not tokens
 
 Budgets are computed in the character domain and converted with
@@ -303,13 +328,19 @@ then wrote the answer into the conversation as if nothing had happened.
 | between stream chunks | leaving the `await for` cancels the subscription: **the only real interruption available** |
 | after the reply is complete | a withdrawn caller is never handed the answer (throws `LLMCancelled`) |
 
-**The streaming abort is real; the non-streaming one is not.** The HTTP client
-is pooled per endpoint (`LLMModelConfig.createClient`) and its `close()` is a
-deliberate no-op — closing the inner one would tear down every other request
-sharing that connection. So a non-streaming request cannot be interrupted
-mid-flight; all that is guaranteed is that its answer is not delivered. This
-is acceptable because the assistant always streams in practice (all four chat
-wires declare tools now), so the real path is the one with the real abort.
+**Both aborts are real (2026-09-14).** The HTTP client is pooled per endpoint
+(`LLMModelConfig.createClient`) and its `close()` only releases a lease —
+closing the inner one would tear down every other request sharing that
+connection. So instead of closing anything, `LLMService` gives each attempt an
+abort trigger in its options (`llmAbortTriggerKey`), and the protocols'
+non-streaming sends go through `sendJsonRequest`, an abortable request wired to
+it. A 250 ms watcher completes the trigger when the hook (chained with any
+probe the caller put in the options — never replacing it) turns true, and the
+attempt's `finally` completes it whenever the attempt ends, which is what
+stops a timed-out non-streaming request from running on upstream. An aborted
+attempt is never retried; aborted by a cancel it surfaces as `LLMCancelled`.
+The streaming abort is unchanged: leaving the `await for` cancels the
+subscription.
 
 `LLMCancelled` is its own type because three places must tell it apart from a
 failure: `isRetryable` has to answer false (otherwise a cancel buys two more

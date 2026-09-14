@@ -9,6 +9,11 @@ import '../../models/spec_rate.dart';
 
 enum LLMRole { system, user, assistant, tool }
 
+/// One subscriber to `LLMService`'s execution log — see
+/// `LLMService.addLogListener`.
+typedef LLMLogListener = void Function(String message,
+    {String level, String? contextId});
+
 /// The app's own reasoning-intensity vocabulary (playbook 03: never let one
 /// vendor's spelling into configuration). Absence — a null wherever this is
 /// carried — means *default*: no field is sent at all, and the endpoint does
@@ -56,6 +61,19 @@ enum ReasoningEffort {
 /// call site).
 const String llmCancellationProbeKey = 'isCancelled';
 
+/// Option key for the request's abort trigger: a `Future<void>` whose
+/// completion aborts the HTTP request in flight (`package:http`'s
+/// `Abortable.abortTrigger`).
+///
+/// Set by `LLMService` per attempt — completed when the caller cancels or the
+/// non-streaming deadline expires — and read by the protocols' shared send
+/// helper (`sendJsonRequest`). It exists because the HTTP client is pooled:
+/// closing it would tear down every other request on the connection, so
+/// before this a cancelled or timed-out non-streaming request kept running
+/// (and billing) upstream until it finished on its own. Like the probe, the
+/// value is not data: the map carrying it must never be persisted.
+const String llmAbortTriggerKey = 'abortTrigger';
+
 /// Key inside a video poll's done envelope (`…generatedSamples[].video`):
 /// whether downloading its `uri` needs the channel's credentials.
 ///
@@ -94,11 +112,20 @@ class LLMApiException implements Exception {
   /// same filter, and every attempt is billed. See [contentBlockedFailure].
   final bool isContentBlocked;
 
+  /// How long the server asked the client to wait before trying again —
+  /// `Retry-After` (seconds or an HTTP-date) or `retry-after-ms` — or null
+  /// when the failed response named no wait. Read generically off the
+  /// response headers (`parseRetryAfter`), never per vendor. `LLMService`
+  /// sleeps at least this long before a retry, and does not retry at all
+  /// when the wait exceeds its cap.
+  final Duration? retryAfter;
+
   LLMApiException(this.message,
       {this.statusCode,
       this.isEnvelope = false,
       this.isNonJsonBody = false,
-      this.isContentBlocked = false});
+      this.isContentBlocked = false,
+      this.retryAfter});
 
   bool get isTransient =>
       statusCode != null &&
@@ -200,6 +227,32 @@ class LLMJobAbandoned implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// A request that is clearly larger than the model's configured context
+/// window, refused **before** it is sent (provider layering 01 §6, pitfalls
+/// 11 §A5, errors 06 §3).
+///
+/// Local stacks (Ollama's default `num_ctx`, llama.cpp) do not reject an
+/// oversized prompt: they silently drop its head — the system prompt first —
+/// and answer 200, so the model replies to a conversation it never saw whole.
+/// Checked only against an explicit window, with a permissive estimate and a
+/// margin (see `ContextBudget.exceedsWindow`): a backstop for an obviously
+/// oversized request, not a second budget. Never retried — nothing was sent,
+/// and the same request is the same size. Carries both numbers for display.
+class LLMContextSizeError implements Exception {
+  final int estimatedTokens;
+  final int contextWindow;
+
+  const LLMContextSizeError(this.estimatedTokens, this.contextWindow);
+
+  @override
+  String toString() =>
+      'This request is about $estimatedTokens tokens, more than the '
+      '$contextWindow-token context window configured for the model, so it '
+      'was not sent — a server that accepted it would silently drop the start '
+      'of the conversation. Shorten the input, or raise the context window in '
+      'the model settings if the model really supports more.';
 }
 
 class LLMDeadlineExceeded implements Exception {
@@ -564,6 +617,13 @@ class LLMModelConfig {
   /// rule as [wireProtocol]: only [LLMConfigResolver] reads the column.
   final String? tag;
 
+  /// The model's configured context window (`llm_models.context_window`
+  /// verbatim — the tri-state `ContextBudget.modeOf` decodes), or null when
+  /// unset or when the caller has no model row. Carried for the pre-send
+  /// size check (`LLMService.preflightContextSize`); only `ContextBudget`
+  /// interprets it.
+  final int? contextWindow;
+
   final double inputFee;
 
   /// Rate for cached input tokens, or null when the fee group leaves it unset —
@@ -597,6 +657,7 @@ class LLMModelConfig {
     this.enableWebSearch = false,
     this.wireProtocol,
     this.tag,
+    this.contextWindow,
     this.inputFee = 0.0,
     this.cacheInputFee,
     this.outputFee = 0.0,
@@ -626,6 +687,7 @@ class LLMModelConfig {
         enableWebSearch: enableWebSearch,
         wireProtocol: wireProtocol,
         tag: tag,
+        contextWindow: contextWindow,
         inputFee: inputFee,
         cacheInputFee: cacheInputFee,
         outputFee: outputFee,

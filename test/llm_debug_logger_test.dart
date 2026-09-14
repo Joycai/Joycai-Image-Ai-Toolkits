@@ -140,13 +140,15 @@ void main() {
       // The trade the buffer makes: a crash mid-stream costs the readable
       // tail, not the whole response.
       final log = await LLMDebugLogger.startLog('m', 'Test', {'body': {}});
-      final fat = 'data: ${'x' * 4096}';
+      // Spaced filler: an unbroken run this long would read as a base64
+      // payload and be collapsed by sanitizeLine, which is not under test.
+      final fat = 'data: ${'x ' * 2048}';
       for (var i = 0; i < 40; i++) {
         await LLMDebugLogger.appendStreamLine(log, fat);
       }
       // No finish().
 
-      expect(log!.file.readAsStringSync(), contains('xxxx'));
+      expect(log!.file.readAsStringSync(), contains('x x x x'));
     });
 
     test('a failed write keeps the buffer instead of dropping it', () async {
@@ -155,7 +157,8 @@ void main() {
       // trade-off on losing up to 64 KB of the very log it was bought for.
       final log = await LLMDebugLogger.startLog('m', 'Test', {'body': {}});
       final dir = log!.file.parent;
-      final marker = 'data: ${'x' * 70000}';
+      // Spaced so sanitizeLine leaves it intact (see the test above).
+      final marker = 'data: ${'x ' * 35000}';
 
       dir.deleteSync(recursive: true); // nothing can land while this is gone
       await LLMDebugLogger.appendStreamLine(log, marker);

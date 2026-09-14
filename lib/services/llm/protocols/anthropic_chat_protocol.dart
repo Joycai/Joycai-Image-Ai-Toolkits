@@ -1335,10 +1335,14 @@ class AnthropicChatProtocol implements ChatProtocol {
         );
       }
 
-      final response = await client.post(
+      // Abortable: LLMService cancels or times out a non-streaming request
+      // through the options' trigger (sendJsonRequest).
+      final response = await sendJsonRequest(
+        client,
         url,
         headers: headers,
         body: jsonEncode(payload),
+        options: options,
       );
 
       if (debugFile != null) {
@@ -1548,6 +1552,7 @@ class AnthropicChatProtocol implements ChatProtocol {
       throw LLMApiException(
         'Anthropic API Stream Request failed: ${response.statusCode} - $body',
         statusCode: response.statusCode,
+        retryAfter: parseRetryAfter(response.headers),
       );
     }
 

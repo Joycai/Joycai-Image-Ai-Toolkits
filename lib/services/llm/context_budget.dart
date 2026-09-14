@@ -68,6 +68,48 @@ class ContextBudget {
     return observed;
   }
 
+  /// Chars-per-token the pre-send size check divides by: the most permissive
+  /// ratio [calibrate] will ever accept.
+  ///
+  /// Deliberately not [charsPerToken]. That default leans CJK and is right
+  /// for *budgeting* (erring small), but a hard refusal must err the other
+  /// way: at 1.5, an English prompt at 60 % of a real window would read as
+  /// 160 % and be refused. At this ratio no calibration the assistant can
+  /// reach budgets more characters than the check allows, so its own
+  /// compaction always runs first — the check can only fire on a request no
+  /// budget in the app would have produced.
+  static const double preflightCharsPerToken = _maxObservedCharsPerToken;
+
+  /// Tokens counted per attached image by the size check: the smallest
+  /// per-image cost among the providers this app speaks (Gemini's 258).
+  /// Real costs run to ~1.6 K; the low figure keeps the estimate a floor.
+  static const int preflightTokensPerImage = 258;
+
+  /// How far past the window the estimate must reach before a request is
+  /// refused. Tokenizers and the per-message framing the estimate ignores
+  /// disagree by a few percent either way; this only has to catch requests
+  /// that are clearly too large.
+  static const double preflightMargin = 1.1;
+
+  /// A floor estimate of one request's prompt tokens: [chars] of message
+  /// text, [toolSchemaChars] of declared tools, and [images] attachments.
+  static int estimateRequestTokens({
+    required int chars,
+    int toolSchemaChars = 0,
+    int images = 0,
+  }) =>
+      ((chars + toolSchemaChars) / preflightCharsPerToken).ceil() +
+      images * preflightTokensPerImage;
+
+  /// Whether [estimatedTokens] is clearly over the configured [window].
+  ///
+  /// Only a [ContextWindowMode.specified] window is checked: unset is an
+  /// assumption, not a limit, and unlimited is the user's claim. Past the
+  /// window by more than [preflightMargin], strictly.
+  static bool exceedsWindow(int estimatedTokens, int? window) =>
+      modeOf(window) == ContextWindowMode.specified &&
+      estimatedTokens > window! * preflightMargin;
+
   /// Assumed window when the model does not declare one.
   static const int defaultWindowTokens = 32768;
 

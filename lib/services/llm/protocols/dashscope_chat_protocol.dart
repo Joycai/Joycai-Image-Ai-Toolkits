@@ -90,10 +90,14 @@ class DashScopeChatProtocol implements ChatProtocol {
         );
       }
 
-      final response = await client.post(
+      // Abortable: LLMService cancels or times out a non-streaming request
+      // through the options' trigger (sendJsonRequest).
+      final response = await sendJsonRequest(
+        client,
         url,
         headers: headers,
         body: jsonEncode(payload),
+        options: options,
       );
 
       if (debugFile != null) {
@@ -245,6 +249,7 @@ class DashScopeChatProtocol implements ChatProtocol {
         'DashScope Chat API stream request failed: ${response.statusCode} - '
         '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
         statusCode: response.statusCode,
+        retryAfter: parseRetryAfter(response.headers),
       );
     }
 
