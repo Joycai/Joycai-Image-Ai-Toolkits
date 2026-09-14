@@ -353,6 +353,52 @@ void main() {
       expect(contentBlockedFailure(meta), isNotNull);
     });
 
+    test('a streamed refusal is content_filter, never reply text', () {
+      final chunks = run([
+        {'type': 'response.output_text.delta', 'output_index': 0, 'delta': 'Sure, '},
+        {'type': 'response.refusal.delta', 'output_index': 0, 'delta': "I can't "},
+        {'type': 'response.refusal.delta', 'output_index': 0, 'delta': 'help'},
+        {'type': 'response.refusal.done', 'output_index': 0, 'refusal': "I can't help with that."},
+        {
+          'type': 'response.output_item.done',
+          'output_index': 0,
+          'item': {
+            'type': 'message',
+            'content': [
+              {'type': 'output_text', 'text': 'Sure, '},
+              {'type': 'refusal', 'refusal': "I can't help with that."},
+            ],
+          },
+        },
+        completed(usage: {'input_tokens': 4, 'output_tokens': 6}),
+      ]);
+      expect(textOf(chunks), 'Sure, ',
+          reason: 'the refusal text must not reach the deliverable');
+      final meta = metaOf(chunks);
+      expect(meta['finish_reason'], contentFilterFinishReason);
+      expect(meta['finish_reason_raw'], 'refusal');
+      expect(meta['prompt_tokens'], 4, reason: 'usage is still published');
+      expect(contentBlockedFailure(meta), isNotNull);
+    });
+
+    test('a refusal part only inside output_item.done is caught too', () {
+      final chunks = run([
+        {
+          'type': 'response.output_item.done',
+          'output_index': 0,
+          'item': {
+            'type': 'message',
+            'content': [
+              {'type': 'refusal', 'refusal': 'No.'},
+            ],
+          },
+        },
+        completed(),
+      ]);
+      expect(textOf(chunks), isEmpty);
+      expect(metaOf(chunks)['finish_reason'], contentFilterFinishReason);
+    });
+
     test('failed, error event and a bare error all throw', () {
       expect(
           () => ResponsesStreamAssembler().feed({
@@ -442,6 +488,24 @@ void main() {
       }, modelId: 'm');
       expect(response.rawResponseItems, isNull);
       expect(response.rawThinkingModelId, isNull);
+    });
+
+    test('a refusal part in a synchronous body is content_filter', () {
+      final response = responsesResponseFromBody({
+        'status': 'completed',
+        'output': [
+          {
+            'type': 'message',
+            'content': [
+              {'type': 'refusal', 'refusal': "I can't help with that."},
+            ],
+          },
+        ],
+        'usage': {'input_tokens': 3, 'output_tokens': 5},
+      }, modelId: 'm');
+      expect(response.text, isEmpty);
+      expect(response.metadata['finish_reason'], contentFilterFinishReason);
+      expect(contentBlockedFailure(response.metadata), isNotNull);
     });
 
     test('status incomplete is published like the stream event', () {

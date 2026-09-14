@@ -642,7 +642,12 @@ bearer、`/models` 与 ① 完全相同，所以没有 `protocolBases` 项、dis
    终止：`completed` → `stop`（有调用时 `tool_calls`）；`incomplete` 的
    `max_output_tokens` → `length`，`content_filter` → `content_filter` 由
    `LLMService` 统一抛（协议不自己抛，与其它三条 wire 一致）；`response.failed`
-   / `error` 事件 / 无 `type` 的裸 `{error}` → `LLMApiException`。**没有终止事件**
+   / `error` 事件 / 无 `type` 的裸 `{error}` → `LLMApiException`。**拒答**——
+   `response.refusal.delta` / `response.refusal.done` 事件，或 message 条目里的
+   `{type:"refusal", refusal}` part（流式与同步同一判定）——发布
+   `finish_reason: content_filter`（`finish_reason_raw: refusal`），与 ④ 的
+   `refusal` 一致，由 `LLMService` 记完用量后统一抛；拒答文字**不进**回复文本，只打
+   一条 WARN（当成普通文字交付，等于把拒绝写进交付物并当成功）。**没有终止事件**
    就结束：纯文本按 ① 的规则标 `length` + `stream_incomplete`（usage 缺失 =
    未报告）；有调用则抛——无法证明这一批调用是完整的。一个事件都没有、或完成了却
    什么内容都没有 → 抛。

@@ -247,6 +247,10 @@ class ResponsesStreamAssembler {
 
   bool _sawEvent = false;
   bool _sawOutput = false;
+
+  /// Whether a `refusal` content part arrived, by event or inside an item.
+  bool _refused = false;
+  final StringBuffer _refusal = StringBuffer();
   bool _terminal = false;
   String? _finishReason;
   String? _finishRaw;
@@ -276,12 +280,30 @@ class ResponsesStreamAssembler {
     _sawEvent = true;
     switch (type) {
       case 'response.output_text.delta':
-      case 'response.refusal.delta':
         final delta = event['delta'];
         if (delta is! String || delta.isEmpty) return const [];
         _sawOutput = true;
         _textStreamed.add(_index(event));
         return [LLMResponseChunk(textPart: delta)];
+
+      // A refusal is not reply text: it ends the turn as `content_filter`,
+      // like ④'s `refusal`, and LLMService fails the request after recording
+      // usage. The text is kept only for the log line.
+      case 'response.refusal.delta':
+        final delta = event['delta'];
+        _refused = true;
+        if (delta is String) _refusal.write(delta);
+        return [LLMResponseChunk()];
+
+      case 'response.refusal.done':
+        final whole = event['refusal'];
+        _refused = true;
+        if (whole is String) {
+          _refusal
+            ..clear()
+            ..write(whole);
+        }
+        return const [];
 
       case 'response.reasoning_summary_text.delta':
       case 'response.reasoning_text.delta':
@@ -366,6 +388,11 @@ class ResponsesStreamAssembler {
         _items[index] = _copy(item);
       case 'message':
         _items[index] = _copy(item);
+        final refusal = _refusalText(item);
+        if (refusal != null) {
+          _refused = true;
+          if (_refusal.isEmpty) _refusal.write(refusal);
+        }
         // A host that sent the item without its text deltas still delivers
         // the text.
         if (!_textStreamed.contains(index)) {
@@ -459,6 +486,15 @@ class ResponsesStreamAssembler {
       streamIncomplete = true;
     }
 
+    if (_refused) {
+      _finishReason = contentFilterFinishReason;
+      _finishRaw = 'refusal';
+      logger?.call(
+        'The model refused (Responses refusal part): ${_refusal.toString()}',
+        level: 'WARN',
+      );
+    }
+
     if (!_sawOutput &&
         _finishReason != 'length' &&
         _finishReason != contentFilterFinishReason) {
@@ -519,11 +555,25 @@ class ResponsesStreamAssembler {
     if (content is! List) return '';
     final buffer = StringBuffer();
     for (final part in content) {
-      if (part is! Map) continue;
-      final text = part['text'] ?? part['refusal'];
+      if (part is! Map || part['type'] == 'refusal') continue;
+      final text = part['text'];
       if (text is String) buffer.write(text);
     }
     return buffer.toString();
+  }
+
+  /// The text of the item's `{type: "refusal", refusal}` part, `''` for one
+  /// without text, or null when the item holds no refusal.
+  static String? _refusalText(Map<String, dynamic> item) {
+    final content = item['content'];
+    if (content is! List) return null;
+    for (final part in content) {
+      if (part is Map && part['type'] == 'refusal') {
+        final text = part['refusal'];
+        return text is String ? text : '';
+      }
+    }
+    return null;
   }
 
   static String _reasoningText(Map<String, dynamic> item) {

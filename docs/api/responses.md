@@ -76,7 +76,13 @@ quoted from each event class:
 | `response.function_call_arguments.done` | `arguments` ("The function-call arguments."), `output_index`, `item_id` |
 | `response.output_item.added` / `.done` | `item` ("The output item that was marked done."), `output_index` |
 | `response.completed` / `response.incomplete` / `response.failed` | `response` (the full Response object) |
+| `response.refusal.delta` | `delta` ("The refusal text that is added."), `output_index`, `content_index` |
+| `response.refusal.done` | `refusal` ("The refusal text that is finalized."), `output_index` |
 | `error` | `code`, `message`, `param` |
+
+A message item's content part may be `{type: "refusal", refusal}` — "A
+refusal from the model." ([SDK] `ResponseOutputRefusal`). The app publishes it
+as `finish_reason: content_filter`, never as reply text.
 
 Terminal response ([SDK] `Response`):
 `incomplete_details.reason` is one of `max_output_tokens`, `max_messages`,
