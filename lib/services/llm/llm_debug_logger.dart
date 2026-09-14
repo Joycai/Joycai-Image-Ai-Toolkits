@@ -97,8 +97,37 @@ class LLMDebugLogger {
     if (log == null) return;
     try {
       await _flush(log);
-      await log.file.writeAsString('$line\n', mode: FileMode.append);
+      await log.file
+          .writeAsString('${sanitizeLine(line)}\n', mode: FileMode.append);
     } catch (_) {}
+  }
+
+  /// A base64-looking run at least this long is replaced in logged lines.
+  /// The same threshold [_sanitize] truncates request strings at.
+  static const int base64RunThreshold = _maxStringChars;
+
+  /// `data:` URL prefix (optional) + an unbroken run of base64 / base64url
+  /// characters of at least [base64RunThreshold], with its padding.
+  static final RegExp _base64Run = RegExp(
+    '(?:data:[A-Za-z0-9.+/-]+;base64,)?'
+    '[A-Za-z0-9+/_-]{$base64RunThreshold,}={0,2}',
+  );
+
+  /// [line] with every base64 payload of [base64RunThreshold] characters or
+  /// more — bare, or as a `data:` URL — collapsed to `<base64 N chars>`.
+  ///
+  /// Response lines are written raw: the image surfaces log `Body:` with
+  /// `b64_json` / `bytesBase64Encoded` inside, and a Gemini image stream logs
+  /// each SSE line with its `inlineData`. One generated picture is megabytes
+  /// of text, and a log nobody can open explains nothing (errors 06 §4).
+  /// Done here, on the text, so it holds for every protocol without each one
+  /// remembering a "safe body" helper; [_sanitize] covers the request map the
+  /// same way structurally. Prose never matches — it has spaces and
+  /// punctuation long before 2048 characters.
+  static String sanitizeLine(String line) {
+    if (line.length < base64RunThreshold) return line;
+    return line.replaceAllMapped(
+        _base64Run, (m) => '<base64 ${m[0]!.length} chars>');
   }
 
   /// Buffer size above which [appendStreamLine] writes through.
@@ -114,7 +143,7 @@ class LLMDebugLogger {
   /// in a `finally`.
   static Future<void> appendStreamLine(LLMDebugLog? log, String line) async {
     if (log == null) return;
-    log.pending.writeln(line);
+    log.pending.writeln(sanitizeLine(line));
     if (log.pending.length >= _flushThresholdChars) {
       await _flush(log);
     }
