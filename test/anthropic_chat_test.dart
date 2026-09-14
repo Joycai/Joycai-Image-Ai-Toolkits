@@ -1238,15 +1238,34 @@ void main() {
           {'path': '07_footwear/07a1.md', 'page': 2});
     });
 
-    test('nothing escapes before content_block_stop', () {
+    test('nothing escapes before content_block_stop — and a cut there fails',
+        () {
       // Half the deltas seen, no stop: the call is still under construction
-      // and must not reach a consumer that is promised whole values.
-      final chunks = run([
-        start(0, {'type': 'tool_use', 'id': 'toolu_1', 'name': 'x'}),
-        delta(0, {'type': 'input_json_delta', 'partial_json': '{"a": 1'}),
-      ]);
+      // and must not reach a consumer that is promised whole values. Nor may
+      // the stream end quietly: the call used to sit in the pending map
+      // forever, and the loop read the turn as "answered without a tool".
+      final assembler = AnthropicStreamAssembler();
+      final chunks = [
+        ...assembler.accept(
+            start(0, {'type': 'tool_use', 'id': 'toolu_1', 'name': 'x'})),
+        ...assembler.accept(
+            delta(0, {'type': 'input_json_delta', 'partial_json': '{"a": 1'})),
+      ];
 
       expect(chunks.map((c) => c.toolCallPart).nonNulls, isEmpty);
+      expect(
+        assembler.finish,
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.message, 'message', contains('x'))),
+      );
+    });
+
+    test('an unclosed text block at the end is not a tool failure', () {
+      final chunks = run([
+        start(0, {'type': 'text'}),
+        delta(0, {'type': 'text_delta', 'text': 'partial'}),
+      ]);
+      expect(chunks.map((c) => c.textPart).nonNulls.join(), 'partial');
     });
 
     test('a tool taking no arguments sends no deltas and still arrives', () {

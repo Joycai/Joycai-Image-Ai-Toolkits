@@ -1174,7 +1174,21 @@ class AnthropicStreamAssembler {
   /// landed and the consumer needs the whole ordered group or none of it —
   /// and the same holds for a server-tool turn's whole content array.
   /// Null when the stream carried none of them.
+  ///
+  /// Throws when a client `tool_use` block opened and never closed: the call
+  /// can only be emitted on its `content_block_stop`, so a stream cut before
+  /// it used to leave the call in [_pendingCalls] and end normally — the
+  /// agent loop then read the turn as "answered without calling a tool",
+  /// the one failure it cannot detect (tools 05 §3).
   LLMResponseChunk? finish() {
+    if (_pendingCalls.isNotEmpty) {
+      final names = _pendingCalls.values.map((c) => c.name).join(', ');
+      throw LLMApiException(
+        'Anthropic API stream ended in the middle of tool call(s) ($names) — '
+        'content_block_stop never arrived, so the arguments are incomplete. '
+        'The stream was truncated.',
+      );
+    }
     for (final run in _serverToolRuns) {
       AnthropicChatProtocol._logServerToolRun(run, logger);
     }
