@@ -64,11 +64,19 @@ class TaskItem {
   /// channel's current wiring — a channel re-pointed at another vendor
   /// mid-job keeps polling where the job actually runs.
   ///
-  /// The operation id itself is not persisted on the task: nothing resumes a
-  /// poll across an app restart, so it lives only in the poll loop's local
-  /// scope. (The `operation_name` column added in v38 is left in the schema
-  /// but no longer written.)
   String? operationSurface;
+
+  /// The upstream id of a long-running (video) job, persisted the moment the
+  /// submit is accepted (`tasks.operation_name`, v38).
+  ///
+  /// A submitted job is billed whether or not anyone polls it, so the id is
+  /// the one thing a crash, a restart or a failed poll must not lose: with it
+  /// the executor resumes polling instead of submitting — and paying — again,
+  /// and a failure message can name the job for the user to look up. It used
+  /// to live only in the poll loop's local scope; the column existed but was
+  /// never written. `TaskRepository.cleanupStuckTasks` requeues an interrupted
+  /// video task that carries one; a manual retry clears it.
+  String? operationName;
 
   TaskItem({
     required this.id,
@@ -87,6 +95,7 @@ class TaskItem {
     this.endTime,
     this.progress,
     this.operationSurface,
+    this.operationName,
     DateTime? createdAt,
   }) : logs = logs ?? [],
        resultPaths = resultPaths ?? [],
@@ -129,6 +138,7 @@ class TaskItem {
       'start_time': startTime?.toIso8601String(),
       'end_time': endTime?.toIso8601String(),
       'operation_surface': operationSurface,
+      'operation_name': operationName,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -207,6 +217,7 @@ class TaskItem {
       startTime: _decodeDate(map['start_time']),
       endTime: _decodeDate(map['end_time']),
       operationSurface: map['operation_surface'] as String?,
+      operationName: map['operation_name'] as String?,
       createdAt: _decodeCreatedAt(map),
     );
   }

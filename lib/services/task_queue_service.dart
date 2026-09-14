@@ -8,14 +8,15 @@ import 'package:uuid/uuid.dart';
 
 import '../core/image_magic.dart';
 import '../core/file_utils.dart';
+import '../core/video_magic.dart';
 import '../models/llm_model.dart';
 import '../models/task_item.dart';
 import 'ai_rename_agent.dart';
 import 'database_service.dart';
 import 'knowledge_base_service.dart';
 import 'llm/image_compression.dart';
+import 'llm/job_poll.dart';
 import 'llm/llm_service.dart';
-import 'llm/vendors/vendors.dart';
 import 'llm/llm_types.dart';
 import 'llm/model_descriptor.dart';
 import 'prompt_optimizer_agent.dart';
@@ -270,6 +271,17 @@ class TaskQueueService extends ChangeNotifier {
     task.progress = null;
     task.startTime = null;
     task.endTime = null;
+    // A retry is a request for a fresh attempt, so a video task forgets its
+    // upstream job and submits a new one. Only an interrupted run resumes
+    // its job (see TaskRepository.cleanupStuckTasks).
+    if (task.operationName != null) {
+      task.addLog(
+        'Previous upstream job ${task.operationName} is not reused; a new job '
+        'will be submitted.',
+      );
+      task.operationName = null;
+      task.operationSurface = null;
+    }
     task.addLog('Task re-queued by user.');
     await DatabaseService().saveTask(task.toMap());
     _notify();

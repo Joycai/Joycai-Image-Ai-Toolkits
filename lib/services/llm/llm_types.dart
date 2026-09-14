@@ -56,6 +56,19 @@ enum ReasoningEffort {
 /// call site).
 const String llmCancellationProbeKey = 'isCancelled';
 
+/// Key inside a video poll's done envelope (`…generatedSamples[].video`):
+/// whether downloading its `uri` needs the channel's credentials.
+///
+/// Decided by the protocol that produced the URL, because only it knows what
+/// kind of link it is: Sora-style `/videos/{id}/content` is an API endpoint
+/// and wants the key, while DashScope's OSS links, MiniMax's CDN links and
+/// xAI's result URLs are signed and must *not* get it — the key has no
+/// meaning at that host and sending it hands a credential to a third party
+/// (standard 14 §3.4). The executor used to attach the bearer to every
+/// download. Absent means false. Lives here rather than in the protocol
+/// layer so the executor can read it without importing a protocol.
+const String videoRequiresAuthKey = 'requiresAuth';
+
 class LLMApiException implements Exception {
   final String message;
 

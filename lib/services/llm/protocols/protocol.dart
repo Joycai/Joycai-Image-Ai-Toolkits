@@ -534,3 +534,36 @@ String? resolveVideoSeconds(Map<String, dynamic>? options) {
   if (s == null) return null;
   return s.toString();
 }
+
+/// Whether a result URL points back at the API host itself — the one case
+/// where the channel's key belongs on the download. A signed storage or CDN
+/// link lives on another host.
+bool videoUriNeedsAuth(String uri, String endpoint) {
+  final u = Uri.tryParse(uri);
+  final e = Uri.tryParse(endpoint);
+  if (u == null || e == null || u.host.isEmpty || e.host.isEmpty) {
+    return false;
+  }
+  return u.host.toLowerCase() == e.host.toLowerCase();
+}
+
+/// The Veo-shaped "done" envelope every video poll returns
+/// ([VideoJobProtocol.poll]), with the download-auth decision attached.
+Map<String, dynamic> videoDoneEnvelope(
+  String operationName,
+  String uri, {
+  required bool requiresAuth,
+}) =>
+    {
+      'name': operationName,
+      'done': true,
+      'response': {
+        'generateVideoResponse': {
+          'generatedSamples': [
+            {
+              'video': {'uri': uri, videoRequiresAuthKey: requiresAuth},
+            }
+          ],
+        },
+      },
+    };

@@ -1117,7 +1117,11 @@ class LLMDispatcher {
               'generateVideoResponse': {
                 'generatedSamples': [
                   {
-                    'video': {'uri': mjTask['imageUrl']?.toString() ?? ''},
+                    // A Discord/CDN link: never the channel key.
+                    'video': {
+                      'uri': mjTask['imageUrl']?.toString() ?? '',
+                      videoRequiresAuthKey: false,
+                    },
                   }
                 ],
               },
@@ -1179,7 +1183,8 @@ class LLMDispatcher {
                 'generatedSamples': [
                   {
                     'video': {
-                      'uri': 'https://storage.googleapis.com/tf-js-examples/webcam-transfer-learning/video/cat.mp4'
+                      'uri': 'https://storage.googleapis.com/tf-js-examples/webcam-transfer-learning/video/cat.mp4',
+                      videoRequiresAuthKey: false,
                     }
                   }
                 ]
@@ -1323,6 +1328,17 @@ class LLMDispatcher {
         return target.model.family == ModelFamily.openaiVideo;
     }
   }
+
+  /// The headers that carry this channel's credentials on a download of a
+  /// generated asset — applied only to a result URL its protocol marked
+  /// [videoRequiresAuthKey].
+  ///
+  /// Asked here so the executor never resolves a vendor itself: which header
+  /// an asset host wants is layer 2 ([VendorProfile.downloadHeaders]), and
+  /// `Vendors.byId(channel.type)` in the executor was that decision leaking
+  /// out of the LLM layer.
+  Map<String, String> downloadHeaders(LLMModelConfig config) =>
+      resolveTarget(config).vendor.downloadHeaders(config.apiKey);
 
   /// The job protocol serving this target, if it can be cancelled upstream.
   ///

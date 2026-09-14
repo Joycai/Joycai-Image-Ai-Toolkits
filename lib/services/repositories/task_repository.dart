@@ -85,8 +85,22 @@ class TaskRepository {
     await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Settles tasks a previous run left `processing`.
+  ///
+  /// A video task that already has an upstream job id goes back to
+  /// `pending`: its job was accepted and billed, and may well have finished
+  /// while the app was closed, so the executor resumes polling that id
+  /// instead of the task being written off (and re-bought by a retry).
+  /// Everything else interrupted mid-run is marked failed, as before.
   Future<void> cleanupStuckTasks() async {
     final db = await _db;
+    await db.update(
+      'tasks',
+      {'status': 'pending'},
+      where: "status = ? AND type = ? AND operation_name IS NOT NULL "
+          "AND operation_name != ''",
+      whereArgs: ['processing', 'videoGenerate'],
+    );
     await db.update(
       'tasks',
       {'status': 'failed'},

@@ -192,19 +192,10 @@ Map<String, dynamic> minimaxH3PollEnvelope(
   final status = data['status']?.toString().toLowerCase() ?? '';
 
   if (status == 'completed') {
-    return {
-      'name': operationName,
-      'done': true,
-      'response': {
-        'generateVideoResponse': {
-          'generatedSamples': [
-            {
-              'video': {'uri': videoUri},
-            }
-          ],
-        },
-      },
-    };
+    // The job's own `/content` endpoint on the API host: the channel's
+    // credentials travel with the download (for a service fronted by an
+    // authenticating proxy; a keyless local serve sends none anyway).
+    return videoDoneEnvelope(operationName, videoUri, requiresAuth: true);
   }
 
   if (status == 'failed') {

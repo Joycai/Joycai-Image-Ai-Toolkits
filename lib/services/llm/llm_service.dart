@@ -440,7 +440,9 @@ class LLMService {
   /// the old version grabbed the *first* three-digit number anywhere in the
   /// message, which read "retry after 500ms" in an error body as a server
   /// error and re-sent a request that was going to fail (and bill) again.
-  @visibleForTesting
+  ///
+  /// Public because the video executor's poll loop classifies poll failures
+  /// with it: a transient one is ridden out, a terminal job state is not.
   static bool isRetryable(Object e) {
     // Belt and braces: nothing below matches [LLMCancelled] today, so the
     // fall-through would answer false anyway. Stated explicitly because
@@ -901,6 +903,21 @@ class LLMService {
       logger: (msg, {level = 'INFO'}) =>
           onLogAdded?.call(msg, level: level, contextId: contextId),
     );
+  }
+
+  /// Credential headers for downloading a generated asset from this model's
+  /// channel. Callers apply them only to a URL its protocol marked as needing
+  /// auth (`videoRequiresAuthKey`); a signed storage link gets none.
+  Future<Map<String, String>> downloadHeadersFor({
+    required dynamic modelIdentifier,
+    String? contextId,
+  }) async {
+    final config = await _configResolver.resolveConfig(
+      modelIdentifier,
+      logger: (msg, {level = 'INFO'}) =>
+          onLogAdded?.call(msg, level: level, contextId: contextId),
+    );
+    return _dispatcher.downloadHeaders(config);
   }
 
   /// How long an upstream cancel may take before the local task gives up on

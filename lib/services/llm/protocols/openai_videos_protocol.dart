@@ -160,48 +160,74 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
       // names the operation in its message.
       final data = decodeJsonBody(response,
           apiName: 'OpenAI video fetch', checkEnvelope: false);
-      final status = data['status']?.toString() ?? '';
-
-      // Two spellings of the terminal state: NewAPI-style relays say
-      // `succeeded`, OpenAI's own Sora surface — and the self-hosted MiniMax
-      // H3-Base service, whose `video_…` job ids the checkOperation prefix
-      // rule can route here — say `completed`. A poller that only knows one
-      // word never errors on the other; it reports "processing" forever.
-      if (status == 'succeeded' || status == 'completed') {
-        // Prefer the explicit URL when the upstream supplies one; otherwise
-        // fall back to the dedicated /content endpoint (which streams the
-        // mp4 with the bearer token).
-        final videoUrl = data['url']?.toString() ?? '$baseUrl/videos/$operationName/content';
-        return {
-          'name': operationName,
-          'done': true,
-          'response': {
-            'generateVideoResponse': {
-              'generatedSamples': [
-                {
-                  'video': {'uri': videoUrl},
-                }
-              ],
-            },
-          },
-        };
-      }
-
-      if (status == 'failed') {
-        final err = data['error'];
-        final msg = err is Map ? (err['message'] ?? err.toString()) : (err?.toString() ?? 'unknown');
-        throw Exception('OpenAI video task $operationName failed: $msg');
-      }
-
-      // processing / queued — relay progress without marking done.
-      return {
-        'name': operationName,
-        'done': false,
-        'progress': data['progress'] ?? 0,
-        'status': status,
-      };
+      return openaiVideoPollEnvelope(data, operationName, baseUrl);
     } finally {
       client.close();
     }
   }
+}
+
+/// One `/videos/{id}` status body translated into the Veo-shaped envelope.
+///
+/// * `succeeded` / `completed` — two spellings of done: NewAPI-style relays
+///   say the first, OpenAI's own Sora surface (and the self-hosted MiniMax
+///   H3-Base service, whose `video_…` ids the checkOperation prefix rule can
+///   route here) the second. A poller that knows one word reports
+///   "processing" forever on the other. The explicit `url` is preferred; it
+///   needs the channel key only when it points back at the API host
+///   ([videoUriNeedsAuth]). The `/content` fallback is an API endpoint and
+///   always does.
+/// * `failed` — [LLMApiException] carrying the upstream code and message.
+/// * `cancelled` / `canceled` / `expired` — terminal too, and said so. They
+///   used to fall through to "not done", so the task polled a job that would
+///   never finish until the 30-minute deadline.
+///
+/// Every terminal failure is an [LLMApiException] with no status code, so
+/// the poll loop never mistakes it for a transient poll failure.
+Map<String, dynamic> openaiVideoPollEnvelope(
+  Map<String, dynamic> data,
+  String operationName,
+  String baseUrl,
+) {
+  final status = data['status']?.toString().toLowerCase() ?? '';
+
+  if (status == 'succeeded' || status == 'completed') {
+    final explicit = data['url']?.toString();
+    if (explicit != null && explicit.isNotEmpty) {
+      return videoDoneEnvelope(operationName, explicit,
+          requiresAuth: videoUriNeedsAuth(explicit, baseUrl));
+    }
+    return videoDoneEnvelope(
+        operationName, '$baseUrl/videos/$operationName/content',
+        requiresAuth: true);
+  }
+
+  if (status == 'failed') {
+    final err = data['error'];
+    final code = err is Map ? err['code'] : null;
+    final msg = err is Map
+        ? (err['message'] ?? err.toString())
+        : (err?.toString() ?? 'unknown');
+    throw LLMApiException('OpenAI video task $operationName failed'
+        '${code != null ? ' ($code)' : ''}: $msg');
+  }
+
+  if (status == 'cancelled' || status == 'canceled') {
+    throw LLMApiException(
+        'OpenAI video task $operationName was cancelled upstream.');
+  }
+
+  if (status == 'expired') {
+    throw LLMApiException(
+        'OpenAI video task $operationName expired upstream before it could be '
+        'fetched; the job record is gone.');
+  }
+
+  // queued / in_progress / processing — relay progress without marking done.
+  return {
+    'name': operationName,
+    'done': false,
+    'progress': data['progress'] ?? 0,
+    'status': status,
+  };
 }
