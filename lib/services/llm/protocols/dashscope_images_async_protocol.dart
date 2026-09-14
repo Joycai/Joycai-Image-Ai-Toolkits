@@ -178,7 +178,8 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
                 await LLMDebugLogger.appendLine(
                     debugFile, 'Body: ${jsonEncode(data)}');
               }
-              return await _collectResult(data, taskId, client, logger);
+              return await _collectResult(data, taskId, client, logger,
+                  sentSize: dashscopeSentSize(payload));
             case 'FAILED':
             case 'CANCELED':
             case 'UNKNOWN':
@@ -203,8 +204,9 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
     Map<String, dynamic> data,
     String taskId,
     http.Client client,
-    LLMLogger? logger,
-  ) async {
+    LLMLogger? logger, {
+    String? sentSize,
+  }) async {
     final images = await resolveImageRefs(
         dashscopeImageRefs(data), client, logger,
         source: 'DashScope image task $taskId');
@@ -224,9 +226,14 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
     return LLMResponse(
       text: '',
       generatedImages: images,
-      metadata: data['usage'] is Map
-          ? (data['usage'] as Map).cast<String, dynamic>()
-          : const {},
+      // Same facts as the synchronous surface: the rendered size for spec
+      // billing, and an image count so a result without `usage` is still
+      // recorded.
+      metadata: dashscopeImageMetadata(
+        data: data,
+        imageCount: images.length,
+        sentSize: sentSize,
+      ),
     );
   }
 

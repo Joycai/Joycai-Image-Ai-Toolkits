@@ -140,11 +140,11 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
       return LLMResponse(
         text: '',
         generatedImages: images,
-        metadata: {
-          'image_count': images.length,
-          if (data['usage'] is Map)
-            ...(data['usage'] as Map).cast<String, dynamic>(),
-        },
+        metadata: dashscopeImageMetadata(
+          data: data,
+          imageCount: images.length,
+          sentSize: dashscopeSentSize(payload),
+        ),
       );
     } finally {
       client.close();
@@ -155,5 +155,56 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
   /// is megabytes of noise in a debug log that exists to be read.
   Map<String, dynamic> _payloadForLog(Map<String, dynamic> payload, int refs) =>
       dashscopePayloadForLog(payload, refs);
+}
+
+/// The `parameters.size` a DashScope image payload actually carried, or null
+/// when none was sent.
+String? dashscopeSentSize(Map<String, dynamic> payload) {
+  final parameters = payload['parameters'];
+  final size = parameters is Map ? parameters['size'] : null;
+  return size is String && size.isNotEmpty ? size : null;
+}
+
+/// Response metadata for a DashScope image result, shared by the synchronous
+/// and the async task surface.
+///
+/// Two facts a spec-billed fee group needs and neither surface published:
+///  * **`output_size`** — what was rendered, which is what DashScope bills
+///    (qwen-image by output area tier). Best source first: the usage echo's
+///    `width`/`height`, its `size` string, then the size this request sent —
+///    which the app always chooses itself (the 1K defaults), so "what was
+///    asked for" is a real spec rather than "whatever upstream picked".
+///    `OutputSpec.from` reads the key and normalises `*` to `x`.
+///  * **`image_count`** — so the metadata is never empty: the non-streaming
+///    path records usage only for a non-empty map, and the async surface
+///    returned `const {}` whenever the task result had no `usage` block.
+///
+/// Facts only, no prices.
+Map<String, dynamic> dashscopeImageMetadata({
+  required Map<String, dynamic> data,
+  required int imageCount,
+  String? sentSize,
+}) {
+  final rawUsage = data['usage'];
+  final usage = rawUsage is Map
+      ? rawUsage.cast<String, dynamic>()
+      : const <String, dynamic>{};
+  final width = usage['width'];
+  final height = usage['height'];
+  final usageSize = usage['size'];
+  final String? rendered;
+  if (width is num && height is num && width > 0 && height > 0) {
+    rendered = '${width.toInt()}x${height.toInt()}';
+  } else if (usageSize is String && usageSize.isNotEmpty) {
+    rendered = usageSize;
+  } else {
+    rendered = null;
+  }
+  final outputSize = rendered ?? sentSize;
+  return {
+    'image_count': imageCount,
+    ...usage,
+    'output_size': ?outputSize,
+  };
 }
 
