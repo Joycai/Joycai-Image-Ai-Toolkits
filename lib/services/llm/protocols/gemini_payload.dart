@@ -192,6 +192,32 @@ String? geminiFinishReason(String? finishReason) {
   }
 }
 
+/// Call ids for the `functionCall`s of one response.
+///
+/// ③ supplies no call id, and the agent loop pairs every result with its call
+/// by id — so a synthesized id has to be unique across the conversation, not
+/// just within one candidate. The old `call_<name>_<index>` restarted its
+/// index per candidate per chunk: a streamed turn could name two different
+/// calls `call_read_0`, and the next turn reused the same id for a third
+/// (protocol 02 §3.2, tools 05 §3).
+///
+/// One instance per response — a stream holds it across its chunks — built
+/// from a per-instance nonce (clock plus a process-wide counter, so two
+/// instances created in the same microsecond still differ) and a monotonic
+/// counter within it: `gtc_<nonce>_<n>`.
+class GeminiToolCallIds {
+  static int _instances = 0;
+  final String _nonce;
+  int _next = 0;
+
+  GeminiToolCallIds()
+      : _nonce = '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}'
+            '${(_instances++).toRadixString(36)}';
+
+  /// The next unused id of this response.
+  String next() => 'gtc_${_nonce}_${_next++}';
+}
+
 /// Parses one `generateContent`/stream chunk into [LLMResponseChunk]s, handling
 /// prompt blocking, finish reasons and safety ratings via [logger].
 ///
@@ -199,7 +225,16 @@ String? geminiFinishReason(String? finishReason) {
 /// the candidate, `finish_reason` (①'s vocabulary) and `finish_reason_raw`
 /// (③'s). Text parts flagged `thought: true` go out as reasoning, never as
 /// text.
-Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Function(String, {String level})? logger}) sync* {
+///
+/// [callIds] synthesizes the ids of any `functionCall` parts. A stream passes
+/// one instance for all of its chunks; left null, the chunk gets a fresh one,
+/// which is right for a synchronous response — that is one chunk.
+Iterable<LLMResponseChunk> parseGoogleChunks(
+  Map<String, dynamic> chunkData, {
+  Function(String, {String level})? logger,
+  GeminiToolCallIds? callIds,
+}) sync* {
+  final ids = callIds ?? GeminiToolCallIds();
   Map<String, dynamic>? metadata = chunkData['usageMetadata'];
 
   // Prompt-level block (e.g. prohibited content). Published, not thrown:
@@ -295,7 +330,6 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
     }
 
     {
-      int callIndex = 0;
       for (var part in parts) {
         final rawText = part['text'] as String?;
         // A `thought: true` part is the model's reasoning summary
@@ -310,13 +344,15 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
         final inlineData = part['inlineData'] ?? part['inline_data'];
         final imgData = inlineData?['data'];
 
-        // Native function calling. Google supplies no call id — synthesize one.
+        // Native function calling. Google supplies no call id — synthesize
+        // one that is unique across the stream and the conversation
+        // ([GeminiToolCallIds]).
         LLMToolCall? toolCall;
         final functionCall = part['functionCall'] ?? part['function_call'];
         if (functionCall is Map) {
           final args = functionCall['args'];
           toolCall = LLMToolCall(
-            id: 'call_${functionCall['name']}_${callIndex++}',
+            id: ids.next(),
             name: functionCall['name']?.toString() ?? '',
             arguments: args is Map<String, dynamic> ? args : {},
             thoughtSignature:
@@ -371,9 +407,27 @@ Map<String, dynamic> prepareGooglePayload(
     };
   }
 
-  final contents = conversationMessages.map((msg) {
+  // The tool name behind each call id. ③ pairs a result with its call by
+  // *name* — the protocol has no call id — so a result persisted without its
+  // tool name takes the name of the call it answers rather than going out as
+  // "" (protocol 02 §2.2).
+  final callNames = <String, String>{
+    for (final m in conversationMessages)
+      for (final tc in m.toolCalls)
+        if (tc.name.isNotEmpty) tc.id: tc.name,
+  };
+
+  final contents = <Map<String, dynamic>>[];
+  // Whether the last content is a batch of function results that the next
+  // result joins.
+  var lastIsResults = false;
+
+  for (final msg in conversationMessages) {
     // Tool result message → functionResponse part (role "user" per the
-    // Gemini REST function-calling contract).
+    // Gemini REST function-calling contract). Consecutive results share one
+    // user content: a batch of parallel calls is answered by one turn, not N
+    // user turns in a row. Anything else that follows — the assistant's
+    // `[view_image result]` message with its picture — stays its own turn.
     if (msg.role == LLMRole.tool) {
       Map<String, dynamic> responsePayload;
       try {
@@ -382,17 +436,25 @@ Map<String, dynamic> prepareGooglePayload(
       } catch (_) {
         responsePayload = {"result": msg.content};
       }
-      return {
-        "role": "user",
-        "parts": [
-          {
-            "functionResponse": {
-              "name": msg.toolName ?? '',
-              "response": responsePayload,
-            }
-          }
-        ],
+      final toolName = msg.toolName;
+      final part = <String, dynamic>{
+        "functionResponse": {
+          "name": (toolName != null && toolName.isNotEmpty)
+              ? toolName
+              : (callNames[msg.toolCallId] ?? ''),
+          "response": responsePayload,
+        }
       };
+      if (lastIsResults) {
+        (contents.last['parts'] as List).add(part);
+      } else {
+        contents.add({
+          "role": "user",
+          "parts": [part],
+        });
+        lastIsResults = true;
+      }
+      continue;
     }
 
     final parts = <Map<String, dynamic>>[];
@@ -430,11 +492,15 @@ Map<String, dynamic> prepareGooglePayload(
       });
     }
 
-    return {
+    // An empty `parts` array is rejected. A turn that produced nothing — an
+    // assistant message with neither text nor calls — is simply not sent.
+    if (parts.isEmpty) continue;
+    contents.add({
       "role": msg.role == LLMRole.user ? "user" : "model",
       "parts": parts
-    };
-  }).toList();
+    });
+    lastIsResults = false;
+  }
 
   final generationConfig = <String, dynamic>{};
   if (emitsImages) {

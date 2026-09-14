@@ -227,6 +227,9 @@ class GeminiChatProtocol implements ChatProtocol {
     // Whether a single protocol-shaped chunk arrived — see the guard after
     // the loop.
     var sawChunk = false;
+    // One id generator for the whole stream: ③ sends each functionCall whole
+    // in its own chunk, and ids restarted per chunk used to collide.
+    final callIds = GeminiToolCallIds();
 
     try {
       if (debugFile != null) {
@@ -245,7 +248,11 @@ class GeminiChatProtocol implements ChatProtocol {
           await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
 
-        for (final chunk in geminiChunksFromSseLine(line, logger: logger)) {
+        for (final chunk in geminiChunksFromSseLine(
+          line,
+          logger: logger,
+          callIds: callIds,
+        )) {
           sawChunk = true;
           yield chunk;
         }
@@ -288,10 +295,13 @@ class GeminiChatProtocol implements ChatProtocol {
 ///
 /// An in-chunk error envelope still throws: that is the request failing, not
 /// the line being noise, so it is checked *after* the tolerant decode.
+///
+/// [callIds] is the stream's shared id generator — see [GeminiToolCallIds].
 @visibleForTesting
 Iterable<LLMResponseChunk> geminiChunksFromSseLine(
   String line, {
   LLMLogger? logger,
+  GeminiToolCallIds? callIds,
 }) {
   if (line.startsWith('event:')) return const [];
   final payload = sseDataPayload(line);
@@ -313,7 +323,7 @@ Iterable<LLMResponseChunk> geminiChunksFromSseLine(
     throw LLMApiException('Google GenAI stream error: $msg', isEnvelope: true);
   }
 
-  return parseGoogleChunks(chunkData, logger: logger);
+  return parseGoogleChunks(chunkData, logger: logger, callIds: callIds);
 }
 
 /// Gemini `GET /models` discovery listing.
