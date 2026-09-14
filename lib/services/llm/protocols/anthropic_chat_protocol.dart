@@ -69,6 +69,29 @@ class AnthropicHistory {
   const AnthropicHistory(this.system, this.messages);
 }
 
+/// The label put in front of author text that joins a user message already
+/// carrying `tool_result` blocks — see [buildAnthropicHistory].
+const String anthropicAuthorTextLabel = '[User message]';
+
+/// Text that already opens with a bracketed tag (`[view_image result] …`)
+/// names its own source and needs no label.
+final RegExp _selfDescribingText = RegExp(r'^\[[^\]\n]{1,60}\]');
+
+/// [blocks] with [anthropicAuthorTextLabel] in front of the first text block,
+/// unless there is none or it already describes itself. Copies rather than
+/// mutates: the blocks may be the caller's.
+List<Map<String, dynamic>> _labelAuthorText(List<Map<String, dynamic>> blocks) {
+  final i = blocks.indexWhere((b) => b['type'] == 'text');
+  if (i == -1) return blocks;
+  final text = blocks[i]['text'];
+  if (text is! String || _selfDescribingText.hasMatch(text)) return blocks;
+  return [
+    ...blocks.sublist(0, i),
+    {...blocks[i], 'text': '$anthropicAuthorTextLabel\n$text'},
+    ...blocks.sublist(i + 1),
+  ];
+}
+
 /// Converts the app's flat message list into ④'s shape.
 ///
 /// Three rewrites happen here, each of which is a 400 from the API if skipped:
@@ -82,6 +105,15 @@ class AnthropicHistory {
 ///    tool calls arrives as N tool messages, and all N results have to travel
 ///    in *one* user message immediately after the assistant turn that asked
 ///    for them.
+///
+/// The merge has a cost of its own: the user's words and the tools' output
+/// both live in `role: "user"`, so a "continue" typed after a stop mid-batch
+/// lands in the envelope the model reads as tool output — and is replayed on
+/// every later turn as if it were a standing instruction. Author text that
+/// joins a message already carrying `tool_result` blocks is therefore
+/// labelled [anthropicAuthorTextLabel] (protocol 02 §2.1 rule 4, pitfalls 11
+/// §21). A message that already names itself (the assistant's
+/// `[view_image result]` note) is left alone.
 AnthropicHistory buildAnthropicHistory(
   List<LLMMessage> history, {
   String? modelId,
@@ -95,7 +127,13 @@ AnthropicHistory buildAnthropicHistory(
     // simply not sent.
     if (blocks.isEmpty) return;
     if (messages.isNotEmpty && messages.last['role'] == role) {
-      (messages.last['content'] as List).addAll(blocks);
+      final existing = messages.last['content'] as List;
+      // Only the tool branch appends `tool_result` blocks, and those carry no
+      // text — so the label can only ever land on author text.
+      final joinsResults =
+          role == 'user' &&
+          existing.any((b) => b is Map && b['type'] == 'tool_result');
+      existing.addAll(joinsResults ? _labelAuthorText(blocks) : blocks);
       return;
     }
     messages.add({'role': role, 'content': blocks});
@@ -152,9 +190,14 @@ AnthropicHistory buildAnthropicHistory(
           blocks.addAll(rawBlocks);
         }
       } else if (msg.reasoningContent != null &&
-          msg.reasoningSignature != null) {
+          msg.reasoningSignature != null &&
+          (modelId == null ||
+              msg.rawThinkingModelId == null ||
+              msg.rawThinkingModelId == modelId)) {
         // Legacy path (histories persisted before raw-block capture): a
-        // sealed thinking block reconstructed from the display fields. With
+        // sealed thinking block reconstructed from the display fields —
+        // model-scoped like the raw blocks, except that a turn with no
+        // recorded producer (the truly old ones) is still replayed. With
         // thinking on, ④ rejects a replayed tool-calling turn whose thinking
         // block is missing or unsigned — and it must precede the text and
         // tool_use blocks it led to. An unsigned one is dropped rather than
@@ -457,9 +500,13 @@ Map<String, dynamic> prepareAnthropicPayload(
 
   if (declared.isNotEmpty) {
     payload['tools'] = declared;
-    // `auto` only. The forcing modes (`any` / `tool`) are the first thing ④
-    // compat layers drop — MiniMax's endpoint has neither — and nothing here
-    // needs them.
+  }
+  // Only when the caller declared tools of its own (tools 05 §2): with server
+  // tools alone, `auto` is this app voicing an opinion on the host's internal
+  // decision. `auto` only, even then — the forcing modes (`any` / `tool`) are
+  // the first thing ④ compat layers drop (MiniMax's endpoint has neither),
+  // and nothing here needs them.
+  if (tools != null && tools.isNotEmpty) {
     payload['tool_choice'] = {'type': 'auto'};
   }
 
@@ -1132,7 +1179,21 @@ class AnthropicStreamAssembler {
   /// landed and the consumer needs the whole ordered group or none of it —
   /// and the same holds for a server-tool turn's whole content array.
   /// Null when the stream carried none of them.
+  ///
+  /// Throws when a client `tool_use` block opened and never closed: the call
+  /// can only be emitted on its `content_block_stop`, so a stream cut before
+  /// it used to leave the call in [_pendingCalls] and end normally — the
+  /// agent loop then read the turn as "answered without calling a tool",
+  /// the one failure it cannot detect (tools 05 §3).
   LLMResponseChunk? finish() {
+    if (_pendingCalls.isNotEmpty) {
+      final names = _pendingCalls.values.map((c) => c.name).join(', ');
+      throw LLMApiException(
+        'Anthropic API stream ended in the middle of tool call(s) ($names) — '
+        'content_block_stop never arrived, so the arguments are incomplete. '
+        'The stream was truncated.',
+      );
+    }
     for (final run in _serverToolRuns) {
       AnthropicChatProtocol._logServerToolRun(run, logger);
     }

@@ -199,6 +199,34 @@ void main() {
       ]);
     });
 
+    test('the reasoning field goes back only to the model that wrote it', () {
+      Map<String, dynamic> replayTo(String modelId, String? producer) =>
+          ((buildDashScopeChatPayload(
+                    target(modelId),
+                    [
+                      LLMMessage(
+                        role: LLMRole.assistant,
+                        content: '',
+                        reasoningContent: 'thought',
+                        reasoningFieldName: 'reasoning_content',
+                        rawThinkingModelId: producer,
+                        toolCalls: [
+                          LLMToolCall(id: 'c1', name: 'f', arguments: {})
+                        ],
+                      )
+                    ],
+                    multimodal: false,
+                    isStreaming: false,
+                  )['input'] as Map)['messages'] as List)
+              .first as Map<String, dynamic>;
+
+      expect(replayTo('qwen3-max', 'qwen3-max')['reasoning_content'], 'thought');
+      expect(replayTo('qwen-plus', 'qwen3-max').containsKey('reasoning_content'),
+          isFalse);
+      // A history persisted before the producer was recorded keeps working.
+      expect(replayTo('qwen-plus', null)['reasoning_content'], 'thought');
+    });
+
     test('multimodal content is always a list, images first', () {
       final payload = buildDashScopeChatPayload(
         target('qwen3-vl-plus'),

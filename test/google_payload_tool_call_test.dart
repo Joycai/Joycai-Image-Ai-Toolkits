@@ -80,6 +80,161 @@ void main() {
     });
   });
 
+  group('thought signatures are model-scoped (reasoning 03 §5)', () {
+    List<LLMMessage> history(String? producer) => [
+          LLMMessage(role: LLMRole.user, content: 'go'),
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: '',
+            rawThinkingModelId: producer,
+            toolCalls: [
+              LLMToolCall(
+                id: 'g1',
+                name: 'list_files',
+                arguments: const {},
+                thoughtSignature: 'sig-x',
+              ),
+            ],
+          ),
+        ];
+
+    Map signedPart(String? producer, String target) =>
+        (((prepareGooglePayload(history(producer), null, null,
+                    modelId: target)['contents'] as List)[1] as Map)['parts']
+                as List)
+            .single as Map;
+
+    test('the producing model gets the signature back', () {
+      expect(signedPart('gemini-3-pro', 'gemini-3-pro')['thoughtSignature'],
+          'sig-x');
+    });
+
+    test('another model does not', () {
+      expect(
+          signedPart('gemini-3-pro', 'gemini-2.5-flash')
+              .containsKey('thoughtSignature'),
+          isFalse);
+    });
+
+    test('a turn with no recorded producer still replays it', () {
+      expect(signedPart(null, 'gemini-2.5-flash')['thoughtSignature'], 'sig-x');
+    });
+  });
+
+  group('synthesized call ids (protocol 02 §3.2)', () {
+    Map<String, dynamic> callChunk(List<String> names) => {
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  for (final n in names)
+                    {
+                      'functionCall': {'name': n, 'args': <String, dynamic>{}}
+                    }
+                ]
+              }
+            }
+          ]
+        };
+
+    List<String> idsOf(Iterable<LLMResponseChunk> chunks) =>
+        chunks.map((c) => c.toolCallPart?.id).nonNulls.toList();
+
+    test('calls in one chunk get distinct ids', () {
+      final ids = idsOf(parseGoogleChunks(callChunk(['a', 'a'])));
+      expect(ids, hasLength(2));
+      expect(ids.toSet(), hasLength(2));
+      expect(ids.every((id) => id.startsWith('gtc_')), isTrue);
+    });
+
+    test('calls in separate chunks of one stream do not collide', () {
+      // ③ streams whole parts per chunk; the counter used to restart at 0
+      // on every chunk, so `call_read_0` named two different calls.
+      final state = GeminiToolCallIds();
+      final first = idsOf(parseGoogleChunks(callChunk(['read']), callIds: state));
+      final second =
+          idsOf(parseGoogleChunks(callChunk(['read']), callIds: state));
+      expect(first.single, isNot(second.single));
+    });
+
+    test('the same call in two turns does not reuse an id', () {
+      // History pairs results by id; a second turn's `call_read_0` answered
+      // the first turn's call as far as the id map could tell.
+      final turn1 = idsOf(parseGoogleChunks(callChunk(['read'])));
+      final turn2 = idsOf(parseGoogleChunks(callChunk(['read'])));
+      expect(turn1.single, isNot(turn2.single));
+    });
+  });
+
+  group('history shape (protocol 02 §2.2)', () {
+    List<Map> contentsOf(List<LLMMessage> history) =>
+        (prepareGooglePayload(history, null, null)['contents'] as List)
+            .cast<Map>();
+
+    test('parallel tool results travel in one user content', () {
+      final contents = contentsOf([
+        LLMMessage(role: LLMRole.user, content: 'do both'),
+        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
+          LLMToolCall(id: 'g1', name: 'a', arguments: const {}),
+          LLMToolCall(id: 'g2', name: 'b', arguments: const {}),
+        ]),
+        LLMMessage(
+            role: LLMRole.tool, content: '{"r":1}', toolCallId: 'g1', toolName: 'a'),
+        LLMMessage(
+            role: LLMRole.tool, content: '{"r":2}', toolCallId: 'g2', toolName: 'b'),
+      ]);
+      expect(contents, hasLength(3));
+      final parts = contents.last['parts'] as List;
+      expect(contents.last['role'], 'user');
+      expect(
+          parts.map((p) => (p as Map)['functionResponse']['name']), ['a', 'b']);
+    });
+
+    test('a user turn after the results stays its own content', () {
+      // The assistant's `[view_image result]` message follows the results
+      // as a separate user turn carrying the picture; it is not a result.
+      final contents = contentsOf([
+        LLMMessage(role: LLMRole.user, content: 'look'),
+        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
+          LLMToolCall(id: 'g1', name: 'view_image', arguments: const {}),
+        ]),
+        LLMMessage(
+            role: LLMRole.tool, content: 'ok', toolCallId: 'g1', toolName: 'view_image'),
+        LLMMessage(
+            role: LLMRole.user,
+            content: '[view_image result] Reference image #1 is attached.'),
+      ]);
+      expect(contents, hasLength(4));
+      expect((contents[2]['parts'] as List).single,
+          contains('functionResponse'));
+      expect((contents[3]['parts'] as List).single, contains('text'));
+    });
+
+    test('an assistant turn with nothing in it is not sent', () {
+      final contents = contentsOf([
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+        LLMMessage(role: LLMRole.assistant, content: ''),
+        LLMMessage(role: LLMRole.user, content: 'still there?'),
+      ]);
+      expect(contents.every((c) => (c['parts'] as List).isNotEmpty), isTrue);
+      expect(contents.map((c) => c['role']), ['user', 'user']);
+    });
+
+    test('a result missing its tool name takes it from the call it answers',
+        () {
+      final contents = contentsOf([
+        LLMMessage(role: LLMRole.user, content: 'go'),
+        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
+          LLMToolCall(id: 'g1', name: 'list_files', arguments: const {}),
+        ]),
+        LLMMessage(role: LLMRole.tool, content: '[]', toolCallId: 'g1'),
+      ]);
+      final fr = ((contents.last['parts'] as List).single
+          as Map)['functionResponse'] as Map;
+      expect(fr['name'], 'list_files');
+    });
+  });
+
   group('③ on the streaming surface', () {
     // ③ needed no accumulator: a functionCall arrives whole inside a streamed
     // candidate part, and the parser below is the *same* one the synchronous
