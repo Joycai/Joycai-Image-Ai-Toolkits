@@ -25,6 +25,12 @@ enum ChannelProbeStatus {
   /// Nothing answered: DNS, refused connection, timeout.
   unreachable,
 
+  /// The endpoint answered and did not reject the key, but refused *for now*:
+  /// rate-limited (429) or a server error (5xx). Distinct from [unreachable],
+  /// whose advice is "check the URL, proxy and network" — exactly the wrong
+  /// errand for a healthy channel behind a busy relay.
+  upstreamError,
+
   /// This channel type has no meaningful probe (Midjourney: discovery is a
   /// built-in catalog, and a real request would start a paid generation).
   notSupported,
@@ -75,6 +81,19 @@ class ChannelProbeService {
   static bool _isQuotaExhausted(LLMApiException e) =>
       e.statusCode == _paymentRequired;
 
+  /// 429 or a 5xx outside [_endpointAbsent]: the host is there and served the
+  /// path, it just will not answer right now.
+  static bool _isUpstreamRefusal(LLMApiException e) {
+    final code = e.statusCode;
+    if (code == null || _endpointAbsent.contains(code)) return false;
+    return code == 429 || (code >= 500 && code < 600);
+  }
+
+  /// Output cap for the completion probe. The probe names an impossible model
+  /// so nothing bills — but some relays route unknown names to a default
+  /// model, and that one then generates. One token caps that surprise.
+  static const int _probeMaxTokens = 1;
+
   Future<ChannelProbeResult> probe(LLMModelConfig config) async {
     if (!_dispatcher.discoveryUsesNetwork(config)) {
       return const ChannelProbeResult(ChannelProbeStatus.notSupported);
@@ -100,8 +119,15 @@ class ChannelProbeService {
       if (e.statusCode != null && _endpointAbsent.contains(e.statusCode)) {
         return _completionProbe(config);
       }
-      // Served-but-refused (429, 5xx, envelope): reachable, and the provider
-      // said why — pass that on rather than re-guessing.
+      // Rate limit / server error: reachable and authenticated as far as
+      // anyone can tell, just not answering now. Reported as such, with the
+      // provider's words — "unreachable" sent users to check their DNS.
+      if (_isUpstreamRefusal(e)) {
+        return ChannelProbeResult(ChannelProbeStatus.upstreamError,
+            detail: e.message);
+      }
+      // Any other served-but-refused answer (an error envelope): the
+      // provider said why — pass that on rather than re-guessing.
       return ChannelProbeResult(ChannelProbeStatus.unreachable,
           detail: e.message);
     } on TimeoutException {
@@ -133,6 +159,9 @@ class ChannelProbeService {
       await _dispatcher.generate(
         probeConfig,
         [LLMMessage(role: LLMRole.user, content: 'ping')],
+        // Capped: a relay that routes the impossible name to a default model
+        // must not bill a full generation for a connection test.
+        options: const {'maxTokens': _probeMaxTokens},
       ).timeout(_stepTimeout);
       // Some relays route unknown model names to a default — a billed
       // surprise, but proof of connectivity.
@@ -147,6 +176,12 @@ class ChannelProbeService {
       // that speaks this API and will run nothing.
       if (_isQuotaExhausted(e)) {
         return ChannelProbeResult(ChannelProbeStatus.unreachable,
+            detail: e.message);
+      }
+      // Also ahead of the connected rule: a 429 or a 5xx is protocol-shaped
+      // too, but says nothing about whether this endpoint would run a request.
+      if (_isUpstreamRefusal(e)) {
+        return ChannelProbeResult(ChannelProbeStatus.upstreamError,
             detail: e.message);
       }
       if (e.isNonJsonBody) {

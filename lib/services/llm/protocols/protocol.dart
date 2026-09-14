@@ -8,6 +8,7 @@ import 'package:http_parser/http_parser.dart';
 import '../../../core/image_magic.dart';
 import '../llm_types.dart';
 import '../model_descriptor.dart';
+import '../output_spec.dart' show parseWxH;
 import '../vendors/vendor_profile.dart';
 
 // Every debug-log line that prints a request URL must redact it first —
@@ -16,6 +17,10 @@ import '../vendors/vendor_profile.dart';
 // mechanism's bug a credential leak. Re-exported here so protocols need no
 // extra import.
 export '../vendors/vendor_profile.dart' show redactUrl;
+export '../output_spec.dart' show parseWxH;
+// The shared async-job poll loop (cancel probe, sliced sleep, consecutive
+// failure tolerance, non-retryable abandon) — see job_poll.dart.
+export '../job_poll.dart';
 
 /// **Layer 1 — the protocol.**
 ///
@@ -330,45 +335,118 @@ String trimBaseUrl(String endpoint) {
 ///  * a `data:<mime>;base64,…` URI.
 ///  * a bare base64 payload, which is what `response_format: base64` returns.
 ///
-/// Shared rather than per-protocol: three image surfaces need exactly this,
-/// and a fix to the fetch path (a retry, a timeout, a status log) has to
-/// land in one place to be worth making.
+/// Shared rather than per-protocol: every image surface that receives a
+/// reference needs exactly this — the Images APIs' `url` / `b64_json` items,
+/// DashScope, MiniMax, Midjourney — and a fix to the fetch path has to land
+/// in one place to be worth making (standard 13 §6).
+///
+/// Two rules every path obeys:
+///  * **Bytes must be an image** ([imageMimeFromBytes]). Relays answer an
+///    expired or unauthorised link with `200` + an HTML page; accepting it
+///    wrote a `.png` nobody could open while the task reported success.
+///    Unrecognised bytes are rejected with a WARN, never returned.
+///  * **A URL gets one retry** after [retryDelay]. The image is already
+///    billed, a freshly minted signed link plus a jittery network fail
+///    together often enough, and the alternative is the whole generation
+///    thrown away.
+///
+/// A `data:` URI or bare base64 is accepted wherever it turns up — relays
+/// put it in the `url` field, where fetching it as a link fails on a desktop
+/// HTTP stack.
 Future<Uint8List?> resolveImageRef(
   String ref,
   http.Client client,
-  LLMLogger? logger,
-) async {
-  if (ref.startsWith('http://') || ref.startsWith('https://')) {
-    try {
-      final resp = await client.get(Uri.parse(ref));
-      if (resp.statusCode == 200) return resp.bodyBytes;
-      logger?.call('Image URL returned ${resp.statusCode}: $ref',
-          level: 'WARN');
-    } catch (e) {
-      logger?.call('Failed to fetch image URL: $e', level: 'WARN');
+  LLMLogger? logger, {
+  Duration retryDelay = const Duration(seconds: 1),
+}) async {
+  final trimmed = ref.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    const attempts = 2;
+    for (var attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        final resp = await client.get(Uri.parse(trimmed));
+        if (resp.statusCode == 200) {
+          final bytes = resp.bodyBytes;
+          if (imageMimeFromBytes(bytes) != null) return bytes;
+          logger?.call(
+              'Image URL answered 200 but the body is not an image '
+              '(${resp.headers['content-type'] ?? 'no content-type'}, '
+              '${bytes.length} bytes): $trimmed',
+              level: 'WARN');
+        } else {
+          logger?.call('Image URL returned ${resp.statusCode}: $trimmed',
+              level: 'WARN');
+        }
+      } catch (e) {
+        logger?.call('Failed to fetch image URL: $e', level: 'WARN');
+      }
+      if (attempt < attempts) {
+        logger?.call('Retrying the image download once.', level: 'INFO');
+        await Future<void>.delayed(retryDelay);
+      }
     }
     return null;
   }
 
-  var payload = ref;
-  if (ref.startsWith('data:')) {
-    final comma = ref.indexOf(',');
+  var payload = trimmed;
+  if (trimmed.startsWith('data:')) {
+    final comma = trimmed.indexOf(',');
     if (comma < 0) {
       // Length-guarded: a truncated ref can be shorter than the excerpt, and
       // a RangeError out of the *log line* would abort the generation this
       // path exists to skip past.
-      final excerpt = ref.length > 32 ? '${ref.substring(0, 32)}…' : ref;
+      final excerpt =
+          trimmed.length > 32 ? '${trimmed.substring(0, 32)}…' : trimmed;
       logger?.call('Malformed data URI (no comma): $excerpt', level: 'WARN');
       return null;
     }
-    payload = ref.substring(comma + 1);
+    payload = trimmed.substring(comma + 1);
   }
+  final Uint8List bytes;
   try {
-    return base64Decode(payload);
+    // Line-wrapped and URL-safe base64 both occur in relay output.
+    bytes = base64Decode(base64.normalize(payload.replaceAll(RegExp(r'\s'), '')));
   } catch (e) {
     logger?.call('Failed to decode inline image: $e', level: 'WARN');
     return null;
   }
+  if (imageMimeFromBytes(bytes) == null) {
+    logger?.call(
+        'Inline image data is not a recognisable image (${bytes.length} '
+        'bytes); skipped.',
+        level: 'WARN');
+    return null;
+  }
+  return bytes;
+}
+
+/// [resolveImageRef] over every reference one response carried, warning when
+/// only some of them could be turned into images.
+///
+/// A partial result is still delivered — the pictures that arrived were paid
+/// for — but it must not read as complete: the missing ones were billed too,
+/// and their links expire. [source] names the surface in that warning.
+Future<List<Uint8List>> resolveImageRefs(
+  Iterable<String> refs,
+  http.Client client,
+  LLMLogger? logger, {
+  required String source,
+  Duration retryDelay = const Duration(seconds: 1),
+}) async {
+  final all = refs.toList();
+  final images = <Uint8List>[];
+  for (final ref in all) {
+    final bytes =
+        await resolveImageRef(ref, client, logger, retryDelay: retryDelay);
+    if (bytes != null) images.add(bytes);
+  }
+  if (images.isNotEmpty && images.length < all.length) {
+    logger?.call(
+        '$source: only ${images.length} of ${all.length} generated image(s) '
+        'could be retrieved; the rest were billed but are not saved.',
+        level: 'WARN');
+  }
+  return images;
 }
 
 /// One image as a multipart part, with the `Content-Type` the bytes actually
@@ -396,6 +474,18 @@ http.MultipartFile imageMultipartFile(
     contentType: MediaType.parse(mime),
   );
 }
+
+/// An input image as a `data:` URL whose MIME type is what the bytes are.
+///
+/// The declared type is the attachment's *file extension* (the executor
+/// labels a `.png` as `image/png` whatever it holds), and renamed downloads
+/// or relay output saved under the wrong name are ordinary. Hosts that
+/// validate the declaration against the bytes reject the whole request; the
+/// lenient ones decode by content and bill the same. [resolveImageMime] keeps
+/// the declaration only for bytes it cannot recognise — the rule the
+/// multipart path ([imageMultipartFile]) already follows.
+String imageDataUrl(Uint8List bytes, String declaredMime) =>
+    'data:${resolveImageMime(bytes, declaredMime)};base64,${base64Encode(bytes)}';
 
 Future<Uint8List?> readAttachmentBytes(LLMAttachment att) async {
   if (att.path != null) return File(att.path!).readAsBytes();
@@ -425,11 +515,9 @@ String? readStringOption(Map<String, dynamic>? options, String key) {
 String? resolveVideoSize(Map<String, dynamic>? options) {
   if (options == null) return null;
 
-  // Explicit WxH wins.
-  final explicit = options['size'];
-  if (explicit is String && RegExp(r'^\d+x\d+$').hasMatch(explicit)) {
-    return explicit;
-  }
+  // Explicit WxH wins, in any of the spellings [parseWxH] reads.
+  final explicit = parseWxH(options['size']);
+  if (explicit != null) return '${explicit.width}x${explicit.height}';
 
   final aspect = options['aspectRatio']?.toString();
   final resolution = options['resolution']?.toString() ?? '720p';
@@ -458,3 +546,36 @@ String? resolveVideoSeconds(Map<String, dynamic>? options) {
   if (s == null) return null;
   return s.toString();
 }
+
+/// Whether a result URL points back at the API host itself — the one case
+/// where the channel's key belongs on the download. A signed storage or CDN
+/// link lives on another host.
+bool videoUriNeedsAuth(String uri, String endpoint) {
+  final u = Uri.tryParse(uri);
+  final e = Uri.tryParse(endpoint);
+  if (u == null || e == null || u.host.isEmpty || e.host.isEmpty) {
+    return false;
+  }
+  return u.host.toLowerCase() == e.host.toLowerCase();
+}
+
+/// The Veo-shaped "done" envelope every video poll returns
+/// ([VideoJobProtocol.poll]), with the download-auth decision attached.
+Map<String, dynamic> videoDoneEnvelope(
+  String operationName,
+  String uri, {
+  required bool requiresAuth,
+}) =>
+    {
+      'name': operationName,
+      'done': true,
+      'response': {
+        'generateVideoResponse': {
+          'generatedSamples': [
+            {
+              'video': {'uri': uri, videoRequiresAuthKey: requiresAuth},
+            }
+          ],
+        },
+      },
+    };

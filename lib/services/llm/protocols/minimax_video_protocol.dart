@@ -49,7 +49,7 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
           role = MiniMaxVideoRole.referenceImage;
       }
       media.add(MiniMaxVideoMedia(
-          role, 'data:${att.mimeType};base64,${base64Encode(bytes)}'));
+          role, imageDataUrl(bytes, att.mimeType)));
     }
 
     // Upstream rejects a request that mixes the image-based modality with the
@@ -146,19 +146,10 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
                 'MiniMax video task $operationName succeeded but returned no '
                 'content.url: $task');
           }
-          return {
-            'name': operationName,
-            'done': true,
-            'response': {
-              'generateVideoResponse': {
-                'generatedSamples': [
-                  {
-                    'video': {'uri': videoUrl},
-                  }
-                ],
-              },
-            },
-          };
+          // A signed CDN link: the API key must not travel to it.
+          return videoDoneEnvelope(operationName, videoUrl,
+              requiresAuth:
+                  videoUriNeedsAuth(videoUrl, target.config.endpoint));
         case 'failed':
         case 'cancelled':
           final error = task['error'];

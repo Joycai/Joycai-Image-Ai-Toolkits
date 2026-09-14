@@ -919,6 +919,35 @@ class LLMDispatcher {
   bool streamIsSingleShot(LLMModelConfig config) =>
       _streamIsSingleShot(resolveTarget(config));
 
+  /// Whether a request on this route pays for a generation as soon as
+  /// upstream *accepts* it — so a failure seen after that point may belong to
+  /// a job that is still running, and billing, upstream.
+  ///
+  /// `LLMService`'s retry loop asks this before re-sending. On a chat route a
+  /// 502 means "try again"; on a billed route it can equally be a relay that
+  /// timed out *after* upstream finished drawing, and re-sending buys the same
+  /// picture twice (standards 13 §4.3, 14 §3, 06 §3). Such routes retry only
+  /// failures provably before acceptance.
+  ///
+  /// True for:
+  /// * every single-shot image surface ([streamIsSingleShot]) — the native
+  ///   Images APIs, Imagen, DashScope's and MiniMax's image faces (DashScope's
+  ///   async task included: it submits inside that one call);
+  /// * Midjourney, whose generate() contains the whole submit → poll cycle;
+  /// * any model whose surface is not chat — an image model riding the chat
+  ///   face (`chatImage`, e.g. a Gemini image model or a relay's
+  ///   `gpt-image-1`) is a billed generation all the same, and a video model
+  ///   has nothing but a job to start.
+  ///
+  /// Routing knowledge, so it lives here with [streamIsSingleShot] rather
+  /// than being re-derived at the call site.
+  bool isBilledOnSubmit(LLMModelConfig config) {
+    final target = resolveTarget(config);
+    if (target.vendor.family == ProtocolFamily.midjourney) return true;
+    if (_streamIsSingleShot(target)) return true;
+    return surfaceForModel(config.modelId, tag: config.tag) != Surface.chat;
+  }
+
   bool _streamIsSingleShot(LLMTarget target) {
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
@@ -1088,7 +1117,11 @@ class LLMDispatcher {
               'generateVideoResponse': {
                 'generatedSamples': [
                   {
-                    'video': {'uri': mjTask['imageUrl']?.toString() ?? ''},
+                    // A Discord/CDN link: never the channel key.
+                    'video': {
+                      'uri': mjTask['imageUrl']?.toString() ?? '',
+                      videoRequiresAuthKey: false,
+                    },
                   }
                 ],
               },
@@ -1150,7 +1183,8 @@ class LLMDispatcher {
                 'generatedSamples': [
                   {
                     'video': {
-                      'uri': 'https://storage.googleapis.com/tf-js-examples/webcam-transfer-learning/video/cat.mp4'
+                      'uri': 'https://storage.googleapis.com/tf-js-examples/webcam-transfer-learning/video/cat.mp4',
+                      videoRequiresAuthKey: false,
                     }
                   }
                 ]
@@ -1294,6 +1328,17 @@ class LLMDispatcher {
         return target.model.family == ModelFamily.openaiVideo;
     }
   }
+
+  /// The headers that carry this channel's credentials on a download of a
+  /// generated asset — applied only to a result URL its protocol marked
+  /// [videoRequiresAuthKey].
+  ///
+  /// Asked here so the executor never resolves a vendor itself: which header
+  /// an asset host wants is layer 2 ([VendorProfile.downloadHeaders]), and
+  /// `Vendors.byId(channel.type)` in the executor was that decision leaking
+  /// out of the LLM layer.
+  Map<String, String> downloadHeaders(LLMModelConfig config) =>
+      resolveTarget(config).vendor.downloadHeaders(config.apiKey);
 
   /// The job protocol serving this target, if it can be cancelled upstream.
   ///

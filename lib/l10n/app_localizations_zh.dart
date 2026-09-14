@@ -2231,6 +2231,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get probeUnreachableNext => 'DNS 解析失败或超时。检查网址、代理设置与网络。';
 
   @override
+  String get probeUpstreamError => '端点有响应，但暂时拒绝请求';
+
+  @override
+  String get probeUpstreamErrorNext => '被限流（429）或服务端出错（5xx）。网址与密钥看起来没问题，稍后再试。';
+
+  @override
   String get probeNotSupportedNext => '该协议没有模型列表接口，只能提交任务后才知道是否可用。';
 
   @override
@@ -6949,6 +6955,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get probeUnreachableNext => 'DNS 解析失敗或逾時。檢查網址、代理設定與網路。';
+
+  @override
+  String get probeUpstreamError => '端點有回應，但暫時拒絕請求';
+
+  @override
+  String get probeUpstreamErrorNext => '被限流（429）或伺服器出錯（5xx）。網址與金鑰看起來沒問題，稍後再試。';
 
   @override
   String get probeNotSupportedNext => '該協定沒有模型清單介面，只能提交任務後才知道是否可用。';

@@ -182,6 +182,9 @@ void main() {
                 'video': {
                   'uri':
                       'http://127.0.0.1:30010/v1/videos/video_abc/content',
+                  // An API endpoint, not a signed link: credentials travel
+                  // with the download.
+                  'requiresAuth': true,
                 },
               }
             ],

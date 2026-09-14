@@ -56,6 +56,19 @@ enum ReasoningEffort {
 /// call site).
 const String llmCancellationProbeKey = 'isCancelled';
 
+/// Key inside a video poll's done envelope (`…generatedSamples[].video`):
+/// whether downloading its `uri` needs the channel's credentials.
+///
+/// Decided by the protocol that produced the URL, because only it knows what
+/// kind of link it is: Sora-style `/videos/{id}/content` is an API endpoint
+/// and wants the key, while DashScope's OSS links, MiniMax's CDN links and
+/// xAI's result URLs are signed and must *not* get it — the key has no
+/// meaning at that host and sending it hands a credential to a third party
+/// (standard 14 §3.4). The executor used to attach the bearer to every
+/// download. Absent means false. Lives here rather than in the protocol
+/// layer so the executor can read it without importing a protocol.
+const String videoRequiresAuthKey = 'requiresAuth';
+
 class LLMApiException implements Exception {
   final String message;
 
@@ -118,6 +131,32 @@ class LLMCancelled implements Exception {
 
   @override
   String toString() => 'Request cancelled by the caller.';
+}
+
+/// Local polling of an **accepted, billed** upstream job was given up — the
+/// overall deadline passed, or too many consecutive polls failed.
+///
+/// Its own type because the one wrong reaction to it is the obvious one:
+/// retrying. A retry re-submits, which buys the same generation twice while
+/// the first may well still be running (and billing) upstream. Before this
+/// existed, DashScope's async image loop rethrew its third transient poll
+/// failure as a 5xx `LLMApiException`, and `LLMService.request` read that
+/// as retryable and submitted a new paid task. `LLMService.isRetryable`
+/// answers false for it explicitly.
+///
+/// [jobId] is carried so the user can still find the job upstream; the
+/// message names it too.
+class LLMJobAbandoned implements Exception {
+  final String jobId;
+  final String message;
+
+  /// The last poll failure, when that is what ended polling.
+  final Object? cause;
+
+  const LLMJobAbandoned(this.jobId, this.message, {this.cause});
+
+  @override
+  String toString() => message;
 }
 
 class LLMDeadlineExceeded implements Exception {

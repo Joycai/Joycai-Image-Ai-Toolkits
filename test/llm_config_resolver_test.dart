@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_config_resolver.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'support/private_data_dir.dart';
@@ -118,6 +120,105 @@ void main() {
       // is what previously leaked a "ghost" channel into the workbench selector.
       expect(remaining.where((m) => m.modelId == 'doomed-model'), isEmpty);
       expect(remaining.where((m) => m.channelId == null), isEmpty);
+    });
+
+    test('a missing model is a typed config error, not a bare Exception',
+        () async {
+      await expectLater(
+        LLMConfigResolver().resolveConfig(987654),
+        throwsA(isA<LLMConfigException>().having(
+            (e) => e.kind, 'kind', LLMConfigErrorKind.modelNotFound)),
+      );
+    });
+
+    test('a keyed channel saved without a key fails before any request',
+        () async {
+      final db = DatabaseService();
+      final channelId = await db.addChannel({
+        'display_name': 'Keyless Relay',
+        'type': 'openai-api-rest',
+        'endpoint': 'https://keyless.test/v1',
+        'api_key': '',
+      });
+      final modelPk = await db.addModel({
+        'model_id': 'keyless-model',
+        'model_name': 'Keyless',
+        'tag': 'chat',
+        'channel_id': channelId,
+      });
+      await expectLater(
+        LLMConfigResolver().resolveConfig(modelPk),
+        throwsA(isA<LLMConfigException>()
+            .having((e) => e.kind, 'kind', LLMConfigErrorKind.missingApiKey)
+            .having((e) => e.message, 'message', contains('Keyless Relay'))),
+      );
+    });
+  });
+
+  // B8: a channel saved without an API key used to send a keyless request and
+  // surface the provider's bare 401. The resolver now refuses it up front with
+  // a typed error naming the channel — except for vendors that declare they
+  // work keyless (standard 11 §D39).
+  group('LLMConfigResolver.requireApiKey', () {
+    test('a keyed vendor with no key is a typed config error naming the channel',
+        () {
+      expect(
+        () => LLMConfigResolver.requireApiKey(
+          channelType: Vendors.openAIRest,
+          apiKey: '',
+          channelName: 'My Relay',
+          modelId: 'gpt-4o',
+        ),
+        throwsA(isA<LLMConfigException>()
+            .having((e) => e.kind, 'kind', LLMConfigErrorKind.missingApiKey)
+            .having((e) => e.message, 'message', contains('My Relay'))),
+      );
+    });
+
+    test('a whitespace-only key counts as missing', () {
+      expect(
+        () => LLMConfigResolver.requireApiKey(
+          channelType: Vendors.anthropicRest,
+          apiKey: '   ',
+          channelName: 'Claude',
+          modelId: 'claude-sonnet-4-5',
+        ),
+        throwsA(isA<LLMConfigException>()),
+      );
+    });
+
+    test('keyless local runtimes are allowed through', () {
+      for (final type in [Vendors.ollama, Vendors.lmStudio, Vendors.minimaxH3Base]) {
+        expect(
+          () => LLMConfigResolver.requireApiKey(
+            channelType: type,
+            apiKey: '',
+            channelName: 'local',
+            modelId: 'llama3',
+          ),
+          returnsNormally,
+          reason: type,
+        );
+      }
+    });
+
+    test('a present key passes', () {
+      expect(
+        () => LLMConfigResolver.requireApiKey(
+          channelType: Vendors.openAIRest,
+          apiKey: 'sk-x',
+          channelName: 'c',
+          modelId: 'm',
+        ),
+        returnsNormally,
+      );
+    });
+
+    test('config errors are never retried', () {
+      expect(
+          LLMService.isRetryable(const LLMConfigException(
+              LLMConfigErrorKind.missingApiKey, 'no key')),
+          isFalse);
     });
   });
 }

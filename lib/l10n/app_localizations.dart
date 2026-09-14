@@ -4037,6 +4037,18 @@ abstract class AppLocalizations {
   /// **'DNS failed or timed out. Check the URL, proxy and network.'**
   String get probeUnreachableNext;
 
+  /// No description provided for @probeUpstreamError.
+  ///
+  /// In en, this message translates to:
+  /// **'The endpoint answered but is refusing requests for now'**
+  String get probeUpstreamError;
+
+  /// No description provided for @probeUpstreamErrorNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate limited (429) or a server error (5xx). The URL and key look fine; try again in a moment.'**
+  String get probeUpstreamErrorNext;
+
   /// No description provided for @probeNotSupportedNext.
   ///
   /// In en, this message translates to:

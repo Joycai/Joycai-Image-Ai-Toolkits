@@ -92,19 +92,63 @@ class GeminiVeoProtocol implements VideoJobProtocol {
     try {
       final response = await client.get(url, headers: headers);
 
-      if (response.statusCode != 200) {
-        throw LLMApiException(
-            'Failed to check operation: ${response.statusCode} - ${response.body}',
-            statusCode: response.statusCode);
-      }
-
-      // Deliberately not [decodeJsonBody]: a *failed operation* is reported
-      // inside a 200 as `{done: true, error: {...}}`, and the task executor
-      // consumes that envelope — the shared decoder would turn it into a
-      // thrown exception and change the poll contract.
-      return jsonDecode(response.body);
+      // checkEnvelope: false — a *failed operation* is reported inside a 200
+      // as `{done: true, error: {...}}`; [veoPollResult] turns it into an
+      // error that names the operation, instead of the generic envelope check
+      // discarding that context.
+      final data = decodeJsonBody(response,
+          apiName: 'Google operation poll', checkEnvelope: false);
+      return veoPollResult(data, operationName, config.endpoint);
     } finally {
       client.close();
     }
   }
+}
+
+/// One Veo operation body, checked against the poll contract every other
+/// video protocol already honours: **failure is thrown, never returned**
+/// (standard 14 §1).
+///
+/// Veo was the exemption. Its poll handed back `{done: true, error: {...}}`
+/// verbatim, the executor read only `response`, and the user saw "Operation
+/// finished but no video URI found. Response: null" — the provider's code and
+/// message were discarded. Now:
+/// * `done` with `error` → [LLMApiException] carrying code and message;
+/// * `done` with no samples but `raiMediaFilteredReasons` → the filter's
+///   reasons, not a missing-URI mystery;
+/// * `done` with samples → each `video` map gains [videoRequiresAuthKey]:
+///   Google's `files/…:download` URIs live on the API host and need the key,
+///   a relay's own storage link does not.
+Map<String, dynamic> veoPollResult(
+  Map<String, dynamic> data,
+  String operationName,
+  String endpoint,
+) {
+  if (data['done'] != true) return data;
+
+  final error = data['error'];
+  if (error != null) {
+    final code = error is Map ? error['code'] : null;
+    final message = error is Map ? (error['message'] ?? error) : error;
+    throw LLMApiException('Veo operation $operationName failed'
+        '${code != null ? ' (code $code)' : ''}: $message');
+  }
+
+  final response = data['response'];
+  final generated = response is Map ? response['generateVideoResponse'] : null;
+  final samples = generated is Map ? generated['generatedSamples'] : null;
+  if (samples is List && samples.isNotEmpty) {
+    for (final sample in samples) {
+      final video = sample is Map ? sample['video'] : null;
+      final uri = video is Map ? video['uri'] : null;
+      if (video is Map && uri is String) {
+        video[videoRequiresAuthKey] = videoUriNeedsAuth(uri, endpoint);
+      }
+    }
+  } else if (generated is Map && generated['raiMediaFilteredReasons'] != null) {
+    throw LLMApiException(
+        'Veo operation $operationName finished without a video — filtered by '
+        'safety: ${generated['raiMediaFilteredReasons']}');
+  }
+  return data;
 }

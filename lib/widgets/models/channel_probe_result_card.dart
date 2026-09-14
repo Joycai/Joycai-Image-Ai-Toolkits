@@ -94,6 +94,15 @@ class ChannelProbeResultCard extends StatelessWidget {
           result.detail,
           true,
         ),
+      ChannelProbeStatus.upstreamError => (
+          Icons.cloud_off,
+          semantic.warningContainer,
+          semantic.onWarningContainer,
+          l10n.probeUpstreamError,
+          l10n.probeUpstreamErrorNext,
+          result.detail,
+          true,
+        ),
       ChannelProbeStatus.notSupported => (
           Icons.block,
           semantic.warningContainer,

@@ -120,7 +120,11 @@ surface 开关"表达不了它。绑定关系升级为：
 - **视频任务的轮询按持久化的提交佐证路由，不按渠道现状。**
   `startLongRunning` 返回 `LLMOperationTicket`（operation id + 发出它的
   `WireProtocol`），executor 把两者一起写进 `tasks` 表
-  （v38 的 `operation_name` / `operation_surface` 列）；此后每一轮
+  （v38 的 `operation_name` / `operation_surface` 列；2026-09 起两列都在提交
+  被受理的当下写入——此前 `operation_name` 实际没写。启动时仍处于
+  processing 且带 operation id 的视频任务回到 pending，executor 见到持久化的
+  id 就跳过提交、直接续轮询，而不是被标成 failed 后让用户再付一次钱；用户
+  手动 retry 则清空 id、重新提交）；此后每一轮
   `checkOperation` / `cancelOperation` 带回 `surfaceId`，dispatcher 经
   `_videoJobProtocolFor`（`_nativeVideoProtocol` 的超集，补上两个从不被声明
   的家族默认面 ①/`veo`）直达当初的面。任务比启动它的配置活得久：渠道中途
@@ -296,6 +300,12 @@ review 时用下面的模式全仓库 grep 一遍即可：
   （带上 operation 名），通用信封检查会先一步抢走并丢掉这个上下文。
 - **`LLMApiException`**（`llm_types.dart`）—— 非 2xx 与信封错误一律抛它。
   `LLMService.isRetryable` 读它的 `statusCode` 决定重试（仅 5xx/429）；
+  **但计费路由例外**：`LLMDispatcher.isBilledOnSubmit` 为真（单发图像面、
+  Midjourney、一切非 chat surface）时只重试"可证明未被上游受理"的失败
+  （429、连接被拒、DNS 失败，`LLMService.isRetryableBeforeAcceptance`）——
+  中转的 502/524/断连可能发生在上游画完之后，重发就是二次计费。单发路由的
+  首块超时抛 `LLMDeadlineExceeded`；轮询被放弃抛 `LLMJobAbandoned`（带任务
+  id），两者都永不重试；
   抛裸 `Exception` 的老路径靠一条锚定 `failed: <status>` 的 legacy 正则兜底，
   新代码不许依赖它。
 - **`sseDataPayload(line)`** —— SSE 行解析（`data:` 后空格可选、注释行、
@@ -322,10 +332,22 @@ review 时用下面的模式全仓库 grep 一遍即可：
 - **`VendorProfile.downloadHeaders(apiKey)`** —— 下载生成产物（视频/图片 URI）
   时用什么认证头是 Layer 2 知识，executor 只消费；按协议族分支写在调用方
   曾是红线违规（错头会被静默忽略，下一个非 bearer vendor 只会得到一个 403）。
+  **带不带头**则是 Layer 1 知识（2026-09 修）：video poll 的 done 信封里
+  `video.requiresAuth`（`videoRequiresAuthKey`）由产出 URL 的协议判定——
+  Sora 式 `/videos/{id}/content` 是 API 端点，要带；DashScope OSS、MiniMax
+  CDN、xAI 结果链接是签名直链，不许带（带了等于把 key 交给第三方主机）。
+  判据 `videoUriNeedsAuth`：URL 与渠道 endpoint 同 host 才带。executor 经
+  `LLMService.downloadHeadersFor` → `LLMDispatcher.downloadHeaders` 取头，
+  不再自己 `Vendors.byId`。下载按容器签名（MP4 `ftyp` / WebM EBML）验收，
+  一次重试，失败删半截文件。
 - **`VideoJobProtocol.poll` / dispatcher `checkOperation` 的返回契约**是
-  Veo 信封（`{name, done, response|progress}`），四个家族一致 —— 包括 MJ
-  分支（dispatcher 内翻译）。唯一豁免：`gemini_veo` 的 poll 返回原始
-  operation JSON 里的 `{done, error}` 由 executor 消费，注释已说明。
+  Veo 信封（`{name, done, response|progress}`），各家族一致 —— 包括 MJ
+  分支（dispatcher 内翻译）。**失败一律抛错、不进返回值**：原先
+  `gemini_veo` 是唯一豁免（原样返回 `{done, error}`），而 executor 只读
+  `response`，用户看到的是 "no video URI found. Response: null"——已取消
+  豁免，`veoPollResult` 对 `done && error` 抛带 code/message 的
+  `LLMApiException`（安全过滤同理）。终态错误不带 statusCode，轮询循环
+  （`job_poll.dart`，容忍连续 3 次瞬时失败）因此不会把它当成可重试的轮询抖动。
 
 ## ④ Anthropic 的六条不变量（会静默错，不会报错）
 

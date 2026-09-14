@@ -2322,6 +2322,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'DNS failed or timed out. Check the URL, proxy and network.';
 
   @override
+  String get probeUpstreamError =>
+      'The endpoint answered but is refusing requests for now';
+
+  @override
+  String get probeUpstreamErrorNext =>
+      'Rate limited (429) or a server error (5xx). The URL and key look fine; try again in a moment.';
+
+  @override
   String get probeNotSupportedNext =>
       'This protocol has no model list; it can only be verified by submitting a task.';
 

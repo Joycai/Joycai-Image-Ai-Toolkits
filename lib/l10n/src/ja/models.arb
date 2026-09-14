@@ -334,6 +334,8 @@
   "probeAuthFailedNext": "キーが完全にコピーされているか、期限切れでないか確認してください。",
   "probeNotAnApiNext": "HTML ページが返りました。コンソールの URL かもしれません。API エンドポイントは通常 /v1 か /v1beta で終わります。",
   "probeUnreachableNext": "DNS の解決に失敗したかタイムアウトしました。URL、プロキシ、ネットワークを確認してください。",
+  "probeUpstreamError": "エンドポイントは応答しましたが、現在リクエストを拒否しています",
+  "probeUpstreamErrorNext": "レート制限（429）またはサーバーエラー（5xx）です。URL とキーは問題なさそうです。しばらくしてから再試行してください。",
   "probeNotSupportedNext": "このプロトコルにはモデル一覧がないため、タスクを送信して確認するしかありません。",
   "previewEmptyKeyNote": "キーは未入力です。あとでチャネル編集から追加できます。",
   "presetShortHint": "エンドポイントとプロトコルをワンタップで入力",

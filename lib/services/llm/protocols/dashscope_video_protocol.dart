@@ -48,7 +48,7 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
       }
       media.add({
         'type': role,
-        'url': 'data:${att.mimeType};base64,${base64Encode(bytes)}',
+        'url': imageDataUrl(bytes, att.mimeType),
       });
     }
 
@@ -188,19 +188,9 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
                 'DashScope video task $operationName succeeded but returned '
                 'no video_url: ${response.body}');
           }
-          return {
-            'name': operationName,
-            'done': true,
-            'response': {
-              'generateVideoResponse': {
-                'generatedSamples': [
-                  {
-                    'video': {'uri': videoUrl},
-                  }
-                ],
-              },
-            },
-          };
+          // A signed OSS link: the API key must not travel to it.
+          return videoDoneEnvelope(operationName, videoUrl,
+              requiresAuth: videoUriNeedsAuth(videoUrl, config.endpoint));
         case 'FAILED':
         case 'CANCELED':
         case 'UNKNOWN':

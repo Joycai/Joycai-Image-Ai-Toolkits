@@ -67,6 +67,9 @@ class LLMService {
       useStream = false;
     }
     final int maxRetries = options?['retryCount'] ?? 0;
+    // Asked once: on a route that bills at acceptance only failures provably
+    // before acceptance are retried — see [shouldRetry].
+    final billedOnSubmit = _dispatcher.isBilledOnSubmit(config);
     int attempt = 0;
     void log(String msg, {String level = 'INFO'}) =>
         onLogAdded?.call(msg, level: level, contextId: contextId);
@@ -190,7 +193,8 @@ class LLMService {
         return mergeTurnParts(parts);
       } catch (e) {
         attempt++;
-        if (attempt > maxRetries || !isRetryable(e)) {
+        if (attempt > maxRetries ||
+            !shouldRetry(e, billedOnSubmit: billedOnSubmit)) {
           rethrow;
         }
         // Asked again here, not just at the top: the failure may well *be*
@@ -241,6 +245,7 @@ class LLMService {
     await for (final chunk in _idleGuarded(
       stream,
       first: _firstChunkGapFor(config, options),
+      firstIsDeadline: _dispatcher.streamIsSingleShot(config),
     )) {
       if (isCancelled?.call() ?? false) {
         // Leaving the loop is the abort. `await for` cancels its
@@ -350,10 +355,21 @@ class LLMService {
   /// twice: cancelling the iterator in the `finally` actually tears down the
   /// subscription, where the non-streaming `Future.timeout` leaves its request
   /// running upstream and billing.
+  ///
+  /// [firstIsDeadline] is for a route [LLMDispatcher.streamIsSingleShot]
+  /// calls out: there the first gap *is* the generation's deadline, so it
+  /// expiring throws [LLMDeadlineExceeded] — never retried — instead of the
+  /// plain [TimeoutException] that [isRetryable] reads as a dead connection.
+  /// The old spelling let a slow single-shot image generation time out and
+  /// be re-sent while upstream was still drawing (and billing) the first.
   static Stream<LLMResponseChunk> _idleGuarded(
     Stream<LLMResponseChunk> stream, {
     Duration? first,
-  }) => _guard(stream, first: first ?? _firstChunkGap, subsequent: _idleGap);
+    bool firstIsDeadline = false,
+  }) => _guard(stream,
+      first: first ?? _firstChunkGap,
+      subsequent: _idleGap,
+      firstIsDeadline: firstIsDeadline);
 
   /// How long the first chunk may take on this particular route.
   ///
@@ -386,17 +402,27 @@ class LLMService {
     Stream<T> stream, {
     required Duration first,
     required Duration subsequent,
-  }) => _guard(stream, first: first, subsequent: subsequent);
+    bool firstIsDeadline = false,
+  }) => _guard(stream,
+      first: first, subsequent: subsequent, firstIsDeadline: firstIsDeadline);
 
   static Stream<T> _guard<T>(
     Stream<T> stream, {
     required Duration first,
     required Duration subsequent,
+    bool firstIsDeadline = false,
   }) async* {
     final iterator = StreamIterator(stream);
     var gap = first;
+    var awaitingFirst = true;
     try {
-      while (await iterator.moveNext().timeout(gap)) {
+      while (await iterator.moveNext().timeout(gap, onTimeout: () {
+        if (awaitingFirst && firstIsDeadline) {
+          throw LLMDeadlineExceeded(first);
+        }
+        throw TimeoutException('No stream chunk within $gap', gap);
+      })) {
+        awaitingFirst = false;
         gap = subsequent;
         yield iterator.current;
       }
@@ -414,7 +440,9 @@ class LLMService {
   /// the old version grabbed the *first* three-digit number anywhere in the
   /// message, which read "retry after 500ms" in an error body as a server
   /// error and re-sent a request that was going to fail (and bill) again.
-  @visibleForTesting
+  ///
+  /// Public because the video executor's poll loop classifies poll failures
+  /// with it: a transient one is ridden out, a terminal job state is not.
   static bool isRetryable(Object e) {
     // Belt and braces: nothing below matches [LLMCancelled] today, so the
     // fall-through would answer false anyway. Stated explicitly because
@@ -432,6 +460,11 @@ class LLMService {
     // the type exists. A generation that ran past its deadline will run past
     // it again; a stalled stream will not necessarily stall again.
     if (e is LLMDeadlineExceeded) return false;
+    // An accepted job whose polling was abandoned: retrying re-submits and
+    // pays for the same generation twice. Explicit because its message can
+    // quote the last poll's "failed: 503", which the legacy regex below
+    // would read as a transient server error.
+    if (e is LLMJobAbandoned) return false;
     if (e is TimeoutException) return true;
     if (e is LLMApiException) return e.isTransient;
 
@@ -453,6 +486,42 @@ class LLMService {
 
     return false;
   }
+
+  /// The retry decision for one failed attempt on a route whose billing
+  /// posture is [billedOnSubmit] ([LLMDispatcher.isBilledOnSubmit]).
+  ///
+  /// A chat route keeps [isRetryable]. A billed route — image generation,
+  /// Midjourney, any non-chat surface — retries only what
+  /// [isRetryableBeforeAcceptance] can prove never reached upstream. A 502,
+  /// a 524 or a "Connection closed" there is just as often a relay that gave
+  /// up *after* upstream finished drawing; re-sending pays for the picture
+  /// twice (standards 13 §4.3, 14 §3, 06 §3).
+  @visibleForTesting
+  static bool shouldRetry(Object e, {required bool billedOnSubmit}) =>
+      billedOnSubmit ? isRetryableBeforeAcceptance(e) : isRetryable(e);
+
+  /// Failures that provably happened before any upstream accepted the
+  /// request: a rate limit (429 is decided at the door), a refused connection,
+  /// or a host name that did not resolve. Nothing else — not a 5xx, not a
+  /// torn-down connection, not a timeout.
+  @visibleForTesting
+  static bool isRetryableBeforeAcceptance(Object e) {
+    if (e is LLMCancelled || e is LLMDeadlineExceeded || e is LLMJobAbandoned) {
+      return false;
+    }
+    if (e is LLMApiException) return e.statusCode == 429;
+    return _neverConnected.hasMatch(e.toString());
+  }
+
+  /// Transport messages meaning the request never left this machine or never
+  /// reached a listening host, across the dart:io / http spellings on
+  /// Windows, macOS and Linux.
+  static final RegExp _neverConnected = RegExp(
+    r'Connection refused|actively refused|Failed host lookup|'
+    r'No address associated with hostname|nodename nor servname|'
+    r'No such host is known|Name or service not known',
+    caseSensitive: false,
+  );
 
   Stream<LLMResponseChunk> requestStream({
     required dynamic modelIdentifier, // Can be String (legacy ID) or int (DbId)
@@ -477,6 +546,9 @@ class LLMService {
     );
 
     final int maxRetries = options?['retryCount'] ?? 0;
+    // The workbench's Retry Count reaches image tasks through here — see
+    // [shouldRetry] for why a billed route retries almost nothing.
+    final billedOnSubmit = _dispatcher.isBilledOnSubmit(config);
     int attempt = 0;
     // Chunks already yielded to the consumer cannot be retracted, and there
     // is no reset signal in the chunk protocol — a retry after the first
@@ -501,6 +573,7 @@ class LLMService {
         await for (final chunk in _idleGuarded(
           stream,
           first: _firstChunkGapFor(config, options),
+          firstIsDeadline: _dispatcher.streamIsSingleShot(config),
         )) {
           if (chunk.reasoningPart != null) {
             onLogAdded?.call(
@@ -558,7 +631,9 @@ class LLMService {
         return; // Success, exit retry loop
       } catch (e) {
         attempt++;
-        if (deliveredAnyChunk || attempt > maxRetries || !isRetryable(e)) {
+        if (deliveredAnyChunk ||
+            attempt > maxRetries ||
+            !shouldRetry(e, billedOnSubmit: billedOnSubmit)) {
           rethrow;
         }
         onLogAdded?.call(
@@ -571,11 +646,33 @@ class LLMService {
     }
   }
 
+  /// Where usage rows are written. Null means the real database; tests swap
+  /// in a sink that throws to pin that recording is best-effort.
+  @visibleForTesting
+  static Future<void> Function(Map<String, dynamic> row)? usageSinkOverride;
+
+  /// Test door onto [_recordUsage].
+  @visibleForTesting
+  Future<void> recordUsageForTest(
+    LLMModelConfig config,
+    Map<String, dynamic> metadata, {
+    Map<String, dynamic>? options,
+    int imageCount = 0,
+  }) =>
+      _recordUsage(config.modelId, config, metadata,
+          options: options, imageCount: imageCount);
+
   /// [options] and [imageCount] feed spec billing: the request's output
   /// spec (size / quality / seconds) is read off the options — or off the
   /// provider's echo in [metadata] where there is one — and priced against
   /// the group's rate table; the units are the pictures the response
   /// carried, the seconds requested, or one per job. See [specUsageFor].
+  ///
+  /// **Best-effort: never throws** (standard 06 §1). It runs after the
+  /// provider has already generated — and billed — the output, so a locked
+  /// database or a bad spec table must not turn a delivered image into a
+  /// failed task, or lose an accepted video job's ticket before its id is
+  /// persisted. A failure is logged at WARN and swallowed.
   Future<void> _recordUsage(
     String modelId,
     LLMModelConfig config,
@@ -585,7 +682,30 @@ class LLMService {
     Map<String, dynamic>? options,
     int imageCount = 0,
   }) async {
-    final db = DatabaseService();
+    try {
+      await _writeUsageRow(modelId, config, metadata,
+          modelDbId: modelDbId,
+          taskTag: taskTag,
+          options: options,
+          imageCount: imageCount);
+    } catch (e) {
+      onLogAdded?.call(
+        'Usage for $modelId could not be recorded (the response itself is '
+        'unaffected): $e',
+        level: 'WARN',
+      );
+    }
+  }
+
+  Future<void> _writeUsageRow(
+    String modelId,
+    LLMModelConfig config,
+    Map<String, dynamic> metadata, {
+    int? modelDbId,
+    String? taskTag,
+    Map<String, dynamic>? options,
+    int imageCount = 0,
+  }) async {
     final spec = specUsageFor(config, options, metadata, imageCount: imageCount);
 
     // Standardize metadata keys. Three spellings are in play: Google
@@ -601,7 +721,8 @@ class LLMService {
     final outputTokens = outputTokensOf(metadata);
     final cacheTokens = _extractCacheTokens(metadata, promptTokens);
 
-    await db.recordTokenUsage({
+    final sink = usageSinkOverride ?? DatabaseService().recordTokenUsage;
+    await sink({
       // The tag makes delegated work distinguishable in the usage table
       // (e.g. `task_id LIKE 'subagent:%'`) — a sub-agent's spend should be
       // attributable to delegation, not blended into ordinary requests.
@@ -782,6 +903,21 @@ class LLMService {
       logger: (msg, {level = 'INFO'}) =>
           onLogAdded?.call(msg, level: level, contextId: contextId),
     );
+  }
+
+  /// Credential headers for downloading a generated asset from this model's
+  /// channel. Callers apply them only to a URL its protocol marked as needing
+  /// auth (`videoRequiresAuthKey`); a signed storage link gets none.
+  Future<Map<String, String>> downloadHeadersFor({
+    required dynamic modelIdentifier,
+    String? contextId,
+  }) async {
+    final config = await _configResolver.resolveConfig(
+      modelIdentifier,
+      logger: (msg, {level = 'INFO'}) =>
+          onLogAdded?.call(msg, level: level, contextId: contextId),
+    );
+    return _dispatcher.downloadHeaders(config);
   }
 
   /// How long an upstream cancel may take before the local task gives up on

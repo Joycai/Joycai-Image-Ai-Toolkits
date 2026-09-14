@@ -2252,6 +2252,13 @@ class AppLocalizationsJa extends AppLocalizations {
       'DNS の解決に失敗したかタイムアウトしました。URL、プロキシ、ネットワークを確認してください。';
 
   @override
+  String get probeUpstreamError => 'エンドポイントは応答しましたが、現在リクエストを拒否しています';
+
+  @override
+  String get probeUpstreamErrorNext =>
+      'レート制限（429）またはサーバーエラー（5xx）です。URL とキーは問題なさそうです。しばらくしてから再試行してください。';
+
+  @override
   String get probeNotSupportedNext =>
       'このプロトコルにはモデル一覧がないため、タスクを送信して確認するしかありません。';
 

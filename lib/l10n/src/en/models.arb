@@ -521,6 +521,8 @@
   "probeAuthFailedNext": "Check the key was copied in full and hasn't expired.",
   "probeNotAnApiNext": "An HTML page came back, probably a console URL. API endpoints usually end in /v1 or /v1beta.",
   "probeUnreachableNext": "DNS failed or timed out. Check the URL, proxy and network.",
+  "probeUpstreamError": "The endpoint answered but is refusing requests for now",
+  "probeUpstreamErrorNext": "Rate limited (429) or a server error (5xx). The URL and key look fine; try again in a moment.",
   "probeNotSupportedNext": "This protocol has no model list; it can only be verified by submitting a task.",
   "previewEmptyKeyNote": "No key yet. You can add it later in Edit Channel.",
   "presetShortHint": "Fills endpoint and protocol in one tap",

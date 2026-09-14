@@ -73,7 +73,7 @@ class XaiVideosProtocol implements VideoJobProtocol {
       final bytes = await readAttachmentBytes(firstFrame);
       if (bytes != null) {
         payload['image'] = {
-          'url': 'data:${firstFrame.mimeType};base64,${base64Encode(bytes)}',
+          'url': imageDataUrl(bytes, firstFrame.mimeType),
         };
       }
       if (references.isNotEmpty) {
@@ -88,7 +88,7 @@ class XaiVideosProtocol implements VideoJobProtocol {
       for (final att in references) {
         final bytes = await readAttachmentBytes(att);
         if (bytes != null) {
-          encoded.add({'url': 'data:${att.mimeType};base64,${base64Encode(bytes)}'});
+          encoded.add({'url': imageDataUrl(bytes, att.mimeType)});
         }
       }
       if (encoded.isNotEmpty) payload['reference_images'] = encoded;
@@ -167,29 +167,23 @@ class XaiVideosProtocol implements VideoJobProtocol {
           final video = data['video'] as Map?;
           final videoUrl = video?['url']?.toString();
           if (videoUrl == null || videoUrl.isEmpty) {
-            throw Exception('xAI video request $operationName is done but returned no URL: ${response.body}');
+            throw LLMApiException(
+                'xAI video request $operationName is done but returned no URL: ${response.body}');
           }
-          return {
-            'name': operationName,
-            'done': true,
-            'response': {
-              'generateVideoResponse': {
-                'generatedSamples': [
-                  {
-                    'video': {'uri': videoUrl},
-                  }
-                ],
-              },
-            },
-          };
+          // A signed result URL on xAI's media host: no API key on the
+          // download unless it points back at the API host itself.
+          return videoDoneEnvelope(operationName, videoUrl,
+              requiresAuth: videoUriNeedsAuth(videoUrl, config.endpoint));
         case 'failed':
           final err = data['error'];
           final msg = err is Map
               ? '${err['code'] ?? 'unknown'}: ${err['message'] ?? err.toString()}'
               : (err?.toString() ?? 'unknown');
-          throw Exception('xAI video request $operationName failed: $msg');
+          throw LLMApiException(
+              'xAI video request $operationName failed: $msg');
         case 'expired':
-          throw Exception('xAI video request $operationName expired before completing.');
+          throw LLMApiException(
+              'xAI video request $operationName expired before completing.');
         default:
           // pending — relay progress (0-100) without marking done.
           return {

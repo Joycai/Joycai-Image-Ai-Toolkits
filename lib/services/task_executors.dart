@@ -1,5 +1,17 @@
 part of 'task_queue_service.dart';
 
+/// Overall bound on a video job: every poll, and the download after it.
+const Duration _videoJobDeadline = Duration(minutes: 30);
+
+/// The least time a finished job's download gets, even at the very end of
+/// [_videoJobDeadline] — the job is already billed in full.
+const Duration _videoDownloadFloor = Duration(minutes: 2);
+
+/// Poll pacing for video jobs: first poll at once, then a mild backoff from
+/// 7 s to a 20 s ceiling (it was a flat, uninterruptible 10 s).
+Duration _videoPollInterval(int pollsSoFar) =>
+    Duration(seconds: math.min(5 + pollsSoFar * 2, 20));
+
 Map<String, dynamic> _compressReferenceInIsolate(Map<String, dynamic> input) {
   final result = ImageCompressor.compress(
     input['bytes'] as Uint8List,
@@ -149,8 +161,20 @@ extension TaskExecutors on TaskQueueService {
 
     if (task.status == TaskStatus.cancelled) return;
 
+    var unrecognised = 0;
     for (int i = 0; i < generatedImages.length; i++) {
       final bytes = generatedImages[i];
+      // Refused rather than defaulted to `.png`: bytes no image format
+      // recognises are an HTML error page or a truncated body, and writing
+      // them out put an unopenable file in the gallery under a success.
+      if (imageMimeFromBytes(bytes) == null) {
+        unrecognised++;
+        task.addLog(
+          'Warning: result ${i + 1} of ${generatedImages.length} is not a '
+          'recognisable image (${bytes.length} bytes) and was not saved.',
+        );
+        continue;
+      }
       final prefix = FileUtils.safeFilenamePrefix(
         '${task.parameters['imagePrefix'] ?? 'result'}',
         fallback: 'result',
@@ -171,6 +195,13 @@ extension TaskExecutors on TaskQueueService {
       task.addLog('Saved result image to: $filePath');
 
       onTaskCompleted?.call(file);
+    }
+
+    if (generatedImages.isNotEmpty && unrecognised == generatedImages.length) {
+      throw Exception(
+        'None of the ${generatedImages.length} returned result(s) is a '
+        'recognisable image; nothing was saved.',
+      );
     }
   }
 
@@ -452,6 +483,128 @@ extension TaskExecutors on TaskQueueService {
 
     final outputDir = await _getEffectiveOutputDir(task);
 
+    // A job id persisted by an earlier run means the job was already accepted
+    // — and billed. Resuming its poll is the only correct move; submitting
+    // again would pay for the same video twice.
+    final persistedOperation = task.operationName;
+    final String operationName;
+    if (persistedOperation != null && persistedOperation.isNotEmpty) {
+      operationName = persistedOperation;
+      task.addLog(
+        'Resuming upstream job $operationName submitted by an earlier run; '
+        'no new job is submitted.',
+      );
+    } else {
+      operationName = await _submitVideoJob(task);
+    }
+    _emit(task.id, TaskEventType.progress, 0.05);
+
+    // Polling through the shared loop (standard 14 §3): a failed poll is
+    // ridden out up to three times in a row — a single one used to kill a
+    // paid job — the sleep between polls is sliced so cancel lands within
+    // half a second, and the interval backs off gently. Giving up is
+    // LLMJobAbandoned, which names the job id.
+    final jobStart = DateTime.now();
+    final Map<String, dynamic> done;
+    try {
+      done = await pollJobUntilDone<Map<String, dynamic>>(
+        job: 'Video job $operationName',
+        jobId: operationName,
+        deadline: _videoJobDeadline,
+        interval: _videoPollInterval,
+        sleepBeforeFirstPoll: false,
+        isCancelled: () => task.status == TaskStatus.cancelled,
+        // A terminal job state is thrown by the poll with no status code and
+        // is not retryable; only transport failures and 5xx/429 polls count
+        // toward the tolerance.
+        isTransient: LLMService.isRetryable,
+        logger: (msg, {level = 'INFO'}) {
+          task.addLog(level == 'INFO' ? msg : '$level: $msg');
+          refreshQueue();
+        },
+        fetch: () => LLMService().checkOperation(
+          modelIdentifier: task.modelDbId ?? task.modelId,
+          operationName: operationName,
+          operationSurface: task.operationSurface,
+          contextId: task.id,
+        ),
+        interpret: (opStatus) {
+          if (opStatus['done'] == true) return opStatus;
+          task.addLog('Generation in progress...');
+          _emit(task.id, TaskEventType.progress, 0.5); // Placeholder progress
+          return null;
+        },
+      );
+    } on LLMCancelled {
+      // The local task is over either way; this only decides whether the
+      // upstream one goes with it. Most surfaces have no cancel and answer
+      // null without a request — see LLMDispatcher.cancelOperation.
+      final action = await LLMService().cancelOperation(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        operationName: operationName,
+        operationSurface: task.operationSurface,
+        contextId: task.id,
+      );
+      task.addLog(
+        action == null
+            ? 'Cancelled locally; the upstream job was left running.'
+            : 'Cancelled locally; upstream reports "$action".',
+      );
+      return;
+    }
+
+    final response = done['response'] as Map?;
+    final generated = response?['generateVideoResponse'] as Map?;
+    final samples = generated?['generatedSamples'] as List?;
+    final Map? video = samples != null && samples.isNotEmpty
+        ? ((samples.first as Map?)?['video'] as Map?)
+        : null;
+    final videoUri = video?['uri'] as String?;
+    if (videoUri == null || videoUri.isEmpty) {
+      throw Exception(
+        'Operation $operationName finished but no video URI found. '
+        'Response: ${jsonEncode(response)}',
+      );
+    }
+    // The protocol that produced the URL decided whether it may carry the
+    // channel's key (signed storage links must not).
+    final requiresAuth = video?[videoRequiresAuthKey] == true;
+
+    if (task.status == TaskStatus.cancelled) return;
+
+    // Download, bounded by what is left of the job deadline — with a floor,
+    // because a job that finished at minute 29 was billed in full and is
+    // still worth fetching.
+    task.addLog('Downloading video from: $videoUri');
+    _emit(task.id, TaskEventType.progress, 0.8);
+
+    var budget = _videoJobDeadline - DateTime.now().difference(jobStart);
+    if (budget < _videoDownloadFloor) budget = _videoDownloadFloor;
+    final headers = requiresAuth
+        ? await _videoDownloadHeaders(task)
+        : const <String, String>{};
+    final downloadPath = await _downloadVideo(
+      videoUri,
+      task,
+      outputDir,
+      headers: headers,
+      budget: budget,
+    );
+
+    task.resultPaths.add(downloadPath);
+    _emit(
+      task.id,
+      TaskEventType.imageResult,
+      downloadPath,
+    ); // Reusing imageResult for video path
+    task.addLog('Saved video to: $downloadPath');
+
+    onTaskCompleted?.call(File(downloadPath));
+  }
+
+  /// Builds the request, submits the job, and persists its id and surface
+  /// before anything else can fail. Returns the operation id.
+  Future<String> _submitVideoJob(TaskItem task) async {
     // 1. Prepare messages and attachments
     final attachments = <LLMAttachment>[];
 
@@ -513,160 +666,153 @@ extension TaskExecutors on TaskQueueService {
       contextId: task.id,
       options: task.parameters,
     );
-    final operationName = ticket.name;
 
-    // Persist the issuing surface immediately: the poll loop re-resolves the
-    // channel from the database every round, and the channel can be edited
-    // (even re-pointed at another vendor) while this job runs. The persisted
-    // surface is what keeps every later poll on the surface that issued the id.
-    // The id itself stays in this local scope — nothing resumes a poll across
-    // a restart, so it is not persisted on the task.
+    // Persist both halves of the job's provenance immediately. The id is
+    // what a restart resumes and what a failure message names; the surface
+    // keeps every later poll on the surface that issued the id, even if the
+    // channel is re-pointed at another vendor while the job runs.
+    task.operationName = ticket.name;
     task.operationSurface = ticket.surfaceId;
     await DatabaseService().saveTask(task.toMap());
 
-    task.addLog('LRO started: $operationName');
-    _emit(task.id, TaskEventType.progress, 0.05);
-
-    // 3. Polling Loop
-    String? videoUri;
-    final pollStartTime = DateTime.now();
-    while (true) {
-      if (task.status == TaskStatus.cancelled) {
-        // The local task is over either way; this only decides whether the
-        // upstream one goes with it. Most surfaces have no cancel and answer
-        // null without a request — see LLMDispatcher.cancelOperation.
-        final action = await LLMService().cancelOperation(
-          modelIdentifier: task.modelDbId ?? task.modelId,
-          operationName: operationName,
-          operationSurface: task.operationSurface,
-          contextId: task.id,
-        );
-        task.addLog(
-          action == null
-              ? 'Cancelled locally; the upstream job was left running.'
-              : 'Cancelled locally; upstream reports "$action".',
-        );
-        break;
-      }
-
-      if (DateTime.now().difference(pollStartTime) >
-          const Duration(minutes: 30)) {
-        throw Exception('Video generation task timed out after 30 minutes.');
-      }
-
-      final opStatus = await LLMService().checkOperation(
-        modelIdentifier: task.modelDbId ?? task.modelId,
-        operationName: operationName,
-        operationSurface: task.operationSurface,
-        contextId: task.id,
-      );
-
-      final isDone = opStatus['done'] == true;
-      if (isDone) {
-        final response = opStatus['response'] as Map?;
-        if (response != null) {
-          final genVideoResponse = response['generateVideoResponse'] as Map?;
-          if (genVideoResponse != null) {
-            final samples = genVideoResponse['generatedSamples'] as List?;
-            if (samples != null && samples.isNotEmpty) {
-              final firstSample = samples[0] as Map?;
-              final video = firstSample?['video'] as Map?;
-              videoUri = video?['uri'] as String?;
-            }
-          }
-        }
-
-        if (videoUri == null) {
-          throw Exception(
-            'Operation finished but no video URI found. Response: ${jsonEncode(response)}',
-          );
-        }
-        break;
-      }
-
-      // If not done, update progress and wait
-      task.addLog('Generation in progress...');
-      _emit(task.id, TaskEventType.progress, 0.5); // Placeholder progress
-
-      await Future.delayed(const Duration(seconds: 10));
-    }
-
-    if (task.status == TaskStatus.cancelled) return;
-
-    // 4. Download Video
-    task.addLog('Downloading video from: $videoUri');
-    _emit(task.id, TaskEventType.progress, 0.8);
-
-    final downloadPath = await _downloadVideo(videoUri!, task, outputDir);
-
-    task.resultPaths.add(downloadPath);
-    _emit(
-      task.id,
-      TaskEventType.imageResult,
-      downloadPath,
-    ); // Reusing imageResult for video path
-    task.addLog('Saved video to: $downloadPath');
-
-    onTaskCompleted?.call(File(downloadPath));
+    task.addLog('LRO started: ${ticket.name}');
+    return ticket.name;
   }
 
+  /// The channel's credential headers for a download whose URL needs them.
+  /// A lookup failure downgrades to no headers — the job is done and billed,
+  /// and a public link may well work without them.
+  Future<Map<String, String>> _videoDownloadHeaders(TaskItem task) async {
+    try {
+      return await LLMService().downloadHeadersFor(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        contextId: task.id,
+      );
+    } catch (e) {
+      task.addLog(
+        'Warning: could not resolve channel credentials for the download '
+        '($e); trying without them.',
+      );
+      return const {};
+    }
+  }
+
+  /// Downloads a finished video: one retry, bounded by [budget], and only a
+  /// real video container is kept (standard 14 §3.4).
   Future<String> _downloadVideo(
     String url,
     TaskItem task,
-    String outputDir,
-  ) async {
-    final client = HttpClient();
-    try {
-      final db = DatabaseService();
-      String? apiKey;
-      VendorProfile? vendor;
-      if (task.modelDbId != null) {
-        final models = await db.getModels();
-        final model = models.cast<LLMModel?>().firstWhere(
-          (m) => m?.id == task.modelDbId,
-          orElse: () => null,
-        );
-        if (model != null && model.channelId != null) {
-          final channel = await db.getChannel(model.channelId!);
-          if (channel != null) {
-            apiKey = channel.apiKey;
-            vendor = Vendors.byId(channel.type);
-          }
+    String outputDir, {
+    required Map<String, String> headers,
+    required Duration budget,
+  }) async {
+    final deadline = DateTime.now().add(budget);
+    Object? lastError;
+    for (var attempt = 1; attempt <= 2; attempt++) {
+      if (task.status == TaskStatus.cancelled) throw const LLMCancelled();
+      if (!DateTime.now().isBefore(deadline)) break;
+      try {
+        return await _downloadVideoOnce(url, task, outputDir, headers, deadline);
+      } on LLMCancelled {
+        rethrow;
+      } catch (e) {
+        lastError = e;
+        task.addLog('Video download attempt $attempt failed: $e');
+        if (attempt == 1) {
+          await Future<void>.delayed(const Duration(seconds: 2));
         }
       }
+    }
+    throw Exception(
+      'Video download failed after one retry: '
+      '${lastError ?? 'the job deadline passed'}. The job itself finished '
+      'upstream; its URL may still work for a while: $url',
+    );
+  }
 
-      final request = await client.getUrl(Uri.parse(url));
-      if (apiKey != null && vendor != null) {
-        // Which header the asset host wants (Google CDN: x-goog-api-key,
-        // relays: bearer) is Layer 2 knowledge — the vendor profile answers,
-        // this executor just applies it.
-        vendor.downloadHeaders(apiKey).forEach(request.headers.add);
+  /// One download attempt, written to a `.part` file that becomes the result
+  /// only after its leading bytes prove a video container. A non-200, an HTML
+  /// error page served as 200, a stalled body or a cancel deletes the partial
+  /// file instead of leaving an unplayable `.mp4` in the output folder.
+  Future<String> _downloadVideoOnce(
+    String url,
+    TaskItem task,
+    String outputDir,
+    Map<String, String> headers,
+    DateTime deadline,
+  ) async {
+    Duration left() {
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) {
+        throw TimeoutException('Video download ran past the job deadline.');
       }
+      return remaining;
+    }
 
-      final response = await request.close();
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 30);
+    File? part;
+    try {
+      final request = await client.getUrl(Uri.parse(url)).timeout(left());
+      headers.forEach(request.headers.add);
+      final response = await request.close().timeout(left());
       if (response.statusCode != 200) {
-        throw Exception('Failed to download video: ${response.statusCode}');
+        throw Exception('Failed to download video: HTTP ${response.statusCode}');
       }
 
       final prefix = FileUtils.safeFilenamePrefix(
         '${task.parameters['imagePrefix'] ?? 'video'}',
         fallback: 'video',
       );
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = '${prefix}_$timestamp.mp4';
-      final filePath = p.join(outputDir, fileName);
-
-      final file = File(filePath);
-      final sink = file.openWrite();
+      final stem = '${prefix}_${DateTime.now().millisecondsSinceEpoch}';
+      part = File(p.join(outputDir, '$stem.part'));
+      final sink = part.openWrite();
+      var received = 0;
       try {
-        await response.pipe(sink);
-      } catch (e) {
+        await for (final chunk in response.timeout(
+          const Duration(seconds: 60),
+        )) {
+          if (task.status == TaskStatus.cancelled) throw const LLMCancelled();
+          left();
+          sink.add(chunk);
+          received += chunk.length;
+        }
+      } finally {
         await sink.close();
-        rethrow;
       }
-      return filePath;
+
+      final raf = await part.open();
+      final Uint8List head;
+      try {
+        head = await raf.read(videoMagicHeadLength);
+      } finally {
+        await raf.close();
+      }
+      final extension = videoExtensionFromBytes(head);
+      if (extension == null) {
+        throw Exception(
+          'Downloaded body is not a video ($received bytes, content-type '
+          '${response.headers.contentType ?? 'none'}) — most likely an error '
+          'page or an expired link.',
+        );
+      }
+
+      final saved = await part.rename(p.join(outputDir, '$stem$extension'));
+      part = null;
+      return saved.path;
+    } catch (_) {
+      final leftover = part;
+      if (leftover != null) {
+        try {
+          if (await leftover.exists()) await leftover.delete();
+        } catch (_) {
+          // Best effort: a partial file that cannot be removed is still
+          // better reported than hidden behind a second error.
+        }
+      }
+      rethrow;
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -39,11 +38,6 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
   static const Duration _relaxedPollInterval = Duration(seconds: 6);
   static const int _densePolls = 10;
 
-  /// Consecutive transient poll failures tolerated before giving up. The
-  /// task is already billed and a poll is a cheap GET, so jitter and a 429
-  /// are worth riding out — but not forever.
-  static const int _maxConsecutivePollFailures = 3;
-
   @override
   Future<LLMResponse> generateImage(
     LLMTarget target,
@@ -57,10 +51,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
       orElse: () => history.last,
     );
 
-    bool cancelled() {
-      final probe = options?[llmCancellationProbeKey];
-      return probe is bool Function() && probe();
-    }
+    final cancelled = cancellationProbeOf(options);
 
     // Reference handling mirrors the synchronous protocol: cap to the
     // model's ceiling, inline as data URLs.
@@ -116,7 +107,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
         );
       }
 
-      final deadline = DateTime.now().add(_overallDeadline);
+      final started = DateTime.now();
 
       final submitResponse = await client.post(
         submitUrl,
@@ -148,82 +139,61 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
 
       final pollUrl = Uri.parse('$base/tasks/$taskId');
       var polls = 0;
-      var consecutiveFailures = 0;
 
-      while (true) {
-        if (cancelled()) {
-          throw LLMApiException(
-              'DashScope image task $taskId abandoned: cancelled by user.');
-        }
-        if (DateTime.now().isAfter(deadline)) {
-          throw LLMApiException(
-              'DashScope image task $taskId did not finish within '
-              '${_overallDeadline.inMinutes} minutes (still polling at '
-              'timeout). The task may still complete upstream.');
-        }
-
-        await _cancellableSleep(
-          polls < _densePolls ? _initialPollInterval : _relaxedPollInterval,
-          cancelled,
-        );
-        polls++;
-
-        Map<String, dynamic> data;
-        try {
+      // The shared loop owns cancellation, the sliced sleep, transient
+      // tolerance and the deadline. Its exhausted-failure exit is
+      // LLMJobAbandoned, never a 5xx: the old rethrow of the third failed
+      // poll made LLMService.request submit a second paid task.
+      return await pollJobUntilDone<LLMResponse>(
+        job: 'DashScope image task $taskId',
+        jobId: taskId,
+        // One deadline over the whole job, submit included.
+        deadline: _overallDeadline - DateTime.now().difference(started),
+        interval: (n) =>
+            n < _densePolls ? _initialPollInterval : _relaxedPollInterval,
+        isCancelled: cancelled,
+        logger: logger,
+        fetch: () async {
           final pollResponse =
               await client.get(pollUrl, headers: target.headers());
           // checkEnvelope: false — a FAILED task arrives inside a 200 and is
           // this loop's own business to report, with the task id attached.
-          data = decodeJsonBody(pollResponse,
+          return decodeJsonBody(pollResponse,
               apiName: 'DashScope task poll', checkEnvelope: false);
-          consecutiveFailures = 0;
-        } on LLMApiException catch (e) {
-          // Transient tolerance: the task is billed either way, and a poll
-          // is cheap. Only repeated failure is a real failure.
-          consecutiveFailures++;
-          if (consecutiveFailures >= _maxConsecutivePollFailures) rethrow;
-          logger?.call(
-              'DashScope task poll failed (${e.message}); retrying '
-              '($consecutiveFailures/$_maxConsecutivePollFailures).',
-              level: 'WARN');
-          continue;
-        }
+        },
+        interpret: (data) async {
+          polls++;
+          final taskOutput = data['output'];
+          final status = taskOutput is Map
+              ? taskOutput['task_status']?.toString().toUpperCase() ?? ''
+              : '';
 
-        final taskOutput = data['output'];
-        final status = taskOutput is Map
-            ? taskOutput['task_status']?.toString().toUpperCase() ?? ''
-            : '';
+          if (debugFile != null) {
+            await LLMDebugLogger.appendLine(debugFile, 'poll #$polls: $status');
+          }
 
-        if (debugFile != null) {
-          await LLMDebugLogger.appendLine(debugFile, 'poll #$polls: $status');
-        }
-
-        switch (status) {
-          case 'SUCCEEDED':
-            if (debugFile != null) {
-              await LLMDebugLogger.appendLine(
-                  debugFile, 'Body: ${jsonEncode(data)}');
-            }
-            return await _collectResult(data, taskId, client, logger);
-          case 'FAILED':
-          case 'CANCELED':
-          case 'UNKNOWN':
-            // UNKNOWN is also what an expired task reports — either way the
-            // structured code/message live inside `output` and must survive
-            // into the thrown message (DataInspectionFailed etc.).
-            final code = taskOutput is Map ? taskOutput['code'] : null;
-            final message = taskOutput is Map ? taskOutput['message'] : null;
-            throw LLMApiException(
-                'DashScope image task $taskId $status'
-                '${code != null ? ' ($code)' : ''}'
-                '${message != null ? ': $message' : ''}');
-          default:
-            // PENDING / RUNNING / anything newer — keep waiting under the
-            // overall deadline.
-            logger?.call('DashScope image task $taskId: $status',
-                level: 'DEBUG');
-        }
-      }
+          switch (status) {
+            case 'SUCCEEDED':
+              if (debugFile != null) {
+                await LLMDebugLogger.appendLine(
+                    debugFile, 'Body: ${jsonEncode(data)}');
+              }
+              return await _collectResult(data, taskId, client, logger,
+                  sentSize: dashscopeSentSize(payload));
+            case 'FAILED':
+            case 'CANCELED':
+            case 'UNKNOWN':
+              throw dashscopeTaskFailure('DashScope image task', taskId,
+                  status, taskOutput);
+            default:
+              // PENDING / RUNNING / anything newer — keep waiting under the
+              // overall deadline.
+              logger?.call('DashScope image task $taskId: $status',
+                  level: 'DEBUG');
+              return null;
+          }
+        },
+      );
     } finally {
       client.close();
     }
@@ -234,14 +204,12 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
     Map<String, dynamic> data,
     String taskId,
     http.Client client,
-    LLMLogger? logger,
-  ) async {
-    final refs = dashscopeImageRefs(data);
-    final images = <Uint8List>[];
-    for (final ref in refs) {
-      final bytes = await resolveImageRef(ref, client, logger);
-      if (bytes != null) images.add(bytes);
-    }
+    LLMLogger? logger, {
+    String? sentSize,
+  }) async {
+    final images = await resolveImageRefs(
+        dashscopeImageRefs(data), client, logger,
+        source: 'DashScope image task $taskId');
 
     if (images.isEmpty) {
       // One deliverable — nothing to return is a failure, not an empty
@@ -258,23 +226,33 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
     return LLMResponse(
       text: '',
       generatedImages: images,
-      metadata: data['usage'] is Map
-          ? (data['usage'] as Map).cast<String, dynamic>()
-          : const {},
+      // Same facts as the synchronous surface: the rendered size for spec
+      // billing, and an image count so a result without `usage` is still
+      // recorded.
+      metadata: dashscopeImageMetadata(
+        data: data,
+        imageCount: images.length,
+        sentSize: sentSize,
+      ),
     );
   }
 
-  /// Sleep [duration] in short slices so a cancellation takes effect within
-  /// ~500 ms instead of a full poll interval.
-  Future<void> _cancellableSleep(
-      Duration duration, bool Function() cancelled) async {
-    var remaining = duration;
-    const slice = Duration(milliseconds: 500);
-    while (remaining > Duration.zero) {
-      if (cancelled()) return;
-      final step = remaining < slice ? remaining : slice;
-      await Future.delayed(step);
-      remaining -= step;
-    }
-  }
+}
+
+/// The error a terminal DashScope task status (FAILED / CANCELED / UNKNOWN)
+/// throws, shared by the image and video task surfaces.
+///
+/// The structured `output.code` / `output.message` survive into the message
+/// (`DataInspectionFailed` is a moderation refusal and must not degrade into
+/// prose). UNKNOWN gets the expiry note on both surfaces: task records live
+/// 24 h, and an expired id reports UNKNOWN rather than "not found" — a
+/// different failure from a task that ran and failed (standard 14 §3.3).
+LLMApiException dashscopeTaskFailure(
+    String surface, String taskId, String status, Object? output) {
+  final code = output is Map ? output['code'] : null;
+  final message = output is Map ? output['message'] : null;
+  return LLMApiException('$surface $taskId $status'
+      '${code != null ? ' ($code)' : ''}'
+      '${message != null ? ': $message' : ''}'
+      '${status == 'UNKNOWN' ? ' (task ids expire after 24h — an expired task also reports UNKNOWN)' : ''}');
 }

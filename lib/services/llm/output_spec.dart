@@ -1,3 +1,22 @@
+/// A pixel size spelled `WxH`, parsed — or null when [raw] is not one.
+///
+/// The one reader of that spelling, because four were in play and each
+/// surface understood a different subset: the app writes `1024x1024`,
+/// DashScope's dialect is `1024*1024`, hand-typed rate tables and relays use
+/// `X` or `×`. The OpenAI Images size and the video size only matched a
+/// lowercase `x`, so a `1024*1024` carried over from a DashScope selection was
+/// silently dropped and the upstream default — often a pricier tier — was
+/// rendered instead. Surrounding and inner whitespace is tolerated.
+({int width, int height})? parseWxH(Object? raw) {
+  if (raw is! String) return null;
+  final m = RegExp(r'^\s*(\d+)\s*[xX*×]\s*(\d+)\s*$').firstMatch(raw);
+  if (m == null) return null;
+  final w = int.parse(m.group(1)!);
+  final h = int.parse(m.group(2)!);
+  if (w <= 0 || h <= 0) return null;
+  return (width: w, height: h);
+}
+
 /// The output spec of one generation request, read off the workbench
 /// parameters it was sent with — the only thing a spec-billed fee group's
 /// rate table can be matched against.
@@ -44,9 +63,8 @@ class OutputSpec {
   static String? normalizeSize(dynamic raw) {
     final s = raw?.toString().trim() ?? '';
     if (_unset.contains(s.toLowerCase())) return null;
-    if (RegExp(r'^\d+\s*[xX×]\s*\d+$').hasMatch(s)) {
-      return s.replaceAll(RegExp(r'\s*[xX×]\s*'), 'x');
-    }
+    final wxh = parseWxH(s);
+    if (wxh != null) return '${wxh.width}x${wxh.height}';
     if (RegExp(r'^\d+[kK]$').hasMatch(s)) return s.toUpperCase();
     if (RegExp(r'^\d+[pP]$').hasMatch(s)) return s.toLowerCase();
     return s;
