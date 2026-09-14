@@ -1546,6 +1546,7 @@ class AnthropicChatProtocol implements ChatProtocol {
       throw LLMApiException(
         'Anthropic API Stream Request failed: ${response.statusCode} - $body',
         statusCode: response.statusCode,
+        retryAfter: parseRetryAfter(response.headers),
       );
     }
 

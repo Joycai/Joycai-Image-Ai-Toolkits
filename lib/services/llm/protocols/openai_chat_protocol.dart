@@ -1011,6 +1011,7 @@ class OpenAIChatProtocol implements ChatProtocol {
         '(${redactUrl(url)}) - '
         '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
         statusCode: response.statusCode,
+        retryAfter: parseRetryAfter(response.headers),
       );
     }
 

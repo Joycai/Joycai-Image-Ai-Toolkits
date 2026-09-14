@@ -99,11 +99,20 @@ class LLMApiException implements Exception {
   /// same filter, and every attempt is billed. See [contentBlockedFailure].
   final bool isContentBlocked;
 
+  /// How long the server asked the client to wait before trying again —
+  /// `Retry-After` (seconds or an HTTP-date) or `retry-after-ms` — or null
+  /// when the failed response named no wait. Read generically off the
+  /// response headers (`parseRetryAfter`), never per vendor. `LLMService`
+  /// sleeps at least this long before a retry, and does not retry at all
+  /// when the wait exceeds its cap.
+  final Duration? retryAfter;
+
   LLMApiException(this.message,
       {this.statusCode,
       this.isEnvelope = false,
       this.isNonJsonBody = false,
-      this.isContentBlocked = false});
+      this.isContentBlocked = false,
+      this.retryAfter});
 
   bool get isTransient =>
       statusCode != null &&

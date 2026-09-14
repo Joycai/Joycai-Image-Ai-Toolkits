@@ -248,7 +248,8 @@ Map<String, dynamic> decodeJsonBody(http.Response response,
     throw LLMApiException(
         '$apiName request failed: $status${_requestUrlNote(response)} - '
         '$detail',
-        statusCode: status);
+        statusCode: status,
+        retryAfter: parseRetryAfter(response.headers));
   }
 
   final decoded = _tryJsonDecode(response.body);
@@ -269,6 +270,52 @@ Map<String, dynamic> decodeJsonBody(http.Response response,
   final data = decoded.cast<String, dynamic>();
   if (checkEnvelope) throwIfEnvelopeError(data);
   return data;
+}
+
+/// The wait a failed response asked for, read off its headers, or null when
+/// it named none (or named one that does not parse).
+///
+/// Three spellings, checked in this order:
+///  * `retry-after-ms` — milliseconds, fractional allowed (OpenAI and several
+///    relays send it beside `retry-after` with more precision);
+///  * `retry-after` as delay-seconds (RFC 9110 §10.2.3);
+///  * `retry-after` as an HTTP-date, turned into a delay from [now]; a date
+///    already past means "now" ([Duration.zero]).
+///
+/// Transport facts, so they live here and are read on every surface alike —
+/// no vendor branch decides whether a 429 is honoured.
+Duration? parseRetryAfter(Map<String, String> headers, {DateTime? now}) {
+  String? header(String name) {
+    for (final entry in headers.entries) {
+      if (entry.key.toLowerCase() == name) return entry.value.trim();
+    }
+    return null;
+  }
+
+  final ms = header('retry-after-ms');
+  if (ms != null) {
+    final value = double.tryParse(ms);
+    if (value != null && value >= 0 && value.isFinite) {
+      return Duration(microseconds: (value * 1000).round());
+    }
+  }
+
+  final raw = header('retry-after');
+  if (raw == null || raw.isEmpty) return null;
+  final seconds = double.tryParse(raw);
+  if (seconds != null) {
+    if (seconds < 0 || !seconds.isFinite) return null;
+    return Duration(milliseconds: (seconds * 1000).round());
+  }
+  try {
+    final at = HttpDate.parse(raw);
+    final delay = at.difference(now ?? DateTime.now());
+    return delay.isNegative ? Duration.zero : delay;
+  } on HttpException {
+    return null;
+  } on FormatException {
+    return null;
+  }
 }
 
 Object? _tryJsonDecode(String body) {

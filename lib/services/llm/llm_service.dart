@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../billing/spec_billing.dart';
 import '../database_service.dart';
 import 'llm_config_resolver.dart';
+import 'job_poll.dart' show cancellableSleep, cancellationProbeOf;
 import 'llm_dispatcher.dart';
 import 'llm_types.dart';
 import 'output_spec.dart';
@@ -235,12 +236,25 @@ class LLMService {
           rethrow;
         }
         // Asked again here, not just at the top: the failure may well *be*
-        // the cancellation tearing the connection down, and the two-second
-        // sleep below is time a stopped turn should not spend waiting to
-        // re-send a request nobody is waiting for.
+        // the cancellation tearing the connection down, and the sleep below
+        // is time a stopped turn should not spend waiting to re-send a
+        // request nobody is waiting for.
         if (isCancelled?.call() ?? false) throw const LLMCancelled();
-        log('Request failed: $e. Retrying in 2 seconds...', level: 'WARN');
-        await Future.delayed(const Duration(seconds: 2));
+        final delay = retryDelayFor(e, attempt);
+        if (delay == null) {
+          log(
+            'Request failed: $e. The server asked to wait longer than '
+            '${maxRetryAfter.inSeconds}s before retrying; not retrying.',
+            level: 'WARN',
+          );
+          rethrow;
+        }
+        log('Request failed: $e. Retrying in ${_describeDelay(delay)}...',
+            level: 'WARN');
+        // Sliced, so pressing stop during a long Retry-After wait ends the
+        // turn within half a second instead of after the whole wait.
+        await cancellableSleep(delay, isCancelled);
+        if (isCancelled?.call() ?? false) throw const LLMCancelled();
       }
     }
   }
@@ -555,6 +569,38 @@ class LLMService {
   static bool shouldRetry(Object e, {required bool billedOnSubmit}) =>
       billedOnSubmit ? isRetryableBeforeAcceptance(e) : isRetryable(e);
 
+  /// The longest server-requested wait ([LLMApiException.retryAfter]) this
+  /// service will sit out before a retry. A provider asking for more — a
+  /// quota window measured in minutes or hours — is not a transient blip, and
+  /// a turn silently parked that long reads as a hang; the error surfaces
+  /// instead, naming the wait.
+  static const Duration maxRetryAfter = Duration(seconds: 60);
+
+  /// One step of the linear backoff: attempt n waits at least n × this.
+  static const Duration retryBackoffStep = Duration(seconds: 2);
+
+  /// How long to wait before retry number [attempt] (1-based) after [e], or
+  /// null when [e] carries a server wait above [maxRetryAfter] and so must
+  /// not be retried at all.
+  ///
+  /// Asked only *after* [shouldRetry] said yes, so it can never widen what is
+  /// retried — the billed-route rule stays where it is. The wait is the larger
+  /// of the linear backoff and the server's `Retry-After`: retrying a 429
+  /// sooner than asked is a guaranteed second 429, and the old flat two
+  /// seconds did exactly that.
+  @visibleForTesting
+  static Duration? retryDelayFor(Object e, int attempt) {
+    final backoff = retryBackoffStep * (attempt < 1 ? 1 : attempt);
+    final asked = e is LLMApiException ? e.retryAfter : null;
+    if (asked == null) return backoff;
+    if (asked > maxRetryAfter) return null;
+    return asked > backoff ? asked : backoff;
+  }
+
+  static String _describeDelay(Duration d) => d.inMilliseconds % 1000 == 0
+      ? '${d.inSeconds} seconds'
+      : '${(d.inMilliseconds / 1000).toStringAsFixed(1)} seconds';
+
   /// Failures that provably happened before any upstream accepted the
   /// request: a rate limit (429 is decided at the door), a refused connection,
   /// or a host name that did not resolve. Nothing else — not a 5xx, not a
@@ -696,12 +742,27 @@ class LLMService {
             !shouldRetry(e, billedOnSubmit: billedOnSubmit)) {
           rethrow;
         }
+        final delay = retryDelayFor(e, attempt);
+        if (delay == null) {
+          _emitLog(
+            'Stream failed: $e. The server asked to wait longer than '
+            '${maxRetryAfter.inSeconds}s before retrying; not retrying.',
+            level: 'WARN',
+            contextId: contextId,
+          );
+          rethrow;
+        }
         _emitLog(
-          'Stream failed: $e. Retrying in 2 seconds...',
+          'Stream failed: $e. Retrying in ${_describeDelay(delay)}...',
           level: 'WARN',
           contextId: contextId,
         );
-        await Future.delayed(const Duration(seconds: 2));
+        // This surface has no isCancelled parameter; the executor's probe
+        // rides in the options, and a stopped task must not sit out a long
+        // Retry-After before noticing.
+        final probe = cancellationProbeOf(options);
+        await cancellableSleep(delay, probe);
+        if (probe?.call() ?? false) throw const LLMCancelled();
       }
     }
   }

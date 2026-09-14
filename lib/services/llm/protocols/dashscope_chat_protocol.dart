@@ -244,6 +244,7 @@ class DashScopeChatProtocol implements ChatProtocol {
         'DashScope Chat API stream request failed: ${response.statusCode} - '
         '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
         statusCode: response.statusCode,
+        retryAfter: parseRetryAfter(response.headers),
       );
     }
 
