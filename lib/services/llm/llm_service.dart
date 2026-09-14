@@ -19,7 +19,39 @@ class LLMService {
   final LLMConfigResolver _configResolver = LLMConfigResolver();
   final LLMDispatcher _dispatcher = LLMDispatcher();
 
-  Function(String, {String level, String? contextId})? onLogAdded;
+  /// Everyone listening to this service's execution log.
+  ///
+  /// A list, not one assignable field (pitfalls 11 §H72, errors 06 §4.2): a
+  /// second consumer that *assigned* the old `onLogAdded` silently replaced
+  /// the app's console sink, and whichever ran last won. Listeners are called
+  /// in registration order over a snapshot, so one that removes itself while
+  /// being called does not skip its neighbour.
+  final List<LLMLogListener> _logListeners = [];
+
+  /// Registers [listener]; returns it so a caller can keep the handle for
+  /// [removeLogListener]. Adding the same function twice is a no-op.
+  LLMLogListener addLogListener(LLMLogListener listener) {
+    if (!_logListeners.contains(listener)) _logListeners.add(listener);
+    return listener;
+  }
+
+  void removeLogListener(LLMLogListener listener) =>
+      _logListeners.remove(listener);
+
+  /// Delivers one log line to every listener. A listener that throws is
+  /// skipped rather than allowed to break the request it is observing.
+  void _emitLog(String msg, {String level = 'INFO', String? contextId}) {
+    for (final listener in List.of(_logListeners)) {
+      try {
+        listener(msg, level: level, contextId: contextId);
+      } catch (_) {}
+    }
+  }
+
+  /// Test door onto [_emitLog].
+  @visibleForTesting
+  void emitLogForTest(String msg, {String level = 'INFO', String? contextId}) =>
+      _emitLog(msg, level: level, contextId: contextId);
 
   /// [isCancelled] is polled at the points where this method would
   /// otherwise keep working for a caller that has already withdrawn: before
@@ -50,7 +82,7 @@ class LLMService {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
     // Tool calling reaches the streaming surface only where the protocol
     // assembles calls out of deltas — every chat family does now, but
@@ -72,7 +104,7 @@ class LLMService {
     final billedOnSubmit = _dispatcher.isBilledOnSubmit(config);
     int attempt = 0;
     void log(String msg, {String level = 'INFO'}) =>
-        onLogAdded?.call(msg, level: level, contextId: contextId);
+        _emitLog(msg, level: level, contextId: contextId);
 
     // The turn so far: the history this request is asked against (grows by
     // one continuation at a time) and the partial replies collected on the
@@ -552,7 +584,7 @@ class LLMService {
     String? contextId,
     Map<String, dynamic>? options,
   }) async* {
-    onLogAdded?.call(
+    _emitLog(
       'Preparing request for model: $modelIdentifier',
       level: 'DEBUG',
       contextId: contextId,
@@ -560,9 +592,9 @@ class LLMService {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
-    onLogAdded?.call(
+    _emitLog(
       'Connecting to ${config.channelType}...',
       level: 'DEBUG',
       contextId: contextId,
@@ -590,7 +622,7 @@ class LLMService {
           messages,
           options: options,
           logger: (msg, {level = 'INFO'}) =>
-              onLogAdded?.call(msg, level: level, contextId: contextId),
+              _emitLog(msg, level: level, contextId: contextId),
         );
 
         await for (final chunk in _idleGuarded(
@@ -599,14 +631,14 @@ class LLMService {
           firstIsDeadline: _dispatcher.streamIsSingleShot(config),
         )) {
           if (chunk.reasoningPart != null) {
-            onLogAdded?.call(
+            _emitLog(
               '[AI thinking]: ${chunk.reasoningPart}',
               level: 'DEBUG',
               contextId: contextId,
             );
           }
           if (chunk.textPart != null) {
-            onLogAdded?.call(
+            _emitLog(
               '[AI]: ${chunk.textPart}',
               level: 'INFO',
               contextId: contextId,
@@ -614,7 +646,7 @@ class LLMService {
           }
           if (chunk.imagePart != null) {
             imageCount++;
-            onLogAdded?.call(
+            _emitLog(
               'Received image part ($imageCount)',
               level: 'DEBUG',
               contextId: contextId,
@@ -625,7 +657,7 @@ class LLMService {
           yield chunk;
         }
 
-        onLogAdded?.call(
+        _emitLog(
           'Stream completed. Total images: $imageCount',
           level: 'DEBUG',
           contextId: contextId,
@@ -636,7 +668,7 @@ class LLMService {
         // ended with a usage payload.
         final specBilled = config.billingMode == specBillingMode;
         if (finalMetadata != null || (specBilled && imageCount > 0)) {
-          onLogAdded?.call(
+          _emitLog(
             'Recording token usage...',
             level: 'DEBUG',
             contextId: contextId,
@@ -664,7 +696,7 @@ class LLMService {
             !shouldRetry(e, billedOnSubmit: billedOnSubmit)) {
           rethrow;
         }
-        onLogAdded?.call(
+        _emitLog(
           'Stream failed: $e. Retrying in 2 seconds...',
           level: 'WARN',
           contextId: contextId,
@@ -717,7 +749,7 @@ class LLMService {
           options: options,
           imageCount: imageCount);
     } catch (e) {
-      onLogAdded?.call(
+      _emitLog(
         'Usage for $modelId could not be recorded (the response itself is '
         'unaffected): $e',
         level: 'WARN',
@@ -884,14 +916,14 @@ class LLMService {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
     final ticket = await _dispatcher.startLongRunning(
       config,
       messages,
       options: options,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
     // Video jobs never flow back through request()/requestStream(), so the
     // accepted submission is the only moment they can be billed at all —
@@ -922,14 +954,14 @@ class LLMService {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
     return await _dispatcher.checkOperation(
       config,
       operationName,
       surfaceId: operationSurface,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
   }
 
@@ -943,7 +975,7 @@ class LLMService {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
-          onLogAdded?.call(msg, level: level, contextId: contextId),
+          _emitLog(msg, level: level, contextId: contextId),
     );
     return _dispatcher.downloadHeaders(config);
   }
@@ -969,7 +1001,7 @@ class LLMService {
       final config = await _configResolver.resolveConfig(
         modelIdentifier,
         logger: (msg, {level = 'INFO'}) =>
-            onLogAdded?.call(msg, level: level, contextId: contextId),
+            _emitLog(msg, level: level, contextId: contextId),
       );
       // Bounded, unlike the poll it replaces. This runs on a user pressing
       // cancel, and the caller cannot finalize the task until it returns —
@@ -982,11 +1014,11 @@ class LLMService {
             operationName,
             surfaceId: operationSurface,
             logger: (msg, {level = 'INFO'}) =>
-                onLogAdded?.call(msg, level: level, contextId: contextId),
+                _emitLog(msg, level: level, contextId: contextId),
           )
           .timeout(_cancelTimeout);
     } catch (e) {
-      onLogAdded?.call(
+      _emitLog(
         'Upstream cancel failed for $operationName: $e',
         level: 'WARN',
         contextId: contextId,

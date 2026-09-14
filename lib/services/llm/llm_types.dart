@@ -9,6 +9,11 @@ import '../../models/spec_rate.dart';
 
 enum LLMRole { system, user, assistant, tool }
 
+/// One subscriber to `LLMService`'s execution log — see
+/// `LLMService.addLogListener`.
+typedef LLMLogListener = void Function(String message,
+    {String level, String? contextId});
+
 /// The app's own reasoning-intensity vocabulary (playbook 03: never let one
 /// vendor's spelling into configuration). Absence — a null wherever this is
 /// carried — means *default*: no field is sent at all, and the endpoint does
