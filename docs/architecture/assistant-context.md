@@ -40,6 +40,14 @@ turn in an agent loop, which is how one session came to upload 55 MB
 because it is reversible: liveness is derived (invariant 4), so the model can
 call `view_image` again and pay for the picture only in the turn that needs it.
 
+Inside that window a request still carries at most the newest `_maxLiveImages`
+(3) images (standard 07 §3.6): one turn can view every reference, and the
+window alone would re-upload all of them on every request of that turn. With
+the per-model force-view-all flag the current turn keeps all of its images —
+the flag promises the model saw every one before `submit_prompt` — and the cap
+applies to older rounds only. Window and cap are one rule,
+`_liveAttachmentIndices`.
+
 Both boundaries come from `_boundaryOf`, and **`_elide` and `_liveViewedPaths`
 must read the same one** — see invariant 4.
 
@@ -159,7 +167,7 @@ nothing throws, the numbers just quietly stop meaning what they claim.
    the model may view the image again. `viewedImagePaths` survives only as the
    UI's "has been looked at" badge and gates nothing the model asks for.
    **`_elide` and `_liveViewedPaths` must use the same boundary**
-   (`_attachmentBoundary`, not `_recentBoundary`) — they are two halves of one
+   (`_liveAttachmentIndices` — the attachment window and the image cap — never `_recentBoundary`) — they are two halves of one
    rule: one decides whether the attachment is still in the request, the other
    whether the model may ask for it again. Point them at different windows and
    the model is refused a re-view of a picture it can no longer see, which is
@@ -335,6 +343,7 @@ Pure functions are pinned directly; prefer adding to these over end-to-end runs.
 | `test/knowledge_base_paging_test.dart` | boundary snapping, determinism, degenerate input |
 | `test/knowledge_base_read_cap_test.dart` | whole-file vs paged, undersized windows |
 | `test/optimizer_image_liveness_test.dart` | image re-view liveness: fresh / elided / compacted; the two windows' different sizes; `_elide` and `_liveViewedPaths` agreeing at every distance |
+| `test/optimizer_image_cap_test.dart` | the newest-three cap across turns; re-view after the cap drops an image; force-view-all keeping the current turn; cap and liveness agreeing at every count |
 | `test/llm_cancellation_test.dart` | `LLMCancelled` classification, and the sub-agent turning it into a cancelled result rather than a failure |
 | `test/openai_chat_payload_test.dart` | reasoning echo-back, inline `<think>` split (sync + cross-chunk), in-body error envelopes |
 

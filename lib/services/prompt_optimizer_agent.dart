@@ -1110,6 +1110,14 @@ class PromptOptimizerAgent {
   /// usually refines it.
   static const int _keepAttachmentTurns = 2;
 
+  /// Most image attachments any one request carries (standard 07 §3.6).
+  ///
+  /// The attachment window is counted in turns, and one turn can view every
+  /// reference image — each then re-uploaded on every later request of that
+  /// turn. The cap bounds the payload per request whatever a turn does; the
+  /// window still bounds how long any one image lingers.
+  static const int _maxLiveImages = 3;
+
   /// Layer-2 compaction's secondary trigger: raw message count, independent of
   /// size. A long conversation of short turns costs little context but still
   /// slows every request down.
@@ -1267,11 +1275,13 @@ class PromptOptimizerAgent {
   static int _readCapNow(
     PromptOptimizerSession session,
     String systemPrompt,
-    int? contextWindow,
-  ) =>
+    int? contextWindow, {
+    bool keepCurrentTurnImages = false,
+  }) =>
       ContextBudget.readCapChars(
         contextWindow,
-        occupiedChars(systemPrompt, _trimForSend(session.history)),
+        occupiedChars(systemPrompt,
+            _trimForSend(session.history, keepCurrentTurnImages: keepCurrentTurnImages)),
         observedCharsPerToken: session.observedCharsPerToken,
       );
 
@@ -1747,7 +1757,8 @@ class PromptOptimizerAgent {
           contextExhausted: contextExhausted,
         );
 
-        final trimmedHistory = _trimForSend(session.history);
+        final trimmedHistory =
+            _trimForSend(session.history, keepCurrentTurnImages: effectiveForceView);
         // knowledgeEntryContent is captured once per task, but staging means no
         // edit can reach disk mid-turn, so the injected file map cannot go
         // stale within a turn.
@@ -2432,14 +2443,13 @@ class PromptOptimizerAgent {
   /// describes for knowledge reads). [PromptOptimizerSession.viewedImagePaths]
   /// remains as the UI's "has been looked at" badge only; it no longer gates
   /// anything the model asks for.
-  static Set<String> _liveViewedPaths(PromptOptimizerSession session) {
+  static Set<String> _liveViewedPaths(PromptOptimizerSession session,
+      {bool keepCurrentTurnImages = false}) {
     final history = session.history;
     final paths = <String>{};
-    for (int i = _attachmentBoundary(history); i < history.length; i++) {
-      final m = history[i];
-      if (m.role != LLMRole.user) continue;
-      if (!m.content.startsWith(viewResultMarker)) continue;
-      for (final att in m.attachments) {
+    for (final i
+        in _liveAttachmentIndices(history, keepCurrentTurnImages: keepCurrentTurnImages)) {
+      for (final att in history[i].attachments) {
         final path = att.path;
         if (path != null) paths.add(path);
       }
@@ -2448,26 +2458,66 @@ class PromptOptimizerAgent {
   }
 
   @visibleForTesting
-  static Set<String> liveViewedPathsForTest(PromptOptimizerSession session) =>
-      _liveViewedPaths(session);
+  static Set<String> liveViewedPathsForTest(PromptOptimizerSession session,
+          {bool keepCurrentTurnImages = false}) =>
+      _liveViewedPaths(session, keepCurrentTurnImages: keepCurrentTurnImages);
 
   /// Layer-1 (lossless in DB, per-request) trimming: before the recent
   /// window, bulky knowledge-file tool results are elided and viewed-image
   /// attachments dropped. User/assistant text and submit_prompt results are
   /// always kept. Tool call/result pairing is preserved (only contents are
   /// shortened), which Gemini requires.
-  static List<LLMMessage> _trimForSend(List<LLMMessage> history) {
+  static List<LLMMessage> _trimForSend(List<LLMMessage> history,
+      {bool keepCurrentTurnImages = false}) {
     final boundary = _recentBoundary(history);
-    final attachmentBoundary = _attachmentBoundary(history);
-    if (boundary == 0 && attachmentBoundary == 0) return history;
+    final liveImages =
+        _liveAttachmentIndices(history, keepCurrentTurnImages: keepCurrentTurnImages);
+    var anyImageDropped = false;
+    for (int i = 0; i < history.length && !anyImageDropped; i++) {
+      anyImageDropped = _isViewWithAttachments(history[i]) && !liveImages.contains(i);
+    }
+    if (boundary == 0 && !anyImageDropped) return history;
     return [
       for (int i = 0; i < history.length; i++)
         _elide(
           history[i],
           bulk: i < boundary,
-          attachments: i < attachmentBoundary,
+          attachments: !liveImages.contains(i),
         ),
     ];
+  }
+
+  static bool _isViewWithAttachments(LLMMessage m) =>
+      m.role == LLMRole.user &&
+      m.content.startsWith(viewResultMarker) &&
+      m.attachments.isNotEmpty;
+
+  /// Indices of the view-result messages whose attachments are still sent:
+  /// inside [_attachmentBoundary] and among the newest [_maxLiveImages]
+  /// images.
+  ///
+  /// With [keepCurrentTurnImages] — the per-model force-view-all flag, which
+  /// promises the model has seen every reference before `submit_prompt` —
+  /// the current turn's attachments are all kept. They still count toward
+  /// the cap, so older rounds leave first.
+  ///
+  /// The one rule both [_trimForSend] and [_liveViewedPaths] read: whether an
+  /// attachment is still sent and whether the model may ask for it again are
+  /// two halves of it (invariant 4).
+  static Set<int> _liveAttachmentIndices(List<LLMMessage> history,
+      {bool keepCurrentTurnImages = false}) {
+    final windowStart = _attachmentBoundary(history);
+    final currentTurnStart =
+        keepCurrentTurnImages ? _boundaryOf(history, 1) : history.length;
+    final live = <int>{};
+    var newer = 0;
+    for (int i = history.length - 1; i >= windowStart; i--) {
+      final m = history[i];
+      if (!_isViewWithAttachments(m)) continue;
+      if (i >= currentTurnStart || newer < _maxLiveImages) live.add(i);
+      newer += m.attachments.length;
+    }
+    return live;
   }
 
   /// The outgoing copy of a whole history, windows applied.
@@ -2476,8 +2526,9 @@ class PromptOptimizerAgent {
   /// own but the agreement between them: what [_trimForSend] still carries
   /// must be exactly what [_liveViewedPaths] reports as live.
   @visibleForTesting
-  static List<LLMMessage> trimForSendForTest(List<LLMMessage> history) =>
-      _trimForSend(history);
+  static List<LLMMessage> trimForSendForTest(List<LLMMessage> history,
+          {bool keepCurrentTurnImages = false}) =>
+      _trimForSend(history, keepCurrentTurnImages: keepCurrentTurnImages);
 
   @visibleForTesting
   static LLMMessage elideForTest(LLMMessage m,
@@ -3282,7 +3333,8 @@ class PromptOptimizerAgent {
             'note': 'This page is already in the conversation — refer to the earlier result instead of re-reading it.',
           };
         }
-        final cap = _readCapNow(session, systemPrompt, contextWindow);
+        final cap = _readCapNow(session, systemPrompt, contextWindow,
+            keepCurrentTurnImages: forceViewAllImages);
         if (cap < _minReadChars) {
           // Returning a sliver instead would be worse than refusing: the model
           // would keep asking for more, and every retry is another full-window
@@ -3376,7 +3428,9 @@ class PromptOptimizerAgent {
         // still inside the recent window and therefore actually part of the
         // next request. Once _trimForSend has elided it (or compaction folded
         // it), the model may legitimately ask to see the image again.
-        if (_liveViewedPaths(session).contains(path) || alreadyAttached) {
+        if (_liveViewedPaths(session, keepCurrentTurnImages: forceViewAllImages)
+                .contains(path) ||
+            alreadyAttached) {
           return {
             'status': 'ok',
             'note': 'Image #$id was already attached earlier in this '
