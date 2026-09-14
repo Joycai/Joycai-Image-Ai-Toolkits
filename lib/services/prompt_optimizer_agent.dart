@@ -2710,6 +2710,9 @@ class PromptOptimizerAgent {
       onLog: (m) => onLog?.call('[KB sub-agent] $m'),
       contextId: contextId,
       usageTag: 'subagent:knowledge',
+      // The same tally the main loop budgets with — tool-call arguments
+      // included — so the sub-agent's read cap is not over-granted.
+      measureOccupancy: (messages) => occupiedChars('', messages),
     );
     return _finishDelegateRun(session, task, result, onLog);
   }

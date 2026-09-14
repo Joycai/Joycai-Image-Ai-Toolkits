@@ -171,6 +171,102 @@ void main() {
       expect(occupiedSeen[1], greaterThan(occupiedSeen[0] + 4000));
     });
 
+    test('tool-round narration is never the deliverable', () async {
+      // Standard 07 §2, 09 §2.3: output is the final plain-text reply. A
+      // "Let me read x.md first" that rode along with a tool call is not
+      // findings — returned as output it became a delegate "success" whose
+      // note said nothing.
+      var turn = 0;
+      final result = await SubAgentRunner.run(
+        modelIdentifier: 'm',
+        systemPrompt: 'sys',
+        task: 'brief',
+        tools: [LLMTool(name: 't', description: 'd', parameters: {})],
+        maxTurns: 2,
+        executeTool: (_, _) => {'ok': true},
+        request: (messages, tools) async {
+          turn++;
+          // Even the tools-free last round misbehaves and calls a tool.
+          return LLMResponse(
+              text: 'Let me look at x.md first.', toolCalls: [toolCall('c$turn')]);
+        },
+      );
+      expect(result.output, isEmpty);
+      expect(result.cancelled, isFalse);
+    });
+
+    test('a cancelled run does not hand back narration as partial output', () async {
+      var cancelled = false;
+      final result = await SubAgentRunner.run(
+        modelIdentifier: 'm',
+        systemPrompt: 'sys',
+        task: 'brief',
+        tools: const [],
+        isCancelled: () => cancelled,
+        executeTool: (call, _) {
+          cancelled = true;
+          return {'ok': call.id};
+        },
+        request: (messages, tools) async => LLMResponse(
+            text: 'Reading the style rules now.',
+            toolCalls: [toolCall('a'), toolCall('b')]),
+      );
+      expect(result.cancelled, isTrue);
+      expect(result.output, isEmpty);
+    });
+
+    test('default occupancy counts tool-call arguments, not just text', () async {
+      // A call carrying a long argument sits in the assistant echo and is
+      // re-sent every turn; a content-only tally missed it entirely.
+      final seen = <int>[];
+      var turn = 0;
+      await SubAgentRunner.run(
+        modelIdentifier: 'm',
+        systemPrompt: 'sys',
+        task: 'brief',
+        tools: const [],
+        executeTool: (call, occupied) {
+          seen.add(occupied);
+          return {'ok': true};
+        },
+        request: (messages, tools) async {
+          turn++;
+          if (turn == 1) {
+            return LLMResponse(text: '', toolCalls: [
+              LLMToolCall(id: 'a', name: 't', arguments: {'paths': 'x' * 4000}),
+            ]);
+          }
+          return LLMResponse(text: 'done');
+        },
+      );
+      expect(seen.single, greaterThan(4000));
+    });
+
+    test('an injected measure is what the executor sees', () async {
+      final seen = <int>[];
+      var turn = 0;
+      await SubAgentRunner.run(
+        modelIdentifier: 'm',
+        systemPrompt: 'sys',
+        task: 'brief',
+        tools: const [],
+        measureOccupancy: (messages) => 1000 + messages.length,
+        executeTool: (call, occupied) {
+          seen.add(occupied);
+          return {'ok': true};
+        },
+        request: (messages, tools) async {
+          turn++;
+          if (turn == 1) {
+            return LLMResponse(text: '', toolCalls: [toolCall('a'), toolCall('b')]);
+          }
+          return LLMResponse(text: 'done');
+        },
+      );
+      // sys + task + echo = 3, then one more after the first result is paired.
+      expect(seen, [1003, 1004]);
+    });
+
     test('an empty run reports empty output for the caller to reject',
         () async {
       final result = await SubAgentRunner.run(
