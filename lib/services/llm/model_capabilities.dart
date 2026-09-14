@@ -465,6 +465,7 @@ class ModelCapabilities {
       case WireProtocol.midjourney:
         return _midjourney;
       case WireProtocol.openaiChat:
+      case WireProtocol.openaiResponses:
       case WireProtocol.anthropicChat:
       case WireProtocol.geminiChat:
       case WireProtocol.dashscopeChat:

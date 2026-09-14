@@ -371,6 +371,8 @@ Call select_images with the id numbers of the images that match the requirement.
         // ③'s verbatim parts (thought signatures included) ride the same
         // tool-calling turn.
         rawModelParts: response.rawModelParts,
+        // ②'s output items, the same obligation on the Responses face.
+        rawResponseItems: response.rawResponseItems,
         toolCalls: response.toolCalls,
       ));
 

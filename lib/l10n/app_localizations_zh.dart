@@ -2057,6 +2057,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolOpenAICompat => 'OpenAI 兼容';
 
   @override
+  String get protocolOpenAIResponses => 'OpenAI Responses';
+
+  @override
+  String get protocolOpenAIResponsesDesc =>
+      'OpenAI 的新接口，同一地址与密钥。工具调用之间保留模型的推理。';
+
+  @override
+  String get reasoningEffortResponsesHint =>
+      '以 reasoning.effort 发送。Grok 4.5 与 4.6 无法关闭推理，选「关闭」会被拒绝；所有 Grok 都不接受「最高」。报 400 并点名档位时请换一档。';
+
+  @override
   String get protocolAnthropicCompat => 'Anthropic 兼容';
 
   @override
@@ -6789,6 +6800,17 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get protocolOpenAICompat => 'OpenAI 相容';
+
+  @override
+  String get protocolOpenAIResponses => 'OpenAI Responses';
+
+  @override
+  String get protocolOpenAIResponsesDesc =>
+      'OpenAI 的新介面，同一位址與金鑰。工具呼叫之間保留模型的推理。';
+
+  @override
+  String get reasoningEffortResponsesHint =>
+      '以 reasoning.effort 傳送。Grok 4.5 與 4.6 無法關閉推理，選「關閉」會被拒絕；所有 Grok 都不接受「最高」。回報 400 並點名檔位時請換一檔。';
 
   @override
   String get protocolAnthropicCompat => 'Anthropic 相容';

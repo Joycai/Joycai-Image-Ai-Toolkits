@@ -48,6 +48,15 @@ enum Surface { chat, imageGen, videoJob }
 /// resolves to code that exists.
 enum WireProtocol {
   openaiChat('openai-chat', Surface.chat),
+
+  /// OpenAI's Responses API (`POST {base}/responses`) — the ② family in the
+  /// standard's numbering. Same base URL, bearer auth and `/models` listing
+  /// as [openaiChat], so it is a chat face of the `openai` family rather
+  /// than a family of its own; the body (`instructions` + `input` items),
+  /// the typed stream events and the replay carrier (whole output items,
+  /// [LLMMessage.rawResponseItems]) are all different, which is why it is a
+  /// protocol of its own rather than a flag on ① (provider layering 01 §3.1).
+  openaiResponses('openai-responses', Surface.chat),
   anthropicChat('anthropic-chat', Surface.chat),
   geminiChat('gemini-chat', Surface.chat),
   midjourney('midjourney', Surface.chat),
@@ -403,6 +412,20 @@ class VendorProfile {
   /// off never takes a working route away.
   final bool offersFamilyMediaSurfaces;
 
+  /// Whether a Responses request ([WireProtocol.openaiResponses]) must ask
+  /// for `include: ["reasoning.encrypted_content"]` to get the encrypted
+  /// reasoning back on its reasoning items.
+  ///
+  /// xAI returns reasoning items without `encrypted_content` unless asked,
+  /// and a tool turn replayed without it still answers 200 — only the
+  /// continuation of the earlier reasoning is lost, silently (reasoning 03
+  /// §7.3, provider layering 01 §9.1). OpenAI (via relays, `store:false`)
+  /// attaches it unasked, and whether its own host drops it without the flag
+  /// is unverified, so the default sends nothing: every proactively sent
+  /// field is one a relay can reject. A declaration, never a vendor-id branch
+  /// inside the protocol.
+  final bool responsesIncludeEncryptedReasoning;
+
   const VendorProfile({
     required this.id,
     required this.family,
@@ -418,6 +441,7 @@ class VendorProfile {
     this.promptCaching = false,
     this.keyOptional = false,
     this.offersFamilyMediaSurfaces = false,
+    this.responsesIncludeEncryptedReasoning = false,
   });
 
   /// The menu of protocols this vendor offers for [surface], honoring the

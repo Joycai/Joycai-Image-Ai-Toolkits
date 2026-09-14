@@ -144,6 +144,10 @@ class Vendors {
       id: openAIRest,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // ① stays the default; the Responses API is a per-model alternate on
+      // the same base and key (OpenAI has Responses-only models — provider
+      // layering 01 §8.1).
+      chatMenu: _openaiChatFaces,
       // OpenAI itself serves `/images` and `/videos`, and an unspecified
       // relay's model names are free text — the generic media surfaces have
       // to be on the menu for a user to correct a guess.
@@ -153,12 +157,24 @@ class Vendors {
       id: newApiOpenAI,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // New API relays `/v1/responses` beside `/v1/chat/completions`
+      // (provider layering 01 §9.2).
+      chatMenu: _openaiChatFaces,
       offersFamilyMediaSurfaces: true,
     ),
     VendorProfile(
       id: xaiApi,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // xAI marks Responses as its recommended interface and Chat
+      // Completions as legacy (provider layering 01 §9.1). ① stays the
+      // default here so existing channels do not move; flipping it is a
+      // separate decision.
+      chatMenu: _openaiChatFaces,
+      // Without it xAI's reasoning items carry no `encrypted_content`, and a
+      // replay without it still answers — the reasoning just stops carrying
+      // over (reasoning 03 §7.3).
+      responsesIncludeEncryptedReasoning: true,
       // xAI's own JSON surfaces replace the family defaults: images via
       // `/images/generations|edits` (JSON, not multipart), async video via
       // `/videos/generations` → `GET /videos/{request_id}`.
@@ -372,6 +388,14 @@ class Vendors {
             description: 'Video generation (self-hosted SGLang /v1/videos)'),
       ],
     ),
+  ];
+
+  /// The OpenAI-shaped hosts that also serve the Responses API: Chat
+  /// Completions first (the default every existing channel already rides),
+  /// Responses as the per-model alternate.
+  static const List<WireProtocol> _openaiChatFaces = [
+    WireProtocol.openaiChat,
+    WireProtocol.openaiResponses,
   ];
 
   /// The models behind MiniMax's two native surfaces, which neither chat

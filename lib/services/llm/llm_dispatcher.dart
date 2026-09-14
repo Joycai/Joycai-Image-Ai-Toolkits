@@ -17,6 +17,7 @@ import 'protocols/minimax_images_protocol.dart';
 import 'protocols/minimax_video_protocol.dart';
 import 'protocols/openai_chat_protocol.dart';
 import 'protocols/openai_images_protocol.dart';
+import 'protocols/openai_responses_protocol.dart';
 import 'protocols/openai_videos_protocol.dart';
 import 'protocols/protocol.dart';
 import 'protocols/xai_images_protocol.dart';
@@ -71,6 +72,7 @@ class LLMOperationTicket {
 class LLMDispatcher {
   // Layer-1 protocol implementations (stateless).
   static final _openaiChat = OpenAIChatProtocol();
+  static final _openaiResponses = OpenAIResponsesProtocol();
   static final _openaiImages = OpenAIImagesProtocol();
   static final _openaiVideos = OpenAIVideosProtocol();
   static final _xaiImages = XaiImagesProtocol();
@@ -459,8 +461,27 @@ class LLMDispatcher {
   ChatProtocol _chatProtocolFor(WireProtocol face) => switch (face) {
         WireProtocol.anthropicChat => _anthropicChat,
         WireProtocol.dashscopeChat => _dashscopeChat,
+        // Same base and auth as ①, so no `protocolBases` entry: the stored
+        // endpoint is already the Responses base.
+        WireProtocol.openaiResponses => _openaiResponses,
         _ => _openaiChat,
       };
+
+  /// The chat face a request for this (channel, model, kind, pin) takes —
+  /// the pin when it is still on the menu, else auto; null when the model's
+  /// kind does not go down chat. The same resolution [reasoningLadder] and
+  /// routing use, for UI that must say something about the face itself (the
+  /// editor's Responses reasoning hint).
+  static WireProtocol? resolvedChatFace({
+    required String channelType,
+    required String modelId,
+    String? tag,
+    String? wireProtocol,
+  }) {
+    final menu = protocolMenu(channelType, modelId, tag: tag);
+    if (menu.surface != Surface.chat) return null;
+    return _validPin(menu, wireProtocol) ?? menu.auto;
+  }
 
   /// The native image protocol serving this target — the model's pinned
   /// choice, else what auto resolves to (the vendor's first entry serving
@@ -763,6 +784,7 @@ class LLMDispatcher {
   static bool chatConsumesReasoningEffort(WireProtocol face) {
     switch (face) {
       case WireProtocol.openaiChat: // reasoning_effort / thinking / enable_thinking
+      case WireProtocol.openaiResponses: // reasoning.{effort, summary}
       case WireProtocol.anthropicChat: // thinking + output_config.effort
       case WireProtocol.dashscopeChat: // parameters.enable_thinking
       case WireProtocol.geminiChat: // generationConfig.thinkingConfig
@@ -829,6 +851,19 @@ class LLMDispatcher {
                 ReasoningEffort.high,
                 ReasoningEffort.max,
               ];
+      case WireProtocol.openaiResponses:
+        // `reasoning.effort` per rung, off as `none` (reasoning 03 §7.1).
+        // Not trimmed per model: Grok 4.5/4.6 reject `none` and GPT-5.4
+        // rejects `max` with a 400 naming the value — the editor says so
+        // rather than guessing the ceiling from an id a relay may rename.
+        return const [
+          null,
+          ReasoningEffort.off,
+          ReasoningEffort.low,
+          ReasoningEffort.medium,
+          ReasoningEffort.high,
+          ReasoningEffort.max,
+        ];
       case WireProtocol.dashscopeChat:
         return const [null, ReasoningEffort.off, ReasoningEffort.medium];
       case WireProtocol.anthropicChat:

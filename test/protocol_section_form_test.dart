@@ -41,12 +41,15 @@ void main() {
           ProtocolSectionForm.none);
       expect(formFor(Vendors.dashscope, 'qwen-image-3.0', 'image'),
           ProtocolSectionForm.none);
-      expect(formFor(Vendors.openAIRest, 'gpt-5-chat', 'chat'),
+      expect(formFor(Vendors.deepseek, 'deepseek-chat', 'chat'),
           ProtocolSectionForm.none);
     });
 
     test('chat keeps 18a: a menu of three is a dropdown, never read-only', () {
       expect(formFor(Vendors.dashscope, 'qwen-max', 'chat'),
+          ProtocolSectionForm.dropdown);
+      // The generic OpenAI host offers Chat Completions and Responses.
+      expect(formFor(Vendors.openAIRest, 'gpt-5-chat', 'chat'),
           ProtocolSectionForm.dropdown);
     });
   });
@@ -62,7 +65,7 @@ void main() {
     test('a stale selection on a single-route channel shows the dropdown',
         () {
       expect(
-          formFor(Vendors.openAIRest, 'gpt-5-chat', 'chat', stale: true),
+          formFor(Vendors.deepseek, 'deepseek-chat', 'chat', stale: true),
           ProtocolSectionForm.dropdown);
     });
 

@@ -1442,6 +1442,9 @@
     }
   },
   "protocolOpenAICompat": "OpenAI-compatible",
+  "protocolOpenAIResponses": "OpenAI Responses",
+  "protocolOpenAIResponsesDesc": "The newer OpenAI interface on the same address and key. Keeps the model's reasoning between tool calls.",
+  "reasoningEffortResponsesHint": "Sent as reasoning.effort. Grok 4.5 and 4.6 cannot turn reasoning off and reject Off; no Grok model accepts Max. A 400 naming the level means pick another one.",
   "protocolAnthropicCompat": "Anthropic-compatible",
   "protocolDashScopeNative": "DashScope native",
   "protocolDashScopeNativeDesc": "Alibaba's own request format; the only route for qwen-audio",

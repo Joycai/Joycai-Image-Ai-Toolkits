@@ -163,6 +163,8 @@ LLMResponse mergeTurnParts(List<LLMResponse> parts) {
     rawContentBlocks: anyRawContent ? rawContent : null,
     // ③'s parts belong to the part that called the tools, like the calls.
     rawModelParts: last.rawModelParts,
+    // ②'s items likewise: they contain the calls, so they follow them.
+    rawResponseItems: last.rawResponseItems,
     toolCalls: last.toolCalls,
   );
 }
