@@ -440,6 +440,54 @@ void main() {
       expect(empty.finish, throwsA(isA<LLMApiException>()));
     });
 
+    test('a completed empty final_answer message is a quiet ending, not an error', () {
+      // gpt-5.6 through a relay, right after submit_prompt delivered the
+      // result: one message item, marked completed, with empty text.
+      const item = {
+        'id': 'msg_1',
+        'type': 'message',
+        'status': 'completed',
+        'phase': 'final_answer',
+        'role': 'assistant',
+        'content': [
+          {'type': 'output_text', 'annotations': [], 'text': ''},
+        ],
+      };
+      final chunks = run([
+        {'type': 'response.created', 'response': {}},
+        {
+          'type': 'response.output_item.added',
+          'output_index': 0,
+          'item': {...item, 'status': 'in_progress', 'content': []},
+        },
+        {'type': 'response.output_text.done', 'output_index': 0, 'content_index': 0, 'text': ''},
+        {'type': 'response.output_item.done', 'output_index': 0, 'item': item},
+        completed(usage: {'input_tokens': 60144, 'output_tokens': 4}),
+      ]);
+      expect(textOf(chunks), isEmpty);
+      expect(chunks.every((c) => c.toolCallPart == null), isTrue);
+      expect(metaOf(chunks)['finish_reason'], 'stop');
+
+      // The synchronous body takes the same path.
+      final response = responsesResponseFromBody({
+        'status': 'completed',
+        'output': [item],
+        'usage': {'input_tokens': 1, 'output_tokens': 4},
+      }, modelId: 'gpt-5.6-sol');
+      expect(response.text, isEmpty);
+    });
+
+    test('a message item that never completed is still no content', () {
+      final a = ResponsesStreamAssembler()
+        ..feed({
+          'type': 'response.output_item.done',
+          'output_index': 0,
+          'item': {'type': 'message', 'status': 'in_progress', 'content': []},
+        })
+        ..feed(completed());
+      expect(a.finish, throwsA(isA<LLMApiException>()));
+    });
+
     test('an echoed effort that differs is reported, never missing echoes', () {
       final events = [
         {'type': 'response.output_text.delta', 'output_index': 0, 'delta': 'x'},
