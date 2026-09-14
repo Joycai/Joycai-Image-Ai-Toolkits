@@ -469,7 +469,10 @@ void main() {
       for (final reason in ['MISSING_THOUGHT_SIGNATURE', 'UNEXPECTED_TOOL_CALL', 'TOO_MANY_TOOL_CALLS']) {
         expect(
           () => parseGoogleChunks(candidate(reason)).toList(),
-          throwsA(predicate((e) => e.toString().contains(reason))),
+          // Typed and never retried: the same history fails the same way.
+          throwsA(isA<LLMApiException>()
+              .having((e) => e.message, 'message', contains(reason))
+              .having((e) => e.isTransient, 'isTransient', isFalse)),
           reason: reason,
         );
       }

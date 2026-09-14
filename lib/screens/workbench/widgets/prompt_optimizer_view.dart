@@ -888,14 +888,16 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
 
       case OptimizerEntryKind.notice:
         {
-          // The two notices that ask the user to do something wear the warning
+          // The notices that ask the user to do something wear the warning
           // container; the compaction note is information.
           final warn = entry.text == PromptOptimizerAgent.imageMissingNoticeToken ||
-              entry.text == PromptOptimizerAgent.kbEntryTooLargeNoticeToken;
+              entry.text == PromptOptimizerAgent.kbEntryTooLargeNoticeToken ||
+              entry.text == PromptOptimizerAgent.roundLimitNoticeToken;
           final noticeText = switch (entry.text) {
             PromptOptimizerAgent.compactedNoticeToken => l10n.optCompactedNotice,
             PromptOptimizerAgent.imageMissingNoticeToken => l10n.optImageMissing,
             PromptOptimizerAgent.kbEntryTooLargeNoticeToken => l10n.optKbEntryTooLarge,
+            PromptOptimizerAgent.roundLimitNoticeToken => l10n.optRoundLimitNotice,
             _ => entry.text,
           };
           return _besideAvatar(

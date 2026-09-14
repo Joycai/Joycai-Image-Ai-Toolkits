@@ -352,6 +352,7 @@ class LLMService {
     Map<String, dynamic>? finalMetadata;
     List<Map<String, dynamic>>? rawThinkingBlocks;
     List<Map<String, dynamic>>? rawContentBlocks;
+    List<Map<String, dynamic>>? rawModelParts;
     String? reasoningSignature;
 
     final stream = _dispatcher.generateStream(
@@ -430,6 +431,9 @@ class LLMService {
       if (chunk.rawContentBlocks != null) {
         rawContentBlocks = chunk.rawContentBlocks;
       }
+      if (chunk.rawModelParts != null) {
+        rawModelParts = chunk.rawModelParts;
+      }
       if (chunk.reasoningSignature != null) {
         reasoningSignature = chunk.reasoningSignature;
       }
@@ -458,14 +462,16 @@ class LLMService {
       reasoningSignature: reasoningSignature,
       rawThinkingBlocks: rawThinkingBlocks,
       rawContentBlocks: rawContentBlocks,
+      rawModelParts: rawModelParts,
       // The producer of every replay carrier this turn captured: ④'s blocks,
-      // a ①/DashScope reasoning field, ③'s thought signatures. The payload
-      // builders echo them only to the same model (reasoning 03 §5 rule 2) —
-      // a DeepSeek `reasoning_content` sent on to official OpenAI is a 400,
-      // to a relay a bill.
+      // a ①/DashScope reasoning field, ③'s raw parts and thought signatures.
+      // The payload builders echo them only to the same model (reasoning 03
+      // §5 rule 2) — a DeepSeek `reasoning_content` sent on to official
+      // OpenAI is a 400, to a relay a bill.
       rawThinkingModelId:
           rawThinkingBlocks != null ||
               rawContentBlocks != null ||
+              rawModelParts != null ||
               fieldReasoning.isNotEmpty ||
               accumulatedToolCalls.any((c) => c.thoughtSignature != null)
           ? config.modelId

@@ -6,7 +6,7 @@
 
 ## 阶段 0 · 协议层类型与词汇（无依赖）
 
-- [ ] `types.ts`：`ApiStandard`（族 × official/compat）、`familyOf()` ★、`AuthMode` +
+- [ ] `types.ts`：`ApiStandard`（四族 × official/compat，含 `openai_responses*`）、`familyOf()` ★、`AuthMode` +
       `authModesFor()`、`ContentPart`/`MessageContent`、`ToolDefinition`/
       `AssistantToolCall`/`AccumulatedToolCall`、`StreamMessage`（OpenAI 形状 + `_` 前缀
       载体字段）★、`StreamChunk`（key 判别变体联合）★、`StreamOptions`、
@@ -30,8 +30,12 @@
       鉴权 + pinned 版本头、`max_tokens` 兜底 ★、thinking 方言与 toolChoice 降级、
       类型化事件解析（块整存）★、usage 三桶求和 ★、refusal/pause_turn；续跑循环
       （verbatim + transcript）可后补，先把 pause_turn 当已知未完成态报警。
+- [ ] `responses.ts`（要接 GPT-5.4+ 带思考的工具调用、xAI 时必做）：`instructions` +
+      `input` 条目、`store:false` 与 `instructions` 恒发 ★、扁平工具显式 `strict:false`、
+      类型化事件解析 + 收集 `output_item.done` 作 `_responseItems` 回传 ★、终止事件回显比对、
+      无终止事件也 finish。
 - [ ] `serverTools.ts`（可选）：版本化 wire type 表、`max_uses` 刹车、两阶段事件、
-      防御读取、纯文本渲染兜底。
+      防御读取、纯文本渲染兜底；② 族按 standard 逐 id 过滤。
 
 **只接 OpenAI 系兼容层时，第一天就要有的三样**：SSE 行缓冲、双错误通道、`<think>`
 切分——它们对应的失败全是静默的。
@@ -65,6 +69,7 @@
 - [ ] `registry.ts`：`ToolAccess`、`ToolId` 字面量联合、`RegisteredTool`、`ToolContext`
       （审批/门控/工作区全部**可选通道**）、`Proposal` 判别联合、`getToolDefinitions`
       （拷贝式动态注入）、`executeRegisteredTool`（白名单类型收窄 + 错误转文本）★。
+      工具多到固定头部吃紧时：`ToolGroup` + 运行状态装载，白名单用 active 集 ★（07 篇 §4.6）。
       先实现 3–4 个只读工具即可跑通全链路；每个工具：路径包含校验、输出限幅+分页、
       错误写成下一步指引。
 - [ ] `presets.ts`：`TaskPreset { id, tools, maxRounds, finishPolicy, scratchpad?,

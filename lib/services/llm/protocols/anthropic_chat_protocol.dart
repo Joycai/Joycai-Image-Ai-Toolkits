@@ -289,6 +289,7 @@ Map<String, dynamic>? anthropicThinkingRequest(
     // A ① dialect has no meaning on this wire; a vendor declaring it cannot
     // be a ④ vendor, so this is unreachable in practice and null by rule.
     case ThinkingDialect.openaiThinkingObject:
+    case ThinkingDialect.openaiEnableThinking:
       return null;
     case ThinkingDialect.adaptive:
       return {'type': 'adaptive'};
@@ -347,7 +348,8 @@ ThinkingDialect? alternateAnthropicThinkingDialect(ThinkingDialect dialect) =>
       ThinkingDialect.anthropicBudget => ThinkingDialect.anthropicAdaptive,
       ThinkingDialect.adaptive ||
       ThinkingDialect.none ||
-      ThinkingDialect.openaiThinkingObject => null,
+      ThinkingDialect.openaiThinkingObject ||
+      ThinkingDialect.openaiEnableThinking => null,
     };
 
 /// Dialects learned from a 400, keyed by endpoint and model, for the life of

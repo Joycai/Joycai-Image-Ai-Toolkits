@@ -421,4 +421,206 @@ void main() {
           KbEditState.failed);
     });
   });
+
+  group('apply re-verifies disk (standard 08 §3.6)', () {
+    KbEditState? stateOf(PromptOptimizerSession s, String id) =>
+        s.transcript.firstWhere((e) => e.editId == id).editState;
+
+    test('an edit whose file changed on disk since staging is not written', () async {
+      await kb.setRoot(root.path);
+      await kb.writeFile(root.path, 'a.md', 'old');
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      final id = session.stageKbEditForTest(
+          relPath: 'a.md', newContent: 'new', oldContent: 'old');
+
+      // The user edits the file while the card is still pending.
+      File(p.join(root.path, 'a.md')).writeAsStringSync('edited by hand');
+
+      await expectLater(
+        PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id),
+        throwsA(isA<KbEditConflictException>()),
+      );
+      expect(kb.readFullFile(root.path, 'a.md'), 'edited by hand');
+      expect(stateOf(session, id), KbEditState.failed);
+    });
+
+    test('two cards on one file: once the first applies, the second does not', () async {
+      await kb.setRoot(root.path);
+      await kb.writeFile(root.path, 'a.md', 'old');
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      final first = session.stageKbEditForTest(
+          relPath: 'a.md', newContent: 'first', oldContent: 'old');
+      final second = session.stageKbEditForTest(
+          relPath: 'a.md', newContent: 'second', oldContent: 'old');
+
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: first);
+      await expectLater(
+        PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: second),
+        throwsA(isA<KbEditConflictException>()),
+      );
+      expect(kb.readFullFile(root.path, 'a.md'), 'first');
+      expect(stateOf(session, second), KbEditState.failed);
+    });
+
+    test('a create whose file appeared in the meantime is not written', () async {
+      await kb.setRoot(root.path);
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      final id = session.stageKbEditForTest(
+          relPath: 'fresh.md', newContent: 'agent', oldContent: null);
+      File(p.join(root.path, 'fresh.md')).writeAsStringSync('user made it first');
+
+      await expectLater(
+        PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id),
+        throwsA(isA<KbEditConflictException>()),
+      );
+      expect(kb.readFullFile(root.path, 'fresh.md'), 'user made it first');
+    });
+
+    test('apply writes to the root the edit was staged against, not the current setting', () async {
+      final other = Directory.systemTemp.createTempSync('kb_other_');
+      addTearDown(() {
+        if (other.existsSync()) other.deleteSync(recursive: true);
+      });
+      await kb.writeFile(root.path, 'a.md', 'old');
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      final id = session.stageKbEditForTest(
+          relPath: 'a.md', newContent: 'new', oldContent: 'old', knowledgeRoot: root.path);
+      // The folder setting is switched while the card waits.
+      await kb.setRoot(other.path);
+
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
+      expect(kb.readFullFile(root.path, 'a.md'), 'new');
+      expect(File(p.join(other.path, 'a.md')).existsSync(), isFalse);
+    });
+  });
+
+  group('backups (standard 08 §3.2)', () {
+    String? backupOf(String rel) {
+      final f = File(p.join(root.path, '$rel${KnowledgeBaseService.backupSuffix}'));
+      return f.existsSync() ? f.readAsStringSync() : null;
+    }
+
+    test('a write that skips confirmation is backed up even with backups off', () async {
+      await kb.setRoot(root.path);
+      await kb.writeFile(root.path, 'a.md', 'old');
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit)
+        ..writePolicy = const KbWritePolicy(
+            confirmEachWrite: false, backupBeforeOverwrite: false);
+      final id = session.stageKbEditForTest(
+          relPath: 'a.md', newContent: 'new', oldContent: 'old');
+
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
+      expect(backupOf('a.md'), 'old',
+          reason: 'nobody read this edit before it landed — the backup is the only way back');
+    });
+
+    test('the first backup of a session is kept, not overwritten by the next write', () async {
+      await kb.setRoot(root.path);
+      await kb.writeFile(root.path, 'a.md', 'original');
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit)
+        ..writePolicy = const KbWritePolicy(backupBeforeOverwrite: true);
+
+      final v1 = session.stageKbEditForTest(
+          relPath: 'a.md', newContent: 'v1', oldContent: 'original');
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: v1);
+      final v2 = session.stageKbEditForTest(
+          relPath: 'a.md', newContent: 'v2', oldContent: 'v1');
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: v2);
+
+      expect(kb.readFullFile(root.path, 'a.md'), 'v2');
+      expect(backupOf('a.md'), 'original',
+          reason: 'a single .bak rewritten on every write only ever holds the '
+              'agent\'s previous draft, never the user\'s own file');
+    });
+  });
+
+  group('writeFile target links', () {
+    test('an existing target that links outside the root is refused', () async {
+      final outside = Directory.systemTemp.createTempSync('kb_outside_');
+      addTearDown(() {
+        if (outside.existsSync()) outside.deleteSync(recursive: true);
+      });
+      final secret = File(p.join(outside.path, 'secret.md'))..writeAsStringSync('secret');
+      try {
+        Link(p.join(root.path, 'a.md')).createSync(secret.path);
+      } on FileSystemException {
+        // Creating links needs privileges on some Windows setups; nothing to
+        // pin without one.
+        return;
+      }
+
+      await expectLater(
+        kb.writeFile(root.path, 'a.md', 'overwritten'),
+        throwsA(isA<KbPathException>()),
+      );
+      expect(secret.readAsStringSync(), 'secret');
+    });
+  });
+
+  group('read-before-write survives compaction (standard 10 §3.2)', () {
+    /// What _maybeCompact leaves behind: everything before [keepFrom] replaced
+    /// by one summary message, the tail kept as the same objects.
+    void compactBefore(PromptOptimizerSession session, int keepFrom) {
+      final tail = session.history.sublist(keepFrom);
+      session.history
+        ..clear()
+        ..add(LLMMessage(
+          role: LLMRole.user,
+          content: '${PromptOptimizerAgent.summaryMarker}\nEarlier work on a.md.',
+        ))
+        ..addAll(tail);
+    }
+
+    test('a re-read after the write counts once the write has been folded away', () async {
+      await kb.setRoot(root.path);
+      await kb.writeFile(root.path, 'a.md', 'old');
+
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      session.addUserTurn('turn 1');
+      recordRead(session, 'a.md', 1, content: 'old');
+      // Enough history that the write's position is far past where a
+      // compacted history will end.
+      for (int i = 2; i <= 9; i++) {
+        session.addUserTurn('turn $i');
+        recordRead(session, 'b.md', i);
+      }
+      final id = session.stageKbEditForTest(
+          relPath: 'a.md', newContent: 'new', oldContent: 'old');
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
+
+      session.addUserTurn('turn 10');
+      compactBefore(session, session.history.length - 1);
+      recordRead(session, 'a.md', 1, content: 'new');
+
+      expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), {1},
+          reason: 'an index recorded before compaction points past the end of '
+              'the shorter history, so the re-read never counts and the '
+              'read-before-write rail refuses this file for the rest of the session');
+    });
+
+    test('a read from before the write stays stale when compaction keeps it', () async {
+      await kb.setRoot(root.path);
+      await kb.writeFile(root.path, 'a.md', 'old');
+
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      for (int i = 1; i <= 6; i++) {
+        session.addUserTurn('turn $i');
+        recordRead(session, 'b.md', i);
+      }
+      final keepFrom = session.history.length;
+      session.addUserTurn('turn 7');
+      // Page 2 read before the write: it describes content that no longer exists.
+      recordRead(session, 'a.md', 2, content: 'old page 2');
+      final id = session.stageKbEditForTest(
+          relPath: 'a.md', newContent: 'new', oldContent: 'old');
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
+
+      compactBefore(session, keepFrom);
+      recordRead(session, 'a.md', 1, content: 'new');
+
+      expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), {1},
+          reason: 'the pre-write read of page 2 stays stale; the post-write '
+              're-read of page 1 counts');
+    });
+  });
 }

@@ -1,9 +1,14 @@
 # AI Provider 协议层 + Agent/子代理体系 · 复用规范文档集
 
 这套文档提炼自 simple-ai-writer（Tauri + React 桌面写作应用）的 AI 层实战：它同时对接
-OpenAI Chat Completions、Google Gemini generateContent、Anthropic Messages 三个协议族与
-大量第三方兼容中继（New API、MiniMax、DeepSeek、OpenRouter、Ollama、LM Studio…），并在
-统一 tool loop 之上实现了权限分级、审批通道、子代理委派与长会话上下文管理。
+OpenAI Chat Completions、OpenAI Responses、Google Gemini generateContent、Anthropic Messages
+四个协议族与大量第三方兼容中继（New API、MiniMax、DeepSeek、千问、xAI、OpenRouter、Ollama、
+LM Studio…），并在统一 tool loop 之上实现了权限分级、审批通道、子代理委派与长会话上下文管理。
+2026-08 起并入本仓库（Joycai Image AI Toolkits）的 vendor–protocol–model 路由重构与
+千问 / MiniMax 图像、视频面的核对；2026-09 并入 ② Responses 族、中转站回显改写与工具按需加载。
+
+> 本目录是 `ai-agent-architecture` skill 的 `references/` 快照（2026-09-14 同步）。
+> 它描述**机制**，不描述本仓库的现状——本仓库怎么做的见 `../architecture/`。
 
 文档以**通用规范**口吻撰写，可直接放进新项目的 `docs/` 作为搭建标准；关键处均标注
 simple-ai-writer 的参考实现文件，迁移时可对照抄写接口与骨架。
@@ -15,11 +20,18 @@ simple-ai-writer 的参考实现文件，迁移时可对照抄写接口与骨架
 | 篇 | 主题 | 一句话 |
 | --- | --- | --- |
 | [01](01-provider-layering.md) | 分层模型与统一抽象 | L1 协议族 / L2 端点 / L3 模型 + 探测维；加一家供应商 = 加一行数据，不是加一个文件 |
-| [02](02-protocol-differences.md) | 三家协议差异对照 | 消息/工具/流式/鉴权/URL 的逐字段对照表与适配器转换规则 |
+| [02](02-protocol-differences.md) | 四族协议差异对照 | 消息/工具/流式/鉴权/URL 的逐字段对照表与适配器转换规则；② Responses 单列 §7 |
 | [03](03-reasoning.md) | 思考/推理统一处理 | 强度、取回、回传义务三分；跨轮回传的东西原物整存 |
 | [04](04-structured-output.md) | 结构化输出与降级链 | 强制 pseudo-tool → 收紧判据 → JSON mode 回退 |
 | [05](05-tools-and-server-tools.md) | 工具协议与 server tools | tool_call 配对不变量；pause_turn 续跑循环 |
-| [06](06-errors-probing-observability.md) | 错误、usage、探测与可观测性 | HTTP 200 ≠ 成功；API 日志是兼容层第一调试工具 |
+| [06](06-errors-probing-observability.md) | 错误、usage、探测与可观测性 | HTTP 200 ≠ 成功；API 日志是兼容层第一调试工具；回显比对（`wireRewrites`） |
+
+### A′. 媒体生成
+
+| 篇 | 主题 | 一句话 |
+| --- | --- | --- |
+| [13](13-image-generation.md) | 图像生成与编辑 | 签名 URL 当场下载；已计费的只重试下载不重试生成；异步任务一个总 deadline |
+| [14](14-video-generation.md) | 视频生成 | 任务 id 归调用方持久化；轮询可重试、提交不可重试；取消与过期 |
 
 ### B. Agent 体系（tool loop、工具系统、写入安全）
 

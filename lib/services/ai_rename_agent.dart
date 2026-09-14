@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
 
 import 'llm/llm_service.dart';
@@ -32,6 +33,20 @@ class RenameProposal {
         newName: newName ?? this.newName,
         overwrite: overwrite ?? this.overwrite,
       );
+}
+
+/// A batch ended without the model ever calling a tool, even after one nudge,
+/// so nothing in it was renamed. Usually a model or route without tool-calling
+/// support — which is why it is loud rather than an empty, successful batch.
+class AiRenameNoToolCallsException implements Exception {
+  final int fileCount;
+
+  const AiRenameNoToolCallsException(this.fileCount);
+
+  @override
+  String toString() => 'The model answered without calling any tool, twice, so '
+      'none of the $fileCount file(s) in this batch were renamed. It may not '
+      'support tool calling.';
 }
 
 /// Runs the AI batch-rename flow as a standard LLM tool-use agent loop.
@@ -127,6 +142,10 @@ class AiRenameAgent {
     void Function(List<RenameProposal> collected)? onProposals,
     void Function(int batch, int total, Object error, List<String> paths)? onBatchFailed,
     bool Function()? isCancelled,
+
+    /// Replaces the network request, so the loop is testable without a model.
+    @visibleForTesting
+    Future<LLMResponse> Function(List<LLMMessage> messages, List<LLMTool> tools)? request,
   }) async {
     // path → proposal (a later call for the same path overrides the earlier one).
     final Map<String, RenameProposal> proposals = {};
@@ -160,6 +179,7 @@ class AiRenameAgent {
           contextId: contextId,
           onLog: onLog,
           isCancelled: isCancelled,
+          request: request,
         );
         consecutiveFailures = 0;
         onProposals?.call(proposals.values.toList());
@@ -197,6 +217,7 @@ class AiRenameAgent {
     String? contextId,
     void Function(String message)? onLog,
     bool Function()? isCancelled,
+    Future<LLMResponse> Function(List<LLMMessage> messages, List<LLMTool> tools)? request,
   }) async {
     final messages = <LLMMessage>[
       LLMMessage(
@@ -212,12 +233,19 @@ class AiRenameAgent {
       ),
     ];
 
+    // Whether this batch has seen a tool call yet, and whether the model has
+    // already been nudged to make one.
+    var usedTools = false;
+    var nudged = false;
+
     for (int turn = 0; turn < _maxTurns; turn++) {
       if (isCancelled?.call() ?? false) return;
 
       final LLMResponse response;
       try {
-        response = await LLMService().request(
+        response = request != null
+            ? await request(List.of(messages), _tools)
+            : await LLMService().request(
           modelIdentifier: modelIdentifier,
           messages: messages,
           tools: _tools,
@@ -237,10 +265,28 @@ class AiRenameAgent {
       }
 
       if (response.toolCalls.isEmpty) {
-        // Model is done (or answered in plain text).
         if (response.text.isNotEmpty) onLog?.call('AI: ${response.text}');
-        return;
+        // After a tool round, plain text is the model saying it is done.
+        if (usedTools) return;
+        // Before any tool call, it is a batch about to end with nothing
+        // renamed and nothing said — the model described renames instead of
+        // staging them. Ask once; a second tool-free reply fails the batch.
+        if (nudged) throw AiRenameNoToolCallsException(chunk.length);
+        nudged = true;
+        onLog?.call('The model answered without calling any tool — asking it '
+            'once more to use the tools.');
+        if (response.text.trim().isNotEmpty) {
+          messages.add(LLMMessage(role: LLMRole.assistant, content: response.text));
+        }
+        messages.add(LLMMessage(
+          role: LLMRole.user,
+          content: 'You have not called any tool, so nothing has been renamed '
+              'yet. Call list_files, then call rename_file once for each file '
+              'that should be renamed.',
+        ));
+        continue;
       }
+      usedTools = true;
 
       // Echo the assistant turn (with its tool calls) back into history,
       // reasoning included — DeepSeek-style endpoints 400 on the next request
@@ -254,6 +300,7 @@ class AiRenameAgent {
         rawThinkingBlocks: response.rawThinkingBlocks,
         rawThinkingModelId: response.rawThinkingModelId,
         rawContentBlocks: response.rawContentBlocks,
+        rawModelParts: response.rawModelParts,
         toolCalls: response.toolCalls,
       ));
 

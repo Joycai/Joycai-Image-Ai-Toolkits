@@ -1,6 +1,6 @@
-# 02 · 三家协议差异对照
+# 02 · 四族协议差异对照
 
-> 本篇解决的问题：把 OpenAI Chat Completions（①）、Google GenAI generateContent（③）、Anthropic Messages（④）三族的 wire 差异一次性列全——消息容器、角色、工具、流式机制、鉴权、URL 约定——并给出适配器里必须做的结构性修补。
+> 本篇解决的问题：把 OpenAI Chat Completions（①）、Google GenAI generateContent（③）、Anthropic Messages（④）三族的 wire 差异一次性列全——消息容器、角色、工具、流式机制、鉴权、URL 约定——并给出适配器里必须做的结构性修补；② OpenAI Responses 族单列在 §7。
 > 不读会踩的坑：Anthropic 的交替律 400、连续 tool 消息拆开发送被拒、Gemini 把 SSE chunk 当 delta 拼接导致内容重复、baseURL 归一化"修复对称"后中继路由全断、Gemini key 走查询串泄进代理日志。
 
 参考实现：simple-ai-writer `src/lib/ai/openai.ts`、`gemini.ts`、`anthropic.ts`、`urls.ts`、`http.ts`；协议事实见其 `docs/api/landscape.md`。
@@ -18,6 +18,7 @@
 | system | `messages[0].role="system"` | 顶层 `systemInstruction:{parts:[{text}]}` | 顶层 `system` 字符串（消息数组内**无** system 角色） |
 | 文本载体 | `content` 字符串或 part 数组 | `parts[].text` | `content` 字符串或 block 数组 |
 | 图片 | `{type:"image_url", image_url:{url: dataURL}}` | `{inlineData:{mimeType,data}}` | `{type:"image", source:{type:"base64",media_type,data}}` |
+| 整份文件（PDF） | `{type:"file", file:{file_data: dataURL, filename}}`（base64 形态 **filename 必带**；DashScope 镜像此形状，仅 qwen3.8-max） | 同 `inlineData`，mime 用 `application/pdf` | `{type:"document", source:{type:"base64",media_type,data}}` |
 | 工具定义 | `tools[].function.{name,description,parameters}`（嵌套） | `tools[0].functionDeclarations[]`（同名字段） | `tools[].{name,description,input_schema}`（唯一不叫 parameters） |
 | 模型发起调用 | `assistant.tool_calls[]`（带 id；arguments 是 **JSON 字符串**） | `parts[].functionCall`（**无 id**；args 是**已解析对象**） | block `type:"tool_use"`（带 id；input 是对象） |
 | 结果回传 | `role:"tool"` + `tool_call_id` | `role:"user"` 的 `parts[].functionResponse`，**靠函数名匹配** | `role:"user"` 的 `tool_result` block + `tool_use_id` |
@@ -132,6 +133,73 @@ export function authModesFor(standard: ApiStandard): AuthMode[] {
 - 带上它是为了 dev 模式纯浏览器环境（回落全局 fetch）也能连——不带则 Anthropic 直接拒绝浏览器 origin 的请求。
 - 本地 Ollama 的 Windows 打包版 403 问题：靠 http 层覆盖 `Origin` 头修复。注意这个修复位于比 provider 枚举更底层的位置，拿不到枚举值，只能按"URL 指向本机"判断——这也是"Ollama 不做成枚举值"的理由之一（L2 数据能表达的就不进代码）。
 
+## 7. ② OpenAI Responses 族
+
+参考实现：simple-ai-writer `src/lib/ai/responses.ts`；协议事实 `docs/api/responses.md`（GPT-5.4/5.5/5.6 经中转站实测 + 官方文档，xAI 官方实测）。
+
+### 7.1 请求骨架
+
+```jsonc
+POST {base}/responses          // base 与 ① 同，Bearer
+{
+  "model": "…",
+  "instructions": "…",         // 全部 system 消息 hoist 并 "\n\n" join；恒发，哪怕空串
+  "input": [ /* items */ ],
+  "tools": [{ "type": "function", "name", "description", "parameters", "strict": false }],
+  "tool_choice": "auto" | "none" | "required" | { "type": "function", "name": "f" },
+  "reasoning": { "effort": "medium", "summary": "auto" },   // 见第 3 篇 §7
+  "text": { "format": {…}, "verbosity": "low" },            // 见第 4 篇 §5
+  "store": false,
+  "stream": true
+}
+```
+
+内部消息 → `input` 条目的转换：
+
+| 内部（① 形状） | ② 条目 |
+| --- | --- |
+| system | 移出列表，进顶层 `instructions` |
+| user 文本 / 多模态 | `{role:"user", content:[{type:"input_text",text} \| {type:"input_image", image_url:"data:…", detail?} \| {type:"input_file", filename, file_data}]}`——**`detail` 与 `image_url` 并列**，不在其内 |
+| 带 tool_calls 的 assistant | 有同模型 `_responseItems` → **整组原样条目**；否则裸 `{type:"function_call", call_id, name, arguments}` |
+| tool 结果 | `{type:"function_call_output", call_id, output}` |
+
+五条不可省的请求侧规则：
+
+1. **`store: false` 恒发**：应用自己保存历史，服务端存一份没意义，零数据保留组织不发会被拒；也是让端点给 reasoning 条目附 `encrypted_content` 的前提。
+2. **`instructions` 恒发**：中转站发现它缺失会注入自己的系统提示（实测一次 4.4K–9K token，第 1 篇 §9.2）。
+3. **工具定义扁平 + 显式 `strict: false`**：省略 `strict` 不是中性——官方端点会自动升成 strict，把所有带可选字段、未声明 `additionalProperties` 的 schema 改写成"全必填否则 400"的契约。① 族 schema 是非 strict 的，这个族上必须明说。
+4. **`tool_choice` 命名形态去掉 `function` 包装**：`{type:"function", name}`。只在声明了函数工具时发（只有 server tools 的请求不带该字段）。此族**没有**"思考中禁止强制"，不做预判降级；个别端点拒绝仍由 400 学习兜底。
+5. 未知顶层键在官方与 xAI 上被忽略（与 ④ 官方的"未知键 400"相反）——但仍按最小公倍数发送，不因此放宽。
+
+### 7.2 流式事件与读取
+
+```
+response.created → response.in_progress
+→ output_item.added {item:{type:"reasoning"|"message"|"function_call"|"web_search_call"…}}
+→ reasoning_summary_text.delta ×N / output_text.delta ×N / function_call_arguments.delta ×N
+→ function_call_arguments.done {arguments}     // 完整串
+→ output_item.done {item: 完整条目，含 encrypted_content}
+→ response.completed {response:{usage, reasoning, temperature, …}}
+  | response.incomplete {response.incomplete_details.reason} | response.failed | error
+```
+
+适配器规则：
+
+- **只读 `data:` 行**（`event:` 行冗余）；`[DONE]` 不属于此协议但要容忍（xAI 会发）。
+- 文本 delta 旁带 `obfuscation` 随机填充字段——**只读 `delta`**；发 `include_obfuscation:false` 实测无效。
+- 函数调用按 **`output_index`** 分组（部分中继的 delta 事件缺 `item_id`）；参数**两次到达**：delta 片段（只用于进度上报）+ `function_call_arguments.done` / `output_item.done` 的整串（**以整串为准**）。只发其中一种的端点也要能拼出完整调用。
+- **回传物直接收集 `output_item.done` 的 `item`**（reasoning / function_call / message 三类），不从 delta 自己拼——它就是下一轮要原样放回 `input` 的条目，挂在 `toolCalls` chunk 的 `_responseItems: {modelId, items}` 上。服务端工具条目（`web_search_call` 等）不回传。
+- 终止：`completed` → 读 usage（`input_tokens` / `output_tokens` / `input_tokens_details.cached_tokens`，cached 是 input 子集）；`incomplete` 且 reason=`max_output_tokens` → `truncated`，reason=`content_filter` → **throw**；`failed` / `error` 事件 → throw；data 行里裸 `{error}`（无 `type`）也 throw。
+- **流可能不带终止事件就结束**：flush 行缓冲尾巴后照样 `finish()`——代价是 usage 记 0、stopReason 缺失，但不能挂死或抛错。
+- 回显比对在终止事件处做（第 6 篇 §4.1）。
+
+### 7.3 回传：原样整组，缺失无现象
+
+`store:false` 下工具轮 `input = 历史 + 上一轮 output 条目 + function_call_output`。实测（GPT-5.4/5.5/5.6、Grok）：原样回传、删 reasoning、删 `encrypted_content`、只回裸 function_call **四种都 200 且答对**——**回传缺失不报错**，与 ④ 族同属"无现象"类，代价只在质量（5.6 默认 `reasoning.context: all_turns` 会渲染往轮推理）。所以规则是按官方推荐原样回传，且：
+
+- 载体带 `modelId`，换了模型退回裸 function_call（与 `_thinkingBlocks` 同一条"换模型整组剥离"）；
+- 原样条目**替代**裸 function_call 映射，不并列发送。
+
 ---
 
 ## 本篇检查清单
@@ -151,3 +219,7 @@ export function authModesFor(standard: ApiStandard): AuthMode[] {
 - [ ] Gemini 不实现 `?key=` 查询串鉴权。
 - [ ] `both` 鉴权只对 compat 开放；authMode 读取时按 standard 校验残留值。
 - [ ] anthropic-version pin 死，不追 latest。
+- [ ] ② 族：`instructions` 恒发（含空串）、`store:false` 恒发；工具扁平且显式 `strict:false`；命名 `tool_choice` 去掉 `function` 包装、只随函数工具发。
+- [ ] ② 族流：只读 data 行、容忍 `[DONE]`、无视 `obfuscation`；函数调用按 `output_index` 分组，整串覆盖 delta 累积；回传物收集自 `output_item.done`。
+- [ ] ② 族终止：`incomplete` 区分 `max_output_tokens`（truncated）与 `content_filter`（throw）；`failed` / `error` / 裸 `{error}` 都 throw；无终止事件的流照样 finish。
+- [ ] `_responseItems` 带 modelId，同模型才原样回传，否则退回裸 function_call；不与裸映射并列发。

@@ -1831,6 +1831,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enableWebSearchDesc => '允许服务商在作答过程中自行搜索网页。按额外 token 计费，并会代你抓取网页。';
 
   @override
+  String get enableWebSearchTracelessHint =>
+      '此协议下搜索是无痕的：不返回来源或角标，也无从判断是否真的搜索过。';
+
+  @override
   String get noProviderMatch => '没有匹配的提供商';
 
   @override
@@ -4182,6 +4186,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optCompactedNotice => '较早的对话已压缩为摘要，以节省上下文。';
+
+  @override
+  String get optRoundLimitNotice =>
+      '助手在这条消息上已用完步骤上限，尚未给出最终答复。发送一条后续消息（例如“继续”）即可让它接着做。';
 
   @override
   String get optKbDistillRequested => '已请求：将本次调优经验总结进知识库。';
@@ -6557,6 +6565,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get enableWebSearchDesc => '允許服務商在作答過程中自行搜尋網頁。按額外 token 計費，並會代你抓取網頁。';
 
   @override
+  String get enableWebSearchTracelessHint =>
+      '此協議下搜尋是無痕的：不回傳來源或角標，也無從判斷是否真的搜尋過。';
+
+  @override
   String get noProviderMatch => '沒有符合的提供商';
 
   @override
@@ -8909,6 +8921,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optCompactedNotice => '較早的對話已壓縮為摘要，以節省上下文。';
+
+  @override
+  String get optRoundLimitNotice =>
+      '助手在這則訊息上已用完步驟上限，尚未給出最終答覆。傳送一則後續訊息（例如「繼續」）即可讓它接著做。';
 
   @override
   String get optKbDistillRequested => '已請求：將本次調優經驗總結進知識庫。';

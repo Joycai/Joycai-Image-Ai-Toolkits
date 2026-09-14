@@ -233,9 +233,54 @@ enum ThinkingDialect {
   /// `{"type": "disabled"}` switches it off. A non-DeepSeek ① host would
   /// reject the object as an unknown field, which is why it is per vendor.
   openaiThinkingObject,
+
+  /// Alibaba DashScope's spelling on the **①** wire (compatible mode): a
+  /// top-level `enable_thinking: bool`, sent **instead of**
+  /// `reasoning_effort` — the reasoning 03 §3 `switch` dialect in its ①
+  /// spelling. A plain switch: every level above off means "on".
+  ///
+  /// Needed because the commercial Qwen3-Max/Plus generation thinks only
+  /// when told, and `reasoning_effort` does not tell it — the model silently
+  /// never thinks (pitfalls 11 §A9). Qwen documents `reasoning_effort` and
+  /// `thinking_budget` as mutually exclusive, and declaring a switch is
+  /// itself the statement that this face has no intensity to send. The
+  /// newest Qwen (3.7+) also reads `reasoning_effort`; the declaration is the
+  /// vendor's default for the face, not a guess about the model.
+  openaiEnableThinking,
+}
+
+/// What switching on the host's own web search does for a (channel, model,
+/// kind, face), as `LLMDispatcher.serverWebSearch` resolves it — the model
+/// editor's one source for whether to show the switch and what to say.
+enum ServerWebSearch {
+  /// The wire has no switch this app sends: nothing to show.
+  unsupported,
+
+  /// ④'s `web_search` server tool: the searches and their sources come back
+  /// as blocks and are logged (tools 05 §5).
+  withSources,
+
+  /// DashScope's `enable_search` flag (① top level, native `parameters`):
+  /// the answer absorbs the results and nothing in the response says a
+  /// search ran (pitfalls 11 §A10). Nothing is invented on the response side;
+  /// the editor says so instead.
+  traceless,
 }
 
 class VendorProfile {
+  /// The chat faces on which this vendor accepts a host-run web search
+  /// *switch* — DashScope's `enable_search`, spelled at the top level on ①
+  /// and under `parameters` on its native face.
+  ///
+  /// A declaration, never inferred: `enable_search` is a private extension,
+  /// and official OpenAI answers an unknown top-level field with a 400. The ①
+  /// adapter checks this set before sending the flag, because a stored
+  /// `enable_web_search` travels with the model row (imports, channel-type
+  /// changes) to hosts that never had it (tools 05 §5). Empty for every
+  /// vendor but Bailian's two. ④'s server tool is not listed here: that
+  /// protocol declares it for every ④ vendor.
+  final Set<WireProtocol> serverWebSearchFaces;
+
   /// Stable id, stored verbatim in `llm_channels.type`.
   final String id;
 
@@ -298,9 +343,24 @@ class VendorProfile {
   /// listing at all. This is the additive case.
   final List<UnlistedModel> unlistedModels;
 
-  /// Which `thinking` spelling this vendor understands, for the ④ surface.
-  /// [ThinkingDialect.none] on every other family.
+  /// Which thinking spelling this vendor understands by default — the ④
+  /// surface's, for the ④ vendors and Bailian; DeepSeek's ① object. Read per
+  /// face through [thinkingFor], which lets [thinkingByProtocol] override it.
   final ThinkingDialect thinking;
+
+  /// Per-face overrides of [thinking], for a multi-face vendor whose faces
+  /// spell thinking differently. Bailian's ④ face takes the manual budget
+  /// form while its ① face takes the `enable_thinking` switch
+  /// ([ThinkingDialect.openaiEnableThinking]); one [thinking] value could say
+  /// only one of the two. Empty for every single-face vendor, whose requests
+  /// are therefore unchanged.
+  final Map<WireProtocol, ThinkingDialect> thinkingByProtocol;
+
+  /// The thinking spelling for requests on [face]: the face's override, else
+  /// the vendor default. The one place protocols and the editor's reasoning
+  /// ladder read the declaration from, so the two cannot disagree.
+  ThinkingDialect thinkingFor(WireProtocol face) =>
+      thinkingByProtocol[face] ?? thinking;
 
   /// Whether this vendor understands ④'s `cache_control` breakpoints.
   ///
@@ -353,6 +413,8 @@ class VendorProfile {
     this.protocolBases = const {},
     this.unlistedModels = const [],
     this.thinking = ThinkingDialect.none,
+    this.thinkingByProtocol = const {},
+    this.serverWebSearchFaces = const {},
     this.promptCaching = false,
     this.keyOptional = false,
     this.offersFamilyMediaSurfaces = false,

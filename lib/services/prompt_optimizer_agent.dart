@@ -192,6 +192,15 @@ class OptimizerChatEntry {
   /// For [OptimizerEntryKind.kbEdit]: approval state.
   final KbEditState? editState;
 
+  /// For [OptimizerEntryKind.kbEdit]: the knowledge-base root the edit was
+  /// staged against. Apply writes there rather than re-reading the setting,
+  /// which can be switched while the card waits.
+  final String? knowledgeRoot;
+
+  /// For [OptimizerEntryKind.kbEdit]: why a [KbEditState.failed] edit was not
+  /// written.
+  final String? editError;
+
   /// For [OptimizerEntryKind.askUser]: the tool-call id this card must answer.
   final String? askCallId;
 
@@ -226,6 +235,8 @@ class OptimizerChatEntry {
     this.newContent,
     this.oldContent,
     this.editState,
+    this.knowledgeRoot,
+    this.editError,
     this.askCallId,
     this.askQuestions,
     this.askState,
@@ -234,6 +245,7 @@ class OptimizerChatEntry {
 
   OptimizerChatEntry copyWith({
     KbEditState? editState,
+    String? editError,
     AskUserState? askState,
     List<AskUserAnswer>? askAnswers,
   }) =>
@@ -250,6 +262,8 @@ class OptimizerChatEntry {
         newContent: newContent,
         oldContent: oldContent,
         editState: editState ?? this.editState,
+        knowledgeRoot: knowledgeRoot,
+        editError: editError ?? this.editError,
         askCallId: askCallId,
         askQuestions: askQuestions,
         askState: askState ?? this.askState,
@@ -333,11 +347,15 @@ class PromptOptimizerSession extends ChangeNotifier {
       // (its rule 4: contradictions) and was answered in the composer loses
       // its write tools on resume. It is appended right after the tool
       // result that pairs the dangling call (resolvePendingAskUserAsFreeText),
-      // so it is the one real user turn preceded by a tool message; a fresh
-      // request always follows the previous turn's assistant message. The
-      // card path already survives — it appends only a tool message. Skip
-      // and keep walking back to the request that opened the turn.
-      if (i > 0 && history[i - 1].role == LLMRole.tool) continue;
+      // so skip it and keep walking back to the request that opened the turn.
+      //
+      // "Preceded by a tool message" is NOT the test: a mid-batch stop, the
+      // round limit and a request that failed after a tool round all leave
+      // the history ending on a tool result too, and the user's next ordinary
+      // message would then inherit the distill turn's write access (standard
+      // 08 §3.5). Only that specific free-text reply counts. The card path
+      // needs no exception — it appends a tool message, never a user turn.
+      if (i > 0 && PromptOptimizerAgent._isFreeTextAskUserReply(history[i - 1])) continue;
       return m.content.startsWith(PromptOptimizerAgent.kbDistillMarker);
     }
     return false;
@@ -379,13 +397,21 @@ class PromptOptimizerSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// [history] length at the moment each knowledge file was last written, so
-  /// reads recorded before the write stop counting as current.
+  /// For each knowledge file written this session, the last [history] message
+  /// at the moment of the write (null when the history was empty): reads
+  /// strictly after it are current, reads at or before it are not.
   ///
   /// A plain "is stale" flag would be unsatisfiable: the read-before-write
   /// rail would reject the very re-read that is supposed to clear it, and the
   /// model could never edit the same file twice in one session.
-  final Map<String, int> knowledgeStaleAt = {};
+  ///
+  /// Keyed by message identity, never by index (standard 10 §3.2): compaction
+  /// shrinks the history and the pairing repair inserts stubs, and an index
+  /// survives neither — after a compaction it pointed past the end of the
+  /// history, so no re-read of the file ever counted again. A marker that is
+  /// no longer in the history was folded into a summary, which means every
+  /// read still present came after the write.
+  final Map<String, LLMMessage?> knowledgeStaleAt = {};
 
   List<OptimizerChatEntry> _transcript = [];
   List<OptimizerChatEntry> get transcript => _transcript;
@@ -504,12 +530,24 @@ class PromptOptimizerSession extends ChangeNotifier {
 
   int _kbEditCounter = 0;
 
+  /// `root|relPath` of every knowledge file already backed up this session.
+  /// Only the first write of a file is backed up, so its `.bak` keeps the
+  /// version from before the session touched it. In memory: a restored session
+  /// starts over, and its first write backs up again.
+  final Set<String> _backedUpPaths = {};
+
+  /// Edit ids whose outcome the model has already been told — by an
+  /// outcomes record, or by the tool result of an edit applied without
+  /// confirmation. In memory only; see invariant 11.
+  final Set<String> _reportedKbEditIds = {};
+
   /// Stages a proposed knowledge-file edit for the user to approve. Nothing
   /// touches disk here — same contract as [_stagePrompt].
   String _stageKbEdit({
     required String relPath,
     required String newContent,
     required String? oldContent,
+    String? knowledgeRoot,
     String? note,
   }) {
     final editId = 'kbedit_${id}_${_kbEditCounter++}';
@@ -520,6 +558,7 @@ class PromptOptimizerSession extends ChangeNotifier {
       targetPath: relPath,
       newContent: newContent,
       oldContent: oldContent,
+      knowledgeRoot: knowledgeRoot,
       editState: KbEditState.pending,
       note: (note == null || note.trim().isEmpty) ? null : note.trim(),
     ));
@@ -529,11 +568,11 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// Flips a staged edit to its terminal state. Rebuilds the transcript rather
   /// than mutating the entry in place; because the length is unchanged, the
   /// chat view re-renders without yanking the user's scroll position.
-  void _resolveKbEdit(String editId, KbEditState state) {
+  void _resolveKbEdit(String editId, KbEditState state, {String? error}) {
     _transcript = [
       for (final e in _transcript)
         (e.kind == OptimizerEntryKind.kbEdit && e.editId == editId)
-            ? e.copyWith(editState: state)
+            ? e.copyWith(editState: state, editError: error)
             : e,
     ];
     notifyListeners();
@@ -559,12 +598,14 @@ class PromptOptimizerSession extends ChangeNotifier {
     required String relPath,
     required String newContent,
     String? oldContent,
+    String? knowledgeRoot,
     String? note,
   }) =>
       _stageKbEdit(
         relPath: relPath,
         newContent: newContent,
         oldContent: oldContent,
+        knowledgeRoot: knowledgeRoot,
         note: note,
       );
 
@@ -637,6 +678,64 @@ class PromptOptimizerSession extends ChangeNotifier {
     return null;
   }
 
+  /// Applies [PromptOptimizerAgent.repairToolCallPairing] to the live history.
+  ///
+  /// [persistedCount] is rebased rather than reset: everything before the
+  /// first message that was not yet persisted stays "persisted" — stubs placed
+  /// there are not written, and every later restore re-derives them the same
+  /// way — while the unpersisted tail is still appended at the next sync.
+  /// Returns whether anything changed.
+  bool _repairToolCallPairing() {
+    final repaired = PromptOptimizerAgent._repairPairingWithOrigins(history);
+    final unchanged = repaired.length == history.length &&
+        [for (int i = 0; i < repaired.length; i++) identical(repaired[i].message, history[i])]
+            .every((same) => same);
+    if (unchanged) return false;
+
+    var rebased = repaired.length;
+    for (int k = 0; k < repaired.length; k++) {
+      final origin = repaired[k].origin;
+      if (origin != null && origin >= persistedCount) {
+        rebased = k;
+        break;
+      }
+    }
+    // Stale markers point at message objects. A rewritten message hands its
+    // marker to its replacement; a dropped one to the nearest message kept
+    // before it — "reads after the marker" still names the same reads.
+    final byOrigin = <int, LLMMessage>{
+      for (final e in repaired)
+        if (e.origin != null) e.origin!: e.message,
+    };
+    for (int i = 0; i < history.length; i++) {
+      final old = history[i];
+      if (!knowledgeStaleAt.values.any((v) => identical(v, old))) continue;
+      LLMMessage? to;
+      for (int j = i; j >= 0; j--) {
+        final kept = byOrigin[j];
+        if (kept != null) {
+          to = kept;
+          break;
+        }
+      }
+      if (!identical(to, old)) _carryStaleMarker(old, to);
+    }
+
+    history
+      ..clear()
+      ..addAll([for (final e in repaired) e.message]);
+    persistedCount = rebased;
+    return true;
+  }
+
+  /// Re-points every [knowledgeStaleAt] marker at [from] to [to] — for the
+  /// places that replace a history message with a rewritten copy.
+  void _carryStaleMarker(LLMMessage from, LLMMessage? to) {
+    for (final key in [...knowledgeStaleAt.keys]) {
+      if (identical(knowledgeStaleAt[key], from)) knowledgeStaleAt[key] = to;
+    }
+  }
+
   void _setRunning(bool running) {
     if (_isRunning == running) return;
     _isRunning = running;
@@ -659,16 +758,24 @@ class PromptOptimizerSession extends ChangeNotifier {
   }) {
     final session = PromptOptimizerSession(mode: mode, id: id);
     session.title = title;
-    session.history.addAll(history);
-    session.persistedCount = history.length;
+    // Stored rows can be individually dropped (corrupt JSON, an unknown role)
+    // and a crash can land between an assistant message and its results, so
+    // the replayed history is not trusted to be pairable: an unanswered call
+    // or an orphan result would 400 every later request of the session. The
+    // repair is deterministic, so the stored rows keep their old shape and
+    // every restore derives the same repaired list — which is why all of it
+    // counts as persisted.
+    final restored = PromptOptimizerAgent.repairToolCallPairing(history);
+    session.history.addAll(restored);
+    session.persistedCount = restored.length;
 
     final entries = <OptimizerChatEntry>[];
     if (hasCompactedHistory && compactedNoticeText != null) {
       entries.add(OptimizerChatEntry(kind: OptimizerEntryKind.notice, text: compactedNoticeText));
     }
     bool anyImageMissing = false;
-    for (int msgIndex = 0; msgIndex < history.length; msgIndex++) {
-      final msg = history[msgIndex];
+    for (int msgIndex = 0; msgIndex < restored.length; msgIndex++) {
+      final msg = restored[msgIndex];
       switch (msg.role) {
         case LLMRole.user:
           if (msg.content.startsWith(PromptOptimizerAgent.viewResultMarker)) {
@@ -680,8 +787,10 @@ class PromptOptimizerSession extends ChangeNotifier {
                 if (!File(path).existsSync()) anyImageMissing = true;
               }
             }
-          } else if (msg.content.startsWith(PromptOptimizerAgent.summaryMarker)) {
-            // Compaction summaries are context, not chat lines.
+          } else if (msg.content.startsWith(PromptOptimizerAgent.summaryMarker) ||
+              msg.content.startsWith(PromptOptimizerAgent.kbEditOutcomesMarker)) {
+            // Compaction summaries and edit-outcome records are context for
+            // the model, not chat lines.
           } else if (msg.content.startsWith(PromptOptimizerAgent.resultFeedbackMarker)) {
             final parsed = PromptOptimizerAgent.tryParseResultFeedback(msg.content);
             // A header that fails to parse degrades to a plain user bubble —
@@ -750,7 +859,7 @@ class PromptOptimizerSession extends ChangeNotifier {
                 // it while diffing against pre-edit content; the cost of being
                 // wrong is one redundant re-read.
                 if (writtenPath.isNotEmpty) {
-                  session.knowledgeStaleAt[writtenPath] = msgIndex;
+                  session.knowledgeStaleAt[writtenPath] = msg;
                 }
                 entries.add(OptimizerChatEntry(
                   kind: OptimizerEntryKind.tool,
@@ -795,8 +904,8 @@ class PromptOptimizerSession extends ChangeNotifier {
                 // kbEdit (inert, could clobber newer disk content), answering
                 // only appends a message, so it is safe to keep live.
                 LLMMessage? result;
-                for (int j = msgIndex + 1; j < history.length; j++) {
-                  final r = history[j];
+                for (int j = msgIndex + 1; j < restored.length; j++) {
+                  final r = restored[j];
                   if (r.role == LLMRole.tool && r.toolCallId == call.id) {
                     result = r;
                     break;
@@ -861,6 +970,14 @@ class PromptOptimizerSession extends ChangeNotifier {
   }
 }
 
+/// The request [PromptOptimizerAgent] makes, as tests replace it — see
+/// [PromptOptimizerAgent.debugRequestOverride].
+typedef AgentRequestFn = Future<LLMResponse> Function(
+  List<LLMMessage> messages,
+  List<LLMTool>? tools,
+  Map<String, dynamic> options,
+);
+
 /// Interactive prompt-optimization agent (tool-use loop).
 ///
 /// The model is given three tools:
@@ -899,11 +1016,27 @@ class PromptOptimizerAgent {
   /// window and boundary math like any typed message.
   static const String kbDistillMarker = '[kb_distill]';
 
+  /// Marker of the synthetic record of staged-edit outcomes that opens a turn
+  /// (invariant 11). Like [viewResultMarker] it is not a real user turn.
+  static const String kbEditOutcomesMarker = '[kb_edit_outcomes]';
+
   /// Transcript-notice tokens, mapped to localized strings at render time.
   static const String compactedNoticeToken = '__compacted__';
   static const String imageMissingNoticeToken = '__image_missing__';
   static const String kbEntryTooLargeNoticeToken = '__kb_entry_too_large__';
   static const String kbDistillNoticeToken = '__kb_distill__';
+
+  /// A turn used every round and the final, tools-free one still produced no
+  /// answer (standard 07 §3.8).
+  static const String roundLimitNoticeToken = '__round_limit__';
+
+  /// Sent with the final round's request only — never written to history,
+  /// where it would read as a standing ban on tools in every later turn
+  /// (07 §3.5).
+  static const String _finalRoundNudge =
+      'You have reached the step limit for this turn, and no tools are '
+      'available in this final round. Answer the user now in plain text: what '
+      'you have done, what is still open, and what they could do next.';
 
   /// Parses a [resultFeedbackMarker] message back into its parts, or null when
   /// the header line is not the JSON [PromptOptimizerSession.addResultFeedback]
@@ -1000,6 +1133,14 @@ class PromptOptimizerAgent {
   /// usually refines it.
   static const int _keepAttachmentTurns = 2;
 
+  /// Most image attachments any one request carries (standard 07 §3.6).
+  ///
+  /// The attachment window is counted in turns, and one turn can view every
+  /// reference image — each then re-uploaded on every later request of that
+  /// turn. The cap bounds the payload per request whatever a turn does; the
+  /// window still bounds how long any one image lingers.
+  static const int _maxLiveImages = 3;
+
   /// Layer-2 compaction's secondary trigger: raw message count, independent of
   /// size. A long conversation of short turns costs little context but still
   /// slows every request down.
@@ -1039,6 +1180,104 @@ class PromptOptimizerAgent {
   }) =>
       occupied >= budgetChars || messageCount > _compactMaxMessages;
 
+  /// Retention target as a share of the trigger budget: standard 10 §3.1's
+  /// RETAIN_TARGET / COMPACT_TRIGGER (0.45 / 0.7). The gap between the two is
+  /// what keeps the turn after a compaction from compacting again.
+  static const double _retainTargetShare = 0.45 / 0.7;
+
+  /// Turns kept verbatim however far over budget the history is (10 §3.1).
+  static const int _minKeepTurns = 2;
+
+  /// Worst-case size charged for the summary a fold will produce — 10 §3.1's
+  /// 1000-token summary budget, in the character domain.
+  static final int _summaryAllowanceChars = (1000 * ContextBudget.charsPerToken).round();
+
+  /// Where to fold: the history before the returned index becomes the
+  /// summary. Null means do not compact this turn.
+  ///
+  /// When only the message count tripped the trigger ([sizeTriggered] false),
+  /// the fold is to the recent window, exactly as before — occupancy is not
+  /// the problem, so there is no target to reach. When size tripped it, the
+  /// fold keeps the most recent turns whose projected occupancy — the tail as
+  /// [_trimForSend] will send it, plus [_summaryAllowanceChars] — fits under
+  /// [_retainTargetShare] of [budgetChars]: never more than [_keepRecentTurns],
+  /// never fewer than [_minKeepTurns], and down to that floor anyway when
+  /// nothing fits (freeing most of the room beats freeing none).
+  ///
+  /// Skipped when the head would be just an existing summary plus at most one
+  /// turn. Re-summarizing a summary to reclaim a single turn is the
+  /// compact-every-turn loop, and each pass invalidates the prompt-cache prefix.
+  @visibleForTesting
+  static int? compactionBoundary(
+    List<LLMMessage> history, {
+    required String systemPrompt,
+    required int budgetChars,
+    required bool sizeTriggered,
+  }) {
+    final starts = [
+      for (int i = 0; i < history.length; i++)
+        if (_isRealUserTurn(history[i])) i,
+    ];
+
+    final int keep;
+    if (!sizeTriggered) {
+      if (starts.length <= _keepRecentTurns) return null;
+      keep = _keepRecentTurns;
+    } else {
+      if (starts.length <= _minKeepTurns) return null;
+      final maxKeep =
+          starts.length - 1 < _keepRecentTurns ? starts.length - 1 : _keepRecentTurns;
+      final target = (budgetChars * _retainTargetShare).floor();
+      var fits = _minKeepTurns;
+      for (int k = maxKeep; k >= _minKeepTurns; k--) {
+        final tail = history.sublist(starts[starts.length - k]);
+        final projected =
+            occupiedChars(systemPrompt, _trimForSend(tail)) + _summaryAllowanceChars;
+        if (projected <= target) {
+          fits = k;
+          break;
+        }
+      }
+      keep = fits;
+    }
+
+    final boundary = starts[starts.length - keep];
+    if (boundary <= 1) return null;
+    final foldedTurns = starts.length - keep;
+    final headIsSummary = history.first.role == LLMRole.user &&
+        history.first.content.startsWith(summaryMarker);
+    if (headIsSummary && foldedTurns <= 1) return null;
+    return boundary;
+  }
+
+  /// Replaces every model request the agent makes — the turn loop's and
+  /// compaction's — so the loop's invariants can be pinned without a network.
+  /// Null in production.
+  @visibleForTesting
+  static AgentRequestFn? debugRequestOverride;
+
+  static Future<LLMResponse> _request({
+    required dynamic modelIdentifier,
+    required List<LLMMessage> messages,
+    List<LLMTool>? tools,
+    String? contextId,
+    required Map<String, dynamic> options,
+    required bool useStream,
+    bool Function()? isCancelled,
+  }) {
+    final override = debugRequestOverride;
+    if (override != null) return override(messages, tools, options);
+    return LLMService().request(
+      modelIdentifier: modelIdentifier,
+      messages: messages,
+      tools: tools,
+      contextId: contextId,
+      options: options,
+      useStream: useStream,
+      isCancelled: isCancelled,
+    );
+  }
+
   /// Live sessions by id, so the task-queue executor can resolve the session
   /// referenced by a queued task.
   static final Map<String, PromptOptimizerSession> sessions = {};
@@ -1059,11 +1298,13 @@ class PromptOptimizerAgent {
   static int _readCapNow(
     PromptOptimizerSession session,
     String systemPrompt,
-    int? contextWindow,
-  ) =>
+    int? contextWindow, {
+    bool keepCurrentTurnImages = false,
+  }) =>
       ContextBudget.readCapChars(
         contextWindow,
-        occupiedChars(systemPrompt, _trimForSend(session.history)),
+        occupiedChars(systemPrompt,
+            _trimForSend(session.history, keepCurrentTurnImages: keepCurrentTurnImages)),
         observedCharsPerToken: session.observedCharsPerToken,
       );
 
@@ -1490,6 +1731,21 @@ class PromptOptimizerAgent {
     }
 
     try {
+      // Make the history sendable before anything else reads it. The dangling
+      // ask_user guard runs first so its own semantics (pair in place, or strip
+      // a pre-rail call) decide that case; the generic repair then covers
+      // everything else a restore or an interrupted write can leave behind.
+      _cancelDanglingAskUser(session);
+      if (session._repairToolCallPairing()) {
+        onLog?.call('Repaired tool-call pairing in the conversation history.');
+      }
+      // What the user did with the model's staged edits since it last spoke
+      // (invariant 11). After the pairing work, so it never lands between a
+      // call and its result; before persistence, so it is saved with the turn.
+      final outcomes = _drainKbEditOutcomes(session);
+      if (outcomes != null) {
+        session.history.add(LLMMessage(role: LLMRole.user, content: outcomes));
+      }
       // Persist the pending user turn, then compact if the history has grown
       // past the context budget. Persistence failures never block the turn.
       try {
@@ -1514,7 +1770,6 @@ class PromptOptimizerAgent {
       } catch (e) {
         onLog?.call('Session persistence failed (continuing without it): $e');
       }
-      _cancelDanglingAskUser(session);
       for (int turn = 0; turn < maxTurns; turn++) {
         if (isCancelled?.call() ?? false) return;
 
@@ -1524,19 +1779,34 @@ class PromptOptimizerAgent {
         // its remaining iterations to burn. Without it the model can only
         // answer, submit or delegate (the sub-agent researches in its own
         // fresh context, so it stays useful exactly when this one is full).
-        final activeTools = toolsetFor(
-          acceptsImageInput: acceptsImageInput,
-          knowledgeMode: knowledgeMode,
-          editMode: editMode,
-          delegateKinds: delegateKinds,
-          contextExhausted: contextExhausted,
-        );
+        //
+        // The final round offers nothing at all (standard 07 §3.8): a model
+        // still working must write its answer down rather than spend the
+        // last request on one more call and end the turn with nothing said.
+        final finalRound = turn == maxTurns - 1;
+        final activeTools = finalRound
+            ? const <LLMTool>[]
+            : toolsetFor(
+                acceptsImageInput: acceptsImageInput,
+                knowledgeMode: knowledgeMode,
+                editMode: editMode,
+                delegateKinds: delegateKinds,
+                contextExhausted: contextExhausted,
+              );
 
-        final trimmedHistory = _trimForSend(session.history);
+        // What this request actually offers. Dispatch is gated on it below.
+        final offered = {for (final t in activeTools) t.name};
+
+        final trimmedHistory =
+            _trimForSend(session.history, keepCurrentTurnImages: effectiveForceView);
         // knowledgeEntryContent is captured once per task, but staging means no
         // edit can reach disk mid-turn, so the injected file map cannot go
         // stale within a turn.
-        final sentChars = occupiedChars(systemPromptText, trimmedHistory);
+        final outgoing = [
+          ...trimmedHistory,
+          if (finalRound) LLMMessage(role: LLMRole.user, content: _finalRoundNudge),
+        ];
+        final sentChars = occupiedChars(systemPromptText, outgoing);
 
         // The two fixed costs of *this* request, for the usage readout. Here
         // rather than once per turn: activeTools shrinks when the window runs
@@ -1549,13 +1819,13 @@ class PromptOptimizerAgent {
 
         final LLMResponse response;
         try {
-          response = await LLMService().request(
+          response = await _request(
             modelIdentifier: modelIdentifier,
             messages: [
               LLMMessage(role: LLMRole.system, content: systemPromptText),
-              ...trimmedHistory,
+              ...outgoing,
             ],
-            tools: activeTools,
+            tools: finalRound ? null : activeTools,
             contextId: contextId,
             options: const {
               // Transient relay/proxy disconnects (e.g. errno 10054) should
@@ -1639,6 +1909,7 @@ class PromptOptimizerAgent {
               rawThinkingBlocks: response.rawThinkingBlocks,
               rawThinkingModelId: response.rawThinkingModelId,
               rawContentBlocks: response.rawContentBlocks,
+              rawModelParts: response.rawModelParts,
             ));
             session._addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.assistant, text: text));
           }
@@ -1659,6 +1930,7 @@ class PromptOptimizerAgent {
           rawThinkingBlocks: response.rawThinkingBlocks,
           rawThinkingModelId: response.rawThinkingModelId,
           rawContentBlocks: response.rawContentBlocks,
+          rawModelParts: response.rawModelParts,
           toolCalls: response.toolCalls,
         ));
         if (response.text.trim().isNotEmpty) {
@@ -1698,6 +1970,20 @@ class PromptOptimizerAgent {
             result = {
               'status': 'cancelled',
               'message': 'The user cancelled the task before this tool ran.',
+            };
+          } else if (!offered.contains(call.name)) {
+            // Standard 07 §4.6 rule 3: only a tool offered in this request
+            // may run. A model can name any tool it has ever seen — a
+            // delegate it was never given, a write tool in a read-only
+            // session, a tool withdrawn when the window filled — and every
+            // executor below would otherwise act on it. The executors keep
+            // their own precondition checks as defence in depth.
+            onLog?.call('Tool call rejected: "${call.name}" was not offered in this request.');
+            result = {
+              'status': 'error',
+              'message': 'Tool "${call.name}" was not offered in this request, so it '
+                  'did not run. '
+                  '${offered.isEmpty ? 'No tools are available right now — answer in plain text.' : 'Available tools: ${offered.join(', ')}.'}',
             };
           } else if (call.name == 'ask_user') {
             if (!canStageAskUser(response.toolCalls)) {
@@ -1837,7 +2123,15 @@ class PromptOptimizerAgent {
         // reply) gets a fresh maxTurns budget.
         if (pendingAskCallId != null) return;
       }
+      // Only reachable when even the tools-free final round came back with tool
+      // calls: those were paired as not offered, so the history is valid, but
+      // the user got no answer and has to be told why rather than left
+      // watching the turn simply stop.
       onLog?.call('Reached the maximum of $maxTurns agent turns — stopping.');
+      session._addEntry(OptimizerChatEntry(
+        kind: OptimizerEntryKind.notice,
+        text: roundLimitNoticeToken,
+      ));
     } finally {
       // Persist whatever this turn produced, even on error/cancel.
       try {
@@ -1894,7 +2188,25 @@ class PromptOptimizerAgent {
   static bool _isRealUserTurn(LLMMessage m) =>
       m.role == LLMRole.user &&
       !m.content.startsWith(viewResultMarker) &&
-      !m.content.startsWith(summaryMarker);
+      !m.content.startsWith(summaryMarker) &&
+      !m.content.startsWith(kbEditOutcomesMarker);
+
+  /// Whether [m] is the result [resolvePendingAskUserAsFreeText] pairs a
+  /// question with: an `ask_user` result with status ok and no structured
+  /// answers. The user message right after it continues the asking turn.
+  ///
+  /// A structured answer (`answers` present) is excluded on purpose — that
+  /// path resumes with no user message at all, so a user turn after it is a
+  /// new request.
+  static bool _isFreeTextAskUserReply(LLMMessage m) {
+    if (m.role != LLMRole.tool || m.toolName != 'ask_user') return false;
+    try {
+      final decoded = jsonDecode(m.content);
+      return decoded is Map && decoded['status'] == 'ok' && decoded['answers'] == null;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// Index of the user message that opens the protected "recent" window
   /// (the last [_keepRecentTurns] real user turns). 0 = protect everything.
@@ -1971,6 +2283,34 @@ class PromptOptimizerAgent {
         for (final e in session.transcript)
           if (e.kind == OptimizerEntryKind.kbEdit && e.editState == KbEditState.pending) e,
       ];
+
+  /// The outcomes record that opens a turn (invariant 11, standard 08 §3.6):
+  /// every staged edit decided since the last report, or null when there is
+  /// nothing new. Marks each listed edit reported, so it is said once.
+  ///
+  /// Facts only, no instruction — it is persisted, and a persisted "do X"
+  /// would keep steering every later turn (11 §21).
+  static String? _drainKbEditOutcomes(PromptOptimizerSession session) {
+    final lines = <String>[];
+    for (final e in session.transcript) {
+      if (e.kind != OptimizerEntryKind.kbEdit || e.editId == null) continue;
+      final state = e.editState;
+      if (state == null || state == KbEditState.pending) continue;
+      if (!session._reportedKbEditIds.add(e.editId!)) continue;
+      final path = e.targetPath ?? e.text;
+      final error = e.editError;
+      lines.add(switch (state) {
+        KbEditState.applied => '- $path: applied by the user — it is now on disk.',
+        KbEditState.rejected => '- $path: rejected by the user — it was not written.',
+        KbEditState.failed =>
+          '- $path: failed to apply — it was not written${error == null ? '' : ' ($error)'}.',
+        KbEditState.pending => '',
+      });
+    }
+    if (lines.isEmpty) return null;
+    return '$kbEditOutcomesMarker Since your last turn, the user decided on '
+        'these staged knowledge-base edits:\n${lines.join('\n')}';
+  }
 
   /// How many tool steps the turn now running has taken.
   ///
@@ -2148,7 +2488,7 @@ class PromptOptimizerAgent {
     // Reads before the recent boundary are elided by _trimForSend; reads
     // before the file was last written no longer describe what is on disk.
     final boundary = _recentBoundary(history);
-    final staleAt = session.knowledgeStaleAt[relPath] ?? 0;
+    final staleAt = _staleFrom(session, relPath);
     final from = boundary > staleAt ? boundary : staleAt;
     final pages = <int>{};
     for (int i = from; i < history.length; i++) {
@@ -2175,6 +2515,17 @@ class PromptOptimizerAgent {
   static Set<int> liveReadPagesForTest(PromptOptimizerSession session, String relPath) =>
       _liveReadPages(session, relPath);
 
+  /// First history index whose reads of [relPath] still describe the file on
+  /// disk — see [PromptOptimizerSession.knowledgeStaleAt].
+  static int _staleFrom(PromptOptimizerSession session, String relPath) {
+    if (!session.knowledgeStaleAt.containsKey(relPath)) return 0;
+    final marker = session.knowledgeStaleAt[relPath];
+    if (marker == null) return 0;
+    final at = session.history.lastIndexWhere((m) => identical(m, marker));
+    // Gone means compaction folded it: whatever survived came after the write.
+    return at < 0 ? 0 : at + 1;
+  }
+
   /// Reference-image paths whose attachment is still part of what will be sent
   /// next — i.e. the synthetic `view_image` message sits inside the recent
   /// window, where [_trimForSend] does not strip attachments.
@@ -2189,14 +2540,13 @@ class PromptOptimizerAgent {
   /// describes for knowledge reads). [PromptOptimizerSession.viewedImagePaths]
   /// remains as the UI's "has been looked at" badge only; it no longer gates
   /// anything the model asks for.
-  static Set<String> _liveViewedPaths(PromptOptimizerSession session) {
+  static Set<String> _liveViewedPaths(PromptOptimizerSession session,
+      {bool keepCurrentTurnImages = false}) {
     final history = session.history;
     final paths = <String>{};
-    for (int i = _attachmentBoundary(history); i < history.length; i++) {
-      final m = history[i];
-      if (m.role != LLMRole.user) continue;
-      if (!m.content.startsWith(viewResultMarker)) continue;
-      for (final att in m.attachments) {
+    for (final i
+        in _liveAttachmentIndices(history, keepCurrentTurnImages: keepCurrentTurnImages)) {
+      for (final att in history[i].attachments) {
         final path = att.path;
         if (path != null) paths.add(path);
       }
@@ -2205,26 +2555,66 @@ class PromptOptimizerAgent {
   }
 
   @visibleForTesting
-  static Set<String> liveViewedPathsForTest(PromptOptimizerSession session) =>
-      _liveViewedPaths(session);
+  static Set<String> liveViewedPathsForTest(PromptOptimizerSession session,
+          {bool keepCurrentTurnImages = false}) =>
+      _liveViewedPaths(session, keepCurrentTurnImages: keepCurrentTurnImages);
 
   /// Layer-1 (lossless in DB, per-request) trimming: before the recent
   /// window, bulky knowledge-file tool results are elided and viewed-image
   /// attachments dropped. User/assistant text and submit_prompt results are
   /// always kept. Tool call/result pairing is preserved (only contents are
   /// shortened), which Gemini requires.
-  static List<LLMMessage> _trimForSend(List<LLMMessage> history) {
+  static List<LLMMessage> _trimForSend(List<LLMMessage> history,
+      {bool keepCurrentTurnImages = false}) {
     final boundary = _recentBoundary(history);
-    final attachmentBoundary = _attachmentBoundary(history);
-    if (boundary == 0 && attachmentBoundary == 0) return history;
+    final liveImages =
+        _liveAttachmentIndices(history, keepCurrentTurnImages: keepCurrentTurnImages);
+    var anyImageDropped = false;
+    for (int i = 0; i < history.length && !anyImageDropped; i++) {
+      anyImageDropped = _isViewWithAttachments(history[i]) && !liveImages.contains(i);
+    }
+    if (boundary == 0 && !anyImageDropped) return history;
     return [
       for (int i = 0; i < history.length; i++)
         _elide(
           history[i],
           bulk: i < boundary,
-          attachments: i < attachmentBoundary,
+          attachments: !liveImages.contains(i),
         ),
     ];
+  }
+
+  static bool _isViewWithAttachments(LLMMessage m) =>
+      m.role == LLMRole.user &&
+      m.content.startsWith(viewResultMarker) &&
+      m.attachments.isNotEmpty;
+
+  /// Indices of the view-result messages whose attachments are still sent:
+  /// inside [_attachmentBoundary] and among the newest [_maxLiveImages]
+  /// images.
+  ///
+  /// With [keepCurrentTurnImages] — the per-model force-view-all flag, which
+  /// promises the model has seen every reference before `submit_prompt` —
+  /// the current turn's attachments are all kept. They still count toward
+  /// the cap, so older rounds leave first.
+  ///
+  /// The one rule both [_trimForSend] and [_liveViewedPaths] read: whether an
+  /// attachment is still sent and whether the model may ask for it again are
+  /// two halves of it (invariant 4).
+  static Set<int> _liveAttachmentIndices(List<LLMMessage> history,
+      {bool keepCurrentTurnImages = false}) {
+    final windowStart = _attachmentBoundary(history);
+    final currentTurnStart =
+        keepCurrentTurnImages ? _boundaryOf(history, 1) : history.length;
+    final live = <int>{};
+    var newer = 0;
+    for (int i = history.length - 1; i >= windowStart; i--) {
+      final m = history[i];
+      if (!_isViewWithAttachments(m)) continue;
+      if (i >= currentTurnStart || newer < _maxLiveImages) live.add(i);
+      newer += m.attachments.length;
+    }
+    return live;
   }
 
   /// The outgoing copy of a whole history, windows applied.
@@ -2233,8 +2623,9 @@ class PromptOptimizerAgent {
   /// own but the agreement between them: what [_trimForSend] still carries
   /// must be exactly what [_liveViewedPaths] reports as live.
   @visibleForTesting
-  static List<LLMMessage> trimForSendForTest(List<LLMMessage> history) =>
-      _trimForSend(history);
+  static List<LLMMessage> trimForSendForTest(List<LLMMessage> history,
+          {bool keepCurrentTurnImages = false}) =>
+      _trimForSend(history, keepCurrentTurnImages: keepCurrentTurnImages);
 
   @visibleForTesting
   static LLMMessage elideForTest(LLMMessage m,
@@ -2303,8 +2694,11 @@ class PromptOptimizerAgent {
         // out of every later request. Without it the turn is rebuilt from
         // the elided fields below — a server-tool turn that also wrote a
         // large file loses its search blocks on replay, which is the cheaper
-        // of the two losses.
+        // of the two losses. ③'s verbatim parts hold the same file body in
+        // their functionCall args, so they go for the same reason; the
+        // rebuilt turn keeps each call's own thoughtSignature.
         rawContentBlocks: null,
+        rawModelParts: null,
         toolCalls: [
           for (final c in m.toolCalls)
             if (c.name == 'write_knowledge_file' &&
@@ -2332,7 +2726,8 @@ class PromptOptimizerAgent {
 
   /// Layer-2 fallback compaction: when even the trimmed history exceeds the
   /// context budget, the conversation before the recent window is replaced by
-  /// a single summary message (LLM-generated; hard truncation as fallback).
+  /// a single LLM-generated summary message. If the summary cannot be made,
+  /// nothing is replaced and the next turn tries again.
   /// The database keeps the original rows flagged `compacted` and re-appends
   /// the new active history, so the full record stays inspectable.
   static Future<void> _maybeCompact(
@@ -2360,27 +2755,36 @@ class PromptOptimizerAgent {
     )) {
       return;
     }
-    final boundary = _recentBoundary(session.history);
-    if (boundary <= 1) {
-      // Nothing meaningful to fold. Worth saying out loud when it is the size
+    final boundary = compactionBoundary(
+      session.history,
+      systemPrompt: systemPrompt,
+      budgetChars: budget,
+      sizeTriggered: occupied >= budget,
+    );
+    if (boundary == null) {
+      // Nothing worth folding. Worth saying out loud when it is the size
       // that triggered this: compaction only folds history, so it can never
-      // shrink an oversized system prompt, and the request is about to fail
-      // with nothing but the provider's own error to explain why.
+      // shrink an oversized system prompt or the turns it always keeps, and
+      // the request may fail with nothing but the provider's own error to
+      // explain why.
       if (occupied >= budget) {
         onLog?.call('Context is over budget ($occupied/$budget chars) but there '
-            'is nothing to summarize yet — the system prompt or the current '
-            'turn alone exceeds the budget.');
+            'is nothing worth summarizing this turn — the system prompt or the '
+            'most recent turns alone exceed the budget.');
       }
       return;
     }
 
     final head = session.history.sublist(0, boundary);
+    // Held as an object, not an index: the summary request below is awaited,
+    // and nothing guarantees the history keeps its shape until it returns.
+    final boundaryMsg = session.history[boundary];
     onLog?.call('Context budget reached ($occupied/$budget chars, '
         '${(contextRatio * 100).round()}% of the window) — summarizing '
         '${head.length} early messages.');
     String summaryText;
     try {
-      final response = await LLMService().request(
+      final response = await _request(
         modelIdentifier: modelIdentifier,
         messages: [
           LLMMessage(
@@ -2398,7 +2802,7 @@ class PromptOptimizerAgent {
           LLMMessage(role: LLMRole.user, content: _serializeForSummary(head)),
         ],
         contextId: contextId,
-        options: const {'retryCount': 2},
+        options: const {'retryCount': 2, 'usageTag': 'compaction'},
         useStream: false,
         isCancelled: isCancelled,
       );
@@ -2411,14 +2815,25 @@ class PromptOptimizerAgent {
       // parting gift from a cancelled turn.
       rethrow;
     } catch (e) {
-      onLog?.call('Summary generation failed ($e) — falling back to hard truncation.');
-      summaryText = 'Earlier conversation was truncated to save context. '
-          'Latest staged prompt (v${session.promptVersions}): '
-          '${session.refinedPrompt ?? '(none yet)'}';
+      // Failure atomicity (standard 10 §3.4): a failed or empty summary
+      // changes nothing — not the history, not the stored rows. The old
+      // fallback replaced the head with a one-line truncation note, turning a
+      // single network blip into permanently lost context. This turn runs on
+      // the uncompacted history (layer 1 still elides), and because the
+      // trigger is re-evaluated at the top of every turn, the next one retries.
+      onLog?.call('Summary generation failed ($e) — the history was left as '
+          'it was; compaction will be retried next turn.');
+      return;
     }
 
+    final at = session.history.indexWhere((m) => identical(m, boundaryMsg));
+    if (at < 0) {
+      onLog?.call('History changed while the summary was generated — '
+          'skipping this compaction.');
+      return;
+    }
     final summaryMsg = LLMMessage(role: LLMRole.user, content: '$summaryMarker\n$summaryText');
-    final tail = session.history.sublist(boundary);
+    final tail = session.history.sublist(at);
     session.history
       ..clear()
       ..addAll([summaryMsg, ...tail]);
@@ -2588,6 +3003,9 @@ class PromptOptimizerAgent {
       onLog: (m) => onLog?.call('[KB sub-agent] $m'),
       contextId: contextId,
       usageTag: 'subagent:knowledge',
+      // The same tally the main loop budgets with — tool-call arguments
+      // included — so the sub-agent's read cap is not over-granted.
+      measureOccupancy: (messages) => occupiedChars('', messages),
     );
     return _finishDelegateRun(session, task, result, onLog);
   }
@@ -2933,6 +3351,7 @@ class PromptOptimizerAgent {
         relPath: writePath,
         newContent: writeContent,
         oldContent: existing,
+        knowledgeRoot: knowledgeRoot,
         note: call.arguments['note']?.toString(),
       );
       // Staged either way, then applied here when the user has turned per-edit
@@ -2941,6 +3360,9 @@ class PromptOptimizerAgent {
       // edit is still reviewable after the fact, still shows its diff, and
       // still says what happened to it.
       if (!session.writePolicy.confirmEachWrite) {
+        // The tool result below (or the error the outer catch returns) already
+        // tells the model what happened — no outcomes record for this one.
+        session._reportedKbEditIds.add(editId);
         await applyStagedKbEdit(session: session, editId: editId);
         return {
           'status': 'ok',
@@ -3014,7 +3436,8 @@ class PromptOptimizerAgent {
             'note': 'This page is already in the conversation — refer to the earlier result instead of re-reading it.',
           };
         }
-        final cap = _readCapNow(session, systemPrompt, contextWindow);
+        final cap = _readCapNow(session, systemPrompt, contextWindow,
+            keepCurrentTurnImages: forceViewAllImages);
         if (cap < _minReadChars) {
           // Returning a sliver instead would be worse than refusing: the model
           // would keep asking for more, and every retry is another full-window
@@ -3108,7 +3531,9 @@ class PromptOptimizerAgent {
         // still inside the recent window and therefore actually part of the
         // next request. Once _trimForSend has elided it (or compaction folded
         // it), the model may legitimately ask to see the image again.
-        if (_liveViewedPaths(session).contains(path) || alreadyAttached) {
+        if (_liveViewedPaths(session, keepCurrentTurnImages: forceViewAllImages)
+                .contains(path) ||
+            alreadyAttached) {
           return {
             'status': 'ok',
             'note': 'Image #$id was already attached earlier in this '
@@ -3175,6 +3600,10 @@ class PromptOptimizerAgent {
   /// Writes a staged edit to disk after the user approved it, and flips the
   /// transcript card to its terminal state. This is the only path that mutates
   /// the knowledge base — the agent never writes directly.
+  ///
+  /// Throws [KbEditConflictException] — card marked failed, nothing written —
+  /// when the file on disk no longer matches the content the edit was proposed
+  /// against.
   static Future<void> applyStagedKbEdit({
     required PromptOptimizerSession session,
     required String editId,
@@ -3184,13 +3613,31 @@ class PromptOptimizerAgent {
     final relPath = entry.targetPath!;
     try {
       final kb = KnowledgeBaseService();
-      final root = await kb.getRoot();
+      // The root the edit was staged against, not whatever Settings says now:
+      // a card can wait a long time, and the folder can be switched meanwhile.
+      final root = entry.knowledgeRoot ?? await kb.getRoot();
       if (root == null) throw KbPathException('The knowledge base folder is not configured.');
+      // Re-verify against disk (standard 08 §3.6). The card previews a diff
+      // from oldContent; if the file no longer holds that — a hand edit while
+      // the card waited, or another card for the same file applied first —
+      // writing would silently discard changes nobody reviewed. A create
+      // (oldContent == null) conflicts with a file that appeared meanwhile.
+      if (kb.readFullFile(root, relPath) != entry.oldContent) {
+        throw KbEditConflictException(relPath);
+      }
       // Before the write, not after: the point of the copy is the content that
-      // is about to stop existing. A create has nothing to copy, and
-      // [KnowledgeBaseService.backupFile] says so by doing nothing.
-      if (session.writePolicy.backupBeforeOverwrite) {
+      // is about to stop existing (standard 08 §3.2 — a failed backup fails the
+      // write). Forced when the write skips confirmation: nobody read it before
+      // it landed. Only a file's first write of the session is backed up, so
+      // the .bak holds the user's own version rather than being rewritten to
+      // the agent's previous draft on every edit. A create has nothing to copy.
+      final policy = session.writePolicy;
+      final backupKey = '$root|$relPath';
+      if ((policy.backupBeforeOverwrite || !policy.confirmEachWrite) &&
+          entry.oldContent != null &&
+          !session._backedUpPaths.contains(backupKey)) {
         await kb.backupFile(root, relPath);
+        session._backedUpPaths.add(backupKey);
       }
       await kb.writeFile(root, relPath, entry.newContent!);
       // The file changed, so every read of it recorded so far describes content
@@ -3198,10 +3645,11 @@ class PromptOptimizerAgent {
       // invalidating single pages would be meaningless. Marking the point in
       // history rather than dropping a flag keeps the re-read that follows
       // able to satisfy the read-before-write rail again.
-      session.knowledgeStaleAt[relPath] = session.history.length;
+      session.knowledgeStaleAt[relPath] =
+          session.history.isEmpty ? null : session.history.last;
       session._resolveKbEdit(editId, KbEditState.applied);
-    } catch (_) {
-      session._resolveKbEdit(editId, KbEditState.failed);
+    } catch (e) {
+      session._resolveKbEdit(editId, KbEditState.failed, error: '$e');
       rethrow;
     }
   }
@@ -3238,6 +3686,106 @@ class PromptOptimizerAgent {
   /// the next iteration of the same turn.
   @visibleForTesting
   static bool canStageAskUser(List<LLMToolCall> batch) => batch.length == 1;
+
+  /// Content of the stub result [repairToolCallPairing] gives a call whose
+  /// real result is missing.
+  static const String notRunStubMessage =
+      '[not run] No result was recorded for this tool call — treat it as not executed.';
+
+  /// Makes [history] pairable again (standard 07 §3.2, 10 §4.3).
+  ///
+  /// Returns a new list; retained messages are the same objects. Rules:
+  ///  * a call with no result in the contiguous tool run after its assistant
+  ///    message gets a `[not run]` stub at the end of that run, so the batch
+  ///    stays one block;
+  ///  * a tool message outside such a run, answering no call of its batch, or
+  ///    answering one twice, is dropped;
+  ///  * calls with an empty id cannot be answered and are stripped; an
+  ///    assistant message left with neither text nor calls is dropped.
+  ///
+  /// The one call left dangling on purpose is a valid `ask_user` at the very
+  /// end of the history — the suspended question of invariant 8, which
+  /// [pendingAskUser] derives and the next turn pairs.
+  static List<LLMMessage> repairToolCallPairing(List<LLMMessage> history) =>
+      [for (final e in _repairPairingWithOrigins(history)) e.message];
+
+  /// [repairToolCallPairing], with each output's index in the input (null for
+  /// a stub) so a caller can rebase indices it holds.
+  static List<({LLMMessage message, int? origin})> _repairPairingWithOrigins(
+      List<LLMMessage> history) {
+    final out = <({LLMMessage message, int? origin})>[];
+    int i = 0;
+    while (i < history.length) {
+      final m = history[i];
+      if (m.role == LLMRole.tool) {
+        // Every legitimate result is consumed by its batch below.
+        i++;
+        continue;
+      }
+      if (m.role != LLMRole.assistant) {
+        out.add((message: m, origin: i));
+        i++;
+        continue;
+      }
+
+      final seen = <String>{};
+      final calls = [
+        for (final c in m.toolCalls)
+          if (c.id.isNotEmpty && seen.add(c.id)) c,
+      ];
+      if (calls.isEmpty && m.content.trim().isEmpty) {
+        // Nothing to send. Its results, if any, fall through as orphans.
+        i++;
+        continue;
+      }
+      final assistant = calls.length == m.toolCalls.length
+          ? m
+          : LLMMessage(
+              role: LLMRole.assistant,
+              content: m.content,
+              reasoningContent: m.reasoningContent,
+              reasoningFieldName: m.reasoningFieldName,
+              reasoningSignature: m.reasoningSignature,
+              rawThinkingBlocks: m.rawThinkingBlocks,
+              rawThinkingModelId: m.rawThinkingModelId,
+              // The verbatim copy names the stripped calls.
+              rawContentBlocks: null,
+              toolCalls: calls,
+            );
+      out.add((message: assistant, origin: i));
+      i++;
+
+      final ids = {for (final c in calls) c.id};
+      final answered = <String>{};
+      while (i < history.length && history[i].role == LLMRole.tool) {
+        final t = history[i];
+        final id = t.toolCallId;
+        if (id != null && ids.contains(id) && answered.add(id)) {
+          out.add((message: t, origin: i));
+        }
+        i++;
+      }
+      final atEnd = i >= history.length;
+      for (final c in calls) {
+        if (answered.contains(c.id)) continue;
+        if (atEnd &&
+            c.name == 'ask_user' &&
+            AskUserQuestion.tryParse(c.arguments['questions']) != null) {
+          continue; // The suspended question — see the dartdoc above.
+        }
+        out.add((
+          message: LLMMessage(
+            role: LLMRole.tool,
+            content: jsonEncode({'status': 'not_run', 'message': notRunStubMessage}),
+            toolCallId: c.id,
+            toolName: c.name,
+          ),
+          origin: null,
+        ));
+      }
+    }
+    return out;
+  }
 
   /// Pairs the dangling `ask_user` call [callId] with [result].
   ///
@@ -3292,13 +3840,16 @@ class PromptOptimizerAgent {
         rawThinkingModelId: owning.rawThinkingModelId,
         // Stripping a call rewrites the tool_use list, so the verbatim copy
         // can no longer stand for this turn — it is dropped and the turn is
-        // rebuilt from the fields, like any pre-capture history.
+        // rebuilt from the fields, like any pre-capture history. ③'s verbatim
+        // parts carry the removed call too, and go for the same reason.
         rawContentBlocks: null,
+        rawModelParts: null,
         toolCalls: [
           for (final c in owning.toolCalls)
             if (c.id != callId) c,
         ],
       );
+      session._carryStaleMarker(owning, history[owner]);
       if (fallback != null) {
         history.add(LLMMessage(role: LLMRole.user, content: fallback));
       }

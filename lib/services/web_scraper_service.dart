@@ -368,6 +368,9 @@ Call select_images with the id numbers of the images that match the requirement.
         reasoningSignature: response.reasoningSignature,
         rawThinkingBlocks: response.rawThinkingBlocks,
         rawThinkingModelId: response.rawThinkingModelId,
+        // ③'s verbatim parts (thought signatures included) ride the same
+        // tool-calling turn.
+        rawModelParts: response.rawModelParts,
         toolCalls: response.toolCalls,
       ));
 

@@ -48,6 +48,9 @@ void main() {
     test('rewrites WxH into DashScope spelling', () {
       expect(dashscopeSize({'imageSize': '1024x1024'}), '1024*1024');
       expect(dashscopeSize({'imageSize': '1536x1024'}), '1536*1024');
+      // Every spelling the shared parser reads, uppercase X included.
+      expect(dashscopeSize({'imageSize': '1024X1536'}), '1024*1536');
+      expect(dashscopeSize({'imageSize': '1024 × 768'}), '1024*768');
     });
 
     test('passes the wan presets through unchanged, upper-cased', () {

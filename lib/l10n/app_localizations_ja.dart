@@ -1845,6 +1845,10 @@ class AppLocalizationsJa extends AppLocalizations {
       '回答中にプロバイダー自身がウェブ検索を実行します。追加トークンとして課金され、代理でページを取得します。';
 
   @override
+  String get enableWebSearchTracelessHint =>
+      'このプロトコルでは検索の痕跡が残りません。出典や引用は返されず、実際に検索が行われたかも確認できません。';
+
+  @override
   String get noProviderMatch => '一致するプロバイダーがありません';
 
   @override
@@ -4225,6 +4229,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optCompactedNotice => 'コンテキスト節約のため、以前のメッセージは要約に圧縮されました。';
+
+  @override
+  String get optRoundLimitNotice =>
+      'アシスタントはこのメッセージのステップ上限に達し、最終的な回答を出す前に停止しました。続けるには「続けて」などのメッセージを送ってください。';
 
   @override
   String get optKbDistillRequested => 'リクエスト済み：今回の調整で得た知見をナレッジベースへ整理します。';

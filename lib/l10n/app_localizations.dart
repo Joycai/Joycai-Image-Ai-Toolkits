@@ -3317,6 +3317,12 @@ abstract class AppLocalizations {
   /// **'Let the provider run its own web searches mid-answer. Billed as extra tokens and fetches pages on your behalf.'**
   String get enableWebSearchDesc;
 
+  /// No description provided for @enableWebSearchTracelessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On this protocol the search is silent: no sources or citations come back, and nothing shows whether a search actually ran.'**
+  String get enableWebSearchTracelessHint;
+
   /// No description provided for @noProviderMatch.
   ///
   /// In en, this message translates to:
@@ -7629,6 +7635,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Earlier messages were compacted into a summary to save context.'**
   String get optCompactedNotice;
+
+  /// No description provided for @optRoundLimitNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant hit its step limit for this message before giving a final answer. Send a follow-up such as “continue” to let it carry on.'**
+  String get optRoundLimitNotice;
 
   /// No description provided for @optKbDistillRequested.
   ///
