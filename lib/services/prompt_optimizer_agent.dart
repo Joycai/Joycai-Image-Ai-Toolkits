@@ -536,6 +536,11 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// starts over, and its first write backs up again.
   final Set<String> _backedUpPaths = {};
 
+  /// Edit ids whose outcome the model has already been told — by an
+  /// outcomes record, or by the tool result of an edit applied without
+  /// confirmation. In memory only; see invariant 11.
+  final Set<String> _reportedKbEditIds = {};
+
   /// Stages a proposed knowledge-file edit for the user to approve. Nothing
   /// touches disk here — same contract as [_stagePrompt].
   String _stageKbEdit({
@@ -782,8 +787,10 @@ class PromptOptimizerSession extends ChangeNotifier {
                 if (!File(path).existsSync()) anyImageMissing = true;
               }
             }
-          } else if (msg.content.startsWith(PromptOptimizerAgent.summaryMarker)) {
-            // Compaction summaries are context, not chat lines.
+          } else if (msg.content.startsWith(PromptOptimizerAgent.summaryMarker) ||
+              msg.content.startsWith(PromptOptimizerAgent.kbEditOutcomesMarker)) {
+            // Compaction summaries and edit-outcome records are context for
+            // the model, not chat lines.
           } else if (msg.content.startsWith(PromptOptimizerAgent.resultFeedbackMarker)) {
             final parsed = PromptOptimizerAgent.tryParseResultFeedback(msg.content);
             // A header that fails to parse degrades to a plain user bubble —
@@ -1008,6 +1015,10 @@ class PromptOptimizerAgent {
   /// open a turn the user initiated, so they count toward the protected
   /// window and boundary math like any typed message.
   static const String kbDistillMarker = '[kb_distill]';
+
+  /// Marker of the synthetic record of staged-edit outcomes that opens a turn
+  /// (invariant 11). Like [viewResultMarker] it is not a real user turn.
+  static const String kbEditOutcomesMarker = '[kb_edit_outcomes]';
 
   /// Transcript-notice tokens, mapped to localized strings at render time.
   static const String compactedNoticeToken = '__compacted__';
@@ -1728,6 +1739,13 @@ class PromptOptimizerAgent {
       if (session._repairToolCallPairing()) {
         onLog?.call('Repaired tool-call pairing in the conversation history.');
       }
+      // What the user did with the model's staged edits since it last spoke
+      // (invariant 11). After the pairing work, so it never lands between a
+      // call and its result; before persistence, so it is saved with the turn.
+      final outcomes = _drainKbEditOutcomes(session);
+      if (outcomes != null) {
+        session.history.add(LLMMessage(role: LLMRole.user, content: outcomes));
+      }
       // Persist the pending user turn, then compact if the history has grown
       // past the context budget. Persistence failures never block the turn.
       try {
@@ -2168,7 +2186,8 @@ class PromptOptimizerAgent {
   static bool _isRealUserTurn(LLMMessage m) =>
       m.role == LLMRole.user &&
       !m.content.startsWith(viewResultMarker) &&
-      !m.content.startsWith(summaryMarker);
+      !m.content.startsWith(summaryMarker) &&
+      !m.content.startsWith(kbEditOutcomesMarker);
 
   /// Whether [m] is the result [resolvePendingAskUserAsFreeText] pairs a
   /// question with: an `ask_user` result with status ok and no structured
@@ -2262,6 +2281,34 @@ class PromptOptimizerAgent {
         for (final e in session.transcript)
           if (e.kind == OptimizerEntryKind.kbEdit && e.editState == KbEditState.pending) e,
       ];
+
+  /// The outcomes record that opens a turn (invariant 11, standard 08 §3.6):
+  /// every staged edit decided since the last report, or null when there is
+  /// nothing new. Marks each listed edit reported, so it is said once.
+  ///
+  /// Facts only, no instruction — it is persisted, and a persisted "do X"
+  /// would keep steering every later turn (11 §21).
+  static String? _drainKbEditOutcomes(PromptOptimizerSession session) {
+    final lines = <String>[];
+    for (final e in session.transcript) {
+      if (e.kind != OptimizerEntryKind.kbEdit || e.editId == null) continue;
+      final state = e.editState;
+      if (state == null || state == KbEditState.pending) continue;
+      if (!session._reportedKbEditIds.add(e.editId!)) continue;
+      final path = e.targetPath ?? e.text;
+      final error = e.editError;
+      lines.add(switch (state) {
+        KbEditState.applied => '- $path: applied by the user — it is now on disk.',
+        KbEditState.rejected => '- $path: rejected by the user — it was not written.',
+        KbEditState.failed =>
+          '- $path: failed to apply — it was not written${error == null ? '' : ' ($error)'}.',
+        KbEditState.pending => '',
+      });
+    }
+    if (lines.isEmpty) return null;
+    return '$kbEditOutcomesMarker Since your last turn, the user decided on '
+        'these staged knowledge-base edits:\n${lines.join('\n')}';
+  }
 
   /// How many tool steps the turn now running has taken.
   ///
@@ -3308,6 +3355,9 @@ class PromptOptimizerAgent {
       // edit is still reviewable after the fact, still shows its diff, and
       // still says what happened to it.
       if (!session.writePolicy.confirmEachWrite) {
+        // The tool result below (or the error the outer catch returns) already
+        // tells the model what happened — no outcomes record for this one.
+        session._reportedKbEditIds.add(editId);
         await applyStagedKbEdit(session: session, editId: editId);
         return {
           'status': 'ok',

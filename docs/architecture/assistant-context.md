@@ -214,6 +214,20 @@ nothing throws, the numbers just quietly stop meaning what they claim.
     history. The repair is deterministic, so the stored rows keep their old
     shape and every restore derives the same list; `persistedCount` is rebased
     to the first message that was never persisted.
+11. **Edit outcomes reach the model as a record, once.** Staged
+    `write_knowledge_file` cards do not block the turn, so the model cannot see
+    what the user did with them. At the start of each turn `runTurn` appends one
+    synthetic user message marked `[kb_edit_outcomes]` listing the edits decided
+    since the last report — applied, rejected, or failed and why. It is
+    persisted, so later requests keep the same prefix, and it states facts
+    rather than giving instructions, so it cannot harden into a standing
+    directive (standard 08 §3.6, 11 §21). It is not a real user turn
+    (`_isRealUserTurn` excludes the marker): boundaries, titles and the distill
+    escalation ignore it, and restore does not render it as a chat line. Edits
+    applied with confirmation off are marked reported at once — their tool
+    result already said what happened. Which edits were reported is tracked in
+    memory; a restored session's cards are inert chips, so nothing is left to
+    report after a restart.
 
 ## Accepted limits
 
