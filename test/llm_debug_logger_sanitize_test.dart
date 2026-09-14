@@ -49,4 +49,28 @@ void main() {
     final prose = 'The model answered at length, with spaces. ' * 200;
     expect(LLMDebugLogger.sanitizeLine(prose), prose);
   });
+
+  test('a multi-megabyte streamed image line is collapsed, not a stack overflow', () {
+    // One Gemini image stream line: a 4 MB picture is ~5.6 million base64
+    // characters. The RegExp this used to be threw StackOverflowError on it,
+    // which escaped the SSE loop and failed a generation that had succeeded.
+    final payload = b64(5600000);
+    final line = 'data: {"candidates":[{"content":{"parts":[{"inlineData":'
+        '{"mimeType":"image/png","data":"$payload"}}]}}]}';
+    final out = LLMDebugLogger.sanitizeLine(line);
+    expect(out, contains('"data":"<base64 5600000 chars>"'));
+    expect(out.length, lessThan(200));
+  });
+
+  test('every payload in a line is collapsed, a short data: URL is kept', () {
+    final short = 'data:image/png;base64,${b64(40)}';
+    final a = b64(threshold);
+    final b = b64(threshold + 7);
+    final line = '[$short] "$a=" x data:image/jpeg;base64,$b end';
+    expect(
+      LLMDebugLogger.sanitizeLine(line),
+      '[$short] "<base64 ${threshold + 1} chars>" x '
+      '<base64 ${'data:image/jpeg;base64,'.length + threshold + 7} chars> end',
+    );
+  });
 }
