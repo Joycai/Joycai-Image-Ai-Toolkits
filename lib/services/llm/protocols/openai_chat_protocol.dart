@@ -1552,6 +1552,12 @@ class OpenAIChatProtocol implements ChatProtocol {
       payload["stream_options"] = {"include_usage": true};
     }
 
+    // Only when a caller explicitly capped the output — the channel probe
+    // asks for one token so a connection test does not pay for a generation.
+    // Absent otherwise: ordinary requests stay byte-identical.
+    final maxTokens = requestedMaxTokens(options);
+    if (maxTokens != null) payload["max_tokens"] = maxTokens;
+
     // Only Gemini-served models (e.g. via New API or Google's OpenAI-compat
     // layer) understand these extensions. Native OpenAI must never receive
     // them. The flag comes from the model descriptor (layer 3).

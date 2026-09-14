@@ -536,6 +536,11 @@ Map<String, dynamic> prepareGooglePayload(
     }
     if (imageConfig.isNotEmpty) generationConfig['imageConfig'] = imageConfig;
   }
+  // Only when a caller explicitly capped the output — the channel probe asks
+  // for one token so a connection test does not pay for a generation.
+  // Absent otherwise, so ordinary requests stay byte-identical.
+  final maxTokens = requestedMaxTokens(options);
+  if (maxTokens != null) generationConfig['maxOutputTokens'] = maxTokens;
 
   return {
     // camelCase for the same reason as `inlineData` above: a relay that reads
