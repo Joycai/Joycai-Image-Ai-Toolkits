@@ -364,7 +364,10 @@ class LLMService {
       if (chunk.reasoningSignature != null) {
         reasoningSignature = chunk.reasoningSignature;
       }
-      if (chunk.metadata != null) finalMetadata = chunk.metadata;
+      // Merged, not replaced: ③ can send a trailing usage-only chunk after
+      // the one that carried `finishReason`, and replacing lost the finish —
+      // a `content_filter` among them, which then passed as success.
+      finalMetadata = mergeChunkMetadata(finalMetadata, chunk.metadata);
     }
 
     if (toolBearing && accumulatedText.isNotEmpty) {
@@ -401,6 +404,35 @@ class LLMService {
     );
 
     return (response: response, cancelled: cancelledMidStream);
+  }
+
+  /// [previous] metadata with [next]'s folded in, as one stream's chunks
+  /// arrive.
+  ///
+  /// Later non-null values win — usage counters grow as a stream goes on, and
+  /// the last report is the complete one. Two things are never lost to a
+  /// later chunk: a key the later chunk simply does not carry (a ③ usage-only
+  /// chunk has no `finishReason`), and a `content_filter` finish once seen —
+  /// interception is sticky, and a later `STOP` must not turn blocked output
+  /// back into a success (errors 06 §2.3).
+  @visibleForTesting
+  static Map<String, dynamic>? mergeChunkMetadata(
+    Map<String, dynamic>? previous,
+    Map<String, dynamic>? next,
+  ) {
+    if (next == null) return previous;
+    if (previous == null) return Map<String, dynamic>.of(next);
+    final merged = Map<String, dynamic>.of(previous);
+    final blocked = previous['finish_reason'] == contentFilterFinishReason;
+    next.forEach((key, value) {
+      if (value == null) return;
+      if (blocked &&
+          (key == 'finish_reason' || key == 'finish_reason_raw')) {
+        return;
+      }
+      merged[key] = value;
+    });
+    return merged;
   }
 
   /// How long the *first* chunk may take.
@@ -698,7 +730,7 @@ class LLMService {
               contextId: contextId,
             );
           }
-          if (chunk.metadata != null) finalMetadata = chunk.metadata;
+          finalMetadata = mergeChunkMetadata(finalMetadata, chunk.metadata);
           deliveredAnyChunk = true;
           yield chunk;
         }
