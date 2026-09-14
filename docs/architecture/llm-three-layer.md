@@ -21,7 +21,7 @@
 
 | 层 | 回答的问题 | 代码 |
 |----|-----------|------|
-| **1 Protocol** | 线上格式长什么样：endpoint 形状、请求体、响应/流解析 | `protocols/` — openai_chat · openai_images · openai_videos · xai_images · xai_videos · gemini_chat · gemini_imagen · gemini_veo · anthropic_chat · midjourney · dashscope_chat · dashscope_images · dashscope_images_async · dashscope_video |
+| **1 Protocol** | 线上格式长什么样：endpoint 形状、请求体、响应/流解析 | `protocols/` — openai_chat · openai_responses · openai_images · openai_videos · xai_images · xai_videos · gemini_chat · gemini_imagen · gemini_veo · anthropic_chat · midjourney · dashscope_chat · dashscope_images · dashscope_images_async · dashscope_video |
 | **2 Vendor** | 谁在提供这个格式：认证方式、每个 surface 的协议菜单 | `vendors/vendor_profile.dart` + `vendors/vendors.dart`（id 即 `llm_channels.type`） |
 | **3 Model** | 这个模型是什么：family 分类、能力、参数表 | `model_descriptor.dart`（包装 `model_family.dart` + `model_capabilities.dart`） |
 
@@ -600,6 +600,77 @@ dispatcher 的 anthropic 分支从"整族抛 UnsupportedError"改成先看 vendo
 所以 `minimax_payload.dart` 里三个 base 推导函数（幂等、只看 path）是这家能"一
 条渠道一把 key 跑通四条面"的全部机关。两条私有协议自己推导 base，不进
 `protocolBases` —— 那张表只服务*通用*协议在替代面上的复用。
+
+## ② OpenAI Responses 的不变量（2026-09-14）
+
+协议事实见 [`docs/api/responses.md`](../api/responses.md)；实现在
+`protocols/openai_responses_protocol.dart`。`WireProtocol.openaiResponses`
+（`openai-responses`）是 **`openai` 家族的一个 chat 面**，不是新家族：base、
+bearer、`/models` 与 ① 完全相同，所以没有 `protocolBases` 项、discovery 不变
+（standard 01 §3.1 的判据是 auth/发现形状，这两样没变）。它出现在
+`openAIRest` / `newApiOpenAI` / `xaiApi` 的 `chatMenu` 里，**排在 ① 之后**——
+① 仍是 auto，存量渠道一个字节都不动；xAI 官方推荐 Responses，把它设为 xAI 默认
+是单独的决定，本轮没做。菜单 >1 项，模型编辑器的点单下拉因此在这三家的 chat 模型
+上出现。以下几条都**不报错**，改动时逐条对照：
+
+1. **`instructions` 恒发，空串也发。** 全部 system 消息 hoist 并以空行连接。
+   New API 中转在它缺失时注入几千 token 的 Codex 系统提示，只在账单上可见
+   （pitfalls 11 §62）。与 ① 不同，这里不补默认句——字段在就够了。
+2. **`store: false` 恒发。** 应用自己存历史；零保留组织不发会被拒；也是端点给
+   reasoning 条目附 `encrypted_content` 的前提。
+3. **函数工具扁平 + 显式 `strict: false`。** 省略时官方端点自动升 strict，把带
+   可选字段的 schema 改写成"全必填否则 400"（pitfalls 11 §64）。`tool_choice`
+   只随函数工具发，命名形态 `{type:"function", name}`，没有 ① 的 `function` 包装。
+4. **回传载体是整组 output 条目，原样、按模型限定、替代而非并列。**
+   `LLMMessage.rawResponseItems`（与 `rawModelParts` 同一套：只挂在带工具调用的
+   轮上、随会话持久化、`rawThinkingModelId` 记产出者、**要求匹配**才原样回放，
+   null 也不回放）。流式由 `ResponsesStreamAssembler` 从 `output_item.done` 直接
+   收集 reasoning / function_call / message（服务端工具条目不收），同步路径把
+   `output[]` 逐条喂给同一个 assembler——两条路不可能分叉。换了模型就退回裸
+   `function_call` + assistant 文本；**原样条目与裸调用绝不同时发**（call_id
+   重复）。只有当每个组装出的调用都能在收集到的条目里找到同 `call_id` 的
+   `function_call` 时才发出载体：只靠 delta 拼出的调用没有条目，只回放推理不回放
+   调用会破坏配对。转发点与 `rawModelParts` 相同（`LLMService._streamOnce`、
+   `mergeTurnParts`、助手两处写入、子代理、AI 重命名、网页抓取）；助手的
+   `write_knowledge_file` 省略、`ask_user` 剥调用、配对修复三处改写**丢掉**它。
+   回传缺失不报错（官方与 xAI 实测四种回传方式都 200 且答对），只能靠调试日志
+   对照（protocol 02 §7.3）。
+5. **流读取。** 只读 `data:` 行（`event:` 行冗余，`[DONE]` 容忍）；文本只读
+   `delta`（旁边的 `obfuscation` 是填充）；函数调用按 **`output_index`** 分组
+   （部分中继缺 `item_id`），`function_call_arguments.done` / `output_item.done`
+   的整串覆盖 delta 累积；没有流式文本/摘要的条目在 `output_item.done` 时补发。
+   终止：`completed` → `stop`（有调用时 `tool_calls`）；`incomplete` 的
+   `max_output_tokens` → `length`，`content_filter` → `content_filter` 由
+   `LLMService` 统一抛（协议不自己抛，与其它三条 wire 一致）；`response.failed`
+   / `error` 事件 / 无 `type` 的裸 `{error}` → `LLMApiException`。**没有终止事件**
+   就结束：纯文本按 ① 的规则标 `length` + `stream_incomplete`（usage 缺失 =
+   未报告）；有调用则抛——无法证明这一批调用是完整的。一个事件都没有、或完成了却
+   什么内容都没有 → 抛。
+6. **usage 以 ① 的拼法发布**：`input_tokens` → `prompt_tokens`、
+   `output_tokens` → `completion_tokens`、`input_tokens_details.cached_tokens`
+   → `prompt_tokens_details.cached_tokens`（输入的子集，与 ① 同口径），
+   `_recordUsage` 无需改动。
+7. **回显比对（errors 06 §4.1）。** 终止响应回显 `reasoning.effort`；与本请求
+   实际发出的值不同时写 `metadata['wire_rewrites'] = [{field, sent, echoed}]`
+   并打一条 WARN，调试日志的 `Summary:` 行照录。只报告，不重试、不抛；没发就不比，
+   没有回显也不报（同一档位背后可能是多个上游）。本路径不发 `temperature`，所以
+   只比 effort。
+8. **推理挡位**：六档（默认不发；关闭 `{effort:"none"}`；其余带
+   `summary:"auto"`——不带就没有摘要事件，思考付费却看不见）。**不按型号裁剪**：
+   Grok 4.5/4.6 拒 `none`、全系 Grok 与 GPT-5.4 拒 `max`，由端点 400 说话；编辑器
+   在该面上多一行提示（`reasoningEffortResponsesHint`，面由
+   `LLMDispatcher.resolvedChatFace` 判定，与挡位同一套解析）。
+9. **`include:["reasoning.encrypted_content"]` 是 Layer 2 声明**
+   （`VendorProfile.responsesIncludeEncryptedReasoning`，只有 xAI 为真）：xAI 不带
+   就没有加密推理，回传照样 200 只是推理不延续。官方端点不带是否丢失未经官方 key
+   验证，默认不发。协议里没有任何 vendor 分支。
+10. `max_output_tokens` 只在调用方显式封顶时发（渠道探测）；有中转无视它，所以
+    "没报截断"不等于"没超长"（pitfalls 11 §65）。
+
+没做的（记在这里免得被当成遗漏）：`text.format` / `text.verbosity`（结构化输出
+04 §5——本仓没有调用方）、Responses 内置工具（`web_search` 等，tools 05 §5；
+编辑器的联网开关在该面上返回 unsupported）、`previous_response_id`（有状态模式
+在第三方兼容层不存在）。测试：`test/openai_responses_test.dart`。
 
 ## 遗留与已知取舍
 
