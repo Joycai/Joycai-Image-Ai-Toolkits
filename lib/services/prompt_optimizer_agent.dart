@@ -333,11 +333,15 @@ class PromptOptimizerSession extends ChangeNotifier {
       // (its rule 4: contradictions) and was answered in the composer loses
       // its write tools on resume. It is appended right after the tool
       // result that pairs the dangling call (resolvePendingAskUserAsFreeText),
-      // so it is the one real user turn preceded by a tool message; a fresh
-      // request always follows the previous turn's assistant message. The
-      // card path already survives — it appends only a tool message. Skip
-      // and keep walking back to the request that opened the turn.
-      if (i > 0 && history[i - 1].role == LLMRole.tool) continue;
+      // so skip it and keep walking back to the request that opened the turn.
+      //
+      // "Preceded by a tool message" is NOT the test: a mid-batch stop, the
+      // round limit and a request that failed after a tool round all leave
+      // the history ending on a tool result too, and the user's next ordinary
+      // message would then inherit the distill turn's write access (standard
+      // 08 §3.5). Only that specific free-text reply counts. The card path
+      // needs no exception — it appends a tool message, never a user turn.
+      if (i > 0 && PromptOptimizerAgent._isFreeTextAskUserReply(history[i - 1])) continue;
       return m.content.startsWith(PromptOptimizerAgent.kbDistillMarker);
     }
     return false;
@@ -1939,6 +1943,23 @@ class PromptOptimizerAgent {
       m.role == LLMRole.user &&
       !m.content.startsWith(viewResultMarker) &&
       !m.content.startsWith(summaryMarker);
+
+  /// Whether [m] is the result [resolvePendingAskUserAsFreeText] pairs a
+  /// question with: an `ask_user` result with status ok and no structured
+  /// answers. The user message right after it continues the asking turn.
+  ///
+  /// A structured answer (`answers` present) is excluded on purpose — that
+  /// path resumes with no user message at all, so a user turn after it is a
+  /// new request.
+  static bool _isFreeTextAskUserReply(LLMMessage m) {
+    if (m.role != LLMRole.tool || m.toolName != 'ask_user') return false;
+    try {
+      final decoded = jsonDecode(m.content);
+      return decoded is Map && decoded['status'] == 'ok' && decoded['answers'] == null;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// Index of the user message that opens the protected "recent" window
   /// (the last [_keepRecentTurns] real user turns). 0 = protect everything.
