@@ -388,6 +388,11 @@ class ResponsesStreamAssembler {
         _items[index] = _copy(item);
       case 'message':
         _items[index] = _copy(item);
+        // A message the server itself marked completed is the model's answer
+        // even when its text is empty: after a tool delivered the result
+        // (submit_prompt), GPT-5.x ends the turn with an empty `final_answer`.
+        // The broken 200 the no-content check exists for carries no item.
+        if (item['status'] == 'completed') _sawOutput = true;
         final refusal = _refusalText(item);
         if (refusal != null) {
           _refused = true;
