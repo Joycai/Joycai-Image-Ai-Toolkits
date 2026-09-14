@@ -41,16 +41,19 @@ export type ReasoningEffort = "default" | "off" | "low" | "medium" | "high" | "m
 - ③ 发 level 时**强制搭配 `includeThoughts: true`**——思考横竖在跑、横竖计费，这个开关只决定你能不能看见；只调深度不开显示等于"付钱买看不见的思考"。
 - ③ 的旧字段 `thinkingBudget` 与新字段 `thinkingLevel` 并存于同一对象，靠"用错模型报错"区分。规则：**只发一代字段**，选目标支持范围对应的那代（参考实现支持 Gemini 3 起，只发 level）。
 - ④ 的 `output_config.effort` 管的是**整个回复**（正文 + 工具调用 + 思考），不只思考深度。UI 上仍然只放一个拨盘，变的是标签——因为没有任何端点把"回复深度"与"思考深度"作为两个独立输入暴露，两个拨盘 = 两个控件写一个值。
-- 私有方言开关（如 DeepSeek 的 `thinking:{type}`）**故意不发**——OpenAI 官方端点对未知顶层字段直接拒绝，为一家的方言破坏官方路径不值。
+- 私有方言开关（DeepSeek 的 `thinking:{type}`、千问的 `enable_thinking`）**默认不发**——OpenAI 官方端点对未知顶层字段直接拒绝，为一家的方言破坏官方路径不值。唯一的例外是作者在模型上**声明了 `switch` 方言**（见 §3）：那时该字段就是这个端点的思考词汇，改发它并停发 `reasoning_effort`。未声明方言的默认路径必须一个字节不变。
 
 ## 3. ThinkingDialect：代次差异由作者声明，不猜
 
-④ 族（形状上也覆盖 ③ 2.5 代）的思考参数**换代改形**，且**代次无法从模型 id 恢复**——中继上模型 id 是作者输入的自由文本（如 `特价kiro | claude-opus-4-6-thinking`）。因此方言做成 **L3 模型字段由作者声明**，不做探测、不做猜测启发式：
+思考参数**换代改形、换厂改拼**，且**代次无法从模型 id 恢复**——中继上模型 id 是作者输入的自由文本（如 `特价kiro | claude-opus-4-6-thinking`）。因此方言做成 **L3 模型字段由作者声明**，不做探测、不做猜测启发式。
+
+关键的建模决定：**方言值是跨族的"参数形状"词汇，族决定拼法**。`extended` 同时描述 Claude ≤4.5 与 Gemini 2.5；`switch` 同时描述 MiniMax-M3 的 ④ 族端点与千问 DashScope 的 ① 族端点——写侧函数先按族分派、再看方言，同一个值在不同族拼出不同字段。这让"支持下一家的开关型端点"不需要新增枚举值、不动 parse 白名单、不动存储列：
 
 ```ts
 // 参考实现：simple-ai-writer src/lib/ai/reasoning.ts
 export type ThinkingDialect = "adaptive" | "extended" | "switch" | "none";
 
+// ④ 族拼法（anthropic 适配器调用）：
 export function thinkingBody(dialect, budgetTokens, effort?) {
   switch (dialect) {
     case "adaptive": return { thinking: { type: "adaptive", display: "summarized" } };
@@ -59,16 +62,23 @@ export function thinkingBody(dialect, budgetTokens, effort?) {
     case "none":     return undefined;
   }
 }
+
+// ① 族拼法（reasoningBody 的 openai 分支）：
+//   dialect === "switch" → { enable_thinking: effort !== "off" }，且不发 reasoning_effort
+//   其余（含未声明）    → { reasoning_effort: … }，与从前逐字节相同
 ```
 
 四种方言的语义：
 
 - **`adaptive`**（Claude 4.6+）：`display:"summarized"` **必须显式发**——当前代默认 `"omitted"`，返回的 thinking block 文本为空串但**照全额计费**（omitted 省的是延迟不是钱）。
 - **`extended`**（Claude ≤4.5；Gemini 2.5 同形）：固定 token 预算。预算钳制：`Math.max(1024, Math.min(16384, maxTokens/2))`——budget 必须 < max_tokens（二者共享一个上限，预算贴顶 = 正文没地方存在）。
-- **`switch`**（为 MiniMax-M3 的 `/anthropic/v1/messages` 这类精简兼容层建）：只有 `{type:"adaptive"|"disabled"}` 开关，无 `display`、无 `output_config`。声明此方言同时意味着"该端点没有深度拨盘"——`reasoningBody` 对它返回 undefined，effort 唯一的用途是 off→disabled。该端点思考**默认关**，不发开关就永不思考。另注意：schema 没有的字段（如 display）不发——兼容层"忽略未知键"与"400 未知键"一样常见，文档没写的不发。
+- **`switch`**（为"只有纯开关"的端点建，每族一种拼法）：声明此方言同时意味着"该端点没有深度拨盘"——effort 唯一的用途是区分「关」与「其余」（其余一律开）。两个真实样本：
+  - **④ 族拼法**（MiniMax-M3 的 `/anthropic/v1/messages`）：只有 `{type:"adaptive"|"disabled"}`，无 `display`、无 `output_config`——`reasoningBody` 对它返回 undefined。schema 没有的字段（如 display）不发——兼容层"忽略未知键"与"400 未知键"一样常见，文档没写的不发。
+  - **① 族拼法**（千问 DashScope compatible-mode）：顶层 `enable_thinking: bool`（官方 SDK 示例写在 `extra_body`，那只是 OpenAI SDK 的透传机制——落到 wire 就是 body 顶层字段）。声明后**停发 `reasoning_effort`**：千问文档写明它与 `thinking_budget` 互斥，且"声明 switch"本身就是"此端点没有深度档"的陈述。`thinking_budget` 刻意不接——没有 UI 载体的字段只会变成噪音（与 ③ 的 thinkingBudget 同一判断）。另一条联动：千问文档明载**思考开启时 `tool_choice` 只接受 `auto|none`**——① 族适配器在「本次真的发出 `enable_thinking: true`」时把 forced 降级为 auto（条件与砍档条件同形，见 04 篇 §4）。
+  - 两个样本共同的动机：这些端点上思考对相当一部分模型**默认关**（MiniMax-M3 全部；千问的 Qwen3-Max/Plus 等商业款——Qwen3.5+/3.7+ 则默认开），不发开关就永不思考。千问的附加事实：新款 Qwen3.7+ 直接接受标准 `reasoning_effort`（与 budget 互斥），**不必声明方言**；部分开源模型思考模式强制 `stream: true`。同一端点、两代模型、两套控制字段——"默认值要按模型代问"的又一实例。
 - **`none`**：不发任何 thinking 字段。
 
-**缺省方言的猜测规则**：anthropic 族猜 `adaptive`，其他族 `none`。乐观猜的理由：对支持范围（4.6+）全对；错的方式是旧模型 400 且报出字段名——比默认"不思考"让作者纳闷"我的推理模型怎么从不推理"好得多。原则：**乐观猜测只在"错的方式会响"时使用**。
+**缺省方言的猜测规则**：anthropic 族猜 `adaptive`，其他族 `none`。乐观猜的理由：对支持范围（4.6+）全对；错的方式是旧模型 400 且报出字段名——比默认"不思考"让作者纳闷"我的推理模型怎么从不推理"好得多。原则：**乐观猜测只在"错的方式会响"时使用**。注意 ① 族的缺省语义不是"不发"：openai 分支对未声明方言的模型照走标准 `reasoning_effort` 路径——所以 ① 族适配器把**作者声明的原值**传给写侧函数即可，不要先过缺省替换。
 
 ## 4. 思维链的流式暴露：三族三种读法，统一产出 `{reasoning}` chunk
 
@@ -95,6 +105,11 @@ export function thinkingBody(dialect, budgetTokens, effort?) {
 实现规则：
 
 1. **只在带 tool_calls 的 assistant 消息上携带**（三个载体一致）：这些端点把"调用工具前的思考"视为同一条回复的一部分（工具调用是模型暂停自己回复的构造，去等外部信息）；普通轮次端点自己会过滤，带上 = 白付 token。
+
+   ⚠️ **DeepSeek 的回传义务是分场景的，两个方向都会 400，别只记住一半**：
+   - **有工具调用的轮次**：该轮 assistant 消息的 `reasoning_content` **必须回传**——官方文档原文"若您的代码中未正确回传 `reasoning_content`，API 会返回 400 报错"。
+   - **没有工具调用的轮次**：**不要携带**——官方文档（另一处，历史更久）规定输入 messages 含 `reasoning_content` 直接 400（新版端点部分改为忽略，但不可依赖）。
+   本条"只在带 tool_calls 的消息上携带"的规则**同时满足两侧约束**，这正是它的由来。诊断线索：多轮工具调用第二轮 400 → 缺回传；400 body 出现 "reasoning_content is not allowed in the input messages" → 无工具轮误携带。两种症状同一条规则修复。
 2. **`_thinkingBlocks` 带 `modelId`**：thinking block 与产出它的模型绑定。允许会话中途换模型的应用，换了就整组丢弃（`thinkingBlocksFor` 比对 modelId）——别的模型不会拒绝，会**静默忽略且照 input 计费**，最坏的组合。
 3. **三个 `_` 字段并存是刻意选择，不要泛化承载**：④ 的载体是有序数组、成员可能只有不透明 payload、顺序受完整性校验，无法复用 `{field,text}`；泛化载体会把 modelId 特例变成所有人的负担。真正泛化的是**剥除**（`_` 前缀丢弃，见第 1 篇），不是承载。
 4. **`redacted_thinking` 块必须回传**：它只有不透明 `data` 字段。按 `type === "thinking"` 过滤内容块的代码会静默丢掉它——过滤条件应当是"是思考类块"而不是精确类型匹配。
@@ -110,6 +125,37 @@ export function thinkingBody(dialect, budgetTokens, effort?) {
 
 第三条规则：**切出来的 reasoning 只展示、不并入 `_reasoning` 回传**——它没有自己的 wire 字段名，编一个名字 = 往下一个请求塞没人认识的键。
 
+## 7. ② Responses 族：强度 / 取回 / 回传
+
+参考实现：simple-ai-writer `src/lib/ai/reasoning.ts`（思考类目 `responses-effort`）、`src/lib/ai/responses.ts`；事实见 `docs/api/responses.md` §2.1、§5、§10 与 `landscape.md` 第十一个样本。
+
+### 7.1 强度：嵌套对象，复用 ① 族词表
+
+| 本项目档位 | ② wire |
+| --- | --- |
+| default / 未设 | 一个字段都不发（各模型默认不同：5.4 `none`，5.5/5.6 `medium`，Grok 4.5/4.6 `high`——"未设"不能拼成其中任何一个） |
+| off | `reasoning: { effort: "none" }`（无 summary） |
+| low / medium / high / xhigh / max | `reasoning: { effort: <同名>, summary: "auto" }` |
+
+- 端点枚举是 `none/minimal/low/medium/high/xhigh/max` 七档，菜单取其中六档（去掉 `minimal`）。
+- **`summary: "auto"` 随非 off 档位一起发**：不发就没有任何摘要事件（与 Gemini 的 `includeThoughts` 同理——付了思考钱却看不见）；`auto` 回显 `detailed`。
+- **按模型的上限不同，但菜单不按型号裁剪**：GPT-5.4 到 `xhigh`（`max` → 400 且报文列出合法值）；5.5 / 5.6 收 `max`；Grok 4.5/4.6 **拒 `none`**、全系拒 `max`。越界 400 就是端点自己的声明——按 id 猜上限会在中转站别名、新型号上错；这与 ① 族各类目一致。代价要写进 UI 提示：Grok 4.5/4.6 上「关闭」芯片必然 400，而这两款本来就关不掉思考。
+- `reasoning.mode:"pro"`、`reasoning.context` 不接：前者两台中转站都回显 `standard`、无从确认生效；后者默认 `all_turns` 恰是回传想要的效果。
+
+### 7.2 取回
+
+`response.reasoning_summary_text.delta` 与 `response.reasoning_text.delta` 都产出 `{reasoning}` chunk（后者在 GPT-5.x 上从未出现，千问的 Responses 面文档里有）。模型没真推理（`reasoning_tokens: 0`）时即使发了 summary 也没有 reasoning 条目——同一请求可能一次有一次没有，不是 bug。
+
+### 7.3 回传
+
+载体是 `_responseItems: {modelId, items}`（第 2 篇 §7.3）：reasoning 条目连同 **`encrypted_content` 原样**放回 `input`，不解释内容。事实边界：
+
+- OpenAI（经中转站）：`store:false` 时 reasoning 条目自带 `encrypted_content`，不需要 `include`。
+- xAI：**必须**发 `include:["reasoning.encrypted_content"]` 才有；不带它回传第二轮照样 200——缺的只是推理延续。
+- 千问 Responses 面：没有 `encrypted_content`，回传的是明文 `summary`。
+
+所以载体设计成"不解释、整组带回"才能同时装下三家；回传缺失在此族**不报错**，与 ④ 族一样只能靠日志对照验证。官方端点不发 `include` 是否丢加密推理**未经官方 key 验证**，参考实现暂不发。
+
 ---
 
 ## 本篇检查清单
@@ -123,6 +169,8 @@ export function thinkingBody(dialect, budgetTokens, effort?) {
 - [ ] `adaptive`/`extended` 恒发 `display:"summarized"`；`switch` 方言不发 display。
 - [ ] `extended` 的 budget 钳在 `[1024, min(16384, maxTokens/2)]`。
 - [ ] 缺省方言的猜测方向满足"错的方式会响"。
+- [ ] ① 族的 `switch` 方言发 `enable_thinking` 且**停发** `reasoning_effort`（互斥）；未声明方言的请求与实现前逐字节相同。
+- [ ] 方言选择 UI 的选项**按族给**：给 ① 族显示 `adaptive`/`extended` 是"按了没反应的控件"（写侧对它们无映射）。
 - [ ] ① 族思维链读取走 `REASONING_CONTENT_FIELDS` 候选表；非字符串值忽略不强转；新拼写 = 表加一项。
 - [ ] 三个回传载体（`_reasoning` / `_geminiModelParts` / `_thinkingBlocks`）只挂在带 tool_calls 的 assistant 消息上。
 - [ ] `_thinkingBlocks` 带 modelId，换模型整组丢弃。
@@ -130,3 +178,6 @@ export function thinkingBody(dialect, budgetTokens, effort?) {
 - [ ] `<think>` 切分器只认响应开头、有 danglingPrefix 跨片处理、流末未闭合按 reasoning flush。
 - [ ] 切分出的 reasoning 不进回传载体。
 - [ ] 有一条验证手段确认 Anthropic 多轮工具会话中 thinking block 仍然出现（静默降级的唯一判据）。
+- [ ] ② 族：`reasoning:{effort, summary:"auto"}`，off → `{effort:"none"}`，default 不发；菜单不按型号裁剪，越界交给端点 400，UI 提示写明 Grok 4.5/4.6 关不掉思考。
+- [ ] ② 族 `reasoning_summary_text.delta` 与 `reasoning_text.delta` 都进 `{reasoning}`；无 reasoning 条目不当错误。
+- [ ] ② 族回传的 reasoning 条目（含 `encrypted_content`）原样整组带回，载体带 modelId。

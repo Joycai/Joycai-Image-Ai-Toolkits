@@ -20,6 +20,7 @@ ToolDefinition = { type: "function", function: { name, description, parameters }
 
 - **Gemini**：`tools: [{ functionDeclarations: tools.map(t => ({name, description, parameters})) }]`——同 schema，换容器。
 - **Anthropic**：`{ name, description, input_schema: t.function.parameters }`——**schema 字段唯一改名的一家**（`parameters` → `input_schema`）。
+- **② Responses**：扁平 `{ type:"function", name, description, parameters, strict: false }`——去掉 `function` 包装，且 **`strict:false` 必须显式**（省略即自动 strict，见第 2 篇 §7.1）。命名 tool_choice 同样扁平：`{type:"function", name}`。
 
 ## 2. toolChoice 翻译
 
@@ -55,7 +56,7 @@ ToolDefinition = { type: "function", function: { name, description, parameters }
 
 ## 5. Server tools：端点自己跑的工具
 
-参考实现：simple-ai-writer `src/lib/ai/serverTools.ts`（形状为 ④ 族的 `web_search`）。
+参考实现：simple-ai-writer `src/lib/ai/serverTools.ts`（④ 族的 `tools[]` 条目形状 + ① 族兼容层的 `enable_search` 形状，同一模块）。
 
 ### 三原则
 
@@ -63,7 +64,72 @@ ToolDefinition = { type: "function", function: { name, description, parameters }
 2. **无可执行**：runtime 的工具循环**绝不能把 `server_tool_use` 当成欠一个结果的调用**——给已完成的调用回 tool_result 是协议错误。
 3. **只读上报**：对上层只做执行日志展示（搜了什么、回了什么），没有任何回传义务。
 
-### wire 形状与 max_uses 刹车
+### 同一个 id，两种拼法——族决定 spelling
+
+app 层的 id 只有一个（如 `"web_search"`），因为它表达的意思只有一个：「这个模型
+获准每次回答自行上网」。**能力路由、子代理资格判定读的都是这个 id**，与哪条 wire
+无关。拼法交给按族的 shaping 函数，与 `jsonModeShaping` 同一收口思路：
+
+- **④ 族**：`tools[]` 里的版本化条目（`anthropicServerTools`，下节）。
+- **① 族兼容层（千问 DashScope）**：请求体**顶层** `enable_search: true`
+  （`openaiServerToolsBody`；SDK 文档写在 `extra_body`，落 wire 即顶层字段）。
+
+**官方/兼容的收窄方向在两族相反，而推理相同。** ④ 族的设置**不**收窄到 compat 半边
+——官方 api.anthropic.com 真有同形状的 server tools，声明给官方端点是合法的。
+① 族则必须**只放行 compat**：`enable_search` 是 DashScope 私有扩展，
+api.openai.com 对未知顶层参数直接 400——同一条「设置只出现在适配器不会丢弃它的
+地方」的规则，按各族事实给出相反答案。适配器侧再守一道（config 层拒存不够：
+配置行会经导入/手改旅行）。
+
+**① 族兼容层的诚实差别：搜索无痕。** 千问文档明载 Chat Completions 模式**不返回
+搜索来源、不支持角标**——没有任何 `ServerToolEvent` 可解析，执行日志什么都显示
+不了，答案直接吸收检索结果。推论有二：其一，「不生效」完全无症状（见 11 篇坑 10），
+只能拿时效性问题对比验证；其二，④ 族那套「结果转写回手」机制在这条线上天然无事
+可做。也没有 `max_uses` 等价物可发——DashScope 未文档化任何单请求搜索上限，但其
+按次计价比 Anthropic 低三个数量级，缺这个刹车不构成同级风险。
+
+### ② Responses 族：可见的内置工具，两家同名不同集
+
+参考实现：`serverTools.ts` 的 `responsesServerTools` / `responsesServerToolEvent` / `supportsServerTool`；
+实测见 `landscape.md` 第六个样本「联网搜索与网页抓取」「图片搜索」、`responses.md` §10。
+
+拼法：函数工具之后追加裸 `{type}` 条目，与函数工具同处 `tools[]`。**app 层 id 与该族 wire type 同名**，
+但**每个 id 能到达哪条 wire 要按 standard 逐个过滤**（`supportsServerTool`），而不是信任配置行：
+
+| app id | `openai_responses`（官方） | `openai_responses_compat`（千问 DashScope） | ① `openai_compat`（千问） |
+| --- | --- | --- | --- |
+| `web_search` | ✅ OpenAI 自家 | ✅ | `enable_search: true` |
+| `web_extractor`（网页抓取） | ❌ 过滤掉 | ✅ 仅当 `web_search` 同在 | `search_options:{search_strategy:"agent_max"}` |
+| `web_search_image`（以文搜图） | ❌ | ✅ 可单独 | ❌（猜的字段被静默忽略） |
+| `image_search`（以图搜图） | ❌ | ✅ 可单独 | ❌ |
+
+规则与理由：
+
+- **抓取离不开搜索**：DashScope 三条线都拒单独的 `web_extractor`（② 面是 HTTP 200 后首个事件 `response.failed`）。
+  所以它存成 `web_search` 的**附加档**，归一化时单独出现就丢弃（`normalizeServerTools`），发送前再归一化一次。
+- **① 面 `agent_max` 按模型分**：qwen3.8-flash 400 `does not support the "agent" search strategy`，qwen3-max / qwen3.5-plus 收；
+  不带策略的 `enable_search` 在 qwen3-max 上**根本没搜**（输入 29 token，凭记忆作答）。400 发生在流开始前、作者看得见，
+  **不做降级重试**——那等于悄悄收回作者开的能力。
+- **官方线只放 `web_search`**：其余三个是 DashScope 的名字，行经导入或换 standard 旅行到官方端点时由适配器滤掉。
+- **图片搜索单独开关**：按次价是搜索的 6–12 倍，所以不挂在搜索下面；只声明不触发是安全的（纯文字请求不会调用），可以做成按模型常开。
+
+响应侧——**可见**，这是 ② 面相对 ① 面搜索无痕的根本差别。按条目类型折成两阶段 `ServerToolEvent`（`output_item.added` → call，`output_item.done` → result），**这些条目不回传**：
+
+| 条目 | call 阶段 input | result 阶段 |
+| --- | --- | --- |
+| `web_search_call`，`action.type:"search"` | `action.queries[]`；缺失时退回单数 `action.query`（OpenAI 有时只给单数） | `action.sources[{type:"url",url}]`，**无标题**（标题=URL）、去重 |
+| `web_search_call`，`action.type:"open_page"` / `"find_in_page"`（OpenAI、xAI） | `{url}`（+ `pattern`），**没有 queries / sources** | `[{title:url, url}]` |
+| `web_extractor_call` | `urls[]` + `goal` | `output`（端点按 goal 提炼的正文，非原始 HTML）；读不到页面不是错误 |
+| `web_search_image_call` / `image_search_call` | `arguments` 是 **JSON 字符串**（`{queries}` / `{img_idx, bbox}`） | `output` 也是 **JSON 字符串** `[{title,url,index}]`；`"[]"` = 没搜到，不是错误 |
+
+防御读取同 ④ 族：解析不了的 JSON 字符串 = 空对象 / 零结果，不炸已完成的回答；条目缺 `id` 用 `output_<index>` 兜底让两阶段配上。
+不按 `open_page` 解析的后果是静默的：执行日志显示一个空查询、空结果。
+
+**成本形态（写进设置抽屉说明）**：搜回/抓回的正文**按输入 token 计**（OpenAI 一次搜索回答实测 45.7K 输入、112 s；xAI 一次 6,851），
+另按次计费（`tool_usage.web_search.num_requests` / xAI `server_side_tool_usage_details`）；首个事件可晚到 54 s。
+流看门狗的首块等待需高于此，且每个 `web_search_call` 的 added 事件都应算作存活信号。
+
+### wire 形状与 max_uses 刹车（④ 族）
 
 ```ts
 { type: "web_search_20250305", name: "web_search", max_uses: 10 }
@@ -116,8 +182,10 @@ ToolDefinition = { type: "function", function: { name, description, parameters }
 - [ ] ① 族参数拼接按 index 分组、id 累积拼接；④ 族空参数 `""` → `"{}"`；`parseJsonArgs` 全员 try/catch。
 - [ ] agent 循环保证 tool_call/结果配对：中止/异常/超时路径下要么双双不入历史、要么补"未执行"结果。
 - [ ] server tools 走声明而非注册，不在 agent 工具注册表里；工具循环对 `server_tool_use` 不回 tool_result。
-- [ ] server tool 的 id→wire type 映射集中一处，type 按日期版本化。
-- [ ] 每个 server tool 声明都带 `max_uses`。
+- [ ] server tool 的 id→wire type 映射集中一处，type 按日期版本化；app 层 id 跨族唯一，拼法按族收口在 shaping 函数（④ `tools[]` 条目 / ① compat 顶层 `enable_search`）。
+- [ ] ① 族的 `enable_search` 只对 compat 标准发；官方端点在 UI 与适配器两层都被挡（api.openai.com 对未知顶层参数 400）。
+- [ ] 知道 ① 族兼容层搜索无痕：无来源无角标可解析，执行日志诚实留白，不伪造事件；「不生效无症状」列入实测清单。
+- [ ] 每个 ④ 族 server tool 声明都带 `max_uses`。
 - [ ] `server_tool_use` 的 query 同时支持 delta 分片与 start 块整给两种到达形状。
 - [ ] 结果块读取全防御：认不出的容器形状 = 零结果，不抛异常。
 - [ ] 实现了 pause_turn verbatim 续跑（块原样回话，encrypted_content 不动），或至少把 `pause_turn` 当已知未完成态报警。
@@ -125,3 +193,7 @@ ToolDefinition = { type: "function", function: { name, description, parameters }
 - [ ] 续跑有腿数上限；触顶按正常结束处理；usage 跨腿求和；最后一腿提示词声明"最后机会"。
 - [ ] transcript 有单条 + 总量双层长度闸，按结果计预算。
 - [ ] 上层只见一条文本流；`turnResumed` 仅诊断用。
+- [ ] ② 族工具定义扁平 + 显式 `strict:false`；server tools 以裸 `{type}` 追加在函数工具之后，`tool_choice` 只随函数工具发。
+- [ ] 每个 server tool id 按 standard 过滤（官方 Responses 只放 `web_search`）；`web_extractor` 只作为 `web_search` 的附加档存在，发送前再归一化。
+- [ ] ② 族服务端工具条目解析覆盖 `search`（queries / 单数 query 兜底）、`open_page` / `find_in_page`（url）、`web_extractor_call`、JSON 字符串形态的图片搜索；这些条目不进回传。
+- [ ] 能力按模型被拒（如 `agent_max` 400）时不静默降级重试；设置说明写清"抓回正文按输入 token 计 + 按次计费"。

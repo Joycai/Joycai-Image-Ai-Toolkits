@@ -46,10 +46,13 @@ own ([Qianwen/DashScope](api/qianwen-bailian.md), [MiniMax](api/minimax.md),
 
 ## AI agent playbook
 
-[`ai-agent-playbook/README.md`](ai-agent-playbook/README.md) — twelve chapters
-across the protocol layer, the agent runtime, sub-agents and long sessions,
-closing with a [pitfall catalogue](ai-agent-playbook/11-pitfalls.md) and a
-[staged migration roadmap](ai-agent-playbook/12-migration-roadmap.md).
+[`ai-agent-playbook/README.md`](ai-agent-playbook/README.md) — fourteen chapters
+across the protocol layer (all four families, Responses included), the agent
+runtime, sub-agents and long sessions, and image / video generation, with a
+[pitfall catalogue](ai-agent-playbook/11-pitfalls.md) and a
+[staged migration roadmap](ai-agent-playbook/12-migration-roadmap.md). It is a
+snapshot of the `ai-agent-architecture` skill's references; re-sync it from
+there rather than editing it here.
 
 ## Plans and the ledger
 
