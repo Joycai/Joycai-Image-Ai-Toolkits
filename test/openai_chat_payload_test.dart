@@ -24,6 +24,10 @@ void main() {
     );
   }
 
+  // reasoning 03 §6 rule 1: only a <think> at the very start of the reply
+  // (leading whitespace allowed) is chain-of-thought. One quoted mid-body is
+  // the author's text — a prompt-writing reply that explains the tag used to
+  // have the explanation eaten.
   group('stripInlineThink', () {
     test('text without tags passes through untouched', () {
       final r = stripInlineThink('a plain answer');
@@ -37,31 +41,64 @@ void main() {
       expect(r.reasoning, 'let me consider…');
     });
 
-    test('multiple spans are all collected', () {
-      final r = stripInlineThink('<think>a</think>one<think>b</think>two');
-      expect(r.text, 'onetwo');
-      expect(r.reasoning, 'ab');
+    test('leading whitespace before the opening tag is allowed', () {
+      final r = stripInlineThink('\n  <think>plan</think>\nbody');
+      expect(r.text, 'body');
+      expect(r.reasoning, 'plan');
     });
 
-    test('an unterminated span swallows the rest as reasoning, not text', () {
-      final r = stripInlineThink('answer so far<think>and I was cut off');
-      expect(r.text, 'answer so far');
+    test('a <think> quoted in the body is the author\'s text', () {
+      const reply = 'Wrap the plan in <think>…</think> tags, then answer.';
+      final r = stripInlineThink(reply);
+      expect(r.text, reply);
+      expect(r.reasoning, isNull);
+    });
+
+    test('only the leading span is reasoning; a later one stays text', () {
+      final r = stripInlineThink('<think>a</think>one<think>b</think>two');
+      expect(r.text, 'one<think>b</think>two');
+      expect(r.reasoning, 'a');
+    });
+
+    test('an unterminated leading span swallows the rest as reasoning', () {
+      final r = stripInlineThink('<think>and I was cut off');
+      expect(r.text, isEmpty);
       expect(r.reasoning, 'and I was cut off');
+    });
+
+    test('an unterminated tag mid-body is not reasoning', () {
+      final r = stripInlineThink('answer so far<think>and more');
+      expect(r.text, 'answer so far<think>and more');
+      expect(r.reasoning, isNull);
     });
   });
 
   group('InlineThinkStreamFilter', () {
-    test('a tag split across chunks is reassembled — <thi + nk> is normal', () {
+    ({String text, String reasoning}) feedAll(List<String> deltas) {
       final f = InlineThinkStreamFilter();
-      final a = f.feed('hello <thi');
-      final b = f.feed('nk>secret</th');
-      final c = f.feed('ink> world');
-      final flush = f.flush();
+      final text = StringBuffer();
+      final reasoning = StringBuffer();
+      for (final d in deltas) {
+        final out = f.feed(d);
+        text.write(out.text);
+        reasoning.write(out.reasoning);
+      }
+      final tail = f.flush();
+      text.write(tail.text);
+      reasoning.write(tail.reasoning);
+      return (text: text.toString(), reasoning: reasoning.toString());
+    }
 
-      final text = a.text + b.text + c.text + flush.text;
-      final reasoning = a.reasoning + b.reasoning + c.reasoning + flush.reasoning;
-      expect(text, 'hello  world');
-      expect(reasoning, 'secret');
+    test('a tag split across chunks is reassembled — <thi + nk> is normal', () {
+      final out = feedAll(['<thi', 'nk>secret</th', 'ink>\n\nworld']);
+      expect(out.text, 'world');
+      expect(out.reasoning, 'secret');
+    });
+
+    test('leading whitespace is held until the tag decides', () {
+      final out = feedAll(['\n ', ' <think>x</think>', 'y']);
+      expect(out.text, 'y');
+      expect(out.reasoning, 'x');
     });
 
     test('plain text streams through without buffering distortion', () {
@@ -72,11 +109,18 @@ void main() {
       expect(f.flush().text, isEmpty);
     });
 
-    test('a lone < at chunk end is held back, then released', () {
+    test('a lone < at the start is held back, then released', () {
       final f = InlineThinkStreamFilter();
-      final a = f.feed('x <');
+      final a = f.feed('<');
+      expect(a.text, isEmpty);
       final b = f.feed('3 y');
-      expect(a.text + b.text, 'x <3 y');
+      expect(a.text + b.text, '<3 y');
+    });
+
+    test('once the body has started, a tag in it is text', () {
+      final out = feedAll(['hello ', '<thi', 'nk>quoted</think> tags']);
+      expect(out.text, 'hello <think>quoted</think> tags');
+      expect(out.reasoning, isEmpty);
     });
 
     test('unterminated think at stream end flushes as reasoning', () {
@@ -85,6 +129,10 @@ void main() {
       final flush = f.flush();
       expect(a.text, isEmpty);
       expect(a.reasoning + flush.reasoning, 'never closed');
+    });
+
+    test('a stream of whitespace alone is still delivered as text', () {
+      expect(feedAll(['  ', '\n']).text, '  \n');
     });
   });
 

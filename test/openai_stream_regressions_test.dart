@@ -236,6 +236,23 @@ void main() {
       );
     });
 
+    test('inline <think> text never joins the echoable reasoning field',
+        () async {
+      // The field's text goes back under `reasoning_content`; an inline span
+      // merged into it would be replayed into a key the host reads as its own.
+      sseLines = [
+        '{"choices":[{"message":{"role":"assistant",'
+            '"reasoning_content":"native thought",'
+            '"content":"<think>inline thought</think>answer"},'
+            '"finish_reason":"stop"}]}',
+      ];
+      final response = await OpenAIChatProtocol().generate(
+          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      expect(response.text, 'answer');
+      expect(response.reasoningFieldName, 'reasoning_content');
+      expect(response.reasoningContent, 'native thought');
+    });
+
     test('the synchronous path refuses an empty message too', () async {
       sseLines = [
         '{"choices":[{"message":{"role":"assistant","content":""},'

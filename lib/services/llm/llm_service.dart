@@ -226,6 +226,7 @@ class LLMService {
   }) async {
     String accumulatedText = "";
     String accumulatedReasoning = "";
+    String fieldReasoning = "";
     String? reasoningFieldName;
     List<Uint8List> accumulatedImages = [];
     List<LLMToolCall> accumulatedToolCalls = [];
@@ -260,6 +261,13 @@ class LLMService {
         // into the deliverable — that must not contain the chain of
         // thought.
         accumulatedReasoning += chunk.reasoningPart!;
+        // The part that arrived under a wire field is kept apart: it is the
+        // only reasoning with an echo obligation, and inline `<think>` text
+        // folded into it would be sent back under that field's name
+        // (reasoning 03 §6 rule 3).
+        if (chunk.reasoningFieldName != null) {
+          fieldReasoning += chunk.reasoningPart!;
+        }
         log('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG');
       }
       // The ①/C2 echo-back key, carried per chunk — losing it here is
@@ -317,12 +325,13 @@ class LLMService {
       generatedImages: accumulatedImages,
       metadata: finalMetadata ?? {},
       toolCalls: accumulatedToolCalls,
-      reasoningContent: accumulatedReasoning.isEmpty
-          ? null
-          : accumulatedReasoning,
-      reasoningFieldName: accumulatedReasoning.isEmpty
-          ? null
-          : reasoningFieldName,
+      // With a native reasoning field present, the response carries that
+      // field's text alone — it is what the next request echoes under
+      // [reasoningFieldName]. Inline `<think>` reasoning is then console-only.
+      reasoningContent: fieldReasoning.isNotEmpty
+          ? fieldReasoning
+          : (accumulatedReasoning.isEmpty ? null : accumulatedReasoning),
+      reasoningFieldName: fieldReasoning.isEmpty ? null : reasoningFieldName,
       reasoningSignature: reasoningSignature,
       rawThinkingBlocks: rawThinkingBlocks,
       rawContentBlocks: rawContentBlocks,
