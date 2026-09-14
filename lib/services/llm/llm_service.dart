@@ -67,6 +67,9 @@ class LLMService {
       useStream = false;
     }
     final int maxRetries = options?['retryCount'] ?? 0;
+    // Asked once: on a route that bills at acceptance only failures provably
+    // before acceptance are retried — see [shouldRetry].
+    final billedOnSubmit = _dispatcher.isBilledOnSubmit(config);
     int attempt = 0;
     void log(String msg, {String level = 'INFO'}) =>
         onLogAdded?.call(msg, level: level, contextId: contextId);
@@ -190,7 +193,8 @@ class LLMService {
         return mergeTurnParts(parts);
       } catch (e) {
         attempt++;
-        if (attempt > maxRetries || !isRetryable(e)) {
+        if (attempt > maxRetries ||
+            !shouldRetry(e, billedOnSubmit: billedOnSubmit)) {
           rethrow;
         }
         // Asked again here, not just at the top: the failure may well *be*
@@ -241,6 +245,7 @@ class LLMService {
     await for (final chunk in _idleGuarded(
       stream,
       first: _firstChunkGapFor(config, options),
+      firstIsDeadline: _dispatcher.streamIsSingleShot(config),
     )) {
       if (isCancelled?.call() ?? false) {
         // Leaving the loop is the abort. `await for` cancels its
@@ -350,10 +355,21 @@ class LLMService {
   /// twice: cancelling the iterator in the `finally` actually tears down the
   /// subscription, where the non-streaming `Future.timeout` leaves its request
   /// running upstream and billing.
+  ///
+  /// [firstIsDeadline] is for a route [LLMDispatcher.streamIsSingleShot]
+  /// calls out: there the first gap *is* the generation's deadline, so it
+  /// expiring throws [LLMDeadlineExceeded] — never retried — instead of the
+  /// plain [TimeoutException] that [isRetryable] reads as a dead connection.
+  /// The old spelling let a slow single-shot image generation time out and
+  /// be re-sent while upstream was still drawing (and billing) the first.
   static Stream<LLMResponseChunk> _idleGuarded(
     Stream<LLMResponseChunk> stream, {
     Duration? first,
-  }) => _guard(stream, first: first ?? _firstChunkGap, subsequent: _idleGap);
+    bool firstIsDeadline = false,
+  }) => _guard(stream,
+      first: first ?? _firstChunkGap,
+      subsequent: _idleGap,
+      firstIsDeadline: firstIsDeadline);
 
   /// How long the first chunk may take on this particular route.
   ///
@@ -386,17 +402,27 @@ class LLMService {
     Stream<T> stream, {
     required Duration first,
     required Duration subsequent,
-  }) => _guard(stream, first: first, subsequent: subsequent);
+    bool firstIsDeadline = false,
+  }) => _guard(stream,
+      first: first, subsequent: subsequent, firstIsDeadline: firstIsDeadline);
 
   static Stream<T> _guard<T>(
     Stream<T> stream, {
     required Duration first,
     required Duration subsequent,
+    bool firstIsDeadline = false,
   }) async* {
     final iterator = StreamIterator(stream);
     var gap = first;
+    var awaitingFirst = true;
     try {
-      while (await iterator.moveNext().timeout(gap)) {
+      while (await iterator.moveNext().timeout(gap, onTimeout: () {
+        if (awaitingFirst && firstIsDeadline) {
+          throw LLMDeadlineExceeded(first);
+        }
+        throw TimeoutException('No stream chunk within $gap', gap);
+      })) {
+        awaitingFirst = false;
         gap = subsequent;
         yield iterator.current;
       }
@@ -459,6 +485,42 @@ class LLMService {
     return false;
   }
 
+  /// The retry decision for one failed attempt on a route whose billing
+  /// posture is [billedOnSubmit] ([LLMDispatcher.isBilledOnSubmit]).
+  ///
+  /// A chat route keeps [isRetryable]. A billed route — image generation,
+  /// Midjourney, any non-chat surface — retries only what
+  /// [isRetryableBeforeAcceptance] can prove never reached upstream. A 502,
+  /// a 524 or a "Connection closed" there is just as often a relay that gave
+  /// up *after* upstream finished drawing; re-sending pays for the picture
+  /// twice (standards 13 §4.3, 14 §3, 06 §3).
+  @visibleForTesting
+  static bool shouldRetry(Object e, {required bool billedOnSubmit}) =>
+      billedOnSubmit ? isRetryableBeforeAcceptance(e) : isRetryable(e);
+
+  /// Failures that provably happened before any upstream accepted the
+  /// request: a rate limit (429 is decided at the door), a refused connection,
+  /// or a host name that did not resolve. Nothing else — not a 5xx, not a
+  /// torn-down connection, not a timeout.
+  @visibleForTesting
+  static bool isRetryableBeforeAcceptance(Object e) {
+    if (e is LLMCancelled || e is LLMDeadlineExceeded || e is LLMJobAbandoned) {
+      return false;
+    }
+    if (e is LLMApiException) return e.statusCode == 429;
+    return _neverConnected.hasMatch(e.toString());
+  }
+
+  /// Transport messages meaning the request never left this machine or never
+  /// reached a listening host, across the dart:io / http spellings on
+  /// Windows, macOS and Linux.
+  static final RegExp _neverConnected = RegExp(
+    r'Connection refused|actively refused|Failed host lookup|'
+    r'No address associated with hostname|nodename nor servname|'
+    r'No such host is known|Name or service not known',
+    caseSensitive: false,
+  );
+
   Stream<LLMResponseChunk> requestStream({
     required dynamic modelIdentifier, // Can be String (legacy ID) or int (DbId)
     required List<LLMMessage> messages,
@@ -482,6 +544,9 @@ class LLMService {
     );
 
     final int maxRetries = options?['retryCount'] ?? 0;
+    // The workbench's Retry Count reaches image tasks through here — see
+    // [shouldRetry] for why a billed route retries almost nothing.
+    final billedOnSubmit = _dispatcher.isBilledOnSubmit(config);
     int attempt = 0;
     // Chunks already yielded to the consumer cannot be retracted, and there
     // is no reset signal in the chunk protocol — a retry after the first
@@ -506,6 +571,7 @@ class LLMService {
         await for (final chunk in _idleGuarded(
           stream,
           first: _firstChunkGapFor(config, options),
+          firstIsDeadline: _dispatcher.streamIsSingleShot(config),
         )) {
           if (chunk.reasoningPart != null) {
             onLogAdded?.call(
@@ -563,7 +629,9 @@ class LLMService {
         return; // Success, exit retry loop
       } catch (e) {
         attempt++;
-        if (deliveredAnyChunk || attempt > maxRetries || !isRetryable(e)) {
+        if (deliveredAnyChunk ||
+            attempt > maxRetries ||
+            !shouldRetry(e, billedOnSubmit: billedOnSubmit)) {
           rethrow;
         }
         onLogAdded?.call(

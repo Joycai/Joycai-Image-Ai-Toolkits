@@ -296,6 +296,12 @@ review 时用下面的模式全仓库 grep 一遍即可：
   （带上 operation 名），通用信封检查会先一步抢走并丢掉这个上下文。
 - **`LLMApiException`**（`llm_types.dart`）—— 非 2xx 与信封错误一律抛它。
   `LLMService.isRetryable` 读它的 `statusCode` 决定重试（仅 5xx/429）；
+  **但计费路由例外**：`LLMDispatcher.isBilledOnSubmit` 为真（单发图像面、
+  Midjourney、一切非 chat surface）时只重试"可证明未被上游受理"的失败
+  （429、连接被拒、DNS 失败，`LLMService.isRetryableBeforeAcceptance`）——
+  中转的 502/524/断连可能发生在上游画完之后，重发就是二次计费。单发路由的
+  首块超时抛 `LLMDeadlineExceeded`；轮询被放弃抛 `LLMJobAbandoned`（带任务
+  id），两者都永不重试；
   抛裸 `Exception` 的老路径靠一条锚定 `failed: <status>` 的 legacy 正则兜底，
   新代码不许依赖它。
 - **`sseDataPayload(line)`** —— SSE 行解析（`data:` 后空格可选、注释行、
