@@ -4,6 +4,62 @@ import 'dart:io';
 import '../../../core/safety_settings.dart';
 import '../image_compression.dart';
 import '../llm_types.dart';
+import '../model_descriptor.dart' show GeminiThinkingGeneration;
+
+/// ③'s `thinkingBudget` for each rung on a [GeminiThinkingGeneration.budget]
+/// model (Gemini 2.5). Off is `0`; High is 24576, the Flash / Flash-Lite
+/// ceiling and inside Pro's; Max has nowhere further to go on every 2.5
+/// model at once and is sent as High. No clamp against `maxOutputTokens`:
+/// this wire never sends one.
+const Map<ReasoningEffort, int> geminiThinkingBudgets = {
+  ReasoningEffort.off: 0,
+  ReasoningEffort.low: 1024,
+  ReasoningEffort.medium: 8192,
+  ReasoningEffort.high: 24576,
+  ReasoningEffort.max: 24576,
+};
+
+/// `generationConfig.thinkingConfig` for [effort] on a model of
+/// [generation], or null for "send nothing" (reasoning 03 §2).
+///
+/// * Default (null) and [GeminiThinkingGeneration.none] send nothing — the
+///   request stays byte-identical to one built before this existed.
+/// * [GeminiThinkingGeneration.level] (Gemini 3+): the UPPERCASE enum.
+///   Off is `MINIMAL` — ③ cannot turn thinking off, and the models without
+///   `MINIMAL` (Gemini 3.1 Pro) answer it with an error, which is the
+///   endpoint's own statement and stays audible. Max is `HIGH`, the top of
+///   the enum.
+/// * [GeminiThinkingGeneration.budget] (Gemini 2.5): [geminiThinkingBudgets].
+///   Off is `0`, which 2.5 Pro (it cannot stop thinking) rejects audibly.
+///
+/// Only one generation's field is ever present, and it always travels with
+/// `includeThoughts: true`: the thinking runs and bills either way, and
+/// without it official Gemini returns no thought parts at all.
+Map<String, dynamic>? geminiThinkingConfig(
+  GeminiThinkingGeneration generation,
+  ReasoningEffort? effort,
+) {
+  if (effort == null) return null;
+  switch (generation) {
+    case GeminiThinkingGeneration.none:
+      return null;
+    case GeminiThinkingGeneration.level:
+      return {
+        'thinkingLevel': switch (effort) {
+          ReasoningEffort.off => 'MINIMAL',
+          ReasoningEffort.low => 'LOW',
+          ReasoningEffort.medium => 'MEDIUM',
+          ReasoningEffort.high || ReasoningEffort.max => 'HIGH',
+        },
+        'includeThoughts': true,
+      };
+    case GeminiThinkingGeneration.budget:
+      return {
+        'thinkingBudget': geminiThinkingBudgets[effort],
+        'includeThoughts': true,
+      };
+  }
+}
 
 /// Pure request-payload builders and response parsing for the Gemini wire
 /// format (layer 1). Isolated from network orchestration so the logic can be
@@ -218,6 +274,48 @@ class GeminiToolCallIds {
   String next() => 'gtc_${_nonce}_${_next++}';
 }
 
+/// Collects a ③ model turn's `parts` verbatim — the carrier behind
+/// [LLMMessage.rawModelParts].
+///
+/// Fed every decoded chunk of a stream in order (or the single body of a
+/// synchronous response). Each ③ chunk is a complete JSON object carrying
+/// whole parts, so collecting them in arrival order *is* the turn: a text
+/// part split across chunks stays as several text parts, and a
+/// `thoughtSignature` that arrives on an empty trailing text part is kept
+/// where it came. Only the first candidate is read — the one every consumer
+/// of this wire uses.
+///
+/// [toolTurnParts] answers only for a turn that called a function: a turn
+/// without calls carries no replay obligation, and keeping its parts would
+/// re-send them as input for nothing (reasoning 03 §5 rule 1).
+class GeminiModelPartsCollector {
+  final List<Map<String, dynamic>> _parts = [];
+  bool _sawCall = false;
+
+  void feed(Map<String, dynamic> chunkData) {
+    final candidates = chunkData['candidates'];
+    if (candidates is! List || candidates.isEmpty) return;
+    final first = candidates.first;
+    if (first is! Map) return;
+    final content = first['content'];
+    final parts = content is Map ? content['parts'] : null;
+    if (parts is! List) return;
+    for (final part in parts) {
+      if (part is! Map) continue;
+      final copy = Map<String, dynamic>.from(part);
+      if (copy.containsKey('functionCall') ||
+          copy.containsKey('function_call')) {
+        _sawCall = true;
+      }
+      _parts.add(copy);
+    }
+  }
+
+  /// The turn's parts when it called a tool, else null.
+  List<Map<String, dynamic>>? get toolTurnParts =>
+      _sawCall && _parts.isNotEmpty ? List.of(_parts) : null;
+}
+
 /// Parses one `generateContent`/stream chunk into [LLMResponseChunk]s, handling
 /// prompt blocking, finish reasons and safety ratings via [logger].
 ///
@@ -317,7 +415,14 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
       // that stopped for a missing signature is a failed request, not an
       // empty reply. With content, the content is kept.
       if (protocol && (parts == null || parts.isEmpty)) {
-        throw Exception('Google GenAI ended the generation: $finishReason');
+        // Typed and non-retryable (no status code): the same history meets
+        // the same broken replay or the same undeclared tool, and every
+        // attempt is billed.
+        throw LLMApiException(
+          'Google GenAI ended the generation with finishReason '
+          '$finishReason and no content'
+          '${finishReason == 'MISSING_THOUGHT_SIGNATURE' ? ' — a replayed tool-calling turn lacked its thoughtSignature' : ''}.',
+        );
       }
     }
 
@@ -401,6 +506,8 @@ Map<String, dynamic> prepareGooglePayload(
   List<LLMTool>? tools,
   bool emitsImages = false,
   String? modelId,
+  GeminiThinkingGeneration thinking = GeminiThinkingGeneration.none,
+  ReasoningEffort? reasoningEffort,
 }) {
   final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
   final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
@@ -464,27 +571,45 @@ Map<String, dynamic> prepareGooglePayload(
 
     final parts = <Map<String, dynamic>>[];
 
-    if (msg.content.isNotEmpty) {
-      parts.add({"text": msg.content});
-    }
+    // A tool-calling model turn goes back as the parts it arrived as, when
+    // the model it goes to is the one that produced them (protocol 02 §2.2
+    // rule 3, reasoning 03 §5): thought parts, every signature, the order.
+    // "Understand and rebuild" keeps only the signatures on functionCall
+    // parts, and ③ answers the gap with MISSING_THOUGHT_SIGNATURE. A copy, so
+    // nothing downstream of the payload can write into stored history.
+    final raw = msg.rawModelParts;
+    final replayRaw = msg.role == LLMRole.assistant &&
+        msg.toolCalls.isNotEmpty &&
+        raw != null &&
+        raw.isNotEmpty &&
+        (modelId == null || msg.rawThinkingModelId == modelId);
+    if (replayRaw) {
+      for (final part in raw) {
+        parts.add((jsonDecode(jsonEncode(part)) as Map).cast<String, dynamic>());
+      }
+    } else {
+      if (msg.content.isNotEmpty) {
+        parts.add({"text": msg.content});
+      }
 
-    // Assistant tool calls echoed back into history → functionCall parts.
-    // Gemini requires the thoughtSignature captured from the original response
-    // to be replayed verbatim on the same part.
-    for (final tc in msg.toolCalls) {
-      parts.add({
-        "functionCall": {
-          "name": tc.name,
-          "args": tc.arguments,
-        },
-        // Only to the model that produced it: another model has no use for
-        // the signature and it still travels as input.
-        if (tc.thoughtSignature != null &&
-            (msg.rawThinkingModelId == null ||
-                modelId == null ||
-                msg.rawThinkingModelId == modelId))
-          "thoughtSignature": tc.thoughtSignature,
-      });
+      // Rebuilt: assistant tool calls → functionCall parts. Gemini requires
+      // the thoughtSignature captured from the original response to be
+      // replayed verbatim on the same part.
+      for (final tc in msg.toolCalls) {
+        parts.add({
+          "functionCall": {
+            "name": tc.name,
+            "args": tc.arguments,
+          },
+          // Only to the model that produced it: another model has no use
+          // for the signature and it still travels as input.
+          if (tc.thoughtSignature != null &&
+              (msg.rawThinkingModelId == null ||
+                  modelId == null ||
+                  msg.rawThinkingModelId == modelId))
+            "thoughtSignature": tc.thoughtSignature,
+        });
+      }
     }
 
     for (var attachment in msg.attachments) {
@@ -516,6 +641,13 @@ Map<String, dynamic> prepareGooglePayload(
   final generationConfig = <String, dynamic>{};
   if (emitsImages) {
     generationConfig['responseModalities'] = ['TEXT', 'IMAGE'];
+  }
+  // Absent at the default effort and for a model that does not think, so
+  // those requests are byte-identical to before (reasoning 03 §2). camelCase
+  // like every other key here.
+  final thinkingConfig = geminiThinkingConfig(thinking, reasoningEffort);
+  if (thinkingConfig != null) {
+    generationConfig['thinkingConfig'] = thinkingConfig;
   }
   if (options != null) {
     final imageConfig = <String, dynamic>{};

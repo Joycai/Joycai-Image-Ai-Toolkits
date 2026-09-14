@@ -1008,6 +1008,7 @@
   "enableThinkingDesc": "回答前にモデルに推論させます。出力トークンを消費し、Anthropic 形式のチャンネルのみ対応。",
   "enableWebSearch": "サーバー側ウェブ検索",
   "enableWebSearchDesc": "回答中にプロバイダー自身がウェブ検索を実行します。追加トークンとして課金され、代理でページを取得します。",
+  "enableWebSearchTracelessHint": "このプロトコルでは検索の痕跡が残りません。出典や引用は返されず、実際に検索が行われたかも確認できません。",
   "noProviderMatch": "一致するプロバイダーがありません",
   "apiKeyRequired": "このプロバイダーはチャンネル追加に API キーが必要です",
   "endpointRequired": "エンドポイント URL を入力してください",

@@ -1897,6 +1897,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Let the provider run its own web searches mid-answer. Billed as extra tokens and fetches pages on your behalf.';
 
   @override
+  String get enableWebSearchTracelessHint =>
+      'On this protocol the search is silent: no sources or citations come back, and nothing shows whether a search actually ran.';
+
+  @override
   String get noProviderMatch => 'No provider matches this search';
 
   @override

@@ -2,6 +2,10 @@ import 'model_capabilities.dart';
 import 'model_family.dart';
 import 'vendors/vendor_profile.dart' show WireProtocol;
 
+// The one layer-3 vocabulary type protocols consume: they read the value off
+// a resolved descriptor and never call the classifier that produced it.
+export 'model_family.dart' show GeminiThinkingGeneration;
+
 /// **Layer 3 — the model.**
 ///
 /// A [ModelDescriptor] is everything the rest of the LLM stack is allowed to
@@ -190,6 +194,20 @@ class ModelDescriptor {
   /// per-model exception. False for anything not recognizably a Claude id.
   bool get usesLegacyAnthropicThinking =>
       ModelFamilyClassifier.isLegacyClaudeThinking(modelId);
+
+  /// Which `thinkingConfig` field generation ③ may send for this model.
+  ///
+  /// [GeminiThinkingGeneration.none] for anything whose job is to generate
+  /// an image or a video, whatever its id: an image request carrying
+  /// `thinkingConfig` to a model that does not think is an error, and a relay
+  /// name re-described as images-through-chat (`servedBy: chatImage`) says
+  /// nothing about whether the model behind it thinks. Otherwise the id's
+  /// generation, with the loud-failure guess for ids it cannot place — see
+  /// [ModelFamilyClassifier.geminiThinkingGeneration].
+  GeminiThinkingGeneration get geminiThinking =>
+      capabilities.isImageGenerator || capabilities.isVideoGenerator
+          ? GeminiThinkingGeneration.none
+          : ModelFamilyClassifier.geminiThinkingGeneration(modelId);
 
   /// True for the `mock-*` ids the simulated long-running-operation path
   /// accepts. Here rather than in the dispatcher because model-id sniffing is

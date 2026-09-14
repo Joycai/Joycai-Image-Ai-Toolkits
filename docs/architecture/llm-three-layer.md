@@ -196,13 +196,36 @@ surface 开关"表达不了它。绑定关系升级为：
   `AppState.descriptorForModel(model)`**。工作台的参数面板、参考图上限、参数记忆
   命名空间都从这里读；`ModelCapabilities.forModel(model.modelId)` 在
   `services/llm/` 之外出现，就是把点单绕过去了。
-- **推理强度的挡位只问 `LLMDispatcher.reasoningLadder(channelType:, modelId:, tag:)`**
-  （2026-09，模型编辑器的推理滑块）。每条 wire 只给它分得开的档，发出去一样的
+- **推理强度的挡位只问 `LLMDispatcher.reasoningLadder(channelType:, modelId:, tag:, wireProtocol:)`**
+  （2026-09，模型编辑器的推理滑块）。**按解析出的 chat 面分派，不按 vendor 的
+  family**（2026-09-14）：面 = 合法点单，否则 auto，与路由的 `_chatFace` 同一套
+  解析。按 family 分派时，兼容面渠道点单到 ④ 的百炼模型会被给出 ① 的六档（而 ④
+  budget 拼法只分得开两档），原生渠道点单到 ① 的模型会被给出原生开关。
+  每条 wire 只给它分得开的档，发出去一样的
   两档就是一个没有效果的旋钮：① 六档全有（DeepSeek 的关闭走 `thinking` 对象，
   仍是另一种请求）；④ adaptive 没有「关闭」——它和「默认」一样不发 `thinking`；
   ④ budget（Claude 4.5 及更早、百炼 ④ 面）与 MiniMax 的裸 adaptive 没有强度，
   只有「默认 / 开启」（开启存为 medium）；百炼原生是「默认 / 关闭 / 开启」；
-  Gemini、MJ 与非 chat surface 返回空。④ 的 dialect 判定与请求共用
+  百炼两个 vendor 的 **① 面**同样是「默认 / 关闭 / 开启」：它声明了
+  `enable_thinking` 开关方言（`ThinkingDialect.openaiEnableThinking`，reasoning
+  03 §3 switch 方言的 ① 拼法），发顶层 `enable_thinking: bool` 并**停发**
+  `reasoning_effort`——商业款 Qwen3-Max/Plus 默认不思考，而 `reasoning_effort`
+  叫不醒它（pitfalls 11 §A9）。方言按面声明：`VendorProfile.thinkingByProtocol`
+  覆盖 `thinking` 默认值，读取一律经 `thinkingFor(face)`，协议与挡位读的是同一处；
+  没有声明的 vendor 请求逐字节不变。该面的 `tool_choice` 恒为 `auto`，恰好满足
+  「思考开启时只接受 auto|none」（pitfalls 11 §A13）。代价：3.7+ 的新款 Qwen 本
+  可接受 `reasoning_effort` 的深度档，在 ① 面上只剩开关；本仓没有模型级方言列，
+  未加。MJ 与非 chat surface 返回空。③ Gemini（2026-09-14）发
+  `generationConfig.thinkingConfig`，**只发一代字段**、恒带
+  `includeThoughts: true`：代次由 Layer 3 声明
+  （`ModelDescriptor.geminiThinking` → `ModelFamilyClassifier.geminiThinkingGeneration`）
+  —— 3+ 走 `thinkingLevel`（全大写，off → `MINIMAL`，max → `HIGH`），2.5 走
+  `thinkingBudget`（0 / 1024 / 8192 / 24576，max 同 high），2.0 及更早与一切
+  图像/视频生成模型不发；读不出版本号的自由文本 id 猜 `thinkingLevel`——错的方式
+  都会响（对面报错点名字段），猜「不发」则是旋钮静默无效。Max 与 High 发出同一个
+  请求，所以 ③ 的挡位是「默认 / 关闭 / 低 / 中 / 高」。默认档不发字段，与改动前逐字节
+  相同。3.1 Pro 没有 `MINIMAL`、2.5 Pro 不接受预算 0：「关闭」在这两款上会 400，
+  这是端点自己的声明，不做降级。④ 的 dialect 判定与请求共用
   `declaredAnthropicThinkingDialect`，编辑器看到的就是请求会用的。测试：
   `test/reasoning_ladder_test.dart`。
 - **测试**：`test/model_kind_protocol_pin_test.dart` 钉住中转图像/视频、无通用面的
@@ -431,7 +454,16 @@ thinking / server tool 一起加。
    一视同仁（同步路径由协议记，流式路径由 `LLMService._streamOnce` 记），
    payload builder 只回传给同一个模型：换了模型，① 官方对未知字段 400，中转照
    input 计费。④ 的原始块要求匹配；其余载体在 `rawThinkingModelId` 为 null 时
-   照旧回传，这是记录产出者之前持久化的旧会话能继续用的原因。内联 `<think>`
+   照旧回传，这是记录产出者之前持久化的旧会话能继续用的原因。
+   ③ 的载体是整组原始 `parts`（`LLMMessage.rawModelParts`，2026-09-14，
+   protocol 02 §2.2 第 3 条）：只挂在带工具调用的模型轮上，thought part、每个
+   `thoughtSignature`（包括流末尾挂在空文本 part 上的那个）与顺序一并原样留存——
+   只重建 text + functionCall 会丢掉不在调用 part 上的签名，③ 对此回
+   `MISSING_THOUGHT_SIGNATURE`。流式路径由 `GeminiModelPartsCollector` 按到达顺序
+   跨 chunk 收集（③ 的每个 chunk 都是完整对象），流末一次性发出。与 ④ 原始块同样
+   **要求匹配**产出模型才原样回放；换了模型就重建且不带签名。改写工具调用参数的
+   上下文省略（助手的 `write_knowledge_file` 省略、`ask_user` 剥调用）与
+   `rawContentBlocks` 一起丢掉它。内联 `<think>`
    切出来的推理从不并入这个字段（reasoning 03 §6 第三条）。
 6. **server tool 不是 tool call。** `web_search_20250305` 由服务端自己执行、
    自己回答，响应里的 `server_tool_use` + `web_search_tool_result` 是**已完成的
@@ -516,8 +548,16 @@ thinking / server tool 一起加。
 两个开关都是**按模型**存的（v33 迁移的 `llm_models.enable_thinking` /
 `enable_web_search`，默认关），由 `LLMConfigResolver` 解析进 `LLMModelConfig`
 —— 不是请求 option。这样助手、提示词精修、AI 重命名三条路自动都认，不必各自记得
-传；同时一条渠道下"支持思考的模型"和"发了就 400 的模型"可以分别设置。UI 只在
-④ 渠道下显示这两个开关。
+传；同时一条渠道下"支持思考的模型"和"发了就 400 的模型"可以分别设置。UI 上思考开关行
+只在 ④ 渠道下显示；**联网搜索开关**（2026-09-14）改问
+`LLMDispatcher.serverWebSearch(channelType:, modelId:, tag:, wireProtocol:)`，
+与推理挡位同一套面解析：④ 厂商的 ④ 面是带来源的 `web_search` server tool；
+声明在 `VendorProfile.serverWebSearchFaces` 里的面（百炼两个 vendor 的 ① 与原生面）
+是无痕的 `enable_search`——① 发顶层、原生发 `parameters.enable_search`，都不返回
+来源，协议不解析也不伪造任何事件（pitfalls 11 §A10），编辑器在开关下写明
+「搜索无痕」。① 适配器发之前再查一次声明：模型行上存着的开关会随导入、改渠道
+类型旅行到 api.openai.com，那里未知顶层字段直接 400（tools 05 §5）。百炼的 ④ 面
+未声明，开关不出现。
 
 三个 ④ vendor（`anthropicRest` / `newApiAnthropic` / `minimaxAnthropic`）
 除 thinking 方言外 chat 行为一致，分开还为记录供货方。**MiniMax 是唯一 base path

@@ -1134,6 +1134,7 @@
   "enableThinkingDesc": "让模型先推理再作答。会消耗输出 token，仅 Anthropic 格式渠道支持。",
   "enableWebSearch": "服务端联网搜索",
   "enableWebSearchDesc": "允许服务商在作答过程中自行搜索网页。按额外 token 计费，并会代你抓取网页。",
+  "enableWebSearchTracelessHint": "此协议下搜索是无痕的：不返回来源或角标，也无从判断是否真的搜索过。",
   "noProviderMatch": "没有匹配的提供商",
   "apiKeyRequired": "该提供商需要密钥才能添加渠道",
   "endpointRequired": "请填写接口地址",

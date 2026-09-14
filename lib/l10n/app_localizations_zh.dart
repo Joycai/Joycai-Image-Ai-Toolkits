@@ -1831,6 +1831,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enableWebSearchDesc => '允许服务商在作答过程中自行搜索网页。按额外 token 计费，并会代你抓取网页。';
 
   @override
+  String get enableWebSearchTracelessHint =>
+      '此协议下搜索是无痕的：不返回来源或角标，也无从判断是否真的搜索过。';
+
+  @override
   String get noProviderMatch => '没有匹配的提供商';
 
   @override
@@ -6559,6 +6563,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get enableWebSearchDesc => '允許服務商在作答過程中自行搜尋網頁。按額外 token 計費，並會代你抓取網頁。';
+
+  @override
+  String get enableWebSearchTracelessHint =>
+      '此協議下搜尋是無痕的：不回傳來源或角標，也無從判斷是否真的搜尋過。';
 
   @override
   String get noProviderMatch => '沒有符合的提供商';
