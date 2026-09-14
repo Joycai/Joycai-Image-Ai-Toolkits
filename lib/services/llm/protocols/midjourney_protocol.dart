@@ -200,50 +200,63 @@ class MidjourneyProtocol implements ChatProtocol {
         throw Exception('Midjourney submit returned no task id: $submitData');
       }
 
-      logger?.call('Midjourney task id: $taskId', level: 'DEBUG');
+      // INFO, the moment it exists: a submitted MJ task is billed, and if
+      // polling dies this id is the only handle left to find the result by.
+      logger?.call('Midjourney task id: $taskId', level: 'INFO');
       onProgress?.call('Task queued ($taskId). Waiting for MJ…');
 
-      // Poll until SUCCESS / FAILURE / timeout.
-      final start = DateTime.now();
+      // Poll until SUCCESS / FAILURE / timeout through the shared loop: it
+      // honours the caller's cancel probe (the old flat 3 s sleep did not),
+      // tolerates a few failed fetches of the already-billed task instead of
+      // abandoning it on the first, and gives up as LLMJobAbandoned — never
+      // retried, because a retry here is a second paid imagine.
       int lastProgress = -1;
       String lastStatus = '';
-      while (true) {
-        if (DateTime.now().difference(start) > _maxWait) {
-          throw Exception('Midjourney task $taskId timed out after ${_maxWait.inMinutes} minutes');
-        }
-        await Future.delayed(_pollInterval);
-
-        final task = await _fetchTask(client, target, taskId);
-        final status = task['status']?.toString() ?? '';
-        final progress = _parseProgress(task['progress']);
-        if (status != lastStatus || progress != lastProgress) {
-          lastStatus = status;
-          lastProgress = progress;
-          final pct = progress >= 0 ? ' ($progress%)' : '';
-          onProgress?.call('MJ status: $status$pct');
-          logger?.call('Midjourney task $taskId status=$status progress=$progress', level: 'DEBUG');
-        }
-
-        if (status == 'SUCCESS') {
-          final imageUrl = task['imageUrl']?.toString();
-          if (imageUrl == null || imageUrl.isEmpty) {
-            throw Exception('Midjourney task $taskId succeeded but returned no imageUrl');
+      return await pollJobUntilDone<_MjResult>(
+        job: 'Midjourney task $taskId',
+        jobId: taskId,
+        deadline: _maxWait,
+        interval: (_) => _pollInterval,
+        isCancelled: cancellationProbeOf(options),
+        logger: logger,
+        fetch: () => _fetchTask(client, target, taskId),
+        interpret: (task) async {
+          final status = task['status']?.toString() ?? '';
+          final progress = _parseProgress(task['progress']);
+          if (status != lastStatus || progress != lastProgress) {
+            lastStatus = status;
+            lastProgress = progress;
+            final pct = progress >= 0 ? ' ($progress%)' : '';
+            onProgress?.call('MJ status: $status$pct');
+            logger?.call(
+                'Midjourney task $taskId status=$status progress=$progress',
+                level: 'DEBUG');
           }
-          onProgress?.call('Downloading image…');
-          final bytes = await _downloadImage(client, imageUrl);
-          return _MjResult(
-            images: [bytes],
-            metadata: {
-              'mj_task_id': taskId,
-              'mj_status': status,
-              'image_url': imageUrl,
-            },
-          );
-        }
-        if (status == 'FAILURE') {
-          throw Exception('Midjourney task $taskId failed: ${task['failReason'] ?? task}');
-        }
-      }
+
+          if (status == 'SUCCESS') {
+            final imageUrl = task['imageUrl']?.toString();
+            if (imageUrl == null || imageUrl.isEmpty) {
+              throw LLMApiException(
+                  'Midjourney task $taskId succeeded but returned no imageUrl');
+            }
+            onProgress?.call('Downloading image…');
+            final bytes = await _downloadImage(client, imageUrl);
+            return _MjResult(
+              images: [bytes],
+              metadata: {
+                'mj_task_id': taskId,
+                'mj_status': status,
+                'image_url': imageUrl,
+              },
+            );
+          }
+          if (status == 'FAILURE') {
+            throw LLMApiException(
+                'Midjourney task $taskId failed: ${task['failReason'] ?? task}');
+          }
+          return null;
+        },
+      );
     } finally {
       client.close();
     }

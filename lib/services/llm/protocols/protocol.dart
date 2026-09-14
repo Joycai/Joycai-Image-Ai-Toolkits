@@ -18,6 +18,9 @@ import '../vendors/vendor_profile.dart';
 // extra import.
 export '../vendors/vendor_profile.dart' show redactUrl;
 export '../output_spec.dart' show parseWxH;
+// The shared async-job poll loop (cancel probe, sliced sleep, consecutive
+// failure tolerance, non-retryable abandon) — see job_poll.dart.
+export '../job_poll.dart';
 
 /// **Layer 1 — the protocol.**
 ///

@@ -120,6 +120,32 @@ class LLMCancelled implements Exception {
   String toString() => 'Request cancelled by the caller.';
 }
 
+/// Local polling of an **accepted, billed** upstream job was given up — the
+/// overall deadline passed, or too many consecutive polls failed.
+///
+/// Its own type because the one wrong reaction to it is the obvious one:
+/// retrying. A retry re-submits, which buys the same generation twice while
+/// the first may well still be running (and billing) upstream. Before this
+/// existed, DashScope's async image loop rethrew its third transient poll
+/// failure as a 5xx `LLMApiException`, and `LLMService.request` read that
+/// as retryable and submitted a new paid task. `LLMService.isRetryable`
+/// answers false for it explicitly.
+///
+/// [jobId] is carried so the user can still find the job upstream; the
+/// message names it too.
+class LLMJobAbandoned implements Exception {
+  final String jobId;
+  final String message;
+
+  /// The last poll failure, when that is what ended polling.
+  final Object? cause;
+
+  const LLMJobAbandoned(this.jobId, this.message, {this.cause});
+
+  @override
+  String toString() => message;
+}
+
 class LLMDeadlineExceeded implements Exception {
   final Duration deadline;
 

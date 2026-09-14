@@ -432,6 +432,11 @@ class LLMService {
     // the type exists. A generation that ran past its deadline will run past
     // it again; a stalled stream will not necessarily stall again.
     if (e is LLMDeadlineExceeded) return false;
+    // An accepted job whose polling was abandoned: retrying re-submits and
+    // pays for the same generation twice. Explicit because its message can
+    // quote the last poll's "failed: 503", which the legacy regex below
+    // would read as a transient server error.
+    if (e is LLMJobAbandoned) return false;
     if (e is TimeoutException) return true;
     if (e is LLMApiException) return e.isTransient;
 
