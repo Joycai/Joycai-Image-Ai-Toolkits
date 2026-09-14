@@ -1320,6 +1320,7 @@
   "enableThinkingDesc": "Let the model reason before answering. Costs output tokens; Anthropic-format channels only.",
   "enableWebSearch": "Host web search",
   "enableWebSearchDesc": "Let the provider run its own web searches mid-answer. Billed as extra tokens and fetches pages on your behalf.",
+  "enableWebSearchTracelessHint": "On this protocol the search is silent: no sources or citations come back, and nothing shows whether a search actually ran.",
   "noProviderMatch": "No provider matches this search",
   "apiKeyRequired": "This provider needs an API key before the channel can be added",
   "endpointRequired": "Enter the endpoint URL for this channel",

@@ -756,14 +756,18 @@ class LLMDispatcher {
   /// shipped, while the editor's own two-family gate kept the control hidden
   /// on every dashscope-native channel — thinking could never be turned off
   /// there, with nothing anywhere reporting why.
-  static bool chatConsumesReasoningEffort(ProtocolFamily family) {
-    switch (family) {
-      case ProtocolFamily.openai: // reasoning_effort
-      case ProtocolFamily.anthropic: // thinking budget tiers
-      case ProtocolFamily.dashscope: // enable_thinking / thinking_budget
+  ///
+  /// Asked of the resolved chat **face**, not of the vendor's family: a
+  /// multi-face vendor's model can ride a wire its family does not name, and
+  /// the wire is what spells (or ignores) the setting.
+  static bool chatConsumesReasoningEffort(WireProtocol face) {
+    switch (face) {
+      case WireProtocol.openaiChat: // reasoning_effort / thinking / enable_thinking
+      case WireProtocol.anthropicChat: // thinking + output_config.effort
+      case WireProtocol.dashscopeChat: // parameters.enable_thinking
+      case WireProtocol.geminiChat: // generationConfig.thinkingConfig
         return true;
-      case ProtocolFamily.gemini:
-      case ProtocolFamily.midjourney:
+      default: // Midjourney, and every non-chat surface
         return false;
     }
   }
@@ -776,9 +780,15 @@ class LLMDispatcher {
   /// A rung that sends exactly what its neighbour sends is a knob whose only
   /// effect is nothing, so each wire offers only the rungs it tells apart:
   ///
+  /// The wire is the chat face the request will take ([wireProtocol] when it
+  /// is a valid pin, else auto), not the vendor's family — see the body.
+  ///
   /// * ① sends every rung as its own `reasoning_effort` value. DeepSeek's off
   ///   travels as the `thinking` object instead, but it is still its own
-  ///   request.
+  ///   request. A face declaring the `enable_thinking` switch (Bailian's ①)
+  ///   is Default, an explicit Off, and on.
+  /// * ③ sends `thinkingConfig`: Default, Off, Low, Medium, High (Max is
+  ///   High); nothing for a model that takes no thinkingConfig.
   /// * ④'s current spelling withholds `thinking` for Off exactly as it does
   ///   for Default, so there is no Off; the intensity rides in
   ///   `output_config.effort`.
@@ -791,24 +801,39 @@ class LLMDispatcher {
     required String channelType,
     required String modelId,
     String? tag,
+    String? wireProtocol,
   }) {
+    // The chat face the request will actually take — the model's pin when it
+    // is still on the menu, else auto — resolved exactly as [_chatFace] does
+    // for routing. Switching on the vendor's family instead answered for the
+    // wrong wire whenever a multi-face channel pinned another face: a
+    // compatible-mode Bailian channel pinned to ④ offered ①'s six rungs to a
+    // budget spelling that has two, and a native channel pinned to ① offered
+    // the native switch for a wire that spells it differently.
+    final menu = protocolMenu(channelType, modelId, tag: tag);
+    if (menu.surface != Surface.chat) return const [];
+    final face = _validPin(menu, wireProtocol) ?? menu.auto;
+    if (face == null || !chatConsumesReasoningEffort(face)) return const [];
     final vendor = Vendors.byId(channelType);
-    if (!chatConsumesReasoningEffort(vendor.family)) return const [];
-    if (surfaceForModel(modelId, tag: tag) != Surface.chat) return const [];
-    switch (vendor.family) {
-      case ProtocolFamily.openai:
-        return const [
-          null,
-          ReasoningEffort.off,
-          ReasoningEffort.low,
-          ReasoningEffort.medium,
-          ReasoningEffort.high,
-          ReasoningEffort.max,
-        ];
-      case ProtocolFamily.dashscope:
+    switch (face) {
+      case WireProtocol.openaiChat:
+        // A declared switch sends a boolean in place of reasoning_effort, so
+        // its intensities are one request.
+        return vendor.thinkingFor(face) == ThinkingDialect.openaiEnableThinking
+            ? const [null, ReasoningEffort.off, ReasoningEffort.medium]
+            : const [
+                null,
+                ReasoningEffort.off,
+                ReasoningEffort.low,
+                ReasoningEffort.medium,
+                ReasoningEffort.high,
+                ReasoningEffort.max,
+              ];
+      case WireProtocol.dashscopeChat:
         return const [null, ReasoningEffort.off, ReasoningEffort.medium];
-      case ProtocolFamily.anthropic:
-        final dialect = declaredAnthropicThinkingDialect(vendor.thinking,
+      case WireProtocol.anthropicChat:
+        final dialect = declaredAnthropicThinkingDialect(
+            vendor.thinkingFor(face),
             legacyModel: ModelDescriptor.of(modelId).usesLegacyAnthropicThinking);
         return switch (dialect) {
           ThinkingDialect.anthropicAdaptive => const [
@@ -821,11 +846,70 @@ class LLMDispatcher {
           ThinkingDialect.anthropicBudget ||
           ThinkingDialect.adaptive =>
             const [null, ReasoningEffort.medium],
-          ThinkingDialect.none || ThinkingDialect.openaiThinkingObject => const [],
+          ThinkingDialect.none ||
+          ThinkingDialect.openaiThinkingObject ||
+          ThinkingDialect.openaiEnableThinking =>
+            const [],
         };
-      case ProtocolFamily.gemini:
-      case ProtocolFamily.midjourney:
+      case WireProtocol.geminiChat:
+        // thinkingConfig: Max and High both send the top of the scale, so
+        // Max is not a rung of its own. A model that takes no thinkingConfig
+        // (a pre-2.5 Gemini) has none — the field would be an error there.
+        return switch (ModelDescriptor.of(modelId).geminiThinking) {
+          GeminiThinkingGeneration.none => const [],
+          GeminiThinkingGeneration.level ||
+          GeminiThinkingGeneration.budget =>
+            const [
+              null,
+              ReasoningEffort.off,
+              ReasoningEffort.low,
+              ReasoningEffort.medium,
+              ReasoningEffort.high,
+            ],
+        };
+      default:
         return const [];
+    }
+  }
+
+  /// Whether this (channel, model, kind, pinned face) can switch on the
+  /// host's own web search, and whether the reply then shows what it read.
+  ///
+  /// The editor's single question, answered from the chat face routing
+  /// resolves — the same resolution [reasoningLadder] uses — so the switch is
+  /// shown exactly where a request would carry it, instead of the editor
+  /// guessing from the channel's family (which hid it on every Bailian
+  /// channel, and would have shown it on Bailian's ④ face, where nothing is
+  /// declared).
+  ///
+  /// * ④ ([WireProtocol.anthropicChat]) on a ④ vendor: the protocol declares
+  ///   the `web_search` server tool, whose sources come back.
+  /// * ① and DashScope native on a vendor that lists the face in
+  ///   [VendorProfile.serverWebSearchFaces]: the traceless `enable_search`.
+  /// * Everything else: unsupported.
+  static ServerWebSearch serverWebSearch({
+    required String channelType,
+    required String modelId,
+    String? tag,
+    String? wireProtocol,
+  }) {
+    final menu = protocolMenu(channelType, modelId, tag: tag);
+    if (menu.surface != Surface.chat) return ServerWebSearch.unsupported;
+    final face = _validPin(menu, wireProtocol) ?? menu.auto;
+    if (face == null) return ServerWebSearch.unsupported;
+    final vendor = Vendors.byId(channelType);
+    switch (face) {
+      case WireProtocol.anthropicChat:
+        return vendor.family == ProtocolFamily.anthropic
+            ? ServerWebSearch.withSources
+            : ServerWebSearch.unsupported;
+      case WireProtocol.openaiChat:
+      case WireProtocol.dashscopeChat:
+        return vendor.serverWebSearchFaces.contains(face)
+            ? ServerWebSearch.traceless
+            : ServerWebSearch.unsupported;
+      default:
+        return ServerWebSearch.unsupported;
     }
   }
 

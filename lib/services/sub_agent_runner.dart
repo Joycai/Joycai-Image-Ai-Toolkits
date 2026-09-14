@@ -164,6 +164,7 @@ class SubAgentRunner {
         rawThinkingBlocks: response.rawThinkingBlocks,
         rawThinkingModelId: response.rawThinkingModelId,
         rawContentBlocks: response.rawContentBlocks,
+        rawModelParts: response.rawModelParts,
         toolCalls: response.toolCalls,
       ));
 
