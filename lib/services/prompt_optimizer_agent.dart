@@ -1015,6 +1015,18 @@ class PromptOptimizerAgent {
   static const String kbEntryTooLargeNoticeToken = '__kb_entry_too_large__';
   static const String kbDistillNoticeToken = '__kb_distill__';
 
+  /// A turn used every round and the final, tools-free one still produced no
+  /// answer (standard 07 §3.8).
+  static const String roundLimitNoticeToken = '__round_limit__';
+
+  /// Sent with the final round's request only — never written to history,
+  /// where it would read as a standing ban on tools in every later turn
+  /// (07 §3.5).
+  static const String _finalRoundNudge =
+      'You have reached the step limit for this turn, and no tools are '
+      'available in this final round. Answer the user now in plain text: what '
+      'you have done, what is still open, and what they could do next.';
+
   /// Parses a [resultFeedbackMarker] message back into its parts, or null when
   /// the header line is not the JSON [PromptOptimizerSession.addResultFeedback]
   /// writes. Shared by transcript restore, the iteration ledger, and the
@@ -1749,13 +1761,20 @@ class PromptOptimizerAgent {
         // its remaining iterations to burn. Without it the model can only
         // answer, submit or delegate (the sub-agent researches in its own
         // fresh context, so it stays useful exactly when this one is full).
-        final activeTools = toolsetFor(
-          acceptsImageInput: acceptsImageInput,
-          knowledgeMode: knowledgeMode,
-          editMode: editMode,
-          delegateKinds: delegateKinds,
-          contextExhausted: contextExhausted,
-        );
+        //
+        // The final round offers nothing at all (standard 07 §3.8): a model
+        // still working must write its answer down rather than spend the
+        // last request on one more call and end the turn with nothing said.
+        final finalRound = turn == maxTurns - 1;
+        final activeTools = finalRound
+            ? const <LLMTool>[]
+            : toolsetFor(
+                acceptsImageInput: acceptsImageInput,
+                knowledgeMode: knowledgeMode,
+                editMode: editMode,
+                delegateKinds: delegateKinds,
+                contextExhausted: contextExhausted,
+              );
 
         // What this request actually offers. Dispatch is gated on it below.
         final offered = {for (final t in activeTools) t.name};
@@ -1765,7 +1784,11 @@ class PromptOptimizerAgent {
         // knowledgeEntryContent is captured once per task, but staging means no
         // edit can reach disk mid-turn, so the injected file map cannot go
         // stale within a turn.
-        final sentChars = occupiedChars(systemPromptText, trimmedHistory);
+        final outgoing = [
+          ...trimmedHistory,
+          if (finalRound) LLMMessage(role: LLMRole.user, content: _finalRoundNudge),
+        ];
+        final sentChars = occupiedChars(systemPromptText, outgoing);
 
         // The two fixed costs of *this* request, for the usage readout. Here
         // rather than once per turn: activeTools shrinks when the window runs
@@ -1782,9 +1805,9 @@ class PromptOptimizerAgent {
             modelIdentifier: modelIdentifier,
             messages: [
               LLMMessage(role: LLMRole.system, content: systemPromptText),
-              ...trimmedHistory,
+              ...outgoing,
             ],
-            tools: activeTools,
+            tools: finalRound ? null : activeTools,
             contextId: contextId,
             options: const {
               // Transient relay/proxy disconnects (e.g. errno 10054) should
@@ -2080,7 +2103,15 @@ class PromptOptimizerAgent {
         // reply) gets a fresh maxTurns budget.
         if (pendingAskCallId != null) return;
       }
+      // Only reachable when even the tools-free final round came back with tool
+      // calls: those were paired as not offered, so the history is valid, but
+      // the user got no answer and has to be told why rather than left
+      // watching the turn simply stop.
       onLog?.call('Reached the maximum of $maxTurns agent turns — stopping.');
+      session._addEntry(OptimizerChatEntry(
+        kind: OptimizerEntryKind.notice,
+        text: roundLimitNoticeToken,
+      ));
     } finally {
       // Persist whatever this turn produced, even on error/cancel.
       try {

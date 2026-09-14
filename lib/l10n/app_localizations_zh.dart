@@ -4178,6 +4178,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optCompactedNotice => '较早的对话已压缩为摘要，以节省上下文。';
 
   @override
+  String get optRoundLimitNotice =>
+      '助手在这条消息上已用完步骤上限，尚未给出最终答复。发送一条后续消息（例如“继续”）即可让它接着做。';
+
+  @override
   String get optKbDistillRequested => '已请求：将本次调优经验总结进知识库。';
 
   @override
@@ -8897,6 +8901,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optCompactedNotice => '較早的對話已壓縮為摘要，以節省上下文。';
+
+  @override
+  String get optRoundLimitNotice =>
+      '助手在這則訊息上已用完步驟上限，尚未給出最終答覆。傳送一則後續訊息（例如「繼續」）即可讓它接著做。';
 
   @override
   String get optKbDistillRequested => '已請求：將本次調優經驗總結進知識庫。';

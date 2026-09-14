@@ -2735,6 +2735,7 @@
   "optDeleteSessionConfirm": "Delete this conversation permanently?",
   "optKbEntryTooLarge": "The knowledge base's README.md takes up a large share of this model's context window. It is re-sent with every request and summarizing cannot shrink it — trim it, or pick a model with a larger window.",
   "optCompactedNotice": "Earlier messages were compacted into a summary to save context.",
+  "optRoundLimitNotice": "The assistant hit its step limit for this message before giving a final answer. Send a follow-up such as “continue” to let it carry on.",
   "optKbDistillRequested": "Requested: distill this session's lessons into the knowledge base.",
   "optResultFeedbackAction": "Feedback to assistant",
   "optResultFeedbackChatLabel": "Result feedback",
