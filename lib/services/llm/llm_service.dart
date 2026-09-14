@@ -571,11 +571,33 @@ class LLMService {
     }
   }
 
+  /// Where usage rows are written. Null means the real database; tests swap
+  /// in a sink that throws to pin that recording is best-effort.
+  @visibleForTesting
+  static Future<void> Function(Map<String, dynamic> row)? usageSinkOverride;
+
+  /// Test door onto [_recordUsage].
+  @visibleForTesting
+  Future<void> recordUsageForTest(
+    LLMModelConfig config,
+    Map<String, dynamic> metadata, {
+    Map<String, dynamic>? options,
+    int imageCount = 0,
+  }) =>
+      _recordUsage(config.modelId, config, metadata,
+          options: options, imageCount: imageCount);
+
   /// [options] and [imageCount] feed spec billing: the request's output
   /// spec (size / quality / seconds) is read off the options — or off the
   /// provider's echo in [metadata] where there is one — and priced against
   /// the group's rate table; the units are the pictures the response
   /// carried, the seconds requested, or one per job. See [specUsageFor].
+  ///
+  /// **Best-effort: never throws** (standard 06 §1). It runs after the
+  /// provider has already generated — and billed — the output, so a locked
+  /// database or a bad spec table must not turn a delivered image into a
+  /// failed task, or lose an accepted video job's ticket before its id is
+  /// persisted. A failure is logged at WARN and swallowed.
   Future<void> _recordUsage(
     String modelId,
     LLMModelConfig config,
@@ -585,7 +607,30 @@ class LLMService {
     Map<String, dynamic>? options,
     int imageCount = 0,
   }) async {
-    final db = DatabaseService();
+    try {
+      await _writeUsageRow(modelId, config, metadata,
+          modelDbId: modelDbId,
+          taskTag: taskTag,
+          options: options,
+          imageCount: imageCount);
+    } catch (e) {
+      onLogAdded?.call(
+        'Usage for $modelId could not be recorded (the response itself is '
+        'unaffected): $e',
+        level: 'WARN',
+      );
+    }
+  }
+
+  Future<void> _writeUsageRow(
+    String modelId,
+    LLMModelConfig config,
+    Map<String, dynamic> metadata, {
+    int? modelDbId,
+    String? taskTag,
+    Map<String, dynamic>? options,
+    int imageCount = 0,
+  }) async {
     final spec = specUsageFor(config, options, metadata, imageCount: imageCount);
 
     // Standardize metadata keys. Three spellings are in play: Google
@@ -601,7 +646,8 @@ class LLMService {
     final outputTokens = outputTokensOf(metadata);
     final cacheTokens = _extractCacheTokens(metadata, promptTokens);
 
-    await db.recordTokenUsage({
+    final sink = usageSinkOverride ?? DatabaseService().recordTokenUsage;
+    await sink({
       // The tag makes delegated work distinguishable in the usage table
       // (e.g. `task_id LIKE 'subagent:%'`) — a sub-agent's spend should be
       // attributable to delegation, not blended into ordinary requests.
