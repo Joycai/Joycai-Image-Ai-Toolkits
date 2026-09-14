@@ -268,6 +268,46 @@ presetForTools(tools: "none" | "read" | "full"): TaskPreset | null
 
 会话场景每轮以 `routeTools(basePreset, subAgents, workspace, models)` 生成**有效 preset 副本**：vision 子代理可用则从主模型剥掉读图工具；任一子代理可用且有工作区则追加 `delegate`；search 子代理可用则主模型自己的 serverTools 置 "off"。判定必须用「enabled + 绑定 + **能力核验**」（vision 必须 multimodal、search 必须带 web_search）——「已启用」≠「可用」；只看开关，绑错模型的 search 子代理会把主模型自己的搜索拿走，却什么都还不回来。详细路由规则与子代理体系见第 09 篇。
 
+### 4.6 工具按需加载（deferred loading / tool search）
+
+参考实现：simple-ai-writer `src/lib/agent/registry.ts`（`ToolGroup` / `partitionByGroup`）、`runtime.ts`；
+设计与实测 `docs/feature/agent/agent-tool-context-lld.md` §5–§7；各族协议事实 `docs/api/tool-search.md`（2026-09 读官方文档，形状未实测）。
+
+**问题**：工具 schema 是每轮固定头部里最大的一块（参考实现全预设 39 个工具 ≈ 9.6K token/轮）。把一部分工具推迟到"需要时"才发，
+有两条路：**由运行状态装载**（零模型配合）或**让模型自己搜/要**（原生 tool search 或自制 `load_tools` 元工具）。
+
+#### 原生支持矩阵（截至 2026-09）
+
+| | 原生 | 延迟标记 / 搜索工具 | 应用自己插入定义 | 回传义务 |
+| --- | --- | --- | --- | --- |
+| ② OpenAI Responses | ✅ GPT-5.4+ | `defer_loading: true`；`{type:"tool_search", execution:"server"\|"client"}`；`{type:"namespace", …}` 分组 | ✅ `{type:"additional_tools", role:"developer", tools}` 条目，不经模型 | 下一轮 `input` **必须**带 `tool_search_output`（及 `additional_tools`），否则工具不可用 |
+| ④ Anthropic | ✅ 4.5+ | `defer_loading`；`tool_search_tool_regex_*` / `_bm25_*`；自带工具可在 `tool_result` 里返回 `tool_reference` | ❌（需经一次 tool_result） | 历史保留 `tool_search_tool_result` 块即可 |
+| ② xAI | ⚠️ 规格有，**实测 403**（仅 alpha 用户） | 同 OpenAI 形 | 未见 | 未写 |
+| ③ Gemini | ❌ | 请求带 `defer_loading` 字段**整个被拒**（第三方报告） | — | — |
+| ① Chat Completions（全部） | ❌ | — | — | — |
+
+语义差：OpenAI 的延迟函数模型仍看得到名字与描述（推迟的主要是参数 schema）；Anthropic 的延迟工具在搜到前完全不可见。
+
+**原生为什么重要：缓存。** 原生实现把取回的定义放在上下文末尾（OpenAI）或原地展开（Anthropic），**工具表前缀不动**；
+自己改 `tools` 参数则从工具表那一截起前缀缓存全部作废（OpenAI 另注明"换一批加载的工具会从那一点起破坏缓存"）。
+
+#### 规范立场：优先由运行状态装载，不让模型开口要
+
+1. **能从运行状态判定"此前必然用不上"的工具组，就推迟到状态成立那一刻装载。** 参考实现的 `lore_write` 组：没有已批准方案时这 9 个写工具**必然被门控拒绝**，所以批准前根本不发——模型路径完全不变（提方案 → 批准 → 动手），实测每轮省 2,542 token（26%）。
+2. **装载追加在常驻工具之后，用有序数组不用 Set**：前 N 项与装载前逐字节相同，缓存前缀继续命中，只有尾巴是新的。
+3. **执行白名单必须是当前 active 集，不是 preset 全集。** `executeRegisteredTool(call, active, ctx)`——若仍用 `preset.tools`，未装载的工具照样可执行，工具门成了摆设。**这是安全边界，不是优化**，回归测试钉住"首轮直接调未装载工具 → `Unknown tool`"。
+4. **装载条件读已有的唯一真相源**（如 `lorePlan.steps.length`），不另开布尔——两个真相源会分叉。只装载一次；按已批准方案的**形状**分组装载（批准改正文不倒出整理工具）。
+5. **可见**：发 `tools-loaded` 事件，执行日志一行「已装载 N 个工具」——否则日志里凭空出现上一轮没有的工具。
+6. **预算不跟着缩**：上下文 ceiling 仍按完整工具集算——这趟运行可能装载，按常驻算等于赌它不装。省下的是 wire token 与钱。
+
+**让模型自己要工具——实测否决**：自制 `load_tools` 元工具净省约 1,440 token/轮，但弱模型（gemma4:12b）在工具**就摆在眼前**时分段写文件 3 次 0 次走通，再加一层"先开口要工具"的间接只会从"做得差"变"做不了"。
+原生 tool search 解决的是缓存，不是这条理由，所以不足以单独翻案。**重开条件**：一个能稳定完成该任务的模型，在同样的间接下仍然稳定（需实测）。
+工具集继续变大时的正确答案：把更多组挂到运行状态装载上。
+
+**若采用原生机制，先做两件事**：
+- ② 族上最契合"零模型配合"的原生写法是 `additional_tools` 条目（定义在上下文末尾、前缀不动）——即运行状态装载的缓存友好版；
+- **回传名单必须扩充**：只回传 reasoning / function_call / message 的实现，要把 `tool_search_call` / `tool_search_output` / `additional_tools` 加进去，否则**加载过的工具下一轮静默消失**（回传缺失无现象）。Anthropic 侧还要注意：至少一个非延迟工具否则 400，`defer_loading` 与 `cache_control` 同时出现 400。
+
 ---
 
 ## 5. 事件系统
@@ -357,3 +397,7 @@ server-tool 日志行需要有状态工厂（query 随 call chunk 来、结果�
 - [ ] trimHistory：图片无条件保最新 N 张；超限只替换旧 tool 结果的 content，消息壳保留；system 与种子永不触碰。
 - [ ] round limit 询问发生在轮首（强制成文之前）；`onRoundLimit` 可选，渲染不了卡片的界面不传、保持硬停。
 - [ ] 事件所有权正确：runtime 发轮内事件，调用方发 run-start / run-done / run-error；tool-step 与 reasoning 在日志中原位替换；子代理事件带 parentStep 且 usage 分桶。
+- [ ] 工具按需加载优先由运行状态触发（零模型配合）；装载组追加在常驻工具之后（有序数组），装载只发生一次并发 `tools-loaded` 事件。
+- [ ] 执行白名单是当前 active 集而非 preset 全集，有"调未装载工具 → Unknown tool"的回归测试。
+- [ ] 上下文 ceiling 仍按完整工具集规划；没有自制"让模型开口要工具"的元工具（或有针对目标模型档位的实测证据）。
+- [ ] 若启用原生 tool search：Gemini / Chat Completions 路径不发 `defer_loading`；② 族回传名单含 `tool_search_call` / `tool_search_output` / `additional_tools`。

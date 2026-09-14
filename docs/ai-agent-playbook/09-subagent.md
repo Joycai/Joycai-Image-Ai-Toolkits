@@ -54,12 +54,12 @@ delegate: {
       "running on its own model. The subagent works in a separate context, writes " +
       "its full findings to a note file, and returns only a short summary plus the " +
       "note path — so its raw material never enters this conversation. Use it for " +
-      "web research, reading images, and digesting long documents.",
+      "web research, reading images, reading PDF files, and digesting long documents.",
     parameters: {
       type: "object",
       properties: {
-        kind: { type: "string", enum: ["search", "vision", "longread"],
-          description: "search — look things up on the web; vision — describe or analyse images; longread — read long documents and report what matters." },
+        kind: { type: "string", enum: ["search", "vision", "longread", "pdf"],
+          description: "search — look things up on the web; vision — describe or analyse images; longread — read long text documents and report what matters; pdf — read PDF files (refs must be .pdf paths)." },
         task: { type: "string",
           description: "A complete, self-contained instruction. The subagent cannot see this conversation, so state everything it needs to know." },
         refs: { type: "array", items: { type: "string" },
@@ -137,8 +137,8 @@ ${clip(output, 800)}    // DELEGATE_SUMMARY_CHARS = 800
 ### 3.1 数据模型
 
 ```ts
-export type SubAgentKind = "search" | "vision" | "longread";
-export const SUBAGENT_KINDS: readonly SubAgentKind[] = ["search", "vision", "longread"];
+export type SubAgentKind = "search" | "vision" | "longread" | "pdf";
+export const SUBAGENT_KINDS: readonly SubAgentKind[] = ["search", "vision", "longread", "pdf"];
 
 export interface SubAgentConfig {
   kind: SubAgentKind;
@@ -156,8 +156,22 @@ export interface SubAgentConfig {
 | `search` | 联网检索查证 | `[]`（无本地工具，搜索发生在端点内部） | **2** | `"always"` | `notes/search-*.md`（要求带原始 URL） |
 | `vision` | 图像理解 | `["read_image", "read_lore_image"]` | **3** | `"off"` | `notes/vision-*.md` |
 | `longread` | 长文精读提要 | `["read_file", "search_text", "list_files"]` | **4** | `"off"` | `notes/read-*.md` |
+| `pdf` | PDF 原件精读 | `[]`（文件已在首条消息里） | **1** | `"off"` | `notes/pdf-*.md` |
 
-三者一律 `finishPolicy: "force-text"`——子代理必须以文本收尾，那段文本就是产出。
+一律 `finishPolicy: "force-text"`——子代理必须以文本收尾，那段文本就是产出。
+
+**`pdf` 展示了第二种 refs 语义：载荷，不是阅读清单。** search/vision/longread 的
+refs 是「去读这些」的指路（子代理用自己的工具去取）；`pdf` 的 refs 是**内容本身**
+——执行器就地读取每个 `.pdf`，编成 ① 族 `file` 内容块
+（`{type:"file", file:{file_data: <data URL>, filename}}`，文件在前、指令在后）放进
+首条 user 消息。由此推出它的全部形状：`maxRounds: 1` 零工具（没有任何工具能在
+后续轮再取一份文件，请求本身就是全部工作）；`.pdf` 后缀强制、包含校验拒项目外与
+app 私有目录（文件是模型当文本读的文档，read_file 挡外泄的论证原样适用）；尺寸/
+份数上限沿用端点自己的（DashScope 单文件 150MB），超限**拒绝而非静默截断**；
+base64 用线性 join，不是图片管线的二次方累加（见 11 篇坑 36）。这种「载荷型 kind」
+的能力前置条件是模型上的**声明位**（`Model.pdfInput`，与 `serverTools` 同一哲学：
+作者买了什么由作者声明，探测无从问起，**绝不 sniff 模型名**——厂商扩大支持面时
+作者勾一下即可，目前的真实样本是 qwen3.8-max）。
 
 **陷阱：`serverTools` 必须是独立于「收尾轮撤工具」的概念。** 若 runtime 用 `preset.tools.length === 0 || 收尾轮` 一并撤掉服务端工具，则本地工具恒为空的 search 子代理**永远不联网**。应当把「没有本地工具」和「该收尾了」拆成两个概念：`TaskPreset.serverTools: "final-round-off"(默认) | "off" | "always"`，search 用 `always`。默认值使既有 preset 行为逐字不变，可整体回退。
 
@@ -165,7 +179,7 @@ export interface SubAgentConfig {
 
 ### 3.3 持久化与悬空绑定清理
 
-- 配置应当是**应用级偏好**，不进项目目录——「它描述的是用户买了什么账号，不是这个项目的内容」。参考实现是 6 个 pref 键：`ai:subagent:{kind}:modelId` / `ai:subagent:{kind}:enabled`。
+- 配置应当是**应用级偏好**，不进项目目录——「它描述的是用户买了什么账号，不是这个项目的内容」。参考实现是每 kind 两个 pref 键：`ai:subagent:{kind}:modelId` / `ai:subagent:{kind}:enabled`（加 kind = 加两个键，读写循环遍历 `SUBAGENT_KINDS` 自动覆盖）。
 - store 暴露 `subAgents: Record<SubAgentKind, SubAgentConfig>` + `setSubAgent(kind, patch)`。
 - **三处清理逻辑**保证绑定不会指向已删除的模型行：
   1. `loadConfig`——配置刷新后逐一验 modelId 是否还在模型表；
@@ -178,7 +192,7 @@ export interface SubAgentConfig {
 设置面板刻意做薄：每个 kind 只有**开关 + 模型下拉**。
 
 - 下拉候选过滤掉不能对话的模型（如 `models.filter(m => m.enabled && m.type !== "image")`）。
-- `warningFor(kind, model)` 就地内联警告：search 绑了无 `serverTools: ["web_search"]` 的模型、vision 绑了非 multimodal 模型时立即提示——「等运行时才报，作者已经白等一个往返，被告知一件这个界面早就知道的事」。
+- `warningFor(kind, model)` 就地内联警告：search 绑了无 `serverTools: ["web_search"]` 的模型、vision 绑了非 multimodal 模型、pdf 绑了无 `pdfInput` 声明的模型时立即提示——「等运行时才报，作者已经白等一个往返，被告知一件这个界面早就知道的事」。
 - **警告但不阻止保存**（用户可能配到一半）。因此下游一律必须用 `subAgentModel()` 再验（见 §4.2）——面板的宽容以下游的严格为前提。
 
 ### 3.5 会话级 chips：只减不增
@@ -309,7 +323,8 @@ toolContext: {
 - ctx 四件套齐不齐（`taskWorkspace`/`signal`/`onNestedEvent`/`resolveSubAgent`，缺任一 → "this surface cannot run subagents"）；
 - kind 合法、task 非空；
 - 连接可解析；
-- **kind 前置条件**：search 模型必须有 web_search、vision 模型必须 multimodal。
+- **kind 前置条件**：search 模型必须有 web_search、vision 模型必须 multimodal、pdf 模型必须有 `pdfInput` 声明；
+- **载荷型 kind 再加载荷校验**（pdf）：refs 里至少一个 `.pdf`、每个文件过包含校验与尺寸/份数上限——任何一项不过就整个拒绝，不发半截请求。
 
 理由：绑错模型的子代理「要烧一整个往返才报告，而且报出来的形态是『子代理失败』而不是『配置不对』」。
 

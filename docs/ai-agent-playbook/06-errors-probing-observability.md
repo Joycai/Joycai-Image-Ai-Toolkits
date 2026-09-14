@@ -71,7 +71,7 @@
 - 开关在设置里；关着时返回 **noop logger**（调用点无条件调用，无 if）。
 - JSONL 按天一文件。
 - **永不写 apiKey。**
-- base64 图片替换成 `<image data url, N chars omitted>` 占位——结构化递归裁剪任何 >2048 字符的字符串，**协议无关**（适配器 body 形状变了照样工作）。
+- base64 图片替换成 `<image data url, N chars omitted>` 占位——结构化递归裁剪任何 >2048 字符的字符串，**协议无关**（适配器 body 形状变了照样工作）。新增一种大载荷（如 ① 族 `file` 内容块里的整份 PDF）时消息级脱敏要跟上：同样的重量问题在 PDF 尺度上是 100MB 级，一条没脱敏的日志行等于没人打得开的日志文件（结构化递归裁剪是兜底，消息级替换保住 filename 等可读信息）。
 - **写入串行化**——agent 循环并发调用不能交错行。
 - 三类条目：
   - `request` —— 调用方意图（消息形状）；
@@ -79,6 +79,32 @@
   - `response` / `error` —— 含 stopReason / truncated。"回答就这么停了"是这份日志要解释的头号问题：只有 stop reason 能区分 max_tokens 截断 / tool_use 该继续 / end_turn 模型自认写完。
 
 验证方法论：所有"文档说支持但未实测"的能力（thinking 各方言等），验证方式就是**打开 API 日志直接读 body**——这个日志是兼容层适配的第一调试工具。
+
+### 4.1 回显比对：端点悄悄换了你的参数
+
+参考实现：`src/lib/ai/responses.ts` 的 `readTerminalUsage`，`types.ts` 的 `WireRewrite`，决策记录 `docs/api/gpt56-plan.md` P2。
+
+**失败形态**：请求 200、输出正常，但端点跑的不是你发的参数。实测（New API 中转站，GPT-5.6）：
+sol 发 effort `max` → 回显 `none`、`reasoning_tokens: 0`；terra 发 `none` → 两次都回显 `medium` 且照样推理；
+`temperature: 0.5` → 回显 `1.0`。作者以为开了（或关了）深思考，其实没有——典型的"不响"类失败。
+
+**可利用的事实**：② Responses 族的终止响应（`response.completed` / `incomplete` 的 `response`）**回显请求字段**。
+
+规则：
+
+1. **比对的是最终 body 里真正发出的值**（extraBody 覆盖之后），与终止响应回显的 `reasoning.effort` / `temperature` 对比；数值用容差比较。
+2. **不一致 → 报告，不重试、不改请求、不抛错**：改写可能来自中转站、档位或后端，客户端分不清；输出本身可用。
+   产出 `done` chunk 上的 `wireRewrites?: {field, sent, echoed}[]` → 写进 API 日志的 response 条目 + 执行日志该轮一行（「端点把 effort 从 max 改成了 none」），作者看见就能换档。
+3. **回显缺失时什么都不说**：实测同一档位背后有多个上游，有的响应根本没有这些字段。只报告"有回显且不一致"，缺字段 ≠ 被改写。
+4. ① Chat Completions 没有回显字段，这条机制在那一族上不存在——不要去伪造。
+
+### 4.2 包装器装钩子必须串联，不能替换
+
+**事故**：统一入口为了把请求体写进 API 日志，把 `_onRequestBody` 设成自己的函数——**覆盖了调用方传入的同名钩子**。
+live 实测文件通过这个钩子读自己发出的 body，所有 `bodies[0]` 断言从此读到 `undefined`：一轮 12 条实测里 6 条"失败"不是端点的错，是这个。
+
+规则：横切层给选项对象装任何回调（日志、计时、看门狗），一律 `(x) => { own(x); caller?.(x); }`；并加一条单测钉住"调用方钩子仍被调用"。
+`onChunk` 早就是这么包的，偏偏"调用方一般不传"的内部钩子最容易被写成替换。
 
 ## 5. providerProbe：连接测试与模型列表（配置时点）
 
@@ -145,6 +171,19 @@ Step 3  deep(opt-in) 从声明值开始的二分搜索找真实接受上限（�
 2. **凡跨轮回传的，原物整存**（thinking blocks、thoughtSignature、encrypted_content、reasoning 字段名）；"理解后重建"恰好丢掉的就是完整性校验依赖的那部分。
 3. **先问失败会不会响。** 会响的（400）靠错误驱动降级即可；不响的（静默降级/静默截断/静默忽略）必须主动验证（API 日志对照、探测、"结果之后模型说话了吗"式的间接判据），并且**只有这类才值得预先花设计预算**。
 
+## 8. 付费实测（live probe）纪律
+
+参考实现：simple-ai-writer `src/lib/__tests__/live.openai-responses.test.ts`、`live.qianwen.test.ts`；结果记录在 `docs/api/landscape.md` §7 的编号样本。
+
+中转站与新型号的真实行为只能花钱测。每一次都要留下可复跑、可引用的产物：
+
+1. **驱动真实 adapter**：经 `streamCompletion` 发请求，验证的是应用自己的请求体与流解析，而不是手写的 curl 仿制品。先用 curl 便宜地摸清形状，再写 live 文件。
+2. **env 门控、不进常规套件**：`describe.skipIf(!KEY)`；base / 模型列表也走 env（中转站模型 id 常带档位前缀）。key 只在命令行 env 里，**永不进仓库文件**。
+3. **"全部 skipped" = key 没加载，不是通过。** 典型原因：key 写在 shell 配置文件里，而工具/CI 的非交互 shell 不读它——每条命令显式经登录 shell 加载（或显式 export）。看到 0 passed / N skipped 先查 env。
+4. **控制 token 成本**：多型号共有的能力只在最便宜的那款上跑全套，其余型号只补"可能不同"的几条（默认力度、上限档位、专有模式）；按型号差异写小谓词（如"哪些型号 `max` 会 400""哪些型号拒 `none`"），避免一个已知 400 把无关用例全拖红。
+5. **夹具要满足端点下限**：xAI 拒绝总像素 < 512 的图片——16×16 的测试图会让图片用例失败在夹具上。
+6. **结果写成编号样本**：每条结论标"实测 / 文档口径 / 中转站干的 / 未验"，与文档不符的按实测记并注明；中转站行为与协议事实分开记，别让中转站的改写污染协议事实页。
+
 ---
 
 ## 本篇检查清单
@@ -164,3 +203,6 @@ Step 3  deep(opt-in) 从声明值开始的二分搜索找真实接受上限（�
 - [ ] endpointProbe 四步递进；判断逻辑在独立纯函数模块可单测；探测前告知成本；finding 带 confidence；probedAt 呈现为"某日实测"。
 - [ ] 作者填的值与实测值分开存储。
 - [ ] 新能力接入时先过一遍"声明 / 运行时降级 / 花钱实测"三分法，只有数值才实测。
+- [ ] ② 族终止事件做回显比对（effort / temperature，比最终 body 的值）；不一致进 `wireRewrites` → API 日志 + 执行日志；不重试不抛错；回显缺失不报告。
+- [ ] 入口/包装层装的每个回调都串联调用方的同名回调，有单测钉住。
+- [ ] live 实测：驱动真实 adapter、env 门控、key 不落仓库；"全部 skipped"按 key 未加载排查；共有能力只在最便宜型号上跑全套；结果记为编号样本并区分实测/文档/中转站/未验。
