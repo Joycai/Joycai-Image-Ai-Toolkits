@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_images_protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 
 /// The output spec is read off workbench parameters spelled by many
 /// families and typed by hand into rate tables, so both sides normalise the
@@ -71,6 +73,38 @@ void main() {
       expect(OutputSpec.normalizeSeconds('0'), isNull);
       expect(OutputSpec.normalizeSeconds('long'), isNull);
       expect(OutputSpec.normalizeSeconds(null), isNull);
+    });
+  });
+
+  group('WxH spellings (B9)', () {
+    test('parseWxH reads x, X, * and ×, with whitespace', () {
+      for (final s in ['1024x768', '1024X768', '1024*768', '1024×768', ' 1024 * 768 ']) {
+        expect(parseWxH(s), (width: 1024, height: 768), reason: s);
+      }
+      expect(parseWxH('1K'), isNull);
+      expect(parseWxH('0x768'), isNull);
+      expect(parseWxH(null), isNull);
+      expect(parseWxH(1024), isNull);
+    });
+
+    test('normalizeSize folds the DashScope * spelling into WxH', () {
+      // A rate table typed as 1024x1024 must price a request that went out
+      // as DashScope's 1024*1024.
+      expect(OutputSpec.normalizeSize('1024*1024'), '1024x1024');
+    });
+
+    test('the OpenAI Images size keeps an explicit * size', () {
+      // Only lowercase x used to match, so a size carried over from a
+      // DashScope selection was dropped and the upstream default rendered.
+      expect(OpenAIImagesProtocol.resolveImageSize({'imageSize': '1536*1024'}),
+          '1536x1024');
+      expect(OpenAIImagesProtocol.resolveImageSize({'imageSize': '1024X1536'}),
+          '1024x1536');
+    });
+
+    test('the video size keeps an explicit * size', () {
+      expect(resolveVideoSize({'size': '1280*720'}), '1280x720');
+      expect(resolveVideoSize({'size': '720×1280'}), '720x1280');
     });
   });
 

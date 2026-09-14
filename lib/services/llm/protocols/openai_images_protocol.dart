@@ -58,7 +58,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     final url = Uri.parse('$baseUrl/images/${isEdit ? 'edits' : 'generations'}');
     logger?.call('Preparing OpenAI Images request (${isEdit ? 'edit' : 'generate'}) to: ${url.host}', level: 'DEBUG');
 
-    final size = _resolveImageSize(options);
+    final size = resolveImageSize(options);
     final quality = _resolveQuality(options);
     final client = config.createClient();
     try {
@@ -198,14 +198,13 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
   }
 
   /// Map the app's aspect-ratio / image-size options onto an OpenAI image size.
-  String? _resolveImageSize(Map<String, dynamic>? options) {
+  static String? resolveImageSize(Map<String, dynamic>? options) {
     if (options == null) return null;
 
-    // Explicit WxH wins if it already looks like a pixel size.
-    final explicit = options['imageSize'];
-    if (explicit is String && RegExp(r'^\d+x\d+$').hasMatch(explicit)) {
-      return explicit;
-    }
+    // Explicit WxH wins if it already looks like a pixel size — in any of
+    // the spellings [parseWxH] reads, sent in the `WxH` this API expects.
+    final explicit = parseWxH(options['imageSize']);
+    if (explicit != null) return '${explicit.width}x${explicit.height}';
 
     final aspect = options['aspectRatio'];
     if (aspect is! String || aspect == 'not_set') return null;

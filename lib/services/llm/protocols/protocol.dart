@@ -8,6 +8,7 @@ import 'package:http_parser/http_parser.dart';
 import '../../../core/image_magic.dart';
 import '../llm_types.dart';
 import '../model_descriptor.dart';
+import '../output_spec.dart' show parseWxH;
 import '../vendors/vendor_profile.dart';
 
 // Every debug-log line that prints a request URL must redact it first —
@@ -16,6 +17,7 @@ import '../vendors/vendor_profile.dart';
 // mechanism's bug a credential leak. Re-exported here so protocols need no
 // extra import.
 export '../vendors/vendor_profile.dart' show redactUrl;
+export '../output_spec.dart' show parseWxH;
 
 /// **Layer 1 — the protocol.**
 ///
@@ -425,11 +427,9 @@ String? readStringOption(Map<String, dynamic>? options, String key) {
 String? resolveVideoSize(Map<String, dynamic>? options) {
   if (options == null) return null;
 
-  // Explicit WxH wins.
-  final explicit = options['size'];
-  if (explicit is String && RegExp(r'^\d+x\d+$').hasMatch(explicit)) {
-    return explicit;
-  }
+  // Explicit WxH wins, in any of the spellings [parseWxH] reads.
+  final explicit = parseWxH(options['size']);
+  if (explicit != null) return '${explicit.width}x${explicit.height}';
 
   final aspect = options['aspectRatio']?.toString();
   final resolution = options['resolution']?.toString() ?? '720p';
