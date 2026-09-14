@@ -327,10 +327,17 @@ class LLMMessage {
   /// *silently disabling thinking* (while billing it) rather than erroring.
   final List<Map<String, dynamic>>? rawThinkingBlocks;
 
-  /// The model that produced [rawThinkingBlocks] and [rawContentBlocks].
-  /// Replay is model-scoped: another model silently ignores foreign blocks
-  /// and still bills them as input, so the payload builder drops the group
-  /// on mismatch.
+  /// The model that produced this turn's replay carriers: [rawThinkingBlocks]
+  /// and [rawContentBlocks] (④), the reasoning field named by
+  /// [reasoningFieldName] (① / DashScope native), and the
+  /// [LLMToolCall.thoughtSignature]s of [toolCalls] (③).
+  ///
+  /// Replay is model-scoped (reasoning 03 §5 rule 2): another model silently
+  /// ignores foreign ④ blocks and still bills them as input, official OpenAI
+  /// 400s an unknown `reasoning_content`, and a relay bills it — so every
+  /// payload builder drops the carrier on mismatch. ④'s raw blocks require a
+  /// match; the other carriers are still echoed when this is null, which is
+  /// how sessions persisted before it was recorded keep working.
   final String? rawThinkingModelId;
 
   /// ④'s **entire** `content` array of this assistant turn, verbatim, when

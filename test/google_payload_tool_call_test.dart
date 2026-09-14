@@ -80,6 +80,47 @@ void main() {
     });
   });
 
+  group('thought signatures are model-scoped (reasoning 03 §5)', () {
+    List<LLMMessage> history(String? producer) => [
+          LLMMessage(role: LLMRole.user, content: 'go'),
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: '',
+            rawThinkingModelId: producer,
+            toolCalls: [
+              LLMToolCall(
+                id: 'g1',
+                name: 'list_files',
+                arguments: const {},
+                thoughtSignature: 'sig-x',
+              ),
+            ],
+          ),
+        ];
+
+    Map signedPart(String? producer, String target) =>
+        (((prepareGooglePayload(history(producer), null, null,
+                    modelId: target)['contents'] as List)[1] as Map)['parts']
+                as List)
+            .single as Map;
+
+    test('the producing model gets the signature back', () {
+      expect(signedPart('gemini-3-pro', 'gemini-3-pro')['thoughtSignature'],
+          'sig-x');
+    });
+
+    test('another model does not', () {
+      expect(
+          signedPart('gemini-3-pro', 'gemini-2.5-flash')
+              .containsKey('thoughtSignature'),
+          isFalse);
+    });
+
+    test('a turn with no recorded producer still replays it', () {
+      expect(signedPart(null, 'gemini-2.5-flash')['thoughtSignature'], 'sig-x');
+    });
+  });
+
   group('synthesized call ids (protocol 02 §3.2)', () {
     Map<String, dynamic> callChunk(List<String> names) => {
           'candidates': [

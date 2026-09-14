@@ -870,6 +870,8 @@ class OpenAIChatProtocol implements ChatProtocol {
         metadata: metadata,
         reasoningContent: reasoningContent,
         reasoningFieldName: reasoningFieldName,
+        // The replay scope of the field — see the payload builder's echo rule.
+        rawThinkingModelId: reasoningFieldName == null ? null : config.modelId,
         toolCalls: toolCalls,
       );
     } finally {
@@ -1386,7 +1388,15 @@ class OpenAIChatProtocol implements ChatProtocol {
           // replayed. Echo under the exact field name it arrived with —
           // vendors that don't require it simply ignore the field. Inline
           // (<think>) reasoning has no field name and no obligation.
-          if (msg.reasoningContent != null && msg.reasoningFieldName != null)
+          //
+          // Model-scoped (reasoning 03 §5 rule 2): only to the model that
+          // produced it. Another model's official host 400s the unknown
+          // field and a relay bills it. A turn with no recorded producer —
+          // persisted before one was recorded — is still echoed.
+          if (msg.reasoningContent != null &&
+              msg.reasoningFieldName != null &&
+              (msg.rawThinkingModelId == null ||
+                  msg.rawThinkingModelId == target.config.modelId))
             msg.reasoningFieldName!: msg.reasoningContent,
           "tool_calls": msg.toolCalls
               .map(

@@ -190,9 +190,14 @@ AnthropicHistory buildAnthropicHistory(
           blocks.addAll(rawBlocks);
         }
       } else if (msg.reasoningContent != null &&
-          msg.reasoningSignature != null) {
+          msg.reasoningSignature != null &&
+          (modelId == null ||
+              msg.rawThinkingModelId == null ||
+              msg.rawThinkingModelId == modelId)) {
         // Legacy path (histories persisted before raw-block capture): a
-        // sealed thinking block reconstructed from the display fields. With
+        // sealed thinking block reconstructed from the display fields —
+        // model-scoped like the raw blocks, except that a turn with no
+        // recorded producer (the truly old ones) is still replayed. With
         // thinking on, ④ rejects a replayed tool-calling turn whose thinking
         // block is missing or unsigned — and it must precede the text and
         // tool_use blocks it led to. An unsigned one is dropped rather than

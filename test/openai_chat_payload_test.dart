@@ -333,6 +333,55 @@ void main() {
       expect(assistant.containsKey('reasoning'), isFalse);
     });
 
+    // reasoning 03 §5.2, pitfalls 11 §A3: a reasoning field belongs to the
+    // model that wrote it. Sent to another model, official OpenAI 400s the
+    // unknown field and a relay bills it as input.
+    group('model scoping', () {
+      Map<String, dynamic>? assistantOf(Map<String, dynamic> payload) =>
+          (payload['messages'] as List)
+              .cast<Map<String, dynamic>>()
+              .where((m) => m['role'] == 'assistant')
+              .firstOrNull;
+
+      LLMMessage toolTurn(String? producer) => LLMMessage(
+            role: LLMRole.assistant,
+            content: '',
+            reasoningContent: 'deepseek thought',
+            reasoningFieldName: 'reasoning_content',
+            rawThinkingModelId: producer,
+            toolCalls: [LLMToolCall(id: 'c', name: 'f', arguments: {})],
+          );
+
+      test('the producing model gets its reasoning back', () {
+        final payload = protocol.buildChatPayloadForTest(
+          target('deepseek-v4-pro'),
+          [toolTurn('deepseek-v4-pro')],
+          isStreaming: false,
+        );
+        expect(assistantOf(payload)!['reasoning_content'], 'deepseek thought');
+      });
+
+      test('another model does not', () {
+        final payload = protocol.buildChatPayloadForTest(
+          target('gpt-5-chat'),
+          [toolTurn('deepseek-v4-pro')],
+          isStreaming: false,
+        );
+        expect(assistantOf(payload)!.containsKey('reasoning_content'), isFalse);
+      });
+
+      test('a legacy turn with no recorded producer is still echoed', () {
+        // Sessions persisted before the producer was recorded must keep
+        // working — DeepSeek 400s a tool turn replayed without its reasoning.
+        final payload = protocol.buildChatPayloadForTest(
+          target('gpt-5-chat'),
+          [toolTurn(null)],
+          isStreaming: false,
+        );
+        expect(assistantOf(payload)!['reasoning_content'], 'deepseek thought');
+      });
+    });
+
     test('an assistant turn without tool calls does not echo reasoning', () {
       final payload = protocol.buildChatPayloadForTest(
         target('some-model'),

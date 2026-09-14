@@ -253,6 +253,27 @@ void main() {
       expect(response.reasoningContent, 'native thought');
     });
 
+    test('a reasoning field records the model that produced it', () async {
+      // The replay scope: the payload builder echoes the field only to this
+      // model (reasoning 03 §5).
+      sseLines = [
+        '{"choices":[{"message":{"role":"assistant",'
+            '"reasoning_content":"thought","content":"answer"},'
+            '"finish_reason":"stop"}]}',
+      ];
+      final response = await OpenAIChatProtocol().generate(
+          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      expect(response.rawThinkingModelId, 'test-model');
+
+      sseLines = [
+        '{"choices":[{"message":{"role":"assistant","content":"answer"},'
+            '"finish_reason":"stop"}]}',
+      ];
+      final plain = await OpenAIChatProtocol().generate(
+          target(), [LLMMessage(role: LLMRole.user, content: 'hi')]);
+      expect(plain.rawThinkingModelId, isNull);
+    });
+
     test('the synchronous path refuses an empty message too', () async {
       sseLines = [
         '{"choices":[{"message":{"role":"assistant","content":""},'

@@ -335,9 +335,18 @@ class LLMService {
       reasoningSignature: reasoningSignature,
       rawThinkingBlocks: rawThinkingBlocks,
       rawContentBlocks: rawContentBlocks,
-      rawThinkingModelId: rawThinkingBlocks == null && rawContentBlocks == null
-          ? null
-          : config.modelId,
+      // The producer of every replay carrier this turn captured: ④'s blocks,
+      // a ①/DashScope reasoning field, ③'s thought signatures. The payload
+      // builders echo them only to the same model (reasoning 03 §5 rule 2) —
+      // a DeepSeek `reasoning_content` sent on to official OpenAI is a 400,
+      // to a relay a bill.
+      rawThinkingModelId:
+          rawThinkingBlocks != null ||
+              rawContentBlocks != null ||
+              fieldReasoning.isNotEmpty ||
+              accumulatedToolCalls.any((c) => c.thoughtSignature != null)
+          ? config.modelId
+          : null,
     );
 
     return (response: response, cancelled: cancelledMidStream);

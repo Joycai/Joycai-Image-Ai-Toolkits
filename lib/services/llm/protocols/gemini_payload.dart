@@ -390,12 +390,17 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
 /// modalities when it is *translating* an OpenAI-shaped request, so on the
 /// native surface the field is ours to send or the model answers in text
 /// only — silently, for the models that need it declared.
+///
+/// [modelId] is the model the request goes to. A replayed call's
+/// `thoughtSignature` is echoed only to the model that produced it, or when
+/// no producer was recorded (reasoning 03 §5 rule 2).
 Map<String, dynamic> prepareGooglePayload(
   List<LLMMessage> history,
   Map<String, dynamic>? options,
   String? endpoint, {
   List<LLMTool>? tools,
   bool emitsImages = false,
+  String? modelId,
 }) {
   final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
   final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
@@ -472,7 +477,13 @@ Map<String, dynamic> prepareGooglePayload(
           "name": tc.name,
           "args": tc.arguments,
         },
-        if (tc.thoughtSignature != null) "thoughtSignature": tc.thoughtSignature,
+        // Only to the model that produced it: another model has no use for
+        // the signature and it still travels as input.
+        if (tc.thoughtSignature != null &&
+            (msg.rawThinkingModelId == null ||
+                modelId == null ||
+                msg.rawThinkingModelId == modelId))
+          "thoughtSignature": tc.thoughtSignature,
       });
     }
 

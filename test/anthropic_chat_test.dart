@@ -1181,6 +1181,24 @@ void main() {
       });
     });
 
+    test('a reconstructed legacy block from another model is dropped too', () {
+      final p = payload([
+        LLMMessage(role: LLMRole.user, content: 'go'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          reasoningContent: 'old turn',
+          reasoningSignature: 'sig-old',
+          rawThinkingModelId: 'claude-haiku-4-5',
+          toolCalls: [LLMToolCall(id: 't1', name: 'f', arguments: {})],
+        ),
+      ]);
+      final assistant = (p['messages'] as List)[1] as Map;
+      final types =
+          [for (final b in assistant['content'] as List) (b as Map)['type']];
+      expect(types, isNot(contains('thinking')));
+    });
+
     test('raw blocks survive an LLMMessage JSON round-trip', () {
       final msg = LLMMessage(
         role: LLMRole.assistant,

@@ -384,6 +384,13 @@ thinking / server tool 一起加。
    注意这与 ① 的机制不同：① 回传的是一个**字段**（名字记在
    `reasoningFieldName`），④ 回传的是一整个**块**，所以 ④ 路径上
    `reasoningFieldName` 永远是 null，① 的 payload builder 才不会替它编一个字段名。
+   **三族的回传载体都按产出模型限定**（2026-09-14）：`rawThinkingModelId` 记录
+   产出者——④ 的块、①/百炼原生的推理字段、③ 调用上的 `thoughtSignature`
+   一视同仁（同步路径由协议记，流式路径由 `LLMService._streamOnce` 记），
+   payload builder 只回传给同一个模型：换了模型，① 官方对未知字段 400，中转照
+   input 计费。④ 的原始块要求匹配；其余载体在 `rawThinkingModelId` 为 null 时
+   照旧回传，这是记录产出者之前持久化的旧会话能继续用的原因。内联 `<think>`
+   切出来的推理从不并入这个字段（reasoning 03 §6 第三条）。
 6. **server tool 不是 tool call。** `web_search_20250305` 由服务端自己执行、
    自己回答，响应里的 `server_tool_use` + `web_search_tool_result` 是**已完成的
    事实**。把它当 `LLMToolCall` 交给 agent 循环，等于让本地去跑一个没人要求的

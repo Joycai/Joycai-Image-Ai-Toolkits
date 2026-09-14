@@ -38,6 +38,7 @@ class GeminiChatProtocol implements ChatProtocol {
       config.endpoint,
       tools: tools,
       emitsImages: target.model.capabilities.isImageGenerator,
+      modelId: config.modelId,
     );
     logger?.call(
       'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',
@@ -121,6 +122,11 @@ class GeminiChatProtocol implements ChatProtocol {
         // ③'s thought summaries, kept off the deliverable. No field name: ③'s
         // replay obligation is the thoughtSignature on the call, not this.
         reasoningContent: reasoning.isEmpty ? null : reasoning,
+        // The producer of the calls' thought signatures, which are replayed
+        // only to the same model (prepareGooglePayload).
+        rawThinkingModelId: toolCalls.any((c) => c.thoughtSignature != null)
+            ? config.modelId
+            : null,
         toolCalls: toolCalls,
       );
     } finally {
@@ -163,6 +169,7 @@ class GeminiChatProtocol implements ChatProtocol {
       config.endpoint,
       tools: tools,
       emitsImages: target.model.capabilities.isImageGenerator,
+      modelId: config.modelId,
     );
     logger?.call(
       'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',
