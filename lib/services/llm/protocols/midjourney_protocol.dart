@@ -240,7 +240,7 @@ class MidjourneyProtocol implements ChatProtocol {
                   'Midjourney task $taskId succeeded but returned no imageUrl');
             }
             onProgress?.call('Downloading image…');
-            final bytes = await _downloadImage(client, imageUrl);
+            final bytes = await _downloadImage(client, imageUrl, logger);
             return _MjResult(
               images: [bytes],
               metadata: {
@@ -277,12 +277,17 @@ class MidjourneyProtocol implements ChatProtocol {
         apiName: 'Midjourney fetch', checkEnvelope: false);
   }
 
-  Future<Uint8List> _downloadImage(http.Client client, String url) async {
-    final resp = await client.get(Uri.parse(url));
-    if (resp.statusCode != 200) {
-      throw Exception('Midjourney image download failed: ${resp.statusCode}');
+  /// Through the shared resolver: one retry, and a body that is not an image
+  /// (an expired CDN link's HTML page) is refused rather than saved.
+  Future<Uint8List> _downloadImage(
+      http.Client client, String url, LLMLogger? logger) async {
+    final bytes = await resolveImageRef(url, client, logger);
+    if (bytes == null) {
+      throw LLMApiException(
+          'Midjourney image download failed for $url — no image after one '
+          'retry (see the log). The task itself succeeded upstream.');
     }
-    return resp.bodyBytes;
+    return bytes;
   }
 
   /// Rewrite the user's prompt to include MJ CLI flags derived from the

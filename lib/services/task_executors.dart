@@ -149,8 +149,20 @@ extension TaskExecutors on TaskQueueService {
 
     if (task.status == TaskStatus.cancelled) return;
 
+    var unrecognised = 0;
     for (int i = 0; i < generatedImages.length; i++) {
       final bytes = generatedImages[i];
+      // Refused rather than defaulted to `.png`: bytes no image format
+      // recognises are an HTML error page or a truncated body, and writing
+      // them out put an unopenable file in the gallery under a success.
+      if (imageMimeFromBytes(bytes) == null) {
+        unrecognised++;
+        task.addLog(
+          'Warning: result ${i + 1} of ${generatedImages.length} is not a '
+          'recognisable image (${bytes.length} bytes) and was not saved.',
+        );
+        continue;
+      }
       final prefix = FileUtils.safeFilenamePrefix(
         '${task.parameters['imagePrefix'] ?? 'result'}',
         fallback: 'result',
@@ -171,6 +183,13 @@ extension TaskExecutors on TaskQueueService {
       task.addLog('Saved result image to: $filePath');
 
       onTaskCompleted?.call(file);
+    }
+
+    if (generatedImages.isNotEmpty && unrecognised == generatedImages.length) {
+      throw Exception(
+        'None of the ${generatedImages.length} returned result(s) is a '
+        'recognisable image; nothing was saved.',
+      );
     }
   }
 

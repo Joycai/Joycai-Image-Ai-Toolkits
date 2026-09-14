@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -206,12 +205,9 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
     http.Client client,
     LLMLogger? logger,
   ) async {
-    final refs = dashscopeImageRefs(data);
-    final images = <Uint8List>[];
-    for (final ref in refs) {
-      final bytes = await resolveImageRef(ref, client, logger);
-      if (bytes != null) images.add(bytes);
-    }
+    final images = await resolveImageRefs(
+        dashscopeImageRefs(data), client, logger,
+        source: 'DashScope image task $taskId');
 
     if (images.isEmpty) {
       // One deliverable — nothing to return is a failure, not an empty

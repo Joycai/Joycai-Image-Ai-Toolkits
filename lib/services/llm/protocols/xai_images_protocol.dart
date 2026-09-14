@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
@@ -115,23 +114,21 @@ class XaiImagesProtocol implements ImageGenProtocol {
       final data = decodeJsonBody(response, apiName: 'xAI Images API');
       final rawItems = data['data'];
       final List<dynamic> items = rawItems is List ? rawItems : const [];
-      final List<Uint8List> images = [];
-
-      for (final item in items) {
-        if (item is! Map) continue;
-        final b64 = item['b64_json'];
-        if (b64 is String && b64.isNotEmpty) {
-          images.add(base64Decode(b64));
-          continue;
-        }
-        final imgUrl = item['url'];
-        if (imgUrl is String && imgUrl.isNotEmpty) {
-          try {
-            final imgResp = await client.get(Uri.parse(imgUrl));
-            if (imgResp.statusCode == 200) images.add(imgResp.bodyBytes);
-          } catch (_) {/* ignore */}
-        }
-      }
+      // Through the shared resolver: a failed link used to be swallowed
+      // without a word, a `data:` URI in `url` was fetched as a link, and an
+      // HTML body was accepted as an image.
+      final refs = <String>[
+        for (final item in items)
+          if (item is Map)
+            if (item['b64_json'] is String &&
+                (item['b64_json'] as String).isNotEmpty)
+              item['b64_json'] as String
+            else if (item['url'] is String &&
+                (item['url'] as String).isNotEmpty)
+              item['url'] as String,
+      ];
+      final images = await resolveImageRefs(refs, client, logger,
+          source: 'xAI Images API');
 
       if (images.isEmpty) {
         // e.g. respect_moderation=false leaves url/b64 empty.

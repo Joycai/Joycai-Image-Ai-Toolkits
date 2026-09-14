@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
@@ -114,14 +113,12 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
       // Per-image failure lives one level down and survives `status_code: 0`.
       throwIfMiniMaxImagesFailed(data);
 
-      final images = <Uint8List>[];
-      for (final ref in minimaxImageRefs(data)) {
-        // `response_format: url` is what the request pins, but the shared
-        // resolver also takes a data URI and a bare base64 payload — nothing
-        // guarantees which spelling a relay fronting this surface uses.
-        final bytes = await resolveImageRef(ref, client, logger);
-        if (bytes != null) images.add(bytes);
-      }
+      // `response_format: url` is what the request pins, but the shared
+      // resolver also takes a data URI and a bare base64 payload — nothing
+      // guarantees which spelling a relay fronting this surface uses.
+      final images = await resolveImageRefs(
+          minimaxImageRefs(data), client, logger,
+          source: 'MiniMax Images API');
 
       if (images.isEmpty) {
         // One deliverable, so nothing to return is a failure, not an empty

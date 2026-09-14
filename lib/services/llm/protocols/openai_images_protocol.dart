@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -140,29 +139,23 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       final data = decodeJsonBody(response, apiName: 'OpenAI Images API');
       final rawItems = data['data'];
       final List<dynamic> items = rawItems is List ? rawItems : const [];
-      final List<Uint8List> images = [];
-
-      for (final item in items) {
-        if (item is! Map) continue;
-        final b64 = item['b64_json'];
-        if (b64 is String && b64.isNotEmpty) {
-          images.add(base64Decode(b64));
-          continue;
-        }
-        final imgUrl = item['url'];
-        if (imgUrl is String && imgUrl.isNotEmpty) {
-          try {
-            final imgResp = await client.get(Uri.parse(imgUrl));
-            if (imgResp.statusCode == 200) {
-              images.add(imgResp.bodyBytes);
-            } else {
-              logger?.call('Image URL returned ${imgResp.statusCode}: $imgUrl', level: 'WARN');
-            }
-          } catch (e) {
-            logger?.call('Failed to fetch image URL: $e', level: 'WARN');
-          }
-        }
-      }
+      // Both spellings through the shared resolver: a `url` that is really a
+      // `data:` URI (relays do this) used to be fetched as a link and fail,
+      // a malformed `b64_json` threw out of the loop, and an HTML body behind
+      // a link was saved as a picture. The resolver validates the bytes and
+      // retries a link once.
+      final refs = <String>[
+        for (final item in items)
+          if (item is Map)
+            if (item['b64_json'] is String &&
+                (item['b64_json'] as String).isNotEmpty)
+              item['b64_json'] as String
+            else if (item['url'] is String &&
+                (item['url'] as String).isNotEmpty)
+              item['url'] as String,
+      ];
+      final images = await resolveImageRefs(refs, client, logger,
+          source: 'OpenAI Images API');
 
       if (images.isEmpty) {
         // The Images API has exactly one deliverable. Returning an empty

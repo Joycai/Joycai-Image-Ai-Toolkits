@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import '../../../core/image_magic.dart';
 import '../../../state/app_state.dart';
@@ -117,12 +116,9 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
       final data = decodeJsonBody(response, apiName: 'DashScope Images API');
       throwIfDashScopeError(data);
 
-      final refs = dashscopeImageRefs(data);
-      final images = <Uint8List>[];
-      for (final ref in refs) {
-        final bytes = await resolveImageRef(ref, client, logger);
-        if (bytes != null) images.add(bytes);
-      }
+      final images = await resolveImageRefs(
+          dashscopeImageRefs(data), client, logger,
+          source: 'DashScope Images API');
 
       if (images.isEmpty) {
         // One deliverable, so nothing to return is a failure, not an empty
