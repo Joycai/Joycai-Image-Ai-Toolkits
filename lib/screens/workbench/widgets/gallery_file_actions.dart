@@ -163,31 +163,42 @@ Future<void> _deleteImageFile(
   }
 }
 
-/// Whether the result at [path] can be fed back to the assistant right now
-/// (`A1 · 3a`).
+/// Whether [path] can be fed back to the assistant right now (`A1 · 3a`).
 ///
-/// Only a picture with a run on record — one the gallery badges `v{n}` —
-/// has a version to judge; an original or an import has none, so the row
-/// greys out on it. And the action is withdrawn while a turn is running so a
-/// click cannot land in the middle of one. The card's hover strip and the
-/// context menu both read this so they agree.
+/// The report is about the conversation's prompt, so the session must have
+/// staged at least one version — with none there is nothing to judge, and
+/// the row greys out. Provenance is not required: a picture the task record
+/// ties to a version reports on that version, any other reports on the
+/// latest (see [resultFeedbackVersion]), since the user may well be judging
+/// a run whose prompt they edited before generating. The action is withdrawn
+/// while a turn is running so a click cannot land in the middle of one. The
+/// card's hover strip and the context menu both read this so they agree.
 bool canSendResultFeedback(WorkbenchUIState workbenchUIState, String path) =>
-    workbenchUIState.resultVersionByPath.containsKey(path) &&
+    workbenchUIState.optimizerSession.promptVersions > 0 &&
     !workbenchUIState.optimizerSession.isRunning;
+
+/// The prompt version a report on [path] binds to: provenance first, the
+/// latest staged version as the fallback. An image the task record ties to
+/// v2 gives feedback on v2 even after v3 was staged — that binding is the
+/// whole reason the tag exists. Null when the session has staged nothing.
+int? resultFeedbackVersion(WorkbenchUIState workbenchUIState, String path) {
+  final version = workbenchUIState.resultVersionByPath[path] ??
+      workbenchUIState.optimizerSession.promptVersions;
+  return version < 1 ? null : version;
+}
 
 /// Collects the verdict on [image] (`3b`) and stages it on the assistant
 /// session, which latches an assistant-turn request the workbench screen
 /// consumes. The user stays where they are — `3a`: 「不切换页面」 — and a
 /// toast says the report went through.
 ///
-/// The version comes from provenance alone: an image the task record ties
-/// to v2 gives feedback on v2 even after v3 was staged — that binding is the
-/// whole reason the tag exists — and a picture without a record gets no
-/// dialog, as the gate above already says.
+/// The version comes from [resultFeedbackVersion]; the run recap in the
+/// heading only appears when the task record names the run, so a picture
+/// without provenance shows the version and the prompt line alone.
 Future<void> sendResultFeedbackFromGallery(BuildContext context, AppImage image) async {
   final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
   final appState = Provider.of<AppState>(context, listen: false);
-  final version = workbenchUIState.resultVersionByPath[image.path];
+  final version = resultFeedbackVersion(workbenchUIState, image.path);
   if (version == null) return;
   final task = await workbenchUIState.resultTaskForPath(image.path);
   if (!context.mounted) return;
