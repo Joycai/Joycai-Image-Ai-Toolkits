@@ -932,8 +932,6 @@ class LLMService {
           yield chunk;
         }
 
-        if (streamProbe?.call() ?? false) throw const LLMCancelled();
-
         _emitLog(
           'Stream completed. Total images: $imageCount',
           level: 'DEBUG',
@@ -966,6 +964,11 @@ class LLMService {
           _emitLog(_missingUsageWarning(config),
               level: 'WARN', contextId: contextId);
         }
+
+        // After usage, same as request(): a stream that ran to its end was
+        // generated and billed even if the caller stopped in the meantime,
+        // so it is recorded before the cancel is reported.
+        if (streamProbe?.call() ?? false) throw const LLMCancelled();
 
         // After usage, same as request(): the chunks already delivered were
         // blocked output, and the consumer must see a failure, not a success.
