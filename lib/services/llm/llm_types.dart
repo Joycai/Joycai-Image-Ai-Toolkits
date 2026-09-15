@@ -74,6 +74,17 @@ const String llmCancellationProbeKey = 'isCancelled';
 /// value is not data: the map carrying it must never be persisted.
 const String llmAbortTriggerKey = 'abortTrigger';
 
+/// Option key for a `void Function()` the shared request builders call once
+/// the request body has been handed to the connection in full.
+///
+/// Set by `LLMService.startLongRunning` only. A video submit may be aborted
+/// while its body uploads — upstream cannot have created a job from half a
+/// body — but not after: from then on the server may already have accepted
+/// (and billed) the job, and aborting would throw away the only copy of its
+/// id. Past this point the submit is left to finish, its ticket is persisted,
+/// and the executor cancels the job upstream through the id instead.
+const String llmBodySentKey = 'onRequestBodySent';
+
 /// Key inside a video poll's done envelope (`…generatedSamples[].video`):
 /// whether downloading its `uri` needs the channel's credentials.
 ///
