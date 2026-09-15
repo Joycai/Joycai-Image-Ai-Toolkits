@@ -192,9 +192,8 @@ class GeminiChatProtocol implements ChatProtocol {
       level: 'DEBUG',
     );
 
-    final request = http.Request('POST', url);
-    request.headers.addAll(headers);
-    request.body = jsonEncode(payload);
+    final request = buildJsonRequest('POST', url,
+        headers: headers, body: jsonEncode(payload), options: options);
 
     final client = config.createClient();
     final appState = AppState();
@@ -376,21 +375,26 @@ class GeminiDiscoveryProtocol implements DiscoveryProtocol {
     final url = target.decorateUrl(Uri.parse('$baseUrl/models'));
     final headers = target.headers();
 
-    final response = await http.get(url, headers: headers);
+    final client = config.createClient();
+    try {
+      final response = await client.get(url, headers: headers);
+      final data = decodeJsonBody(response, apiName: 'Gemini models');
+      final rawModels = data['models'];
+      final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
 
-    final data = decodeJsonBody(response, apiName: 'Gemini models');
-    final rawModels = data['models'];
-    final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
-
-    return modelsJson
-        .map(
-          (m) => DiscoveredModel(
-            modelId: m['name']?.toString().replaceFirst('models/', '') ?? '',
-            displayName: m['displayName'] ?? m['name'] ?? '',
-            description: m['description'] ?? '',
-            rawData: m as Map<String, dynamic>,
-          ),
-        )
-        .toList();
+      return modelsJson.whereType<Map>().map((m) {
+        final id =
+            m['name']?.toString().replaceFirst('models/', '').trim() ?? '';
+        if (id.isEmpty) return null;
+        return DiscoveredModel(
+          modelId: id,
+          displayName: m['displayName']?.toString() ?? id,
+          description: m['description']?.toString() ?? '',
+          rawData: m.cast<String, dynamic>(),
+        );
+      }).whereType<DiscoveredModel>().toList();
+    } finally {
+      client.close();
+    }
   }
 }

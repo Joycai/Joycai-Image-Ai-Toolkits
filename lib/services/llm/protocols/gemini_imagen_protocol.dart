@@ -1,12 +1,26 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
-
 import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'gemini_payload.dart';
 import 'protocol.dart';
+
+/// Extracts inline images from an Imagen `predictions` value.
+/// Malformed relay entries are skipped; bytes are validated later by
+/// [resolveImageRefs] before a generation can be reported as successful.
+List<String> imagenImageRefs(Object? predictions) {
+  if (predictions is! List) return const [];
+  final refs = <String>[];
+  for (final prediction in predictions) {
+    if (prediction is! Map) continue;
+    final nested = prediction['image'];
+    final raw = prediction['bytesBase64Encoded'] ??
+        (nested is Map ? nested['bytesBase64Encoded'] : null);
+    if (raw is String && raw.trim().isNotEmpty) refs.add(raw);
+  }
+  return refs;
+}
 
 /// Imagen text-to-image via the dedicated Gemini `:predict` surface
 /// (not `:generateContent`). Text-to-image only — reference images are
@@ -63,18 +77,13 @@ class GeminiImagenProtocol implements ImageGenProtocol {
 
       final data = decodeJsonBody(response, apiName: 'Imagen');
 
-      final List<Uint8List> images = [];
-      final predictions = data['predictions'] as List?;
-      if (predictions != null) {
-        for (final p in predictions) {
-          final b64 = p['bytesBase64Encoded'] ?? p['image']?['bytesBase64Encoded'];
-          if (b64 is String) {
-            try {
-              images.add(base64Decode(b64));
-            } catch (_) {/* ignore */}
-          }
-        }
-      }
+      final images = await resolveImageRefs(
+        imagenImageRefs(data['predictions']),
+        client,
+        logger,
+        source: 'Imagen',
+        abortTrigger: abortTriggerOf(options),
+      );
 
       if (images.isEmpty) {
         // Mirrors the OpenAI/xAI images surfaces: a 200 that carries no

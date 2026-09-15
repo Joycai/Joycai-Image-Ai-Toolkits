@@ -156,8 +156,11 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
         isCancelled: cancelled,
         logger: logger,
         fetch: () async {
-          final pollResponse =
-              await client.get(pollUrl, headers: target.headers());
+          final pollResponse = await sendJsonRequest(client, pollUrl,
+              headers: target.headers(),
+              body: '',
+              options: options,
+              method: 'GET');
           // checkEnvelope: false — a FAILED task arrives inside a 200 and is
           // this loop's own business to report, with the task id attached.
           return decodeJsonBody(pollResponse,
@@ -166,9 +169,11 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
         interpret: (data) async {
           polls++;
           final taskOutput = data['output'];
-          final status = taskOutput is Map
-              ? taskOutput['task_status']?.toString().toUpperCase() ?? ''
-              : '';
+          final status = requireJobStatus(
+                  taskOutput is Map ? taskOutput['task_status'] : null,
+                  job: 'DashScope image task',
+                  jobId: taskId)
+              .toUpperCase();
 
           if (debugFile != null) {
             await LLMDebugLogger.appendLine(debugFile, 'poll #$polls: $status');
@@ -181,7 +186,8 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
                     debugFile, 'Body: ${jsonEncode(data)}');
               }
               return await _collectResult(data, taskId, client, logger,
-                  sentSize: dashscopeSentSize(payload));
+                  sentSize: dashscopeSentSize(payload),
+                  abortTrigger: abortTriggerOf(options));
             case 'FAILED':
             case 'CANCELED':
             case 'UNKNOWN':
@@ -208,10 +214,12 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
     http.Client client,
     LLMLogger? logger, {
     String? sentSize,
+    Future<void>? abortTrigger,
   }) async {
     final images = await resolveImageRefs(
         dashscopeImageRefs(data), client, logger,
-        source: 'DashScope image task $taskId');
+        source: 'DashScope image task $taskId',
+        abortTrigger: abortTrigger);
 
     if (images.isEmpty) {
       // One deliverable — nothing to return is a failure, not an empty

@@ -177,11 +177,10 @@ class MidjourneyProtocol implements ChatProtocol {
         });
       }
 
-      final submitResp = await client.post(
-        endpoint,
-        headers: target.headers(),
-        body: jsonEncode(body),
-      );
+      final submitResp = await sendJsonRequest(client, endpoint,
+          headers: target.headers(),
+          body: jsonEncode(body),
+          options: options);
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Status: ${submitResp.statusCode}');
@@ -219,9 +218,10 @@ class MidjourneyProtocol implements ChatProtocol {
         interval: (_) => _pollInterval,
         isCancelled: cancellationProbeOf(options),
         logger: logger,
-        fetch: () => _fetchTask(client, target, taskId),
+        fetch: () => _fetchTask(client, target, taskId, options: options),
         interpret: (task) async {
-          final status = task['status']?.toString() ?? '';
+          final status = requireJobStatus(task['status'],
+              job: 'Midjourney task', jobId: taskId);
           final progress = _parseProgress(task['progress']);
           if (status != lastStatus || progress != lastProgress) {
             lastStatus = status;
@@ -240,7 +240,8 @@ class MidjourneyProtocol implements ChatProtocol {
                   'Midjourney task $taskId succeeded but returned no imageUrl');
             }
             onProgress?.call('Downloading image…');
-            final bytes = await _downloadImage(client, imageUrl, logger);
+            final bytes = await _downloadImage(client, imageUrl, logger,
+                abortTrigger: abortTriggerOf(options));
             return _MjResult(
               images: [bytes],
               metadata: {
@@ -265,11 +266,16 @@ class MidjourneyProtocol implements ChatProtocol {
   Future<Map<String, dynamic>> _fetchTask(
     http.Client client,
     LLMTarget target,
-    String taskId,
-  ) async {
+    String taskId, {
+    Map<String, dynamic>? options,
+  }) async {
     final baseUrl = trimBaseUrl(target.config.endpoint);
     final url = Uri.parse('$baseUrl/mj/task/$taskId/fetch');
-    final resp = await client.get(url, headers: target.headers());
+    final resp = await sendJsonRequest(client, url,
+        headers: target.headers(),
+        body: '',
+        options: options,
+        method: 'GET');
     // checkEnvelope: false — the task JSON is a status record
     // (status/progress/failReason), and FAILURE is handled by the polling
     // loop with the task id in its message.
@@ -280,8 +286,10 @@ class MidjourneyProtocol implements ChatProtocol {
   /// Through the shared resolver: one retry, and a body that is not an image
   /// (an expired CDN link's HTML page) is refused rather than saved.
   Future<Uint8List> _downloadImage(
-      http.Client client, String url, LLMLogger? logger) async {
-    final bytes = await resolveImageRef(url, client, logger);
+      http.Client client, String url, LLMLogger? logger,
+      {Future<void>? abortTrigger}) async {
+    final bytes = await resolveImageRef(url, client, logger,
+        abortTrigger: abortTrigger);
     if (bytes == null) {
       throw LLMApiException(
           'Midjourney image download failed for $url — no image after one '

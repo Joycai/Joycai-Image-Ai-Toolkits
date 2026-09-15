@@ -202,9 +202,8 @@ class DashScopeChatProtocol implements ChatProtocol {
       isStreaming: true,
     );
 
-    final request = http.Request('POST', url);
-    request.headers.addAll(headers);
-    request.body = jsonEncode(payload);
+    final request = buildJsonRequest('POST', url,
+        headers: headers, body: jsonEncode(payload), options: options);
 
     final client = config.createClient();
     LLMDebugLog? debugFile;

@@ -120,7 +120,8 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
       // guarantees which spelling a relay fronting this surface uses.
       final images = await resolveImageRefs(
           minimaxImageRefs(data), client, logger,
-          source: 'MiniMax Images API');
+          source: 'MiniMax Images API',
+          abortTrigger: abortTriggerOf(options));
 
       if (images.isEmpty) {
         // One deliverable, so nothing to return is a failure, not an empty

@@ -101,11 +101,10 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await client.post(
-        url,
-        headers: target.headers(),
-        body: jsonEncode(payload),
-      );
+      final response = await sendJsonRequest(client, url,
+          headers: target.headers(),
+          body: jsonEncode(payload),
+          options: options);
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(
@@ -131,6 +130,7 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
   Future<Map<String, dynamic>> poll(
     LLMTarget target,
     String operationName, {
+    Map<String, dynamic>? options,
     LLMLogger? logger,
   }) async {
     final config = target.config;
@@ -139,7 +139,11 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await client.get(url, headers: target.headers());
+      final response = await sendJsonRequest(client, url,
+          headers: target.headers(),
+          body: '',
+          options: options,
+          method: 'GET');
       // checkEnvelope: false — a failed job arrives as a 200 with an `error`
       // beside `status`, and the status machine in the payload helper owns
       // that case and names the operation in its message.

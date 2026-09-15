@@ -55,7 +55,8 @@ class GeminiVeoProtocol implements VideoJobProtocol {
         });
       }
 
-      final response = await client.post(url, headers: headers, body: jsonEncode(payload));
+      final response = await sendJsonRequest(client, url,
+          headers: headers, body: jsonEncode(payload), options: options);
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
@@ -79,6 +80,7 @@ class GeminiVeoProtocol implements VideoJobProtocol {
   Future<Map<String, dynamic>> poll(
     LLMTarget target,
     String operationName, {
+    Map<String, dynamic>? options,
     LLMLogger? logger,
   }) async {
     final config = target.config;
@@ -90,7 +92,8 @@ class GeminiVeoProtocol implements VideoJobProtocol {
     final headers = target.headers();
     final client = config.createClient();
     try {
-      final response = await client.get(url, headers: headers);
+      final response = await sendJsonRequest(client, url,
+          headers: headers, body: '', options: options, method: 'GET');
 
       // checkEnvelope: false — a *failed operation* is reported inside a 200
       // as `{done: true, error: {...}}`; [veoPollResult] turns it into an

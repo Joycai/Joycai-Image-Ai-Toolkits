@@ -126,7 +126,8 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           });
         }
 
-        response = await client.post(url, headers: headers, body: jsonEncode(payload));
+        response = await sendJsonRequest(client, url,
+            headers: headers, body: jsonEncode(payload), options: options);
       }
 
       if (debugFile != null) {
@@ -157,7 +158,8 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
               item['url'] as String,
       ];
       final images = await resolveImageRefs(refs, client, logger,
-          source: 'OpenAI Images API');
+          source: 'OpenAI Images API',
+          abortTrigger: abortTriggerOf(options));
 
       if (images.isEmpty) {
         // The Images API has exactly one deliverable. Returning an empty

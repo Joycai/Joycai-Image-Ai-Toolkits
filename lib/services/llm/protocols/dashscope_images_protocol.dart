@@ -120,7 +120,8 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
 
       final images = await resolveImageRefs(
           dashscopeImageRefs(data), client, logger,
-          source: 'DashScope Images API');
+          source: 'DashScope Images API',
+          abortTrigger: abortTriggerOf(options));
 
       if (images.isEmpty) {
         // One deliverable, so nothing to return is a failure, not an empty
@@ -209,4 +210,3 @@ Map<String, dynamic> dashscopeImageMetadata({
     'output_size': ?outputSize,
   };
 }
-

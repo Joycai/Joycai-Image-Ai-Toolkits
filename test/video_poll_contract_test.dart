@@ -4,6 +4,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_veo_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_videos_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/xai_videos_protocol.dart';
 
 /// The video poll contract (standard 14 §1, §3): failure is thrown, never
 /// returned (B6, B12), and each done envelope says whether its URL may carry
@@ -26,6 +27,21 @@ void main() {
               'https://dashscope.aliyuncs.com/api/v1'),
           isFalse);
       expect(videoUriNeedsAuth('not a url', 'https://h/v1'), isFalse);
+    });
+
+    test('same host on another scheme or port never receives the key', () {
+      const endpoint = 'https://relay.example.com/v1';
+      expect(
+          videoUriNeedsAuth('http://relay.example.com/video.mp4', endpoint),
+          isFalse);
+      expect(
+          videoUriNeedsAuth(
+              'https://relay.example.com:8443/video.mp4', endpoint),
+          isFalse);
+      expect(
+          videoUriNeedsAuth(
+              'https://relay.example.com:443/video.mp4', endpoint),
+          isTrue);
     });
   });
 
@@ -77,6 +93,39 @@ void main() {
           {'status': 'in_progress', 'progress': 40}, 'video_1', base);
       expect(env['done'], isFalse);
       expect(env['progress'], 40);
+    });
+
+    test('a 2xx body without status fails immediately as malformed', () {
+      expect(
+        () => openaiVideoPollEnvelope({}, 'video_1', base),
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.message, 'message', contains('no status'))),
+      );
+    });
+  });
+
+  group('xaiVideoPollEnvelope', () {
+    const endpoint = 'https://api.x.ai/v1';
+
+    test('normalizes status casing and marks signed CDN output public', () {
+      final env = xaiVideoPollEnvelope({
+        'status': 'DONE',
+        'video': {'url': 'https://cdn.x.ai/result.mp4?sig=x'},
+      }, 'req_1', endpoint);
+      expect(env['done'], isTrue);
+      expect(videoOf(env)[videoRequiresAuthKey], isFalse);
+    });
+
+    test('cancelled and malformed responses are terminal', () {
+      for (final body in [
+        {'status': 'CANCELLED'},
+        <String, dynamic>{},
+      ]) {
+        expect(
+          () => xaiVideoPollEnvelope(body, 'req_1', endpoint),
+          throwsA(isA<LLMApiException>()),
+        );
+      }
     });
   });
 

@@ -30,7 +30,11 @@ void main() {
       paths.add(request.uri.path);
       request.response
         ..headers.contentType = ContentType.json
-        ..write(jsonEncode({'status': 'in_progress'}));
+        ..write(jsonEncode(request.uri.path.contains('/tasks/')
+            ? {
+                'output': {'task_status': 'RUNNING'}
+              }
+            : {'status': 'in_progress'}));
       await request.response.close();
     });
   });

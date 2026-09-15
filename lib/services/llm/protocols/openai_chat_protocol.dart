@@ -868,7 +868,8 @@ class OpenAIChatProtocol implements ChatProtocol {
         final structured = extractStructuredImages(message);
         images.addAll(dedupe.filter(structured.bytes));
         images.addAll(
-          dedupe.filter(await _fetchImageUrls(structured.urls, config, logger)),
+          dedupe.filter(await _fetchImageUrls(structured.urls, config, logger,
+              abortTrigger: abortTriggerOf(options))),
         );
 
         if (text.isNotEmpty) {
@@ -881,6 +882,7 @@ class OpenAIChatProtocol implements ChatProtocol {
             config,
             imageReply: target.model.capabilities.isImageGenerator,
             logger: logger,
+            abortTrigger: abortTriggerOf(options),
           );
           text = result.text;
           images.addAll(dedupe.filter(result.images));
@@ -969,9 +971,8 @@ class OpenAIChatProtocol implements ChatProtocol {
       );
     }
 
-    final request = http.Request('POST', url);
-    request.headers.addAll(headers);
-    request.body = jsonEncode(payload);
+    final request = buildJsonRequest('POST', url,
+        headers: headers, body: jsonEncode(payload), options: options);
 
     final client = config.createClient();
     final appState = AppState();
@@ -1129,7 +1130,8 @@ class OpenAIChatProtocol implements ChatProtocol {
             yield LLMResponseChunk(imagePart: img);
           }
           for (final img in dedupe.filter(
-            await _fetchImageUrls(structured.urls, config, logger),
+            await _fetchImageUrls(structured.urls, config, logger,
+                abortTrigger: abortTriggerOf(options)),
           )) {
             sawOutput = true;
             yield LLMResponseChunk(imagePart: img);
@@ -1200,6 +1202,7 @@ class OpenAIChatProtocol implements ChatProtocol {
           config,
           imageReply: target.model.capabilities.isImageGenerator,
           logger: logger,
+          abortTrigger: abortTriggerOf(options),
         );
         // If the text was mostly images, don't yield the messy leftover text
         if (result.text.length < accumulatedText.length * 0.1 ||
@@ -1317,13 +1320,14 @@ class OpenAIChatProtocol implements ChatProtocol {
   Future<List<Uint8List>> _fetchImageUrls(
     List<String> urls,
     LLMModelConfig config,
-    LLMLogger? logger,
-  ) async {
+    LLMLogger? logger, {
+    Future<void>? abortTrigger,
+  }) async {
     if (urls.isEmpty) return const [];
     final client = config.createClient();
     try {
       return await resolveImageRefs(urls, client, logger,
-          source: 'OpenAI chat image links');
+          source: 'OpenAI chat image links', abortTrigger: abortTrigger);
     } finally {
       client.close();
     }
@@ -1344,11 +1348,14 @@ class OpenAIChatProtocol implements ChatProtocol {
     LLMModelConfig config, {
     required bool imageReply,
     LLMLogger? logger,
+    Future<void>? abortTrigger,
   }) async {
     final client = config.createClient();
     try {
       final result = await extractTextImages(text, client,
-          imageReply: imageReply, logger: logger);
+          imageReply: imageReply,
+          logger: logger,
+          abortTrigger: abortTrigger);
       return _TextProcessResult(result.text, result.images);
     } finally {
       client.close();
@@ -1372,6 +1379,7 @@ class OpenAIChatProtocol implements ChatProtocol {
     required bool imageReply,
     LLMLogger? logger,
     Duration retryDelay = const Duration(seconds: 1),
+    Future<void>? abortTrigger,
   }) async {
     final List<Uint8List> images = [];
     String cleanText = text;
@@ -1385,7 +1393,7 @@ class OpenAIChatProtocol implements ChatProtocol {
         images.add(whole.bytes!);
       } else if (whole.url != null) {
         final bytes = await resolveImageRef(whole.url!, client, logger,
-            retryDelay: retryDelay);
+            retryDelay: retryDelay, abortTrigger: abortTrigger);
         if (bytes != null) images.add(bytes);
       }
       if (images.isNotEmpty) return (text: '', images: images);
@@ -1405,7 +1413,9 @@ class OpenAIChatProtocol implements ChatProtocol {
 
     // 2. Fetch images the text points at rather than embeds.
     images.addAll(await resolveImageRefs(imageUrlsInText(text), client, logger,
-        source: 'OpenAI chat reply links', retryDelay: retryDelay));
+        source: 'OpenAI chat reply links',
+        retryDelay: retryDelay,
+        abortTrigger: abortTrigger));
 
     return (text: cleanText.trim(), images: images);
   }
@@ -1727,21 +1737,27 @@ class OpenAIDiscoveryProtocol implements DiscoveryProtocol {
     final url = Uri.parse('${trimBaseUrl(config.endpoint)}/models');
     final headers = target.headers();
 
-    final response = await http.get(url, headers: headers);
+    // Use the configured client so discovery honors the same proxy and
+    // connection pool as generation.
+    final client = config.createClient();
+    try {
+      final response = await client.get(url, headers: headers);
+      final data = decodeJsonBody(response, apiName: 'OpenAI models');
+      final rawModels = data['data'];
+      final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
 
-    final data = decodeJsonBody(response, apiName: 'OpenAI models');
-    final rawModels = data['data'];
-    final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
-
-    return modelsJson
-        .map(
-          (m) => DiscoveredModel(
-            modelId: m['id']?.toString() ?? '',
-            displayName: m['id']?.toString() ?? '',
-            description: 'Owned by: ${m['owned_by'] ?? 'unknown'}',
-            rawData: m as Map<String, dynamic>,
-          ),
-        )
-        .toList();
+      return modelsJson.whereType<Map>().map((m) {
+        final id = m['id']?.toString().trim() ?? '';
+        if (id.isEmpty) return null;
+        return DiscoveredModel(
+          modelId: id,
+          displayName: id,
+          description: 'Owned by: ${m['owned_by'] ?? 'unknown'}',
+          rawData: m.cast<String, dynamic>(),
+        );
+      }).whereType<DiscoveredModel>().toList();
+    } finally {
+      client.close();
+    }
   }
 }

@@ -115,14 +115,13 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await client.post(
-        url,
+      final response = await sendJsonRequest(client, url,
         headers: {
           ...target.headers(),
           'X-DashScope-Async': 'enable',
         },
         body: jsonEncode(payload),
-      );
+        options: options);
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(
@@ -160,6 +159,7 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
   Future<Map<String, dynamic>> poll(
     LLMTarget target,
     String operationName, {
+    Map<String, dynamic>? options,
     LLMLogger? logger,
   }) async {
     final config = target.config;
@@ -168,16 +168,22 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await client.get(url, headers: target.headers());
+      final response = await sendJsonRequest(client, url,
+          headers: target.headers(),
+          body: '',
+          options: options,
+          method: 'GET');
       // checkEnvelope: false — a failed task arrives inside a 200 and this
       // status machine owns reporting it, with the task id in the message.
       final data = decodeJsonBody(response,
           apiName: 'DashScope video poll', checkEnvelope: false);
 
       final output = data['output'];
-      final status = output is Map
-          ? output['task_status']?.toString().toUpperCase() ?? ''
-          : '';
+      final status = requireJobStatus(
+              output is Map ? output['task_status'] : null,
+              job: 'DashScope video task',
+              jobId: operationName)
+          .toUpperCase();
 
       switch (status) {
         case 'SUCCEEDED':
