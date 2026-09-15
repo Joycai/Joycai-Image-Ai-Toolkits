@@ -1256,6 +1256,20 @@ void main() {
           {'path': '07_footwear/07a1.md', 'page': 2});
     });
 
+    test('client tool fragments report progress; the host\'s own do not', () {
+      final chunks = run([
+        start(0, {'type': 'tool_use', 'id': 'toolu_1', 'name': 'submit_prompt'}),
+        delta(0, {'type': 'input_json_delta', 'partial_json': '{"pro'}),
+        delta(0, {'type': 'input_json_delta', 'partial_json': 'mpt": "a"}'}),
+        stop(0),
+        start(1, {'type': 'server_tool_use', 'id': 'srv', 'name': 'web_search', 'input': {}}),
+        delta(1, {'type': 'input_json_delta', 'partial_json': '{"query":"q"}'}),
+        stop(1),
+      ]);
+
+      expect([for (final c in chunks) ?c.toolArgumentChars], [5, 15]);
+    });
+
     test('nothing escapes before content_block_stop — and a cut there fails',
         () {
       // Half the deltas seen, no stop: the call is still under construction

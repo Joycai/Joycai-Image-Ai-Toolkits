@@ -4529,6 +4529,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optAgentStepWorking => '正在执行下一步…';
 
   @override
+  String optAgentStepStreaming(int count) {
+    return '模型正在输出… 已接收 $count 字';
+  }
+
+  @override
   String optElapsedSeconds(int seconds) {
     return '已用 ${seconds}s';
   }
@@ -9291,6 +9296,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optAgentStepWorking => '正在執行下一步…';
+
+  @override
+  String optAgentStepStreaming(int count) {
+    return '模型正在輸出… 已接收 $count 字';
+  }
 
   @override
   String optElapsedSeconds(int seconds) {

@@ -731,7 +731,25 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
 
   /// "Working on the next step..." at the foot of a live timeline, behind the
   /// breathing dot — the one loop the design allows.
+  ///
+  /// While a tool call streams it counts what has arrived instead. Only this
+  /// row listens to that count: it ticks per fragment, and rebuilding the
+  /// whole transcript that often is the cost the notifier exists to avoid.
   Widget _buildWorkingStep(AppLocalizations l10n, ColorScheme colorScheme) {
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: colorScheme.accentText,
+          fontWeight: FontWeight.w500,
+        );
+    Widget label(int? chars) => Text(
+          chars == null || chars <= 0
+              ? l10n.optAgentStepWorking
+              : l10n.optAgentStepStreaming(chars),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        );
+    final progress = _session?.streamingToolArgumentChars;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -743,15 +761,12 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
           ),
           const SizedBox(width: 8),
           Flexible(
-            child: Text(
-              l10n.optAgentStepWorking,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.accentText,
-                    fontWeight: FontWeight.w500,
+            child: progress == null
+                ? label(null)
+                : ValueListenableBuilder<int?>(
+                    valueListenable: progress,
+                    builder: (context, chars, _) => label(chars),
                   ),
-            ),
           ),
         ],
       ),

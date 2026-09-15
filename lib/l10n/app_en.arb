@@ -2999,6 +2999,14 @@
   },
   "optAgentStepsRunning": "Agent process · running",
   "optAgentStepWorking": "Working on the next step...",
+  "optAgentStepStreaming": "Model is writing... {count} chars received",
+  "@optAgentStepStreaming": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "optElapsedSeconds": "{seconds}s elapsed",
   "@optElapsedSeconds": {
     "placeholders": {

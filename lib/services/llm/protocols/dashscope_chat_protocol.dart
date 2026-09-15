@@ -320,7 +320,8 @@ class DashScopeChatProtocol implements ChatProtocol {
           // after the loop, but the consumer's idle guard resets only on
           // chunks it receives — a long tool-call-only answer would
           // otherwise time out mid-delivery and be re-sent.
-          yield LLMResponseChunk();
+          yield LLMResponseChunk(
+              toolArgumentChars: streamedToolCalls.argumentChars);
         }
 
         final rawReasoning = message['reasoning_content'];

@@ -90,6 +90,9 @@ class LLMService {
     List<LLMTool>? tools,
     bool useStream = true,
     bool Function()? isCancelled,
+    // Called with [LLMResponseChunk.toolArgumentChars] as a streamed call
+    // grows. Progress for display only; restarts from zero on a retry.
+    void Function(int chars)? onToolArgumentChars,
   }) async {
     final config = await _resolveConfig(
       modelIdentifier,
@@ -182,6 +185,7 @@ class LLMService {
               toolBearing: toolBearing,
               isCancelled: cancelProbe,
               log: log,
+              onToolArgumentChars: onToolArgumentChars,
             ),
           );
           response = streamed.response;
@@ -342,6 +346,7 @@ class LLMService {
     required bool toolBearing,
     required bool Function()? isCancelled,
     required void Function(String msg, {String level}) log,
+    void Function(int chars)? onToolArgumentChars,
   }) async {
     String accumulatedText = "";
     String accumulatedReasoning = "";
@@ -440,6 +445,9 @@ class LLMService {
       }
       if (chunk.reasoningSignature != null) {
         reasoningSignature = chunk.reasoningSignature;
+      }
+      if (chunk.toolArgumentChars != null) {
+        onToolArgumentChars?.call(chunk.toolArgumentChars!);
       }
       // Merged, not replaced: ③ can send a trailing usage-only chunk after
       // the one that carried `finishReason`, and replacing lost the finish —

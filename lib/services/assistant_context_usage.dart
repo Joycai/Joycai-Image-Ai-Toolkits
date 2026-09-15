@@ -50,6 +50,12 @@ enum ContextWindowBasis {
 /// budgeting already works in — see [ContextBudget], which converts once, at
 /// the edge, using the ratio it calibrates per model.
 ///
+/// **The card must not print these figures as they are.** The user configures
+/// the window in tokens, and a `1.8M` next to a model card saying `1M` reads as
+/// a wrong window, not as a different unit. [tokensOf] converts back with the
+/// same [charsPerToken] the window was converted with, so a configured window
+/// reads as exactly the number the user picked.
+///
 /// Built by `PromptOptimizerAgent.measureContext`; this class only carries the
 /// numbers and the arithmetic that must not differ between the card and its
 /// tests.
@@ -68,9 +74,15 @@ class ContextUsageSnapshot {
 
   final ContextWindowBasis basis;
 
+  /// The ratio [windowChars] was converted from tokens with — the session's
+  /// calibrated one, or [ContextBudget.charsPerToken]. Required: a default here
+  /// is how a figure in characters ends up printed as tokens.
+  final double charsPerToken;
+
   const ContextUsageSnapshot({
     required this.windowChars,
     required this.slices,
+    required this.charsPerToken,
     this.basis = ContextWindowBasis.configured,
   });
 
@@ -78,8 +90,12 @@ class ContextUsageSnapshot {
   static const ContextUsageSnapshot placeholder = ContextUsageSnapshot(
     windowChars: 0,
     slices: <ContextUsageSlice, int>{},
+    charsPerToken: ContextBudget.charsPerToken,
     basis: ContextWindowBasis.none,
   );
+
+  /// [chars] in the unit the user configured the window in.
+  int tokensOf(int chars) => (chars / charsPerToken).round();
 
   /// True while there is nothing measured to show. Distinct from a window of
   /// zero: an unlimited model has real figures and no ceiling.

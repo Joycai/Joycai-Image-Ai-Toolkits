@@ -131,6 +131,9 @@ void main() {
           PromptOptimizerAgent.measureContext(session, contextWindowTokens: 100000);
 
       expect(usage.windowChars, 120000);
+      // …and carries that ratio, so the card prints the window the user set.
+      expect(usage.charsPerToken, 1.2);
+      expect(usage.tokensOf(usage.windowChars), 100000);
       expect(
         usage.windowChars,
         lessThan((100000 * ContextBudget.charsPerToken).round()),
