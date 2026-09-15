@@ -149,9 +149,9 @@ Future<void> showImageCardContextMenu(
         },
       ),
       // `3a`: the verdict on one run, distinct from the quick block's
-      // 「助手」 (which hands the picture to the conversation). Greyed on an
-      // original or an import — nothing to judge — and gone under a
-      // multi-selection, since a verdict is about one picture.
+      // 「助手」 (which hands the picture to the conversation). Greyed while
+      // the conversation has staged no prompt — nothing to judge — and gone
+      // under a multi-selection, since a verdict is about one picture.
       if (!multi)
         AppGlassMenuItem(
           icon: Icons.rate_review_outlined,
