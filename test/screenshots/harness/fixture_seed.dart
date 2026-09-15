@@ -829,6 +829,25 @@ void seedOptimizerRunning(AppState appState) {
   session.recordRequestBasis(systemPromptChars: 4820, toolSchemaChars: 1960);
   session.setRunningForTest(true);
 
+  // The task the turn is running as, so the composer offers Stop. The screen
+  // only shows that control while the queue holds a live `promptRefine` task
+  // for this session — a running flag alone is the crashed-turn case, which
+  // deliberately gets no button. Inserted rather than `addTask`ed: adding
+  // would try to execute it.
+  appState.taskQueue.queue.add(
+    TaskItem(
+      id: 'fixture-assistant-running-task',
+      type: TaskType.promptRefine,
+      imagePaths: images.map((AppImage i) => i.path).toList(),
+      modelId: 'gemini-2.5-flash',
+      parameters: <String, dynamic>{'sessionId': session.id, 'mode': session.mode.name},
+      useStream: false,
+      status: TaskStatus.processing,
+      startTime: kSeedNow.subtract(const Duration(seconds: 37)),
+    ),
+  );
+  appState.taskQueue.refreshQueue();
+
   appState.workbenchUIState.adoptOptimizerSession(session, images);
 }
 
