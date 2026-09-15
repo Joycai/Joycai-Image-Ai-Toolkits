@@ -218,7 +218,9 @@ class OptimizerContextCard extends StatelessWidget {
                 label: labels[slice]!,
                 // A missing key is a slice nobody has measured yet — '—', not a
                 // zero the user would read as "this costs nothing".
-                value: usage.isUnknown ? null : usage.slices[slice],
+                value: usage.isUnknown || usage.slices[slice] == null
+                    ? null
+                    : usage.tokensOf(usage.slices[slice]!),
               ),
             _buildLegendRow(
               colorScheme,
@@ -227,7 +229,7 @@ class OptimizerContextCard extends StatelessWidget {
               label: l10n.optCtxRemaining,
               // An unlimited model has real figures and no ceiling: there is no
               // remainder to report, and a "0 left" there would be backwards.
-              value: usage.hasWindow ? usage.remainingChars : null,
+              value: usage.hasWindow ? usage.tokensOf(usage.remainingChars) : null,
             ),
           ],
         ),
@@ -258,12 +260,12 @@ class OptimizerContextCard extends StatelessWidget {
       TextSpan(
         children: [
           TextSpan(
-            text: _formatChars(usage.usedChars),
+            text: _formatTokens(usage.tokensOf(usage.usedChars)),
             style: base?.copyWith(color: colorScheme.onSurface),
           ),
           TextSpan(
             text: usage.hasWindow
-                ? ' / ${_formatChars(usage.windowChars)}'
+                ? ' / ${_formatTokens(usage.tokensOf(usage.windowChars))}'
                 : ' / ${l10n.optCtxWindowUnlimited}',
             style: base?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
@@ -333,7 +335,7 @@ class OptimizerContextCard extends StatelessWidget {
           ),
           const SizedBox(width: OptimizerPanelCard.gap),
           Text(
-            value == null ? '—' : _formatChars(value),
+            value == null ? '—' : _formatTokens(value),
             style: textTheme.labelSmall?.mono.copyWith(
               fontWeight: FontWeight.w400,
               color: colorScheme.onSurfaceVariant,
@@ -344,12 +346,13 @@ class OptimizerContextCard extends StatelessWidget {
     );
   }
 
-  /// `18.2K` past a thousand, `1.6M` past a million, the bare figure below
-  /// both. The `M` step keeps a 1M-token window from reading `1572.9K` and
-  /// pushing the readout into the caption at 250px.
-  static String _formatChars(int chars) {
-    if (chars < 1000) return '$chars';
-    if (chars < 1000000) return '${(chars / 1000).toStringAsFixed(1)}K';
-    return '${(chars / 1000000).toStringAsFixed(1)}M';
+  /// `18.2K` past a thousand, `1.0M` past a million, the bare figure below
+  /// both. Tokens, not the snapshot's characters — the window is configured in
+  /// tokens, and printing characters made a 1M window read `1.8M`. The `M`
+  /// step keeps the readout out of the caption at 250px.
+  static String _formatTokens(int tokens) {
+    if (tokens < 1000) return '$tokens';
+    if (tokens < 1000000) return '${(tokens / 1000).toStringAsFixed(1)}K';
+    return '${(tokens / 1000000).toStringAsFixed(1)}M';
   }
 }

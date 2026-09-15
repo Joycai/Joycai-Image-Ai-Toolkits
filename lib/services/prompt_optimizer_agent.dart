@@ -2452,6 +2452,7 @@ class PromptOptimizerAgent {
 
     return ContextUsageSnapshot(
       windowChars: windowChars,
+      charsPerToken: perToken,
       basis: basis,
       slices: {
         // Omitted rather than zeroed while unmeasured: a session restored from

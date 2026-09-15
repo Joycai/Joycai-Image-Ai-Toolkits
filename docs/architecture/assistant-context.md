@@ -113,7 +113,10 @@ The 上下文占用 card in the assistant's right panel shows the same accountin
 budget runs on, so the user can see a turn approaching compaction instead of
 discovering it afterwards. `PromptOptimizerAgent.measureContext` builds it;
 `ContextUsageSnapshot` (`services/assistant_context_usage.dart`) carries it; the
-card is presentational and does no arithmetic beyond formatting.
+card is presentational and does no arithmetic beyond formatting — and turning
+the snapshot's characters back into tokens with the ratio the snapshot carries.
+The window is configured in tokens; printing characters made a 1M-token model
+read `1.8M` once a session calibrated to ~1.7 chars/token.
 
 Three things about it are load-bearing:
 

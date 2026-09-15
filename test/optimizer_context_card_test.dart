@@ -8,6 +8,9 @@ import 'package:joycai_image_ai_toolkits/services/assistant_context_usage.dart';
 /// window: nothing measured yet, an unlimited model, a model with no window
 /// configured, and a real measurement. The two obvious ways to draw a stacked
 /// bar — `Expanded(flex:)` and `used / window` — blow up on the first three.
+///
+/// Most cases use a ratio of 1 so the figures read the same in characters and
+/// tokens; the unit conversion has its own test.
 void main() {
   Future<void> pump(
     WidgetTester tester,
@@ -65,6 +68,7 @@ void main() {
       tester,
       const ContextUsageSnapshot(
         windowChars: 200000,
+        charsPerToken: 1,
         slices: {
           ContextUsageSlice.systemPrompt: 18200,
           ContextUsageSlice.tools: 9600,
@@ -79,11 +83,36 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('figures are printed in tokens, so a 1M window reads 1M', (tester) async {
+    // The reported bug: a 1,048,576-token window calibrated to 1.7 chars/token
+    // is 1,782,579 chars, and the card printed that as `1.8M`.
+    const perToken = 1.7;
+    await pump(
+      tester,
+      ContextUsageSnapshot(
+        windowChars: (1048576 * perToken).round(),
+        charsPerToken: perToken,
+        slices: const {
+          ContextUsageSlice.systemPrompt: 12070, // 7.1K tokens
+          ContextUsageSlice.tools: 5610, // 3.3K tokens
+          ContextUsageSlice.history: 7140, // 4.2K tokens
+        },
+      ),
+    );
+
+    expect(find.textContaining('14.6K / 1.0M'), findsOneWidget);
+    expect(find.text('7.1K'), findsOneWidget);
+    expect(find.text('3.3K'), findsOneWidget);
+    expect(find.text('4.2K'), findsOneWidget);
+    expect(find.textContaining('1.8M'), findsNothing);
+  });
+
   testWidgets('a session over its window clamps rather than going negative', (tester) async {
     await pump(
       tester,
       const ContextUsageSnapshot(
         windowChars: 1000,
+        charsPerToken: 1,
         slices: {
           ContextUsageSlice.systemPrompt: 0,
           ContextUsageSlice.tools: 0,
@@ -103,6 +132,7 @@ void main() {
       tester,
       const ContextUsageSnapshot(
         windowChars: 0,
+        charsPerToken: 1,
         basis: ContextWindowBasis.unlimited,
         slices: {
           ContextUsageSlice.systemPrompt: 18200,
@@ -129,6 +159,7 @@ void main() {
       tester,
       const ContextUsageSnapshot(
         windowChars: 200000,
+        charsPerToken: 1,
         slices: {ContextUsageSlice.history: 74400},
       ),
     );
@@ -147,6 +178,7 @@ void main() {
       // assumption, drawn, and labelled as an assumption.
       const ContextUsageSnapshot(
         windowChars: 49152,
+        charsPerToken: 1.5,
         basis: ContextWindowBasis.assumed,
         slices: slices,
       ),
@@ -156,7 +188,7 @@ void main() {
 
     await pump(
       tester,
-      const ContextUsageSnapshot(windowChars: 49152, slices: slices),
+      const ContextUsageSnapshot(windowChars: 49152, charsPerToken: 1.5, slices: slices),
     );
     expect(find.text(l10n.optCtxWindowAssumed), findsNothing,
         reason: 'a configured window carries no caveat');
@@ -168,6 +200,7 @@ void main() {
         tester,
         const ContextUsageSnapshot(
           windowChars: 200000,
+          charsPerToken: 1,
           slices: {
             ContextUsageSlice.systemPrompt: 18200,
             ContextUsageSlice.tools: 9600,
