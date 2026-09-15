@@ -2501,6 +2501,14 @@
   },
   "optAgentStepsRunning": "Agent 過程 · 進行中",
   "optAgentStepWorking": "正在執行下一步…",
+  "optAgentStepStreaming": "模型正在輸出… 已接收 {count} 字",
+  "@optAgentStepStreaming": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "optElapsedSeconds": "已用 {seconds}s",
   "@optElapsedSeconds": {
     "placeholders": {

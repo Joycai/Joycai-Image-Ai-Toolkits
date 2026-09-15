@@ -1129,6 +1129,17 @@ class LLMResponseChunk {
   /// [LLMMessage.rawResponseItems].
   final List<Map<String, dynamic>>? rawResponseItems;
 
+  /// How many characters of tool-call arguments this response has streamed
+  /// so far — a running total, not the size of this fragment.
+  ///
+  /// Progress only, never content: [toolCallPart] stays the one way a call
+  /// reaches a consumer. It exists because a long call (a `submit_prompt` is
+  /// thousands of characters) streams for minutes with nothing else on the
+  /// wire, and a consumer that shows nothing for that long gets stopped by a
+  /// user who reads it as hung. A total rather than a fragment length so a
+  /// dialect that restates the whole call each frame is not counted twice.
+  final int? toolArgumentChars;
+
   final bool isDone;
 
   LLMResponseChunk({
@@ -1143,6 +1154,7 @@ class LLMResponseChunk {
     this.rawContentBlocks,
     this.rawModelParts,
     this.rawResponseItems,
+    this.toolArgumentChars,
     this.isDone = false,
   });
 }

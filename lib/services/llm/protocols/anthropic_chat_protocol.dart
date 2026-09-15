@@ -864,6 +864,11 @@ String? anthropicFinishReason(String? stopReason) {
 /// Feed it decoded `data:` events in arrival order with [accept], then call
 /// [finish] once. It is single-use and not reentrant.
 class AnthropicStreamAssembler {
+  /// Argument characters received for the caller's tools, for
+  /// [LLMResponseChunk.toolArgumentChars]. The host's own tools are left out:
+  /// they are not something this app is waiting on.
+  int _toolArgumentChars = 0;
+
   final LLMLogger? logger;
 
   AnthropicStreamAssembler({this.logger});
@@ -1052,6 +1057,12 @@ class AnthropicStreamAssembler {
             if (partial is String) {
               _pendingCalls[index]?.json.write(partial);
               _pendingServerCalls[index]?.json.write(partial);
+              // Also the only chunk such a fragment produces — without it a
+              // long call streamed nothing the consumer could see.
+              if (_pendingCalls[index] != null && partial.isNotEmpty) {
+                _toolArgumentChars += partial.length;
+                yield LLMResponseChunk(toolArgumentChars: _toolArgumentChars);
+              }
             }
           case 'signature_delta':
             final seal = delta['signature'];

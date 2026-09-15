@@ -252,6 +252,10 @@ class ResponsesStreamAssembler {
   bool _refused = false;
   final StringBuffer _refusal = StringBuffer();
   bool _terminal = false;
+
+  /// Argument characters received across every call, for
+  /// [LLMResponseChunk.toolArgumentChars].
+  int _toolArgumentChars = 0;
   String? _finishReason;
   String? _finishRaw;
   Map<String, dynamic>? _usage;
@@ -329,9 +333,13 @@ class ResponsesStreamAssembler {
       case 'response.function_call_arguments.delta':
         final delta = event['delta'];
         final call = _calls.putIfAbsent(_index(event), _PendingResponsesCall.new);
-        if (delta is String) call.deltas.write(delta);
+        if (delta is String) {
+          call.deltas.write(delta);
+          _toolArgumentChars += delta.length;
+        }
         _sawOutput = true;
-        return [LLMResponseChunk()];
+        // Keepalive and progress in one: the call is still buffering.
+        return [LLMResponseChunk(toolArgumentChars: _toolArgumentChars)];
 
       case 'response.function_call_arguments.done':
         final args = event['arguments'];

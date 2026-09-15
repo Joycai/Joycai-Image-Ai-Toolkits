@@ -4710,6 +4710,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optAgentStepWorking => 'Working on the next step...';
 
   @override
+  String optAgentStepStreaming(int count) {
+    return 'Model is writing... $count chars received';
+  }
+
+  @override
   String optElapsedSeconds(int seconds) {
     return '${seconds}s elapsed';
   }

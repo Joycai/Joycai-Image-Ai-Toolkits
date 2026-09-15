@@ -4576,6 +4576,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optAgentStepWorking => '次のステップを実行中…';
 
   @override
+  String optAgentStepStreaming(int count) {
+    return 'モデルが出力中… $count 文字受信';
+  }
+
+  @override
   String optElapsedSeconds(int seconds) {
     return '経過 ${seconds}s';
   }

@@ -41,6 +41,39 @@ void main() {
       expect(calls.single.arguments, {'location': 'Hangzhou'});
     });
 
+    test('counts assembled argument chars, a cumulative repeat once', () {
+      final acc = StreamingToolCallAccumulator();
+      expect(acc.argumentChars, 0);
+      acc.feed([
+        {
+          'index': 0,
+          'id': 'call_a',
+          'function': {'name': 'submit_prompt', 'arguments': '{"p":'},
+        }
+      ]);
+      acc.feed([
+        {
+          'index': 0,
+          'function': {'arguments': '"x"}'},
+        }
+      ]);
+      expect(acc.argumentChars, 9);
+
+      // DashScope's cumulative face restates the whole call every frame — a
+      // progress figure summed per frame would count it again each time.
+      final cumulative = StreamingToolCallAccumulator();
+      for (final args in ['{"p":', '{"p":"x"}', '{"p":"x"}']) {
+        cumulative.feed([
+          {
+            'index': 0,
+            'id': 'call_a',
+            'function': {'name': 'submit_prompt', 'arguments': args},
+          }
+        ]);
+      }
+      expect(cumulative.argumentChars, 9);
+    });
+
     test('keeps interleaved parallel calls apart by index', () {
       // The whole reason `index` is the grouping key: both calls are open at
       // once and their fragments arrive mixed.

@@ -8224,6 +8224,12 @@ abstract class AppLocalizations {
   /// **'Working on the next step...'**
   String get optAgentStepWorking;
 
+  /// No description provided for @optAgentStepStreaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Model is writing... {count} chars received'**
+  String optAgentStepStreaming(int count);
+
   /// No description provided for @optElapsedSeconds.
   ///
   /// In en, this message translates to:

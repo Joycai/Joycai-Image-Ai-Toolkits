@@ -441,6 +441,16 @@ class PromptOptimizerSession extends ChangeNotifier {
   DateTime? _runStartedAt;
   DateTime? get runStartedAt => _runStartedAt;
 
+  /// Characters of tool-call arguments the request in flight has streamed,
+  /// or null when no call is streaming.
+  ///
+  /// The stretch this covers is the one that looked hung: a `submit_prompt`
+  /// runs to thousands of characters, streams for minutes, and appends
+  /// nothing to the transcript until it is whole — so users stopped turns
+  /// that were working. Its own notifier rather than [notifyListeners]: it
+  /// ticks per fragment, and only the timeline's working row reads it.
+  final ValueNotifier<int?> streamingToolArgumentChars = ValueNotifier(null);
+
   void addUserTurn(String text) {
     history.add(LLMMessage(role: LLMRole.user, content: text));
     _addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.user, text: text));
@@ -740,6 +750,7 @@ class PromptOptimizerSession extends ChangeNotifier {
     if (_isRunning == running) return;
     _isRunning = running;
     _runStartedAt = running ? DateTime.now() : null;
+    streamingToolArgumentChars.value = null;
     notifyListeners();
   }
 
@@ -1264,6 +1275,7 @@ class PromptOptimizerAgent {
     required Map<String, dynamic> options,
     required bool useStream,
     bool Function()? isCancelled,
+    void Function(int chars)? onToolArgumentChars,
   }) {
     final override = debugRequestOverride;
     if (override != null) return override(messages, tools, options);
@@ -1275,6 +1287,7 @@ class PromptOptimizerAgent {
       options: options,
       useStream: useStream,
       isCancelled: isCancelled,
+      onToolArgumentChars: onToolArgumentChars,
     );
   }
 
@@ -1853,6 +1866,8 @@ class PromptOptimizerAgent {
             // tool calls, which is the wrong grain — a single turn is one long
             // request and almost all of the waiting happens inside it.
             isCancelled: isCancelled,
+            onToolArgumentChars: (chars) =>
+                session.streamingToolArgumentChars.value = chars,
           );
         } on LLMCancelled {
           // The user pressed stop. Not a failure, so no error card: being
@@ -1866,6 +1881,10 @@ class PromptOptimizerAgent {
             text: e.toString(),
           ));
           rethrow;
+        } finally {
+          // Whatever the request ended in, the count describes a call that is
+          // no longer streaming — the next step's row starts from nothing.
+          session.streamingToolArgumentChars.value = null;
         }
 
         // The race the hook alone cannot close: the reply may have arrived

@@ -304,6 +304,20 @@ void main() {
           reason: 'calls with no finished item have nothing to replay');
     });
 
+    test('argument deltas report a running total across calls', () {
+      // A submit_prompt streams for minutes before it is whole; the total is
+      // what lets the assistant show it working instead of looking hung.
+      final chunks = run([
+        {'type': 'response.output_item.added', 'output_index': 0, 'item': {'type': 'function_call', 'call_id': 'c0', 'name': 'a'}},
+        {'type': 'response.function_call_arguments.delta', 'output_index': 0, 'delta': '{"x":'},
+        {'type': 'response.function_call_arguments.delta', 'output_index': 0, 'delta': '1}'},
+        {'type': 'response.output_item.added', 'output_index': 1, 'item': {'type': 'function_call', 'call_id': 'c1', 'name': 'b'}},
+        {'type': 'response.function_call_arguments.delta', 'output_index': 1, 'delta': '{}'},
+        completed(),
+      ]);
+      expect([for (final c in chunks) ?c.toolArgumentChars], [5, 7, 9]);
+    });
+
     test('the whole string wins over the accumulated deltas', () {
       final chunks = run([
         {'type': 'response.output_item.added', 'output_index': 0, 'item': {'type': 'function_call', 'call_id': 'c0', 'name': 'a'}},

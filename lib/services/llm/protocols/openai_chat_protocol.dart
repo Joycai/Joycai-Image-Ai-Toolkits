@@ -166,6 +166,11 @@ class StreamingToolCallAccumulator {
   /// text alone, which is the common case.
   bool get isEmpty => _calls.isEmpty;
 
+  /// Argument characters assembled so far, across every call — measured on
+  /// the merged text, so a cumulative dialect's restated frames count once.
+  int get argumentChars =>
+      _calls.values.fold(0, (sum, call) => sum + call.arguments.length);
+
   /// Consume one chunk's `tool_calls` array. Anything else is ignored — the
   /// field is absent from most chunks of a tool-bearing stream.
   void feed(Object? rawToolCalls) {
@@ -1121,7 +1126,8 @@ class OpenAIChatProtocol implements ChatProtocol {
             // the moment it is delivering
             // (docs/plans/2026-08-assistant-timeout.md, the case streaming
             // tools exists to fix).
-            yield LLMResponseChunk();
+            yield LLMResponseChunk(
+                toolArgumentChars: streamedToolCalls.argumentChars);
           }
 
           final structured = extractStructuredImages(delta);
