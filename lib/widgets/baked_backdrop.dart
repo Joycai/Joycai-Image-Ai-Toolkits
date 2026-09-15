@@ -17,6 +17,7 @@
 // and the raster cache has a size ceiling a 4K window is far past. The
 // numbers above are the ones `lib/bench/render_bench.dart` reproduces.
 
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -127,6 +128,15 @@ class BakedAuroraBackdrop extends StatelessWidget {
 /// Only for static decoration: anything that animates per frame would re-bake
 /// per frame and be worse. The quarter-resolution trick is fine for gradients
 /// and soft washes and nothing else — there is no hard edge here to soften.
+///
+/// **Quarter resolution only under Skia** ([texelsPerLogicalPixel]). Impeller
+/// dithers every gradient with a per-pixel pattern. Painted live that pattern
+/// is below notice; baked into a quarter-*logical* image and stretched back
+/// out it becomes a visible grid — 8 physical pixels a texel on a Retina Mac,
+/// a 16px checker across the whole gallery. So where Impeller renders the
+/// bake is made at physical resolution, texel for pixel. Windows pins Skia
+/// (`windows/runner/main.cpp`), which is where the quarter-res saving was
+/// measured, and keeps it.
 class BakedBackdrop extends StatefulWidget {
   const BakedBackdrop({
     super.key,
@@ -147,6 +157,24 @@ class BakedBackdrop extends StatefulWidget {
 
   final Widget? child;
 
+  /// Whether this platform's default renderer is Impeller, which dithers
+  /// gradients. Windows is pinned to Skia by its runner; Linux defaults to it.
+  static final bool _rendererDithers =
+      Platform.isMacOS || Platform.isIOS || Platform.isAndroid;
+
+  /// Image pixels to bake per logical pixel of the window.
+  ///
+  /// Under Skia a quarter: smooth gradients survive it untouched, and
+  /// re-baking on a resize costs almost nothing at a sixteenth of the pixels.
+  /// Under Impeller one per physical pixel — see the class comment for the
+  /// grid a magnified dither draws.
+  @visibleForTesting
+  static double texelsPerLogicalPixel({
+    required double devicePixelRatio,
+    required bool rendererDithers,
+  }) =>
+      rendererDithers ? devicePixelRatio : 1 / 4;
+
   @override
   State<BakedBackdrop> createState() => _BakedBackdropState();
 }
@@ -154,18 +182,23 @@ class BakedBackdrop extends StatefulWidget {
 class _BakedBackdropState extends State<BakedBackdrop> {
   ui.Image? _image;
   Size? _bakedFor;
+  double? _bakedRatio;
   Object? _bakedKey;
   bool _baking = false;
 
-  /// Smooth gradients survive this untouched, and re-baking on a window
-  /// resize costs almost nothing at a sixteenth of the pixels.
-  static const int _downscale = 4;
+  /// Well inside every GPU's texture limit, and above a 5K display's width,
+  /// so a physical-resolution bake is never stretched.
+  static const int _maxTexture = 8192;
 
-  Future<void> _bake(Size size) async {
+  Future<void> _bake(Size size, double ratio) async {
     if (_baking) return;
     _baking = true;
-    final int w = (size.width / _downscale).ceil().clamp(1, 4096);
-    final int h = (size.height / _downscale).ceil().clamp(1, 4096);
+    final double scale = BakedBackdrop.texelsPerLogicalPixel(
+      devicePixelRatio: ratio,
+      rendererDithers: BakedBackdrop._rendererDithers,
+    );
+    final int w = (size.width * scale).ceil().clamp(1, _maxTexture);
+    final int h = (size.height * scale).ceil().clamp(1, _maxTexture);
     final recorder = ui.PictureRecorder();
     widget.paint(Canvas(recorder), Size(w.toDouble(), h.toDouble()));
     final ui.Picture picture = recorder.endRecording();
@@ -180,6 +213,7 @@ class _BakedBackdropState extends State<BakedBackdrop> {
       _image?.dispose();
       _image = image;
       _bakedFor = size;
+      _bakedRatio = ratio;
       _bakedKey = widget.recipeKey;
     });
   }
@@ -195,9 +229,14 @@ class _BakedBackdropState extends State<BakedBackdrop> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final Size size = constraints.biggest;
-        final bool stale = _bakedFor != size || _bakedKey != widget.recipeKey;
+        // Moving the window to a display with another scale re-bakes too.
+        final double ratio = MediaQuery.maybeDevicePixelRatioOf(context) ?? 1;
+        final bool stale = _bakedFor != size ||
+            _bakedRatio != ratio ||
+            _bakedKey != widget.recipeKey;
         if (stale && size.isFinite && !size.isEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) => _bake(size));
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _bake(size, ratio));
         }
         final ui.Image? image = _image;
         // Before the first bake lands, paint the recipe live rather than show
