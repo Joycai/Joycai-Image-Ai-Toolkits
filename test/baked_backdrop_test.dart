@@ -105,4 +105,27 @@ void main() {
       baked.dispose();
     });
   }
+
+  // Impeller dithers gradients; a quarter-res bake magnified the dither into
+  // a visible 16px grid on a Retina Mac. Where the renderer dithers, the bake
+  // is texel for physical pixel, whatever the display scale.
+  group('texelsPerLogicalPixel', () {
+    test('a dithering renderer bakes at physical resolution', () {
+      for (final double ratio in [1.0, 1.5, 2.0, 3.0]) {
+        expect(
+          BakedBackdrop.texelsPerLogicalPixel(
+              devicePixelRatio: ratio, rendererDithers: true),
+          ratio,
+        );
+      }
+    });
+
+    test('Skia keeps the measured quarter-resolution bake', () {
+      expect(
+        BakedBackdrop.texelsPerLogicalPixel(
+            devicePixelRatio: 2, rendererDithers: false),
+        0.25,
+      );
+    });
+  });
 }
