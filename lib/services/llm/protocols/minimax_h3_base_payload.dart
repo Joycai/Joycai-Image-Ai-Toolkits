@@ -189,7 +189,9 @@ Map<String, dynamic> minimaxH3PollEnvelope(
   String operationName,
   String videoUri,
 ) {
-  final status = data['status']?.toString().toLowerCase() ?? '';
+  final status = requireJobStatus(data['status'],
+          job: 'MiniMax H3 local video job', jobId: operationName)
+      .toLowerCase();
 
   if (status == 'completed') {
     // The job's own `/content` endpoint on the API host: the channel's

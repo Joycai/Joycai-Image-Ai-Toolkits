@@ -130,7 +130,8 @@ class XaiImagesProtocol implements ImageGenProtocol {
               item['url'] as String,
       ];
       final images = await resolveImageRefs(refs, client, logger,
-          source: 'xAI Images API');
+          source: 'xAI Images API',
+          abortTrigger: abortTriggerOf(options));
 
       if (images.isEmpty) {
         // e.g. respect_moderation=false leaves url/b64 empty.

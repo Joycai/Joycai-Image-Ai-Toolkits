@@ -91,11 +91,10 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await client.post(
-        url,
-        headers: target.headers(),
-        body: jsonEncode(payload),
-      );
+      final response = await sendJsonRequest(client, url,
+          headers: target.headers(),
+          body: jsonEncode(payload),
+          options: options);
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(
@@ -130,12 +129,16 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
   Future<Map<String, dynamic>> poll(
     LLMTarget target,
     String operationName, {
+    Map<String, dynamic>? options,
     LLMLogger? logger,
   }) async {
     final client = target.config.createClient();
     try {
-      final task = await _fetchTask(target, operationName, client);
-      final status = task['status']?.toString().toLowerCase() ?? '';
+      final task =
+          await _fetchTask(target, operationName, client, options: options);
+      final status = requireJobStatus(task['status'],
+              job: 'MiniMax video task', jobId: operationName)
+          .toLowerCase();
 
       switch (status) {
         case 'succeeded':
@@ -243,11 +246,16 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
   Future<Map<String, dynamic>> _fetchTask(
     LLMTarget target,
     String operationName,
-    http.Client client,
-  ) async {
+    http.Client client, {
+    Map<String, dynamic>? options,
+  }) async {
     final url = Uri.parse('${minimaxV2Base(target.config.endpoint)}'
         '/query/video_generation/$operationName');
-    final response = await client.get(url, headers: target.headers());
+    final response = await sendJsonRequest(client, url,
+        headers: target.headers(),
+        body: '',
+        options: options,
+        method: 'GET');
     final data = decodeJsonBody(response,
         apiName: 'MiniMax video poll', checkEnvelope: false);
 

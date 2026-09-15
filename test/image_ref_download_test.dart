@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_imagen_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 
 /// B5: every generated-image fetch goes through resolveImageRef, which
@@ -88,5 +89,23 @@ void main() {
         logs.any((l) =>
             l.startsWith('WARN') && l.contains('only 1 of 2')),
         isTrue);
+  });
+
+  test('Imagen prediction parsing skips malformed entries and reads both shapes',
+      () {
+    expect(
+      imagenImageRefs([
+        null,
+        'diagnostic',
+        {'bytesBase64Encoded': ' direct '},
+        {
+          'image': {'bytesBase64Encoded': 'nested'}
+        },
+        {'image': 'not-a-map'},
+        {'bytesBase64Encoded': ''},
+      ]),
+      [' direct ', 'nested'],
+    );
+    expect(imagenImageRefs({'predictions': []}), isEmpty);
   });
 }

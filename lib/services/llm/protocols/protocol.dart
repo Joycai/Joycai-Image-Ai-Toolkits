@@ -133,6 +133,7 @@ abstract class VideoJobProtocol {
   Future<Map<String, dynamic>> poll(
     LLMTarget target,
     String operationName, {
+    Map<String, dynamic>? options,
     LLMLogger? logger,
   });
 }
@@ -270,6 +271,26 @@ Map<String, dynamic> decodeJsonBody(http.Response response,
   final data = decoded.cast<String, dynamic>();
   if (checkEnvelope) throwIfEnvelopeError(data);
   return data;
+}
+
+/// Reads a required status from an asynchronous job response.
+///
+/// An empty status is a malformed poll response, not a future in-progress
+/// state. Treating it as the latter makes callers poll the wrong endpoint or
+/// envelope until the multi-minute job deadline.
+String requireJobStatus(
+  Object? value, {
+  required String job,
+  required String jobId,
+}) {
+  final status = value?.toString().trim() ?? '';
+  if (status.isEmpty) {
+    throw LLMApiException(
+      '$job $jobId returned no status; the poll response has an unexpected '
+      'shape.',
+    );
+  }
+  return status;
 }
 
 /// The wait a failed response asked for, read off its headers, or null when
@@ -420,13 +441,17 @@ Future<Uint8List?> resolveImageRef(
   http.Client client,
   LLMLogger? logger, {
   Duration retryDelay = const Duration(seconds: 1),
+  Future<void>? abortTrigger,
 }) async {
   final trimmed = ref.trim();
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     const attempts = 2;
     for (var attempt = 1; attempt <= attempts; attempt++) {
       try {
-        final resp = await client.get(Uri.parse(trimmed));
+        final request = http.AbortableRequest('GET', Uri.parse(trimmed),
+            abortTrigger: abortTrigger);
+        final resp =
+            await http.Response.fromStream(await client.send(request));
         if (resp.statusCode == 200) {
           final bytes = resp.bodyBytes;
           if (imageMimeFromBytes(bytes) != null) return bytes;
@@ -439,6 +464,8 @@ Future<Uint8List?> resolveImageRef(
           logger?.call('Image URL returned ${resp.statusCode}: $trimmed',
               level: 'WARN');
         }
+      } on http.RequestAbortedException {
+        rethrow;
       } catch (e) {
         logger?.call('Failed to fetch image URL: $e', level: 'WARN');
       }
@@ -494,12 +521,13 @@ Future<List<Uint8List>> resolveImageRefs(
   LLMLogger? logger, {
   required String source,
   Duration retryDelay = const Duration(seconds: 1),
+  Future<void>? abortTrigger,
 }) async {
   final all = refs.toList();
   final images = <Uint8List>[];
   for (final ref in all) {
-    final bytes =
-        await resolveImageRef(ref, client, logger, retryDelay: retryDelay);
+    final bytes = await resolveImageRef(ref, client, logger,
+        retryDelay: retryDelay, abortTrigger: abortTrigger);
     if (bytes != null) images.add(bytes);
   }
   if (images.isNotEmpty && images.length < all.length) {
@@ -539,11 +567,34 @@ Future<http.Response> sendJsonRequest(
   Map<String, dynamic>? options,
   String method = 'POST',
 }) async {
+  final request = buildJsonRequest(
+    method,
+    url,
+    headers: headers,
+    body: body,
+    options: options,
+  );
+  return http.Response.fromStream(await client.send(request));
+}
+
+/// Builds an abortable JSON request for one-shot and streaming paths alike.
+///
+/// Cancelling a response subscription only helps after headers arrive. While
+/// a stream waits for its first byte (or uploads a multimodal body), the
+/// request-level trigger is the only way to stop it without closing the
+/// channel's shared pooled client.
+http.AbortableRequest buildJsonRequest(
+  String method,
+  Uri url, {
+  required Map<String, String> headers,
+  required String body,
+  Map<String, dynamic>? options,
+}) {
   final request = http.AbortableRequest(method, url,
       abortTrigger: abortTriggerOf(options));
   request.headers.addAll(headers);
   request.body = body;
-  return http.Response.fromStream(await client.send(request));
+  return request;
 }
 
 /// The prompt the provider actually drew from, when it rewrote the one it
@@ -670,16 +721,29 @@ String? resolveVideoSeconds(Map<String, dynamic>? options) {
   return s.toString();
 }
 
-/// Whether a result URL points back at the API host itself — the one case
+/// Whether a result URL points back at the API origin itself — the one case
 /// where the channel's key belongs on the download. A signed storage or CDN
-/// link lives on another host.
+/// link lives on another origin. Host alone is insufficient: sending a key to
+/// the same hostname over a different scheme or port can disclose it to an
+/// unrelated service.
 bool videoUriNeedsAuth(String uri, String endpoint) {
   final u = Uri.tryParse(uri);
   final e = Uri.tryParse(endpoint);
   if (u == null || e == null || u.host.isEmpty || e.host.isEmpty) {
     return false;
   }
-  return u.host.toLowerCase() == e.host.toLowerCase();
+  int effectivePort(Uri value) {
+    if (value.hasPort) return value.port;
+    return switch (value.scheme.toLowerCase()) {
+      'https' => 443,
+      'http' => 80,
+      _ => -1,
+    };
+  }
+
+  return u.scheme.toLowerCase() == e.scheme.toLowerCase() &&
+      u.host.toLowerCase() == e.host.toLowerCase() &&
+      effectivePort(u) == effectivePort(e);
 }
 
 /// The Veo-shaped "done" envelope every video poll returns

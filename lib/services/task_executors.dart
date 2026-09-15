@@ -382,12 +382,17 @@ extension TaskExecutors on TaskQueueService {
 
     String resultText = "";
     final actualUseStream = await _shouldUseStream(task);
+    final requestOptions = <String, dynamic>{
+      ...task.parameters,
+      llmCancellationProbeKey: () => task.status == TaskStatus.cancelled,
+    };
 
     if (actualUseStream) {
       final stream = LLMService().requestStream(
         modelIdentifier: task.modelDbId ?? task.modelId,
         messages: messages,
         contextId: task.id,
+        options: requestOptions,
       );
 
       await for (final chunk in stream) {
@@ -402,8 +407,9 @@ extension TaskExecutors on TaskQueueService {
       final response = await LLMService().request(
         modelIdentifier: task.modelDbId ?? task.modelId,
         messages: messages,
-        options: task.parameters,
+        options: requestOptions,
         useStream: false,
+        isCancelled: () => task.status == TaskStatus.cancelled,
       );
       resultText = response.text;
       _emit(task.id, TaskEventType.textChunk, resultText);
@@ -527,6 +533,7 @@ extension TaskExecutors on TaskQueueService {
           operationName: operationName,
           operationSurface: task.operationSurface,
           contextId: task.id,
+          isCancelled: () => task.status == TaskStatus.cancelled,
         ),
         interpret: (opStatus) {
           if (opStatus['done'] == true) return opStatus;
@@ -664,7 +671,13 @@ extension TaskExecutors on TaskQueueService {
       modelIdentifier: task.modelDbId ?? task.modelId,
       messages: messages,
       contextId: task.id,
-      options: task.parameters,
+      // A function cannot be persisted in task.parameters, so attach the
+      // live cancellation probe only to this request copy. LLMService turns
+      // it into an AbortableRequest trigger while the job is being submitted.
+      options: {
+        ...task.parameters,
+        llmCancellationProbeKey: () => task.status == TaskStatus.cancelled,
+      },
     );
 
     // Persist both halves of the job's provenance immediately. The id is

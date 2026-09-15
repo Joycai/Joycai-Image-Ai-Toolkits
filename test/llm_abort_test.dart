@@ -7,7 +7,10 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_videos_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
 /// Cancel and timeout used to leave a non-streaming request running upstream:
 /// the client is pooled, so it cannot be closed for one request. The shared
@@ -16,6 +19,21 @@ import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 /// probe (pitfalls 11 §H72).
 void main() {
   group('sendJsonRequest', () {
+    test('the shared builder makes streaming JSON requests abortable too', () {
+      final trigger = Completer<void>().future;
+      final request = buildJsonRequest(
+        'POST',
+        Uri.parse('https://example.invalid/v1/stream'),
+        headers: const {'Content-Type': 'application/json'},
+        body: '{"stream":true}',
+        options: {llmAbortTriggerKey: trigger},
+      );
+
+      expect(request, isA<http.AbortableRequest>());
+      expect(request.abortTrigger, same(trigger));
+      expect(request.body, '{"stream":true}');
+    });
+
     test('an abort stops a request the server never answers — through the '
         'pooled client', () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -96,6 +114,48 @@ void main() {
     expect(abortTriggerOf({llmAbortTriggerKey: f}), same(f));
     expect(abortTriggerOf({llmAbortTriggerKey: 'nope'}), isNull);
     expect(abortTriggerOf(null), isNull);
+  });
+
+  test('an in-flight video status poll is abortable', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final seen = Completer<void>();
+    final held = <HttpRequest>[];
+    server.listen((req) {
+      held.add(req);
+      if (!seen.isCompleted) seen.complete();
+    });
+    addTearDown(() async {
+      for (final request in held) {
+        try {
+          await request.response.close();
+        } catch (_) {}
+      }
+      LLMClientPool.disposeAll();
+      await server.close(force: true);
+    });
+
+    final config = LLMModelConfig(
+      modelId: 'sora-2',
+      channelType: Vendors.openAIRest,
+      endpoint: 'http://127.0.0.1:${server.port}/v1',
+      apiKey: 'k',
+    );
+    final target = LLMTarget(
+      config: config,
+      vendor: Vendors.byId(config.channelType),
+      model: ModelDescriptor.of(config.modelId),
+    );
+    final abort = Completer<void>();
+    final polling = OpenAIVideosProtocol().poll(
+      target,
+      'video_1',
+      options: {llmAbortTriggerKey: abort.future},
+    );
+    await seen.future.timeout(const Duration(seconds: 5));
+    abort.complete();
+
+    await expectLater(
+        polling, throwsA(isA<http.RequestAbortedException>()));
   });
 
   group('LLMService.chainCancellationProbe', () {

@@ -1511,9 +1511,8 @@ class AnthropicChatProtocol implements ChatProtocol {
       dialect: dialect,
     );
 
-    final request = http.Request('POST', url);
-    request.headers.addAll(headers);
-    request.body = jsonEncode(payload);
+    final request = buildJsonRequest('POST', url,
+        headers: headers, body: jsonEncode(payload), options: options);
 
     final client = config.createClient();
     final appState = AppState();
@@ -1639,20 +1638,25 @@ class AnthropicDiscoveryProtocol implements DiscoveryProtocol {
     final url = Uri.parse('${trimBaseUrl(config.endpoint)}/models');
     final headers = target.headers();
 
-    final response = await http.get(url, headers: headers);
+    final client = config.createClient();
+    try {
+      final response = await client.get(url, headers: headers);
+      final data = decodeJsonBody(response, apiName: 'Anthropic models');
+      final rawModels = data['data'];
+      final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
 
-    final data = decodeJsonBody(response, apiName: 'Anthropic models');
-    final rawModels = data['data'];
-    final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
-
-    return modelsJson.whereType<Map>().map((m) {
-      final id = m['id']?.toString() ?? '';
-      return DiscoveredModel(
-        modelId: id,
-        displayName: m['display_name']?.toString() ?? id,
-        description: m['created_at']?.toString() ?? '',
-        rawData: m.cast<String, dynamic>(),
-      );
-    }).toList();
+      return modelsJson.whereType<Map>().map((m) {
+        final id = m['id']?.toString().trim() ?? '';
+        if (id.isEmpty) return null;
+        return DiscoveredModel(
+          modelId: id,
+          displayName: m['display_name']?.toString() ?? id,
+          description: m['created_at']?.toString() ?? '',
+          rawData: m.cast<String, dynamic>(),
+        );
+      }).whereType<DiscoveredModel>().toList();
+    } finally {
+      client.close();
+    }
   }
 }

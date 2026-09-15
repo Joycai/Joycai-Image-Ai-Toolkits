@@ -1207,12 +1207,14 @@ class LLMDispatcher {
     LLMModelConfig config,
     String operationName, {
     String? surfaceId,
+    Map<String, dynamic>? options,
     LLMLogger? logger,
   }) async {
     final target = resolveTarget(config);
     final pinned = _videoJobProtocolFor(WireProtocol.tryParse(surfaceId));
     if (pinned != null) {
-      return pinned.poll(target, operationName, logger: logger);
+      return pinned.poll(target, operationName,
+          options: options, logger: logger);
     }
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
@@ -1261,13 +1263,15 @@ class LLMDispatcher {
         // not hand a Sora-style id to MiniMax's `/v2` query, where it means
         // nothing and the in-flight task fails permanently.
         if (operationName.startsWith('video_')) {
-          return _openaiVideos.poll(target, operationName, logger: logger);
+          return _openaiVideos.poll(target, operationName,
+              options: options, logger: logger);
         }
         // Symmetric with the submit above: an operation on this channel can
         // only have come from the vendor-native surface it declares.
         final nativeVideo = _nativeVideoProtocol(target.vendor.videoProtocol);
         if (nativeVideo != null) {
-          return nativeVideo.poll(target, operationName, logger: logger);
+          return nativeVideo.poll(target, operationName,
+              options: options, logger: logger);
         }
         throw UnsupportedError(
           'Operation "$operationName" cannot belong to this Anthropic channel '
@@ -1276,20 +1280,23 @@ class LLMDispatcher {
         );
 
       case ProtocolFamily.gemini:
-        return _veo.poll(target, operationName, logger: logger);
+        return _veo.poll(target, operationName,
+            options: options, logger: logger);
 
       case ProtocolFamily.dashscope:
         // Same in-flight guard as the ① and ④ branches — a `video_…` id was
         // issued by the `/v1/videos` surface, never by `video-synthesis`,
         // whatever the channel's wiring says today.
         if (operationName.startsWith('video_')) {
-          return _openaiVideos.poll(target, operationName, logger: logger);
+          return _openaiVideos.poll(target, operationName,
+              options: options, logger: logger);
         }
         // Symmetric with the submit above: an operation on this channel can
         // only have come from `video-synthesis`, and its poll already
         // translates DashScope's task states into the Veo-shaped envelope
         // the task executor speaks.
-        return _dashscopeVideo.poll(target, operationName, logger: logger);
+        return _dashscopeVideo.poll(target, operationName,
+            options: options, logger: logger);
 
       case ProtocolFamily.openai:
         if (operationName.startsWith('openai_lro_sim_')) {
@@ -1327,7 +1334,8 @@ class LLMDispatcher {
         // where a `video_…` id means nothing — every in-flight video from
         // before the upgrade fails permanently.
         if (operationName.startsWith('video_')) {
-          return _openaiVideos.poll(target, operationName, logger: logger);
+          return _openaiVideos.poll(target, operationName,
+              options: options, logger: logger);
         }
 
         // Vendors with a native video surface poll it with their own status
@@ -1338,13 +1346,15 @@ class LLMDispatcher {
         // channel can only have come from its own surface.
         final nativeVideo = _nativeVideoProtocol(target.vendor.videoProtocol);
         if (nativeVideo != null) {
-          return nativeVideo.poll(target, operationName, logger: logger);
+          return nativeVideo.poll(target, operationName,
+              options: options, logger: logger);
         }
 
         // Non-prefixed ids some upstreams emit (e.g. Wanxiang) dispatch by
         // model family instead.
         if (target.model.family == ModelFamily.openaiVideo) {
-          return _openaiVideos.poll(target, operationName, logger: logger);
+          return _openaiVideos.poll(target, operationName,
+              options: options, logger: logger);
         }
 
         throw UnsupportedError('Operation "$operationName" is not recognized by the OpenAI protocol family.');

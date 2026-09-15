@@ -114,11 +114,10 @@ class XaiVideosProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await client.post(
-        url,
-        headers: target.headers(),
-        body: jsonEncode(payload),
-      );
+      final response = await sendJsonRequest(client, url,
+          headers: target.headers(),
+          body: jsonEncode(payload),
+          options: options);
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
@@ -145,6 +144,7 @@ class XaiVideosProtocol implements VideoJobProtocol {
   Future<Map<String, dynamic>> poll(
     LLMTarget target,
     String operationName, {
+    Map<String, dynamic>? options,
     LLMLogger? logger,
   }) async {
     final config = target.config;
@@ -153,48 +153,63 @@ class XaiVideosProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await client.get(url, headers: target.headers());
+      final response = await sendJsonRequest(client, url,
+          headers: target.headers(),
+          body: '',
+          options: options,
+          method: 'GET');
       // 200 = terminal result; 202 = accepted / still pending — both inside
       // decodeJsonBody's 2xx window. checkEnvelope: false because a failed
       // job carries an `error` field beside `status`, owned by the status
       // machine below (which names the request in its message).
       final data = decodeJsonBody(response,
           apiName: 'xAI video fetch', checkEnvelope: false);
-      final status = data['status']?.toString() ?? '';
-
-      switch (status) {
-        case 'done':
-          final video = data['video'] as Map?;
-          final videoUrl = video?['url']?.toString();
-          if (videoUrl == null || videoUrl.isEmpty) {
-            throw LLMApiException(
-                'xAI video request $operationName is done but returned no URL: ${response.body}');
-          }
-          // A signed result URL on xAI's media host: no API key on the
-          // download unless it points back at the API host itself.
-          return videoDoneEnvelope(operationName, videoUrl,
-              requiresAuth: videoUriNeedsAuth(videoUrl, config.endpoint));
-        case 'failed':
-          final err = data['error'];
-          final msg = err is Map
-              ? '${err['code'] ?? 'unknown'}: ${err['message'] ?? err.toString()}'
-              : (err?.toString() ?? 'unknown');
-          throw LLMApiException(
-              'xAI video request $operationName failed: $msg');
-        case 'expired':
-          throw LLMApiException(
-              'xAI video request $operationName expired before completing.');
-        default:
-          // pending — relay progress (0-100) without marking done.
-          return {
-            'name': operationName,
-            'done': false,
-            'progress': data['progress'] ?? 0,
-            'status': status,
-          };
-      }
+      return xaiVideoPollEnvelope(data, operationName, config.endpoint);
     } finally {
       client.close();
     }
+  }
+}
+
+/// One xAI status response translated into the common video-job envelope.
+Map<String, dynamic> xaiVideoPollEnvelope(
+  Map<String, dynamic> data,
+  String operationName,
+  String endpoint,
+) {
+  final status = requireJobStatus(data['status'],
+          job: 'xAI video request', jobId: operationName)
+      .toLowerCase();
+
+  switch (status) {
+    case 'done':
+      final video = data['video'] as Map?;
+      final videoUrl = video?['url']?.toString();
+      if (videoUrl == null || videoUrl.isEmpty) {
+        throw LLMApiException(
+            'xAI video request $operationName is done but returned no URL: $data');
+      }
+      return videoDoneEnvelope(operationName, videoUrl,
+          requiresAuth: videoUriNeedsAuth(videoUrl, endpoint));
+    case 'failed':
+      final err = data['error'];
+      final msg = err is Map
+          ? '${err['code'] ?? 'unknown'}: ${err['message'] ?? err.toString()}'
+          : (err?.toString() ?? 'unknown');
+      throw LLMApiException('xAI video request $operationName failed: $msg');
+    case 'expired':
+      throw LLMApiException(
+          'xAI video request $operationName expired before completing.');
+    case 'cancelled':
+    case 'canceled':
+      throw LLMApiException(
+          'xAI video request $operationName was cancelled upstream.');
+    default:
+      return {
+        'name': operationName,
+        'done': false,
+        'progress': data['progress'] ?? 0,
+        'status': status,
+      };
   }
 }

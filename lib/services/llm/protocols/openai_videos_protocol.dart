@@ -44,7 +44,8 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
     final seconds = resolveVideoSeconds(options);
     final quality = readStringOption(options, 'videoQuality');
 
-    final request = http.MultipartRequest('POST', url);
+    final request = http.AbortableMultipartRequest('POST', url,
+        abortTrigger: abortTriggerOf(options));
     // Auth comes from the vendor profile (layer 2) like every other surface —
     // this was the last protocol with a hardcoded bearer header, which worked
     // only because today's OpenAI-family vendors all happen to use one.
@@ -145,6 +146,7 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
   Future<Map<String, dynamic>> poll(
     LLMTarget target,
     String operationName, {
+    Map<String, dynamic>? options,
     LLMLogger? logger,
   }) async {
     final config = target.config;
@@ -154,7 +156,8 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final response = await client.get(url, headers: headers);
+      final response = await sendJsonRequest(client, url,
+          headers: headers, body: '', options: options, method: 'GET');
       // checkEnvelope: false — a failed job arrives as a 200 with an `error`
       // field beside `status`; the status machine below owns that case and
       // names the operation in its message.
@@ -189,7 +192,9 @@ Map<String, dynamic> openaiVideoPollEnvelope(
   String operationName,
   String baseUrl,
 ) {
-  final status = data['status']?.toString().toLowerCase() ?? '';
+  final status = requireJobStatus(data['status'],
+          job: 'OpenAI video task', jobId: operationName)
+      .toLowerCase();
 
   if (status == 'succeeded' || status == 'completed') {
     final explicit = data['url']?.toString();

@@ -146,7 +146,7 @@ class LLMService {
       // window between the user pressing stop and this loop starting its
       // next attempt is exactly where a cancelled turn used to spend another
       // full request.
-      if (isCancelled?.call() ?? false) throw const LLMCancelled();
+      if (cancelProbe?.call() ?? false) throw const LLMCancelled();
       // One trigger per attempt, fired by the watcher on cancel and by the
       // `finally` below whenever the attempt ends — completing it after the
       // response has fully arrived has no effect.
@@ -180,7 +180,7 @@ class LLMService {
               options: attemptOptions,
               tools: tools,
               toolBearing: toolBearing,
-              isCancelled: isCancelled,
+              isCancelled: cancelProbe,
               log: log,
             ),
           );
@@ -251,7 +251,7 @@ class LLMService {
         // generated and billed, so it belongs in the usage table — but a
         // half-received reply must never enter a conversation, and a caller
         // that already stopped must not be handed one to display.
-        if (cancelledMidStream || (isCancelled?.call() ?? false)) {
+        if (cancelledMidStream || (cancelProbe?.call() ?? false)) {
           throw const LLMCancelled();
         }
 
@@ -302,7 +302,7 @@ class LLMService {
         // the cancellation tearing the connection down, and the sleep below
         // is time a stopped turn should not spend waiting to re-send a
         // request nobody is waiting for.
-        if (isCancelled?.call() ?? false) throw const LLMCancelled();
+        if (cancelProbe?.call() ?? false) throw const LLMCancelled();
         final delay = retryDelayFor(e, attempt);
         if (delay == null) {
           log(
@@ -316,8 +316,8 @@ class LLMService {
             level: 'WARN');
         // Sliced, so pressing stop during a long Retry-After wait ends the
         // turn within half a second instead of after the whole wait.
-        await cancellableSleep(delay, isCancelled);
-        if (isCancelled?.call() ?? false) throw const LLMCancelled();
+        await cancellableSleep(delay, cancelProbe);
+        if (cancelProbe?.call() ?? false) throw const LLMCancelled();
       } finally {
         cancelWatch?.cancel();
         // Ends whatever this attempt still has in flight — a timed-out
@@ -870,6 +870,7 @@ class LLMService {
     final requestSerial = ++_requestSerial;
 
     while (true) {
+      if (streamProbe?.call() ?? false) throw const LLMCancelled();
       final abort = Completer<void>();
       final cancelWatch = _abortWhenCancelled(streamProbe, abort);
       final correlation = LLMLogCorrelation(
@@ -930,6 +931,8 @@ class LLMService {
           deliveredAnyChunk = true;
           yield chunk;
         }
+
+        if (streamProbe?.call() ?? false) throw const LLMCancelled();
 
         _emitLog(
           'Stream completed. Total images: $imageCount',
@@ -1248,13 +1251,35 @@ class LLMService {
       logger: (msg, {level = 'INFO'}) =>
           _emitLog(msg, level: level, contextId: contextId),
     );
-    final ticket = await _dispatcher.startLongRunning(
-      config,
-      messages,
-      options: options,
-      logger: (msg, {level = 'INFO'}) =>
-          _emitLog(msg, level: level, contextId: contextId),
-    );
+    final cancelProbe = cancellationProbeOf(options);
+    if (cancelProbe?.call() ?? false) throw const LLMCancelled();
+
+    // Video submissions bypass request()/requestStream(), so translate the
+    // executor's cancellation probe into the same per-request abort trigger.
+    // Otherwise cancelling during a large upload can still create a billed
+    // upstream job after the local task has gone away.
+    final abort = Completer<void>();
+    final cancelWatch = _abortWhenCancelled(cancelProbe, abort);
+    final submitOptions = <String, dynamic>{
+      ...?options,
+      llmAbortTriggerKey: abort.future,
+    };
+    final LLMOperationTicket ticket;
+    try {
+      ticket = await _dispatcher.startLongRunning(
+        config,
+        messages,
+        options: submitOptions,
+        logger: (msg, {level = 'INFO'}) =>
+            _emitLog(msg, level: level, contextId: contextId),
+      );
+    } on http.RequestAbortedException {
+      if (cancelProbe?.call() ?? false) throw const LLMCancelled();
+      rethrow;
+    } finally {
+      cancelWatch?.cancel();
+      if (!abort.isCompleted) abort.complete();
+    }
     // Video jobs never flow back through request()/requestStream(), so the
     // accepted submission is the only moment they can be billed at all —
     // without this every Veo/Sora/xAI generation was invisible to the metrics
@@ -1280,19 +1305,32 @@ class LLMService {
     required String operationName,
     String? operationSurface,
     String? contextId,
+    bool Function()? isCancelled,
   }) async {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
           _emitLog(msg, level: level, contextId: contextId),
     );
-    return await _dispatcher.checkOperation(
-      config,
-      operationName,
-      surfaceId: operationSurface,
-      logger: (msg, {level = 'INFO'}) =>
-          _emitLog(msg, level: level, contextId: contextId),
-    );
+    if (isCancelled?.call() ?? false) throw const LLMCancelled();
+    final abort = Completer<void>();
+    final cancelWatch = _abortWhenCancelled(isCancelled, abort);
+    try {
+      return await _dispatcher.checkOperation(
+        config,
+        operationName,
+        surfaceId: operationSurface,
+        options: {llmAbortTriggerKey: abort.future},
+        logger: (msg, {level = 'INFO'}) =>
+            _emitLog(msg, level: level, contextId: contextId),
+      );
+    } on http.RequestAbortedException {
+      if (isCancelled?.call() ?? false) throw const LLMCancelled();
+      rethrow;
+    } finally {
+      cancelWatch?.cancel();
+      if (!abort.isCompleted) abort.complete();
+    }
   }
 
   /// Credential headers for downloading a generated asset from this model's

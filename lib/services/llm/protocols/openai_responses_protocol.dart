@@ -753,9 +753,8 @@ class OpenAIResponsesProtocol implements ChatProtocol {
     final payload = buildResponsesPayload(target, history,
         options: options, isStreaming: true, tools: tools);
 
-    final request = http.Request('POST', url);
-    request.headers.addAll(headers);
-    request.body = jsonEncode(payload);
+    final request = buildJsonRequest('POST', url,
+        headers: headers, body: jsonEncode(payload), options: options);
 
     final client = config.createClient();
     LLMDebugLog? debugFile;
