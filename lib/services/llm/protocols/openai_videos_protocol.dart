@@ -117,7 +117,7 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
 
     final client = config.createClient();
     try {
-      final streamed = await client.send(request);
+      final streamed = await client.send(trackBodySent(request, options));
       final response = await http.Response.fromStream(streamed);
 
       if (debugFile != null) {

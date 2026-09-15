@@ -91,7 +91,7 @@ class LLMService {
     bool useStream = true,
     bool Function()? isCancelled,
   }) async {
-    final config = await _configResolver.resolveConfig(
+    final config = await _resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
           _emitLog(msg, level: level, contextId: contextId),
@@ -836,7 +836,7 @@ class LLMService {
       level: 'DEBUG',
       contextId: contextId,
     );
-    final config = await _configResolver.resolveConfig(
+    final config = await _resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
           _emitLog(msg, level: level, contextId: contextId),
@@ -932,8 +932,6 @@ class LLMService {
           yield chunk;
         }
 
-        if (streamProbe?.call() ?? false) throw const LLMCancelled();
-
         _emitLog(
           'Stream completed. Total images: $imageCount',
           level: 'DEBUG',
@@ -966,6 +964,11 @@ class LLMService {
           _emitLog(_missingUsageWarning(config),
               level: 'WARN', contextId: contextId);
         }
+
+        // After usage, same as request(): a stream that ran to its end was
+        // generated and billed even if the caller stopped in the meantime,
+        // so it is recorded before the cancel is reported.
+        if (streamProbe?.call() ?? false) throw const LLMCancelled();
 
         // After usage, same as request(): the chunks already delivered were
         // blocked output, and the consumer must see a failure, not a success.
@@ -1043,6 +1046,21 @@ class LLMService {
   /// in a sink that throws to pin that recording is best-effort.
   @visibleForTesting
   static Future<void> Function(Map<String, dynamic> row)? usageSinkOverride;
+
+  /// Test door in front of [LLMConfigResolver]: when set, every entry point
+  /// takes its config from here instead of the model database.
+  @visibleForTesting
+  static LLMModelConfig Function(dynamic modelIdentifier)?
+      configResolverOverride;
+
+  Future<LLMModelConfig> _resolveConfig(
+    dynamic modelIdentifier, {
+    required Function(String, {String level}) logger,
+  }) async {
+    final override = configResolverOverride;
+    if (override != null) return override(modelIdentifier);
+    return _configResolver.resolveConfig(modelIdentifier, logger: logger);
+  }
 
   /// Test door onto [_recordUsage].
   @visibleForTesting
@@ -1246,7 +1264,7 @@ class LLMService {
     String? contextId,
     Map<String, dynamic>? options,
   }) async {
-    final config = await _configResolver.resolveConfig(
+    final config = await _resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
           _emitLog(msg, level: level, contextId: contextId),
@@ -1255,14 +1273,22 @@ class LLMService {
     if (cancelProbe?.call() ?? false) throw const LLMCancelled();
 
     // Video submissions bypass request()/requestStream(), so translate the
-    // executor's cancellation probe into the same per-request abort trigger.
-    // Otherwise cancelling during a large upload can still create a billed
-    // upstream job after the local task has gone away.
+    // executor's cancellation probe into the same per-request abort trigger —
+    // but only while the body is still uploading ([llmBodySentKey]). A cancel
+    // there stops a large upload before upstream can create a job from it.
+    // Once the body is out the server may already have accepted and billed
+    // the job, and aborting would lose its id: the submit is left to finish,
+    // the ticket is recorded and persisted, and the executor's first poll
+    // sees the cancel and cancels the job upstream by that id.
     final abort = Completer<void>();
-    final cancelWatch = _abortWhenCancelled(cancelProbe, abort);
+    var bodySent = false;
+    final cancelWatch = cancelProbe == null
+        ? null
+        : _abortWhenCancelled(() => !bodySent && cancelProbe(), abort);
     final submitOptions = <String, dynamic>{
       ...?options,
       llmAbortTriggerKey: abort.future,
+      llmBodySentKey: () => bodySent = true,
     };
     final LLMOperationTicket ticket;
     try {
@@ -1307,7 +1333,7 @@ class LLMService {
     String? contextId,
     bool Function()? isCancelled,
   }) async {
-    final config = await _configResolver.resolveConfig(
+    final config = await _resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
           _emitLog(msg, level: level, contextId: contextId),
@@ -1340,7 +1366,7 @@ class LLMService {
     required dynamic modelIdentifier,
     String? contextId,
   }) async {
-    final config = await _configResolver.resolveConfig(
+    final config = await _resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
           _emitLog(msg, level: level, contextId: contextId),
@@ -1366,7 +1392,7 @@ class LLMService {
     String? contextId,
   }) async {
     try {
-      final config = await _configResolver.resolveConfig(
+      final config = await _resolveConfig(
         modelIdentifier,
         logger: (msg, {level = 'INFO'}) =>
             _emitLog(msg, level: level, contextId: contextId),

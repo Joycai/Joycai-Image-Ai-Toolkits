@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -574,7 +575,8 @@ Future<http.Response> sendJsonRequest(
     body: body,
     options: options,
   );
-  return http.Response.fromStream(await client.send(request));
+  return http.Response.fromStream(
+      await client.send(trackBodySent(request, options)));
 }
 
 /// Builds an abortable JSON request for one-shot and streaming paths alike.
@@ -595,6 +597,63 @@ http.AbortableRequest buildJsonRequest(
   request.headers.addAll(headers);
   request.body = body;
   return request;
+}
+
+/// The body-sent callback `LLMService` put in [options] ([llmBodySentKey]),
+/// or null when the caller supplied none.
+void Function()? bodySentHookOf(Map<String, dynamic>? options) {
+  final hook = options?[llmBodySentKey];
+  return hook is void Function() ? hook : null;
+}
+
+/// [request] as it should be handed to `client.send`: unchanged, or — when
+/// `options` carry [llmBodySentKey] — reporting the moment its body has been
+/// handed to the connection in full. Apply it to a fully built request, at
+/// the send call.
+http.BaseRequest trackBodySent(
+  http.BaseRequest request,
+  Map<String, dynamic>? options,
+) {
+  final hook = bodySentHookOf(options);
+  return hook == null ? request : _BodySentRequest(request, hook);
+}
+
+/// Forwards everything to [_inner] and calls [_onBodySent] when the body
+/// stream ends. The client pipes [finalize] into the socket, so that end is
+/// the moment the whole body has left this process. A wrapper because
+/// `package:http`'s abortable request classes are final.
+class _BodySentRequest extends http.BaseRequest with http.Abortable {
+  final http.BaseRequest _inner;
+  final void Function() _onBodySent;
+
+  _BodySentRequest(this._inner, this._onBodySent)
+      : super(_inner.method, _inner.url) {
+    followRedirects = _inner.followRedirects;
+    maxRedirects = _inner.maxRedirects;
+    persistentConnection = _inner.persistentConnection;
+  }
+
+  @override
+  Future<void>? get abortTrigger {
+    final inner = _inner;
+    return inner is http.Abortable ? inner.abortTrigger : null;
+  }
+
+  @override
+  http.ByteStream finalize() {
+    final body = _inner.finalize();
+    // Copied after the inner finalize: a multipart request only settles its
+    // boundary Content-Type and length there.
+    headers.addAll(_inner.headers);
+    contentLength = _inner.contentLength;
+    super.finalize();
+    return http.ByteStream(body.transform(
+        StreamTransformer<List<int>, List<int>>.fromHandlers(
+            handleDone: (sink) {
+      _onBodySent();
+      sink.close();
+    })));
+  }
 }
 
 /// The prompt the provider actually drew from, when it rewrote the one it
