@@ -148,6 +148,39 @@ void main() {
     expect(session.history.last.role, LLMRole.assistant);
   });
 
+  test('the mark and the model survive a restart', () async {
+    final session = PromptOptimizerSession();
+    session.addUserTurn('go');
+    PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async => LLMResponse(
+          text: 'I would suggest a low-angle shot with',
+          metadata: const {'finish_reason': 'length'},
+        );
+
+    await PromptOptimizerAgent.runTurn(session: session, modelIdentifier: 7, referenceImages: const []);
+
+    // What the repository stores and reads back.
+    final stored = [
+      for (final m in session.history) LLMMessage.fromJson(jsonDecode(jsonEncode(m.toJson())) as Map<String, dynamic>),
+    ];
+    final restored = PromptOptimizerSession.fromStored(
+      id: session.id,
+      mode: session.mode,
+      history: stored,
+    );
+    final reply = restored.transcript.lastWhere((e) => e.kind == OptimizerEntryKind.assistant);
+    expect(reply.truncated, isTrue);
+    expect(reply.modelDbId, 7);
+  });
+
+  test('host bookkeeping stays off a row that has none', () {
+    final json = LLMMessage(role: LLMRole.assistant, content: 'done').toJson();
+    expect(json.containsKey('truncated'), isFalse);
+    expect(json.containsKey('modelDbId'), isFalse);
+    final old = LLMMessage.fromJson(const {'role': 'assistant', 'content': 'done'});
+    expect(old.truncated, isFalse);
+    expect(old.modelDbId, isNull);
+  });
+
   test('a whole plain-text reply is not marked', () async {
     final session = PromptOptimizerSession();
     session.addUserTurn('go');

@@ -57,7 +57,7 @@
 | 1 | state 换新列表：视频参考图增删、`GalleryState.toggleDirectory`、下载器日志 | `state/workbench_ui_state.dart` · `state/gallery_state.dart` · `state/downloader_state.dart` | `test/state_list_identity_test.dart` | ✅ |
 | 2 | 视频面板桌面分栏：头部内容放不下时整栏单滚动，不再把参考图卡裁成一条 | `screens/workbench/widgets/video_config_panel.dart` | 1440 截图参考图区完整；`test/video_panel_head_fit_test.dart` | ✅ |
 | 3 | AI 重命名「覆盖」禁用态的测试：给 `AiRenameDialog` 留 `@visibleForTesting` 初始行入口 | `screens/browser/ai_rename_dialog.dart` · 新测试 | `test/ai_rename_overwrite_ui_test.dart`（去掉禁用即失败） | ✅ |
-| 4 | 截断标记跨重启：`LLMMessage` JSON 带可选 `truncated` / `modelDbId`，恢复时读回 | `llm_types.dart` · `prompt_optimizer_session.dart` · `prompt_optimizer_agent.dart` | 往返测试；旧行无键照常 | ☐ |
+| 4 | 截断标记跨重启：`LLMMessage` JSON 带可选 `truncated` / `modelDbId`，恢复时读回 | `llm_types.dart` · `prompt_optimizer_session.dart` · `prompt_optimizer_agent.dart` | `optimizer_truncation_test.dart` 两条：重启往返、旧行无键 | ✅ |
 | 5 | 按节写入预览只 diff 那一节：条目带 `section` / `mode`，卡片取节的旧新片段 | `prompt_optimizer_session.dart` · `assistant_tool_calls.dart` · `knowledge_base_service.dart` · `optimizer_kb_edit_card.dart` | 单测：节切片；卡片测试 | ☐ |
 | 6 | ① 「no choices」等裸 `Exception` 改 `LLMApiException`；`LLMMessage.fromJson` 未知 role 抛 `FormatException` | `openai_chat_protocol.dart` · `dashscope_images_protocol.dart` · `midjourney_protocol.dart` · `gemini_veo_protocol.dart` · `llm_types.dart` | 单测 | ☐ |
 | 7 | 非 Anthropic vendor 的 ④ 面不发 `web_search`（谓词与 `serverWebSearch` 同源）；编辑器保存时不支持即清零 | `anthropic_payload.dart` · `llm_dispatcher.dart` · `model_edit_dialog.dart` | payload 测试 | ☐ |

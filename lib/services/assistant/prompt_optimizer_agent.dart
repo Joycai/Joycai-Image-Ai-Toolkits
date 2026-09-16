@@ -732,6 +732,8 @@ class PromptOptimizerAgent {
               rawContentBlocks: response.rawContentBlocks,
               rawModelParts: response.rawModelParts,
               rawResponseItems: response.rawResponseItems,
+              truncated: truncated,
+              modelDbId: modelIdentifier is int ? modelIdentifier : null,
             ));
             // A cut chat reply stays a chat reply — it is what the model
             // said — but the line says where it stopped and why.
@@ -762,6 +764,8 @@ class PromptOptimizerAgent {
           rawModelParts: response.rawModelParts,
           rawResponseItems: response.rawResponseItems,
           toolCalls: response.toolCalls,
+          truncated: truncated,
+          modelDbId: modelIdentifier is int ? modelIdentifier : null,
         ));
         if (response.text.trim().isNotEmpty) {
           // Narration beside the calls: a cut one ends mid-sentence, and

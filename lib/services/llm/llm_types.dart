@@ -512,6 +512,15 @@ class LLMMessage {
   /// functionResponse format).
   final String? toolName;
 
+  /// Host bookkeeping, never put on the wire: this assistant turn ended at
+  /// the model's output limit rather than where the model stopped. Stored so
+  /// a restored conversation still marks the cut reply.
+  final bool truncated;
+
+  /// Host bookkeeping, never put on the wire: the stored model row
+  /// (`llm_models.id`) that produced this assistant turn, when it ran on one.
+  final int? modelDbId;
+
   LLMMessage({
     required this.role,
     required this.content,
@@ -527,6 +536,8 @@ class LLMMessage {
     this.toolCalls = const [],
     this.toolCallId,
     this.toolName,
+    this.truncated = false,
+    this.modelDbId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -553,6 +564,8 @@ class LLMMessage {
         if (toolCalls.isNotEmpty) 'toolCalls': toolCalls.map((c) => c.toJson()).toList(),
         if (toolCallId != null) 'toolCallId': toolCallId,
         if (toolName != null) 'toolName': toolName,
+        if (truncated) 'truncated': true,
+        if (modelDbId != null) 'modelDbId': modelDbId,
       };
 
   factory LLMMessage.fromJson(Map<String, dynamic> json) => LLMMessage(
@@ -597,6 +610,8 @@ class LLMMessage {
         ],
         toolCallId: json['toolCallId'] as String?,
         toolName: json['toolName'] as String?,
+        truncated: json['truncated'] == true,
+        modelDbId: json['modelDbId'] is int ? json['modelDbId'] as int : null,
       );
 }
 

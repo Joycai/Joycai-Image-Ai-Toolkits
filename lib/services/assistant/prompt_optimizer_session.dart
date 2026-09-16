@@ -208,14 +208,13 @@ class OptimizerChatEntry {
   /// For [OptimizerEntryKind.assistant]: the reply hit the model's output
   /// limit and ends where the host cut it, not where the model stopped. The
   /// chat line says so at its tail and points at the model's max-output
-  /// setting. In memory only — a restored session renders history, which
-  /// keeps no finish reason.
+  /// setting. Survives a restart through [LLMMessage.truncated].
   final bool truncated;
 
   /// The model row (`llm_models.id`) whose reply this entry records, when
   /// the turn ran on a stored model. A cut reply's card jumps to *that*
   /// model's editor — the picker may have moved on by the time the user
-  /// clicks. In memory only, like [truncated].
+  /// clicks. Survives a restart through [LLMMessage.modelDbId].
   final int? modelDbId;
 
   OptimizerChatEntry({
@@ -849,7 +848,12 @@ class PromptOptimizerSession extends ChangeNotifier {
           }
         case LLMRole.assistant:
           if (msg.content.trim().isNotEmpty) {
-            entries.add(OptimizerChatEntry(kind: OptimizerEntryKind.assistant, text: msg.content.trim()));
+            entries.add(OptimizerChatEntry(
+              kind: OptimizerEntryKind.assistant,
+              text: msg.content.trim(),
+              truncated: msg.truncated,
+              modelDbId: msg.modelDbId,
+            ));
           }
           for (final call in msg.toolCalls) {
             switch (call.name) {
