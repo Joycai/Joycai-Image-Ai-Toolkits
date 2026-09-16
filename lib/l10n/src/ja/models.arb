@@ -498,6 +498,8 @@
   "sortAscending": "昇順",
   "sortDescending": "降順",
   "modelSortTooltip": "並べ替え：{key} · {direction}",
+  "modelGroupByChannel": "チャンネルごとにグループ化",
+  "modelGroupByChannelHint": "オフにすると、すべてのチャンネルのモデルが 1 つのリストになります",
   "@modelSortTooltip": {
     "placeholders": {
       "key": {

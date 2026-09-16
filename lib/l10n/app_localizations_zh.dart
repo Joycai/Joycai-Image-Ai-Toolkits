@@ -2578,6 +2578,12 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get modelGroupByChannel => '按渠道分组';
+
+  @override
+  String get modelGroupByChannelHint => '关掉后所有渠道的模型排成一列';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -7373,6 +7379,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String modelSortTooltip(String key, String direction) {
     return '排序：$key · $direction';
   }
+
+  @override
+  String get modelGroupByChannel => '依通道分組';
+
+  @override
+  String get modelGroupByChannelHint => '關閉後所有通道的模型排成一列';
 
   @override
   String get prompts => '提示';

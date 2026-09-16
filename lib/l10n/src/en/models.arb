@@ -706,6 +706,8 @@
   "sortAscending": "Ascending",
   "sortDescending": "Descending",
   "modelSortTooltip": "Sort: {key} · {direction}",
+  "modelGroupByChannel": "Group by channel",
+  "modelGroupByChannelHint": "Off, every channel's models run as one list",
   "@modelSortTooltip": {
     "placeholders": {
       "key": {

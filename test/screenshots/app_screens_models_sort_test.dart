@@ -42,6 +42,51 @@ void main() {
     });
   }
 
+  // The phone (`2e`): the title-bar button's menu with its grouping row, and
+  // the tab once that row is off — one run across every channel, each card
+  // naming its own.
+  testWidgets('models · sortMenu @ mobile light', (WidgetTester tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.models,
+      size: kShotSizes.firstWhere((ShotSize s) => s.label == 'mobile'),
+      brightness: Brightness.light,
+      suffix: 'sortMenu',
+      after: (WidgetTester tester) async {
+        if (sortButton().evaluate().isEmpty) return;
+        await tester.tap(sortButton());
+        await settle(tester);
+      },
+    );
+  });
+
+  testWidgets('models · ungrouped @ mobile light', (WidgetTester tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.models,
+      size: kShotSizes.firstWhere((ShotSize s) => s.label == 'mobile'),
+      brightness: Brightness.light,
+      suffix: 'ungrouped',
+      after: (WidgetTester tester) async {
+        if (sortButton().evaluate().isEmpty) return;
+        await tester.tap(sortButton());
+        await settle(tester);
+        final Finder group = find.text('按渠道分组');
+        if (group.evaluate().isEmpty) return;
+        await tester.tap(group, warnIfMissed: false);
+        await settle(tester);
+        await tester.tap(sortButton().evaluate().isEmpty ? find.byIcon(Icons.arrow_upward) : sortButton());
+        await settle(tester);
+        final Finder kind = find.text('类型').last;
+        if (kind.evaluate().isEmpty) return;
+        await tester.tap(kind, warnIfMissed: false);
+        await settle(tester);
+      },
+    );
+  });
+
   // Lit: the accent wash, the direction arrow, and — at desktop width — the
   // key's name beside it. The tablet shot is the same state one degradation
   // step down, where the name has gone and the button has not.

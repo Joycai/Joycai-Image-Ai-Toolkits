@@ -4679,6 +4679,18 @@ abstract class AppLocalizations {
   /// **'Sort: {key} · {direction}'**
   String modelSortTooltip(String key, String direction);
 
+  /// No description provided for @modelGroupByChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Group by channel'**
+  String get modelGroupByChannel;
+
+  /// No description provided for @modelGroupByChannelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off, every channel\'s models run as one list'**
+  String get modelGroupByChannelHint;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

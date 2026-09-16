@@ -2608,6 +2608,12 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get modelGroupByChannel => 'チャンネルごとにグループ化';
+
+  @override
+  String get modelGroupByChannelHint => 'オフにすると、すべてのチャンネルのモデルが 1 つのリストになります';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

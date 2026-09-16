@@ -2696,6 +2696,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get modelGroupByChannel => 'Group by channel';
+
+  @override
+  String get modelGroupByChannelHint =>
+      'Off, every channel\'s models run as one list';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

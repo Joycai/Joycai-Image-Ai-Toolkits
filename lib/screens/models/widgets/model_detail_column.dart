@@ -218,7 +218,7 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
           // The sort button is 32 unless it is lit *and* the row is wide
           // enough for its key's name; the two tails below are that row with
           // and without the name.
-          final sortName = _sortKeyLabel(l10n, listState.sortKey);
+          final sortName = modelSortKeyLabel(l10n, listState.sortKey);
           final double sortNamed = listState.isDefault
               ? AppSize.control
               : ModelsActionButton.widthFor(context, sortName);
@@ -344,17 +344,6 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
   }
 }
 
-/// The key's name as the menu and the button write it.
-String _sortKeyLabel(AppLocalizations l10n, ModelSortKey key) => switch (key) {
-      ModelSortKey.manual => l10n.modelSortDefault,
-      ModelSortKey.name => l10n.modelSortName,
-      ModelSortKey.kind => l10n.modelSortKind,
-      ModelSortKey.added => l10n.modelSortAdded,
-    };
-
-String _sortDirectionLabel(AppLocalizations l10n, ModelSortDirection direction) =>
-    direction == ModelSortDirection.ascending ? l10n.sortAscending : l10n.sortDescending;
-
 /// `D1d` 排序按钮: 32 at r10 in the filter row, between the search field and
 /// Add Model — with the chips and the search, which shape the list, rather
 /// than with the primary action.
@@ -389,37 +378,15 @@ class _SortButton extends StatelessWidget {
       tone: lit ? ModelsButtonTone.active : ModelsButtonTone.neutral,
       // Named on hover in both faces: the icon-only button says 「排过序」 but
       // not by what, and the labelled one still owes the direction.
-      tooltip: l10n.modelSortTooltip(label, _sortDirectionLabel(l10n, listState.sortDirection)),
-      onPressed: () => showAppGlassMenuBelow(context, entries: _entries(l10n)),
+      tooltip: l10n.modelSortTooltip(label, modelSortDirectionLabel(l10n, listState.sortDirection)),
+      // The same menu the phone opens, minus its grouping row — one builder,
+      // so the two surfaces cannot drift into two dialects (`D1d · 2e`).
+      onPressed: () => showAppGlassMenuBelow(
+        context,
+        entries: modelSortMenuItems(l10n, listState: listState),
+      ),
     );
   }
-
-  /// The key group over the direction group, the same glass menu the channel
-  /// header's ⋮ opens. Picking closes it, as every menu in the app does —
-  /// changing key *and* direction is two openings, which is the price of one
-  /// menu language instead of two.
-  List<AppGlassMenuEntry> _entries(AppLocalizations l10n) => [
-        AppGlassMenuHeading(l10n.sortSection),
-        for (final key in ModelSortKey.values)
-          AppGlassMenuItem(
-            label: _sortKeyLabel(l10n, key),
-            // 「默认」 is a word with no content until it says whose default:
-            // the order the channel handed over, or the one a hand left.
-            hint: key == ModelSortKey.manual ? l10n.modelSortDefaultHint : null,
-            radio: true,
-            checked: listState.sortKey == key,
-            onSelected: () => listState.setSortKey(key),
-          ),
-        const AppGlassMenuDivider(),
-        for (final direction in ModelSortDirection.values)
-          AppGlassMenuItem(
-            label: _sortDirectionLabel(l10n, direction),
-            radio: true,
-            checked: listState.sortDirection == direction,
-            trailing: direction == ModelSortDirection.ascending ? '\u2191' : '\u2193',
-            onSelected: () => listState.setSortDirection(direction),
-          ),
-      ];
 }
 
 /// `1a` 右栏头: the channel's plate and name over its protocol and endpoint,

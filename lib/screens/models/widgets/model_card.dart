@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/app_semantic_colors.dart';
+import '../../../core/constants.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
@@ -46,6 +47,7 @@ class ModelCard extends StatelessWidget {
     this.feeGroup,
     this.size = ModelCardSize.regular,
     this.showBilling = false,
+    this.showChannel = false,
     this.onTap,
     this.onEdit,
     this.onDelete,
@@ -58,9 +60,16 @@ class ModelCard extends StatelessWidget {
   /// a choice being made; off in the list, where the chip's name suffices.
   final bool showBilling;
 
-  /// The channel the model belongs to. Only used to tell whether a pinned
-  /// protocol is stale; without it the pin is shown as valid.
+  /// The channel the model belongs to. Tells whether a pinned protocol is
+  /// stale — without it the pin is shown as valid — and, with [showChannel],
+  /// names itself on the card.
   final LLMChannel? channel;
+
+  /// `D1d · 2e`: a 「● 渠道名」 line under the model id, in the channel's own
+  /// tag colour. For the phone's Models tab once its channel groups are off:
+  /// the group header was the only thing saying which channel served a model,
+  /// and a flat list across every channel has to put that back on the card.
+  final bool showChannel;
 
   /// The model's fee group, resolved by the caller; null draws
   /// 「No Fee Group」.
@@ -129,6 +138,10 @@ class ModelCard extends StatelessWidget {
               ?.mono
               .copyWith(color: scheme.onSurfaceVariant),
         ),
+        if (showChannel && channel != null) ...[
+          SizedBox(height: _phone ? AppSpace.s4 : AppSpace.s6),
+          _ChannelLine(channel!),
+        ],
         if (!_phone) ...[
           const SizedBox(height: AppSpace.s6),
           Wrap(
@@ -390,6 +403,46 @@ class _FeeGroupChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// `D1d · 2e`: which channel serves this model — a 6px dot in the channel's
+/// own tag colour and its name, in the weak ink.
+///
+/// A dot rather than the [ChannelAvatar] plate: the card already carries the
+/// kind plate, and `D1a` is explicit that two identity colours on one card
+/// read as no hierarchy at all. The dot is small enough to be a footnote to
+/// the name, which is what it is.
+class _ChannelLine extends StatelessWidget {
+  const _ChannelLine(this.channel);
+
+  final LLMChannel channel;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Container(
+          width: AppSpace.s6,
+          height: AppSpace.s6,
+          decoration: BoxDecoration(
+            color: Color(channel.tagColor ?? AppConstants.defaultTagColor),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: AppSpace.s6),
+        Flexible(
+          child: Text(
+            channel.displayName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ),
+      ],
     );
   }
 }

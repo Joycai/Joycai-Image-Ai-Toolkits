@@ -1456,6 +1456,8 @@
   "sortAscending": "升序",
   "sortDescending": "降序",
   "modelSortTooltip": "排序：{key} · {direction}",
+  "modelGroupByChannel": "按渠道分组",
+  "modelGroupByChannelHint": "关掉后所有渠道的模型排成一列",
   "@modelSortTooltip": {
     "placeholders": {
       "key": {
