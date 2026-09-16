@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../services/task_queue_service.dart';
+import '../models/task_item.dart';
 
 /// One glyph per kind of task, shared by everything that lists them.
 ///

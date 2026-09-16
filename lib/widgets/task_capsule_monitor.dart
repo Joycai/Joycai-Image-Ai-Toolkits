@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../core/app_theme.dart';
 import '../core/design_tokens.dart';
 import '../core/responsive.dart';
-import '../core/task_type_glyph.dart';
+import 'task_type_glyph.dart';
 import '../l10n/app_localizations.dart';
 import '../services/task_queue_service.dart';
 import '../state/app_state.dart';
