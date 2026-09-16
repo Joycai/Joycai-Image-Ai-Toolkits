@@ -389,6 +389,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get renameConflictAutoRename => 'Rename';
 
   @override
+  String get renameOverwriteDuplicateHint =>
+      'Another row in this list is taking this name — nothing on disk has it yet, so there is nothing to overwrite. Rename or skip one of the two.';
+
+  @override
   String get renameNoModelsTitle => 'No chat model available';
 
   @override

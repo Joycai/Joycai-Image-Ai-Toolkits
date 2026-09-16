@@ -74,6 +74,24 @@ void main() {
     expect(File(p.join(dir.path, 'b.png')).readAsStringSync(), 'new');
   });
 
+  test('overwrite never replaces a file this run renamed into place', () async {
+    // Two proposals with one target: the second must not delete the first's
+    // file to make room, whatever its flag says. (The gate also folds case,
+    // for the file systems that do; this runs on one that may not, so the
+    // names here match exactly.)
+    final first = await write('a.png', 'first');
+    final second = await write('c.png', 'second');
+
+    final count = await AiRenameAgent.applyProposals([
+      proposal(first, 'b.png'),
+      proposal(second, 'b.png', overwrite: true),
+    ]);
+
+    expect(count, 1);
+    expect(File(p.join(dir.path, 'b.png')).readAsStringSync(), 'first');
+    expect(File(second).readAsStringSync(), 'second', reason: 'the refused source stays where it was');
+  });
+
   test('a proposal that does not change the name is a no-op', () async {
     final source = await write('a.png', 'aaa');
 

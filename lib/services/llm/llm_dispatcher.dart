@@ -4,6 +4,8 @@ import 'model_capabilities.dart';
 import 'model_descriptor.dart';
 import 'model_family.dart';
 import 'protocols/anthropic_chat_protocol.dart';
+import 'protocols/anthropic_thinking.dart';
+import 'protocols/anthropic_wire.dart';
 import 'protocols/dashscope_chat_protocol.dart';
 import 'protocols/dashscope_images_async_protocol.dart';
 import 'protocols/dashscope_images_protocol.dart';

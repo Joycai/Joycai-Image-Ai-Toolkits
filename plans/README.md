@@ -37,8 +37,9 @@ git show 46d5a72:plans/012-task-capsule-spring-settle.md
 - **加载 → 网格硬切**（`lib/screens/workbench/gallery.dart:218-238`）：扫描占位在一帧内换成满屏
   图块。仍是全应用视觉上最猛的一次跳变，一段 `AppMotion.reveal` 的淡入即可消解。
   **这条从第一轮就在单子上，三轮未做——下一轮若无新的 HIGH，它应当优先立项。**
-- **两棵树的展开都是硬跳**：目录树在 `directory_tree_item.dart:647` 直接把子树插进 `Column`，
-  箭头在 `:1073-1085` 的 `_disclosure()` 里用 `chevron_right`/`expand_more` 两个图标互换而非旋转；
+- **两棵树的展开都是硬跳**：目录树在 `directory_tree_item.dart:583` 直接把子树插进 `Column`，
+  箭头在 `folder_tree_row.dart:388-400` 的 `_disclosure()` 里用 `chevron_right`/`expand_more`
+  两个图标互换而非旋转（行号 2026-09-16 大文件拆分后复核）；
   知识库树 `knowledge_tree_panel.dart:575` 同样是互换。箭头旋转（`AnimatedRotation` +
   `AppMotion.state`）两处都能低成本拿下；子树伸缩只有目录树能用 `AnimatedSize`，知识库树是
   扁平化过滤列表，要动就得换 `AnimatedList`，不划算。

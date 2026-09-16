@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/drag/app_drag_follower.dart';
-import '../../workbench/directory_tree_item.dart' show FolderDropFollower;
+import '../../../widgets/files/folder_drop_feedback.dart' show FolderDropFollower;
 
 /// What follows the pointer while files are dragged onto a folder
 /// (`00d · 1e`): the opaque follower chip with the count, saying what a

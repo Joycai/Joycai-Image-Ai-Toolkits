@@ -309,6 +309,7 @@
   "renameActionEdit": "Edit name",
   "renameActionUndo": "Undo skip",
   "renameConflictAutoRename": "Rename",
+  "renameOverwriteDuplicateHint": "Another row in this list is taking this name — nothing on disk has it yet, so there is nothing to overwrite. Rename or skip one of the two.",
   "renameNoModelsTitle": "No chat model available",
   "renameNoModelsDesc": "Batch renaming needs a chat model to read the pictures and write the names. Configure at least one working channel under Models and Channels first.",
   "renameGoToSettings": "Go to settings",

@@ -336,11 +336,20 @@ class AiRenameAgent {
   }
 
   /// Applies proposals to disk. Returns the number of files actually renamed.
+  ///
+  /// `overwrite` replaces a file that was there before the run — never one an
+  /// earlier proposal in the same run has just renamed into place. Two
+  /// proposals with one target would otherwise have the second delete the
+  /// first's file: the user's photo, gone, with nothing in the review list
+  /// saying so. The review dialog refuses that answer too
+  /// (`resolveRenameConflict`); this does not rely on it. Compared ignoring
+  /// case, like the review's clash check.
   static Future<int> applyProposals(
     List<RenameProposal> proposals, {
     void Function(String message)? onLog,
   }) async {
     int renamed = 0;
+    final placedThisRun = <String>{};
     for (final proposal in proposals) {
       if (!isSafeFileName(proposal.newName)) {
         onLog?.call('Skipped (unsafe name): ${proposal.newName}');
@@ -356,6 +365,10 @@ class AiRenameAgent {
             onLog?.call('Skipped (target exists): ${proposal.newName}');
             continue;
           }
+          if (placedThisRun.contains(newPath.toLowerCase())) {
+            onLog?.call('Skipped (would replace a file this run just renamed): ${proposal.newName}');
+            continue;
+          }
           // Deleted rather than renamed over: `File.rename` onto an existing
           // path throws on Windows, so the overwrite the user asked for would
           // fail on the platform this app is most used on.
@@ -363,6 +376,7 @@ class AiRenameAgent {
           onLog?.call('Overwrote: ${proposal.newName}');
         }
         await oldFile.rename(newPath);
+        placedThisRun.add(newPath.toLowerCase());
         renamed++;
         onLog?.call('Renamed: ${proposal.oldName} -> ${proposal.newName}');
       } else {

@@ -39,8 +39,11 @@ lib/
       llm_service.dart            # facade the app calls
       llm_dispatcher.dart         # the ONLY routing table (surface × protocol × vendor)
       protocols/                  # layer 1 — wire formats: openai chat/images/videos · xai images/videos ·
-                                  #   gemini chat/imagen/veo · anthropic chat ·
-                                  #   dashscope chat/images/images-async/video · minimax images/video · midjourney
+                                  #   gemini chat/imagen/veo · anthropic chat (seven anthropic_* files, mapped
+                                  #   in the architecture note) · dashscope chat/images/images-async/video ·
+                                  #   minimax images/video · midjourney; the ①-shaped parts other protocols
+                                  #   share: openai_chat_parsing · streaming_tool_calls · inline_think ·
+                                  #   chat_image_extraction
       vendors/                    # layer 2 — VendorProfile registry (auth, per-surface protocol menus);
                                   #   ProtocolFamily lives in vendor_profile.dart; ids stored in llm_channels.type
       model_descriptor.dart       # layer 3 — family + capabilities; with model_family.dart, the only
@@ -53,9 +56,13 @@ lib/
     tasks/                        # task_queue_service.dart (concurrency, Stream<TaskEvent>, ETA) ·
                                   #   task_executors.dart (`part of` it, one _executeXxxTask per TaskType) ·
                                   #   task_list_ordering.dart (created_at is the only key) ·
-                                  #   ai_rename_agent.dart (the aiRename task's agent)
+                                  #   ai_rename_agent.dart (the aiRename task's agent) ·
+                                  #   ai_rename_review.dart (the review list's clash rules — it and the
+                                  #   agent's applyProposals both refuse to delete a file the run placed)
     assistant/                    # the Prompt Assistant (see architecture note): prompt_optimizer_agent.dart
-                                  #   (tool loop, modes, session persistence + compaction) · sub_agent_runner.dart ·
+                                  #   (the public class + tool loop) with six `part`s — session, context_window
+                                  #   (elide / compact), tool_calls, toolset, history_repair, system_prompts ·
+                                  #   sub_agent_runner.dart ·
                                   #   knowledge_base_service.dart (README.md entry, paged reads) ·
                                   #   knowledge_base_starter.dart · assistant_context_usage.dart ·
                                   #   assistant_kb_distill.dart · prompt_provenance.dart
@@ -88,7 +95,8 @@ lib/
     tasks/                        # app_run_console · task_capsule_monitor · log_console · smooth_progress ·
                                   #   task_type_glyph
     settings/                     # theme_accent_picker · settings_widgets · dual_tone_swatch · backup_error_text
-    files/                        # folder_group_header · folder_outline_bar · thumbnail_fit_toggle
+    files/                        # folder_group_header · folder_outline_bar · thumbnail_fit_toggle ·
+                                  #   folder_drop_feedback (a folder row's refusal, shown by the browser's drag chip)
     dialogs/ · placeholders/
   bench/                          # render_bench.dart — raster/GPU benchmark, inert unless RBENCH=1
   l10n/                           # generated — do NOT edit directly (see l10n workflow below)
@@ -105,12 +113,12 @@ Read the relevant note before changing that subsystem — each records invariant
 that fail silently when broken, and alternatives already tried and rejected.
 
 - **[LLM three-layer API stack](docs/architecture/llm-three-layer.md)** — protocol / vendor / model layering, the dispatcher routing table, and the layering rules (no model-id sniffing outside `ModelDescriptor`, no vendor branches inside protocols). Required reading before touching anything under `lib/services/llm/`.
-- **[Prompt Assistant context management](docs/architecture/assistant-context.md)** — elide/compact layers, the `context_window` tri-state, knowledge-read budgeting and paging. Required reading before touching `prompt_optimizer_agent.dart`, `context_budget.dart`, or `knowledge_base_service.dart`.
+- **[Prompt Assistant context management](docs/architecture/assistant-context.md)** — elide/compact layers, the `context_window` tri-state, knowledge-read budgeting and paging. Required reading before touching `prompt_optimizer_agent.dart` or any of its parts (`assistant_context_window.dart` above all), `context_budget.dart`, or `knowledge_base_service.dart`.
 - **[Design tokens & multi-theme rule](docs/architecture/design-tokens.md)** — how the design spec's single blue maps onto 8 seed colours: the `onAccentTint` brightness branch, the alpha ladder (and its dark-mode ceiling), which colours must *not* follow the seed, and the deliberate divergences from the spec. Required reading before touching `design_tokens.dart`, `app_semantic_colors.dart`, `app_theme.dart`, or any accent/status colour in `widgets/`.
 
 [docs/README.md](docs/README.md) indexes the rest: protocol facts under `docs/api/`,
 the portable AI-agent playbook, and the two ledgers of retired work —
-[docs/plans/README.md](docs/plans/README.md) (seven feature/refactor rounds, where each
+[docs/plans/README.md](docs/plans/README.md) (every executed feature/refactor round, where each
 conclusion now lives, and **what is still owed**) and [plans/README.md](plans/README.md)
 (fourteen animation plans, plus the effects ruled deliberate — do not "fix" those).
 Read the relevant ledger before proposing a round of work; plan files are deleted once

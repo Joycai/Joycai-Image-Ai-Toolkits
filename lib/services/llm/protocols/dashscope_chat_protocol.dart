@@ -7,13 +7,10 @@ import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import '../vendors/vendor_profile.dart' show WireProtocol;
 import 'dashscope_payload.dart';
-import 'openai_chat_protocol.dart'
-    show
-        StreamingToolCallAccumulator,
-        contentToText,
-        decodeToolArguments,
-        resolveToolCallId;
+import 'openai_chat_parsing.dart'
+    show contentToText, decodeToolArguments, resolveToolCallId;
 import 'protocol.dart';
+import 'streaming_tool_calls.dart' show StreamingToolCallAccumulator;
 
 /// The header that turns a DashScope-native request into an SSE stream.
 ///

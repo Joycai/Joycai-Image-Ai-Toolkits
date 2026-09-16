@@ -309,6 +309,7 @@
   "renameActionEdit": "就地改名",
   "renameActionUndo": "撤销跳过",
   "renameConflictAutoRename": "改名",
+  "renameOverwriteDuplicateHint": "这个名字是列表里另一行要用的——磁盘上还没有这个文件，没有东西可覆盖。请给其中一行改名或跳过。",
   "renameNoModelsTitle": "没有可用的语言模型",
   "renameNoModelsDesc": "批量重命名需要一个对话模型来阅读图片并生成名字。请先在「模型与渠道」里配置至少一个可用渠道。",
   "renameGoToSettings": "前往设置",

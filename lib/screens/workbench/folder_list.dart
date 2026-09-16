@@ -16,6 +16,7 @@ import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/dashed_border.dart';
 import '../../widgets/drag/app_drag_session.dart';
 import 'directory_tree_item.dart';
+import 'folder_tree_row.dart';
 import 'widgets/result_tree_item.dart';
 
 /// A registered folder the user has asked to take off the list, waiting on

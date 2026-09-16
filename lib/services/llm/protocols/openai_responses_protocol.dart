@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
-import 'openai_chat_protocol.dart' show decodeToolArguments, resolveToolCallId;
+import 'openai_chat_parsing.dart' show decodeToolArguments, resolveToolCallId;
 import 'protocol.dart';
 
 /// The `include` value that asks a Responses host for the encrypted

@@ -13,6 +13,7 @@ git show f709059:docs/plans/2026-09-llm-endpoint-audit.md
 git show f709059:docs/reports/code-review-report-20260613.md  # 三份审计
 git show f709059:docs/reports/api-standards-audit.md
 git show f709059:docs/reviews/2026-08-ai-capability-review.md
+git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆分（八片，每片的做法与发现）
 ```
 
 留在这份文件里的，是**不随代码走的那部分**：哪一轮做了什么、结论现在住在哪、
@@ -39,6 +40,7 @@ git show f709059:docs/reviews/2026-08-ai-capability-review.md
 | `2026-09-spec-based-billing.md` + `-design-prompt.md` | 计费组第三种模式「按规格」：单位（张 / 秒 / 条）× 档位表（尺寸 · 质量 · 时长三个可选条件 + 单价，填得最多的行优先，全空行兜底）；请求的规格从工作台参数读、OpenAI Images 回显的实际尺寸优先；单价与数量快照进用量行，读时算钱 | 非 UI 部分已落地：v42 迁移（`fee_groups.output_unit / output_rates`、`token_usage.output_*` 四列）、`models/spec_rate.dart`、`services/llm/output_spec.dart`（归一化）、`services/billing/spec_billing.dart`（匹配与计价）、`LLMService.specUsageFor`（三条记录路径共用的纯函数）、`usage_stats.dart` 的 `spec` 部分与 `usageRowUnmatched`。视频仍在提交时计费（同按次）。UI 按 D2b 稿落地：`widgets/models/spec_rate_table.dart`（单位 chip + 档位表 + 校验）、`widgets/models/fee_group_summary.dart`（三种模式同一格式的摘要）、`services/billing/spec_known_values.dart`（条件取值 = 家族参数表 ∪ 协议参数表 ∪ `VeoResolution`）；用量页分组行数量列、未匹配提示与「去补档位」、明细「规格」列。与稿的出入见下面「还欠的」 |
 | 2026-09-14 LLM 层对照 `ai-agent-architecture` skill 审计（无方案文件；五路只读审计 → 六个分支） | 修：chat wire 完整性（内容拦截一律抛、截断/空 200/半截工具调用不再当成功、`<think>` 只认开头、③ 调用 id 唯一、回传载体按模型作用域）#265；计费与媒体（计费面接受后不重试、视频任务 id 落库并跨重启续轮询、下载校验与不给签名链接带 key、`LLMConfigException`）#263；助手运行时（恢复时修配对、压缩失败不动历史、KB 应用前复核磁盘、收尾轮撤工具）#266。补：Gemini `thinkingConfig` 与 raw parts 回传、百炼 ① 面 `enable_thinking` / `enable_search` #268；Retry-After、可中止请求、上下文预检、日志脱敏与关联 #267；OpenAI Responses 协议面 #269 | `architecture/llm-three-layer.md`（chat wire 完整性、Responses 两节）、`architecture/assistant-context.md`（不变量 10–11）、`api/responses.md`、`ai-agent-playbook/`（与 skill 同步，#264）。欠的并入下面「还欠的」 |
 | D2 `用量统计` 稿 1d–1h（无方案文件，直接按稿施工） | 费用组页面：头行 + 桌面双栏 / 平板单栏 / 手机全屏页，拖拽排序（v43 `fee_groups.sort_order`） | `widgets/models/pricing_group_manager.dart` 与 `widgets/models/fee_group_*.dart`；与稿的出入见下面「还欠的」 |
+| `2026-09-large-file-split.md`（八片，分支 `claude/split-*`，一片一个 PR） | 1500 行以上的八个文件拆开：`prompt_optimizer_agent` 4207→1352 · `prompt_optimizer_view` 2759→595 · `video_config_panel` 1947→573 · `openai_chat_protocol` 1784→796 · `anthropic_chat_protocol` 1670→420 · `directory_tree_item` 1593→701 · `ai_rename_dialog` 1510→477 · `model_edit_dialog` 1497→290。两种手法：并列的顶层单元拆成独立库（两个协议、`widgets/files/folder_drop_feedback.dart`、`folder_tree_row.dart`）；一个大类或大 State 用 `part` 拆，私有 static 变库私有顶层声明、State 的 builder 变 State 上的具名 extension —— **元素树一个节点不变**，所以没有把卡片改成独立 widget。顺带：`browser` 不再横向引 `workbench`；问答卡的虚线用回共享节奏；**AI 重命名的冲突逻辑下沉到 `services/tasks/ai_rename_review.dart` 并第一次有了测试，由此找到并修掉一个会删用户照片的 bug**（两行重名时点「改名」原样还回同名、「覆盖」删掉另一行刚放好的文件；现在 review 与 executor 两层都拒绝，UI 上禁用并说明）。**`llm_dispatcher.dart`（1586 行）刻意没拆：它是唯一路由表，拆开就违反那条不变量 —— 按行数扫到它不要立项。** | ④ 的文件 ↔ 不变量对照在 `architecture/llm-three-layer.md` ④ 一节；助手七个文件在 `architecture/assistant-context.md`「Where it lives」；CLAUDE.md 的 map。拆分手法与各片的坑（插值里补类名会静默编译通过、extension 里库作用域优先于 `this`、截图要比像素不比字节）在上面 `git show` 的方案原文里 |
 
 三份审计报告（`code-review-report-20260613.md` v2.3.0、`api-standards-audit.md`
 基线 `d03047e`、`2026-08-ai-capability-review.md` 基线 `6a4920d`）都是带完整
@@ -47,6 +49,23 @@ git show f709059:docs/reviews/2026-08-ai-capability-review.md
 不要照着旧快照改。
 
 ## 还欠的（2026-09-12 对照 main 逐条复核过）
+
+### 大文件拆分（2026-09-16，八片之后）
+
+- **`runTurn` 仍是 541 行**（`prompt_optimizer_agent.dart`）。它是 tool loop 本体，拆它要动控制流，
+  和「搬家」不是一类工作。
+- **拆出来的卡片还是 State 上的 extension，不是独立 widget。** 要收窄 rebuild 范围（例如
+  `PromptOptimizerChatView` 每次 session 通知都 `setState` 整个 view）得真的抽 widget —— 先用
+  `render_probe` 量，再决定值不值。
+- **AI 重命名的「覆盖」禁用态没有任何截图或 widget 测试。** harness 从不展示 review 行；要种出这些行
+  得 stub 一次模型调用，`AiRenameDialog` 没有给测试留这个口子。
+- **视频面板在 1440×900 下参考图区只露出一条**，缩略图被裁掉大半（`workbench_*_video_filled.png`，
+  空态也一样）。没查是刻意的折叠还是布局问题。
+- **`WorkbenchUIState.addVideoReferenceImage` / `removeVideoReferenceImage` 原地改列表再
+  `notifyListeners()`**，与 CLAUDE.md「先建新实例」的规则不符；任何 `select` 这个列表的地方都看不到变化。
+- **1000–1500 行之间还有 14 个文件**（`crop_resize_toolbar` 1472、`llm_service` 1431、
+  `model_capabilities` 1330、`task_queue_card` 1294 领头）。这一轮只做了 1500 以上的。
+- `buildAnthropicHistory` 没有直接测试，只经 payload 测试间接覆盖（拆分前就是如此）。
 
 ### 需要真实 key 才能定论（来自端点审计第 3 节）
 

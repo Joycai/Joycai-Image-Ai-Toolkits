@@ -386,6 +386,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get renameConflictAutoRename => '改名';
 
   @override
+  String get renameOverwriteDuplicateHint =>
+      '这个名字是列表里另一行要用的——磁盘上还没有这个文件，没有东西可覆盖。请给其中一行改名或跳过。';
+
+  @override
   String get renameNoModelsTitle => '没有可用的语言模型';
 
   @override
@@ -5187,6 +5191,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get renameConflictAutoRename => '改名';
+
+  @override
+  String get renameOverwriteDuplicateHint =>
+      '這個名稱是清單裡另一列要用的——磁碟上還沒有這個檔案，沒有東西可覆蓋。請替其中一列改名或跳過。';
 
   @override
   String get renameNoModelsTitle => '沒有可用的語言模型';

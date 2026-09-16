@@ -295,6 +295,7 @@
   "renameActionEdit": "名前を編集",
   "renameActionUndo": "スキップを取消",
   "renameConflictAutoRename": "改名",
+  "renameOverwriteDuplicateHint": "この名前はリスト内の別の行が使う予定です。ディスク上にはまだ存在しないため、上書きする対象がありません。どちらかを改名するかスキップしてください。",
   "renameNoModelsTitle": "利用できるモデルがありません",
   "renameNoModelsDesc": "一括リネームには画像を読んで名前を作るチャットモデルが必要です。まず「モデルとチャネル」で利用可能なチャネルを設定してください。",
   "renameGoToSettings": "設定を開く",
