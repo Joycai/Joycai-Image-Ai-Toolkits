@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'minimax_payload.dart';
@@ -78,9 +77,8 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
 
     final client = config.createClient();
     try {
-      final appState = AppState();
       LLMDebugLog? debugFile;
-      if (appState.enableApiDebug) {
+      if (LLMDebugLogger.enabled) {
         debugFile = await LLMDebugLogger.startLog(
           config.modelId,
           'MiniMax (Image ${isReference ? 'Reference' : 'Generate'})',

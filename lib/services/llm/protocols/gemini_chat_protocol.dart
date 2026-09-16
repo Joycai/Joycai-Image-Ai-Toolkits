@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../core/safety_settings.dart';
-import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'gemini_payload.dart';
@@ -51,9 +50,8 @@ class GeminiChatProtocol implements ChatProtocol {
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
     try {
-      final appState = AppState();
       LLMDebugLog? debugFile;
-      if (appState.enableApiDebug) {
+      if (LLMDebugLogger.enabled) {
         debugFile = await LLMDebugLogger.startLog(
           config.modelId,
           'GoogleGenAI (Standard)',
@@ -196,9 +194,8 @@ class GeminiChatProtocol implements ChatProtocol {
         headers: headers, body: jsonEncode(payload), options: options);
 
     final client = config.createClient();
-    final appState = AppState();
     LLMDebugLog? debugFile;
-    if (appState.enableApiDebug) {
+    if (LLMDebugLogger.enabled) {
       debugFile = await LLMDebugLogger.startLog(
         config.modelId,
         'GoogleGenAI (Stream)',

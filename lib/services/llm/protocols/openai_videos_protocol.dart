@@ -1,7 +1,6 @@
 
 import 'package:http/http.dart' as http;
 
-import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'protocol.dart';
@@ -105,9 +104,8 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
     }
 
     logger?.call('Submitting OpenAI video task to: ${url.host}', level: 'DEBUG');
-    final appState = AppState();
     LLMDebugLog? debugFile;
-    if (appState.enableApiDebug) {
+    if (LLMDebugLogger.enabled) {
       debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Video Submit)', {
         'url': redactUrl(url),
         'fields': request.fields,

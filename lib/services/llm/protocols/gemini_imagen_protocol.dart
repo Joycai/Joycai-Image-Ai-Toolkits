@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'gemini_payload.dart';
@@ -57,9 +56,8 @@ class GeminiImagenProtocol implements ImageGenProtocol {
 
     final client = config.createClient();
     try {
-      final appState = AppState();
       LLMDebugLog? debugFile;
-      if (appState.enableApiDebug) {
+      if (LLMDebugLogger.enabled) {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleImagen (Predict)', {
           'url': redactUrl(url),
           'headers': headers,

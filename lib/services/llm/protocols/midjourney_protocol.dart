@@ -4,7 +4,6 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
-import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'protocol.dart';
@@ -149,7 +148,6 @@ class MidjourneyProtocol implements ChatProtocol {
     final botType = target.model.isNijiVariant ? 'NIJI_JOURNEY' : 'MID_JOURNEY';
 
     final client = config.createClient();
-    final appState = AppState();
     LLMDebugLog? debugFile;
     try {
       final endpoint = isBlend
@@ -170,7 +168,7 @@ class MidjourneyProtocol implements ChatProtocol {
       logger?.call('Submitting Midjourney ${isBlend ? "blend" : "imagine"} to: ${endpoint.host}', level: 'DEBUG');
       onProgress?.call('Submitting to Midjourney (${botType == 'NIJI_JOURNEY' ? "Niji" : "MJ"}, mode=$mode)…');
 
-      if (appState.enableApiDebug) {
+      if (LLMDebugLogger.enabled) {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'Midjourney (Submit)', {
           'url': endpoint.toString(),
           'body': _safeBody(body),

@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../../../state/app_state.dart';
 import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
@@ -1336,9 +1335,8 @@ class AnthropicChatProtocol implements ChatProtocol {
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
     try {
-      final appState = AppState();
       LLMDebugLog? debugFile;
-      if (appState.enableApiDebug) {
+      if (LLMDebugLogger.enabled) {
         debugFile = await LLMDebugLogger.startLog(
           config.modelId,
           'Anthropic (Standard)',
@@ -1526,9 +1524,8 @@ class AnthropicChatProtocol implements ChatProtocol {
         headers: headers, body: jsonEncode(payload), options: options);
 
     final client = config.createClient();
-    final appState = AppState();
     LLMDebugLog? debugFile;
-    if (appState.enableApiDebug) {
+    if (LLMDebugLogger.enabled) {
       debugFile = await LLMDebugLogger.startLog(
         config.modelId,
         'Anthropic (Stream)',

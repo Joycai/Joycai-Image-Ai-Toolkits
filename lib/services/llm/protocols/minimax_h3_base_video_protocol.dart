@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'minimax_h3_base_payload.dart';
@@ -86,9 +85,8 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
     logger?.call('Submitting MiniMax H3 local video job to: ${url.host}',
         level: 'DEBUG');
 
-    final appState = AppState();
     LLMDebugLog? debugFile;
-    if (appState.enableApiDebug) {
+    if (LLMDebugLogger.enabled) {
       debugFile = await LLMDebugLogger.startLog(
         config.modelId,
         'MiniMax H3 Local (Video Submit)',

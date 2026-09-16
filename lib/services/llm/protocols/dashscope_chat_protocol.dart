@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../../../state/app_state.dart';
 import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
@@ -75,7 +74,7 @@ class DashScopeChatProtocol implements ChatProtocol {
     final client = config.createClient();
     try {
       LLMDebugLog? debugFile;
-      if (AppState().enableApiDebug) {
+      if (LLMDebugLogger.enabled) {
         debugFile = await LLMDebugLogger.startLog(
           config.modelId,
           'DashScope (Native Chat)',
@@ -207,7 +206,7 @@ class DashScopeChatProtocol implements ChatProtocol {
 
     final client = config.createClient();
     LLMDebugLog? debugFile;
-    if (AppState().enableApiDebug) {
+    if (LLMDebugLogger.enabled) {
       debugFile = await LLMDebugLogger.startLog(
         config.modelId,
         'DashScope (Native Chat Stream)',

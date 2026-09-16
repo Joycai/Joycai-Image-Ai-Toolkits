@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 
 import '../../../core/image_magic.dart';
 import '../../../core/safety_settings.dart';
-import '../../../state/app_state.dart';
 import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
@@ -758,9 +757,8 @@ class OpenAIChatProtocol implements ChatProtocol {
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
     try {
-      final appState = AppState();
       LLMDebugLog? debugFile;
-      if (appState.enableApiDebug) {
+      if (LLMDebugLogger.enabled) {
         debugFile = await LLMDebugLogger.startLog(
           config.modelId,
           'OpenAI (Standard)',
@@ -997,9 +995,8 @@ class OpenAIChatProtocol implements ChatProtocol {
         headers: headers, body: jsonEncode(payload), options: options);
 
     final client = config.createClient();
-    final appState = AppState();
     LLMDebugLog? debugFile;
-    if (appState.enableApiDebug) {
+    if (LLMDebugLogger.enabled) {
       debugFile = await LLMDebugLogger.startLog(
         config.modelId,
         'OpenAI (Stream)',
