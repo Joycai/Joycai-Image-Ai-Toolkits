@@ -1,6 +1,6 @@
 # 大文件拆分方案
 
-**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1 已做
+**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–2 已做
 
 `lib/` 的结构债在 PR #287（目录间循环）和 #288（目录内平铺）之后只剩最后一项：单个文件
 太大。这份方案把它切成八片，一片一个 PR。
@@ -99,33 +99,36 @@ stream ← response；protocol ← 全部。七个文件之间没有环。
 
 ---
 
-### 片 2 · `openai_chat_protocol.dart` 1784 → 6 个文件
+### 片 2 · `openai_chat_protocol.dart` 1784 → 6 个文件 ✅ 已做
 
-| 新文件 | 内容 | 原行 | ~行 |
-|---|---|---|---|
-| `openai_chat_parsing.dart` | `contentToText` · `resolveToolCallId` · `decodeToolArguments`（含 `_recoverConcatenatedJsonObjects`）· `firstChoice` · `pickReasoningField` · `normalizeOpenAIUsage` | 22–155 · 333–384 | 150 |
-| `streaming_tool_calls.dart` | `StreamingToolCallAccumulator` + `_PendingToolCall` | 156–332 | 180 |
-| `inline_think.dart` | `stripInlineThink` + `InlineThinkStreamFilter` + `_ThinkPhase` | 385–531 | 150 |
-| `chat_image_extraction.dart` | `StructuredImages` · `WholeContentImage` · `ImageDeduper` · `imageUrlsInText` | 532–717 | 190 |
-| `openai_chat_payload.dart` | payload 构造 + `openaiThinkingFields` + gemini 兼容扩展 + `buildChatPayloadForTest` | 1445–1746 | 300 |
-| `openai_chat_protocol.dart` | `generate` · `generateStream` · 图文处理 · discovery | 718–1444 · 1747–1784 | 620 |
+| 新文件 | 内容 | 实际行 |
+|---|---|---|
+| `openai_chat_parsing.dart` | `contentToText` · `resolveToolCallId` · `decodeToolArguments`（含 `_recoverConcatenatedJsonObjects`）· `firstChoice` · `pickReasoningField` · `normalizeOpenAIUsage` | 187 |
+| `streaming_tool_calls.dart` | `StreamingToolCallAccumulator` + `_PendingToolCall` | 187 |
+| `inline_think.dart` | `stripInlineThink` + `InlineThinkStreamFilter` + `_ThinkPhase` | 145 |
+| `chat_image_extraction.dart` | `StructuredImages` · `WholeContentImage` · `ImageDeduper` · `imageUrlsInText` | 195 |
+| `openai_chat_payload.dart` | `openaiDefaultSystemPrompt` + `prepareOpenAIChatPayload` + `openaiReasoningEffortWire` · `openaiThinkingFields` + gemini 兼容扩展 | 298 |
+| `openai_chat_protocol.dart` | `generate` · `generateStream`（372 行）· 图文处理 · `buildChatPayloadForTest` · discovery | 796 |
 
-**已验证的前提**：`OpenAIChatProtocol` **一个实例字段都没有**（727 行起直接是 `@override
-generate`），是纯方法袋。所以 `_prepareChatPayload` 可以无损变成顶层函数
-`prepareOpenAIChatPayload`，不需要传 `this`。
+依赖：parsing ← streaming_tool_calls；inline_think 与 chat_image_extraction 不引任何兄弟；
+payload 只引 `protocol.dart`；protocol ← 全部。
 
-`_TextProcessResult`（1747）只被 `_processTextAndExtractImages` 用，跟着留在主文件。
+**做法**：顶层声明照片 1 的脚本原样搬；类里的 `_prepareChatPayload`、两个 static、
+`_applyGeminiCompatExtensions` 去掉两格缩进变成顶层函数（`_prepareChatPayload` →
+`prepareOpenAIChatPayload`，另两个 static 去掉 `static`）。事前查过：这几个成员在类里除了
+彼此不碰任何东西。`buildChatPayloadForTest` 留在类上转调，四个测试一行不改。
+按去缩进、改名之后的行做多重集比对，一行不差。
 
-**外部影响**（片 1 同理，但这片更大）：这些 helper 早就被跨文件用了 ——
-`dashscope_chat_protocol.dart`（7 处）、`openai_responses_protocol.dart`（3 处）、
-`turn_continuation.dart`、`protocols/protocol.dart`，加上 6 个测试文件。**它们本来就是共享
-工具，只是住在一个 protocol 文件里。** 拆出来是把现状写明，不是新增耦合。import 改动机械但
-会碰到 ~12 个 importer。
+**importer**：`dashscope_chat_protocol.dart` 的 `show` 拆成两条（parsing + streaming_tool_calls），
+`openai_responses_protocol.dart` 改引 parsing —— **这两个 ① 的兄弟协议现在不再经过
+`openai_chat_protocol.dart` 拿公共件**。三个测试改引新文件。
 
-**守护**：`streaming_tool_call_accumulator_test.dart`（21 处引用）、
-`image_relay_compat_test.dart`（12 处）、`openai_chat_payload_test.dart`（36 处）、
-`openai_chat_image_links_test.dart`、`openai_stream_regressions_test.dart`、
-`turn_continuation_test.dart`。
+**工具上的一个坑**：修剪未用 import 的脚本第一次把 `openai_responses_protocol.dart` 里
+那条 `show` 也删了 —— 它的名字搬走后，analyzer 报的是「未用」而不是「找不到」。脚本
+现在只改显式传入的文件。
+
+**结果**：`flutter analyze` 零问题；`flutter test -x screenshots` 2183 passed。
+`llm-three-layer.md` 里指向 `openai_chat_protocol.dart` 的公共件位置已改。
 
 ---
 

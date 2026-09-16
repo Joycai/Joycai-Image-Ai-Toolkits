@@ -558,9 +558,11 @@ thinking / server tool 一起加。
 
 ① 的 `function.arguments` 按 `delta.tool_calls[].index` 分片（streaming.md
 §1），另有一套累积器 `StreamingToolCallAccumulator`（在
-`openai_chat_protocol.dart`，和 `contentToText` / `resolveToolCallId` 一样属于
-①-shaped 的公共件）。**C2 复用同一个类** —— DashScope 私有面的 `tool_calls` 就
-是 ① 的拼法。三条不变量：
+`streaming_tool_calls.dart`；`contentToText` / `resolveToolCallId` /
+`decodeToolArguments` 在 `openai_chat_parsing.dart`，同属 ①-shaped 的公共件，
+C2 与 Responses 协议都从这两个文件引，不经过 `openai_chat_protocol.dart`）。
+**C2 复用同一个类** —— DashScope 私有面的 `tool_calls` 就是 ① 的拼法。
+三条不变量：
 
 - **流结束前什么都不出去。** ① 没有 ④ 的 `content_block_stop` 那种逐调用终止
   符，所以只能在传输循环跑完之后 `flush()`。这也是它必须放在 `finally` **之外**
