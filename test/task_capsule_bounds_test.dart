@@ -135,6 +135,12 @@ void main() {
     await tester.tap(capsuleBody);
     await tester.pump();
     expect(sizeDuration(), AppMotion.panel, reason: 'opening moves with the width');
+    // A progress rebuild mid-open must not swap the timing under the
+    // running animation — the height would jump.
+    await tester.pump(const Duration(milliseconds: 50));
+    tester.element(find.byType(TaskCapsuleMonitor)).markNeedsBuild();
+    await tester.pump();
+    expect(sizeDuration(), AppMotion.panel, reason: 'held for the whole open');
     await settle(tester);
     // Any later rebuild that is not a tap is back on M2.
     tester.element(find.byType(TaskCapsuleMonitor)).markNeedsBuild();

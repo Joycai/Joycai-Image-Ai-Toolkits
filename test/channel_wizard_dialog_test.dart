@@ -205,6 +205,32 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    testWidgets('back before the forward move finishes: each copy keeps its own way',
+        (tester) async {
+      await _pumpWizard(tester);
+      await _selectProvider(tester, 'DeepSeek');
+
+      await tester.tap(find.text('Next').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+      await tester.tap(find.text('Back').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+
+      final shifts = <int, double>{
+        for (final w in tester.widgetList<SlideTransition>(
+          find.byWidgetPredicate((w) => w is SlideTransition && w.child is KeyedSubtree),
+        ))
+          ((w.child! as KeyedSubtree).key! as ValueKey<int>).value: w.position.value.dx,
+      };
+      final serials = shifts.keys.toList()..sort();
+      expect(serials.length, 3, reason: 'first provider, connection, provider again');
+      expect(shifts[serials[0]], lessThan(0), reason: 'the first copy still leaves to the left');
+      expect(shifts[serials[1]], greaterThan(0), reason: 'the connection step leaves to the right');
+      expect(shifts[serials[2]], lessThan(0), reason: 'the new copy comes in from the left');
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('a missing key blocks the next step and says why', (tester) async {
       await _pumpWizard(tester);
       await _selectProvider(tester, 'DeepSeek');

@@ -74,7 +74,7 @@
 | 12 | 选择栏退场：滑动与淡出同一时钟（新 `AppMotion.sceneFor(entering:)`） | `design_tokens.dart` · `browser_selection_bar.dart` · `gallery_selection_bar.dart` | `test/selection_bar_exit_clock_test.dart` | ✅ |
 | 13 | 渠道向导步骤切换带方向（前进右入、后退左入，位移 5% 宽，M2） | `channel_wizard_dialog.dart` | `channel_wizard_dialog_test.dart` 加一条 | ✅ |
 | 14 | 用量比例条 0 → 值生长（M3）；换区间时从旧值滑到新值（同一个 tween，未单独区分） | `usage_chrome.dart`（`UsageShareGrow`）· `usage_summary.dart` · `usage_group_costs.dart` | 两个测试的 pump 改 settle；新增生长一条 | ✅ |
-| R2 | 第二期 code review | — | — | ☐ |
+| R2 | 第二期 code review | `task_capsule_monitor.dart` · `knowledge_tree_panel.dart` · `channel_wizard_dialog.dart` | 3 条：胶囊逐帧重判时长会在展开途中换曲线 → 计时器保持 M3 整段；知识库树行无 key，箭头转到没点的文件夹上 → 按路径 key；向导快速前进又后退时两个同 key 副本同向 → 每次切换一个序号、按序号记方向。各一条测试（去掉修复即失败） | ✅ |
 
 ### 第三期：需要先决策的
 

@@ -450,14 +450,20 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
       itemCount: rows.length,
       itemBuilder: (context, index) {
         final entry = rows[index];
-        return _buildRow(
-          entry,
-          edits[entry.relPath],
-          onPendingPath.contains(entry.relPath),
-          density,
-          l10n,
-          colorScheme,
-          textTheme,
+        // Keyed by path: rows shift when a folder closes or the filter
+        // changes, and an unkeyed row would hand its chevron's turn to
+        // whichever folder slid into its place.
+        return KeyedSubtree(
+          key: ValueKey<String>(entry.relPath),
+          child: _buildRow(
+            entry,
+            edits[entry.relPath],
+            onPendingPath.contains(entry.relPath),
+            density,
+            l10n,
+            colorScheme,
+            textTheme,
+          ),
         );
       },
     );

@@ -60,7 +60,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   /// it: +1 forward, −1 back. The step enum is declared in wizard order, so
   /// its index is the order whether or not the variant step is in the list.
   _WizardStep? _shownStep;
-  int _stepDirection = 1;
+
+  /// One serial per step change, keying the switcher's child, and the
+  /// direction of the move that brought each serial in. A child's slide is
+  /// read from these rather than from the step it shows: going A → B → A
+  /// quickly leaves the first A still on its way out while the new A comes
+  /// in, and the two would otherwise be told apart by nothing.
+  int _stepSerial = 0;
+  final Map<int, int> _serialDirection = {0: 1};
 
   /// How far a step body travels as it changes, as a fraction of its width.
   /// A hint of direction, not a page turn.
@@ -644,10 +651,11 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
     final shown = _shownStep;
     if (shown != null && shown != step) {
-      _stepDirection = step.index > shown.index ? 1 : -1;
+      _stepSerial++;
+      _serialDirection[_stepSerial] = step.index > shown.index ? 1 : -1;
     }
     _shownStep = step;
-    final direction = _stepDirection.toDouble();
+    final current = _stepSerial;
 
     // Forward, the next step comes in from the right and the last one leaves
     // to the left; back, the other way round. A plain cross-fade looked the
@@ -658,20 +666,24 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       switchOutCurve: AppMotion.enter,
       transitionBuilder: (child, animation) {
         // The outgoing body runs the same animation in reverse, so its
-        // `begin` is where it leaves to.
-        final incoming = child.key == ValueKey(step);
+        // `begin` is where it leaves to — the way of the move that replaced
+        // it, the serial after its own.
+        final serial = (child.key! as ValueKey<int>).value;
+        final double shift = serial == current
+            ? (_serialDirection[serial] ?? 1) * _stepShift
+            : -(_serialDirection[serial + 1] ?? 1) * _stepShift;
         return FadeTransition(
           opacity: animation,
           child: SlideTransition(
             position: Tween<Offset>(
-              begin: Offset((incoming ? 1 : -1) * direction * _stepShift, 0),
+              begin: Offset(shift, 0),
               end: Offset.zero,
             ).animate(animation),
             child: child,
           ),
         );
       },
-      child: KeyedSubtree(key: ValueKey(step), child: body),
+      child: KeyedSubtree(key: ValueKey<int>(current), child: body),
     );
   }
 
