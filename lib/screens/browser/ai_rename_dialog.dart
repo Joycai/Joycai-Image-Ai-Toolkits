@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -13,8 +12,8 @@ import '../../l10n/app_localizations.dart';
 import '../../models/browser_file.dart';
 import '../../models/prompt.dart';
 import '../../services/tasks/ai_rename_agent.dart';
+import '../../services/tasks/ai_rename_review.dart';
 import '../../services/db/database_service.dart';
-import '../../services/files/file_transfer_service.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
@@ -49,49 +48,6 @@ const double _kMinFooterSummaryWidth = 160;
 /// Which rows the result list is showing.
 enum _RowFilter { all, conflicts, skipped }
 
-/// How a row's target name clashes.
-enum _RowConflict {
-  none,
-
-  /// Another file already carries this name on disk.
-  targetExists,
-
-  /// Two rows in this run propose the same name.
-  duplicate,
-}
-
-/// What the user decided about a clashing row.
-enum _ConflictChoice { rename, skip, overwrite }
-
-/// One line of the review list.
-///
-/// Mutable on purpose: the whole point of the review list is that a row is a
-/// thing the user edits — skipped, renamed in place, a clash answered — rather
-/// than a cell in a take-it-or-leave-it table.
-class _RenameRow {
-  _RenameRow(this.proposal) : newName = proposal.newName;
-
-  final RenameProposal proposal;
-
-  String newName;
-  bool skipped = false;
-  bool autoRenamed = false;
-  _RowConflict conflict = _RowConflict.none;
-  _ConflictChoice? choice;
-
-  String get path => proposal.path;
-  String get oldName => proposal.oldName;
-  String get directory => p.dirname(proposal.path);
-
-  bool get hasConflict => conflict != _RowConflict.none;
-
-  /// A conflict the user has not answered. These are subtracted from the apply
-  /// count one by one — one bad name must not block thirty-five good ones.
-  bool get unresolved => hasConflict && choice == null;
-
-  bool get willApply => !skipped && !unresolved && newName.isNotEmpty && newName != oldName;
-}
-
 /// AI batch rename — `B1b 1e` / `1f`.
 ///
 /// The one large dialog on this screen: 920 wide, config on the left and the
@@ -122,7 +78,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   int _batchIndex = 0;
   int _batchTotal = 0;
 
-  List<_RenameRow> _rows = [];
+  List<RenameReviewRow> _rows = [];
   _RowFilter _filter = _RowFilter.all;
 
   /// Row being renamed in place, by path. One at a time: an editor open on
@@ -268,8 +224,8 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   /// already made about a row that came back again.
   void _mergeProposals(List<RenameProposal> collected) {
     final existing = {for (final row in _rows) row.path: row};
-    final merged = <_RenameRow>[
-      for (final proposal in collected) existing[proposal.path] ?? _RenameRow(proposal),
+    final merged = <RenameReviewRow>[
+      for (final proposal in collected) existing[proposal.path] ?? RenameReviewRow(proposal),
     ];
     _update(() => _rows = merged);
     _recomputeConflicts();
@@ -277,56 +233,14 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
 
   // --------------------------------------------------------------- conflicts
 
-  /// Recomputed from scratch on every edit rather than patched.
-  ///
-  /// A rename can resolve one clash and create another in the same keystroke,
-  /// and an incremental update has to get both halves right; this is O(n) over
-  /// a list that is at most a few hundred rows long.
+  /// See [recomputeRenameConflicts]: every edit recomputes every row.
   Future<void> _recomputeConflicts() async {
-    final taken = <String, int>{};
-    for (final row in _rows) {
-      if (row.skipped) continue;
-      final key = p.join(row.directory, row.newName).toLowerCase();
-      taken[key] = (taken[key] ?? 0) + 1;
-    }
-
-    for (final row in _rows) {
-      if (row.skipped) {
-        row.conflict = _RowConflict.none;
-        continue;
-      }
-      final targetPath = p.join(row.directory, row.newName);
-      if ((taken[targetPath.toLowerCase()] ?? 0) > 1) {
-        row.conflict = _RowConflict.duplicate;
-        continue;
-      }
-      // A name that only "exists" because it is this row's own file is not a
-      // clash — that is the no-op case, filtered out by [_RenameRow.willApply].
-      final exists = await File(targetPath).exists();
-      row.conflict = (exists && !p.equals(targetPath, row.path))
-          ? _RowConflict.targetExists
-          : _RowConflict.none;
-      if (row.conflict == _RowConflict.none && row.choice != _ConflictChoice.skip) {
-        row.choice = null;
-      }
-    }
+    await recomputeRenameConflicts(_rows);
     if (mounted) _update(() {});
   }
 
-  void _resolve(_RenameRow row, _ConflictChoice choice) {
-    _update(() {
-      row.choice = choice;
-      switch (choice) {
-        case _ConflictChoice.rename:
-          final unique = FileTransferService.uniqueTargetPath(row.directory, row.newName);
-          row.newName = p.basename(unique);
-          row.autoRenamed = true;
-        case _ConflictChoice.skip:
-          row.skipped = true;
-        case _ConflictChoice.overwrite:
-          break;
-      }
-    });
+  void _resolve(RenameReviewRow row, RenameConflictChoice choice) {
+    _update(() => resolveRenameConflict(row, choice));
     _recomputeConflicts();
   }
 
@@ -366,7 +280,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                 'path': row.path,
                 'old_name': row.oldName,
                 'new_name': row.newName,
-                'overwrite': row.choice == _ConflictChoice.overwrite,
+                'overwrite': row.choice == RenameConflictChoice.overwrite,
               }
           ],
         },
@@ -390,7 +304,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
 
   // -------------------------------------------------------------------- view
 
-  List<_RenameRow> get _visibleRows {
+  List<RenameReviewRow> get _visibleRows {
     switch (_filter) {
       case _RowFilter.all:
         return _rows;
@@ -903,7 +817,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
               onUndoSkip: () {
                 _update(() {
                   row.skipped = false;
-                  if (row.choice == _ConflictChoice.skip) row.choice = null;
+                  if (row.choice == RenameConflictChoice.skip) row.choice = null;
                 });
                 _recomputeConflicts();
               },
@@ -1127,7 +1041,7 @@ class _GeneratingRow extends StatelessWidget {
 
 /// `1e` 行 52: thumbnail · old name → new name · badge · inline actions.
 class _ResultRow extends StatelessWidget {
-  final _RenameRow row;
+  final RenameReviewRow row;
   final bool narrow;
 
   /// Actions as glyphs with tooltips, for a list too narrow for their labels.
@@ -1139,7 +1053,7 @@ class _ResultRow extends StatelessWidget {
   final VoidCallback onSkip;
   final VoidCallback onEdit;
   final ValueChanged<String> onCommitEdit;
-  final ValueChanged<_ConflictChoice> onResolve;
+  final ValueChanged<RenameConflictChoice> onResolve;
 
   const _ResultRow({
     required this.row,
@@ -1225,7 +1139,7 @@ class _ResultRow extends StatelessWidget {
       badge = TransferBadge(label: l10n.renameSkippedBadge, tone: TransferTone.track);
     } else if (unresolved) {
       badge = TransferBadge(label: l10n.renameDuplicateBadge, tone: TransferTone.err, outlined: true);
-    } else if (row.choice == _ConflictChoice.overwrite) {
+    } else if (row.choice == RenameConflictChoice.overwrite) {
       badge = TransferBadge(label: l10n.conflictOverwrite, tone: TransferTone.err);
     } else if (row.autoRenamed) {
       badge = TransferBadge(label: l10n.renameRenamedBadge, tone: TransferTone.ok);
@@ -1251,7 +1165,7 @@ class _ResultRow extends StatelessWidget {
           label: l10n.renameConflictAutoRename,
           color: colorScheme.onAccentTint,
           iconOnly: iconOnly,
-          onTap: () => onResolve(_ConflictChoice.rename),
+          onTap: () => onResolve(RenameConflictChoice.rename),
         ),
         // Overwrite is the only answer that destroys a file, so it is the
         // only one in the error colour.
@@ -1260,14 +1174,14 @@ class _ResultRow extends StatelessWidget {
           label: l10n.conflictOverwrite,
           color: colorScheme.error,
           iconOnly: iconOnly,
-          onTap: () => onResolve(_ConflictChoice.overwrite),
+          onTap: () => onResolve(RenameConflictChoice.overwrite),
         ),
         _RowAction(
           icon: Icons.block,
           label: l10n.renameActionSkip,
           color: colorScheme.onSurfaceVariant,
           iconOnly: true,
-          onTap: () => onResolve(_ConflictChoice.skip),
+          onTap: () => onResolve(RenameConflictChoice.skip),
         ),
       ];
     } else {
