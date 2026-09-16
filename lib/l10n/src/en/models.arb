@@ -696,5 +696,24 @@
   "discardChangesTitle": "Discard unsaved changes?",
   "discardChangesBody": "Switching to another group drops the edits made here.",
   "discard": "Discard",
-  "modelsUsingGroup": "Models using it"
+  "modelsUsingGroup": "Models using it",
+  "sortModels": "Sort models",
+  "modelSortDefault": "Default order",
+  "modelSortDefaultHint": "As the channel returned them, or as arranged by hand",
+  "modelSortName": "Name",
+  "modelSortKind": "Kind",
+  "modelSortAdded": "Date added",
+  "sortAscending": "Ascending",
+  "sortDescending": "Descending",
+  "modelSortTooltip": "Sort: {key} · {direction}",
+  "@modelSortTooltip": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      },
+      "direction": {
+        "type": "String"
+      }
+    }
+  }
 }

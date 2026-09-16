@@ -4625,6 +4625,60 @@ abstract class AppLocalizations {
   /// **'Models using it'**
   String get modelsUsingGroup;
 
+  /// No description provided for @sortModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort models'**
+  String get sortModels;
+
+  /// No description provided for @modelSortDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default order'**
+  String get modelSortDefault;
+
+  /// No description provided for @modelSortDefaultHint.
+  ///
+  /// In en, this message translates to:
+  /// **'As the channel returned them, or as arranged by hand'**
+  String get modelSortDefaultHint;
+
+  /// No description provided for @modelSortName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get modelSortName;
+
+  /// No description provided for @modelSortKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Kind'**
+  String get modelSortKind;
+
+  /// No description provided for @modelSortAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Date added'**
+  String get modelSortAdded;
+
+  /// No description provided for @sortAscending.
+  ///
+  /// In en, this message translates to:
+  /// **'Ascending'**
+  String get sortAscending;
+
+  /// No description provided for @sortDescending.
+  ///
+  /// In en, this message translates to:
+  /// **'Descending'**
+  String get sortDescending;
+
+  /// No description provided for @modelSortTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort: {key} · {direction}'**
+  String modelSortTooltip(String key, String direction);
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

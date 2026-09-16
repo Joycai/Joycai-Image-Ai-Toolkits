@@ -1321,6 +1321,25 @@
   "discardChangesBody": "別のグループに切り替えると、ここでの変更は失われます。",
   "discard": "破棄",
   "modelsUsingGroup": "使用中のモデル",
+  "sortModels": "並べ替え",
+  "modelSortDefault": "既定の順序",
+  "modelSortDefaultHint": "チャンネルから取得した順序、または手動で並べた順序",
+  "modelSortName": "名前",
+  "modelSortKind": "種類",
+  "modelSortAdded": "追加日時",
+  "sortAscending": "昇順",
+  "sortDescending": "降順",
+  "modelSortTooltip": "並べ替え：{key} · {direction}",
+  "@modelSortTooltip": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      },
+      "direction": {
+        "type": "String"
+      }
+    }
+  },
   "prompts": "プロンプト",
   "promptLibrary": "プロンプトライブラリ",
   "newPrompt": "新しいプロンプト",
