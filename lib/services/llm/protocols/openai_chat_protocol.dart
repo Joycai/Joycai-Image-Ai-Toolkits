@@ -908,13 +908,16 @@ class OpenAIChatProtocol implements ChatProtocol {
       // A message with nothing in it — no text, reasoning, tool calls or
       // images — is not "the model chose to say nothing" (pitfalls 11 §A6).
       // `length` and `content_filter` are real endings with their own
-      // handling downstream, so they pass through.
+      // handling downstream, so they pass through — and so does the one
+      // caller that declared an empty ending legitimate
+      // ([emptyReplyEndsTurnKey]: an agent continuing after a tool result).
       if (text.isEmpty &&
           reasoningContent == null &&
           toolCalls.isEmpty &&
           images.isEmpty &&
           finishReason != 'length' &&
-          finishReason != contentFilterFinishReason) {
+          finishReason != contentFilterFinishReason &&
+          !_emptyReplyEndsTurn(options, logger)) {
         throw LLMApiException(
           'OpenAI API (${redactUrl(url)}) returned no content — no text, '
           'reasoning, tool calls or images '
@@ -949,6 +952,20 @@ class OpenAIChatProtocol implements ChatProtocol {
   /// (docs/plans/2026-08-assistant-timeout.md).
   @override
   bool get streamingDeclaresTools => true;
+
+  /// Whether the caller declared an empty reply a legitimate end of turn
+  /// (see [emptyReplyEndsTurnKey]). Logged, so a log that shows a 200 with
+  /// nothing in it also shows why it was not failed.
+  static bool _emptyReplyEndsTurn(
+      Map<String, dynamic>? options, LLMLogger? logger) {
+    if (options?[emptyReplyEndsTurnKey] != true) return false;
+    logger?.call(
+      'The reply carried no content; the caller declared that a legitimate '
+      'end of turn, so it is delivered empty rather than failed.',
+      level: 'DEBUG',
+    );
+    return true;
+  }
 
   @override
   Stream<LLMResponseChunk> generateStream(
@@ -1246,7 +1263,8 @@ class OpenAIChatProtocol implements ChatProtocol {
     // truncation warning, [contentBlockedFailure]).
     if (!sawOutput &&
         finishReason != 'length' &&
-        finishReason != contentFilterFinishReason) {
+        finishReason != contentFilterFinishReason &&
+        !_emptyReplyEndsTurn(options, logger)) {
       throw LLMApiException(
         'OpenAI API stream (${redactUrl(url)}) returned no content — no '
         'text, reasoning, tool calls or images '

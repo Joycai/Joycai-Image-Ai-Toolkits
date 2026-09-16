@@ -1840,7 +1840,7 @@ class PromptOptimizerAgent {
             ],
             tools: finalRound ? null : activeTools,
             contextId: contextId,
-            options: const {
+            options: {
               // Transient relay/proxy disconnects (e.g. errno 10054) should
               // not kill the whole agent turn — retry a couple of times.
               'retryCount': 2,
@@ -1849,6 +1849,14 @@ class PromptOptimizerAgent {
               // sized against a 4096 guess that is roughly half the real
               // answer. Changes no payload — see [expectedOutputTokensKey].
               expectedOutputTokensKey: 8192,
+              // A request that continues after tool results may come back
+              // with nothing in it: once submit_prompt has staged the
+              // deliverable, GPT-5.x ends the turn with an empty `stop`,
+              // which ① otherwise fails as a broken reply — and the user saw
+              // "request failed" under a prompt that had just been delivered.
+              // A turn opening on the user's message (or the final-round
+              // nudge) keeps the failure: an empty answer there is one.
+              if (outgoing.last.role == LLMRole.tool) emptyReplyEndsTurnKey: true,
             },
             // Streamed where the route can carry tool calls over it (④
             // today), and silently downgraded everywhere else. Not for

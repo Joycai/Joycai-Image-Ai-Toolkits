@@ -152,6 +152,20 @@ class LLMApiException implements Exception {
 /// `geminiFinishReason`).
 const String contentFilterFinishReason = 'content_filter';
 
+/// Options key: a reply with nothing in it ends the turn instead of failing
+/// the request.
+///
+/// A 200 that carries no text, reasoning, tool calls or images is normally a
+/// broken relay and is thrown (pitfalls 11 §A6). An agent loop continuing
+/// after a tool result is the one caller for which it is not: once a tool has
+/// delivered the deliverable (`submit_prompt`), GPT-5.x ends the turn with an
+/// empty `stop` — ④ already reads that off the completed message item, and
+/// this key is how ① learns the same thing, since a chat-completions stream
+/// has no item status to read. Set only on such continuation requests, never
+/// on a turn that opens with the user's message: there an empty reply is
+/// still a silent failure the user must see.
+const String emptyReplyEndsTurnKey = 'emptyReplyEndsTurn';
+
 /// The failure a response carrying [metadata] stands for, or null when it was
 /// not content-blocked.
 ///
