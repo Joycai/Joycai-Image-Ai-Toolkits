@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_chat_protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_response.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_payload.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 

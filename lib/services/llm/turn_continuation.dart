@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'llm_types.dart';
-import 'protocols/anthropic_chat_protocol.dart'
+import 'protocols/anthropic_wire.dart'
     show anthropicPauseFinishReason, anthropicTurnIncompleteKey;
 
 /// Continuing a turn the host stopped in the middle.

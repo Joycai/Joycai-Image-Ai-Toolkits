@@ -4,7 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_chat_protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_history.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_payload.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_response.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_stream.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_thinking.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_wire.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
