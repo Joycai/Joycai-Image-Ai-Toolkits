@@ -396,19 +396,43 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
   }
   final writePath = call.arguments['path']?.toString() ?? '';
   final writeContent = call.arguments['content']?.toString() ?? '';
-  onLog?.call('Tool call: write_knowledge_file $writePath (${writeContent.length} chars)');
+  final mode = call.arguments['mode']?.toString() ?? 'replace_file';
+  final section = call.arguments['section']?.toString().trim();
+  onLog?.call('Tool call: write_knowledge_file $writePath '
+      '(${writeContent.length} chars, $mode${section == null || section.isEmpty ? '' : ' "$section"'})');
   if (writePath.trim().isEmpty) {
     return {'status': 'error', 'message': 'The path argument must not be empty.'};
   }
   if (writeContent.isEmpty) {
     return {
       'status': 'error',
-      'message': 'The content argument must not be empty. Pass the complete file content.',
+      'message': 'The content argument must not be empty. Pass the complete '
+          '${mode == 'replace_file' ? 'file' : 'section'} content.',
+    };
+  }
+  if (mode != 'replace_file' && mode != 'replace_section' && mode != 'append') {
+    return {
+      'status': 'error',
+      'message': 'Unknown mode "$mode". Use replace_file, replace_section or append.',
+    };
+  }
+  if (mode == 'replace_section' && (section == null || section.isEmpty)) {
+    return {
+      'status': 'error',
+      'message': 'replace_section needs a section: the heading line exactly as '
+          'the file spells it (for example "## Lighting").',
     };
   }
   try {
     final kb = KnowledgeBaseService();
     final existing = kb.readFullFile(knowledgeRoot, writePath);
+    if (mode != 'replace_file' && existing == null) {
+      return {
+        'status': 'error',
+        'message': '$writePath does not exist, so there is no section to '
+            '$mode into. Create it with the whole-file mode.',
+      };
+    }
     // Read-before-write rail, enforced here rather than left to the
     // system prompt: overwriting a file the model has not read is the
     // cheapest way for it to silently destroy the user's rules. Keyed on
@@ -422,9 +446,27 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
             'must not overwrite a file you have not read.',
       };
     }
+    // The targeted modes send one section over the wire; what is staged is
+    // still the whole file, spliced here, so the diff card, the suspicious-
+    // shrink check and the apply path see exactly what they always did.
+    final String newContent;
+    if (mode == 'replace_file') {
+      newContent = writeContent;
+    } else {
+      try {
+        newContent = KnowledgeBaseService.spliceSection(
+          existing!,
+          section == null || section.isEmpty ? null : section,
+          writeContent,
+          append: mode == 'append',
+        );
+      } on KbSectionNotFound catch (e) {
+        return {'status': 'error', 'message': e.message};
+      }
+    }
     final editId = session._stageKbEdit(
       relPath: writePath,
-      newContent: writeContent,
+      newContent: newContent,
       oldContent: existing,
       knowledgeRoot: knowledgeRoot,
       note: call.arguments['note']?.toString(),

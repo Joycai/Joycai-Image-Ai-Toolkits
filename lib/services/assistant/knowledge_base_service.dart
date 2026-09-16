@@ -118,6 +118,22 @@ class KbReadResult {
 
 /// Thrown when a tool-supplied path escapes the knowledge-base root or does
 /// not exist. The message is safe to surface to the model.
+/// A `write_knowledge_file` section argument named no heading in the file.
+/// Carries the file's headings so the tool result can list what would have
+/// matched — the model then corrects the spelling instead of guessing again.
+class KbSectionNotFound implements Exception {
+  final String heading;
+  final List<String> available;
+
+  const KbSectionNotFound(this.heading, this.available);
+
+  String get message => 'No section headed "$heading" in the file. '
+      '${available.isEmpty ? 'The file has no headings — use the whole-file mode.' : 'Its headings are: ${available.join(' | ')}'}';
+
+  @override
+  String toString() => message;
+}
+
 class KbPathException implements Exception {
   final String message;
   KbPathException(this.message);
@@ -185,6 +201,120 @@ class KnowledgeBaseService {
 
   /// Max characters returned per read_knowledge_file page.
   static const int pageSize = 8000;
+
+  /// The headings of a markdown [content], one entry per heading line, as
+  /// the model must spell a `section` argument. ATX headings only (`#` to
+  /// `######`, trimmed); a fenced code block's contents are not headings.
+  static List<String> sectionHeadings(String content) {
+    final out = <String>[];
+    var inFence = false;
+    for (final line in content.split('\n')) {
+      final t = line.trimRight().replaceAll('\r', '').trim();
+      if (t.startsWith('```') || t.startsWith('~~~')) inFence = !inFence;
+      if (inFence) continue;
+      if (_headingLevel(t) > 0) out.add(t);
+    }
+    return out;
+  }
+
+  /// [existing] with one section replaced or extended — the targeted form
+  /// of `write_knowledge_file`, so a rule change sends the rule's section
+  /// over the wire rather than the whole file.
+  ///
+  /// [heading] is a heading line exactly as the file spells it (`## Lighting`,
+  /// trimmed); the section runs from that line to just before the next
+  /// heading of the same or a higher level, or to the end of the file. The
+  /// first matching heading wins when the file repeats one. With [append]
+  /// false the whole section, heading included, is replaced by [body]; a
+  /// [body] that does not itself begin with a heading keeps the original
+  /// heading line above it. With [append] true, [body] is inserted at the
+  /// end of the section (before the next heading), or at the end of the
+  /// file when [heading] is null. Line endings follow the file. The output
+  /// is what gets staged, so the diff card and the read-before-write rail
+  /// see the same whole file they always did.
+  ///
+  /// Throws [KbSectionNotFound] — listing the file's headings — when
+  /// [heading] is not in the file: silently appending a section the model
+  /// meant to replace would leave the old rule standing beside the new one.
+  static String spliceSection(
+    String existing,
+    String? heading,
+    String body, {
+    required bool append,
+  }) {
+    final newline = existing.contains('\r\n') ? '\r\n' : '\n';
+    final lines = existing.isEmpty ? <String>[] : existing.split(newline);
+    // A trailing newline splits into a final empty element; keep the file's
+    // ending as it was and work on the content lines.
+    final hadTrailingNewline = lines.length > 1 && lines.last.isEmpty;
+    if (hadTrailingNewline) lines.removeLast();
+    final bodyLines = body.replaceAll('\r\n', '\n').trimRight().split('\n');
+
+    if (heading == null) {
+      if (!append) throw ArgumentError('a section heading is required to replace a section');
+      final out = [...lines, if (lines.isNotEmpty && lines.last.trim().isNotEmpty) '', ...bodyLines];
+      return '${out.join(newline)}$newline';
+    }
+
+    final target = heading.trim();
+    final level = _headingLevel(target);
+    if (level == 0) throw KbSectionNotFound(target, sectionHeadings(existing));
+    var start = -1;
+    var inFence = false;
+    for (var i = 0; i < lines.length; i++) {
+      final t = lines[i].trim();
+      if (t.startsWith('```') || t.startsWith('~~~')) inFence = !inFence;
+      if (inFence) continue;
+      if (t == target) {
+        start = i;
+        break;
+      }
+    }
+    if (start < 0) throw KbSectionNotFound(target, sectionHeadings(existing));
+    var end = lines.length;
+    inFence = false;
+    for (var i = start + 1; i < lines.length; i++) {
+      final t = lines[i].trim();
+      if (t.startsWith('```') || t.startsWith('~~~')) inFence = !inFence;
+      if (inFence) continue;
+      final l = _headingLevel(t);
+      if (l > 0 && l <= level) {
+        end = i;
+        break;
+      }
+    }
+
+    final List<String> replacement;
+    if (append) {
+      // Drop the section's trailing blank lines so the addition sits inside
+      // it, then restore one blank line before the next heading.
+      final section = lines.sublist(start, end);
+      while (section.length > 1 && section.last.trim().isEmpty) {
+        section.removeLast();
+      }
+      replacement = [...section, ...bodyLines, if (end < lines.length) ''];
+    } else {
+      final keepsHeading = _headingLevel(bodyLines.first.trim()) > 0;
+      replacement = [
+        if (!keepsHeading) target,
+        ...bodyLines,
+        if (end < lines.length) '',
+      ];
+    }
+    final out = [...lines.sublist(0, start), ...replacement, ...lines.sublist(end)];
+    final joined = out.join(newline);
+    return hadTrailingNewline || existing.isEmpty ? '$joined$newline' : joined;
+  }
+
+  /// `1`–`6` for an ATX heading line, `0` otherwise.
+  static int _headingLevel(String trimmedLine) {
+    var n = 0;
+    while (n < trimmedLine.length && trimmedLine[n] == '#') {
+      n++;
+    }
+    if (n == 0 || n > 6) return 0;
+    return n < trimmedLine.length && trimmedLine[n] == ' ' ? n : 0;
+  }
 
   Future<String?> getRoot() async {
     final path = await DatabaseService().getSetting(settingKey);

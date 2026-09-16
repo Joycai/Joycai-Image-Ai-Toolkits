@@ -43,7 +43,7 @@
 
 | 片 | 内容 | 涉及文件 | 验收 | 状态 |
 |---|---|---|---|---|
-| 8 | B2 按节写入：`write_knowledge_file` 加 `section` / `mode`；`KnowledgeBaseService.spliceSection`；拼好后仍走 `_stageKbEdit`；编辑与蒸馏提示更新 | `knowledge_base_service.dart` · `assistant_toolset.dart` · `assistant_tool_calls.dart` · `assistant_system_prompts.dart` | `test/knowledge_base_splice_test.dart`：层级、末节、重复标题取第一个、CRLF、找不到即报错 | ☐ |
+| 8 | B2 按节写入：`write_knowledge_file` 加 `section` / `mode`；`KnowledgeBaseService.spliceSection`；拼好后仍走 `_stageKbEdit`；编辑与蒸馏提示更新 | `knowledge_base_service.dart` · `assistant_toolset.dart` · `assistant_tool_calls.dart` · `assistant_system_prompts.dart` | `test/knowledge_base_splice_test.dart`：层级、末节、重复标题取第一个、CRLF、找不到即报错 | ✅ |
 | R3 | 第三期 code review | — | — | ☐ |
 
 ### 收尾
@@ -64,3 +64,4 @@
 - 片 5 · B1 + B3。测试逼出一个设计漏洞：第二次压缩时 `submit_prompt` 调用已被折掉，只剩上一份摘要尾部附的那份——`_latestSubmittedPrompt` 现在也从上一份摘要里接力（无更新的调用时），并且序列化时把上一份摘要附的提示词切掉不喂给摘要模型。提示词正文从摘要输入里一律省略（保留 note）。
 - 片 6 · B4（知识子代理 ≤ ~1500 词、草稿子代理 ≤ ~800 词）+ B5（推理非默认且已指定上限时一行提示，四语）。
 - 片 7 · `discoveredLimitsOf` 按键形读四家列表（Anthropic / Gemini / OpenRouter / LM Studio），发现对话框只给**新建**行种 `context_window` 与 `max_output_tokens`——「已有用户值不覆盖」由发现对话框只加新模型这一事实保证，没有另写守卫。
+- 片 8 · B2。`mode: replace_file | replace_section | append` + `section`；拼接是 `KnowledgeBaseService.spliceSection`（静态纯函数，代码围栏里的 `#` 不算标题，行尾随文件），拼好后仍走 `_stageKbEdit`，预览卡 / 先读后写 / 可疑缩水一个没动；找不到标题抛 `KbSectionNotFound`，工具结果列出文件里的标题。编辑与蒸馏提示改为优先按节；蒸馏加「大文件一条消息一个调用」。
