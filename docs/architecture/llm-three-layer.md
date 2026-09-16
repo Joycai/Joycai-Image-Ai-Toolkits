@@ -421,6 +421,20 @@ review 时用下面的模式全仓库 grep 一遍即可：
 踩得到、且**不会以报错形式暴露**的六条。前四条是接入时就有的，后两条随
 thinking / server tool 一起加。
 
+④ 的实现在 `protocols/` 下分七个文件，依赖只朝一个方向（wire 在最底，protocol
+在最顶）。改哪条不变量先看它住在哪 —— 第 3 条鉴权不在这里，在 `vendors/` 的
+`AuthScheme`；第 7 条的续跑在 `llm/turn_continuation.dart`：
+
+| 文件 | 管什么 | 下面哪几条 |
+|---|---|---|
+| `anthropic_wire.dart` | 常量：`max_tokens` 兜底、图片媒体类型、web search 工具类型与上限、`pause` / `turn_incomplete` 两个标记、thinking 预算下限 | 2、7 |
+| `anthropic_history.dart` | `buildAnthropicHistory`：system 上提、工具结果并进 user、同角色合并与作者文本标注；thinking 块与 server-tool 轮的原样回放 | 4、5、7 |
+| `anthropic_thinking.dart` | thinking 请求与 `output_config`、两种方言的选择与**按端点+模型学来的记忆**（进程级，测试要 reset） | 5 |
+| `anthropic_payload.dart` | `prepareAnthropicPayload` + 缓存断点 | — |
+| `anthropic_response.dart` | 读响应：content 块、server tool 结果、usage 三桶求和、`stop_reason` 翻译、`turn_incomplete` 的形状判定 | 1、2、6、7 |
+| `anthropic_stream.dart` | `AnthropicStreamAssembler`（见本节末） | 6、7 |
+| `anthropic_chat_protocol.dart` | 传输：一次重试换方言、非流式 / 流式两条 I/O 路径、模型发现 | 5 |
+
 1. **usage 三桶不重叠，必须先加起来。** ④ 的 `input_tokens` 只是未命中缓存的
    余量，`cache_read_input_tokens` / `cache_creation_input_tokens` 与它并列；
    而 `LLMService._recordUsage` 的口径是"prompt 总量包含缓存部分，再把缓存减

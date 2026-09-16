@@ -1,6 +1,6 @@
 # 大文件拆分方案
 
-**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 未开工
+**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1 已做
 
 `lib/` 的结构债在 PR #287（目录间循环）和 #288（目录内平铺）之后只剩最后一项：单个文件
 太大。这份方案把它切成八片，一片一个 PR。
@@ -60,31 +60,42 @@ CLAUDE.md 和 `docs/architecture/llm-three-layer.md` 都明文规定它是**唯�
 
 ## 2. 分期
 
-### 片 1 · `anthropic_chat_protocol.dart` 1670 → 7 个文件
+### 片 1 · `anthropic_chat_protocol.dart` 1670 → 7 个文件 ✅ 已做
 
 这个文件不是一个大类，是**一个顶层函数库 + 两个 protocol 类**。切面天然存在。
 
-| 新文件 | 内容 | 原行 | ~行 |
-|---|---|---|---|
-| `anthropic_wire.dart` | 七个 const + `anthropicMaxTokens` + `anthropicUsageMetadata` + `anthropicFinishReason` | 20–61 · 263–274 · 793–864 | 130 |
-| `anthropic_history.dart` | `AnthropicHistory` · `buildAnthropicHistory` · `anthropicUserBlocks` · `_labelAuthorText` | 62–262 | 200 |
-| `anthropic_thinking.dart` | thinking request / output config / effort wire / 备用方言 + 方言学习记忆 + `isAnthropicThinkingRejection` | 275–452 | 180 |
-| `anthropic_payload.dart` | `prepareAnthropicPayload` + `applyAnthropicCacheBreakpoints` | 453–568 | 115 |
-| `anthropic_content.dart` | `ServerToolRun` · `AnthropicContent` · `parseAnthropicContent` + web search 结果解析 | 569–792 | 225 |
-| `anthropic_stream.dart` | `AnthropicStreamAssembler` | 865–1251 | 390 |
-| `anthropic_chat_protocol.dart` | `AnthropicChatProtocol` + `AnthropicDiscoveryProtocol` | 1252–1670 | 420 |
+| 新文件 | 内容 | 实际行 |
+|---|---|---|
+| `anthropic_wire.dart` | 七个 const + `anthropicMaxTokens` | 56 |
+| `anthropic_history.dart` | `AnthropicHistory` · `buildAnthropicHistory` · `anthropicUserBlocks` · `_labelAuthorText` | 205 |
+| `anthropic_thinking.dart` | thinking request / output config / effort wire / 备用方言 + 方言学习记忆 + `isAnthropicThinkingRejection` | 183 |
+| `anthropic_payload.dart` | `prepareAnthropicPayload` + `applyAnthropicCacheBreakpoints` | 131 |
+| `anthropic_response.dart` | `ServerToolRun` · `logAnthropicServerToolRun` · `AnthropicContent` · `parseAnthropicContent` · `parseAnthropicWebSearchResult` · `anthropicUsageMetadata` · `anthropicFinishReason` | 310 |
+| `anthropic_stream.dart` | `AnthropicStreamAssembler` | 395 |
+| `anthropic_chat_protocol.dart` | `AnthropicChatProtocol` + `AnthropicDiscoveryProtocol` | 420 |
 
-**已验证的前提**：私有 top-level 的引用位置逐个查过，只有一处跨组 ——
-`_parseWebSearchResult`（760）被 `parseAnthropicContent`（710）和 `AnthropicStreamAssembler`
-（1002）同时用。要提成 public 放进 `anthropic_content.dart`。其余
-（`_labelAuthorText` · `_selfDescribingText` · `_ephemeral` · `_learnedThinkingDialects` ·
-`_thinkingMemoKey`）都只在一组内部，整组搬走即可。
+依赖只朝一个方向：wire ← history / thinking / response；payload ← history + thinking；
+stream ← response；protocol ← 全部。七个文件之间没有环。
 
-`_learnedThinkingDialects` 是可变的进程级状态，带 `resetAnthropicThinkingDialectsForTest`。
-**必须和它的四个读写点一起整组搬**，拆开会出现两份记忆。
+**和原计划的两处出入**
 
-**守护**：`test/anthropic_chat_test.dart` 有 `AnthropicContent` 18 处、
-`AnthropicStreamAssembler` 7 处、`prepareAnthropicPayload` 多处直接引用。
+- usage 与 `stop_reason` 翻译没进 wire，进了 response（原计划叫 `anthropic_content.dart`）。
+  `anthropicUsageMetadata` 收 `List<ServerToolRun>`，放在 wire 会让最底层反过来依赖
+  response；「读一个响应」本来也是一件事。
+- 事前只查了**顶层**私有名，漏了一个**类内**私有静态：`AnthropicChatProtocol._logServerToolRun`
+  也被 stream assembler 调用。它记录的是一个 `ServerToolRun`，所以变成顶层函数
+  `logAnthropicServerToolRun` 住到那个类旁边。另一处已知的 `_parseWebSearchResult` →
+  `parseAnthropicWebSearchResult`。**后面几片的事前检查要把类内私有静态一起查。**
+
+`_learnedThinkingDialects`（进程级可变状态）和它的四个读写点、reset 一起整组进了
+`anthropic_thinking.dart`，只有一份记忆。
+
+**importer**：`llm_dispatcher.dart` 改引 thinking + wire；`turn_continuation.dart` 的
+`show` 改指 wire；`anthropic_chat_test.dart` 改引六个新文件，**不再引协议文件本身**
+—— 它测的一直是这些 helper，不是协议类。
+
+**结果**：`flutter analyze` 零问题；`flutter test -x screenshots` 2183 passed（与基线
+一致）。`docs/architecture/llm-three-layer.md` 的 ④ 一节加了文件 → 不变量对照表。
 
 ---
 
