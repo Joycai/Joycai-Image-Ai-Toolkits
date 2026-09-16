@@ -1,6 +1,6 @@
 # 大文件拆分方案
 
-**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–3 已做
+**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–4 已做
 
 `lib/` 的结构债在 PR #287（目录间循环）和 #288（目录内平铺）之后只剩最后一项：单个文件
 太大。这份方案把它切成八片，一片一个 PR。
@@ -182,38 +182,53 @@ payload 只引 `protocol.dart`；protocol ← 全部。
 
 ---
 
-### 片 4 · `prompt_optimizer_view.dart` 2759 → 9 个文件
+### 片 4 · `prompt_optimizer_view.dart` 2759 → 9 个文件 ✅ 已做
 
-State 类 2144 行（95–2239），里面是一串互不相干的卡片渲染器。新文件全部进
-`screens/workbench/widgets/optimizer/` 子目录。
+State 类 2140 行，builder 共享它的字段、常量和一套卡片词汇。
 
-| 新文件 | 内容 | 原行 | ~行 |
+**手法和原计划不同：没有抽成独立 widget，而是 `part` + State 上的具名 extension。**
+原计划写的是「真的抽 widget、抽出去的变 public、会改 rebuild 范围」。改主意的理由：
+这个 view 只有部分覆盖（4 个 UI 测试 + screenshot），而抽 widget 会改元素树 —— state
+保留、`setState` 范围、rebuild 范围都会动，那是行为变化，不是搬家。extension 让元素树
+**一个节点都不变**。真要抽 widget（顺便收窄 rebuild），应当单独立项、单独验证。
+
+| part（`widgets/optimizer/`） | extension | 内容 | 实际行 |
 |---|---|---|---|
-| `optimizer_card.dart` | `_card` · `_cardHeader` · `_textAction` · `_statusBadge` · `_besideAvatar` · `_fold` → 一套卡片词汇 | 419–598 · 1515–1556 | 220 |
-| `optimizer_agent_timeline.dart` | 时间线 + 过程卡 + 工作步 + 工具步 | 599–806 | 210 |
-| `optimizer_kb_edit_card.dart` | KB edit 卡 + 结果 + diff + diff 行 + 全文 | 1007–1378 | 370 |
-| `optimizer_prompt_card.dart` | 提示词卡 + 行数徽标 | 1379–1514 · 1919–1939 | 160 |
-| `optimizer_feedback_card.dart` | 结果反馈卡 + `_feedbackChip` | 1557–1728 | 170 |
-| `optimizer_distill_cards.dart` | 蒸馏请求卡 + 完成卡 + `_distillOutcome` | 1729–1918 | 190 |
-| `optimizer_composer.dart` | 输入栏（176 行）+ 发送 / 停止 / chip | 1940–2238 | 300 |
-| `optimizer_ask_user_card.dart` | `_AskUserCard` 全套 | 2340–2729 | 390 |
-| `prompt_optimizer_view.dart` | State + `_TranscriptRow` + 转录装配 + 空状态 + `_RunStatus` + `_ElapsedLabel` | 25–418 · 2239–2339 | 500 |
+| `optimizer_card_chrome.dart` | `_CardChrome` | 头像列、卡片框 / 头、文字动作、徽标 | 181 |
+| `optimizer_agent_timeline.dart` | `_AgentTimeline` | 运行卡 + 工具时间线 + `_ElapsedLabel` | 294 |
+| `optimizer_kb_edit_card.dart` | `_KbEditCard` | KB edit 卡、diff、全文 + `_lineCount` | 386 |
+| `optimizer_prompt_card.dart` | `_PromptCard` | 提示词卡 + `_fold` | 180 |
+| `optimizer_feedback_card.dart` | `_FeedbackCard` | 结果反馈卡 | 173 |
+| `optimizer_distill_cards.dart` | `_DistillCards` | 蒸馏请求卡 + 完成卡 + `_distillOutcome` | 219 |
+| `optimizer_composer.dart` | `_Composer` | chip、输入栏、发送 / 停止、`_isSendKey` + `_RunStatus` | 349 |
+| `optimizer_ask_user_card.dart` | — | `_AskUserCard`（本来就是独立 widget）+ 虚线 painter | 428 |
+| `prompt_optimizer_view.dart` | — | widget + State 生命周期 + 转录装配 + `_buildEntry` 分派 | 594 |
 
-**三个注意点**
+**语言逼出来的两处改动**
 
-1. **私有类跨文件不行** —— Dart 的 private 是库级。抽出去的要变 public。子目录
-   `optimizer/` 就是用来圈住这批新 public 名字的。
-2. **`_DashedOutlinePainter`（2730）是第四份拷贝。** `widgets/ui/dashed_border.dart` 的
-   doc 里写着它存在的理由是「三处各自长了一个 painter」，并且导出了
-   `drawDashedRRect(Canvas, RRect, Paint)` 正好给自绘 painter 用。差别只有节奏：
-   本地是 dash 4 / gap 4−1，primitive 是 dash 5 / gap 4，而 primitive 明确说这个节奏
-   **不参数化**（「no call site has ever wanted a different rhythm」）。
-   **建议换过去并接受 1px 的节奏变化** —— 那正是这个 primitive 的意义；要 PNG 对比确认。
-3. **抽 widget 会改 rebuild 范围**（往好的方向）。这片要跑
-   `flutter test test/screenshots/render_probe.dart` 前后对比，确认没变差。
+- extension 里引用被扩展类型的 static 必须带类名：21 处补了
+  `_PromptOptimizerChatViewState.`（其中一处在插值里，已加 `${}`）。
+- extension 不能调 protected 的 `setState`：三个展开开关改走 State 上一行的 `_rebuild`。
 
-**守护**：`optimizer_ask_user_ui_test.dart` · `optimizer_kb_edit_ui_test.dart` ·
-`optimizer_kb_loop_ui_test.dart` · `optimizer_a2_frames_test.dart` + screenshot。
+**analyzer 看不见、查了的**：在 extension 体里，**库作用域的名字优先于隐式 `this`**（类体里
+正相反）。代码用到的 69 个成员名（含继承来的 `context` / `widget` / `mounted`）逐个在
+同一组 import 下探测过，没有一个在库作用域里有定义；库自己的顶层名也逐个对过。
+
+**虚线 painter（§5 第 1 条）**：`DashedBorder` 不是 drop-in —— 它画在 child **后面**，而这里
+child 是输入框自己的不透明底色，会把虚线盖住。所以保留前景 painter 和半像素内缩
+（`app_reorder_gap.dart` 同款），只把虚线循环交给 `drawDashedRRect`。唯一可见变化是节奏
+4/3 → 5/4；没有 harness 截图拍到这个输入框，另做了一张新旧并排的渲染肉眼核对。单独一个 commit。
+
+**验证上学到的**：`diff -r` 比 PNG **字节**毫无意义 —— 两次运行几乎每张图的字节都不同（连
+没碰过的下载器、文件浏览器也是）。改成解码后逐像素比（scratchpad 的 `pixdiff.py`）：
+175 / 175 一致。`render_probe` 没有单独跑前后对比：元素树按构造不变，
+`rebuild_scope_test` 照常通过。
+
+按「去类名前缀、`_rebuild` 还原」归一后多重集比对：只多出 7 个 extension 外壳和
+`_rebuild`，一行不少。
+
+**结果**：`flutter analyze` 零问题；`flutter test -x screenshots` 2183 passed；screenshot
+175 / 175 像素一致。
 
 ---
 
@@ -345,11 +360,11 @@ cp -r build/ui-screenshots /tmp/before-<片号>
 ```bash
 flutter analyze                                 # 必须 No issues found!（含 info）
 flutter test -x screenshots                     # 数字必须和基线一致（除了片 7 新增的）
-flutter test test/screenshots && diff -r /tmp/before-<片号> build/ui-screenshots
+flutter test test/screenshots && python3 pixdiff.py /tmp/before-<片号> build/ui-screenshots  # 比像素，不比字节
 git diff -M25% --stat main...HEAD               # 看到的应该是 rename / 大块移动，不是重写
 ```
 
-- PNG 对比对片 1–3、5 应当**字节级一致**；片 4 的 dashed 节奏和片 6、8 的 section 抽取
+- PNG 对比对片 1–3、5 应当**逐像素一致**（字节每次运行都会变，见片 4）；片 4 的 dashed 节奏和片 6、8 的 section 抽取
   可能有 1px 级差异，逐张看过并在 PR 里说明。
 - 片 4 和片 5 额外跑 `flutter test test/screenshots/render_probe.dart` 前后对比 rebuild 范围。
 - 片 7 的测试数会涨（新增 `rename_plan_test.dart`），在 PR 里写明涨了几个。
