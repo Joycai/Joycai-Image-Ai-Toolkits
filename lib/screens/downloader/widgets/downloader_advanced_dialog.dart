@@ -5,9 +5,11 @@ import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
+import '../../../services/db/repositories/cookie_repository.dart';
 import '../../../state/downloader_state.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_segmented_control.dart';
 import 'downloader_inputs.dart';
 
 /// Advanced options (`B3 · 1d`): filename prefix, cookies, cookie import and
@@ -157,9 +159,34 @@ class _AdvancedOptionsBodyState extends State<_AdvancedOptionsBody> {
                   ? const SizedBox(width: double.infinity)
                   : Padding(
                       padding: const EdgeInsets.only(top: AppSpace.s10),
-                      child: history.isEmpty
-                          ? const _EmptyCookieHistory()
-                          : _CookieHistoryList(entries: history, onUse: _useCookies),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _CookieRetentionRow(
+                            value: widget.state.cookieRetention,
+                            onChanged: widget.state.setCookieRetention,
+                          ),
+                          const SizedBox(height: AppSpace.s10),
+                          if (history.isEmpty)
+                            const _EmptyCookieHistory()
+                          else ...[
+                            _CookieHistoryList(
+                              entries: history,
+                              onUse: _useCookies,
+                              onForget: (entry) => widget.state.forgetCookie('${entry['host'] ?? ''}'),
+                            ),
+                            Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: TextButton(
+                                onPressed: widget.state.clearCookieHistory,
+                                style: TextButton.styleFrom(foregroundColor: scheme.error),
+                                child: Text(l10n.cookieHistoryClearAll),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
             ),
           ],
@@ -169,11 +196,57 @@ class _AdvancedOptionsBodyState extends State<_AdvancedOptionsBody> {
   }
 }
 
+/// How long cookies are remembered (S3), with what that storage means.
+class _CookieRetentionRow extends StatelessWidget {
+  const _CookieRetentionRow({required this.value, required this.onChanged});
+
+  final CookieRetention value;
+  final ValueChanged<CookieRetention> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final caption = downloaderCaptionStyle(context);
+    final label = <CookieRetention, String>{
+      CookieRetention.off: l10n.cookieRetentionOff,
+      CookieRetention.week: l10n.cookieRetentionWeek,
+      CookieRetention.month: l10n.cookieRetentionMonth,
+      CookieRetention.untilCleared: l10n.cookieRetentionForever,
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(l10n.cookieRetention, style: caption),
+        const SizedBox(height: AppSpace.s6),
+        AppSegmentedControl<CookieRetention>(
+          expand: true,
+          compact: true,
+          segments: [
+            for (final r in CookieRetention.values) AppSegment(value: r, label: label[r]!),
+          ],
+          value: value,
+          onChanged: onChanged,
+        ),
+        const SizedBox(height: AppSpace.s4),
+        Text(
+          l10n.cookieRetentionNote,
+          style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                fontWeight: FontWeight.w400,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
 class _CookieHistoryList extends StatelessWidget {
-  const _CookieHistoryList({required this.entries, required this.onUse});
+  const _CookieHistoryList({required this.entries, required this.onUse, required this.onForget});
 
   final List<Map<String, dynamic>> entries;
   final ValueChanged<Map<String, dynamic>> onUse;
+  final ValueChanged<Map<String, dynamic>> onForget;
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +261,11 @@ class _CookieHistoryList extends StatelessWidget {
         children: [
           for (final (i, entry) in entries.indexed) ...[
             if (i > 0) const Divider(height: 1),
-            _CookieHistoryRow(entry: entry, onUse: () => onUse(entry)),
+            _CookieHistoryRow(
+              entry: entry,
+              onUse: () => onUse(entry),
+              onForget: () => onForget(entry),
+            ),
           ],
         ],
       ),
@@ -199,10 +276,11 @@ class _CookieHistoryList extends StatelessWidget {
 /// One saved host (`行 44`): glyph, mono host over when it was last used, and
 /// the deep-ink action that puts its cookies back in the field.
 class _CookieHistoryRow extends StatelessWidget {
-  const _CookieHistoryRow({required this.entry, required this.onUse});
+  const _CookieHistoryRow({required this.entry, required this.onUse, required this.onForget});
 
   final Map<String, dynamic> entry;
   final VoidCallback onUse;
+  final VoidCallback onForget;
 
   static String _two(int n) => n.toString().padLeft(2, '0');
 
@@ -266,6 +344,14 @@ class _CookieHistoryRow extends StatelessWidget {
               outlined: false,
               height: AppSize.compact,
               onPressed: onUse,
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, size: AppSize.iconSm),
+              tooltip: l10n.cookieHistoryForget,
+              color: scheme.onSurfaceVariant,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: AppSize.compact, height: AppSize.compact),
+              onPressed: onForget,
             ),
           ],
         ),

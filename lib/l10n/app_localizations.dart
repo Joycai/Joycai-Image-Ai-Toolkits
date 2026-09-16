@@ -2153,6 +2153,54 @@ abstract class AppLocalizations {
   /// **'Use'**
   String get cookieHistoryUse;
 
+  /// No description provided for @cookieRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember cookies'**
+  String get cookieRetention;
+
+  /// No description provided for @cookieRetentionOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get cookieRetentionOff;
+
+  /// No description provided for @cookieRetentionWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'7 days'**
+  String get cookieRetentionWeek;
+
+  /// No description provided for @cookieRetentionMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'30 days'**
+  String get cookieRetentionMonth;
+
+  /// No description provided for @cookieRetentionForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Until cleared'**
+  String get cookieRetentionForever;
+
+  /// No description provided for @cookieRetentionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept unencrypted on this device and never written to backups. Off forgets them now.'**
+  String get cookieRetentionNote;
+
+  /// No description provided for @cookieHistoryForget.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get cookieHistoryForget;
+
+  /// No description provided for @cookieHistoryClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get cookieHistoryClearAll;
+
   /// No description provided for @cookieHistoryPairs.
   ///
   /// In en, this message translates to:
@@ -5506,6 +5554,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear Temporary Files'**
   String get clearTempFiles;
+
+  /// No description provided for @clearCookieHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Cookie History'**
+  String get clearCookieHistory;
+
+  /// No description provided for @clearCookieHistoryNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Site cookies the downloader remembered'**
+  String get clearCookieHistoryNote;
+
+  /// No description provided for @clearCookieHistoryConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget every site cookie the downloader remembered? Downloads already queued keep theirs.'**
+  String get clearCookieHistoryConfirm;
+
+  /// No description provided for @cookieHistoryCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookie history cleared.'**
+  String get cookieHistoryCleared;
 
   /// No description provided for @clearTempFilesConfirmTitle.
   ///

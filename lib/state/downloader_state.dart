@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../services/db/database_service.dart';
+import '../services/db/repositories/cookie_repository.dart';
 import '../services/media/web_scraper_service.dart';
 
 class DownloaderState extends ChangeNotifier {
@@ -21,6 +21,9 @@ class DownloaderState extends ChangeNotifier {
   bool isAnalyzing = false;
 
   List<Map<String, dynamic>> cookieHistory = [];
+
+  /// How long cookies are remembered (S3). Loaded with the history.
+  CookieRetention cookieRetention = CookieRepository.defaultRetention;
 
   /// Runs the image discovery and stores the results on this state object,
   /// regardless of whether the downloader screen is still mounted. Rethrows
@@ -68,13 +71,30 @@ class DownloaderState extends ChangeNotifier {
   }
 
   Future<void> loadCookieHistory() async {
-    cookieHistory = await DatabaseService().getDownloaderCookies();
+    final repo = CookieRepository();
+    cookieRetention = await repo.retention();
+    cookieHistory = await repo.list();
     notifyListeners();
   }
 
   Future<void> saveCookie(String host, String cookieValue) async {
     if (host.isEmpty || cookieValue.isEmpty) return;
-    await DatabaseService().saveDownloaderCookie(host, cookieValue);
+    await CookieRepository().save(host, cookieValue);
+    await loadCookieHistory();
+  }
+
+  Future<void> setCookieRetention(CookieRetention retention) async {
+    await CookieRepository().setRetention(retention);
+    await loadCookieHistory();
+  }
+
+  Future<void> forgetCookie(String host) async {
+    await CookieRepository().delete(host);
+    await loadCookieHistory();
+  }
+
+  Future<void> clearCookieHistory() async {
+    await CookieRepository().clear();
     await loadCookieHistory();
   }
 

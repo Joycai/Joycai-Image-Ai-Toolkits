@@ -15,6 +15,7 @@ import '../../models/prompt.dart';
 import '../../models/prompt_history_entry.dart';
 import '../../models/tag.dart';
 import 'database_migrations.dart';
+import 'repositories/cookie_repository.dart';
 import 'repositories/model_repository.dart';
 import 'repositories/prompt_repository.dart';
 import 'repositories/task_repository.dart';
@@ -90,6 +91,7 @@ class DatabaseService {
       final db = await _initDatabase();
       _database = db;
       await syncPresets();
+      await TaskRepository().scrubStoredCookies();
       return db;
     }();
     return _databaseFuture!;
@@ -285,29 +287,9 @@ class DatabaseService {
     });
   }
 
-  // Downloader Cookies History
-  Future<void> saveDownloaderCookie(String host, String cookies) async {        
-    final db = await database;
-    await db.insert('downloader_cookies', {
-      'host': host,
-      'cookies': cookies,
-      'last_used': DateTime.now().toIso8601String(),
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
-
-    // Limit to last 5
-    final all = await db.query('downloader_cookies', orderBy: 'last_used DESC');
-    if (all.length > 5) {
-      final toDelete = all.sublist(5);
-      for (var row in toDelete) {
-        await db.delete('downloader_cookies', where: 'host = ?', whereArgs: [row['host']]);
-      }
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> getDownloaderCookies() async {
-    final db = await database;
-    return db.query('downloader_cookies', orderBy: 'last_used DESC');     
-  }
+  // Downloader Cookies History — see [CookieRepository] for retention.
+  Future<void> saveDownloaderCookie(String host, String cookies) => CookieRepository().save(host, cookies);
+  Future<List<Map<String, dynamic>>> getDownloaderCookies() => CookieRepository().list();
 
   // Source Directories Methods
   Future<void> addSourceDirectory(String path) async {

@@ -939,6 +939,14 @@
   "manualHtmlEmptyTitle": "No HTML pasted yet",
   "manualHtmlEmptyDesc": "View the page source in your browser, select all and copy, then click Paste above.",
   "cookieHistoryUse": "Use",
+  "cookieRetention": "Remember cookies",
+  "cookieRetentionOff": "Off",
+  "cookieRetentionWeek": "7 days",
+  "cookieRetentionMonth": "30 days",
+  "cookieRetentionForever": "Until cleared",
+  "cookieRetentionNote": "Kept unencrypted on this device and never written to backups. Off forgets them now.",
+  "cookieHistoryForget": "Remove",
+  "cookieHistoryClearAll": "Clear all",
   "cookieHistoryPairs": "{count} pairs",
   "@cookieHistoryPairs": {
     "placeholders": {
@@ -2035,6 +2043,10 @@
   "enableNotifications": "Enable System Notifications",
   "runSetupWizard": "Run Setup Wizard",
   "clearTempFiles": "Clear Temporary Files",
+  "clearCookieHistory": "Clear Cookie History",
+  "clearCookieHistoryNote": "Site cookies the downloader remembered",
+  "clearCookieHistoryConfirm": "Forget every site cookie the downloader remembered? Downloads already queued keep theirs.",
+  "cookieHistoryCleared": "Cookie history cleared.",
   "clearTempFilesConfirmTitle": "Clear Temporary Files?",
   "clearTempFilesConfirmMessage": "Deletes {size} of masks, crop copies, downloader cache and video thumbnails. Entries in the temporary workspace that point at these files are removed with them; files in your own folders are untouched.",
   "@clearTempFilesConfirmMessage": {

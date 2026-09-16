@@ -834,7 +834,13 @@ extension TaskExecutors on TaskQueueService {
 
     final outputDir = await _getEffectiveOutputDir(task);
 
-    final cookies = task.parameters['cookies'] as String?;
+    // A download restored after a restart has no cookies of its own — task
+    // rows never store them — so it asks the history for the page's host.
+    var cookies = task.parameters['cookies'] as String?;
+    if (cookies == null) {
+      final host = Uri.tryParse('${task.parameters['url'] ?? ''}')?.host ?? '';
+      cookies = await CookieRepository().lookup(host);
+    }
     final formattedCookies = WebScraperService().parseCookies(cookies ?? '');
     final prefix = FileUtils.safeFilenamePrefix(
       '${task.parameters['prefix'] ?? 'download'}',

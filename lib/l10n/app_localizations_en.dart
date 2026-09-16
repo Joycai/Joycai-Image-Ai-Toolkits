@@ -1233,6 +1233,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cookieHistoryUse => 'Use';
 
   @override
+  String get cookieRetention => 'Remember cookies';
+
+  @override
+  String get cookieRetentionOff => 'Off';
+
+  @override
+  String get cookieRetentionWeek => '7 days';
+
+  @override
+  String get cookieRetentionMonth => '30 days';
+
+  @override
+  String get cookieRetentionForever => 'Until cleared';
+
+  @override
+  String get cookieRetentionNote =>
+      'Kept unencrypted on this device and never written to backups. Off forgets them now.';
+
+  @override
+  String get cookieHistoryForget => 'Remove';
+
+  @override
+  String get cookieHistoryClearAll => 'Clear all';
+
+  @override
   String cookieHistoryPairs(int count) {
     return '$count pairs';
   }
@@ -3165,6 +3190,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearTempFiles => 'Clear Temporary Files';
+
+  @override
+  String get clearCookieHistory => 'Clear Cookie History';
+
+  @override
+  String get clearCookieHistoryNote => 'Site cookies the downloader remembered';
+
+  @override
+  String get clearCookieHistoryConfirm =>
+      'Forget every site cookie the downloader remembered? Downloads already queued keep theirs.';
+
+  @override
+  String get cookieHistoryCleared => 'Cookie history cleared.';
 
   @override
   String get clearTempFilesConfirmTitle => 'Clear Temporary Files?';

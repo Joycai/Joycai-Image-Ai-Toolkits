@@ -1199,6 +1199,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cookieHistoryUse => '使用';
 
   @override
+  String get cookieRetention => 'Cookie を記憶';
+
+  @override
+  String get cookieRetentionOff => '記憶しない';
+
+  @override
+  String get cookieRetentionWeek => '7 日';
+
+  @override
+  String get cookieRetentionMonth => '30 日';
+
+  @override
+  String get cookieRetentionForever => '消去するまで';
+
+  @override
+  String get cookieRetentionNote =>
+      'この端末に暗号化せずに保存され、バックアップには含まれません。「記憶しない」にすると今ある記録も消去します。';
+
+  @override
+  String get cookieHistoryForget => '削除';
+
+  @override
+  String get cookieHistoryClearAll => 'すべて消去';
+
+  @override
   String cookieHistoryPairs(int count) {
     return '$count 組';
   }
@@ -3065,6 +3090,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get clearTempFiles => '一時ファイルを削除';
+
+  @override
+  String get clearCookieHistory => 'Cookie 履歴を消去';
+
+  @override
+  String get clearCookieHistoryNote => 'ダウンローダーが記憶したサイトの Cookie';
+
+  @override
+  String get clearCookieHistoryConfirm =>
+      'ダウンローダーが記憶したサイトの Cookie をすべて消去しますか？キューに追加済みのダウンロードには影響しません。';
+
+  @override
+  String get cookieHistoryCleared => 'Cookie 履歴を消去しました。';
 
   @override
   String get clearTempFilesConfirmTitle => '一時ファイルを削除しますか？';
