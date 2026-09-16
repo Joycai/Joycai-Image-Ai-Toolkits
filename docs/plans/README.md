@@ -23,6 +23,7 @@ git show f709059:docs/reviews/2026-08-ai-capability-review.md
 | 文件 | 为什么留着 |
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
+| [`2026-09-large-file-split.md`](2026-09-large-file-split.md) | **本轮在施工的说明书**（基线 `6e55653`）：八个大文件切成八片，一片一个 PR。八片合入后删除，结论回写进下面「已执行」——**其中一条必须留下：`llm_dispatcher.dart` 1584 行是刻意的，它是唯一路由表，不要立项拆它。** |
 
 ## 已执行（不要重复立项）
 
