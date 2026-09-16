@@ -537,5 +537,26 @@
   "discardChangesTitle": "放弃未保存的改动？",
   "discardChangesBody": "切到另一组会丢掉这里的改动。",
   "discard": "放弃",
-  "modelsUsingGroup": "使用它的模型"
+  "modelsUsingGroup": "使用它的模型",
+  "sortModels": "排序",
+  "modelSortDefault": "默认顺序",
+  "modelSortDefaultHint": "渠道获取或手动排列的顺序",
+  "modelSortName": "名称",
+  "modelSortKind": "类型",
+  "modelSortAdded": "添加时间",
+  "sortAscending": "升序",
+  "sortDescending": "降序",
+  "modelSortTooltip": "排序：{key} · {direction}",
+  "modelGroupByChannel": "按渠道分组",
+  "modelGroupByChannelHint": "关掉后所有渠道的模型排成一列",
+  "@modelSortTooltip": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      },
+      "direction": {
+        "type": "String"
+      }
+    }
+  }
 }

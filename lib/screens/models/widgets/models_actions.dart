@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
+import '../../../services/model_list_ordering.dart';
+import '../../../state/model_list_state.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 
 /// Everything the models screen's pieces can ask the screen to do.
@@ -110,3 +112,62 @@ List<AppGlassMenuEntry> channelMenuItems(
   ];
 }
 
+
+/// The key's name as the sort menu and the sort button write it (`D1d`).
+String modelSortKeyLabel(AppLocalizations l10n, ModelSortKey key) => switch (key) {
+      ModelSortKey.manual => l10n.modelSortDefault,
+      ModelSortKey.name => l10n.modelSortName,
+      ModelSortKey.kind => l10n.modelSortKind,
+      ModelSortKey.added => l10n.modelSortAdded,
+    };
+
+String modelSortDirectionLabel(AppLocalizations l10n, ModelSortDirection direction) =>
+    direction == ModelSortDirection.ascending ? l10n.sortAscending : l10n.sortDescending;
+
+/// The sort menu (`D1d`): the four keys, then the direction, each group a set
+/// of radios under one rule.
+///
+/// [withGrouping] adds the phone's 「按渠道分组」 checkbox after a second rule
+/// (`2e`). Only the phone passes it: the desktop right column is already one
+/// channel, so there is nothing there to group by. The two surfaces share one
+/// builder so the menu cannot drift into two dialects of the same question.
+List<AppGlassMenuEntry> modelSortMenuItems(
+  AppLocalizations l10n, {
+  required ModelListState listState,
+  bool withGrouping = false,
+}) =>
+    [
+      AppGlassMenuHeading(l10n.sortSection),
+      for (final key in ModelSortKey.values)
+        AppGlassMenuItem(
+          label: modelSortKeyLabel(l10n, key),
+          // 「默认」 is a word with no content until it says whose default:
+          // the order the channel handed over, or the one a hand left.
+          hint: key == ModelSortKey.manual ? l10n.modelSortDefaultHint : null,
+          radio: true,
+          checked: listState.sortKey == key,
+          onSelected: () => listState.setSortKey(key),
+        ),
+      const AppGlassMenuDivider(),
+      for (final direction in ModelSortDirection.values)
+        AppGlassMenuItem(
+          label: modelSortDirectionLabel(l10n, direction),
+          radio: true,
+          checked: listState.sortDirection == direction,
+          trailing: direction == ModelSortDirection.ascending ? '\u2191' : '\u2193',
+          onSelected: () => listState.setSortDirection(direction),
+        ),
+      if (withGrouping) ...[
+        const AppGlassMenuDivider(),
+        // A checkbox, not a radio: the rows above say how to sort, this one
+        // says who the list is for. Its hint states what turning it off does,
+        // because the row's own label cannot — 「按渠道分组」 off is a shape
+        // the tab has never had.
+        AppGlassMenuItem(
+          label: l10n.modelGroupByChannel,
+          hint: l10n.modelGroupByChannelHint,
+          checked: listState.groupByChannel,
+          onSelected: () => listState.setGroupByChannel(!listState.groupByChannel),
+        ),
+      ],
+    ];

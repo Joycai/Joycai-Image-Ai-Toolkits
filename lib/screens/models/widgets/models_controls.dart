@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import '../../../core/design_tokens.dart';
 import '../../../widgets/glass/glass_controls.dart';
 
-/// The two button treatments `D1a` uses in its column headers and filter
-/// row: the solid accent (Add Channel, Add Model) and the neutral hairline
-/// box on the panel (Fetch Models, Edit), both 32 tall at r10.
-enum ModelsButtonTone { primary, neutral }
+/// The button treatments `D1a` uses in its column headers and filter row: the
+/// solid accent (Add Channel, Add Model) and the neutral hairline box on the
+/// panel (Fetch Models, Edit), both 32 tall at r10 — plus [active], `D1d`'s
+/// face for a control that is *on* (the sort button once the list has left
+/// its default order): the accent wash under the deep ink, and no hairline,
+/// because a lit control is no longer a neutral box waiting to be pressed.
+enum ModelsButtonTone { primary, neutral, active }
 
 /// A 32px header button that knows its own width, so a header can decide by
 /// measurement whether it still fits with its label (`D1a · 1c`: Fetch
@@ -54,15 +57,27 @@ class ModelsActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final primary = tone == ModelsButtonTone.primary;
+    final active = tone == ModelsButtonTone.active;
     final enabled = onPressed != null;
 
     final Color background = !enabled && primary
         ? scheme.surfaceContainerHighest
-        : (primary ? scheme.primary : scheme.surface);
+        : (primary
+            ? scheme.primary
+            : active
+                ? scheme.accentTint
+                : scheme.surface);
     final Color labelColor = !enabled
         ? scheme.onSurface.withValues(alpha: AppAlpha.disabled)
-        : (primary ? scheme.onPrimary : scheme.onSurface);
-    final Color iconColor = !enabled || primary ? labelColor : scheme.onSurfaceVariant;
+        : (primary
+            ? scheme.onPrimary
+            : active
+                ? scheme.onAccentTint
+                : scheme.onSurface);
+    // On an active button the glyph carries the state — it is the one thing
+    // that says which way the list runs — so it keeps the label's ink instead
+    // of stepping back to the weak one.
+    final Color iconColor = !enabled || primary || active ? labelColor : scheme.onSurfaceVariant;
     final radius = BorderRadius.circular(AppRadius.control);
 
     final Widget content = showLabel
@@ -88,7 +103,7 @@ class ModelsActionButton extends StatelessWidget {
       color: background,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
-        side: primary ? BorderSide.none : BorderSide(color: scheme.outlineVariant),
+        side: primary || active ? BorderSide.none : BorderSide(color: scheme.outlineVariant),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

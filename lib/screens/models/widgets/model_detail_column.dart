@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
@@ -9,6 +10,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
 import '../../../models/pricing_group.dart';
+import '../../../services/model_list_ordering.dart';
+import '../../../state/model_list_state.dart';
 import '../../../widgets/app_search_field.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
@@ -66,9 +69,10 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final listState = context.watch<ModelListState>();
     final models = widget.models;
     final query = _query.text.trim().toLowerCase();
-    final visible = [
+    final matched = [
       for (final m in models)
         if ((_kind == null || m.tag.toLowerCase() == _kind) &&
             (query.isEmpty ||
@@ -76,12 +80,16 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
                 m.modelId.toLowerCase().contains(query)))
           m,
     ];
+    // Sorted after filtering, not before: the two chips above the list say
+    // what is *in* it, the sort button says what order it is in, and doing it
+    // this way round means the sort only ever walks the rows on screen.
+    final visible = listState.arrange(matched);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _ChannelHeader(channel: widget.channel, actions: widget.actions),
-        _buildFilterRow(context, l10n),
+        _buildFilterRow(context, l10n, listState),
         Expanded(child: _buildBody(context, l10n, visible)),
       ],
     );
@@ -165,10 +173,14 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
   TextStyle _chipCountStyle(BuildContext context) =>
       _chipLabelStyle(context, selected: false).mono.copyWith(fontWeight: FontWeight.w500);
 
-  /// `1a` 筛选行, degrading by measurement (`1c`): first the chip counts go,
-  /// then search and Add Model fold into two 32 icons — the search icon opens
-  /// the field over the row — and only then do the chips scroll.
-  Widget _buildFilterRow(BuildContext context, AppLocalizations l10n) {
+  /// `1a` 筛选行, degrading by measurement (`1c`, `D1d`): first the chip counts
+  /// and the sort key's name go — one branch, not two, so the row never shows
+  /// a count beside a nameless sort button — then search and Add Model fold
+  /// into two 32 icons (the search icon opens the field over the row), and
+  /// only then do the chips scroll. The sort button survives every step: it
+  /// is the answer to 「这个列表为什么是这个次序」, and a hidden control cannot
+  /// answer anything.
+  Widget _buildFilterRow(BuildContext context, AppLocalizations l10n, ModelListState listState) {
     final scheme = Theme.of(context).colorScheme;
     final models = widget.models;
     final double inset = widget.dense ? AppSpace.s16 : 20;
@@ -203,9 +215,17 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
               _chipGap * (kinds.length - 1);
 
           final addWidth = ModelsActionButton.widthFor(context, l10n.addModel);
-          final tail = 12 + _searchMin + 8 + addWidth;
-          final bool withCounts = chipsWidth(true) + tail <= width;
-          final bool iconsOnly = !withCounts && chipsWidth(false) + tail > width;
+          // The sort button is 32 unless it is lit *and* the row is wide
+          // enough for its key's name; the two tails below are that row with
+          // and without the name.
+          final sortName = modelSortKeyLabel(l10n, listState.sortKey);
+          final double sortNamed = listState.isDefault
+              ? AppSize.control
+              : ModelsActionButton.widthFor(context, sortName);
+          const double sortIcon = AppSize.control;
+          double tail(double sort) => 12 + _searchMin + 8 + sort + AppSpace.s6 + addWidth;
+          final bool withCounts = chipsWidth(true) + tail(sortNamed) <= width;
+          final bool iconsOnly = !withCounts && chipsWidth(false) + tail(sortIcon) > width;
 
           final chips = Row(
             mainAxisSize: MainAxisSize.min,
@@ -247,6 +267,12 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
             onPressed: () => widget.actions.addModel(widget.channel.id),
           );
 
+          final sort = _SortButton(
+            listState: listState,
+            label: sortName,
+            showLabel: withCounts && !listState.isDefault,
+          );
+
           if (iconsOnly && (_searchOpen || _query.text.isNotEmpty)) {
             return Row(
               children: [
@@ -261,6 +287,8 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
                     _searchOpen = false;
                   }),
                 ),
+                const SizedBox(width: AppSpace.s6),
+                sort,
                 const SizedBox(width: AppSpace.s6),
                 add,
               ],
@@ -284,6 +312,8 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
                   onPressed: () => setState(() => _searchOpen = true),
                 ),
                 const SizedBox(width: AppSpace.s6),
+                sort,
+                const SizedBox(width: AppSpace.s6),
                 add,
               ],
             );
@@ -303,10 +333,57 @@ class _ModelDetailColumnState extends State<ModelDetailColumn> {
                 ),
               ),
               const SizedBox(width: 8),
+              sort,
+              const SizedBox(width: AppSpace.s6),
               add,
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// `D1d` 排序按钮: 32 at r10 in the filter row, between the search field and
+/// Add Model — with the chips and the search, which shape the list, rather
+/// than with the primary action.
+///
+/// Two faces, and which one it wears is the whole point: on the default
+/// reading it is the neutral box the header buttons wear, so an unused
+/// control takes no attention; off the default it lights up and its glyph
+/// becomes the direction, so the order the list is in has an answer at rest
+/// instead of only inside the menu.
+class _SortButton extends StatelessWidget {
+  const _SortButton({required this.listState, required this.label, required this.showLabel});
+
+  final ModelListState listState;
+
+  /// The current key's name, measured by the row even when it is not shown.
+  final String label;
+  final bool showLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final bool lit = !listState.isDefault;
+    final bool ascending = listState.sortDirection == ModelSortDirection.ascending;
+
+    return ModelsActionButton(
+      // `sort` at rest is the glyph the file browser's sort chip (`B1a · 1f`)
+      // already taught; lit, the direction replaces it, because by then
+      // 「哪个方向」 is the thing the row cannot otherwise say.
+      icon: lit ? (ascending ? Icons.arrow_upward : Icons.arrow_downward) : Icons.sort,
+      label: label,
+      showLabel: showLabel,
+      tone: lit ? ModelsButtonTone.active : ModelsButtonTone.neutral,
+      // Named on hover in both faces: the icon-only button says 「排过序」 but
+      // not by what, and the labelled one still owes the direction.
+      tooltip: l10n.modelSortTooltip(label, modelSortDirectionLabel(l10n, listState.sortDirection)),
+      // The same menu the phone opens, minus its grouping row — one builder,
+      // so the two surfaces cannot drift into two dialects (`D1d · 2e`).
+      onPressed: () => showAppGlassMenuBelow(
+        context,
+        entries: modelSortMenuItems(l10n, listState: listState),
       ),
     );
   }

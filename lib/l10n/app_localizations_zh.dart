@@ -2549,6 +2549,41 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modelsUsingGroup => '使用它的模型';
 
   @override
+  String get sortModels => '排序';
+
+  @override
+  String get modelSortDefault => '默认顺序';
+
+  @override
+  String get modelSortDefaultHint => '渠道获取或手动排列的顺序';
+
+  @override
+  String get modelSortName => '名称';
+
+  @override
+  String get modelSortKind => '类型';
+
+  @override
+  String get modelSortAdded => '添加时间';
+
+  @override
+  String get sortAscending => '升序';
+
+  @override
+  String get sortDescending => '降序';
+
+  @override
+  String modelSortTooltip(String key, String direction) {
+    return '排序：$key · $direction';
+  }
+
+  @override
+  String get modelGroupByChannel => '按渠道分组';
+
+  @override
+  String get modelGroupByChannelHint => '关掉后所有渠道的模型排成一列';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -7315,6 +7350,41 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get modelsUsingGroup => '使用它的模型';
+
+  @override
+  String get sortModels => '排序';
+
+  @override
+  String get modelSortDefault => '預設順序';
+
+  @override
+  String get modelSortDefaultHint => '通道取得或手動排列的順序';
+
+  @override
+  String get modelSortName => '名稱';
+
+  @override
+  String get modelSortKind => '類型';
+
+  @override
+  String get modelSortAdded => '加入時間';
+
+  @override
+  String get sortAscending => '升冪';
+
+  @override
+  String get sortDescending => '降冪';
+
+  @override
+  String modelSortTooltip(String key, String direction) {
+    return '排序：$key · $direction';
+  }
+
+  @override
+  String get modelGroupByChannel => '依通道分組';
+
+  @override
+  String get modelGroupByChannelHint => '關閉後所有通道的模型排成一列';
 
   @override
   String get prompts => '提示';

@@ -2666,6 +2666,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modelsUsingGroup => 'Models using it';
 
   @override
+  String get sortModels => 'Sort models';
+
+  @override
+  String get modelSortDefault => 'Default order';
+
+  @override
+  String get modelSortDefaultHint =>
+      'As the channel returned them, or as arranged by hand';
+
+  @override
+  String get modelSortName => 'Name';
+
+  @override
+  String get modelSortKind => 'Kind';
+
+  @override
+  String get modelSortAdded => 'Date added';
+
+  @override
+  String get sortAscending => 'Ascending';
+
+  @override
+  String get sortDescending => 'Descending';
+
+  @override
+  String modelSortTooltip(String key, String direction) {
+    return 'Sort: $key · $direction';
+  }
+
+  @override
+  String get modelGroupByChannel => 'Group by channel';
+
+  @override
+  String get modelGroupByChannelHint =>
+      'Off, every channel\'s models run as one list';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

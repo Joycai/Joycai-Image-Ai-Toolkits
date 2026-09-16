@@ -70,6 +70,7 @@ void main() async {
         ),
         ChangeNotifierProvider.value(value: appState.workbenchUIState),
         ChangeNotifierProvider.value(value: appState.taskListState),
+        ChangeNotifierProvider.value(value: appState.modelListState),
         ChangeNotifierProvider.value(value: appState.fileBrowserState),
         ChangeNotifierProvider.value(value: appState.fileStagingState),
         ChangeNotifierProvider.value(value: appState.downloaderState),

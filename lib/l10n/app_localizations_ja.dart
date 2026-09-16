@@ -2579,6 +2579,41 @@ class AppLocalizationsJa extends AppLocalizations {
   String get modelsUsingGroup => '使用中のモデル';
 
   @override
+  String get sortModels => '並べ替え';
+
+  @override
+  String get modelSortDefault => '既定の順序';
+
+  @override
+  String get modelSortDefaultHint => 'チャンネルから取得した順序、または手動で並べた順序';
+
+  @override
+  String get modelSortName => '名前';
+
+  @override
+  String get modelSortKind => '種類';
+
+  @override
+  String get modelSortAdded => '追加日時';
+
+  @override
+  String get sortAscending => '昇順';
+
+  @override
+  String get sortDescending => '降順';
+
+  @override
+  String modelSortTooltip(String key, String direction) {
+    return '並べ替え：$key · $direction';
+  }
+
+  @override
+  String get modelGroupByChannel => 'チャンネルごとにグループ化';
+
+  @override
+  String get modelGroupByChannelHint => 'オフにすると、すべてのチャンネルのモデルが 1 つのリストになります';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

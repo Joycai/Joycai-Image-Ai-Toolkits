@@ -1321,6 +1321,27 @@
   "discardChangesBody": "切到另一組會丟掉這裡的變更。",
   "discard": "放棄",
   "modelsUsingGroup": "使用它的模型",
+  "sortModels": "排序",
+  "modelSortDefault": "預設順序",
+  "modelSortDefaultHint": "通道取得或手動排列的順序",
+  "modelSortName": "名稱",
+  "modelSortKind": "類型",
+  "modelSortAdded": "加入時間",
+  "sortAscending": "升冪",
+  "sortDescending": "降冪",
+  "modelSortTooltip": "排序：{key} · {direction}",
+  "modelGroupByChannel": "依通道分組",
+  "modelGroupByChannelHint": "關閉後所有通道的模型排成一列",
+  "@modelSortTooltip": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      },
+      "direction": {
+        "type": "String"
+      }
+    }
+  },
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",
