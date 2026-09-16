@@ -86,7 +86,7 @@
 | 18 | `render_probe` 加助手一项并量：一次 session 通知 1,122 次 build → 29 次（debug 37.7 → 6.3 ms）。新原语 `ListenableSelector`；对话宿主、工具条、左侧知识树、右侧配置面板只在所读字段变化时重建，上下文用量卡自己监听；对话视图按所画字段门控；知识库编辑卡的 diff 按 edit id 缓存 | `widgets/ui/listenable_selector.dart` · `workbench_screen.dart` · `optimizer_left_panel.dart` · `optimizer_config_panel.dart` · `prompt_optimizer_view.dart` · `optimizer_kb_edit_card.dart` · `render_probe.dart` | `rebuild_scope_test.dart` 加一条；`listenable_selector_test.dart` | ✅ |
 | 19 | D2a 三条：参数块引导线点单时补间到主色 35%（新 token `accentRule`）；`ModelEditMenuField` 与共享 `AppDropdown` 的菜单选中行加 check（槽位每行都留）；点单态协议值用主色深（桌面与手机） | `design_tokens.dart` · `model_edit_controls.dart` · `model_protocol_section.dart` · `widgets/ui/app_dropdown.dart` | `model_edit_param_block_test.dart` · `app_dropdown_test.dart` 加一条；编辑器截图看过点单 / 自动两态 | ✅ |
 | 20 | 1000–1500 行文件拆分，十五个文件、十五个提交（20.A1–A4 · B1–B3 · C1–C4 · D1–D4），四个子代理各在自己的 worktree 里做、这边 cherry-pick | 见施工记录 | 每组截图 177/177 像素一致；合并后门禁绿 | ✅ |
-| R3 | 第三期 code review | — | — | ☐ |
+| R3 | 第三期 code review | `cookie_repository.dart` · `task_executors.dart` | 1 条：清空 cookie 字段后入队的下载，任务行里的空值也被剥掉，重启后会借用历史里的 cookie → 空值保留作「不带 cookie」的记号；测试一条。片 15 在 R2 与 R3 的范围之间漏审，单独补审见下一行 | ✅ |
 
 ### 收尾
 

@@ -101,6 +101,14 @@ void main() {
       expect((await storedParams('t2')).containsKey('cookies'), isFalse);
     });
 
+    test('a download queued without cookies keeps saying so', () async {
+      await TaskRepository().saveTask(row('t3', {'url': 'https://a.example/p', 'cookies': ''}));
+      expect((await storedParams('t3'))['cookies'], '',
+          reason: 'a missing key would make a restored task borrow the saved cookies');
+      await TaskRepository().scrubStoredCookies();
+      expect((await storedParams('t3'))['cookies'], '');
+    });
+
     test('parameters that are not JSON are left alone', () {
       expect(CookieRepository.withoutCookies('not json'), 'not json');
       expect(CookieRepository.withoutCookies('{"a":1}'), '{"a":1}');

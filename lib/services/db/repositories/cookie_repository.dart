@@ -112,10 +112,16 @@ class CookieRepository {
   /// [parameters] as a task row may store them: without the `cookies` a
   /// download was queued with. The running task keeps its copy in memory;
   /// a download restored after a restart asks [lookup] for its host instead.
+  ///
+  /// An *empty* value stays: it records that the user queued the download
+  /// without cookies, and a restored task must not fill them in from the
+  /// history.
   static String withoutCookies(String parametersJson) {
     try {
       final decoded = jsonDecode(parametersJson);
-      if (decoded is! Map || !decoded.containsKey('cookies')) return parametersJson;
+      if (decoded is! Map) return parametersJson;
+      final cookies = decoded['cookies'];
+      if (cookies == null || (cookies is String && cookies.isEmpty)) return parametersJson;
       return jsonEncode(Map<String, dynamic>.from(decoded)..remove('cookies'));
     } on FormatException {
       return parametersJson;
