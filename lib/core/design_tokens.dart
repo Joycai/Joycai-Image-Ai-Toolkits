@@ -392,6 +392,16 @@ class AppMotion {
         AppEffects.reduced(context) ? state : panel,
       );
 
+  /// [sceneOf] for a piece coming in, and [exitFactor] of it for one going
+  /// out. Every property of one scene change takes this one duration, so a
+  /// slide and a fade that leave together also arrive together.
+  static Duration sceneFor(BuildContext context, {required bool entering}) {
+    final enter = sceneOf(context);
+    return entering
+        ? enter
+        : Duration(milliseconds: (enter.inMilliseconds * exitFactor).round());
+  }
+
   /// Whether the running dot may breathe.
   static bool breathes(BuildContext context) =>
       !prefersReduced(context) && !AppEffects.reduced(context);
