@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/optimizer_config_panel.dart';
-import 'package:joycai_image_ai_toolkits/services/knowledge_base_service.dart';
-import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 

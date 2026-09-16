@@ -7,10 +7,10 @@ import '../../../core/design_tokens.dart';
 import '../../../core/thumbnail_fit.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
-import '../../../services/prompt_optimizer_agent.dart';
+import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
-import '../../../widgets/thumbnail_fit_toggle.dart';
+import '../../../widgets/files/thumbnail_fit_toggle.dart';
 import 'optimizer_context_card.dart';
 
 /// The Prompt Assistant's left column outside library-edit mode (`A3a 1a` /

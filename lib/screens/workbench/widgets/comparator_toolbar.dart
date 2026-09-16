@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/workbench_ui_state.dart';
-import '../../../widgets/app_switch.dart';
+import '../../../widgets/ui/app_switch.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../workbench_layout.dart';

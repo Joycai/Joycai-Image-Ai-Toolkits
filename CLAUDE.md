@@ -34,8 +34,8 @@ lib/
   state/                          # ChangeNotifier singletons: AppState (split across app_state{,_data,_workbench}.dart),
                                   #   GalleryState, FileBrowserState, FileStagingState, DownloaderState,
                                   #   WorkbenchUIState, TaskListState, LogState
-  services/                       # all business logic
-    llm/
+  services/                       # all business logic — nothing loose in the root, nine domains
+    llm/                          # the API stack (see architecture note); also model_family.dart
       llm_service.dart            # facade the app calls
       llm_dispatcher.dart         # the ONLY routing table (surface × protocol × vendor)
       protocols/                  # layer 1 — wire formats: openai chat/images/videos · xai images/videos ·
@@ -46,24 +46,50 @@ lib/
       model_descriptor.dart       # layer 3 — family + capabilities; with model_family.dart, the only
                                   #   place model-id sniffing is allowed
       context_budget.dart         # sole interpreter of a model's context window (see architecture note)
-    repositories/                 # SQLite DAOs: model, prompt, task, usage, assistant session, assistant note
-    database_service.dart         # SQLite via sqflite / sqflite_common_ffi
-    database_migrations.dart      # schema migrations, onCreate + onUpgrade in lockstep
-    task_queue_service.dart       # concurrency queue, Stream<TaskEvent>, ETA estimation
-    task_executors.dart           # `part of` the queue — one _executeXxxTask per TaskType
-    task_list_ordering.dart       # task-list filter/sort: created_at is the only key; pinning is a switch over it
-    prompt_optimizer_agent.dart   # Prompt Assistant agent: tool loop, modes (system prompt / knowledge base),
-                                  #   session persistence + compaction
-    sub_agent_runner.dart         # nested single-shot agent runs used by the assistant
-    knowledge_base_service.dart   # local knowledge-base folder access (README.md entry, paged reads)
-    web_scraper_service.dart      # HTML image extraction with cookie support
+    db/                           # database_service.dart (sqflite / sqflite_common_ffi) ·
+                                  #   database_migrations.dart (onCreate + onUpgrade in lockstep) ·
+                                  #   repositories/ — the DAOs over it: model, prompt, task, usage,
+                                  #   assistant session, assistant note
+    tasks/                        # task_queue_service.dart (concurrency, Stream<TaskEvent>, ETA) ·
+                                  #   task_executors.dart (`part of` it, one _executeXxxTask per TaskType) ·
+                                  #   task_list_ordering.dart (created_at is the only key) ·
+                                  #   ai_rename_agent.dart (the aiRename task's agent)
+    assistant/                    # the Prompt Assistant (see architecture note): prompt_optimizer_agent.dart
+                                  #   (tool loop, modes, session persistence + compaction) · sub_agent_runner.dart ·
+                                  #   knowledge_base_service.dart (README.md entry, paged reads) ·
+                                  #   knowledge_base_starter.dart · assistant_context_usage.dart ·
+                                  #   assistant_kb_distill.dart · prompt_provenance.dart
+    catalogue/                    # what backs the models page: model_list_ordering · model_id_uniqueness ·
+                                  #   context_window_scale — NOT llm/, which is only the API stack
+    files/                        # filesystem on the user's behalf: browser_file_scanner (isolate) ·
+                                  #   file_permission · file_transfer (staging) · folder_operations ·
+                                  #   trash · temp_storage
+    media/                        # image_processing · image_metadata · video_thumbnail ·
+                                  #   web_scraper_service.dart (HTML image extraction with cookie support)
+    system/                       # host-platform adapters: font · gpu_info · notification ·
+                                  #   runtime_info (the About page's block) · window_chrome
+    billing/                      # spec_billing · spec_known_values
   screens/                        # workbench · browser · batch · downloader · prompts · settings · metrics · models · wizard
   models/                         # LLMModel, LLMChannel, PricingGroup, Prompt/SystemPrompt, PromptTag,
                                   #   PromptHistoryEntry, TaskItem (+ TaskType, TaskEvent), AppImage, BrowserFile, LogEntry
   core/                           # Responsive (breakpoints), AppConstants/enums, AppPaths, file utils,
-                                  #   design_tokens.dart · app_theme.dart · app_semantic_colors.dart · theme_accent.dart
-  widgets/                        # shared UI components; subfolders: shell/ (nav chrome, shell_cover) · glass/ · dialogs/ · drag/ · models/
-                                  #   baked_backdrop.dart — the window ground, drawn once into an image
+                                  #   design_tokens.dart (incl. AppDock — the phone dock's dimensions, so a
+                                  #   primitive can clear it without importing the shell) · app_theme.dart ·
+                                  #   app_semantic_colors.dart · theme_accent.dart
+  widgets/                        # shared UI — nothing loose in the root, ten folders
+    ui/                           # the design system: the spec's controls (app_*), the generic inputs
+                                  #   (searchable_picker · markdown_editor · api_key_field · color_hue_picker ·
+                                  #   model_tag_chip · tag_avatar), the drawing primitives (dashed_border ·
+                                  #   scroll_edge_fade) and the layout pair (app_card / panel_resizer)
+    glass/                        # the glass materials · drag/ # lift, drop zones, reorder gaps
+    shell/                        # nav chrome: app_window_frame · app_top_bar · phone_dock · app_destinations ·
+                                  #   shell_cover · baked_backdrop.dart (the window ground, baked into an image)
+    models/                       # model & channel management UI, incl. the fee-group editor
+    tasks/                        # app_run_console · task_capsule_monitor · log_console · smooth_progress ·
+                                  #   task_type_glyph
+    settings/                     # theme_accent_picker · settings_widgets · dual_tone_swatch · backup_error_text
+    files/                        # folder_group_header · folder_outline_bar · thumbnail_fit_toggle
+    dialogs/ · placeholders/
   bench/                          # render_bench.dart — raster/GPU benchmark, inert unless RBENCH=1
   l10n/                           # generated — do NOT edit directly (see l10n workflow below)
     src/<lang>/                   # source .arb files, one per module: en · zh · zh_Hant · ja
@@ -97,7 +123,7 @@ executed, so an empty directory does not mean the work is open.
 - **Render performance:** measure it, do not reason about it, and know which thread you are measuring.
   - **UI thread** — `flutter test test/screenshots/render_probe.dart` mounts the real tree and reports what one state change rebuilds, what a gesture costs, glass layers per screen, and what an animation drags into its repaint (see [docs/README.md](docs/README.md#tooling)). The invariants it found are pinned by `test/screenshots/rebuild_scope_test.dart` and `test/render_performance_test.dart` — a state class hands out a **new** list rather than mutating one, because list identity is the only signal a `select` has.
   - **GPU** — `lib/bench/render_bench.dart`, inert unless `RBENCH=1`. Build profile, then drive the exe with `RBENCH_SCENE` (`blank`, `aurora-live`/`aurora`, `glass0`…`glass4`, `app-lightbox-legacy`/`app-lightbox`, …) at a fixed `RBENCH_SIZE`; it prints `FrameTiming` percentiles and a layer census. **`rasterDuration` does not see GPU time here** — this app pins Skia on ANGLE (`windows/runner/main.cpp`, for video_player_win's DXGI textures), which executes asynchronously, so a scene reading 0.9ms of raster was really 11ms of GPU. Take the GPU number from `\GPU Engine(pid_<pid>*engtype_3d)\Running Time` instead. Before believing anything, check which adapter the process landed on: this machine's display hangs off the integrated Radeon and Windows puts the app there. Absolute numbers drift up to 2x between sessions — **always take before and after in one pass**, which is what the `*-live` / `*-legacy` scenes exist for.
-  - **What painting has already been stopped:** the window ground is one baked image rather than four full-window fills (`widgets/baked_backdrop.dart`), and a settled full-screen cover stops the shell under it (`widgets/shell/shell_cover.dart` — `FullScreenCoverRoute` flips its own overlay entry opaque, the ground shrinks to the strip behind the title bar). Both are pinned by tests that assert the mechanism, never a frame time.
+  - **What painting has already been stopped:** the window ground is one baked image rather than four full-window fills (`widgets/shell/baked_backdrop.dart`), and a settled full-screen cover stops the shell under it (`widgets/shell/shell_cover.dart` — `FullScreenCoverRoute` flips its own overlay entry opaque, the ground shrinks to the strip behind the title bar). Both are pinned by tests that assert the mechanism, never a frame time.
 - **Visual debugging:** to *see* a layout instead of inferring it, run `flutter test test/screenshots` and open the PNGs in `build/ui-screenshots/` — the real screens with seeded data at four widths (390 / 834 / 1024 / 1440), light and dark. Overflows are printed, never asserted: this is not a regression gate. See [docs/ui-screenshot-harness.md](docs/ui-screenshot-harness.md).
   For anything touching accent or status colour use `component_gallery_test.dart` instead — every component on one page under all 8 theme seeds in both brightnesses (16 PNGs) is the only way to see whether a colour rule survives a seed change. `shoot()` also takes an `accent` (a `ThemeAccent` from `AppConstants.presetThemes`) for a whole screen at one theme colour.
 - **State:** use the existing state classes. Never use `StatefulWidget` for shared or persistent data. Always create new list/object instances before `notifyListeners()` — do not mutate in place.
@@ -114,10 +140,29 @@ executed, so an empty directory does not mean the work is open.
   So `core` imports nothing else in `lib/` at all, a service may not read `AppState`
   (pass the value in, or park it beside the thing that needs it — `LLMDebugLogger.enabled`
   is the worked example), and a shared widget may not import a feature screen (inject the
-  dependency — `AppRunConsole`'s `onExpand` is the worked example). `test/source_layout_test.dart`
-  asserts the ranks, the absence of cycles and that no relative import climbs past `lib/`;
-  it prints the offending file and line, and adding a genuinely new layer means re-ranking
-  there on purpose. The three cycles it now prevents each survived a long time because
+  dependency — `AppRunConsole`'s `onExpand` is the worked example).
+
+  Two rules hold *inside* those directories:
+
+  - **`widgets/` and `services/` keep nothing in their root.** Every file sits in a
+    domain folder (see the project map). One loose file is how a flat root comes back —
+    it names no domain, so the next one lands beside it. And being in `lib/widgets/` is
+    a claim that more than one feature uses the file: a shared widget with exactly one
+    screen's worth of callers belongs under that screen.
+  - **The design system — `widgets/{ui,glass,drag}` — imports `core`, `l10n` and itself,
+    and nothing else in `lib/`.** No model, no service, no state, no sibling feature
+    folder. That is what makes it a design system rather than a naming convention: a
+    screen taking a button does not also take `AppState`. When a primitive seems to need
+    something higher, either it is not a primitive, or the thing it needs belongs lower
+    down — `AppSnackbar` needed the phone dock's height, so the dock's dimensions became
+    `AppDock` in `core/design_tokens.dart`, and `TagAvatar` came out of
+    `widgets/models/channel_avatar.dart` because the picker only ever needed the
+    bare-string half.
+
+  `test/source_layout_test.dart` asserts all of it — the ranks, the absence of cycles,
+  the two rules above, and that no relative import climbs past `lib/` — and prints the
+  offending file and line. Adding a genuinely new layer or folder means changing that
+  test on purpose. The three cycles it now prevents each survived a long time because
   none of them breaks a build.
 - **Shell commands:** detect host OS before running shell commands. Never use Unix commands on Windows or PowerShell commands on macOS/Linux. No trial-and-error retries.
 
@@ -132,7 +177,7 @@ Supports `en`, `zh`, `zh_Hant`, `ja`. **All four languages must be updated toget
 ## Extension Patterns
 
 **New task type:** add a value to `TaskType` in `lib/models/task_item.dart` → implement
-`_executeXxxTask()` in `services/task_executors.dart` → add its branch to `_executeTask()`
+`_executeXxxTask()` in `services/tasks/task_executors.dart` → add its branch to `_executeTask()`
 in `task_queue_service.dart`. `addTask()` takes the type as a parameter and needs no change.
 
 **New LLM vendor (OpenAI/Gemini-compatible supplier):** add a `VendorProfile` in

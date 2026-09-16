@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/task_queue_service.dart';
+import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../glass/app_glass.dart';
 import 'app_destinations.dart';

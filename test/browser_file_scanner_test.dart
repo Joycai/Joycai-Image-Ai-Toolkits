@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
-import 'package:joycai_image_ai_toolkits/services/browser_file_scanner.dart';
+import 'package:joycai_image_ai_toolkits/services/files/browser_file_scanner.dart';
 import 'package:path/path.dart' as p;
 
 /// `scanBrowserFiles`: the file browser's folder scan, and the running count

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../app_button.dart';
-import '../app_dialog.dart';
+import '../ui/app_button.dart';
+import '../ui/app_dialog.dart';
 
 /// Smallest and largest tile the gallery grids will draw, in logical pixels.
 const double kMinThumbnailSize = 80;

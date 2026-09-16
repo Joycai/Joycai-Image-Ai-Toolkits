@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_dialog.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
 import 'usage_controller.dart';
 
 /// `D2`'s card: the panel ground, a hairline, r16.

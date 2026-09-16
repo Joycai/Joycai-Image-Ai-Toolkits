@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/runtime_info.dart';
+import 'package:joycai_image_ai_toolkits/services/system/runtime_info.dart';
 
 /// `RuntimeInfo`: what the About page's 「运行信息」 block reports, and the block
 /// the Copy button puts on the clipboard (`E1 · 2a`).

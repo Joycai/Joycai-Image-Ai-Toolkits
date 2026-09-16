@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
-import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
-import 'package:joycai_image_ai_toolkits/services/prompt_provenance.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_provenance.dart';
 
 /// The three hand-offs of generation→prompt-version provenance, pinned as
 /// pure functions: version lookup at apply time, tagging at submit time, and

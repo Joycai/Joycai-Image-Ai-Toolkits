@@ -7,10 +7,10 @@ import 'package:path/path.dart' as p;
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/folder_operations_service.dart';
-import '../app_button.dart';
-import '../app_dialog.dart';
-import '../app_snackbar.dart';
+import '../../services/files/folder_operations_service.dart';
+import '../ui/app_button.dart';
+import '../ui/app_dialog.dart';
+import '../ui/app_snackbar.dart';
 import '../glass/app_glass.dart';
 
 /// The longest file name the disks this app writes to accept, in characters.

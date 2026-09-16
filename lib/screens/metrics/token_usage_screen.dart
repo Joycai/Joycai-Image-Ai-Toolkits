@@ -8,7 +8,7 @@ import '../../state/app_state.dart';
 import '../../widgets/glass/app_glass.dart';
 import '../../widgets/glass/glass_controls.dart';
 import '../../widgets/models/fee_group_edit_page.dart';
-import '../../widgets/pricing_group_manager.dart';
+import '../../widgets/models/pricing_group_manager.dart';
 import 'widgets/usage_chrome.dart';
 import 'widgets/usage_controller.dart';
 import 'widgets/usage_view_desktop.dart';

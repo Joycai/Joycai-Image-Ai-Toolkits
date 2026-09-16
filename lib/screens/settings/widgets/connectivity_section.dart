@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../services/database_service.dart';
-import '../../../widgets/api_key_field.dart';
-import '../../../widgets/app_setting_row.dart';
-import '../../../widgets/app_text_field.dart';
+import '../../../services/db/database_service.dart';
+import '../../../widgets/ui/api_key_field.dart';
+import '../../../widgets/ui/app_setting_row.dart';
+import '../../../widgets/ui/app_text_field.dart';
 import 'settings_layout.dart';
 
 /// `E1 · 1c` right: the proxy and the MCP server, each one column-coloured

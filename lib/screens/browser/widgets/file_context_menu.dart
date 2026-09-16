@@ -11,7 +11,7 @@ import '../../../models/browser_file.dart';
 import '../../../state/app_state.dart';
 import '../../../state/file_staging_state.dart';
 import '../../../state/workbench_ui_state.dart';
-import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart';
 import '../../../widgets/glass/app_glass_menu.dart';

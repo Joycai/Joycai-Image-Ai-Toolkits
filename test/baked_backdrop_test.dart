@@ -17,7 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
-import 'package:joycai_image_ai_toolkits/widgets/baked_backdrop.dart';
+import 'package:joycai_image_ai_toolkits/widgets/shell/baked_backdrop.dart';
 
 Future<ui.Image> _record(
   void Function(Canvas canvas, Size size) paint,

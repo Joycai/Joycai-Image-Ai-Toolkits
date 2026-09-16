@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import '../../../../services/video_thumbnail_service.dart';
+import '../../../../services/media/video_thumbnail_service.dart';
 
 /// Renders a poster frame for a video file, generated lazily via
 /// [VideoThumbnailService]. Used both in the bottom thumbnail strip and as the

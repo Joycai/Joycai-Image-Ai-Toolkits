@@ -7,7 +7,7 @@
 // next launch.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
-import 'package:joycai_image_ai_toolkits/services/task_list_ordering.dart';
+import 'package:joycai_image_ai_toolkits/services/tasks/task_list_ordering.dart';
 
 void main() {
   final DateTime t0 = DateTime(2026, 9, 2, 13, 0);

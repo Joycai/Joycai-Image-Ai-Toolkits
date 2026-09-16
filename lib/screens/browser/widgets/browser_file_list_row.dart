@@ -6,7 +6,7 @@ import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
-import '../../../services/image_metadata_service.dart';
+import '../../../services/media/image_metadata_service.dart';
 import '../../../widgets/drag/app_drag_session.dart';
 import 'browser_drag_chip.dart';
 

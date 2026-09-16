@@ -10,20 +10,20 @@ import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../core/file_utils.dart';
-import '../../widgets/task_type_glyph.dart';
+import '../../widgets/tasks/task_type_glyph.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/task_queue_service.dart';
+import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
-import '../../widgets/app_breathing_dot.dart';
-import '../../widgets/app_button.dart';
-import '../../widgets/app_section_label.dart';
-import '../../widgets/app_snackbar.dart';
-import '../../widgets/dashed_border.dart';
+import '../../widgets/ui/app_breathing_dot.dart';
+import '../../widgets/ui/app_button.dart';
+import '../../widgets/ui/app_section_label.dart';
+import '../../widgets/ui/app_snackbar.dart';
+import '../../widgets/ui/dashed_border.dart';
 import '../../widgets/dialogs/task_log_dialog.dart';
 import '../../widgets/glass/app_glass_menu.dart';
 import '../../widgets/glass/glass_controls.dart';
-import '../../widgets/scroll_edge_fade.dart';
-import '../../widgets/smooth_progress.dart';
+import '../../widgets/ui/scroll_edge_fade.dart';
+import '../../widgets/tasks/smooth_progress.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // Shared vocabulary — `B2` 颜色角色 / 尺寸

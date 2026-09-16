@@ -4,10 +4,10 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt_history_entry.dart';
 import '../../state/app_state.dart';
-import '../app_button.dart';
-import '../app_dialog.dart';
-import '../app_side_panel.dart';
-import '../scroll_edge_fade.dart';
+import '../ui/app_button.dart';
+import '../ui/app_dialog.dart';
+import '../ui/app_side_panel.dart';
+import '../ui/scroll_edge_fade.dart';
 
 /// Prompt-header action that opens the recent-prompt picker for [type].
 ///

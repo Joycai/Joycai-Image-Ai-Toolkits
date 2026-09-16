@@ -5,7 +5,7 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
-import '../app_window_frame.dart';
+import 'app_window_frame.dart';
 import '../glass/app_glass.dart';
 import 'app_destinations.dart';
 import 'nav_lens_group.dart';

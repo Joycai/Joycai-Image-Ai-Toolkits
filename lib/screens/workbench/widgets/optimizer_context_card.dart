@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
-import '../../../widgets/context_usage_palette.dart';
+import 'context_usage_palette.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../services/assistant_context_usage.dart';
+import '../../../services/assistant/assistant_context_usage.dart';
 
 /// A card in the Prompt Assistant's side columns (`A3a` / `A3b`): the panel
 /// ground laid on the column, a hairline, r16, a 10px inset and an 8px rhythm

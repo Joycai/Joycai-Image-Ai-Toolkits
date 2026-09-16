@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_dialog.dart';
-import '../../../widgets/app_field_size.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_field_size.dart';
 import 'safety_settings_section.dart';
 
 /// Queue/output settings dialog shared by the image and video workbenches:

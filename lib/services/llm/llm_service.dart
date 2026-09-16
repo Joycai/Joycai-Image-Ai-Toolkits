@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../billing/spec_billing.dart';
-import '../database_service.dart';
+import '../db/database_service.dart';
 import 'context_budget.dart';
 import 'llm_config_resolver.dart';
 import 'llm_debug_logger.dart';

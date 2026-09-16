@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
-import 'package:joycai_image_ai_toolkits/widgets/folder_outline_bar.dart';
+import 'package:joycai_image_ai_toolkits/widgets/files/folder_outline_bar.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
 
 /// The outline bar's width degradation, its taps and its menus (`A1b`).

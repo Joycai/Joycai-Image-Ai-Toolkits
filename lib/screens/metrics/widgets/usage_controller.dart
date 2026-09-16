@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../../../models/llm_model.dart';
-import '../../../services/database_service.dart';
+import '../../../services/db/database_service.dart';
 import 'usage_range.dart';
 import 'usage_stats.dart';
 

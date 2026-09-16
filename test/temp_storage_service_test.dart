@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/temp_storage_service.dart';
+import 'package:joycai_image_ai_toolkits/services/files/temp_storage_service.dart';
 import 'package:path/path.dart' as p;
 
 /// Covers the reaper for `<temp>/joycai`, the app's own scratch space.

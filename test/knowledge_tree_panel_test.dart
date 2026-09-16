@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/knowledge_tree_panel.dart';
-import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:path/path.dart' as p;
 
 void main() {

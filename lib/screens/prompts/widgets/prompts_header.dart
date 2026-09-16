@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_icon_button.dart';
-import '../../../widgets/app_search_field.dart';
-import '../../../widgets/app_segmented_control.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_icon_button.dart';
+import '../../../widgets/ui/app_search_field.dart';
+import '../../../widgets/ui/app_segmented_control.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import 'prompt_library_parts.dart';
 

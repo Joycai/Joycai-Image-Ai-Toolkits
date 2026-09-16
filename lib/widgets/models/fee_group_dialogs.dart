@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/pricing_group.dart';
 import '../../state/app_state.dart';
-import '../app_button.dart';
-import '../app_dialog.dart';
+import '../ui/app_button.dart';
+import '../ui/app_dialog.dart';
 
 /// `D2 · 1e` 删除组: the error plate, the group's name, and — when models
 /// point at it — how many of them will be left with no fee group. Returns

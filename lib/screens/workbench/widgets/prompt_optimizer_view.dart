@@ -12,11 +12,11 @@ import '../../../core/responsive.dart';
 import '../../../core/text_diff.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
-import '../../../services/prompt_optimizer_agent.dart';
+import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
-import '../../../widgets/app_breathing_dot.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/ui/app_breathing_dot.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import 'result_feedback_labels.dart';
 
 /// One row of the transcript as drawn, which is not one-to-one with

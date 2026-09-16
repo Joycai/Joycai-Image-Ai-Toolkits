@@ -6,7 +6,7 @@ import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../widgets/app_button.dart';
+import '../../../widgets/ui/app_button.dart';
 
 /// Small pieces the Prompt Library (`C1`) draws in more than one place.
 ///

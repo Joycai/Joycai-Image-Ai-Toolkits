@@ -4,9 +4,9 @@ import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/tag.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_segmented_control.dart';
-import '../../../widgets/scroll_edge_fade.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_segmented_control.dart';
+import '../../../widgets/ui/scroll_edge_fade.dart';
 import 'prompt_library_parts.dart';
 
 /// The category filter in the library's left column (`C1 · 1a`).

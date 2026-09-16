@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/context_window_scale.dart';
+import 'package:joycai_image_ai_toolkits/services/catalogue/context_window_scale.dart';
 
 void main() {
   group('ContextWindowScale', () {

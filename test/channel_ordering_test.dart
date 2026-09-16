@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
-import 'package:joycai_image_ai_toolkits/services/database_migrations.dart';
-import 'package:joycai_image_ai_toolkits/services/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_migrations.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'screenshots/harness/fixture_env.dart';

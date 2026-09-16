@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/ai_rename_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/tasks/ai_rename_agent.dart';
 import 'package:path/path.dart' as p;
 
 /// Covers the disk half of AI batch rename — what [AiRenameAgent.applyProposals]

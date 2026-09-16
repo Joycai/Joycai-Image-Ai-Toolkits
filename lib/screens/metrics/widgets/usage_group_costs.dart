@@ -6,7 +6,7 @@ import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/pricing_group.dart';
-import '../../../widgets/app_button.dart';
+import '../../../widgets/ui/app_button.dart';
 import 'usage_chrome.dart';
 import 'usage_palette.dart';
 import 'usage_stats.dart';

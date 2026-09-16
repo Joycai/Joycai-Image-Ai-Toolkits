@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/widgets/scroll_edge_fade.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/scroll_edge_fade.dart';
 
 /// Covers the rule that makes the fade worth having: it appears only on an
 /// edge that actually has content beyond it.

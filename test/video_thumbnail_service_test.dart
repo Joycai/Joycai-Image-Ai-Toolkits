@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/video_thumbnail_service.dart';
+import 'package:joycai_image_ai_toolkits/services/media/video_thumbnail_service.dart';
 
 /// The platform extractor fails transiently on a file that is still being
 /// written or still syncing down from a cloud drive. The service must keep

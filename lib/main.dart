@@ -11,6 +11,7 @@ import 'package:window_manager/window_manager.dart';
 import 'bench/render_bench.dart';
 import 'core/app_effects.dart';
 import 'core/app_theme.dart';
+import 'core/design_tokens.dart';
 import 'core/responsive.dart';
 import 'core/theme_accent.dart';
 import 'l10n/app_localizations.dart';
@@ -24,18 +25,18 @@ import 'screens/settings/settings_screen.dart';
 import 'screens/wizard/setup_wizard.dart';
 import 'screens/workbench/workbench_screen.dart';
 import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
-import 'services/notification_service.dart';
-import 'services/task_queue_service.dart';
-import 'services/temp_storage_service.dart';
-import 'services/video_thumbnail_service.dart';
-import 'services/window_chrome_service.dart';
+import 'services/system/notification_service.dart';
+import 'services/tasks/task_queue_service.dart';
+import 'services/files/temp_storage_service.dart';
+import 'services/media/video_thumbnail_service.dart';
+import 'services/system/window_chrome_service.dart';
 import 'state/app_state.dart';
-import 'widgets/app_window_frame.dart';
+import 'widgets/shell/app_window_frame.dart';
 import 'widgets/shell/app_destinations.dart';
 import 'widgets/shell/app_top_bar.dart';
 import 'widgets/shell/phone_dock.dart';
 import 'widgets/shell/shell_cover.dart';
-import 'widgets/task_capsule_monitor.dart';
+import 'widgets/tasks/task_capsule_monitor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -348,11 +349,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       // content clear of it the same way it keeps clear of a home indicator.
       //
       // `padding` only. `viewPadding` stays the window's own, because that is
-      // what [PhoneDock.clearanceOf] measures from: overriding it too made
+      // what [AppDock.clearanceOf] measures from: overriding it too made
       // the clearance count itself, and anything computing it from a screen's
       // context — a snackbar's bottom margin — cleared the dock twice.
       final mq = MediaQuery.of(context);
-      final clearance = PhoneDock.clearanceOf(context);
+      final clearance = AppDock.clearanceOf(context);
       screen = MediaQuery(
         data: mq.copyWith(padding: mq.padding.copyWith(bottom: clearance)),
         child: screen,

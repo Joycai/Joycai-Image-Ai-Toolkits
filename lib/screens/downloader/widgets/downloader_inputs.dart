@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/design_tokens.dart';
-import '../../../widgets/app_field_size.dart';
+import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/glass/glass_controls.dart';
 
 /// Shared geometry and the small controls of the downloader column (`B3`).

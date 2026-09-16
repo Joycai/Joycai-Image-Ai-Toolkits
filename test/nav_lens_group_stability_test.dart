@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_window_frame.dart';
+import 'package:joycai_image_ai_toolkits/widgets/shell/app_window_frame.dart';
 import 'package:joycai_image_ai_toolkits/widgets/shell/nav_lens_group.dart';
 
 import 'screenshots/harness/fixture_env.dart';

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
-import '../searchable_picker.dart';
+import '../ui/searchable_picker.dart';
 
 /// Turns the app's two pickable records into [PickerOption]s.
 ///

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../services/file_transfer_service.dart';
+import '../../../services/files/file_transfer_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/file_staging_state.dart';
 import '../staging_paste_flow.dart';

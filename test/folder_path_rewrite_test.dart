@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/file_utils.dart';
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
-import 'package:joycai_image_ai_toolkits/services/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/state/file_browser_state.dart';
 import 'package:joycai_image_ai_toolkits/state/file_staging_state.dart';
 import 'package:path/path.dart' as p;

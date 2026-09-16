@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/assistant_kb_distill.dart';
-import 'package:joycai_image_ai_toolkits/services/knowledge_base_service.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/assistant_kb_distill.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/models/result_feedback.dart';
 
 /// The knowledge-base optimization loop, model-free: the feedback-message

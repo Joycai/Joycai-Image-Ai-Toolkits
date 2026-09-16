@@ -29,7 +29,7 @@ git show 46d5a72:plans/012-task-capsule-spring-settle.md
 
 按价值排序。前两条是第三轮审计发现、当轮明确留在范围外的。
 
-- **胶囊内容区的 `AnimatedSize` 还挂在 M3 档**（`lib/widgets/task_capsule_monitor.dart:252-255`）。
+- **胶囊内容区的 `AnimatedSize` 还挂在 M3 档**（`lib/widgets/tasks/task_capsule_monitor.dart:252-255`）。
   它每次 `runningCount` 跨过 0 就重放一次——批量跑任务时是每个任务一次，按频率该降到 M2。
 - **选择栏退场的两半时钟对不上**（`lib/screens/browser/widgets/browser_selection_bar.dart:50-63`、
   `lib/screens/workbench/widgets/gallery_selection_bar.dart:77-90`）：滑动走 `sceneOf`（280ms），
@@ -42,7 +42,7 @@ git show 46d5a72:plans/012-task-capsule-spring-settle.md
   知识库树 `knowledge_tree_panel.dart:575` 同样是互换。箭头旋转（`AnimatedRotation` +
   `AppMotion.state`）两处都能低成本拿下；子树伸缩只有目录树能用 `AnimatedSize`，知识库树是
   扁平化过滤列表，要动就得换 `AnimatedList`，不划算。
-- **`ScrollEdgeFade` 的边缘渐变 0/1 硬切**（`lib/widgets/scroll_edge_fade.dart:96-101`）：两个 bool
+- **`ScrollEdgeFade` 的边缘渐变 0/1 硬切**（`lib/widgets/ui/scroll_edge_fade.dart:96-101`）：两个 bool
   直接决定渐变端点是白还是透明，于是滚动离开顶端的第一个像素就让渐变**满强度弹出**。用
   `TweenAnimationBuilder<double>` 配 `AppMotion.hover` 把这两个 bool 补间成 0..1，可以在不引入
   逐帧 `setState` 的前提下消掉这个 pop。
@@ -62,9 +62,9 @@ git show 46d5a72:plans/012-task-capsule-spring-settle.md
 - **任务胶囊的选边**（`task_capsule_monitor.dart`，`_project()` 用速度投影决定停靠边、按压 0.97
   反馈）。第三轮的 012 细化了它**选完边之后**的那段行程（原先定长 280ms 曲线把速度丢了），
   选边本身这条结论不变。
-- **对话框 materialize 的机制**（`lib/widgets/app_dialog.dart`：0.96 起手、骑路由自身 animation
+- **对话框 materialize 的机制**（`lib/widgets/ui/app_dialog.dart`：0.96 起手、骑路由自身 animation
   所以出场自动反向、减弱动画时降为纯淡入）。第三轮的 013 换掉的是它骑的那口钟，不是机制。
-- **呼吸圆点**（`lib/widgets/app_breathing_dot.dart`）：生命周期正确，`stop` 而非 `reset`，
+- **呼吸圆点**（`lib/widgets/ui/app_breathing_dot.dart`）：生命周期正确，`stop` 而非 `reset`，
   减弱动画时直接停表。
 - **滚动橡皮筋**（`lib/main.dart:167`）：`BouncingScrollPhysics` 覆盖全平台是 `7091ca5` 记录在案的
   刻意取舍（「只在用户自己的手势下发生」），按规矩不再翻案。

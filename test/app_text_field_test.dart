@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_text_field.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_text_field.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 void main() {

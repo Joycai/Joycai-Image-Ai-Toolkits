@@ -4,7 +4,7 @@ import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/browser/widgets/browser_filter_bar.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/file_browser_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/thumbnail_fit_toggle.dart';
+import 'package:joycai_image_ai_toolkits/widgets/files/thumbnail_fit_toggle.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 

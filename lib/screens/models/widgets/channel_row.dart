@@ -7,7 +7,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/models/channel_avatar.dart';
-import '../../../widgets/models/model_tag_chip.dart';
+import '../../../widgets/ui/model_tag_chip.dart';
 
 /// What a channel row shows at its right edge while hovered.
 enum ChannelHandle {

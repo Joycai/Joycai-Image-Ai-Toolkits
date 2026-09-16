@@ -7,8 +7,8 @@ import '../../core/app_semantic_colors.dart';
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
-import '../app_switch.dart';
-import '../app_field_size.dart';
+import '../ui/app_switch.dart';
+import '../ui/app_field_size.dart';
 
 /// The pieces the model editor (design D1c) is built from.
 ///

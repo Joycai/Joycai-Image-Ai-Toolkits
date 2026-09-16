@@ -37,20 +37,20 @@ import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_card.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_dropdown.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_empty_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_field_size.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_labelled_field.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_icon_button.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_search_field.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_section_label.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_text_field.dart';
-import 'package:joycai_image_ai_toolkits/widgets/dual_tone_swatch.dart';
-import 'package:joycai_image_ai_toolkits/widgets/theme_accent_picker.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_card.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_dropdown.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_empty_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_field_size.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_labelled_field.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_icon_button.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_search_field.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_section_label.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_text_field.dart';
+import 'package:joycai_image_ai_toolkits/widgets/settings/dual_tone_swatch.dart';
+import 'package:joycai_image_ai_toolkits/widgets/settings/theme_accent_picker.dart';
 
 void main() {
   for (final MapEntry<String, ThemeAccent> seed in AppConstants.presetThemes.entries) {

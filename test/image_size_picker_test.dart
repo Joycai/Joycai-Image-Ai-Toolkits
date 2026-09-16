@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dialogs/image_size_picker_dialog.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 

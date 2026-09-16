@@ -5,8 +5,8 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../app_button.dart';
-import '../app_dialog.dart';
+import '../ui/app_button.dart';
+import '../ui/app_dialog.dart';
 
 /// Asks which parts of a backup to restore — design `E1 · 1d` 「导入选项」.
 ///

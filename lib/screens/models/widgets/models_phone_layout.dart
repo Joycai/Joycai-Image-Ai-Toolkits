@@ -7,7 +7,7 @@ import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
-import '../../../services/model_list_ordering.dart';
+import '../../../services/catalogue/model_list_ordering.dart';
 import '../../../state/app_state.dart';
 import '../../../state/model_list_state.dart';
 import '../../../widgets/drag/app_drag_lift.dart';

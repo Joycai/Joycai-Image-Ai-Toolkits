@@ -9,7 +9,7 @@ import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
-import '../../services/file_permission_service.dart';
+import '../../services/files/file_permission_service.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/drag/app_drop_zone.dart';
 import '../../widgets/placeholders/permission_placeholder.dart';
@@ -20,8 +20,8 @@ import 'workbench_layout.dart';
 import '../../core/folder_outline_geometry.dart';
 import '../../core/folder_outline_labels.dart';
 import '../../core/folder_outline_spy.dart';
-import '../../widgets/folder_group_header.dart';
-import '../../widgets/folder_outline_bar.dart';
+import '../../widgets/files/folder_group_header.dart';
+import '../../widgets/files/folder_outline_bar.dart';
 
 /// Everything the grid reads out of [GalleryState], gathered so the selector
 /// in `build` can compare it in one go.

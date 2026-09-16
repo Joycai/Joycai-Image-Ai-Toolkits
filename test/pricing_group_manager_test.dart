@@ -6,8 +6,8 @@ import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/fee_group_row.dart';
-import 'package:joycai_image_ai_toolkits/widgets/pricing_group_manager.dart';
-import 'package:joycai_image_ai_toolkits/widgets/spec_rate_table.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/pricing_group_manager.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/spec_rate_table.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 

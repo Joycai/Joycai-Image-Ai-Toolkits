@@ -6,7 +6,7 @@ import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/tag.dart';
-import '../../../services/database_service.dart';
+import '../../../services/db/database_service.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';
 import '../prompt_reorder.dart';

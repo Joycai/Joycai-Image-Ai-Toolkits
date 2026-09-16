@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/database_service.dart';
-import 'package:joycai_image_ai_toolkits/services/task_queue_service.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'support/private_data_dir.dart';

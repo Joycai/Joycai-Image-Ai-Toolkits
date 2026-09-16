@@ -1,6 +1,6 @@
 import '../../../l10n/app_localizations.dart';
 import '../../../models/result_feedback.dart';
-import '../../../services/prompt_optimizer_agent.dart';
+import '../../../services/assistant/prompt_optimizer_agent.dart';
 
 /// The localized label of one `3b` reason tag. One switch for the dialog,
 /// the transcript card and the timeline, so a tag reads the same everywhere.

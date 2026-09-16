@@ -8,7 +8,7 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../dashed_border.dart';
+import '../ui/dashed_border.dart';
 
 /// `00d · 1a / 1b` 「空位即落点」: the drop indicator of a reorderable list,
 /// drawn inside the gap the framework opens for the dragged item.

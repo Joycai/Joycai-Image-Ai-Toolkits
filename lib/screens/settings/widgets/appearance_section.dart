@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
-import '../../../widgets/app_setting_row.dart';
-import '../../../widgets/app_switch.dart';
-import '../../../widgets/settings_widgets.dart';
+import '../../../widgets/ui/app_setting_row.dart';
+import '../../../widgets/ui/app_switch.dart';
+import '../../../widgets/settings/settings_widgets.dart';
 import 'settings_layout.dart';
 
 /// `E1 · 1a / 1e`: mode, theme colour, font, language, and reduce visual

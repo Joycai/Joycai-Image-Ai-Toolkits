@@ -4,7 +4,7 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/llm/vendors/vendors.dart';
-import '../app_dialog.dart';
+import '../ui/app_dialog.dart';
 import 'channel_form_sections.dart';
 import 'channel_provider_presets.dart';
 import 'channel_provider_row.dart';

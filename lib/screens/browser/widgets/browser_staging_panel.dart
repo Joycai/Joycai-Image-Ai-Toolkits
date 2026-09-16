@@ -7,10 +7,10 @@ import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
-import '../../../services/file_transfer_service.dart';
+import '../../../services/files/file_transfer_service.dart';
 import '../../../state/file_staging_state.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/dashed_border.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/dashed_border.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import 'transfer_dialog_parts.dart';
 

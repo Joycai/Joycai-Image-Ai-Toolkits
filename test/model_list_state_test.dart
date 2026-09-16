@@ -6,8 +6,8 @@
 // because that is the shape the phone's tab has always had, and a regression
 // to off would silently dissolve every channel group on first launch.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/database_service.dart';
-import 'package:joycai_image_ai_toolkits/services/model_list_ordering.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/catalogue/model_list_ordering.dart';
 import 'package:joycai_image_ai_toolkits/state/model_list_state.dart';
 
 import 'screenshots/harness/fixture_env.dart';

@@ -10,13 +10,13 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../models/tag.dart';
 import '../../../state/app_state.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_dialog.dart';
-import '../../../widgets/app_field_size.dart';
-import '../../../widgets/app_labelled_field.dart';
-import '../../../widgets/app_segmented_control.dart';
-import '../../../widgets/color_picker_widget.dart';
-import '../../../widgets/markdown_editor.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_field_size.dart';
+import '../../../widgets/ui/app_labelled_field.dart';
+import '../../../widgets/ui/app_segmented_control.dart';
+import 'color_picker_widget.dart';
+import '../../../widgets/ui/markdown_editor.dart';
 import 'prompt_library_parts.dart';
 
 /// Dialogs for the Prompt Library screen (`C1 · 1d`).

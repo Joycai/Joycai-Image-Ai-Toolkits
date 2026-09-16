@@ -1,4 +1,4 @@
-import '../database_service.dart';
+import '../db/database_service.dart';
 
 /// How a model's context window is configured.
 ///
