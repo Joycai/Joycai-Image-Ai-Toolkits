@@ -9,8 +9,8 @@ import 'app_dialog.dart';
 import 'app_empty_state.dart';
 import 'app_field_size.dart';
 import 'app_search_field.dart';
-import '../models/channel_avatar.dart';
-import '../models/model_tag_chip.dart';
+import 'tag_avatar.dart';
+import 'model_tag_chip.dart';
 
 /// One row of a [SearchablePickerField]'s picker.
 ///

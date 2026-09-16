@@ -21,14 +21,6 @@ import 'app_destinations.dart';
 class PhoneDock extends StatelessWidget {
   const PhoneDock({super.key});
 
-  static const double height = 64;
-  static const double sideInset = AppSpace.s16;
-  static const double bottomInset = 24;
-
-  /// How much of the bottom of the screen a phone screen must keep clear for
-  /// the dock and the gap above it (`01 · 1g`: the capsule parks at 104).
-  static double clearanceOf(BuildContext context) =>
-      height + bottomInset + AppSpace.s16 + MediaQuery.viewPaddingOf(context).bottom;
 
   @override
   Widget build(BuildContext context) {
@@ -42,9 +34,9 @@ class PhoneDock extends StatelessWidget {
     final bottom = MediaQuery.viewPaddingOf(context).bottom;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(sideInset, 0, sideInset, bottomInset + bottom),
+      padding: EdgeInsets.fromLTRB(AppDock.sideInset, 0, AppDock.sideInset, AppDock.bottomInset + bottom),
       child: SizedBox(
-        height: height,
+        height: AppDock.height,
         child: AppGlass(
           grade: GlassGrade.float,
           borderRadius: BorderRadius.circular(AppRadius.sheet),

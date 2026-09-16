@@ -10,7 +10,7 @@ import '../../services/llm/model_discovery_service.dart';
 import '../../services/llm/model_family.dart';
 import '../../services/catalogue/model_id_uniqueness.dart';
 import '../../state/app_state.dart';
-import 'model_tag_chip.dart';
+import '../ui/model_tag_chip.dart';
 import '../ui/app_button.dart';
 import '../ui/app_search_field.dart';
 import '../ui/app_dialog.dart';

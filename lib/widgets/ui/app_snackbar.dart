@@ -5,7 +5,6 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../glass/app_glass.dart';
-import '../shell/phone_dock.dart';
 
 enum _AppSnackBarKind { success, error, warning, info }
 
@@ -64,7 +63,7 @@ class AppSnackBar {
         scheme.brightness == Brightness.dark ? scheme.primary : scheme.accentOnOverlay;
 
     final bottom = Responsive.isMobile(context)
-        ? PhoneDock.clearanceOf(context)
+        ? AppDock.clearanceOf(context)
         : AppSpace.s16;
 
     final messenger = ScaffoldMessenger.of(context);

@@ -13,7 +13,6 @@ import '../../state/app_state.dart';
 import '../ui/app_breathing_dot.dart';
 import '../glass/app_glass.dart';
 import '../shell/app_destinations.dart';
-import '../shell/phone_dock.dart';
 import 'smooth_progress.dart';
 
 /// The floating summary of the queue (`01 · 1d` collapsed, `1e` expanded,
@@ -149,7 +148,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor>
     final isPhone = Responsive.isMobile(context);
     final screenSize = MediaQuery.sizeOf(context);
 
-    _initPosition(screenSize, isPhone, PhoneDock.clearanceOf(context));
+    _initPosition(screenSize, isPhone, AppDock.clearanceOf(context));
 
     final pendingCount = queue.queue.where((t) => t.status == TaskStatus.pending).length;
     final activeTasks = queue.queue.where((t) => t.status == TaskStatus.processing).toList();

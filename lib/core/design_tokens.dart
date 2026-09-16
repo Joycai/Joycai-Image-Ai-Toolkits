@@ -97,6 +97,34 @@ class AppSize {
   static const double iconLg = 20;
 }
 
+/// How much of a phone screen the floating dock occupies.
+///
+/// `01 · 1g`: the dock is a float — 64 tall, inset 16 from the sides and 24
+/// from the bottom — so anything that parks at the bottom of a phone screen
+/// has to clear it: the toast, the task capsule, and the scroll padding
+/// `main.dart` puts under every screen.
+///
+/// These live here rather than on `PhoneDock` because its callers are not all
+/// above the shell. [AppSnackbar] is a design-system primitive, and
+/// `widgets/ui/` may not import `widgets/shell/` — which would drag `AppState`
+/// and the task queue in behind it. A toast asking the dock how tall it is was
+/// the entire edge. The dock still draws itself from these.
+class AppDock {
+  /// The dock's own height.
+  static const double height = 64;
+
+  /// Inset from the left and right edges.
+  static const double sideInset = AppSpace.s16;
+
+  /// Inset from the bottom edge, above whatever the system already reserves.
+  static const double bottomInset = 24;
+
+  /// What a phone screen must keep clear for the dock and the gap over it
+  /// (`01 · 1g`: the capsule parks at 104).
+  static double clearanceOf(BuildContext context) =>
+      height + bottomInset + AppSpace.s16 + MediaQuery.viewPaddingOf(context).bottom;
+}
+
 /// The alphas the accent is allowed to be drawn at.
 class AppAlpha {
   /// The 12% wash behind a selected thing (`00` 「主色 12% 底」).
