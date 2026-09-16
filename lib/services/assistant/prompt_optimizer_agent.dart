@@ -17,6 +17,7 @@ import '../db/repositories/assistant_note_repository.dart';
 import '../db/repositories/assistant_session_repository.dart';
 import 'sub_agent_runner.dart';
 
+part 'assistant_chat_entries.dart';
 part 'assistant_context_window.dart';
 part 'assistant_history_repair.dart';
 part 'assistant_system_prompts.dart';
