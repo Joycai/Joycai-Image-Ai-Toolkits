@@ -7834,6 +7834,36 @@ abstract class AppLocalizations {
   /// **'The assistant hit its step limit for this message before giving a final answer. Send a follow-up such as “continue” to let it carry on.'**
   String get optRoundLimitNotice;
 
+  /// No description provided for @optTruncatedTail.
+  ///
+  /// In en, this message translates to:
+  /// **'The reply was cut at the output limit'**
+  String get optTruncatedTail;
+
+  /// No description provided for @optOpenModelSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust max output in model settings'**
+  String get optOpenModelSettings;
+
+  /// No description provided for @optTruncatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The delivery was cut at the output limit'**
+  String get optTruncatedTitle;
+
+  /// No description provided for @optTruncatedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Two replies in a row hit the model\'s output-token limit while delivering, so this turn stopped and no half-finished tool call was run. Raise the model\'s Max Output in its settings — one Prompt Assistant delivery runs 6–8k tokens, and thinking shares the cap.'**
+  String get optTruncatedBody;
+
+  /// No description provided for @optAdjustOutputCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust max output'**
+  String get optAdjustOutputCap;
+
   /// No description provided for @optKbDistillRequested.
   ///
   /// In en, this message translates to:

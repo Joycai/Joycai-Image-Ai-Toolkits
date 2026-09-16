@@ -4302,6 +4302,22 @@ class AppLocalizationsZh extends AppLocalizations {
       '助手在这条消息上已用完步骤上限，尚未给出最终答复。发送一条后续消息（例如“继续”）即可让它接着做。';
 
   @override
+  String get optTruncatedTail => '回复在输出上限处被截断';
+
+  @override
+  String get optOpenModelSettings => '去模型设置调整最大输出';
+
+  @override
+  String get optTruncatedTitle => '交付被输出上限截断';
+
+  @override
+  String get optTruncatedBody =>
+      '连续两次回复在交付时触及模型的输出 token 上限，本轮已停止，未执行任何半截的工具调用。请到模型设置里调高「最大输出」——提示词助手的一次交付约 6–8k tokens，且思考与正文共用该上限。';
+
+  @override
+  String get optAdjustOutputCap => '调整最大输出';
+
+  @override
   String get optKbDistillRequested => '已请求：将本次调优经验总结进知识库。';
 
   @override
@@ -9150,6 +9166,22 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get optRoundLimitNotice =>
       '助手在這則訊息上已用完步驟上限，尚未給出最終答覆。傳送一則後續訊息（例如「繼續」）即可讓它接著做。';
+
+  @override
+  String get optTruncatedTail => '回覆在輸出上限處被截斷';
+
+  @override
+  String get optOpenModelSettings => '到模型設定調整最大輸出';
+
+  @override
+  String get optTruncatedTitle => '交付被輸出上限截斷';
+
+  @override
+  String get optTruncatedBody =>
+      '連續兩次回覆在交付時觸及模型的輸出 token 上限，本輪已停止，未執行任何半截的工具呼叫。請到模型設定裡調高「最大輸出」——提示詞助手的一次交付約 6–8k tokens，且思考與正文共用該上限。';
+
+  @override
+  String get optAdjustOutputCap => '調整最大輸出';
 
   @override
   String get optKbDistillRequested => '已請求：將本次調優經驗總結進知識庫。';

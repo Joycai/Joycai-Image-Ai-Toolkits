@@ -4478,6 +4478,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'The assistant hit its step limit for this message before giving a final answer. Send a follow-up such as “continue” to let it carry on.';
 
   @override
+  String get optTruncatedTail => 'The reply was cut at the output limit';
+
+  @override
+  String get optOpenModelSettings => 'Adjust max output in model settings';
+
+  @override
+  String get optTruncatedTitle => 'The delivery was cut at the output limit';
+
+  @override
+  String get optTruncatedBody =>
+      'Two replies in a row hit the model\'s output-token limit while delivering, so this turn stopped and no half-finished tool call was run. Raise the model\'s Max Output in its settings — one Prompt Assistant delivery runs 6–8k tokens, and thinking shares the cap.';
+
+  @override
+  String get optAdjustOutputCap => 'Adjust max output';
+
+  @override
   String get optKbDistillRequested =>
       'Requested: distill this session\'s lessons into the knowledge base.';
 

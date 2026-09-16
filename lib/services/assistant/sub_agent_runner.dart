@@ -31,6 +31,35 @@ class SubAgentResult {
 
 /// The request a sub-agent turn makes — injectable so the loop's invariants
 /// (pairing, force-text, cancellation) are testable without a network.
+/// How many consecutive replies cut at the output limit while carrying tool
+/// calls end a run — the parent turn's and a sub-agent's alike. Two: the
+/// first cut gets a directed retry (answer with the call alone, tighten),
+/// which is the one thing the model can do about it; a second cut says the
+/// cap is the problem, and only the user can move that.
+const int maxTruncatedRounds = 2;
+
+/// The result paired with every tool call of a reply that hit the output
+/// limit (`finish_reason == 'length'`). None of the calls ran: a call cut
+/// mid-JSON decodes to empty arguments, and executing that is how a
+/// `submit_prompt` used to answer "prompt must not be empty" and a
+/// `write_knowledge_file` would stage half a file (the KB card's
+/// `suspiciousShrink` was the only brake). The message is directed — reply
+/// with the call alone, tighten rather than restart — because the model
+/// otherwise re-does the whole analysis and is cut in the same place again.
+///
+/// [emittedTokens] is what the host reported generating, when it did; the
+/// cap itself is resolved inside the request layer and is not known here.
+Map<String, dynamic> truncatedToolResult({int? emittedTokens}) => {
+      'status': 'error',
+      'code': 'output_truncated',
+      'message': 'Your reply hit the model\'s output-token limit'
+          '${emittedTokens != null && emittedTokens > 0 ? ' after $emittedTokens tokens' : ''}'
+          ' before this call was complete, so it did NOT run and nothing was '
+          'delivered. Reply with ONLY the tool call — no text before it. If '
+          'the content itself cannot fit, tighten it; do not restart the '
+          'analysis.',
+    };
+
 typedef SubAgentRequestFn = Future<LLMResponse> Function(
   List<LLMMessage> messages,
   List<LLMTool>? tools,
@@ -158,6 +187,7 @@ class SubAgentRunner {
       LLMMessage(role: LLMRole.user, content: task, attachments: attachments),
     ];
 
+    var truncatedRounds = 0;
     for (var turn = 0; turn < maxTurns; turn++) {
       if (isCancelled?.call() ?? false) {
         return SubAgentResult(output: '', cancelled: true, turnsUsed: turn);
@@ -176,9 +206,14 @@ class SubAgentRunner {
         return SubAgentResult(output: '', cancelled: true, turnsUsed: turn);
       }
 
+      final truncated = response.metadata['finish_reason'] == 'length';
       if (response.toolCalls.isEmpty) {
         // The only place output is ever taken from: a reply with no tool
         // calls is the deliverable. Text beside a tool call is narration.
+        if (truncated) {
+          onLog?.call('The sub-agent\'s answer hit the output-token limit and '
+              'was cut off; delivering what arrived.');
+        }
         return SubAgentResult(
             output: response.text.trim(), cancelled: false, turnsUsed: turn + 1);
       }
@@ -196,6 +231,32 @@ class SubAgentRunner {
         rawResponseItems: response.rawResponseItems,
         toolCalls: response.toolCalls,
       ));
+
+      // Same rule as the parent loop: a reply cut mid-call runs none of its
+      // calls, gets one directed retry, and a second cut in a row ends the
+      // run with no deliverable rather than a loop of identical cuts.
+      if (truncated) {
+        truncatedRounds++;
+        final emitted = LLMService.outputTokensOf(response.metadata);
+        onLog?.call('The sub-agent\'s reply hit the output-token limit'
+            '${emitted > 0 ? ' after $emitted tokens' : ''}; its tool calls '
+            'will not run.');
+        for (final call in response.toolCalls) {
+          messages.add(LLMMessage(
+            role: LLMRole.tool,
+            content: jsonEncode(truncatedToolResult(emittedTokens: emitted > 0 ? emitted : null)),
+            toolCallId: call.id,
+            toolName: call.name,
+          ));
+        }
+        if (truncatedRounds >= maxTruncatedRounds) {
+          onLog?.call('Two consecutive sub-agent replies were cut at the '
+              'output limit — stopping the run.');
+          return SubAgentResult(output: '', cancelled: false, turnsUsed: turn + 1);
+        }
+        continue;
+      }
+      truncatedRounds = 0;
 
       var cancelledMidBatch = false;
       for (final call in response.toolCalls) {

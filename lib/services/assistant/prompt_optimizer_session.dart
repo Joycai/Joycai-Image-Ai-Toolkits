@@ -205,9 +205,17 @@ class OptimizerChatEntry {
   /// thumbs down; empty for a thumbs up or an untagged report.
   final List<ResultFeedbackReason> feedbackReasons;
 
+  /// For [OptimizerEntryKind.assistant]: the reply hit the model's output
+  /// limit and ends where the host cut it, not where the model stopped. The
+  /// chat line says so at its tail and points at the model's max-output
+  /// setting. In memory only — a restored session renders history, which
+  /// keeps no finish reason.
+  final bool truncated;
+
   OptimizerChatEntry({
     required this.kind,
     required this.text,
+    this.truncated = false,
     this.version,
     this.note,
     this.feedbackSatisfied,
@@ -235,6 +243,7 @@ class OptimizerChatEntry {
       OptimizerChatEntry(
         kind: kind,
         text: text,
+        truncated: truncated,
         version: version,
         note: note,
         feedbackSatisfied: feedbackSatisfied,

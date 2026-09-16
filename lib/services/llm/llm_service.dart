@@ -1226,8 +1226,8 @@ class LLMService {
   /// the thinking sits beside it in `thoughtsTokenCount` — so reading the
   /// former alone recorded a "think 5k, answer 500" request as 500, dropping
   /// exactly the expensive part. The two are summed here, and only here, so
-  /// the metrics page and the billing agree with the invoice.
-  @visibleForTesting
+  /// the metrics page and the billing agree with the invoice. Public like
+  /// [promptTokensOf]: the assistant reads it to say where a reply was cut.
   static int outputTokensOf(Map<String, dynamic> metadata) {
     final counted =
         metadata['candidatesTokenCount'] ??

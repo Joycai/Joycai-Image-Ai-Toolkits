@@ -4347,6 +4347,22 @@ class AppLocalizationsJa extends AppLocalizations {
       'アシスタントはこのメッセージのステップ上限に達し、最終的な回答を出す前に停止しました。続けるには「続けて」などのメッセージを送ってください。';
 
   @override
+  String get optTruncatedTail => '返答は出力上限で途中終了しました';
+
+  @override
+  String get optOpenModelSettings => 'モデル設定で最大出力を調整';
+
+  @override
+  String get optTruncatedTitle => '納品が出力上限で途中終了しました';
+
+  @override
+  String get optTruncatedBody =>
+      '納品中に 2 回連続でモデルの出力トークン上限に達したため、このターンを停止し、途中で切れたツール呼び出しは実行していません。モデル設定の「最大出力」を引き上げてください。プロンプトアシスタントの 1 回の納品は 6–8k トークンで、思考と本文がこの上限を共有します。';
+
+  @override
+  String get optAdjustOutputCap => '最大出力を調整';
+
+  @override
   String get optKbDistillRequested => 'リクエスト済み：今回の調整で得た知見をナレッジベースへ整理します。';
 
   @override

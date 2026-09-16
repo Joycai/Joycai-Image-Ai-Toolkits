@@ -76,6 +76,12 @@ class PromptOptimizerAgent {
   /// answer (standard 07 §3.8).
   static const String roundLimitNoticeToken = '__round_limit__';
 
+  /// Error-entry text token: [maxTruncatedRounds] consecutive replies were
+  /// cut at the output limit while carrying tool calls, so the turn stopped
+  /// rather than burn its remaining rounds on the same cut. The UI renders
+  /// the explanation and a jump to the model's max-output setting.
+  static const String truncationStopNoticeToken = '__truncation_stop__';
+
   /// Parses a [resultFeedbackMarker] message back into its parts, or null when
   /// the header line is not the JSON [PromptOptimizerSession.addResultFeedback]
   /// writes. Shared by transcript restore, the iteration ledger, and the
@@ -448,6 +454,10 @@ class PromptOptimizerAgent {
     /// Set once a read finds no room left, for the rest of this turn.
     bool contextExhausted = false;
 
+    /// Consecutive replies cut at the output limit while carrying tool calls.
+    /// Reset by any reply that was not cut; see [maxTruncatedRounds].
+    var truncatedRounds = 0;
+
     // Built once: it is identical on every request of this turn, and both the
     // budget check and the request itself must see the same string — it is the
     // largest fixed cost in the window (the knowledge-base file map lives in
@@ -655,11 +665,17 @@ class PromptOptimizerAgent {
         if (observed != null) session.observedCharsPerToken = observed;
 
         // A truncated reply is not "the model ignoring instructions": a
-        // submit_prompt cut mid-JSON parses as empty arguments and burns a
-        // retry round. Say what actually happened (streaming.md §2).
-        if (response.metadata['finish_reason'] == 'length') {
-          onLog?.call('The reply hit the model\'s output-token limit and was '
-              'truncated — tool arguments from this turn may be incomplete.');
+        // submit_prompt cut mid-JSON parses as empty arguments, and executing
+        // it burned a retry round on "prompt must not be empty" — after which
+        // the model re-did the whole analysis and was cut in the same place.
+        // Say what happened (streaming.md §2), and below, act on it.
+        final truncated = response.metadata['finish_reason'] == 'length';
+        final emittedTokens = truncated ? LLMService.outputTokensOf(response.metadata) : 0;
+        if (truncated) {
+          onLog?.call('The reply hit the model\'s output-token limit'
+              '${emittedTokens > 0 ? ' after $emittedTokens tokens' : ''} and '
+              'was cut off'
+              '${response.toolCalls.isNotEmpty ? ' — none of its tool calls will run' : ''}.');
         }
 
         if (response.toolCalls.isEmpty) {
@@ -682,7 +698,13 @@ class PromptOptimizerAgent {
               rawModelParts: response.rawModelParts,
               rawResponseItems: response.rawResponseItems,
             ));
-            session._addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.assistant, text: text));
+            // A cut chat reply stays a chat reply — it is what the model
+            // said — but the line says where it stopped and why.
+            session._addEntry(OptimizerChatEntry(
+              kind: OptimizerEntryKind.assistant,
+              text: text,
+              truncated: truncated,
+            ));
           }
           return;
         }
@@ -711,6 +733,38 @@ class PromptOptimizerAgent {
             text: response.text.trim(),
           ));
         }
+
+        // A reply cut mid-call runs none of its calls: half a JSON argument
+        // is not an argument. Every call is still paired — the history must
+        // stay sendable — with a result that says what to do instead. One
+        // cut earns the directed retry; a second in a row ends the turn,
+        // because at that point the cap is the problem and only the user can
+        // raise it. Ahead of `offered` and every executor, so a cut
+        // write_knowledge_file never stages half a file.
+        if (truncated) {
+          truncatedRounds++;
+          for (final call in response.toolCalls) {
+            session.history.add(LLMMessage(
+              role: LLMRole.tool,
+              content: jsonEncode(truncatedToolResult(
+                  emittedTokens: emittedTokens > 0 ? emittedTokens : null)),
+              toolCallId: call.id,
+              toolName: call.name,
+            ));
+          }
+          if (truncatedRounds >= maxTruncatedRounds) {
+            onLog?.call('Two consecutive replies were cut at the output limit '
+                '— stopping this turn. Raise the model\'s max output in its '
+                'settings.');
+            session._addEntry(OptimizerChatEntry(
+              kind: OptimizerEntryKind.error,
+              text: truncationStopNoticeToken,
+            ));
+            return;
+          }
+          continue;
+        }
+        truncatedRounds = 0;
 
         // Images requested this turn; attached after all tool results so the
         // history stays valid for providers whose tool results are text-only.
