@@ -229,8 +229,13 @@ class ModelCard extends StatelessWidget {
     final pin = model.wireProtocol;
     final group = feeGroup;
 
+    final cap = model.maxOutputTokens;
+
     return [
       _CapabilityChip(contextLabel, mono: true),
+      // Only a cap the user set: ④'s built-in 8192 is the app's default, not
+      // a declaration about this model.
+      if (cap != null && cap > 0) _CapabilityChip(l10n.outputCapChip(_formatTokens(cap)), mono: true),
       // Streaming is the interesting fact; standard-request only worth stating
       // when streaming is off.
       if (model.supportsStream)

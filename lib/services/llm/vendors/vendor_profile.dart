@@ -258,6 +258,32 @@ enum ThinkingDialect {
   openaiEnableThinking,
 }
 
+/// Which name the ① wire's output cap goes out under — a Layer 2 fact.
+///
+/// The field was renamed inside the family (`max_tokens` →
+/// `max_completion_tokens`, usage 04 §3) and hosts moved at different speeds:
+/// OpenAI's reasoning models (GPT-5.x, the o-series) reject the old name with
+/// a 400 `Unsupported parameter`, while Ollama and the older relays know only
+/// the old one, and DeepSeek, Bailian's compatible face and MiniMax document
+/// the old name as deprecated but still accepted. So the spelling is declared
+/// per vendor rather than guessed per model — a protocol may not sniff the
+/// model id to pick it, and one declaration per host is what a relay's
+/// free-text model names leave room for. The default is the old name: it is
+/// the one every non-OpenAI ① host has been shown to accept.
+enum OutputCapField {
+  /// `max_tokens` — the original spelling.
+  maxTokens('max_tokens'),
+
+  /// `max_completion_tokens` — the current spelling on OpenAI's own host
+  /// (and through New API, which passes both through).
+  maxCompletionTokens('max_completion_tokens');
+
+  const OutputCapField(this.wireName);
+
+  /// The JSON key as it appears in the request body.
+  final String wireName;
+}
+
 /// What switching on the host's own web search does for a (channel, model,
 /// kind, face), as `LLMDispatcher.serverWebSearch` resolves it — the model
 /// editor's one source for whether to show the switch and what to say.
@@ -426,6 +452,25 @@ class VendorProfile {
   /// inside the protocol.
   final bool responsesIncludeEncryptedReasoning;
 
+  /// The name the ① chat wire sends the output cap under on this vendor's
+  /// hosts. See [OutputCapField]; read through [outputCapFieldFor], which
+  /// adds the one host that is known by address rather than by profile.
+  final OutputCapField outputCapField;
+
+  /// The cap field for a request to [endpoint]: the declared spelling, or
+  /// the new one on OpenAI's own host. By address because the generic ①
+  /// profile ([Vendors.openAIRest]) is also every custom relay's — the
+  /// "Custom (OpenAI-compatible)" preset, the fallback for an unknown stored
+  /// type — and a relay may know only the old name, while `api.openai.com`
+  /// rejects it for its reasoning models. The same shape as
+  /// [AuthScheme.anthropicApiKeyWithBearerFallback]'s host check: Layer 2
+  /// knowledge, keyed on the endpoint, invisible to the protocol.
+  OutputCapField outputCapFieldFor(String endpoint) {
+    if (outputCapField == OutputCapField.maxCompletionTokens) return outputCapField;
+    final host = Uri.tryParse(endpoint)?.host.toLowerCase();
+    return host == 'api.openai.com' ? OutputCapField.maxCompletionTokens : outputCapField;
+  }
+
   const VendorProfile({
     required this.id,
     required this.family,
@@ -442,6 +487,7 @@ class VendorProfile {
     this.keyOptional = false,
     this.offersFamilyMediaSurfaces = false,
     this.responsesIncludeEncryptedReasoning = false,
+    this.outputCapField = OutputCapField.maxTokens,
   });
 
   /// The menu of protocols this vendor offers for [surface], honoring the

@@ -4,7 +4,7 @@ Cross-platform Flutter desktop/mobile app for AI image and video generation, bui
 around a multi-vendor LLM layer. Designed for artists and designers working with
 AI-generated media.
 
-**Version:** 4.7.8 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
+**Version:** 4.8.0 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
 
 ## Key Commands
 
@@ -67,7 +67,7 @@ lib/
                                   #   knowledge_base_starter.dart · assistant_context_usage.dart ·
                                   #   assistant_kb_distill.dart · prompt_provenance.dart
     catalogue/                    # what backs the models page: model_list_ordering · model_id_uniqueness ·
-                                  #   context_window_scale — NOT llm/, which is only the API stack
+                                  #   context_window_scale · output_cap_scale — NOT llm/, which is only the API stack
     files/                        # filesystem on the user's behalf: browser_file_scanner (isolate) ·
                                   #   file_permission · file_transfer (staging) · folder_operations ·
                                   #   trash · temp_storage

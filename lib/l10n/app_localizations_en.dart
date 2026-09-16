@@ -1824,6 +1824,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contextTokensUnit => 'tokens';
 
   @override
+  String get outputCap => 'Max Output';
+
+  @override
+  String get outputCapAuto => 'Auto';
+
+  @override
+  String get outputCapSpecify => 'Specify';
+
+  @override
+  String get outputCapAutoDesc =>
+      'No cap is sent; the host decides. Relays often default to 4k–8k while one Prompt Assistant delivery runs 6–8k tokens — switch to Specify if replies get cut off.';
+
+  @override
+  String get outputCapAutoAnthropicDesc =>
+      'The Anthropic format requires a cap, so 8192 is sent when none is set. Thinking and the answer share it — with reasoning on, 32k or more is advisable.';
+
+  @override
+  String get outputCapSpecifyDesc =>
+      'Sent with every request; thinking and the answer share it. Below 8k the Prompt Assistant is likely to be cut off. Claude and GPT-5 take 64k–128k.';
+
+  @override
+  String get outputCapSliderHint =>
+      'Six presets from 4k to 128k. The field takes 64k shorthand and ←→ step through the presets; a typed value wins.';
+
+  @override
+  String get outputCapSpecifyInvalid =>
+      'Enter a positive whole number; blank or 0 can\'t be saved.';
+
+  @override
+  String outputCapExceedsWindow(String window) {
+    return 'Not below the context window ($window tokens). The part beyond the window never takes effect: hosted endpoints refuse the request, local runtimes truncate silently. It can be saved — check both figures.';
+  }
+
+  @override
+  String outputCapDefault(String size) {
+    return 'default $size';
+  }
+
+  @override
+  String outputCapChip(String size) {
+    return 'Out $size';
+  }
+
+  @override
+  String get outputCapThinkingHint =>
+      'Reasoning is on for this model, and its thinking tokens count against this cap before the answer does — leave room above what the answer needs.';
+
+  @override
+  String outputCapStarvesThinking(String min) {
+    return 'Below $min tokens an Anthropic-format model cannot fit a thinking budget, so the request goes out without thinking at all — silently.';
+  }
+
+  @override
   String get contextPresets => 'Presets';
 
   @override
@@ -4432,6 +4485,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get optRoundLimitNotice =>
       'The assistant hit its step limit for this message before giving a final answer. Send a follow-up such as “continue” to let it carry on.';
+
+  @override
+  String get optTruncatedTail => 'The reply was cut at the output limit';
+
+  @override
+  String get optOpenModelSettings => 'Adjust max output in model settings';
+
+  @override
+  String get optTruncatedTitle => 'The delivery was cut at the output limit';
+
+  @override
+  String get optTruncatedBody =>
+      'Two replies in a row hit the model\'s output-token limit while delivering, so this turn stopped and no half-finished tool call was run. Raise the model\'s Max Output in its settings — one Prompt Assistant delivery runs 6–8k tokens, and thinking shares the cap.';
+
+  @override
+  String get optAdjustOutputCap => 'Adjust max output';
 
   @override
   String get optKbDistillRequested =>

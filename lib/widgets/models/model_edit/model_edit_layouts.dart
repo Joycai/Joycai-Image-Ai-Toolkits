@@ -345,6 +345,7 @@ extension _Layouts on _ModelEditDialogState {
             // nothing to choose and nothing to explain.
             if (_showProtocolSection) _protocolSection(context),
             _contextSection(context),
+            if (_hasOutputCap) _outputCapSection(context),
             _agentSection(context),
             _reasoningSection(context),
             if (_isAnthropicChannel || _webSearch != ServerWebSearch.unsupported) _providerSection(context),
@@ -360,6 +361,7 @@ extension _Layouts on _ModelEditDialogState {
       if (_showProtocolSection) _protocolSection(context),
       _capabilitiesSection(context),
       _contextSection(context),
+      if (_hasOutputCap) _outputCapSection(context),
       _agentSection(context),
       _reasoningSection(context),
       if (_isAnthropicChannel || _webSearch != ServerWebSearch.unsupported) _providerSection(context),

@@ -34,6 +34,7 @@ import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_field_size.dart';
 import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_snackbar.dart';
+import '../../widgets/models/model_edit_dialog.dart';
 import 'widgets/drawing_canvas.dart';
 import '../batch/task_queue_screen.dart';
 import 'unified_sidebar.dart';
@@ -359,9 +360,27 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         (t.status == TaskStatus.pending || t.status == TaskStatus.processing));
   }
 
+  /// Opens a model's editor — the max-output setting lives there — from a
+  /// reply the output limit cut. [modelDbId] is the row the reply came from;
+  /// null (an entry that does not know) falls back to the picker. The same
+  /// dialog the models page opens; a model deleted since is a no-op.
+  void _handleOpenOptimizerModelSettings(int? modelDbId) {
+    final appState = _appState;
+    if (appState == null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final dbId = modelDbId ?? workbenchUIState.optSelectedModelDbId;
+    final model = appState.allModels.cast<LLMModel?>().firstWhere((m) => m?.id == dbId, orElse: () => null);
+    if (model == null) return;
+    showDialog(
+      context: context,
+      useSafeArea: false,
+      builder: (context) => ModelEditDialog(l10n: l10n, appState: appState, model: model),
+    );
+  }
+
   /// Sends one user turn of the optimizer conversation: the message is added
   /// to the session immediately (so it shows in the chat), then a queue task
-  /// runs the agent turn against the current reference images.
   Future<void> _handleOptimizerSend() async {
     final l10n = AppLocalizations.of(context)!;
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
@@ -1034,6 +1053,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                                   onDistill:
                                       session.usesKnowledgeBase ? _handleKbDistill : null,
                                   onSaveFinalPrompt: _handleSaveFinalPrompt,
+                                  onOpenModelSettings: _handleOpenOptimizerModelSettings,
                                   isBusy: isBusy,
                                   // Only while there is a task to stop. A
                                   // session whose `isRunning` outlived its

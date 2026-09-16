@@ -154,6 +154,47 @@
   "contextWindowHint": "用於每次請求的圖片分批，以及提示詞助手讀取知識庫與摘要的預算。",
   "contextSliderHint": "九檔 8k–1M。拖曳靠近任一檔即吸附；點刻度標籤直達該檔；輸入框接受 128k / 1m 簡寫，↑↓ 走相鄰檔、⇧↑↓ 只跳主檔。以手填為準，非整檔的數按比例停在兩檔之間。",
   "contextTokensUnit": "tokens",
+  "outputCap": "最大輸出",
+  "outputCapAuto": "自動",
+  "outputCapSpecify": "指定上限",
+  "outputCapAutoDesc": "不傳送上限，由伺服端決定。中轉站的預設值常為 4k–8k，而提示詞助手的一次交付約 6–8k tokens——回覆被截斷時請改為指定上限。",
+  "outputCapAutoAnthropicDesc": "Anthropic 格式必須攜帶上限，未指定時傳送 8192。思考與正文共用它——開啟推理後建議指定 32k 以上。",
+  "outputCapSpecifyDesc": "隨每次請求傳送，思考與正文共用。低於 8k 時提示詞助手很可能被截斷；Claude 與 GPT-5 系可到 64k–128k。",
+  "outputCapSliderHint": "六檔 4k–128k。輸入框接受 64k 簡寫，←→ 走相鄰檔；以手填為準。",
+  "outputCapSpecifyInvalid": "請填正整數；留空或 0 無法儲存。",
+  "outputCapExceedsWindow": "不小於上下文大小（{window} tokens）。超出上下文的部分不會生效：託管端點會拒絕請求，本機執行時會靜默截短。可以儲存，但請核對兩個數字。",
+  "@outputCapExceedsWindow": {
+    "placeholders": {
+      "window": {
+        "type": "String"
+      }
+    }
+  },
+  "outputCapDefault": "預設 {size}",
+  "@outputCapDefault": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "outputCapChip": "輸出 {size}",
+  "outputCapThinkingHint": "該模型已開啟推理，思考 token 先於正文計入此上限——請在正文所需之上留出餘量。",
+  "outputCapStarvesThinking": "低於 {min} tokens 時，Anthropic 格式的模型放不下思考預算，請求會靜默地不帶思考送出。",
+  "@outputCapStarvesThinking": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      }
+    }
+  },
+  "@outputCapChip": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "contextPresets": "檔位",
   "contextStatusPreset": "= {label} · 整檔",
   "contextStatusBetween": "≈ {lo}–{hi}",

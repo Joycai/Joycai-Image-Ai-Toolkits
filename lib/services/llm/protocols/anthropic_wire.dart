@@ -1,5 +1,5 @@
 import '../image_compression.dart';
-import '../llm_types.dart';
+import 'protocol.dart';
 
 /// Fallback for Anthropic's mandatory `max_tokens`.
 ///
@@ -7,8 +7,10 @@ import '../llm_types.dart';
 /// and the request is rejected outright — so an adapter must carry a constant.
 /// 8192 is the largest value every Claude model still in service accepts;
 /// going higher would 400 on the older ones, and the current generation caps
-/// far above it, so nothing is lost that the caller cannot raise per request
-/// via `options['maxTokens']`.
+/// far above it (128K), so nothing is lost that the user cannot raise in the
+/// model editor (`llm_models.max_output_tokens`) or a caller per request via
+/// `options['maxTokens']`. It is also the cap thinking shares — the Prompt
+/// Assistant's 6–8K-token deliveries are why the editor exists.
 const int anthropicDefaultMaxTokens = 8192;
 
 /// The four image media types Anthropic accepts. Anything else is re-encoded
@@ -50,7 +52,9 @@ const String anthropicTurnIncompleteKey = 'turn_incomplete';
 /// is rejected rather than clamped.
 const int anthropicMinThinkingBudget = 1024;
 
-/// The output cap for a request: the caller's `maxTokens` when it set one,
-/// [anthropicDefaultMaxTokens] otherwise.
-int anthropicMaxTokens(Map<String, dynamic>? options) =>
-    requestedMaxTokens(options) ?? anthropicDefaultMaxTokens;
+/// The output cap for a request: what [outputCapFor] ranks (the caller's
+/// `maxTokens`, then the model's stored cap), [anthropicDefaultMaxTokens]
+/// otherwise — ④'s field is mandatory, so this is the one wire that never
+/// answers null.
+int anthropicMaxTokens(LLMTarget target, Map<String, dynamic>? options) =>
+    outputCapFor(target, options) ?? anthropicDefaultMaxTokens;

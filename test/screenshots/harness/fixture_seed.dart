@@ -229,6 +229,9 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
       channelId: openaiId,
       feeGroupId: proFee,
       contextWindow: 400000,
+      // The editor screenshot's model: shows the output cap's Specify state
+      // and the card's chip.
+      maxOutputTokens: 65536,
       sortOrder: 4,
     ),
     LLMModel(

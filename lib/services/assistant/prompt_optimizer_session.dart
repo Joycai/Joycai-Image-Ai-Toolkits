@@ -205,9 +205,24 @@ class OptimizerChatEntry {
   /// thumbs down; empty for a thumbs up or an untagged report.
   final List<ResultFeedbackReason> feedbackReasons;
 
+  /// For [OptimizerEntryKind.assistant]: the reply hit the model's output
+  /// limit and ends where the host cut it, not where the model stopped. The
+  /// chat line says so at its tail and points at the model's max-output
+  /// setting. In memory only — a restored session renders history, which
+  /// keeps no finish reason.
+  final bool truncated;
+
+  /// The model row (`llm_models.id`) whose reply this entry records, when
+  /// the turn ran on a stored model. A cut reply's card jumps to *that*
+  /// model's editor — the picker may have moved on by the time the user
+  /// clicks. In memory only, like [truncated].
+  final int? modelDbId;
+
   OptimizerChatEntry({
     required this.kind,
     required this.text,
+    this.truncated = false,
+    this.modelDbId,
     this.version,
     this.note,
     this.feedbackSatisfied,
@@ -235,6 +250,8 @@ class OptimizerChatEntry {
       OptimizerChatEntry(
         kind: kind,
         text: text,
+        truncated: truncated,
+        modelDbId: modelDbId,
         version: version,
         note: note,
         feedbackSatisfied: feedbackSatisfied,
@@ -602,6 +619,18 @@ class PromptOptimizerSession extends ChangeNotifier {
         note: note,
       );
 
+  /// The proposed content of the newest still-pending edit to [relPath], or
+  /// null when none is waiting: what a further section edit to the same
+  /// file in the same turn builds on.
+  String? _pendingKbEditContent(String relPath) {
+    for (final e in _transcript.reversed) {
+      if (e.kind == OptimizerEntryKind.kbEdit && e.targetPath == relPath) {
+        return e.editState == KbEditState.pending ? e.newContent : null;
+      }
+    }
+    return null;
+  }
+
   OptimizerChatEntry? _findKbEdit(String editId) {
     for (final e in _transcript) {
       if (e.kind == OptimizerEntryKind.kbEdit && e.editId == editId) return e;
@@ -781,10 +810,21 @@ class PromptOptimizerSession extends ChangeNotifier {
                 if (!File(path).existsSync()) anyImageMissing = true;
               }
             }
-          } else if (msg.content.startsWith(PromptOptimizerAgent.summaryMarker) ||
-              msg.content.startsWith(PromptOptimizerAgent.kbEditOutcomesMarker)) {
-            // Compaction summaries and edit-outcome records are context for
-            // the model, not chat lines.
+          } else if (msg.content.startsWith(PromptOptimizerAgent.summaryMarker)) {
+            // A compaction summary is context for the model, not a chat
+            // line — but the delivery it carries is the session's latest
+            // prompt: the call it came from was folded away, so nothing
+            // later in the history re-seeds it. The version label keeps the
+            // counter where it was, so the next delivery is not numbered
+            // below the ones the summary talks about.
+            final carried = _appendedPromptOf(msg.content);
+            if (carried != null) {
+              session.refinedPrompt = carried.prompt;
+              final version = carried.version ?? (session.promptVersions + 1);
+              if (version > session.promptVersions) session.promptVersions = version;
+            }
+          } else if (msg.content.startsWith(PromptOptimizerAgent.kbEditOutcomesMarker)) {
+            // Edit-outcome records are context for the model, not chat lines.
           } else if (msg.content.startsWith(PromptOptimizerAgent.resultFeedbackMarker)) {
             final parsed = PromptOptimizerAgent.tryParseResultFeedback(msg.content);
             // A header that fails to parse degrades to a plain user bubble —

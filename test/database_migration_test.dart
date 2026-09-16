@@ -592,4 +592,67 @@ void main() {
       expect(await columnsOf(db, 'fee_groups'), contains('sort_order'));
     });
   });
+
+  group('v44 gives models an output cap', () {
+    /// `llm_models` as a v43 database holds it: the v32 shape plus the
+    /// columns v35–v39 added. Only the columns the step touches matter.
+    Future<Database> v43ModelsDb() async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      await db.execute('''
+        CREATE TABLE llm_models (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          model_id TEXT NOT NULL,
+          model_name TEXT NOT NULL,
+          tag TEXT NOT NULL,
+          context_window INTEGER,
+          wire_protocol TEXT
+        )
+      ''');
+      return db;
+    }
+
+    test('an existing model gains the column unset, and keeps its row', () async {
+      final db = await v43ModelsDb();
+      addTearDown(db.close);
+      await db.insert('llm_models', {
+        'model_id': 'gpt-5.6',
+        'model_name': 'GPT',
+        'tag': 'chat',
+        'context_window': 131072,
+      });
+
+      await DatabaseMigration.migrate(db, 43, 44);
+
+      expect(await columnsOf(db, 'llm_models'), contains('max_output_tokens'));
+      final row = (await db.query('llm_models')).single;
+      expect(row['model_id'], 'gpt-5.6');
+      expect(row['context_window'], 131072);
+      // Unset, never a default: a cap nobody chose would be sent as a fact.
+      expect(row['max_output_tokens'], isNull);
+    });
+
+    test('the step is idempotent and keeps a value already stored', () async {
+      final db = await v43ModelsDb();
+      addTearDown(db.close);
+      await DatabaseMigration.migrate(db, 43, 44);
+      await db.insert('llm_models', {
+        'model_id': 'claude-opus-5',
+        'model_name': 'Claude',
+        'tag': 'chat',
+        'max_output_tokens': 65536,
+      });
+
+      await DatabaseMigration.migrate(db, 43, 44);
+
+      final row = (await db.query('llm_models')).single;
+      expect(row['max_output_tokens'], 65536);
+    });
+
+    test('a fresh database is created with the column', () async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      addTearDown(db.close);
+      await DatabaseMigration.onCreate(db);
+      expect(await columnsOf(db, 'llm_models'), contains('max_output_tokens'));
+    });
+  });
 }

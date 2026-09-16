@@ -22,7 +22,9 @@ const String _kbSubAgentSystemPrompt =
     '2. The knowledge-base file paths (exactly as listed) each finding '
     'rests on.\n'
     '3. Open questions, if any.\n'
-    'Never invent content that is not in the files.';
+    'Never invent content that is not in the files. Keep the whole answer '
+    'under about 1500 words: the main agent reads a short summary of it and '
+    'fetches the rest only when it needs exact wording.';
 
 /// System prompt of the drafting sub-agent — a code asset, like
 /// [_kbSubAgentSystemPrompt].
@@ -35,7 +37,7 @@ const String _draftSubAgentSystemPrompt =
     '2. A draft prompt fragment that captures it, following the brief\'s '
     'instructions.\n'
     'Describe only what is visible — never invent details the image does '
-    'not show.';
+    'not show. Keep the whole answer under about 800 words.';
 
 /// How the model should treat generation-feedback rounds. Appended to every
 /// mode's system prompt: feedback can arrive in any of them, and a model
@@ -53,6 +55,15 @@ const String _feedbackRoundNote =
     'the critique concerns something visual, diagnose the gap against the '
     'references and the rules you are working from, and deliver a complete '
     'revised prompt via submit_prompt (never a fragment).';
+
+/// Appended to every mode's system prompt: the one delivery is the only
+/// place its text goes. Models that narrate first — write the prompt (or a
+/// file) as prose, then call the tool with the same text — double a
+/// 6–8K-token output and are what hits an 8K output cap first.
+const String _terseDeliveryNote =
+    '\nKeep chat text brief. Never write a prompt (or a knowledge file\'s '
+    'content) as plain text and then again inside the tool call — the tool '
+    'call is the only copy. Think, read, then deliver in one call.';
 
 String _buildSystemPrompt(
   String? template,
@@ -94,7 +105,8 @@ String _buildSystemPrompt(
       'Afterwards you may also reply with a brief comment.\n'
       'The user may reply with follow-up adjustments — deliver every '
       'revision through submit_prompt again, always with the full prompt.'
-      '$_feedbackRoundNote';
+      '$_feedbackRoundNote'
+      '$_terseDeliveryNote';
 }
 
 /// System prompt for [AssistantMode.knowledgeBase]. Built-in — user presets
@@ -146,7 +158,8 @@ String _buildKnowledgeSystemPrompt(
       'The user may reply with follow-up adjustments — apply the knowledge '
       'base rules again and deliver every revision through submit_prompt '
       'with the full prompt.'
-      '$_feedbackRoundNote';
+      '$_feedbackRoundNote'
+      '$_terseDeliveryNote';
 }
 
 /// System prompt for [AssistantMode.knowledgeEdit]. Built-in like the
@@ -187,9 +200,11 @@ String _buildKnowledgeEditSystemPrompt(
       'Workflow:\n'
       '1. Use the file map to locate the files the request concerns, and read '
       'them. Read only what you need — do NOT sweep the whole knowledge base.\n'
-      '2. You MUST read an existing file before rewriting it. Pass the '
-      'COMPLETE new content to write_knowledge_file — there is no patch mode, '
-      'and partial content would truncate the file.\n'
+      '2. You MUST read an existing file before changing it. Change it with '
+      'write_knowledge_file in mode "replace_section" (one heading\'s section) '
+      'or "append" — send only the section that changes. Use the whole-file '
+      'mode only for a new file or a restructure, and then pass the COMPLETE '
+      'content: partial content in that mode would truncate the file.\n'
       '3. Preserve what the user already wrote. Improve structure and add '
       'what was asked for; do not silently drop existing rules, and never '
       'invent rules the user did not ask for.\n'
@@ -204,7 +219,8 @@ String _buildKnowledgeEditSystemPrompt(
       'write reaches disk until they accept it. So never claim a change has '
       'been saved, and do not re-read a file expecting to find your own '
       'pending edit. After staging, briefly tell the user what you changed.'
-      '$_feedbackRoundNote';
+      '$_feedbackRoundNote'
+      '$_terseDeliveryNote';
 }
 
 /// System prompt for a distill turn: the user has asked (via
@@ -222,10 +238,13 @@ String _buildKnowledgeDistillSystemPrompt(
 }) {
   final deliverStep = canWrite
       ? '5. Deliver each change with write_knowledge_file — one file per '
-          'call, the COMPLETE new content (no patch mode), and you MUST '
-          'read an existing file with read_knowledge_file before rewriting '
-          'it. Every edit is STAGED for the user to approve; never claim it '
-          'is saved. If you add or rename a file, update the entry file '
+          'call, and when a file is large, one call per message. Prefer '
+          'mode "replace_section" or "append" and send only the section '
+          'that changes; the whole-file mode needs the COMPLETE content and '
+          'is for new files. You MUST read an existing file with '
+          'read_knowledge_file before changing it. Every edit is STAGED for '
+          'the user to approve; never claim it is saved. If you add or '
+          'rename a file, update the entry file '
           '(${KnowledgeBaseService.entryFileName}) in the same turn so the '
           'file map keeps matching the tree.\n'
       : '5. Knowledge-base writing is currently switched OFF for this '
@@ -268,5 +287,6 @@ String _buildKnowledgeDistillSystemPrompt(
       '$deliverStep'
       '6. Finish with a short chat summary of what you distilled and where '
       'it went. If the ledger supports no real lesson, say so — writing '
-      'noise into the knowledge base is worse than writing nothing.';
+      'noise into the knowledge base is worse than writing nothing.'
+      '$_terseDeliveryNote';
 }

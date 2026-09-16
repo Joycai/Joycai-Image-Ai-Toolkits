@@ -30,14 +30,21 @@ void main() {
           options: options, isStreaming: false);
     }
 
-    test('the probe cap reaches max_tokens', () {
-      expect(payload(const {'maxTokens': 1})['max_tokens'], 1);
+    // The generic ① profile on a relay host keeps the old spelling; OpenAI's
+    // own host takes the new one (its reasoning models 400 on `max_tokens`,
+    // so a probe sending it there read as "connected" only by accident). See
+    // `VendorProfile.outputCapFieldFor`.
+    test('the probe cap reaches the host\'s cap field', () {
+      final body = payload(const {'maxTokens': 1});
+      expect(body['max_tokens'], 1);
+      expect(body.containsKey('max_completion_tokens'), isFalse);
     });
 
-    test('no cap asked for sends no max_tokens', () {
-      expect(payload(null).containsKey('max_tokens'), isFalse);
-      expect(payload(const {'retryCount': 2}).containsKey('max_tokens'),
-          isFalse);
+    test('no cap asked for sends neither spelling', () {
+      for (final body in [payload(null), payload(const {'retryCount': 2})]) {
+        expect(body.containsKey('max_tokens'), isFalse);
+        expect(body.containsKey('max_completion_tokens'), isFalse);
+      }
     });
   });
 

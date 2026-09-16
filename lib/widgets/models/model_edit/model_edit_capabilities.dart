@@ -105,6 +105,7 @@ extension _CapabilitySections on _ModelEditDialogState {
       channelId: channelId,
       feeGroupId: feeGroupId,
       contextWindow: _contextValid ? ContextBudget.store(contextMode, _contextTokens ?? 0) : null,
+      maxOutputTokens: _outputCapValid ? _storedOutputCap : null,
       forceViewAllImages: forceViewAllImages,
       enableThinking: reasoningEffort != null && reasoningEffort != 'off',
       reasoningEffort: reasoningEffort,

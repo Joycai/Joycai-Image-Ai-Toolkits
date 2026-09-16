@@ -203,6 +203,47 @@
   "contextWindowHint": "Used to batch images per request, and to budget the Prompt Assistant's knowledge-base reads and summarization.",
   "contextSliderHint": "Nine presets from 8k to 1M. A drag snaps onto a nearby preset; tap a tick label to jump to it; the field takes 128k or 1m shorthand, ↑↓ step through presets and ⇧↑↓ only the major ones. A typed value wins and rests between two presets in proportion.",
   "contextTokensUnit": "tokens",
+  "outputCap": "Max Output",
+  "outputCapAuto": "Auto",
+  "outputCapSpecify": "Specify",
+  "outputCapAutoDesc": "No cap is sent; the host decides. Relays often default to 4k–8k while one Prompt Assistant delivery runs 6–8k tokens — switch to Specify if replies get cut off.",
+  "outputCapAutoAnthropicDesc": "The Anthropic format requires a cap, so 8192 is sent when none is set. Thinking and the answer share it — with reasoning on, 32k or more is advisable.",
+  "outputCapSpecifyDesc": "Sent with every request; thinking and the answer share it. Below 8k the Prompt Assistant is likely to be cut off. Claude and GPT-5 take 64k–128k.",
+  "outputCapSliderHint": "Six presets from 4k to 128k. The field takes 64k shorthand and ←→ step through the presets; a typed value wins.",
+  "outputCapSpecifyInvalid": "Enter a positive whole number; blank or 0 can't be saved.",
+  "outputCapExceedsWindow": "Not below the context window ({window} tokens). The part beyond the window never takes effect: hosted endpoints refuse the request, local runtimes truncate silently. It can be saved — check both figures.",
+  "@outputCapExceedsWindow": {
+    "placeholders": {
+      "window": {
+        "type": "String"
+      }
+    }
+  },
+  "outputCapDefault": "default {size}",
+  "@outputCapDefault": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "outputCapChip": "Out {size}",
+  "outputCapThinkingHint": "Reasoning is on for this model, and its thinking tokens count against this cap before the answer does — leave room above what the answer needs.",
+  "outputCapStarvesThinking": "Below {min} tokens an Anthropic-format model cannot fit a thinking budget, so the request goes out without thinking at all — silently.",
+  "@outputCapStarvesThinking": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      }
+    }
+  },
+  "@outputCapChip": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "contextPresets": "Presets",
   "contextStatusPreset": "= {label} · preset",
   "@contextStatusPreset": {

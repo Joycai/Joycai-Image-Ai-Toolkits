@@ -1771,6 +1771,58 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contextTokensUnit => 'tokens';
 
   @override
+  String get outputCap => '最大出力';
+
+  @override
+  String get outputCapAuto => '自動';
+
+  @override
+  String get outputCapSpecify => '上限を指定';
+
+  @override
+  String get outputCapAutoDesc =>
+      '上限を送らず、ホスト側の既定に任せます。中継サービスの既定は 4k–8k のことが多く、プロンプトアシスタントの 1 回の納品は 6–8k トークンです。返答が途中で切れる場合は上限を指定してください。';
+
+  @override
+  String get outputCapAutoAnthropicDesc =>
+      'Anthropic 形式では上限が必須のため、未指定時は 8192 を送ります。思考と本文がこの上限を共有します。推論を有効にする場合は 32k 以上の指定を推奨します。';
+
+  @override
+  String get outputCapSpecifyDesc =>
+      '毎回のリクエストに付けて送ります。思考と本文が共有します。8k 未満ではプロンプトアシスタントが途中で切れやすくなります。Claude と GPT-5 系は 64k–128k まで指定できます。';
+
+  @override
+  String get outputCapSliderHint =>
+      '4k〜128k の 6 段階。入力欄は 64k の省略表記を受け付け、←→ で隣の段階へ移動します。入力した値が優先されます。';
+
+  @override
+  String get outputCapSpecifyInvalid => '正の整数を入力してください。空欄または 0 は保存できません。';
+
+  @override
+  String outputCapExceedsWindow(String window) {
+    return 'コンテキストウィンドウ（$window トークン）以上です。ウィンドウを超える分は効きません。ホスト型のエンドポイントはリクエストを拒否し、ローカル実行環境は黙って切り詰めます。保存はできますが、両方の値を確認してください。';
+  }
+
+  @override
+  String outputCapDefault(String size) {
+    return '既定 $size';
+  }
+
+  @override
+  String outputCapChip(String size) {
+    return '出力 $size';
+  }
+
+  @override
+  String get outputCapThinkingHint =>
+      'このモデルは推論が有効です。思考トークンは本文より先にこの上限を消費するため、本文に必要な分より余裕を持たせてください。';
+
+  @override
+  String outputCapStarvesThinking(String min) {
+    return '$min トークン未満では Anthropic 形式のモデルに思考予算が収まらず、リクエストは思考なしで（何も告げずに）送られます。';
+  }
+
+  @override
   String get contextPresets => 'プリセット';
 
   @override
@@ -4302,6 +4354,22 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get optRoundLimitNotice =>
       'アシスタントはこのメッセージのステップ上限に達し、最終的な回答を出す前に停止しました。続けるには「続けて」などのメッセージを送ってください。';
+
+  @override
+  String get optTruncatedTail => '返答は出力上限で途中終了しました';
+
+  @override
+  String get optOpenModelSettings => 'モデル設定で最大出力を調整';
+
+  @override
+  String get optTruncatedTitle => '納品が出力上限で途中終了しました';
+
+  @override
+  String get optTruncatedBody =>
+      '納品中に 2 回連続でモデルの出力トークン上限に達したため、このターンを停止し、途中で切れたツール呼び出しは実行していません。モデル設定の「最大出力」を引き上げてください。プロンプトアシスタントの 1 回の納品は 6–8k トークンで、思考と本文がこの上限を共有します。';
+
+  @override
+  String get optAdjustOutputCap => '最大出力を調整';
 
   @override
   String get optKbDistillRequested => 'リクエスト済み：今回の調整で得た知見をナレッジベースへ整理します。';

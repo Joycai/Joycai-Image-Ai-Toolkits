@@ -68,6 +68,7 @@ class DatabaseMigration {
     if (oldVersion < 41) await _createV41Columns(db);
     if (oldVersion < 42) await _createV42Columns(db);
     if (oldVersion < 43) await _createV43Columns(db);
+    if (oldVersion < 44) await _createV44Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -110,7 +111,24 @@ class DatabaseMigration {
     await _createV41Columns(db);
     await _createV42Columns(db);
     await _createV43Columns(db);
+    await _createV44Columns(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// Per-model output cap (`llm_models.max_output_tokens`, NULL = not set).
+  ///
+  /// Two states only: NULL means the request carries no cap (①②③ leave the
+  /// field off and the host decides; ④ falls back to its built-in constant),
+  /// and a positive number is sent as the wire's own spelling of it. No
+  /// "unlimited" value: ④ must send a number, and on the other families
+  /// "unlimited" *is* not sending one — NULL already says that. User
+  /// configuration in the same vein as `context_window`, not a derivable
+  /// copy, so it is a real column.
+  static Future<void> _createV44Columns(Database db) async {
+    // Guarded like v43: the migration tests drive partial databases through
+    // later steps, and a fresh database creates the table before this runs.
+    if (!await _tableExists(db, 'llm_models')) return;
+    await _addColumnIfNotExists(db, 'llm_models', 'max_output_tokens', 'INTEGER');
   }
 
   /// The user's arrangement of the fee groups (`D2 · 1g`): `fee_groups.sort_order`,

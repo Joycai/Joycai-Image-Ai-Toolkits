@@ -24,6 +24,14 @@ class LLMModel {
   /// conservative default.
   final int? contextWindow;
 
+  /// The output cap sent with every chat request, in tokens, or null to send
+  /// none. Null is the common state: ①②③ then leave the field off and the
+  /// host applies its own default, ④ substitutes its built-in constant. A
+  /// positive number goes out as the wire's spelling of the cap (see
+  /// `outputCapFor` in the protocol layer). There is no "unlimited" value —
+  /// on the families where the cap is optional, unlimited *is* null.
+  final int? maxOutputTokens;
+
   /// When true, agent workflows (prompt optimizer) instruct the model that it
   /// MUST view every reference image before delivering a result. Meant for
   /// small local models that otherwise look at one image and stop.
@@ -71,6 +79,7 @@ class LLMModel {
     this.channelId,
     this.feeGroupId,
     this.contextWindow,
+    this.maxOutputTokens,
     this.forceViewAllImages = false,
     this.enableThinking = false,
     this.reasoningEffort,
@@ -94,6 +103,7 @@ class LLMModel {
       channelId: map['channel_id'] as int?,
       feeGroupId: map['fee_group_id'] as int?,
       contextWindow: map['context_window'] as int?,
+      maxOutputTokens: map['max_output_tokens'] as int?,
       forceViewAllImages: (map['force_view_all_images'] ?? 0) == 1,
       enableThinking: (map['enable_thinking'] ?? 0) == 1,
       reasoningEffort: map['reasoning_effort'] as String?,
@@ -117,6 +127,7 @@ class LLMModel {
       'channel_id': channelId,
       'fee_group_id': feeGroupId,
       'context_window': contextWindow,
+      'max_output_tokens': maxOutputTokens,
       'force_view_all_images': forceViewAllImages ? 1 : 0,
       'enable_thinking': enableThinking ? 1 : 0,
       'reasoning_effort': reasoningEffort,

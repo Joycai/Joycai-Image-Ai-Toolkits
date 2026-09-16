@@ -154,13 +154,21 @@ final List<LLMTool> _knowledgeTools = [
 final List<LLMTool> _knowledgeWriteTools = [
   LLMTool(
     name: 'write_knowledge_file',
-    description: 'Propose creating or rewriting one knowledge-base markdown '
-        'file. The edit is STAGED for the user to review and approve — it is '
-        'NOT written to disk by this call. You must pass the COMPLETE new '
-        'file content (there is no patch/diff mode). Before rewriting an '
-        'existing file you must read it first with read_knowledge_file. '
-        'Whenever you add or rename a file, also update the entry file '
-        '(README.md) so the file map keeps matching the real tree.',
+    description: 'Propose creating, rewriting or extending one knowledge-base '
+        'markdown file. The edit is STAGED for the user to review and approve '
+        '— it is NOT written to disk by this call. Three modes: '
+        '"replace_section" (default choice for changing existing rules) '
+        'replaces ONE section — the heading line you name in "section" and '
+        'everything under it up to the next heading of the same or higher '
+        'level — with "content"; "append" adds "content" at the end of that '
+        'section, or at the end of the file when "section" is omitted; '
+        '"replace_file" replaces the whole file and needs the COMPLETE new '
+        'content — use it only for a new file or a restructure. Omitting '
+        '"mode" means replace_section when "section" is given, replace_file '
+        'otherwise. Before touching an existing file you '
+        'must read it first with read_knowledge_file. Whenever you add or '
+        'rename a file, also update the entry file (README.md) so the file '
+        'map keeps matching the real tree.',
     parameters: {
       'type': 'object',
       'properties': {
@@ -170,7 +178,22 @@ final List<LLMTool> _knowledgeWriteTools = [
         },
         'content': {
           'type': 'string',
-          'description': 'The complete new content of the file, not a fragment or a diff.',
+          'description': 'For replace_file: the complete new file. For '
+              'replace_section: the complete new section, heading line '
+              'included (omit the heading to keep the original one). For '
+              'append: the lines to add.',
+        },
+        'mode': {
+          'type': 'string',
+          'enum': ['replace_file', 'replace_section', 'append'],
+          'description': 'What "content" replaces. Omitted: replace_section '
+              'when "section" is given, else replace_file.',
+        },
+        'section': {
+          'type': 'string',
+          'description': 'For replace_section (required) and append '
+              '(optional): the heading line exactly as the file spells it, '
+              'e.g. "## Lighting".',
         },
         'note': {
           'type': 'string',

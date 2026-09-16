@@ -180,11 +180,16 @@ Map<String, dynamic> prepareOpenAIChatPayload(
     payload['stream_options'] = {'include_usage': true};
   }
 
-  // Only when a caller explicitly capped the output — the channel probe
-  // asks for one token so a connection test does not pay for a generation.
-  // Absent otherwise: ordinary requests stay byte-identical.
-  final maxTokens = requestedMaxTokens(options);
-  if (maxTokens != null) payload['max_tokens'] = maxTokens;
+  // Only when something capped the output — the channel probe's one token,
+  // or the model's stored cap. Absent otherwise: a model with no cap set
+  // sends a body byte-identical to before the field existed. The key is the
+  // vendor's answer ([VendorProfile.outputCapFieldFor]): OpenAI's own host
+  // 400s on the old name for its reasoning models, older relays and Ollama
+  // know only it.
+  final maxTokens = outputCapFor(target, options);
+  if (maxTokens != null) {
+    payload[target.vendor.outputCapFieldFor(target.config.endpoint).wireName] = maxTokens;
+  }
 
   // Only Gemini-served models (e.g. via New API or Google's OpenAI-compat
   // layer) understand these extensions. Native OpenAI must never receive

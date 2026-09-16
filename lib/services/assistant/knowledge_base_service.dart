@@ -125,6 +125,16 @@ class KbPathException implements Exception {
   String toString() => message;
 }
 
+/// A `write_knowledge_file` section argument named no heading in the file.
+/// The message lists the file's headings so the model corrects the spelling
+/// instead of guessing again. A [KbPathException] so the tool handler's one
+/// catch hands it to the model like every other refusal.
+class KbSectionNotFound extends KbPathException {
+  KbSectionNotFound(String heading, List<String> available)
+      : super('No section headed "$heading" in the file. '
+            '${available.isEmpty ? 'The file has no headings — use the whole-file mode.' : 'Its headings are: ${available.join(' | ')}'}');
+}
+
 /// Thrown when a staged edit's target no longer matches the content the edit
 /// was proposed against — the file changed on disk after the card was staged
 /// (a hand edit, or another card for the same file applied first). Nothing is
@@ -185,6 +195,141 @@ class KnowledgeBaseService {
 
   /// Max characters returned per read_knowledge_file page.
   static const int pageSize = 8000;
+
+  /// The headings of a markdown [content], one entry per heading line, as
+  /// the model must spell a `section` argument. ATX headings only (`#` to
+  /// `######`, trimmed); a fenced code block's contents are not headings.
+  static List<String> sectionHeadings(String content) {
+    final out = <String>[];
+    var inFence = false;
+    for (final line in content.split(_lineBreak)) {
+      final t = line.trim();
+      if (t.startsWith('```') || t.startsWith('~~~')) inFence = !inFence;
+      if (inFence) continue;
+      if (_headingLevel(line) > 0) out.add(t);
+    }
+    return out;
+  }
+
+  /// Either line ending: a file may carry both (a pasted CRLF line inside an
+  /// LF file), and splitting on one of them would glue the others into a
+  /// single line that then swallows every section after it.
+  static final RegExp _lineBreak = RegExp(r'\r?\n');
+
+  /// [existing] with one section replaced or extended — the targeted form
+  /// of `write_knowledge_file`, so a rule change sends the rule's section
+  /// over the wire rather than the whole file.
+  ///
+  /// [heading] is a heading line exactly as the file spells it (`## Lighting`,
+  /// trimmed); the section runs from that line to just before the next
+  /// heading of the same or a higher level, or to the end of the file. The
+  /// first matching heading wins when the file repeats one. With [append]
+  /// false the whole section, heading included, is replaced by [body]: the
+  /// original heading line stays above the body unless the body opens with
+  /// a heading of the *same* level (a rename) — any other opening keeps the
+  /// heading, so a body that starts with a sub-heading or a blank line
+  /// neither re-parents the section nor duplicates its title. With [append]
+  /// true, [body] is inserted at the end of the section (before the next
+  /// heading), or at the end of the file when [heading] is null. Line
+  /// endings follow the file's first line break. The output is what gets
+  /// staged, so the diff card and the read-before-write rail see the same
+  /// whole file they always did.
+  ///
+  /// Throws [KbSectionNotFound] — listing the file's headings — when
+  /// [heading] is not in the file: silently appending a section the model
+  /// meant to replace would leave the old rule standing beside the new one.
+  static String spliceSection(
+    String existing,
+    String? heading,
+    String body, {
+    required bool append,
+  }) {
+    final firstBreak = _lineBreak.firstMatch(existing);
+    final newline = firstBreak?.group(0) ?? '\n';
+    final lines = existing.isEmpty ? <String>[] : existing.split(_lineBreak);
+    // A trailing newline splits into a final empty element; keep the file's
+    // ending as it was and work on the content lines.
+    final hadTrailingNewline = lines.length > 1 && lines.last.isEmpty;
+    if (hadTrailingNewline) lines.removeLast();
+    // Trimmed on both sides: a body that opens with a blank line (models
+    // often lead with one) must not put that blank where the heading goes.
+    final bodyLines = body.trim().split(_lineBreak);
+
+    if (heading == null) {
+      if (!append) throw ArgumentError('a section heading is required to replace a section');
+      final out = [...lines, if (lines.isNotEmpty && lines.last.trim().isNotEmpty) '', ...bodyLines];
+      return '${out.join(newline)}$newline';
+    }
+
+    final target = heading.trim();
+    final level = _headingLevel(target);
+    if (level == 0) throw KbSectionNotFound(target, sectionHeadings(existing));
+    var start = -1;
+    var inFence = false;
+    for (var i = 0; i < lines.length; i++) {
+      final t = lines[i].trim();
+      if (t.startsWith('```') || t.startsWith('~~~')) inFence = !inFence;
+      if (inFence) continue;
+      if (t == target && _headingLevel(lines[i]) > 0) {
+        start = i;
+        break;
+      }
+    }
+    if (start < 0) throw KbSectionNotFound(target, sectionHeadings(existing));
+    var end = lines.length;
+    inFence = false;
+    for (var i = start + 1; i < lines.length; i++) {
+      final t = lines[i].trim();
+      if (t.startsWith('```') || t.startsWith('~~~')) inFence = !inFence;
+      if (inFence) continue;
+      final l = _headingLevel(lines[i]);
+      if (l > 0 && l <= level) {
+        end = i;
+        break;
+      }
+    }
+
+    final List<String> replacement;
+    if (append) {
+      // Drop the section's trailing blank lines so the addition sits inside
+      // it, then restore one blank line before the next heading.
+      final section = lines.sublist(start, end);
+      while (section.length > 1 && section.last.trim().isEmpty) {
+        section.removeLast();
+      }
+      replacement = [...section, ...bodyLines, if (end < lines.length) ''];
+    } else {
+      // Only a same-level heading may stand in for the original (a rename);
+      // anything else keeps it, so the body cannot re-parent the section.
+      final renames = _headingLevel(bodyLines.first) == level;
+      replacement = [
+        if (!renames) target,
+        ...bodyLines,
+        if (end < lines.length) '',
+      ];
+    }
+    final out = [...lines.sublist(0, start), ...replacement, ...lines.sublist(end)];
+    final joined = out.join(newline);
+    return hadTrailingNewline || existing.isEmpty ? '$joined$newline' : joined;
+  }
+
+  /// `1`–`6` for an ATX heading line, `0` otherwise. CommonMark: up to three
+  /// spaces of indent are still a heading, four or more are an indented code
+  /// block — so a `# comment` inside indented code does not end a section.
+  static int _headingLevel(String line) {
+    var indent = 0;
+    while (indent < line.length && line[indent] == ' ') {
+      indent++;
+    }
+    if (indent > 3) return 0;
+    final t = line.substring(indent).trimRight();
+    var n = 0;
+    while (n < t.length && t[n] == '#') {
+      n++;
+    }
+    if (n == 0 || n > 6) return 0;
+    return n < t.length && t[n] == ' ' ? n : 0;
+  }
 
   Future<String?> getRoot() async {
     final path = await DatabaseService().getSetting(settingKey);

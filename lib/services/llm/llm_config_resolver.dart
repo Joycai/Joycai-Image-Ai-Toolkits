@@ -156,6 +156,8 @@ class LLMConfigResolver {
       tag: modelData.tag,
       // Raw tri-state; ContextBudget alone decodes it (preflight size check).
       contextWindow: modelData.contextWindow,
+      // Raw too; `outputCapFor` in the protocol layer is its only reader.
+      maxOutputTokens: modelData.maxOutputTokens,
       inputFee: inputFee,
       cacheInputFee: cacheInputFee,
       outputFee: outputFee,

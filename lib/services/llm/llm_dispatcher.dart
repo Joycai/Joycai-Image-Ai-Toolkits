@@ -596,8 +596,9 @@ class LLMDispatcher {
 
   /// How much output to size the deadline against, best source first.
   ///
-  /// 1. **`maxTokens`** — the cap the request will actually carry. A fact,
-  ///    so nothing beats it.
+  /// 1. **`maxTokens`**, then the model's stored cap — the cap the request
+  ///    will actually carry (the same ranking as `outputCapFor`). A fact, so
+  ///    nothing beats it.
   /// 2. **[expectedOutputTokensKey]** — what the caller expects to *receive*.
   ///    Reaches no payload; it exists because ① and ③ send no cap at all, so
   ///    the alternative is a guess, and an agent that knows it is asking for
@@ -608,7 +609,7 @@ class LLMDispatcher {
   ///    host decide, which is not knowable here — 4096 stands in, low enough
   ///    that the floor usually wins and short calls keep the old behaviour.
   int _outputCap(LLMTarget target, Map<String, dynamic>? options) {
-    final requested = requestedMaxTokens(options);
+    final requested = outputCapFor(target, options);
     if (requested != null) return requested;
 
     final expected = options?[expectedOutputTokensKey];

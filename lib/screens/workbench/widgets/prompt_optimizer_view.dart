@@ -83,6 +83,13 @@ class PromptOptimizerChatView extends StatefulWidget {
   /// prompt, from the distill wrap-up card's footer (`20d`·d).
   final VoidCallback? onSaveFinalPrompt;
 
+  /// Opens a model's editor, from a reply cut at the output limit — the fix
+  /// lives in that model's max-output setting. Called with the model row the
+  /// reply came from ([OptimizerChatEntry.modelDbId]), or null when the entry
+  /// does not know; the screen then falls back to the picker. Null hides the
+  /// jump.
+  final void Function(int? modelDbId)? onOpenModelSettings;
+
   const PromptOptimizerChatView({
     super.key,
     required this.inputCtrl,
@@ -96,6 +103,7 @@ class PromptOptimizerChatView extends StatefulWidget {
     this.onAbort,
     this.onDistill,
     this.onSaveFinalPrompt,
+    this.onOpenModelSettings,
   });
 
   @override
@@ -440,15 +448,46 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
           Padding(
             // Centres the first 13px line on the 26px avatar.
             padding: const EdgeInsets.only(top: 3),
-            child: MarkdownBody(
-              data: entry.text,
-              selectable: true,
-              styleSheet: MarkdownStyleSheet(
-                p: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface,
-                  height: AppType.proseHeight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MarkdownBody(
+                  data: entry.text,
+                  selectable: true,
+                  styleSheet: MarkdownStyleSheet(
+                    p: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      height: AppType.proseHeight,
+                    ),
+                  ),
                 ),
-              ),
+                // The reply ends where the host cut it, not where the model
+                // stopped: said at the tail, in the caption tone, with the
+                // one place the fix lives.
+                if (entry.truncated)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpace.s6),
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: AppSpace.s6,
+                      children: [
+                        Icon(Icons.keyboard_tab, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
+                        Text(
+                          l10n.optTruncatedTail,
+                          style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                        if (widget.onOpenModelSettings != null)
+                          AppButton(
+                            label: l10n.optOpenModelSettings,
+                            variant: AppButtonVariant.text,
+                            size: AppButtonSize.compact,
+                            onPressed: () => widget.onOpenModelSettings!(entry.modelDbId),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
         );
@@ -532,6 +571,10 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         }
 
       case OptimizerEntryKind.error:
+        // Two cut deliveries in a row stop the turn with their own card: the
+        // generic "request failed" would send the user to retry, and a retry
+        // is exactly what just failed twice. The fix is the model's cap.
+        final truncationStop = entry.text == PromptOptimizerAgent.truncationStopNoticeToken;
         return _besideAvatar(
           _avatar(
             Icons.error_outline,
@@ -552,7 +595,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  l10n.optErrorTitle,
+                  truncationStop ? l10n.optTruncatedTitle : l10n.optErrorTitle,
                   style: textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onErrorContainer,
@@ -560,7 +603,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 ),
                 const SizedBox(height: AppSpace.s4),
                 SelectableText(
-                  entry.text,
+                  truncationStop ? l10n.optTruncatedBody : entry.text,
                   style: textTheme.labelSmall?.mono.copyWith(
                     fontWeight: FontWeight.w400,
                     color: colorScheme.onErrorContainer,
@@ -569,16 +612,34 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 ),
                 // The failed turn's context (user message, tool results) is
                 // still in the session history — retrying just re-runs the
-                // agent turn without re-reading knowledge or images.
+                // agent turn without re-reading knowledge or images. After a
+                // truncation stop the primary action is the setting instead;
+                // retry stays, second, for the user who has just raised it.
                 if (isLast && !widget.isBusy)
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
-                    child: AppButton(
-                      label: l10n.optRetry,
-                      icon: Icons.refresh,
-                      variant: AppButtonVariant.destructive,
-                      size: AppButtonSize.compact,
-                      onPressed: widget.onRetry,
+                    child: Wrap(
+                      spacing: AppSpace.s10,
+                      runSpacing: AppSpace.s6,
+                      children: [
+                        if (truncationStop && widget.onOpenModelSettings != null)
+                          AppButton(
+                            label: l10n.optAdjustOutputCap,
+                            icon: Icons.tune,
+                            variant: AppButtonVariant.destructive,
+                            size: AppButtonSize.compact,
+                            onPressed: () => widget.onOpenModelSettings!(entry.modelDbId),
+                          ),
+                        AppButton(
+                          label: l10n.optRetry,
+                          icon: Icons.refresh,
+                          variant: truncationStop && widget.onOpenModelSettings != null
+                              ? AppButtonVariant.text
+                              : AppButtonVariant.destructive,
+                          size: AppButtonSize.compact,
+                          onPressed: widget.onRetry,
+                        ),
+                      ],
                     ),
                   ),
               ],
