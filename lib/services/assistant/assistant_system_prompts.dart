@@ -54,6 +54,15 @@ const String _feedbackRoundNote =
     'references and the rules you are working from, and deliver a complete '
     'revised prompt via submit_prompt (never a fragment).';
 
+/// Appended to every mode's system prompt: the one delivery is the only
+/// place its text goes. Models that narrate first — write the prompt (or a
+/// file) as prose, then call the tool with the same text — double a
+/// 6–8K-token output and are what hits an 8K output cap first.
+const String _terseDeliveryNote =
+    '\nKeep chat text brief. Never write a prompt (or a knowledge file\'s '
+    'content) as plain text and then again inside the tool call — the tool '
+    'call is the only copy. Think, read, then deliver in one call.';
+
 String _buildSystemPrompt(
   String? template,
   int referenceImageCount,
@@ -94,7 +103,8 @@ String _buildSystemPrompt(
       'Afterwards you may also reply with a brief comment.\n'
       'The user may reply with follow-up adjustments — deliver every '
       'revision through submit_prompt again, always with the full prompt.'
-      '$_feedbackRoundNote';
+      '$_feedbackRoundNote'
+      '$_terseDeliveryNote';
 }
 
 /// System prompt for [AssistantMode.knowledgeBase]. Built-in — user presets
@@ -146,7 +156,8 @@ String _buildKnowledgeSystemPrompt(
       'The user may reply with follow-up adjustments — apply the knowledge '
       'base rules again and deliver every revision through submit_prompt '
       'with the full prompt.'
-      '$_feedbackRoundNote';
+      '$_feedbackRoundNote'
+      '$_terseDeliveryNote';
 }
 
 /// System prompt for [AssistantMode.knowledgeEdit]. Built-in like the
@@ -204,7 +215,8 @@ String _buildKnowledgeEditSystemPrompt(
       'write reaches disk until they accept it. So never claim a change has '
       'been saved, and do not re-read a file expecting to find your own '
       'pending edit. After staging, briefly tell the user what you changed.'
-      '$_feedbackRoundNote';
+      '$_feedbackRoundNote'
+      '$_terseDeliveryNote';
 }
 
 /// System prompt for a distill turn: the user has asked (via
@@ -268,5 +280,6 @@ String _buildKnowledgeDistillSystemPrompt(
       '$deliverStep'
       '6. Finish with a short chat summary of what you distilled and where '
       'it went. If the ledger supports no real lesson, say so — writing '
-      'noise into the knowledge base is worse than writing nothing.';
+      'noise into the knowledge base is worse than writing nothing.'
+      '$_terseDeliveryNote';
 }

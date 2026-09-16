@@ -448,6 +448,11 @@ Future<void> _maybeCompact(
   }
 
   final head = session.history.sublist(0, boundary);
+  // The latest delivery, when the fold takes it: appended to the summary by
+  // the app rather than re-typed by the model (see `latestPromptMarker`).
+  // Left alone while it still sits in the kept tail — the next compaction
+  // that folds it will carry it forward then.
+  final foldedLatestPrompt = _latestSubmittedPrompt(head, session.history);
   // Held as an object, not an index: the summary request below is awaited,
   // and nothing guarantees the history keeps its shape until it returns.
   final boundaryMsg = session.history[boundary];
@@ -465,11 +470,13 @@ Future<void> _maybeCompact(
               'dense working summary. Keep, verbatim where possible: the '
               'user\'s core request and all confirmed design/character '
               'details; every knowledge-base file already consulted (paths '
-              'only); the LATEST submitted prompt in full; the outcome of '
-              'every generation-feedback round (which prompt version, what '
-              'the user reported, what was changed in response); unresolved '
-              'questions. Discard tool chatter. Answer with the summary '
-              'only.',
+              'only); the outcome of every generation-feedback round (which '
+              'prompt version, what the user reported, what was changed in '
+              'response); unresolved questions. Do NOT reproduce any '
+              'submitted prompt: their text is omitted from the transcript, '
+              'and the app appends the latest version after your summary — '
+              'refer to it as "the latest prompt". Discard tool chatter. '
+              'Answer with the summary only.',
         ),
         LLMMessage(role: LLMRole.user, content: _serializeForSummary(head)),
       ],
@@ -504,7 +511,11 @@ Future<void> _maybeCompact(
         'skipping this compaction.');
     return;
   }
-  final summaryMsg = LLMMessage(role: LLMRole.user, content: '${PromptOptimizerAgent.summaryMarker}\n$summaryText');
+  final summaryMsg = LLMMessage(
+    role: LLMRole.user,
+    content: '${PromptOptimizerAgent.summaryMarker}\n$summaryText'
+        '${foldedLatestPrompt == null ? '' : '\n\n${PromptOptimizerAgent.latestPromptMarker} v${session.promptVersions}\n$foldedLatestPrompt'}',
+  );
   final tail = session.history.sublist(at);
   session.history
     ..clear()
@@ -519,18 +530,72 @@ Future<void> _maybeCompact(
 
 /// Plain-text rendering of history for the summarization call. Tool results
 /// are clipped hard — the summary needs decisions, not raw file contents.
+/// The prompt of the latest `submit_prompt` call in [history] when that
+/// call lies inside [head] (the part about to be folded), else null.
+///
+/// From the history, not from `session.refinedPrompt`: the summary replaces
+/// exactly these messages, so what it carries forward must be what they
+/// held. Older versions are not carried — the feedback rounds' outcomes,
+/// which the summarizer keeps, are what distinguished them.
+///
+/// Once a fold has carried the prompt, the call itself is gone and the only
+/// copy is the one appended to that summary — which is now in the head of
+/// the next fold. So an earlier summary's appended prompt is carried forward
+/// too, unless a newer call exists (in the tail, where it stays live, or in
+/// the head, where it wins).
+String? _latestSubmittedPrompt(List<LLMMessage> head, List<LLMMessage> history) {
+  for (var i = history.length - 1; i >= 0; i--) {
+    final m = history[i];
+    if (m.role != LLMRole.assistant) continue;
+    for (final call in m.toolCalls.reversed) {
+      if (call.name != 'submit_prompt') continue;
+      if (i >= head.length) return null;
+      final prompt = call.arguments['prompt']?.toString() ?? '';
+      return prompt.isEmpty ? null : prompt;
+    }
+  }
+  for (final m in head.reversed) {
+    if (m.role != LLMRole.user || !m.content.startsWith(PromptOptimizerAgent.summaryMarker)) continue;
+    final carried = _appendedPromptOf(m.content);
+    if (carried != null) return carried;
+  }
+  return null;
+}
+
+/// The prompt text appended to a summary message, or null when none was.
+String? _appendedPromptOf(String summaryContent) {
+  final at = summaryContent.indexOf('\n\n${PromptOptimizerAgent.latestPromptMarker}');
+  if (at < 0) return null;
+  final section = summaryContent.substring(at).trimLeft();
+  final newline = section.indexOf('\n');
+  if (newline < 0) return null;
+  final prompt = section.substring(newline + 1);
+  return prompt.isEmpty ? null : prompt;
+}
+
 String _serializeForSummary(List<LLMMessage> messages) {
   final buffer = StringBuffer();
   for (final m in messages) {
     switch (m.role) {
       case LLMRole.user:
         if (m.content.startsWith(PromptOptimizerAgent.viewResultMarker)) continue;
-        buffer.writeln('USER: ${m.content}');
+        // An earlier summary's appended prompt is not input for the next
+        // one: the fold that made it appended it, and this fold appends the
+        // latest again if it is going in.
+        final content = m.content.startsWith(PromptOptimizerAgent.summaryMarker)
+            ? m.content.split('\n\n${PromptOptimizerAgent.latestPromptMarker}').first
+            : m.content;
+        buffer.writeln('USER: $content');
       case LLMRole.assistant:
         if (m.content.trim().isNotEmpty) buffer.writeln('ASSISTANT: ${m.content.trim()}');
         for (final call in m.toolCalls) {
           if (call.name == 'submit_prompt') {
-            buffer.writeln('SUBMITTED PROMPT: ${call.arguments['prompt'] ?? ''}');
+            // Body omitted: the app appends the latest version to the
+            // summary itself, and no version's text is for the model to
+            // re-type (the note is what changed, and it stays).
+            final body = call.arguments['prompt']?.toString() ?? '';
+            buffer.writeln('SUBMITTED PROMPT: (${body.length} chars, text omitted)'
+                '${call.arguments['note'] != null ? ' — ${call.arguments['note']}' : ''}');
           } else if (call.name == 'ask_user') {
             final questions = AskUserQuestion.tryParse(call.arguments['questions']);
             buffer.writeln('USER WAS ASKED: '

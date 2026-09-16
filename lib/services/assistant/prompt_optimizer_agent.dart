@@ -51,6 +51,13 @@ class PromptOptimizerAgent {
   static const String viewResultMarker = '[view_image result]';
   static const String summaryMarker = '[Conversation summary]';
 
+  /// Heads the latest submitted prompt inside a compaction summary message.
+  /// The app appends it there itself: the summarizer used to be asked to
+  /// reproduce "the LATEST submitted prompt in full", a 6–8K-token document
+  /// re-typed by a non-streaming call whose deadline assumed 4096 — and the
+  /// app already holds that text, byte for byte, in the folded history.
+  static const String latestPromptMarker = '[Latest submitted prompt]';
+
   /// Marker of a user turn reporting a generation result — see
   /// [PromptOptimizerSession.addResultFeedback] for the wire format.
   static const String resultFeedbackMarker = '[result_feedback]';
