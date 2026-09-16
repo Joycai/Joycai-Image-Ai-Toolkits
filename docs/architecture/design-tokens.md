@@ -8,7 +8,7 @@
 
 | 文件 | 内容 |
 |---|---|
-| `lib/core/design_tokens.dart` | `AppRadius` / `AppSpace` / `AppSize` / `AppAlpha` / `AppType` / `AppMotion` 阶梯，`AppOverlay` 固定墨色，`extension AppAccent on ColorScheme`（主色三形态），`extension AppShadow` |
+| `lib/core/design_tokens.dart` | `AppRadius` / `AppSpace` / `AppSize` / `AppAlpha` / `AppType` / `AppMotion` 阶梯，`AppOverlay` 固定墨色，`AppDock` 手机 dock 的尺寸与净空（放在这里，是为了让 `widgets/ui/` 的原语能避开 dock 而不必 import `widgets/shell/`），`extension AppAccent on ColorScheme`（主色三形态），`extension AppShadow` |
 | `lib/core/app_theme.dart` | `_Neutrals` 暖石灰常量表、`_ErrorRoles`、`buildAppColorScheme` / `buildAppTheme`、各 Material 子主题、字号阶梯、`TextStyle.mono` / `metricsOnly` |
 | `lib/core/app_semantic_colors.dart` | `AppSemanticColors`——成功 / 警告 / 信息 |
 | `lib/core/theme_accent.dart` | `ThemeAccent`：主题色是一对（亮 / 暗） |
