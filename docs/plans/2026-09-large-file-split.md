@@ -406,7 +406,7 @@ git diff -M25% --stat main...HEAD               # 看到的应该是 rename / �
 | 3 agent | 31 个 `optimizer_*` | — |
 | 4 view | 4 个 UI 测试 + screenshot | — |
 | 5 tree | `rebuild_scope_test` + 文件浏览器 screenshot | — |
-| 6 model_edit | **仅 screenshot（不断言）** | 靠 PNG 逐张对比 |
+| 6 model_edit | **仅 screenshot（不断言）** | 靠 PNG 逐像素对比 |
 | 7 ai_rename | **零** | ✅ 补了 `ai_rename_review_test.dart`（11 条）+ executor 1 条 |
 | 8 video | **零，连 screenshot 都没有** | **本片先补 screenshot** |
 
