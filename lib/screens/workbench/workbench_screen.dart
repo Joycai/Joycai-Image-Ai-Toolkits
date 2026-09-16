@@ -35,7 +35,8 @@ import '../../widgets/app_field_size.dart';
 import '../../widgets/app_run_console.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/drawing_canvas.dart';
-import '../../widgets/unified_sidebar.dart';
+import '../batch/task_queue_screen.dart';
+import './unified_sidebar.dart';
 import '../prompts/widgets/prompt_dialogs.dart';
 import 'gallery.dart';
 import 'widgets/gallery_selection_bar.dart';
@@ -1277,7 +1278,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             return const SizedBox.shrink();
         }
       },
-      bottomPanel: const AppRunConsole(),
+      bottomPanel: const AppRunConsole(onExpand: showTaskQueueSheet),
       showLeftPanel: showLeftPanel,
       showRightPanel: showRightPanel,
       fabIcon: fabIcon,

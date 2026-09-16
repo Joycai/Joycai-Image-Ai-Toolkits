@@ -12,6 +12,7 @@ import '../../widgets/app_run_console.dart';
 import '../../widgets/app_search_field.dart';
 import '../../widgets/glass/app_glass.dart';
 import '../../widgets/panel_resizer.dart';
+import '../batch/task_queue_screen.dart';
 import 'prompts_io.dart';
 import 'widgets/prompt_category_strip.dart';
 import 'widgets/prompt_dialogs.dart';
@@ -198,7 +199,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         tablet: _buildDesktopLayout(l10n, filteredUser, filteredSystem, isTablet: true),
         desktop: _buildDesktopLayout(l10n, filteredUser, filteredSystem),
       ),
-      bottomNavigationBar: const AppRunConsole(),
+      bottomNavigationBar: const AppRunConsole(onExpand: showTaskQueueSheet),
       floatingActionButton: phone && _isSelectionMode
           ? PromptSelectionCapsule(
               count: _selectedIds.length,

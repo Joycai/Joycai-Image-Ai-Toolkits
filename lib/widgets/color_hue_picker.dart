@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../core/design_tokens.dart';
+import '../core/design_tokens.dart';
 
 /// Saturation and value every picked hue is drawn at, shared by the bar and
 /// the wheel so a category keeps its colour whichever one chose it.

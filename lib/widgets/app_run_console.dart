@@ -12,7 +12,6 @@ import '../state/app_state.dart';
 import '../state/log_state.dart';
 import 'app_breathing_dot.dart';
 import 'log_console.dart';
-import '../screens/batch/task_queue_screen.dart';
 
 /// Shared run-status console: status dot, running/planned task summary, the
 /// last log line, and an expandable execution log. Reads entirely from
@@ -24,7 +23,16 @@ import '../screens/batch/task_queue_screen.dart';
 /// line pushed right, and a chevron. Expanded, the log panel below it is the
 /// same opaque column ground, with its height dragged from the top edge.
 class AppRunConsole extends StatefulWidget {
-  const AppRunConsole({super.key});
+  const AppRunConsole({super.key, required this.onExpand});
+
+  /// Opens the full task queue — on a phone, where the strip has nothing to
+  /// disclose in place.
+  ///
+  /// Injected rather than called directly: the console is a shared widget and
+  /// `lib/widgets/` must not import `lib/screens/`. The queue screen owns its
+  /// own sheet presentation (`showTaskQueueSheet`), which every host passes in
+  /// as a top-level tear-off, so the hosts stay `const`.
+  final void Function(BuildContext context) onExpand;
 
   @override
   State<AppRunConsole> createState() => _AppRunConsoleState();
@@ -118,7 +126,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
           chevron: (!isMobile && isConsoleExpanded) ? Icons.expand_more : Icons.expand_less,
           onTap: () {
             if (isMobile) {
-              _showTaskQueueSheet(context);
+              widget.onExpand(context);
             } else {
               context.read<AppState>().setConsoleExpanded(!isConsoleExpanded);
             }
@@ -231,26 +239,6 @@ class _AppRunConsoleState extends State<AppRunConsole> {
       if (idle) l10n.consoleIdle,
     ];
     return parts.join(' · ');
-  }
-
-  void _showTaskQueueSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      // The queue screen draws task cards on a canvas; on `surface` the cards
-      // would be the same colour as the sheet they sit on.
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-      builder: (context) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.8,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) {
-          return const TaskQueueScreen();
-        },
-      ),
-    );
   }
 }
 

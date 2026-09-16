@@ -22,7 +22,7 @@ import '../../widgets/pricing_group_manager.dart';
 import 'widgets/channel_column.dart';
 import 'widgets/model_detail_column.dart';
 import 'widgets/models_actions.dart';
-import 'widgets/models_controls.dart';
+import '../../widgets/models/models_controls.dart';
 import 'widgets/models_phone_layout.dart';
 
 /// Models & Channels (`D1a`): channels on the left, the selected channel's

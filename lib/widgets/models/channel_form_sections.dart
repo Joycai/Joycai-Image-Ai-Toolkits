@@ -7,7 +7,7 @@ import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
-import '../../screens/prompts/widgets/color_hue_picker.dart';
+import '../color_hue_picker.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
 import '../app_switch.dart';

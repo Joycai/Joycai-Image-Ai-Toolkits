@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/pricing_group.dart';
-import '../../screens/models/widgets/model_card.dart';
+import './model_card.dart';
 import 'model_edit_controls.dart';
 
 /// 「卡片预览」: the models screen's own [ModelCard], drawn from the form as it

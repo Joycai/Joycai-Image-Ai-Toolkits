@@ -17,9 +17,9 @@ import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/models/channel_avatar.dart';
 import '../../../widgets/scroll_edge_fade.dart';
-import 'model_card.dart';
+import '../../../widgets/models/model_card.dart';
 import 'models_actions.dart';
-import 'models_controls.dart';
+import '../../../widgets/models/models_controls.dart';
 
 /// The selected channel's column (`D1a · 1a` 右栏): the channel header, the
 /// kind filter row and the model cards.

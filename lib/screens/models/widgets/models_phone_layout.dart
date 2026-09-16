@@ -17,9 +17,9 @@ import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/models/channel_avatar.dart';
 import 'channel_row.dart';
-import 'model_card.dart';
+import '../../../widgets/models/model_card.dart';
 import 'models_actions.dart';
-import 'models_controls.dart';
+import '../../../widgets/models/models_controls.dart';
 
 /// The phone form (`D1a · 1d`): a G1 top bar — the title, an add action for
 /// whichever tab is showing, and the Models / Channels tabs — over two lists
