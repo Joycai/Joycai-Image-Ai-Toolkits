@@ -3257,6 +3257,12 @@ abstract class AppLocalizations {
   /// **'Out {size}'**
   String outputCapChip(String size);
 
+  /// No description provided for @outputCapThinkingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning is on for this model, and its thinking tokens count against this cap before the answer does — leave room above what the answer needs.'**
+  String get outputCapThinkingHint;
+
   /// No description provided for @contextPresets.
   ///
   /// In en, this message translates to:

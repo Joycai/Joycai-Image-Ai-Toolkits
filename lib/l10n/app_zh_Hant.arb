@@ -1012,6 +1012,7 @@
     }
   },
   "outputCapChip": "輸出 {size}",
+  "outputCapThinkingHint": "該模型已開啟推理，思考 token 先於正文計入此上限——請在正文所需之上留出餘量。",
   "@outputCapChip": {
     "placeholders": {
       "size": {

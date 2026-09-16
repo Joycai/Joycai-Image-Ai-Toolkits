@@ -1868,6 +1868,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get outputCapThinkingHint =>
+      'Reasoning is on for this model, and its thinking tokens count against this cap before the answer does — leave room above what the answer needs.';
+
+  @override
   String get contextPresets => 'Presets';
 
   @override

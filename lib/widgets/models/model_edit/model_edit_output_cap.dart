@@ -49,6 +49,10 @@ extension _OutputCapSection on _ModelEditDialogState {
         : _isAnthropicChannel
             ? l10n.outputCapAutoAnthropicDesc
             : l10n.outputCapAutoDesc;
+    // Reasoning is set on this model and the cap is a number: the two share
+    // it on every wire (usage 04 §3), and a cap sized for the answer alone
+    // is spent on the thinking first.
+    final thinkingShares = specified && reasoningEffort != null && reasoningEffort != 'off';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -135,6 +139,10 @@ extension _OutputCapSection on _ModelEditDialogState {
         ),
         const SizedBox(height: AppSpace.s6),
         ModelEditHelperText(description),
+        if (thinkingShares) ...[
+          const SizedBox(height: AppSpace.s6),
+          ModelEditHelperText(l10n.outputCapThinkingHint),
+        ],
       ],
     );
   }

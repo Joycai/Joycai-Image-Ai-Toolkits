@@ -22,7 +22,9 @@ const String _kbSubAgentSystemPrompt =
     '2. The knowledge-base file paths (exactly as listed) each finding '
     'rests on.\n'
     '3. Open questions, if any.\n'
-    'Never invent content that is not in the files.';
+    'Never invent content that is not in the files. Keep the whole answer '
+    'under about 1500 words: the main agent reads a short summary of it and '
+    'fetches the rest only when it needs exact wording.';
 
 /// System prompt of the drafting sub-agent — a code asset, like
 /// [_kbSubAgentSystemPrompt].
@@ -35,7 +37,7 @@ const String _draftSubAgentSystemPrompt =
     '2. A draft prompt fragment that captures it, following the brief\'s '
     'instructions.\n'
     'Describe only what is visible — never invent details the image does '
-    'not show.';
+    'not show. Keep the whole answer under about 800 words.';
 
 /// How the model should treat generation-feedback rounds. Appended to every
 /// mode's system prompt: feedback can arrive in any of them, and a model

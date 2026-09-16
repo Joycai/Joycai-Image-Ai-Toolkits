@@ -1814,6 +1814,10 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get outputCapThinkingHint =>
+      'このモデルは推論が有効です。思考トークンは本文より先にこの上限を消費するため、本文に必要な分より余裕を持たせてください。';
+
+  @override
   String get contextPresets => 'プリセット';
 
   @override

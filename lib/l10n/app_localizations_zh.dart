@@ -1802,6 +1802,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get outputCapThinkingHint =>
+      '该模型已开启推理，思考 token 先于正文计入此上限——请在正文所需之上留出余量。';
+
+  @override
   String get contextPresets => '档位';
 
   @override
@@ -6665,6 +6669,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String outputCapChip(String size) {
     return '輸出 $size';
   }
+
+  @override
+  String get outputCapThinkingHint =>
+      '該模型已開啟推理，思考 token 先於正文計入此上限——請在正文所需之上留出餘量。';
 
   @override
   String get contextPresets => '檔位';
