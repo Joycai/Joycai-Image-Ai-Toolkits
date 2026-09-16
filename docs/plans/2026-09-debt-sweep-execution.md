@@ -85,7 +85,7 @@
 | 17 | `runTurn` 拆出 `_systemPromptFor` · `_warnIfSystemPromptCrowds` · `_prepareTurn`（取消返回 false）· `_dispatchToolCall`（ask_user 暂存返回 null），控制流不变；602 → 464 行 | `prompt_optimizer_agent.dart` | 助手全部测试绿（未新增测试：纯搬家） | ✅ |
 | 18 | `render_probe` 加助手一项并量：一次 session 通知 1,122 次 build → 29 次（debug 37.7 → 6.3 ms）。新原语 `ListenableSelector`；对话宿主、工具条、左侧知识树、右侧配置面板只在所读字段变化时重建，上下文用量卡自己监听；对话视图按所画字段门控；知识库编辑卡的 diff 按 edit id 缓存 | `widgets/ui/listenable_selector.dart` · `workbench_screen.dart` · `optimizer_left_panel.dart` · `optimizer_config_panel.dart` · `prompt_optimizer_view.dart` · `optimizer_kb_edit_card.dart` · `render_probe.dart` | `rebuild_scope_test.dart` 加一条；`listenable_selector_test.dart` | ✅ |
 | 19 | D2a 三条：参数块引导线点单时补间到主色 35%（新 token `accentRule`）；`ModelEditMenuField` 与共享 `AppDropdown` 的菜单选中行加 check（槽位每行都留）；点单态协议值用主色深（桌面与手机） | `design_tokens.dart` · `model_edit_controls.dart` · `model_protocol_section.dart` · `widgets/ui/app_dropdown.dart` | `model_edit_param_block_test.dart` · `app_dropdown_test.dart` 加一条；编辑器截图看过点单 / 自动两态 | ✅ |
-| 20+ | 1000–1500 行文件拆分，一文件一片（有接缝的才拆；单张表 / 注册表记理由不拆） | 见施工记录 | 搬家不改行为，截图像素一致 | ☐ |
+| 20 | 1000–1500 行文件拆分，十五个文件、十五个提交（20.A1–A4 · B1–B3 · C1–C4 · D1–D4），四个子代理各在自己的 worktree 里做、这边 cherry-pick | 见施工记录 | 每组截图 177/177 像素一致；合并后门禁绿 | ✅ |
 | R3 | 第三期 code review | — | — | ☐ |
 
 ### 收尾
@@ -113,3 +113,14 @@
   「没实现」指的是它不随点单变色；先做了一个包住所有下级行的新组件，截图里成了双线，撤回，改为让参数块
   自己的线补间。能力 / 代理行为两个区块没有「受管辖的下级行」，未动。菜单选中项的 10% 底：阶梯上没有
   10%，`ModelEditMenuField` 已用 12% 的 `accentTint`；`AppDropdown` 的选中底仍是 Material 自带的，只加了 check。
+- 片 20（前后行数）：`prompt_optimizer_agent` 1570→1282（+`assistant_turn` part）· `prompt_optimizer_session`
+  1051→755（+`assistant_chat_entries` part）· `llm_types` 1206→241（再导出 `llm_errors` / `llm_messages` /
+  `llm_model_config`，121 个 importer 不动）· `llm_service` 1431→1244（只搬私有成员：用量记录、流空闲守卫；
+  公开的重试分类与长任务方法被 20 多个测试按 `LLMService.X` 调用，搬走就改了门面）· `model_capabilities`
+  1330→260（`param_spec` / `image_size_rules` 两个库 + 表格 part；id 嗅探留在原文件）· `crop_resize_toolbar`
+  1472→426 · `workbench_screen` 1318→621（助手宿主四个 part；调 `setState` 的方法都留在 State 上）·
+  `task_queue_card` 1294→455 · `task_queue_screen` 1242→437 · `workbench_config_panel` 1049→661（剩下的是
+  460 行的 `build`，它的局部闭包捕获 build 内的值，再拆就是改代码）· `optimizer_config_panel` 1177→394 ·
+  `channel_wizard_dialog` 1261→387 · `model_edit_controls` 1190→39（再导出五个库）· `theme_accent_picker`
+  1156→114 · `channel_form_sections` 1048→10（再导出四个库）。`llm_dispatcher` 1574 按规矩不拆。
+  顺带发现未处理：`modelKindIcon` 在 `widgets/ui/model_tag_chip.dart` 与 `model_edit_controls.dart` 各声明一份。
