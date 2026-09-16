@@ -20,8 +20,11 @@ import 'package:path/path.dart' as p;
 ///
 /// Adding an edge means moving the file to the layer it belongs in, or
 /// deliberately re-ranking here and saying why. `docs/architecture/` holds the
-/// reasoning for the layers inside `services/llm/`; this test is only about
-/// the top-level directories.
+/// reasoning for the layers inside `services/llm/`; this test is otherwise
+/// about the top-level directories, with two exceptions it also pins: that
+/// `widgets/` and `services/` stay grouped rather than drifting back to one
+/// flat root, and that the design system under `widgets/` stays free of the
+/// app's domain.
 void main() {
   /// Lower rank may not import higher. Equal rank means the same module.
   const rank = <String, int>{
@@ -182,6 +185,68 @@ void main() {
       reason: 'Dart clamps `..` at the package root, so these resolve anyway and '
           'will keep resolving however many are added — but they claim a depth the '
           'file does not have:\n  ${overDeep.join('\n  ')}',
+    );
+  });
+
+  /// Directories that are grouped by domain, and so may not hold loose files.
+  ///
+  /// Both had flat roots — 44 files in `widgets/`, 31 in `services/` — mixing
+  /// the design system with feature components and five service domains with
+  /// each other. Nothing is wrong with a flat directory as such: `core/`,
+  /// `models/` and `state/` are flat and readable, because each is one kind of
+  /// thing. These two are not, and one loose file is how the flat root comes
+  /// back: it names no domain, so the next one has somewhere to land beside it.
+  const grouped = {'widgets', 'services'};
+
+  /// The design system: the spec's own controls, materials and affordances.
+  ///
+  /// What makes them a group is a property rather than a naming convention —
+  /// none of them knows anything about this app. They may draw on the
+  /// foundation and on each other, and that is all, so a screen taking a
+  /// button does not also take `AppState`. `widgets/ui/app_snackbar.dart`
+  /// asking `PhoneDock` how tall it is was how the shell, the global notifier
+  /// and the task queue got behind every toast; the dock's dimensions are
+  /// `AppDock` in `core/design_tokens.dart` now, for exactly this reason.
+  const designSystem = {'widgets/ui', 'widgets/glass', 'widgets/drag'};
+
+  /// The folder a file sits in, relative to `lib/`, as a `/`-joined path.
+  String folderOf(String path) {
+    final rel = p.relative(p.dirname(path), from: 'lib');
+    return rel == '.' ? '<root>' : p.split(rel).join('/');
+  }
+
+  test('the grouped directories have nothing loose in their root', () {
+    final loose = dartFiles
+        .where((f) => grouped.contains(moduleOf(f)) && folderOf(f) == moduleOf(f))
+        .toList();
+    expect(
+      loose,
+      isEmpty,
+      reason: 'these sit in a grouped directory\'s root:\n  ${loose.join('\n  ')}\n\n'
+          'Put the file in the folder whose domain it belongs to, or add a '
+          'folder and say in the commit what it is for. A shared widget used by '
+          'exactly one screen is not shared — it belongs under that screen.',
+    );
+  });
+
+  test('the design system imports only core, l10n and itself', () {
+    final violations = <String>[];
+    for (final edge in edges) {
+      if (!designSystem.contains(folderOf(edge.from))) continue;
+      final toFolder = folderOf(edge.to);
+      if (designSystem.contains(toFolder)) continue;
+      if (const {'core', 'l10n'}.contains(moduleOf(edge.to))) continue;
+      violations.add("${edge.from}:${edge.line}  -> $toFolder   import '${edge.uri}'");
+    }
+    expect(
+      violations,
+      isEmpty,
+      reason: 'the design system reached outside the foundation:\n'
+          '  ${violations.join('\n  ')}\n\n'
+          'Either the primitive is not one — move it to the feature folder that '
+          'owns it — or the thing it needs belongs lower down. `TagAvatar` came '
+          'out of `widgets/models/channel_avatar.dart` because the picker only '
+          'ever needed the bare-string half.',
     );
   });
 
