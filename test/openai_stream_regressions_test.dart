@@ -236,6 +236,37 @@ void main() {
       );
     });
 
+    test('a caller that declared an empty ending gets it delivered, not thrown',
+        () async {
+      // The turn after submit_prompt: GPT-5.x answers `stop` with an empty
+      // delta and a handful of completion tokens. The agent loop declares
+      // that legitimate; the guard stands for every other caller.
+      sseLines = [
+        'data: {"choices":[{"delta":{"role":"assistant"}}]}',
+        'data: {"choices":[{"delta":{"content":""},"finish_reason":"stop"}]}',
+        'data: {"choices":[],"usage":{"prompt_tokens":9,"completion_tokens":4}}',
+        'data: [DONE]',
+      ];
+      final chunks = await OpenAIChatProtocol()
+          .generateStream(
+            target(),
+            [LLMMessage(role: LLMRole.user, content: 'hi')],
+            options: const {emptyReplyEndsTurnKey: true},
+          )
+          .toList();
+      expect(chunks.map((c) => c.textPart).nonNulls.join(), isEmpty);
+      expect(chunks.map((c) => c.toolCallPart).nonNulls, isEmpty);
+      final metadata = chunks.map((c) => c.metadata).nonNulls.single;
+      expect(metadata['finish_reason'], 'stop');
+      // The declaration does not reach past the guard: the same body without
+      // it is still the failure pinned above.
+      await expectLater(
+        run(),
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.message, 'message', contains('no content'))),
+      );
+    });
+
     test('inline <think> text never joins the echoable reasoning field',
         () async {
       // The field's text goes back under `reasoning_content`; an inline span
@@ -345,6 +376,14 @@ void main() {
         throwsA(isA<LLMApiException>()
             .having((e) => e.message, 'message', contains('no content'))),
       );
+
+      // …unless the caller declared an empty ending legitimate.
+      final declared = await OpenAIChatProtocol().generate(
+          target(), [LLMMessage(role: LLMRole.user, content: 'hi')],
+          options: const {emptyReplyEndsTurnKey: true});
+      expect(declared.text, isEmpty);
+      expect(declared.toolCalls, isEmpty);
+      expect(declared.metadata['finish_reason'], 'stop');
 
       // …while an empty `length` ending is still delivered.
       sseLines = [
