@@ -77,4 +77,33 @@ void main() {
 
     expect(find.byType(ShaderMask), findsNothing);
   });
+
+  testWidgets('an edge eases out over M1 instead of switching off', (tester) async {
+    // The strengths are tweened; a bool straight into the gradient popped the
+    // fade in at full strength on the first pixel scrolled.
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(host(list(items: 20, controller: controller)));
+    await tester.pumpAndSettle();
+
+    await tester.pumpWidget(host(list(items: 2, controller: controller)));
+    await tester.pump();
+    expect(find.byType(ShaderMask), findsOneWidget,
+        reason: 'a frame after the content fits, the fade is still running out');
+    await tester.pumpAndSettle();
+    expect(find.byType(ShaderMask), findsNothing);
+  });
+
+  testWidgets('the list keeps its state when the mask goes on', (tester) async {
+    // The child used to sit under a different parent with and without the
+    // mask, so a list that started to overflow was rebuilt from scratch.
+    await tester.pumpWidget(host(list(items: 3)));
+    await tester.pump();
+    final before = tester.state(find.byType(Scrollable));
+
+    await tester.pumpWidget(host(list(items: 20)));
+    await tester.pumpAndSettle();
+    expect(find.byType(ShaderMask), findsOneWidget);
+    expect(tester.state(find.byType(Scrollable)), same(before));
+  });
 }

@@ -69,7 +69,7 @@
 |---|---|---|---|---|
 | 8 | 加载 → 网格：网格接替占位时淡入（M2），网格常驻时不重播 | `screens/workbench/gallery.dart` | `test/gallery_reveal_test.dart` | ✅ |
 | 9 | 两棵树的展开箭头改旋转（`AnimatedRotation` + M2） | 新原语 `widgets/ui/app_disclosure_chevron.dart` · `folder_tree_row.dart` · `knowledge_tree_panel.dart` | `test/app_disclosure_chevron_test.dart` | ✅ |
-| 10 | `ScrollEdgeFade` 两端强度补间（M1） | `widgets/ui/scroll_edge_fade.dart` | widget 测试 | ☐ |
+| 10 | `ScrollEdgeFade` 两端强度补间（M1）；顺带：子组件用 GlobalKey 跨「无遮罩 / 有遮罩」两种结构，列表不再在开始溢出时被重建 | `widgets/ui/scroll_edge_fade.dart` | `scroll_edge_fade_test.dart` 加两条（去掉 key 即失败） | ✅ |
 | 11 | 胶囊内容区 `AnimatedSize` 降到 M2 | `widgets/tasks/task_capsule_monitor.dart` | — | ☐ |
 | 12 | 选择栏退场：滑动与淡出同一时钟 | `browser_selection_bar.dart` · `gallery_selection_bar.dart` | — | ☐ |
 | 13 | 渠道向导步骤切换带方向（前进右入、后退左入） | `channel_wizard_dialog.dart` | — | ☐ |

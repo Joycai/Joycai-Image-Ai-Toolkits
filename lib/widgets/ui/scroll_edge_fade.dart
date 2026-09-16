@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/design_tokens.dart';
+
 /// Fades a scrollable's content out where it runs under fixed chrome, instead
 /// of cutting it off square.
 ///
@@ -51,6 +53,12 @@ class _ScrollEdgeFadeState extends State<ScrollEdgeFade> {
   bool _atStart = true;
   bool _atEnd = true;
 
+  /// Carries the child between the bare and the masked arrangement. Without
+  /// it the scrollable was rebuilt from scratch whenever an edge started or
+  /// stopped having content beyond it — a card expanding in a list that used
+  /// to fit lost the list's state along with the hard edge.
+  final GlobalKey _childKey = GlobalKey();
+
   bool _update(ScrollMetrics metrics) {
     if (metrics.axis != widget.axis) return false;
     // Half a pixel, not zero: a fling settles on a fractional offset, and an
@@ -79,31 +87,41 @@ class _ScrollEdgeFadeState extends State<ScrollEdgeFade> {
       onNotification: (n) => _update(n.metrics),
       child: NotificationListener<ScrollNotification>(
         onNotification: (n) => _update(n.metrics),
-        child: _atStart && _atEnd
+        // Each edge's strength is tweened (M1) rather than switched: a bool
+        // straight into the gradient made the fade pop in at full strength on
+        // the first pixel scrolled. Offset lerps both components at once.
+        child: TweenAnimationBuilder<Offset>(
+          tween: Tween<Offset>(end: Offset(_atStart ? 0 : 1, _atEnd ? 0 : 1)),
+          duration: AppMotion.durationOf(context, AppMotion.hover),
+          curve: AppMotion.quick,
+          child: KeyedSubtree(key: _childKey, child: widget.child),
+          builder: (context, strength, child) {
             // Nothing to fade: hand back the child untouched rather than a
             // fully-opaque mask, so a list that fits pays no saveLayer at all.
-            ? widget.child
-            : ShaderMask(
-                blendMode: BlendMode.dstIn,
-                shaderCallback: (bounds) {
-                  final span = vertical ? bounds.height : bounds.width;
-                  // A fade taller than half the viewport would meet itself in
-                  // the middle and dim the content the panel is there to show.
-                  final fade = (widget.extent / span).clamp(0.0, 0.5);
-                  return LinearGradient(
-                    begin: vertical ? Alignment.topCenter : Alignment.centerLeft,
-                    end: vertical ? Alignment.bottomCenter : Alignment.centerRight,
-                    colors: [
-                      _atStart ? Colors.white : Colors.transparent,
-                      Colors.white,
-                      Colors.white,
-                      _atEnd ? Colors.white : Colors.transparent,
-                    ],
-                    stops: [0, fade, 1 - fade, 1],
-                  ).createShader(bounds);
-                },
-                child: widget.child,
-              ),
+            if (strength.dx <= 0 && strength.dy <= 0) return child!;
+            return ShaderMask(
+              blendMode: BlendMode.dstIn,
+              shaderCallback: (bounds) {
+                final span = vertical ? bounds.height : bounds.width;
+                // A fade taller than half the viewport would meet itself in
+                // the middle and dim the content the panel is there to show.
+                final fade = (widget.extent / span).clamp(0.0, 0.5);
+                return LinearGradient(
+                  begin: vertical ? Alignment.topCenter : Alignment.centerLeft,
+                  end: vertical ? Alignment.bottomCenter : Alignment.centerRight,
+                  colors: [
+                    Color.lerp(Colors.white, Colors.transparent, strength.dx)!,
+                    Colors.white,
+                    Colors.white,
+                    Color.lerp(Colors.white, Colors.transparent, strength.dy)!,
+                  ],
+                  stops: [0, fade, 1 - fade, 1],
+                ).createShader(bounds);
+              },
+              child: child,
+            );
+          },
+        ),
       ),
     );
   }
