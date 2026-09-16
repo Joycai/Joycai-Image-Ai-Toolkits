@@ -392,7 +392,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   }
 
   Future<void> _pickKnowledgeBase() async {
-    String? path = await FilePicker.getDirectoryPath();
+    final String? path = await FilePicker.getDirectoryPath();
     if (path != null) {
       await KnowledgeBaseService().setRoot(path);
       final status = await KnowledgeBaseService().validate(path);
@@ -406,7 +406,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   }
 
   Future<void> _pickOutputDirectory(AppState appState) async {
-    String? path = await FilePicker.getDirectoryPath();
+    final String? path = await FilePicker.getDirectoryPath();
     if (path != null) {
       setState(() => _outputDirController.text = path);
       await appState.updateOutputDirectory(path);

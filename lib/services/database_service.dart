@@ -140,7 +140,7 @@ class DatabaseService {
   }
 
   Future<String> getDatabasePath() async {
-    return await AppPaths.getDataDirectory();
+    return AppPaths.getDataDirectory();
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -276,7 +276,7 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> getDownloaderCookies() async {
     final db = await database;
-    return await db.query('downloader_cookies', orderBy: 'last_used DESC');     
+    return db.query('downloader_cookies', orderBy: 'last_used DESC');     
   }
 
   // Source Directories Methods
@@ -304,7 +304,7 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> getSourceDirectories() async {
     final db = await database;
-    return await db.query('source_directories');
+    return db.query('source_directories');
   }
 
   // Pricing Groups Methods

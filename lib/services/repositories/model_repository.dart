@@ -8,12 +8,12 @@ import '../database_service.dart';
 class ModelRepository {
   final DatabaseService _dbService = DatabaseService();
 
-  Future<Database> get _db async => await _dbService.database;
+  Future<Database> get _db async => _dbService.database;
 
   // LLM Models Methods
   Future<int> addModel(LLMModel model) async {
     final db = await _db;
-    return await db.insert('llm_models', model.toMap(includeId: false));
+    return db.insert('llm_models', model.toMap(includeId: false));
   }
 
   Future<void> updateModel(int id, LLMModel model) async {
@@ -65,7 +65,7 @@ class ModelRepository {
     final maxRow = await db
         .rawQuery('SELECT MAX(sort_order) AS m FROM llm_channels');
     final maxOrder = maxRow.first['m'] as int?;
-    return await db.insert('llm_channels', {
+    return db.insert('llm_channels', {
       ...channel.toMap(includeId: false),
       'sort_order': (maxOrder ?? -1) + 1,
     });
@@ -125,7 +125,7 @@ class ModelRepository {
     // 0 would put every new group at the top of the list.
     final maxRow = await db.rawQuery('SELECT MAX(sort_order) AS m FROM fee_groups');
     final maxOrder = maxRow.first['m'] as int?;
-    return await db.insert('fee_groups', {
+    return db.insert('fee_groups', {
       ...group.toMap(includeId: false),
       'sort_order': (maxOrder ?? -1) + 1,
     });

@@ -220,8 +220,8 @@ class AppState extends ChangeNotifier {
   String? lastVideoModelId;
   VeoResolution lastVideoResolution = VeoResolution.r720p;
   VeoAspectRatio lastVideoAspectRatio = VeoAspectRatio.r16_9;
-  String lastPrompt = "";
-  String lastVideoPrompt = "";
+  String lastPrompt = '';
+  String lastVideoPrompt = '';
 
   /// The prompt most recently applied from the assistant, for
   /// generation-task provenance. In-memory by design (see the class doc);
@@ -526,8 +526,8 @@ class AppState extends ChangeNotifier {
     lastVideoModelId = await _db.getSetting('last_video_model_id');
     lastVideoResolution = VeoResolution.fromString(await _db.getSetting('last_video_resolution'));
     lastVideoAspectRatio = VeoAspectRatio.fromString(await _db.getSetting('last_video_aspect_ratio'));
-    lastPrompt = await _db.getSetting('last_prompt') ?? "";
-    lastVideoPrompt = await _db.getSetting('last_video_prompt') ?? "";
+    lastPrompt = await _db.getSetting('last_prompt') ?? '';
+    lastVideoPrompt = await _db.getSetting('last_video_prompt') ?? '';
     useStream = (await _db.getSetting('workbench_use_stream') ?? 'true') == 'true';
     compressReferenceImages = (await _db.getSetting('workbench_compress_reference_images') ?? 'false') == 'true';
 

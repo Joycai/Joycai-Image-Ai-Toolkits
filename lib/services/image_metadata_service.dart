@@ -34,13 +34,13 @@ class ImageMetadata {
   /// figure the ratio can be *derived* from to make room for the derivation.
   /// [params] still carries it for the metadata inspector, which has a column
   /// to put it in.
-  String get displayString => width > 0 ? "$width×$height · $sizeString" : sizeString;
+  String get displayString => width > 0 ? '$width×$height · $sizeString' : sizeString;
 
   Map<String, String> get params => {
-    if (width > 0) "Width": "$width px",
-    if (height > 0) "Height": "$height px",
-    if (aspectRatio.isNotEmpty) "Aspect Ratio": aspectRatio,
-    "File Size": sizeString,
+    if (width > 0) 'Width': '$width px',
+    if (height > 0) 'Height': '$height px',
+    if (aspectRatio.isNotEmpty) 'Aspect Ratio': aspectRatio,
+    'File Size': sizeString,
   };
 }
 
@@ -99,7 +99,7 @@ class ImageMetadataService {
           width: 0,
           height: 0,
           fileSize: fileSize,
-          aspectRatio: "",
+          aspectRatio: '',
           sizeString: AppConstants.formatFileSize(fileSize),
         );
         _putInCache(path, metadata);

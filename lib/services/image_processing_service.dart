@@ -46,7 +46,7 @@ Uint8List _runImageProcess(_ImageProcessParams params) {
   final file = File(params.sourcePath);
   final bytes = file.readAsBytesSync();
   img.Image? image = img.decodeImage(bytes);
-  if (image == null) throw Exception("Failed to decode image");
+  if (image == null) throw Exception('Failed to decode image');
 
   // 1. Crop
   if (params.cropX != null && params.cropY != null && params.cropWidth != null && params.cropHeight != null) {
@@ -63,10 +63,10 @@ Uint8List _runImageProcess(_ImageProcessParams params) {
   if (params.width != null || params.height != null) {
     img.Interpolation filter;
     switch (params.sampling) {
-      case SamplingMethod.nearest: filter = img.Interpolation.nearest; break;
-      case SamplingMethod.linear: filter = img.Interpolation.linear; break;
-      case SamplingMethod.cubic: filter = img.Interpolation.cubic; break;
-      case SamplingMethod.lanczos: filter = img.Interpolation.average; break; // Lanczos not directly mapped, use average
+      case SamplingMethod.nearest: filter = img.Interpolation.nearest;
+      case SamplingMethod.linear: filter = img.Interpolation.linear;
+      case SamplingMethod.cubic: filter = img.Interpolation.cubic;
+      case SamplingMethod.lanczos: filter = img.Interpolation.average; // Lanczos not directly mapped, use average
     }
 
     image = img.copyResize(
@@ -136,7 +136,7 @@ class ImageProcessingService {
       sampling: sampling,
       targetPath: targetPath,
     );
-    return await compute(_runImageProcess, params);
+    return compute(_runImageProcess, params);
   }
 
   /// Writes [bytes] to [targetPath].

@@ -348,15 +348,15 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     _isAutoUpdating = true;
     if (ratio != null) {
       if (ratio == 1.0) {
-        _ratioXController.text = "1"; _ratioYController.text = "1";
+        _ratioXController.text = '1'; _ratioYController.text = '1';
       } else if (ratio > 1.3 && ratio < 1.4) {
-        _ratioXController.text = "4"; _ratioYController.text = "3";
+        _ratioXController.text = '4'; _ratioYController.text = '3';
       } else if (ratio > 1.7 && ratio < 1.8) {
-        _ratioXController.text = "16"; _ratioYController.text = "9";
+        _ratioXController.text = '16'; _ratioYController.text = '9';
       } else if (ratio > 0.7 && ratio < 0.8) {
-        _ratioXController.text = "3"; _ratioYController.text = "4";
+        _ratioXController.text = '3'; _ratioYController.text = '4';
       } else if (ratio > 0.5 && ratio < 0.6) {
-        _ratioXController.text = "9"; _ratioYController.text = "16";
+        _ratioXController.text = '9'; _ratioYController.text = '16';
       }
     } else {
       _ratioXController.clear();
@@ -605,7 +605,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
       );
 
       if (confirmed == null) return;
-      if (confirmed == false) return _handleSave(overwrite: false);
+      if (!confirmed) return _handleSave(overwrite: false);
     }
 
     if (!mounted) return;
@@ -614,9 +614,9 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     try {
       SamplingMethod sampling;
       switch (uiState.samplingMethod) {
-        case 'nearest': sampling = SamplingMethod.nearest; break;
-        case 'linear': sampling = SamplingMethod.linear; break;
-        case 'cubic': sampling = SamplingMethod.cubic; break;
+        case 'nearest': sampling = SamplingMethod.nearest;
+        case 'linear': sampling = SamplingMethod.linear;
+        case 'cubic': sampling = SamplingMethod.cubic;
         default: sampling = SamplingMethod.lanczos;
       }
 
@@ -681,7 +681,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.error(context, "Error: $e");
+        AppSnackBar.error(context, 'Error: $e');
       }
     } finally {
       if (mounted) setState(() => _processingAction = null);

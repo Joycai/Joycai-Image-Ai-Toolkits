@@ -30,7 +30,7 @@ class AppPaths {
     if (Platform.isAndroid || Platform.isIOS) return false;
     
     final exeDir = File(Platform.resolvedExecutable).parent.path;
-    return await File(p.join(exeDir, '.portable')).exists();
+    return File(p.join(exeDir, '.portable')).exists();
   }
 
   static Future<void> setPortableMode(bool enabled) async {

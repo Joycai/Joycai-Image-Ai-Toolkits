@@ -104,7 +104,7 @@ class GalleryState extends ChangeNotifier {
   String? outputDirectory;
   String? resultCacheDirectory;
   double thumbnailSize = 150.0;
-  String imagePrefix = "result";
+  String imagePrefix = 'result';
 
   /// Root directories of the result tree (dedup, non-empty): the configured
   /// output directory plus the platform result cache when it differs.
@@ -258,7 +258,7 @@ class GalleryState extends ChangeNotifier {
       thumbnailSize = double.tryParse(savedThumbSize) ?? 150.0;
     }
 
-    imagePrefix = await _db.getSetting('image_prefix') ?? "result";
+    imagePrefix = await _db.getSetting('image_prefix') ?? 'result';
     outputDirectory = await _db.getSetting('output_directory');
 
     // Result Cache initialization (Fallback for sandboxed environments like iOS/macOS)

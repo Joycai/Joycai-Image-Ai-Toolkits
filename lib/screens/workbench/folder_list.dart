@@ -85,7 +85,7 @@ class _FolderListState extends State<FolderList> {
   Future<void> _pickDirectory(BuildContext context, AppState appState) async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      String? selectedDirectory = await FilePicker.getDirectoryPath(
+      final String? selectedDirectory = await FilePicker.getDirectoryPath(
         dialogTitle: l10n.selectSourceDirectory,
       );
 

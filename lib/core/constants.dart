@@ -196,7 +196,7 @@ class AppConstants {
   }
 
   static String formatAspectRatio(int width, int height) {
-    if (width == 0 || height == 0) return "";
+    if (width == 0 || height == 0) return '';
     final double ratio = width / height;
     
     // Standard ratios and their decimal values
@@ -233,15 +233,15 @@ class AppConstants {
   }
 
   static String formatFileSize(int bytes) {
-    if (bytes <= 0) return "0 B";
-    const units = ["B", "KB", "MB", "GB", "TB"];
+    if (bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     int i = 0;
     double size = bytes.toDouble();
     while (size >= 1024 && i < units.length - 1) {
       size /= 1024;
       i++;
     }
-    return "${size.toStringAsFixed(size < 10 ? 2 : 1)} ${units[i]}";
+    return '${size.toStringAsFixed(size < 10 ? 2 : 1)} ${units[i]}';
   }
 
   static String getMimeType(String path) {

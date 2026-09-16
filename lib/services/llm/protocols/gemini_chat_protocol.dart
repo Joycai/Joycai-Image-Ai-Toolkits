@@ -101,10 +101,10 @@ class GeminiChatProtocol implements ChatProtocol {
         );
       }
 
-      String text = "";
-      String reasoning = "";
-      List<Uint8List> images = [];
-      List<LLMToolCall> toolCalls = [];
+      String text = '';
+      String reasoning = '';
+      final List<Uint8List> images = [];
+      final List<LLMToolCall> toolCalls = [];
       Map<String, dynamic> metadata = {};
 
       for (final chunk in parseGoogleChunks(data, logger: logger)) {

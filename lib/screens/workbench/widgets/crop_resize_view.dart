@@ -205,7 +205,7 @@ class _CropResizeViewState extends State<CropResizeView> {
             key: _canvasKey,
             child: ExtendedImage.file(
               File(sourceImage.path),
-              key: ValueKey("${sourceImage.path}_${uiState.cropAspectRatio}"),
+              key: ValueKey('${sourceImage.path}_${uiState.cropAspectRatio}'),
               fit: BoxFit.contain,
               mode: ExtendedImageMode.editor,
               enableLoadState: true,

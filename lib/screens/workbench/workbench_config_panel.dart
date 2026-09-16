@@ -647,7 +647,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       onApply: (content, isAppend) {
         if (isAppend) {
           final existing = _promptController.text;
-          _promptController.text = existing.isEmpty ? content : "$existing\n\n$content";
+          _promptController.text = existing.isEmpty ? content : '$existing\n\n$content';
         } else {
           _promptController.text = content;
         }

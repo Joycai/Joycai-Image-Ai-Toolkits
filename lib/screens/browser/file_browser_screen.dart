@@ -130,7 +130,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   Future<void> _reAuthorizeFolder(FileBrowserState browser, String path) async {
     final String? newPath = await FilePermissionService().reAuthorize(
       path,
-      title: "Authorize Access to: $path",
+      title: 'Authorize Access to: $path',
     );
     if (newPath != null) browser.refresh();
   }

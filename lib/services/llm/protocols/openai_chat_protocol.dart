@@ -788,8 +788,8 @@ class OpenAIChatProtocol implements ChatProtocol {
       logger?.call('Response received, parsing data...', level: 'DEBUG');
       // Status → JSON → shape → envelope, in that order (decodeJsonBody).
       final data = decodeJsonBody(response, apiName: 'OpenAI API');
-      String text = "";
-      List<Uint8List> images = [];
+      String text = '';
+      final List<Uint8List> images = [];
       final List<LLMToolCall> toolCalls = [];
       String? reasoningContent;
       String? reasoningFieldName;
@@ -1052,7 +1052,7 @@ class OpenAIChatProtocol implements ChatProtocol {
       );
     }
 
-    String accumulatedText = "";
+    String accumulatedText = '';
     bool isLikelyBase64Stream = false;
     // <think> tags arrive split across chunks; the filter reassembles them
     // and keeps the thinking out of the text channel.
@@ -1453,17 +1453,17 @@ class OpenAIChatProtocol implements ChatProtocol {
       // Tool result message.
       if (msg.role == LLMRole.tool) {
         return {
-          "role": "tool",
-          "tool_call_id": msg.toolCallId,
-          "content": msg.content,
+          'role': 'tool',
+          'tool_call_id': msg.toolCallId,
+          'content': msg.content,
         };
       }
 
       // Assistant message carrying tool calls.
       if (msg.role == LLMRole.assistant && msg.toolCalls.isNotEmpty) {
         return {
-          "role": "assistant",
-          "content": msg.content.isEmpty ? null : msg.content,
+          'role': 'assistant',
+          'content': msg.content.isEmpty ? null : msg.content,
           // ① family echo-back obligation (reasoning.md §3): DeepSeek returns
           // 400 when a tool-calling assistant turn's reasoning is not
           // replayed. Echo under the exact field name it arrived with —
@@ -1479,14 +1479,14 @@ class OpenAIChatProtocol implements ChatProtocol {
               (msg.rawThinkingModelId == null ||
                   msg.rawThinkingModelId == target.config.modelId))
             msg.reasoningFieldName!: msg.reasoningContent,
-          "tool_calls": msg.toolCalls
+          'tool_calls': msg.toolCalls
               .map(
                 (tc) => {
-                  "id": tc.id,
-                  "type": "function",
-                  "function": {
-                    "name": tc.name,
-                    "arguments": jsonEncode(tc.arguments),
+                  'id': tc.id,
+                  'type': 'function',
+                  'function': {
+                    'name': tc.name,
+                    'arguments': jsonEncode(tc.arguments),
                   },
                 },
               )
@@ -1507,29 +1507,29 @@ class OpenAIChatProtocol implements ChatProtocol {
             (msg.role == LLMRole.user &&
                 target.model.capabilities.isImageGenerator)
             ? [
-                {"type": "text", "text": msg.content},
+                {'type': 'text', 'text': msg.content},
               ]
             : msg.content;
       } else {
         final parts = <Map<String, dynamic>>[];
         if (msg.content.isNotEmpty) {
-          parts.add({"type": "text", "text": msg.content});
+          parts.add({'type': 'text', 'text': msg.content});
         }
         for (var attachment in msg.attachments) {
           if (attachment.path == null && attachment.bytes == null) continue;
           final resolved = ImageCompressor.readForApi(attachment);
           parts.add({
-            "type": "image_url",
-            "image_url": {
-              "url":
-                  "data:${resolved.mimeType};base64,${base64Encode(resolved.bytes)}",
+            'type': 'image_url',
+            'image_url': {
+              'url':
+                  'data:${resolved.mimeType};base64,${base64Encode(resolved.bytes)}',
             },
           });
         }
         content = parts;
       }
 
-      return {"role": msg.role.name, "content": content};
+      return {'role': msg.role.name, 'content': content};
     }).toList();
 
     // Never without a system message (provider layering 01 §9.2, pitfalls 11
@@ -1543,16 +1543,16 @@ class OpenAIChatProtocol implements ChatProtocol {
     if (!history.any((m) => m.role == LLMRole.system) &&
         !target.model.capabilities.isImageGenerator) {
       messages.insert(0, {
-        "role": "system",
-        "content": openaiDefaultSystemPrompt,
+        'role': 'system',
+        'content': openaiDefaultSystemPrompt,
       });
     }
 
     final effort = target.config.effectiveReasoningEffort;
     final payload = <String, dynamic>{
-      "model": target.config.modelId,
-      "messages": messages,
-      "stream": isStreaming,
+      'model': target.config.modelId,
+      'messages': messages,
+      'stream': isStreaming,
       // Only when the user picked a level — default sends nothing (the
       // minimal-common-denominator rule: every proactively sent field is one
       // some relay can 400 on). `off` goes out as "none": an endpoint that
@@ -1575,14 +1575,14 @@ class OpenAIChatProtocol implements ChatProtocol {
     };
 
     if (tools != null && tools.isNotEmpty) {
-      payload["tools"] = tools
+      payload['tools'] = tools
           .map(
             (t) => {
-              "type": "function",
-              "function": {
-                "name": t.name,
-                "description": t.description,
-                "parameters": t.parameters,
+              'type': 'function',
+              'function': {
+                'name': t.name,
+                'description': t.description,
+                'parameters': t.parameters,
               },
             },
           )
@@ -1590,7 +1590,7 @@ class OpenAIChatProtocol implements ChatProtocol {
       // Always auto, never a forced tool. That is also what keeps a declared
       // `enable_thinking: true` valid: Qwen accepts only auto|none as
       // tool_choice while thinking is on (pitfalls 11 §A13).
-      payload["tool_choice"] = "auto";
+      payload['tool_choice'] = 'auto';
     }
 
     // The host's own web search, as a top-level flag — only on a vendor that
@@ -1601,18 +1601,18 @@ class OpenAIChatProtocol implements ChatProtocol {
     // §A10).
     if (target.config.enableWebSearch &&
         target.vendor.serverWebSearchFaces.contains(WireProtocol.openaiChat)) {
-      payload["enable_search"] = true;
+      payload['enable_search'] = true;
     }
 
     if (isStreaming) {
-      payload["stream_options"] = {"include_usage": true};
+      payload['stream_options'] = {'include_usage': true};
     }
 
     // Only when a caller explicitly capped the output — the channel probe
     // asks for one token so a connection test does not pay for a generation.
     // Absent otherwise: ordinary requests stay byte-identical.
     final maxTokens = requestedMaxTokens(options);
-    if (maxTokens != null) payload["max_tokens"] = maxTokens;
+    if (maxTokens != null) payload['max_tokens'] = maxTokens;
 
     // Only Gemini-served models (e.g. via New API or Google's OpenAI-compat
     // layer) understand these extensions. Native OpenAI must never receive
@@ -1708,9 +1708,9 @@ class OpenAIChatProtocol implements ChatProtocol {
     Map<String, dynamic> payload,
     Map<String, dynamic>? options,
   ) {
-    payload["modalities"] = ["image", "text"];
+    payload['modalities'] = ['image', 'text'];
 
-    payload["safety_settings"] = SafetySettings.toApiList(
+    payload['safety_settings'] = SafetySettings.toApiList(
       options?[SafetySettings.paramKey],
     );
 
@@ -1729,7 +1729,7 @@ class OpenAIChatProtocol implements ChatProtocol {
     }
     if (portable.isEmpty) return;
 
-    payload["image_config"] = {
+    payload['image_config'] = {
       'person_generation': 'allow_all',
       ...portable,
       'number_of_images': 1,

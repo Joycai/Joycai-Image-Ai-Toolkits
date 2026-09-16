@@ -134,7 +134,7 @@ class _ColorHuePickerState extends State<ColorHuePicker> {
   void _handleGesture(Offset localPosition, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     
-    double rad = (localPosition - center).direction; // -pi to pi
+    final double rad = (localPosition - center).direction; // -pi to pi
     double deg = (rad * 180 / 3.1415926535) + 90;
     if (deg < 0) deg += 360;
 

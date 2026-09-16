@@ -207,7 +207,7 @@ void main() {
       ]);
       final messages = p['messages'] as List;
       expect(messages, hasLength(1));
-      expect((messages.single['content'] as List), hasLength(2));
+      expect(messages.single['content'] as List, hasLength(2));
     });
 
     test('an assistant turn keeps its text alongside its tool calls', () {

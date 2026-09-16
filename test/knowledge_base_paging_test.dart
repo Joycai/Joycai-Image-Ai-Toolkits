@@ -21,7 +21,7 @@ void main() {
     });
 
     test('is deterministic — the same input always maps to the same pages', () {
-      final content = ('para\n\n' * 4000);
+      final content = 'para\n\n' * 4000;
       final first = KnowledgeBaseService.pageBoundaries(content, pageSize);
       final second = KnowledgeBaseService.pageBoundaries(content, pageSize);
       expect(first, second);
@@ -29,7 +29,7 @@ void main() {
     });
 
     test('boundaries are strictly increasing and cover the whole file', () {
-      final content = ('para\n\n' * 4000);
+      final content = 'para\n\n' * 4000;
       final starts = KnowledgeBaseService.pageBoundaries(content, pageSize);
       for (int i = 1; i < starts.length; i++) {
         expect(starts[i], greaterThan(starts[i - 1]));

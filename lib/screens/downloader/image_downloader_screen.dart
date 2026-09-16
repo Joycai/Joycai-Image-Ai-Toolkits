@@ -139,7 +139,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.error(context, "Analysis failed: $e");
+        AppSnackBar.error(context, 'Analysis failed: $e');
       }
     }
   }
@@ -225,7 +225,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     try {
       final content = utf8.decode(await picked.readAsBytes());
 
-      String parsedCookies = "";
+      String parsedCookies = '';
       int count = 0;
 
       if (content.contains('# Netscape HTTP Cookie File')) {

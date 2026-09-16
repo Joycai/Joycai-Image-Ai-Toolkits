@@ -348,12 +348,12 @@ class LLMService {
     required void Function(String msg, {String level}) log,
     void Function(int chars)? onToolArgumentChars,
   }) async {
-    String accumulatedText = "";
-    String accumulatedReasoning = "";
-    String fieldReasoning = "";
+    String accumulatedText = '';
+    String accumulatedReasoning = '';
+    String fieldReasoning = '';
     String? reasoningFieldName;
-    List<Uint8List> accumulatedImages = [];
-    List<LLMToolCall> accumulatedToolCalls = [];
+    final List<Uint8List> accumulatedImages = [];
+    final List<LLMToolCall> accumulatedToolCalls = [];
     Map<String, dynamic>? finalMetadata;
     List<Map<String, dynamic>>? rawThinkingBlocks;
     List<Map<String, dynamic>>? rawContentBlocks;

@@ -60,7 +60,7 @@ class WorkbenchUIState extends ChangeNotifier {
   AppImage? maskEditorSourceImage;
 
   // Prompt Optimizer State
-  String optimizerRoughPrompt = "";
+  String optimizerRoughPrompt = '';
   List<AppImage> optimizerReferenceImages = [];
 
   /// Interactive optimizer conversation. Replaced (not mutated) when the user
@@ -395,7 +395,7 @@ class WorkbenchUIState extends ChangeNotifier {
   }
 
   void clearOptimizerTransfer() {
-    optimizerRoughPrompt = "";
+    optimizerRoughPrompt = '';
     // Note: We might want to keep the images as reference in the sidebar
     // so we only clear the prompt "signal" that triggers the overwrite.
     notifyListeners();

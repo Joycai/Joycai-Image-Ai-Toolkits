@@ -57,7 +57,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   List<Prompt> _userPrompts = [];
   List<SystemPrompt> _systemPrompts = [];
   List<PromptTag> _tags = [];
-  String _searchQuery = "";
+  String _searchQuery = '';
 
   /// 'all', 'refiner' or 'rename'.
   String _selectedSystemType = 'all';

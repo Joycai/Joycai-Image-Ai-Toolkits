@@ -32,7 +32,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
   final TextEditingController _searchController = TextEditingController();
   bool _autoScroll = true;
   String? _filterLevel;
-  String _searchQuery = "";
+  String _searchQuery = '';
   bool _isSearchExpanded = false;
 
   @override
@@ -155,7 +155,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
                       tooltip: materialL10n.closeButtonTooltip,
                       onPressed: () {
                         setState(() {
-                          _searchQuery = "";
+                          _searchQuery = '';
                           _searchController.clear();
                           _isSearchExpanded = false;
                         });

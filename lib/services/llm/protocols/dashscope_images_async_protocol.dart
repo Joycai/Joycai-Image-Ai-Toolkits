@@ -183,7 +183,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
                 await LLMDebugLogger.appendLine(
                     debugFile, 'Body: ${jsonEncode(data)}');
               }
-              return await _collectResult(data, taskId, client, logger,
+              return _collectResult(data, taskId, client, logger,
                   sentSize: dashscopeSentSize(payload),
                   abortTrigger: abortTriggerOf(options));
             case 'FAILED':
