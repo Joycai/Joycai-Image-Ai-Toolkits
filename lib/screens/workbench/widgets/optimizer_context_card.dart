@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../core/app_semantic_colors.dart';
@@ -279,6 +281,10 @@ class OptimizerContextCard extends StatelessWidget {
   /// [LayoutBuilder] with explicit widths rather than `Expanded(flex:)` —
   /// `flex` must be at least 1, so a zero-length slice (which an unmeasured or
   /// unlimited session makes all three) would assert rather than not draw.
+  ///
+  /// The Row stretches its children: a Row hands them a *loose* height, and a
+  /// childless [ColoredBox] takes the smallest size it is allowed — zero — so
+  /// without the stretch every slice was an invisible 0px strip.
   Widget _buildBar(Map<ContextUsageSlice, Color> colors, Color remaining) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadius.xs),
@@ -287,19 +293,42 @@ class OptimizerContextCard extends StatelessWidget {
         child: ColoredBox(
           color: remaining,
           child: LayoutBuilder(
-            builder: (context, constraints) => Row(
-              children: [
-                for (final slice in ContextUsageSlice.values)
-                  SizedBox(
-                    width: constraints.maxWidth * usage.fractionOf(slice),
-                    child: ColoredBox(color: colors[slice]!),
-                  ),
-              ],
-            ),
+            builder: (context, constraints) {
+              final widths = _sliceWidths(constraints.maxWidth);
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final slice in ContextUsageSlice.values)
+                    SizedBox(
+                      width: widths[slice],
+                      child: ColoredBox(color: colors[slice]!),
+                    ),
+                ],
+              );
+            },
           ),
         ),
       ),
     );
+  }
+
+  /// A slice that costs something is never drawn thinner than this. A fresh
+  /// session against a 1M window is a fraction of a pixel, and a bar showing
+  /// nothing beside a readout showing a spend reads as "not measured".
+  static const double _minSliceWidth = 2;
+
+  /// Each slice's width in a track [trackWidth] wide: to scale, floored at
+  /// [_minSliceWidth] when non-empty, and never adding up past the track.
+  Map<ContextUsageSlice, double> _sliceWidths(double trackWidth) {
+    final widths = <ContextUsageSlice, double>{};
+    var left = trackWidth;
+    for (final slice in ContextUsageSlice.values) {
+      final fraction = usage.fractionOf(slice);
+      final width = fraction <= 0 ? 0.0 : math.max(trackWidth * fraction, _minSliceWidth);
+      widths[slice] = width.clamp(0.0, left);
+      left -= widths[slice]!;
+    }
+    return widths;
   }
 
   /// One legend pair: dot and label on the left, the figure on the right.

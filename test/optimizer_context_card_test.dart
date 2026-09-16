@@ -83,6 +83,67 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  /// The bar's filled slices, left to right: every [ColoredBox] under the
+  /// track except the track itself.
+  List<Rect> barSlices(WidgetTester tester) {
+    final track = find.byWidgetPredicate((w) => w is ClipRRect).first;
+    final boxes = find.descendant(of: track, matching: find.byType(ColoredBox));
+    return boxes.evaluate().skip(1).map((e) {
+      final box = e.renderObject! as RenderBox;
+      return box.localToGlobal(Offset.zero) & box.size;
+    }).toList();
+  }
+
+  testWidgets('the bar paints its slices at full height and to scale', (tester) async {
+    // The reported bug: a Row hands its children a loose height, and a
+    // childless ColoredBox sizes to the smallest it may — zero — so the text
+    // said 102.2K while the bar stayed an empty track.
+    await pump(
+      tester,
+      const ContextUsageSnapshot(
+        windowChars: 200000,
+        charsPerToken: 1,
+        slices: {
+          ContextUsageSlice.systemPrompt: 18200,
+          ContextUsageSlice.tools: 9600,
+          ContextUsageSlice.history: 74400,
+        },
+      ),
+    );
+
+    final slices = barSlices(tester);
+    expect(slices, hasLength(3));
+    for (final slice in slices) {
+      expect(slice.height, 8, reason: 'a slice must be as tall as the track');
+    }
+    final track = tester.getSize(find.byWidgetPredicate((w) => w is ClipRRect).first);
+    expect(slices[2].width, closeTo(track.width * 74400 / 200000, 0.01));
+  });
+
+  testWidgets('a sliver of a huge window still shows on the bar', (tester) async {
+    // A 1.5M window with a fresh session: a few thousand tokens is well under
+    // a pixel at the right panel's width, and a bar that shows nothing reads
+    // as "not measured" next to a readout that says otherwise.
+    await pump(
+      tester,
+      const ContextUsageSnapshot(
+        windowChars: 1500000,
+        charsPerToken: 1,
+        slices: {
+          ContextUsageSlice.systemPrompt: 700,
+          ContextUsageSlice.tools: 0,
+          ContextUsageSlice.history: 400,
+        },
+      ),
+      size: const Size(250, 900),
+    );
+
+    final slices = barSlices(tester);
+    expect(slices[0].width, greaterThanOrEqualTo(2));
+    expect(slices[1].width, 0, reason: 'a slice that costs nothing draws nothing');
+    expect(slices[2].width, greaterThanOrEqualTo(2));
+  });
+
   testWidgets('figures are printed in tokens, so a 1M window reads 1M', (tester) async {
     // The reported bug: a 1,048,576-token window calibrated to 1.7 chars/token
     // is 1,782,579 chars, and the card printed that as `1.8M`.
