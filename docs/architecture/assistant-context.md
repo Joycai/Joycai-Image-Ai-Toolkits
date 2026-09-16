@@ -280,6 +280,84 @@ nothing throws, the numbers just quietly stop meaning what they claim.
     memory; a restored session's cards are inert chips, so nothing is left to
     report after a restart.
 
+12. **A reply cut at the output limit runs none of its tool calls.** See
+    *The output side*. Break it and a `write_knowledge_file` cut mid-content
+    stages half a file with only the card's shrink check between it and disk.
+13. **The compaction summary never contains a prompt the model re-typed.**
+    The app appends the latest delivery itself, and carries an earlier
+    summary's appended copy forward when no newer call exists. See *The
+    output side*.
+
+## The output side (2026-09-16)
+
+Everything above budgets what the model is *sent*. What it may *say back*
+is a second limit, and until 2026-09 the assistant had no answer to it: ①②③
+sent no cap (a relay's default is often 4k–8k), ④ sent a fixed 8192 that
+thinking shares, and one `submit_prompt` measures 6–8K tokens. The cap
+itself is now per-model configuration, resolved in the protocol layer
+(`llm-three-layer.md` → 输出上限). What lives here is what the agent does
+around it:
+
+- **A reply cut at the output limit runs none of its tool calls**
+  (invariant 12). `finish_reason == 'length'` with tool calls used to execute
+  the cut call with the empty arguments its half JSON decoded to —
+  `submit_prompt` answered "prompt must not be empty", the model redid the
+  analysis, and was cut in the same place until the round limit. Now every
+  cut call is paired (the history must stay sendable) with
+  `truncatedToolResult` — directed: answer with the call alone, tighten, do
+  not restart — and a second cut in a row ends the turn with
+  `truncationStopNoticeToken`, whose card jumps to the model's editor. A cut
+  plain-text reply is kept as what the model said, marked `truncated` on its
+  entry (narration beside cut calls too); a cut reply with *nothing* in it —
+  thinking spent the whole cap, ③ with a small `maxOutputTokens` does this —
+  counts toward the stop like a cut call, or the user would see nothing at
+  all. Entries record `modelDbId`, so the card's jump opens the editor of
+  the model that produced the reply, not whatever the picker shows now. The
+  sub-agent loop applies the same rule (`maxTruncatedRounds`, in
+  `sub_agent_runner.dart` because the agent library imports it, not the
+  reverse). Pinned by `optimizer_truncation_test.dart`.
+- **The summary never asks the model to re-type a prompt** (invariant 13).
+  The summarizer used to be told to keep "the LATEST submitted prompt in
+  full" — a 6–8K-token document re-typed by a non-streaming call whose
+  deadline assumed 4096. Prompt bodies are now omitted from its input (the
+  notes stay; they are what distinguished the versions), and the app appends
+  the latest delivery under `latestPromptMarker` when the fold takes it.
+  Four rules make that hold: a delivery still in the kept tail is not
+  duplicated (the next fold that takes it appends it then); once the call
+  itself has been folded away the only copy is the one appended to the
+  earlier summary, so `_latestSubmittedPrompt` carries that forward — and
+  `_serializeForSummary` strips it from the earlier summary's text so the
+  summarizer never sees it; a cut call (empty arguments, invariant 12) is
+  skipped, as restore skips it, so it cannot hide the accepted version
+  before it; and `compactionBoundary` projects the carried prompt's size
+  into the fold (`carriedPromptChars`), or a 6–8K-token document would land
+  on top of the retention target every time. Restore reads the summary's
+  `[Latest submitted prompt] vN` back into `refinedPrompt` and the version
+  counter, so a session folded and reopened does not number its next
+  delivery v1 under prose about v3. Pinned by
+  `optimizer_compaction_test.dart` (the re-compaction and cut-call cases
+  are the ones review found).
+- **The one delivery is the only place its text goes.** Every mode's prompt
+  ends with `_terseDeliveryNote`; the sub-agent prompts bound their answers
+  (~1500 / ~800 words) because the parent reads an 800-char summary anyway.
+- **Knowledge writes send one section, stage the whole file.**
+  `write_knowledge_file` takes `mode` (`replace_file` | `replace_section` |
+  `append`) and `section` (a heading line as the file spells it);
+  `KnowledgeBaseService.spliceSection` splices the section into the file the
+  model already read, and `_stageKbEdit` gets the spliced whole file — so
+  the diff card, the read-before-write rail and `suspiciousShrink` are
+  untouched. A heading not in the file is a tool error listing the file's
+  headings, never an append beside the old rule. Three rails the section
+  modes needed on top of the whole-file one: a second section edit to the
+  same file in one turn chains on the still-pending card's content
+  (`_pendingKbEditContent`), so applying the cards in order applies both
+  and applying the second alone conflicts audibly; on a paged file the page
+  holding the heading must be a live read (`_sectionOnUnreadPage` — a
+  whole-file read covers everything), or a section on an unread page would
+  be rewritten from a guess; and `section` with no `mode` means the section
+  mode, because the default is the one destructive choice. Pinned by
+  `knowledge_base_splice_test.dart`.
+
 ## Accepted limits
 
 - **No mid-loop compaction, structurally.** `_maybeCompact` runs outside the
@@ -319,6 +397,13 @@ nothing throws, the numbers just quietly stop meaning what they claim.
   old `Set` pattern until 2026-08** — `viewedImagePaths` gated re-views without
   anything invalidating it — and exhibited exactly this deadlock before moving
   to the same derivation (`_liveViewedPaths`).
+- **Continuing a cut tool call.** No family can resume a `tool_use` mid
+  argument, and ④ 4.6+ removed assistant prefill; the directed retry of
+  invariant 12 is the most the loop can do, and the cap is the user's to
+  raise. A fixed default cap for ①③ was rejected for the same reason the
+  timeout round rejected it: it 400s on a model whose ceiling is lower, and
+  the user has nowhere to switch it off — a per-model number has neither
+  problem.
 - **Hard truncation as the compaction fallback.** Until 2026-09 a failed or
   empty summary replaced everything before the recent window with a one-line
   "earlier conversation was truncated" note, and flagged the rows compacted.
@@ -417,6 +502,8 @@ Pure functions are pinned directly; prefer adding to these over end-to-end runs.
 | `test/optimizer_image_cap_test.dart` | the newest-three cap across turns; re-view after the cap drops an image; force-view-all keeping the current turn; cap and liveness agreeing at every count |
 | `test/llm_cancellation_test.dart` | `LLMCancelled` classification, and the sub-agent turning it into a cancelled result rather than a failure |
 | `test/openai_chat_payload_test.dart` | reasoning echo-back, inline `<think>` split (sync + cross-chunk), in-body error envelopes |
+| `test/optimizer_truncation_test.dart` | invariant 12: a cut call is not run, its result shape, two cuts end the turn, a whole reply resets the count, a cut text reply is marked; the sub-agent's two cases |
+| `test/knowledge_base_splice_test.dart` | section modes: span to the next same-or-higher heading, nested headings go with their parent, first of duplicate headings, fenced code ignored, CRLF kept, not-found lists headings, append into a section / the file / an empty file |
 
 **Not covered end-to-end:** the model dialog's tri-state control and the
 Settings summary-ratio dropdown have never been driven through a real UI run.

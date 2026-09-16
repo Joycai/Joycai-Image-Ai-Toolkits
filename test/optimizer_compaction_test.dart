@@ -161,6 +161,47 @@ void main() {
       expect(session.history.any((m) => identical(m, delivery)), isTrue);
     });
 
+    test('a cut submit_prompt (empty arguments, invariant 12) does not hide the accepted prompt', () async {
+      final session = sessionWithDelivery(inTurn: 2);
+      // The cut call the loop keeps in history, paired with its refusal,
+      // one turn after the accepted delivery.
+      session.history.insert(
+        6,
+        LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
+          LLMToolCall(id: 'cut', name: 'submit_prompt', arguments: const {}),
+        ]),
+      );
+      session.history.insert(
+        7,
+        LLMMessage(role: LLMRole.tool, content: '{"code":"output_truncated"}', toolCallId: 'cut', toolName: 'submit_prompt'),
+      );
+      PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async =>
+          LLMResponse(text: isSummaryRequest(messages) ? 'the gist' : 'answer');
+
+      await PromptOptimizerAgent.runTurn(
+          session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 2000);
+
+      expect(session.history.first.content, endsWith(promptText));
+    });
+
+    test('a restored session takes its latest prompt and version from the summary', () async {
+      final session = sessionWithDelivery(inTurn: 2);
+      session.promptVersions = 3;
+      PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async =>
+          LLMResponse(text: isSummaryRequest(messages) ? 'the gist' : 'answer');
+      await PromptOptimizerAgent.runTurn(
+          session: session, modelIdentifier: 'm', referenceImages: const [], contextWindow: 2000);
+      expect(session.history.first.content, contains('${PromptOptimizerAgent.latestPromptMarker} v3'));
+
+      final restored = PromptOptimizerSession.fromStored(
+        id: 'restored',
+        mode: AssistantMode.systemPrompt,
+        history: List.of(session.history),
+      );
+      expect(restored.refinedPrompt, promptText);
+      expect(restored.promptVersions, 3);
+    });
+
     test('an earlier summary\'s appended prompt is not fed back into the next summary', () async {
       final session = sessionWithDelivery(inTurn: 2);
       final inputs = <String>[];

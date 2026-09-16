@@ -452,9 +452,24 @@ class VendorProfile {
   /// inside the protocol.
   final bool responsesIncludeEncryptedReasoning;
 
-  /// The name the ① chat wire sends the output cap under on this host. See
-  /// [OutputCapField]; the ① payload builder reads it and nothing else does.
+  /// The name the ① chat wire sends the output cap under on this vendor's
+  /// hosts. See [OutputCapField]; read through [outputCapFieldFor], which
+  /// adds the one host that is known by address rather than by profile.
   final OutputCapField outputCapField;
+
+  /// The cap field for a request to [endpoint]: the declared spelling, or
+  /// the new one on OpenAI's own host. By address because the generic ①
+  /// profile ([Vendors.openAIRest]) is also every custom relay's — the
+  /// "Custom (OpenAI-compatible)" preset, the fallback for an unknown stored
+  /// type — and a relay may know only the old name, while `api.openai.com`
+  /// rejects it for its reasoning models. The same shape as
+  /// [AuthScheme.anthropicApiKeyWithBearerFallback]'s host check: Layer 2
+  /// knowledge, keyed on the endpoint, invisible to the protocol.
+  OutputCapField outputCapFieldFor(String endpoint) {
+    if (outputCapField == OutputCapField.maxCompletionTokens) return outputCapField;
+    final host = Uri.tryParse(endpoint)?.host.toLowerCase();
+    return host == 'api.openai.com' ? OutputCapField.maxCompletionTokens : outputCapField;
+  }
 
   const VendorProfile({
     required this.id,

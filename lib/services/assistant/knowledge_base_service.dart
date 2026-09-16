@@ -118,27 +118,21 @@ class KbReadResult {
 
 /// Thrown when a tool-supplied path escapes the knowledge-base root or does
 /// not exist. The message is safe to surface to the model.
-/// A `write_knowledge_file` section argument named no heading in the file.
-/// Carries the file's headings so the tool result can list what would have
-/// matched — the model then corrects the spelling instead of guessing again.
-class KbSectionNotFound implements Exception {
-  final String heading;
-  final List<String> available;
-
-  const KbSectionNotFound(this.heading, this.available);
-
-  String get message => 'No section headed "$heading" in the file. '
-      '${available.isEmpty ? 'The file has no headings — use the whole-file mode.' : 'Its headings are: ${available.join(' | ')}'}';
-
-  @override
-  String toString() => message;
-}
-
 class KbPathException implements Exception {
   final String message;
   KbPathException(this.message);
   @override
   String toString() => message;
+}
+
+/// A `write_knowledge_file` section argument named no heading in the file.
+/// The message lists the file's headings so the model corrects the spelling
+/// instead of guessing again. A [KbPathException] so the tool handler's one
+/// catch hands it to the model like every other refusal.
+class KbSectionNotFound extends KbPathException {
+  KbSectionNotFound(String heading, List<String> available)
+      : super('No section headed "$heading" in the file. '
+            '${available.isEmpty ? 'The file has no headings — use the whole-file mode.' : 'Its headings are: ${available.join(' | ')}'}');
 }
 
 /// Thrown when a staged edit's target no longer matches the content the edit
@@ -208,14 +202,19 @@ class KnowledgeBaseService {
   static List<String> sectionHeadings(String content) {
     final out = <String>[];
     var inFence = false;
-    for (final line in content.split('\n')) {
-      final t = line.trimRight().replaceAll('\r', '').trim();
+    for (final line in content.split(_lineBreak)) {
+      final t = line.trim();
       if (t.startsWith('```') || t.startsWith('~~~')) inFence = !inFence;
       if (inFence) continue;
-      if (_headingLevel(t) > 0) out.add(t);
+      if (_headingLevel(line) > 0) out.add(t);
     }
     return out;
   }
+
+  /// Either line ending: a file may carry both (a pasted CRLF line inside an
+  /// LF file), and splitting on one of them would glue the others into a
+  /// single line that then swallows every section after it.
+  static final RegExp _lineBreak = RegExp(r'\r?\n');
 
   /// [existing] with one section replaced or extended — the targeted form
   /// of `write_knowledge_file`, so a rule change sends the rule's section
@@ -225,13 +224,16 @@ class KnowledgeBaseService {
   /// trimmed); the section runs from that line to just before the next
   /// heading of the same or a higher level, or to the end of the file. The
   /// first matching heading wins when the file repeats one. With [append]
-  /// false the whole section, heading included, is replaced by [body]; a
-  /// [body] that does not itself begin with a heading keeps the original
-  /// heading line above it. With [append] true, [body] is inserted at the
-  /// end of the section (before the next heading), or at the end of the
-  /// file when [heading] is null. Line endings follow the file. The output
-  /// is what gets staged, so the diff card and the read-before-write rail
-  /// see the same whole file they always did.
+  /// false the whole section, heading included, is replaced by [body]: the
+  /// original heading line stays above the body unless the body opens with
+  /// a heading of the *same* level (a rename) — any other opening keeps the
+  /// heading, so a body that starts with a sub-heading or a blank line
+  /// neither re-parents the section nor duplicates its title. With [append]
+  /// true, [body] is inserted at the end of the section (before the next
+  /// heading), or at the end of the file when [heading] is null. Line
+  /// endings follow the file's first line break. The output is what gets
+  /// staged, so the diff card and the read-before-write rail see the same
+  /// whole file they always did.
   ///
   /// Throws [KbSectionNotFound] — listing the file's headings — when
   /// [heading] is not in the file: silently appending a section the model
@@ -242,13 +244,16 @@ class KnowledgeBaseService {
     String body, {
     required bool append,
   }) {
-    final newline = existing.contains('\r\n') ? '\r\n' : '\n';
-    final lines = existing.isEmpty ? <String>[] : existing.split(newline);
+    final firstBreak = _lineBreak.firstMatch(existing);
+    final newline = firstBreak?.group(0) ?? '\n';
+    final lines = existing.isEmpty ? <String>[] : existing.split(_lineBreak);
     // A trailing newline splits into a final empty element; keep the file's
     // ending as it was and work on the content lines.
     final hadTrailingNewline = lines.length > 1 && lines.last.isEmpty;
     if (hadTrailingNewline) lines.removeLast();
-    final bodyLines = body.replaceAll('\r\n', '\n').trimRight().split('\n');
+    // Trimmed on both sides: a body that opens with a blank line (models
+    // often lead with one) must not put that blank where the heading goes.
+    final bodyLines = body.trim().split(_lineBreak);
 
     if (heading == null) {
       if (!append) throw ArgumentError('a section heading is required to replace a section');
@@ -265,7 +270,7 @@ class KnowledgeBaseService {
       final t = lines[i].trim();
       if (t.startsWith('```') || t.startsWith('~~~')) inFence = !inFence;
       if (inFence) continue;
-      if (t == target) {
+      if (t == target && _headingLevel(lines[i]) > 0) {
         start = i;
         break;
       }
@@ -277,7 +282,7 @@ class KnowledgeBaseService {
       final t = lines[i].trim();
       if (t.startsWith('```') || t.startsWith('~~~')) inFence = !inFence;
       if (inFence) continue;
-      final l = _headingLevel(t);
+      final l = _headingLevel(lines[i]);
       if (l > 0 && l <= level) {
         end = i;
         break;
@@ -294,9 +299,11 @@ class KnowledgeBaseService {
       }
       replacement = [...section, ...bodyLines, if (end < lines.length) ''];
     } else {
-      final keepsHeading = _headingLevel(bodyLines.first.trim()) > 0;
+      // Only a same-level heading may stand in for the original (a rename);
+      // anything else keeps it, so the body cannot re-parent the section.
+      final renames = _headingLevel(bodyLines.first) == level;
       replacement = [
-        if (!keepsHeading) target,
+        if (!renames) target,
         ...bodyLines,
         if (end < lines.length) '',
       ];
@@ -306,14 +313,22 @@ class KnowledgeBaseService {
     return hadTrailingNewline || existing.isEmpty ? '$joined$newline' : joined;
   }
 
-  /// `1`–`6` for an ATX heading line, `0` otherwise.
-  static int _headingLevel(String trimmedLine) {
+  /// `1`–`6` for an ATX heading line, `0` otherwise. CommonMark: up to three
+  /// spaces of indent are still a heading, four or more are an indented code
+  /// block — so a `# comment` inside indented code does not end a section.
+  static int _headingLevel(String line) {
+    var indent = 0;
+    while (indent < line.length && line[indent] == ' ') {
+      indent++;
+    }
+    if (indent > 3) return 0;
+    final t = line.substring(indent).trimRight();
     var n = 0;
-    while (n < trimmedLine.length && trimmedLine[n] == '#') {
+    while (n < t.length && t[n] == '#') {
       n++;
     }
     if (n == 0 || n > 6) return 0;
-    return n < trimmedLine.length && trimmedLine[n] == ' ' ? n : 0;
+    return n < t.length && t[n] == ' ' ? n : 0;
   }
 
   Future<String?> getRoot() async {

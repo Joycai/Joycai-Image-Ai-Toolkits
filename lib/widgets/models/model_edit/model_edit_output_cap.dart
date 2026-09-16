@@ -53,6 +53,12 @@ extension _OutputCapSection on _ModelEditDialogState {
     // it on every wire (usage 04 §3), and a cap sized for the answer alone
     // is spent on the thinking first.
     final thinkingShares = specified && reasoningEffort != null && reasoningEffort != 'off';
+    // ④'s budget dialect carves half the cap for thinking with a 1024 floor
+    // and sends no thinking at all when that floor does not fit — silently,
+    // the request just goes out without it. Below twice the floor is where
+    // that happens; said here, since nothing on the wire says it.
+    final capStarvesThinking =
+        thinkingShares && _isAnthropicChannel && hasValue && tokens < 2 * anthropicMinThinkingBudget;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -131,6 +137,14 @@ extension _OutputCapSection on _ModelEditDialogState {
                           padding: const EdgeInsets.only(top: AppSpace.s6),
                           child: ModelEditValidationNote(
                             title: l10n.outputCapExceedsWindow(formatGroupedTokens(window)),
+                          ),
+                        ),
+                      if (capStarvesThinking)
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppSpace.s6),
+                          child: ModelEditValidationNote(
+                            title: l10n.outputCapStarvesThinking(
+                                formatGroupedTokens(2 * anthropicMinThinkingBudget)),
                           ),
                         ),
                     ],

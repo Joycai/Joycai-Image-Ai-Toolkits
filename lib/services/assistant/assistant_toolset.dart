@@ -162,9 +162,10 @@ final List<LLMTool> _knowledgeWriteTools = [
         'everything under it up to the next heading of the same or higher '
         'level — with "content"; "append" adds "content" at the end of that '
         'section, or at the end of the file when "section" is omitted; '
-        '"replace_file" (the default when "mode" is omitted) replaces the '
-        'whole file and needs the COMPLETE new content — use it only for a '
-        'new file or a restructure. Before touching an existing file you '
+        '"replace_file" replaces the whole file and needs the COMPLETE new '
+        'content — use it only for a new file or a restructure. Omitting '
+        '"mode" means replace_section when "section" is given, replace_file '
+        'otherwise. Before touching an existing file you '
         'must read it first with read_knowledge_file. Whenever you add or '
         'rename a file, also update the entry file (README.md) so the file '
         'map keeps matching the real tree.',
@@ -185,7 +186,8 @@ final List<LLMTool> _knowledgeWriteTools = [
         'mode': {
           'type': 'string',
           'enum': ['replace_file', 'replace_section', 'append'],
-          'description': 'What "content" replaces. Defaults to replace_file.',
+          'description': 'What "content" replaces. Omitted: replace_section '
+              'when "section" is given, else replace_file.',
         },
         'section': {
           'type': 'string',

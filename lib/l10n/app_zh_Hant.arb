@@ -1013,6 +1013,14 @@
   },
   "outputCapChip": "輸出 {size}",
   "outputCapThinkingHint": "該模型已開啟推理，思考 token 先於正文計入此上限——請在正文所需之上留出餘量。",
+  "outputCapStarvesThinking": "低於 {min} tokens 時，Anthropic 格式的模型放不下思考預算，請求會靜默地不帶思考送出。",
+  "@outputCapStarvesThinking": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      }
+    }
+  },
   "@outputCapChip": {
     "placeholders": {
       "size": {

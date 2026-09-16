@@ -1872,6 +1872,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Reasoning is on for this model, and its thinking tokens count against this cap before the answer does — leave room above what the answer needs.';
 
   @override
+  String outputCapStarvesThinking(String min) {
+    return 'Below $min tokens an Anthropic-format model cannot fit a thinking budget, so the request goes out without thinking at all — silently.';
+  }
+
+  @override
   String get contextPresets => 'Presets';
 
   @override

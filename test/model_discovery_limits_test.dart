@@ -34,14 +34,18 @@ void main() {
     expect(limits.maxOutputTokens, 65536);
   });
 
-  test('OpenRouter: context_length and top_provider.max_completion_tokens', () {
+  test('OpenRouter: the smaller of the two windows, and top_provider.max_completion_tokens', () {
     final limits = discoveredLimitsOf(listed({
       'id': 'openai/gpt-5.6',
       'context_length': 400000,
-      'top_provider': {'context_length': 400000, 'max_completion_tokens': 128000},
+      'top_provider': {'context_length': 128000, 'max_completion_tokens': 128000},
     }));
-    expect(limits.contextWindow, 400000);
+    expect(limits.contextWindow, 128000);
     expect(limits.maxOutputTokens, 128000);
+  });
+
+  test('a bare max_tokens outside the Anthropic shape is not an output cap', () {
+    expect(discoveredLimitsOf(listed({'id': 'x', 'max_tokens': 131072})).maxOutputTokens, isNull);
   });
 
   test('LM Studio: max_context_length, no cap', () {
@@ -51,10 +55,10 @@ void main() {
   });
 
   test('zero, negative and junk read as unknown; numeric strings count', () {
-    expect(discoveredLimitsOf(listed({'max_tokens': 0})).maxOutputTokens, isNull);
-    expect(discoveredLimitsOf(listed({'max_tokens': -1})).maxOutputTokens, isNull);
-    expect(discoveredLimitsOf(listed({'max_tokens': 'lots'})).maxOutputTokens, isNull);
-    expect(discoveredLimitsOf(listed({'max_tokens': '65536'})).maxOutputTokens, 65536);
+    expect(discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': 0})).maxOutputTokens, isNull);
+    expect(discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': -1})).maxOutputTokens, isNull);
+    expect(discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': 'lots'})).maxOutputTokens, isNull);
+    expect(discoveredLimitsOf(listed({'max_input_tokens': 1, 'max_tokens': '65536'})).maxOutputTokens, 65536);
     expect(discoveredLimitsOf(listed({'top_provider': 'n/a'})).maxOutputTokens, isNull);
   });
 }

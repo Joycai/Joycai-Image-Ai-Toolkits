@@ -369,10 +369,6 @@ extension _Layouts on _ModelEditDialogState {
     ]);
   }
 
-  /// An image or video model has no reply to cap: the section is absent for
-  /// those kinds, as the window section's copy says for them.
-  bool get _hasOutputCap => tag != 'image' && tag != 'video';
-
   Widget _stack(List<Widget> sections) => Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

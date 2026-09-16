@@ -229,6 +229,14 @@
   },
   "outputCapChip": "输出 {size}",
   "outputCapThinkingHint": "该模型已开启推理，思考 token 先于正文计入此上限——请在正文所需之上留出余量。",
+  "outputCapStarvesThinking": "低于 {min} tokens 时，Anthropic 格式的模型放不下思考预算，请求会静默地不带思考发出。",
+  "@outputCapStarvesThinking": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      }
+    }
+  },
   "@outputCapChip": {
     "placeholders": {
       "size": {

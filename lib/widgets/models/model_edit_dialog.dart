@@ -14,7 +14,7 @@ import '../../services/catalogue/output_cap_scale.dart';
 import '../../services/llm/context_budget.dart';
 import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/llm_types.dart';
-import '../../services/llm/protocols/anthropic_wire.dart' show anthropicDefaultMaxTokens;
+import '../../services/llm/protocols/anthropic_wire.dart' show anthropicDefaultMaxTokens, anthropicMinThinkingBudget;
 import '../../services/llm/vendors/vendors.dart';
 import '../../services/catalogue/model_id_uniqueness.dart';
 import '../../state/app_state.dart';
@@ -216,11 +216,17 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   /// The output cap's Specify figure, in the context field's grammar.
   int? get _outputCapTokens => OutputCapScale.parse(outputCapCtrl.text);
 
-  /// Same rule as the window: Specify with nothing savable blocks Save.
-  bool get _outputCapValid => !outputCapSpecified || (_outputCapTokens ?? 0) > 0;
+  /// An image or video model has no reply to cap: the section is absent for
+  /// those kinds, and so is everything that reads it — a hidden field must
+  /// neither block Save nor be stored.
+  bool get _hasOutputCap => tag != 'image' && tag != 'video';
 
-  /// What the row stores: null on Auto, the figure on Specify.
-  int? get _storedOutputCap => outputCapSpecified ? _outputCapTokens : null;
+  /// Same rule as the window: Specify with nothing savable blocks Save.
+  bool get _outputCapValid => !_hasOutputCap || !outputCapSpecified || (_outputCapTokens ?? 0) > 0;
+
+  /// What the row stores: null on Auto (and for a kind without the
+  /// section), the figure on Specify.
+  int? get _storedOutputCap => _hasOutputCap && outputCapSpecified ? _outputCapTokens : null;
 
   /// The ID is the only required field — a blank name saves as the ID.
   bool get _canSave =>

@@ -609,7 +609,7 @@ class LLMDispatcher {
   ///    host decide, which is not knowable here — 4096 stands in, low enough
   ///    that the floor usually wins and short calls keep the old behaviour.
   int _outputCap(LLMTarget target, Map<String, dynamic>? options) {
-    final requested = requestedMaxTokens(options) ?? target.config.maxOutputTokens;
+    final requested = outputCapFor(target, options);
     if (requested != null) return requested;
 
     final expected = options?[expectedOutputTokensKey];

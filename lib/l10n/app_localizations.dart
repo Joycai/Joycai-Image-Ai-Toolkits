@@ -3263,6 +3263,12 @@ abstract class AppLocalizations {
   /// **'Reasoning is on for this model, and its thinking tokens count against this cap before the answer does — leave room above what the answer needs.'**
   String get outputCapThinkingHint;
 
+  /// No description provided for @outputCapStarvesThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Below {min} tokens an Anthropic-format model cannot fit a thinking budget, so the request goes out without thinking at all — silently.'**
+  String outputCapStarvesThinking(String min);
+
   /// No description provided for @contextPresets.
   ///
   /// In en, this message translates to:

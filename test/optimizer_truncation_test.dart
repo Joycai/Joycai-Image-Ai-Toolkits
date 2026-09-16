@@ -115,6 +115,23 @@ void main() {
     expect(session.transcript.any((e) => e.kind == OptimizerEntryKind.error), isFalse);
   });
 
+  test('an empty cut reply — thinking spent the whole cap — counts toward the stop', () async {
+    final session = PromptOptimizerSession();
+    session.addUserTurn('go');
+    var requests = 0;
+    PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
+      requests++;
+      return LLMResponse(text: '', metadata: const {'finish_reason': 'length'});
+    };
+
+    await PromptOptimizerAgent.runTurn(session: session, modelIdentifier: 7, referenceImages: const []);
+
+    expect(requests, maxTruncatedRounds);
+    expect(session.transcript.last.kind, OptimizerEntryKind.error);
+    expect(session.transcript.last.text, PromptOptimizerAgent.truncationStopNoticeToken);
+    expect(session.transcript.last.modelDbId, 7, reason: 'the card jumps to the model that produced the reply');
+  });
+
   test('a cut plain-text reply is kept as a reply and marked truncated', () async {
     final session = PromptOptimizerSession();
     session.addUserTurn('go');

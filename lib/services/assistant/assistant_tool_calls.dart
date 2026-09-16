@@ -360,6 +360,59 @@ Map<String, dynamic> _executeSubAgentKbTool(
   }
 }
 
+/// The page of [existing] (at the read tool's constant page size) that holds
+/// [heading], when no live read of [relPath] covers it; null when a live read
+/// does — a whole-file read (`total_pages: 1`) covers everything, a paged one
+/// only its page. Reads of a file that fits in one page are always whole.
+int? _sectionOnUnreadPage(
+  PromptOptimizerSession session,
+  String relPath,
+  String existing,
+  String heading,
+  Set<int> livePages,
+) {
+  final starts = KnowledgeBaseService.pageBoundaries(existing, KnowledgeBaseService.pageSize);
+  if (starts.length <= 1) return null;
+  // The heading's offset: the first line that is exactly it.
+  var offset = -1;
+  var cursor = 0;
+  for (final line in existing.split(RegExp(r'\r?\n'))) {
+    if (line.trim() == heading) {
+      offset = cursor;
+      break;
+    }
+    cursor += line.length + 1;
+  }
+  if (offset < 0) return null; // Not found: the splice reports that itself.
+  var page = 1;
+  while (page < starts.length && starts[page] <= offset) {
+    page++;
+  }
+  if (_liveWholeReads(session, relPath)) return null;
+  return livePages.contains(page) ? null : page;
+}
+
+/// Whether any live read of [relPath] returned the whole file.
+bool _liveWholeReads(PromptOptimizerSession session, String relPath) {
+  final history = session.history;
+  final boundary = _recentBoundary(history);
+  final staleAt = _staleFrom(session, relPath);
+  final from = boundary > staleAt ? boundary : staleAt;
+  for (int i = from; i < history.length; i++) {
+    final m = history[i];
+    if (m.role != LLMRole.tool || m.toolName != 'read_knowledge_file') continue;
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(m.content);
+    } catch (_) {
+      continue;
+    }
+    if (decoded is! Map || decoded['path'] != relPath || decoded['content'] == null) continue;
+    if (decoded['total_pages'] == 1) return true;
+  }
+  return false;
+}
+
 /// The `write_knowledge_file` tool.
 ///
 /// Out here rather than in [_executeTool]'s switch because it can now
@@ -396,14 +449,21 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
   }
   final writePath = call.arguments['path']?.toString() ?? '';
   final writeContent = call.arguments['content']?.toString() ?? '';
-  final mode = call.arguments['mode']?.toString() ?? 'replace_file';
   final section = call.arguments['section']?.toString().trim();
+  // A section named with no mode means the section mode: the alternative —
+  // silently staging a 30-byte fragment as the whole file — is the very
+  // failure the modes exist to end, and the default is the one destructive
+  // choice.
+  final mode = call.arguments['mode']?.toString() ??
+      (section != null && section.isNotEmpty ? 'replace_section' : 'replace_file');
   onLog?.call('Tool call: write_knowledge_file $writePath '
       '(${writeContent.length} chars, $mode${section == null || section.isEmpty ? '' : ' "$section"'})');
   if (writePath.trim().isEmpty) {
     return {'status': 'error', 'message': 'The path argument must not be empty.'};
   }
-  if (writeContent.isEmpty) {
+  // Whitespace counts as empty: in a section mode it would wipe the section
+  // (a body of one blank line), in the file mode the file.
+  if (writeContent.trim().isEmpty) {
     return {
       'status': 'error',
       'message': 'The content argument must not be empty. Pass the complete '
@@ -439,13 +499,21 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
     // a *live* read, so a read that has since been elided or compacted
     // away no longer licenses a write — the model must fetch the file
     // again and diff against what it can actually see.
-    if (existing != null && _liveReadPages(session, writePath).isEmpty) {
+    final livePages = existing == null ? const <int>{} : _liveReadPages(session, writePath);
+    if (existing != null && livePages.isEmpty) {
       return {
         'status': 'error',
         'message': 'Read $writePath with read_knowledge_file first — you '
             'must not overwrite a file you have not read.',
       };
     }
+    // A section mode chains on an edit of the same file the user has not
+    // decided on yet: the second card's diff is against the first card's
+    // result, so applying them in order applies both, and applying the
+    // second alone conflicts audibly instead of silently dropping the first.
+    // The whole-file mode replaces whatever is pending, as it always did.
+    final pendingBase = mode == 'replace_file' ? null : session._pendingKbEditContent(writePath);
+    final base = pendingBase ?? existing;
     // The targeted modes send one section over the wire; what is staged is
     // still the whole file, spliced here, so the diff card, the suspicious-
     // shrink check and the apply path see exactly what they always did.
@@ -453,21 +521,32 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
     if (mode == 'replace_file') {
       newContent = writeContent;
     } else {
-      try {
-        newContent = KnowledgeBaseService.spliceSection(
-          existing!,
-          section == null || section.isEmpty ? null : section,
-          writeContent,
-          append: mode == 'append',
-        );
-      } on KbSectionNotFound catch (e) {
-        return {'status': 'error', 'message': e.message};
+      final sectionOrNull = section == null || section.isEmpty ? null : section;
+      // The page holding the heading must be one the model has read: with
+      // a paged file the rail above only proves *some* page is live, and a
+      // section on an unread page would be rewritten from a guess. A read
+      // that came back whole covers every heading.
+      if (sectionOrNull != null && pendingBase == null) {
+        final unread = _sectionOnUnreadPage(session, writePath, existing!, sectionOrNull, livePages);
+        if (unread != null) {
+          return {
+            'status': 'error',
+            'message': 'The section "$sectionOrNull" of $writePath is on page '
+                '$unread, which you have not read — read that page first.',
+          };
+        }
       }
+      newContent = KnowledgeBaseService.spliceSection(
+        base!,
+        sectionOrNull,
+        writeContent,
+        append: mode == 'append',
+      );
     }
     final editId = session._stageKbEdit(
       relPath: writePath,
       newContent: newContent,
-      oldContent: existing,
+      oldContent: base,
       knowledgeRoot: knowledgeRoot,
       note: call.arguments['note']?.toString(),
     );

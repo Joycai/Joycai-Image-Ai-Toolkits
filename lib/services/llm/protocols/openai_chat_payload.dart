@@ -183,11 +183,12 @@ Map<String, dynamic> prepareOpenAIChatPayload(
   // Only when something capped the output — the channel probe's one token,
   // or the model's stored cap. Absent otherwise: a model with no cap set
   // sends a body byte-identical to before the field existed. The key is the
-  // vendor's declaration ([VendorProfile.outputCapField]): OpenAI's reasoning
-  // models 400 on the old name, older relays and Ollama know only it.
+  // vendor's answer ([VendorProfile.outputCapFieldFor]): OpenAI's own host
+  // 400s on the old name for its reasoning models, older relays and Ollama
+  // know only it.
   final maxTokens = outputCapFor(target, options);
   if (maxTokens != null) {
-    payload[target.vendor.outputCapField.wireName] = maxTokens;
+    payload[target.vendor.outputCapFieldFor(target.config.endpoint).wireName] = maxTokens;
   }
 
   // Only Gemini-served models (e.g. via New API or Google's OpenAI-compat

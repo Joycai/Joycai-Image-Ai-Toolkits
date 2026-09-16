@@ -57,6 +57,10 @@
 ④ 的必填是跨族移植时最容易漏的一条：其余三族省略即用服务端默认，只有它必须
 自带一个兜底常量。
 
+App 侧（2026-09-16）：上限是模型级配置 `llm_models.max_output_tokens`，协议经
+`outputCapFor` 读，① 的字段名按 `VendorProfile.outputCapField` 声明（官方 OpenAI /
+New API 发新名，其余发旧名）。见 `architecture/llm-three-layer.md` 的「输出上限」。
+
 **上限与思考的相互作用**：④ 的手动思考模式下 `budget_tokens` 必须 <
 `max_tokens`（思考 token 计入同一个上限）；而在高 effort 下若 `max_tokens` 给
 得太小，模型会把额度全用在思考上、正文被截断。JSON 输出场景尤其危险——截断的

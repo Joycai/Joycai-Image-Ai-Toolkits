@@ -212,6 +212,14 @@ class PromptOptimizerAgent {
     required String systemPrompt,
     required int budgetChars,
     required bool sizeTriggered,
+
+    /// The latest delivery's index and size (`_latestSubmittedPrompt`). A
+    /// fold that takes it appends its text to the summary, so the projected
+    /// tail includes it whenever the candidate boundary lies past it —
+    /// otherwise a 6–8K-token prompt lands on top of the retention target
+    /// and the trigger/target gap is never restored.
+    int? carriedPromptIndex,
+    int? carriedPromptChars,
   }) {
     final starts = [
       for (int i = 0; i < history.length; i++)
@@ -229,9 +237,13 @@ class PromptOptimizerAgent {
       final target = (budgetChars * _retainTargetShare).floor();
       var fits = _minKeepTurns;
       for (int k = maxKeep; k >= _minKeepTurns; k--) {
-        final tail = history.sublist(starts[starts.length - k]);
+        final candidate = starts[starts.length - k];
+        final tail = history.sublist(candidate);
+        final carried = carriedPromptIndex != null && carriedPromptIndex < candidate
+            ? (carriedPromptChars ?? 0)
+            : 0;
         final projected =
-            occupiedChars(systemPrompt, _trimForSend(tail)) + _summaryAllowanceChars;
+            occupiedChars(systemPrompt, _trimForSend(tail)) + _summaryAllowanceChars + carried;
         if (projected <= target) {
           fits = k;
           break;
@@ -689,6 +701,22 @@ class PromptOptimizerAgent {
           // Model is done: plain text is a chat reply (comment, clarifying
           // question, ...), never the deliverable itself.
           final text = response.text.trim();
+          // Cut with nothing in it — thinking spent the whole cap before a
+          // word of answer (③ with a small maxOutputTokens does exactly
+          // this). Nothing to show, so it counts like a cut call: one
+          // retry, then the card that names the setting.
+          if (text.isEmpty && truncated) {
+            truncatedRounds++;
+            if (truncatedRounds >= maxTruncatedRounds) {
+              session._addEntry(OptimizerChatEntry(
+                kind: OptimizerEntryKind.error,
+                text: truncationStopNoticeToken,
+                modelDbId: modelIdentifier is int ? modelIdentifier : null,
+              ));
+              return;
+            }
+            continue;
+          }
           if (text.isNotEmpty) {
             // No echo obligation without tool calls (the payload builder only
             // replays reasoning on tool-call-bearing messages), but keep the
@@ -711,6 +739,7 @@ class PromptOptimizerAgent {
               kind: OptimizerEntryKind.assistant,
               text: text,
               truncated: truncated,
+              modelDbId: modelIdentifier is int ? modelIdentifier : null,
             ));
           }
           return;
@@ -735,9 +764,13 @@ class PromptOptimizerAgent {
           toolCalls: response.toolCalls,
         ));
         if (response.text.trim().isNotEmpty) {
+          // Narration beside the calls: a cut one ends mid-sentence, and
+          // says so like a text-only reply would.
           session._addEntry(OptimizerChatEntry(
             kind: OptimizerEntryKind.assistant,
             text: response.text.trim(),
+            truncated: truncated,
+            modelDbId: modelIdentifier is int ? modelIdentifier : null,
           ));
         }
 
@@ -766,6 +799,7 @@ class PromptOptimizerAgent {
             session._addEntry(OptimizerChatEntry(
               kind: OptimizerEntryKind.error,
               text: truncationStopNoticeToken,
+              modelDbId: modelIdentifier is int ? modelIdentifier : null,
             ));
             return;
           }

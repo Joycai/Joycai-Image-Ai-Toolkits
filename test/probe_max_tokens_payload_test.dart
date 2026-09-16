@@ -30,13 +30,14 @@ void main() {
           options: options, isStreaming: false);
     }
 
-    // OpenAI's own host is declared on the new spelling: its reasoning
-    // models 400 on `max_tokens`, so a probe sending it there read as
-    // "connected" only by accident (see `OutputCapField`).
-    test('the probe cap reaches the vendor\'s cap field', () {
+    // The generic ① profile on a relay host keeps the old spelling; OpenAI's
+    // own host takes the new one (its reasoning models 400 on `max_tokens`,
+    // so a probe sending it there read as "connected" only by accident). See
+    // `VendorProfile.outputCapFieldFor`.
+    test('the probe cap reaches the host\'s cap field', () {
       final body = payload(const {'maxTokens': 1});
-      expect(body['max_completion_tokens'], 1);
-      expect(body.containsKey('max_tokens'), isFalse);
+      expect(body['max_tokens'], 1);
+      expect(body.containsKey('max_completion_tokens'), isFalse);
     });
 
     test('no cap asked for sends neither spelling', () {

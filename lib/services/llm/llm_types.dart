@@ -752,6 +752,7 @@ class LLMModelConfig {
         wireProtocol: wireProtocol,
         tag: tag,
         contextWindow: contextWindow,
+        maxOutputTokens: maxOutputTokens,
         inputFee: inputFee,
         cacheInputFee: cacheInputFee,
         outputFee: outputFee,

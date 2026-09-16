@@ -706,6 +706,49 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
 编辑器的联网开关在该面上返回 unsupported）、`previous_response_id`（有状态模式
 在第三方兼容层不存在）。测试：`test/openai_responses_test.dart`。
 
+## 输出上限（2026-09-16）
+
+> 立项与实测证据在 `git show 671f987:docs/plans/2026-09-assistant-output-cap.md`
+> （执行清单同目录 `-execution.md`）。这里只留分层结论。
+
+四族里只有 ④ 的输出上限必填；①②③ 不发就是服务端默认，而中转站的默认常常是
+4k–8k，提示词助手的一次交付实测 6–8K token。所以上限成了**模型级用户配置**
+（`llm_models.max_output_tokens`，v44；`null` = 不发，`> 0` = 发这个数，**没有「无限」
+态**——④ 必须发数字，其余家族的无限就是不发）。分层上的几条：
+
+- **协议只经一个口读上限：`protocol.dart` 的 `outputCapFor(target, options)`。**
+  顺序：每请求的 `options['maxTokens']`（渠道探针要 1 个 token）→ 模型配置 → null。
+  五条 chat wire 各自把它写成自己的拼法（① 见下、② `max_output_tokens`、③
+  `generationConfig.maxOutputTokens`、④ `max_tokens`、C2 `parameters.max_tokens`）；
+  非流式 deadline 的 `_outputCap` 读同一个排序。③ 的 builder 没有 target，由协议算好
+  经 `outputCap:` 传入，裸 option 仍作回落（探针与抓取器路径不变）。在 builder 里直接
+  `requestedMaxTokens(options)` 而不经 `outputCapFor`，就是绕过了模型配置——review 时 grep。
+- **① 的字段名是 Layer 2 知识，按 host 定：`VendorProfile.outputCapFieldFor(endpoint)`。**
+  `api.openai.com` 发 `max_completion_tokens`（GPT-5 / o 系对旧名 400），其余一律
+  `max_tokens`——包括 New API 中转与通用 ① profile（`Vendors.openAIRest` 同时是「自定义
+  OpenAI 兼容」预设和未知渠道类型的回退，老中转与 Ollama 只认旧名）。和
+  `AuthScheme.anthropicApiKeyWithBearerFallback` 的 host 判断同一形状：vendor 层看
+  endpoint，协议只拿答案，不看模型 id，不做 400 换名重试。DeepSeek / 百炼兼容面 /
+  MiniMax 文档写「旧名已弃用仍接受」，实测过再改声明（`outputCapField` 仍可按 vendor
+  声明新名）。顺带修掉了探针在官方 OpenAI 上发旧名的问题。
+- **④ 的 8192 退为兜底常量**（`anthropicDefaultMaxTokens`），budget 方言「取一半」随
+  用户的上限放大。
+- **不夹到 `window − occupied`。** 托管端点对不可能的请求会响，本地栈自己截短；请求层
+  再改写就是第三种谁也看不见的行为。编辑器在上限 ≥ 上下文大小时提示，仅此而已。
+- **发现时只预填新行的上下文窗口，不预填上限**（`discoveredLimitsOf` 按键形读 Anthropic
+  `max_input_tokens`、Gemini `inputTokenLimit`、OpenRouter `context_length` 与
+  `top_provider.context_length` 取小、LM Studio `max_context_length`；存量行是用户的，
+  不改写）。列表报的输出上限是模型的**最大值**，不是谁选的要发的数——存进去就会随每次
+  请求发出、撑大 deadline、④ budget 方言按它一半开思考、长会话上 input + max_tokens
+  超窗直接 400——所以函数读得出（`max_tokens` 只在 `max_input_tokens` 同在时算上限），
+  对话框不种。这是 usage 04 §4「协议不告诉你窗口」的唯一例外来源。
+- 编辑器区块与刻度：`widgets/models/model_edit/model_edit_output_cap.dart` +
+  `services/catalogue/output_cap_scale.dart`（六档 4k–128k，输出侧的刻度，不复用输入侧的
+  九档）。设计稿 <https://claude.ai/artifact/Y5noFcoMjvC1VXaoSGXXvH>。
+- 测试：`test/output_cap_payload_test.dart`（五条 wire 逐字节、① 按 vendor 选名、④ 兜底与
+  budget 折半、探针压过模型配置、deadline）、`test/model_discovery_limits_test.dart`、
+  `test/output_cap_scale_test.dart`。
+
 ## 遗留与已知取舍
 
 - 模型 family 的**默认值**仍由 modelId 字符串规则推断（`model_family.dart`）。

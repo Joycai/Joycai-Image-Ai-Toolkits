@@ -443,8 +443,9 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
     final feeGroupId = widget.appState.defaultFeeGroupFor(widget.channel.id);
     for (var id in _selectedIds) {
       final m = _discovered.firstWhere((dm) => dm.modelId == id);
-      // What the listing said about the model's limits seeds the new row;
-      // absent stays unset (the editor's "not set"), never a guess.
+      // What the listing said about the model's window seeds the new row;
+      // absent stays unset (the editor's "not set"), never a guess. The
+      // output cap is deliberately not seeded — see `discoveredLimitsOf`.
       final limits = discoveredLimitsOf(m);
       await widget.appState.addModel({
         'model_id': m.modelId,
@@ -457,7 +458,6 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         'channel_id': widget.channel.id,
         'fee_group_id': feeGroupId,
         if (limits.contextWindow != null) 'context_window': limits.contextWindow,
-        if (limits.maxOutputTokens != null) 'max_output_tokens': limits.maxOutputTokens,
       });
     }
     if (mounted) Navigator.pop(context);

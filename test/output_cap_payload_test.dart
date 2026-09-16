@@ -77,19 +77,21 @@ void main() {
     });
 
     test('OpenAI\'s own host takes the new spelling only', () {
-      final body = payload(target(Vendors.openAIRest, maxOutputTokens: 32768));
+      final body = payload(target(Vendors.openAIRest,
+          maxOutputTokens: 32768, endpoint: 'https://api.openai.com/v1'));
       expect(body['max_completion_tokens'], 32768);
       expect(body.containsKey('max_tokens'), isFalse);
     });
 
-    test('New API relays take the new spelling too', () {
-      final body = payload(target(Vendors.newApiOpenAI, maxOutputTokens: 32768));
-      expect(body['max_completion_tokens'], 32768);
-      expect(body.containsKey('max_tokens'), isFalse);
+    test('the generic profile on any other host — a custom relay — keeps the old spelling', () {
+      final body = payload(target(Vendors.openAIRest, maxOutputTokens: 32768));
+      expect(body['max_tokens'], 32768);
+      expect(body.containsKey('max_completion_tokens'), isFalse);
     });
 
     test('every other ① host keeps the old spelling', () {
       for (final vendor in [
+        Vendors.newApiOpenAI,
         Vendors.ollama,
         Vendors.lmStudio,
         Vendors.deepseek,
@@ -102,11 +104,14 @@ void main() {
       }
     });
 
-    test('the probe\'s one token wins over the stored cap, under the vendor\'s key',
+    test('the probe\'s one token wins over the stored cap, under the host\'s key',
         () {
-      final body = payload(
-          target(Vendors.openAIRest, maxOutputTokens: 65536), const {'maxTokens': 1});
-      expect(body['max_completion_tokens'], 1);
+      final official = payload(
+          target(Vendors.openAIRest, maxOutputTokens: 65536, endpoint: 'https://api.openai.com/v1'),
+          const {'maxTokens': 1});
+      expect(official['max_completion_tokens'], 1);
+      final relay = payload(target(Vendors.openAIRest, maxOutputTokens: 65536), const {'maxTokens': 1});
+      expect(relay['max_tokens'], 1);
     });
   });
 

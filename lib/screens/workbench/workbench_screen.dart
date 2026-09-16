@@ -360,17 +360,16 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         (t.status == TaskStatus.pending || t.status == TaskStatus.processing));
   }
 
-  /// Sends one user turn of the optimizer conversation: the message is added
-  /// to the session immediately (so it shows in the chat), then a queue task
-  /// Opens the assistant model's editor — the max-output setting lives
-  /// there — from a reply the output limit cut. The same dialog the models
-  /// page opens; a model deleted since the turn ran is a no-op.
-  void _handleOpenOptimizerModelSettings() {
+  /// Opens a model's editor — the max-output setting lives there — from a
+  /// reply the output limit cut. [modelDbId] is the row the reply came from;
+  /// null (an entry that does not know) falls back to the picker. The same
+  /// dialog the models page opens; a model deleted since is a no-op.
+  void _handleOpenOptimizerModelSettings(int? modelDbId) {
     final appState = _appState;
     if (appState == null) return;
     final l10n = AppLocalizations.of(context)!;
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    final dbId = workbenchUIState.optSelectedModelDbId;
+    final dbId = modelDbId ?? workbenchUIState.optSelectedModelDbId;
     final model = appState.allModels.cast<LLMModel?>().firstWhere((m) => m?.id == dbId, orElse: () => null);
     if (model == null) return;
     showDialog(
@@ -380,7 +379,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     );
   }
 
-  /// runs the agent turn against the current reference images.
+  /// Sends one user turn of the optimizer conversation: the message is added
+  /// to the session immediately (so it shows in the chat), then a queue task
   Future<void> _handleOptimizerSend() async {
     final l10n = AppLocalizations.of(context)!;
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);

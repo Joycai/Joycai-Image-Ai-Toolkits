@@ -180,6 +180,14 @@
   },
   "outputCapChip": "出力 {size}",
   "outputCapThinkingHint": "このモデルは推論が有効です。思考トークンは本文より先にこの上限を消費するため、本文に必要な分より余裕を持たせてください。",
+  "outputCapStarvesThinking": "{min} トークン未満では Anthropic 形式のモデルに思考予算が収まらず、リクエストは思考なしで（何も告げずに）送られます。",
+  "@outputCapStarvesThinking": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      }
+    }
+  },
   "@outputCapChip": {
     "placeholders": {
       "size": {

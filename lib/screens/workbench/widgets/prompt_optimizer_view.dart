@@ -83,10 +83,12 @@ class PromptOptimizerChatView extends StatefulWidget {
   /// prompt, from the distill wrap-up card's footer (`20d`·d).
   final VoidCallback? onSaveFinalPrompt;
 
-  /// Opens the assistant model's editor, from a reply cut at the output
-  /// limit — the fix lives in that model's max-output setting, and the screen
-  /// knows which model that is. Null hides the jump.
-  final VoidCallback? onOpenModelSettings;
+  /// Opens a model's editor, from a reply cut at the output limit — the fix
+  /// lives in that model's max-output setting. Called with the model row the
+  /// reply came from ([OptimizerChatEntry.modelDbId]), or null when the entry
+  /// does not know; the screen then falls back to the picker. Null hides the
+  /// jump.
+  final void Function(int? modelDbId)? onOpenModelSettings;
 
   const PromptOptimizerChatView({
     super.key,
@@ -480,7 +482,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                             label: l10n.optOpenModelSettings,
                             variant: AppButtonVariant.text,
                             size: AppButtonSize.compact,
-                            onPressed: widget.onOpenModelSettings,
+                            onPressed: () => widget.onOpenModelSettings!(entry.modelDbId),
                           ),
                       ],
                     ),
@@ -626,7 +628,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                             icon: Icons.tune,
                             variant: AppButtonVariant.destructive,
                             size: AppButtonSize.compact,
-                            onPressed: widget.onOpenModelSettings,
+                            onPressed: () => widget.onOpenModelSettings!(entry.modelDbId),
                           ),
                         AppButton(
                           label: l10n.optRetry,

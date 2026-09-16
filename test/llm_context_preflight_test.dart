@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/context_budget.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
@@ -133,5 +134,11 @@ void main() {
   test('the resolver-facing config carries the window through withEndpoint',
       () {
     expect(config(8192).withEndpoint('http://x.invalid').contextWindow, 8192);
+    // The output cap rides along too: every chat route on a vendor with
+    // derived faces goes through withEndpoint, and a cap dropped there is
+    // the exact symptom the setting exists to fix.
+    final capped = LLMModelConfig(
+        modelId: 'm', channelType: Vendors.openAIRest, endpoint: 'http://x.invalid', apiKey: 'k', maxOutputTokens: 32768);
+    expect(capped.withEndpoint('http://y.invalid').maxOutputTokens, 32768);
   });
 }

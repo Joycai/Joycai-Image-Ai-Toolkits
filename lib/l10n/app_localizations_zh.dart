@@ -1806,6 +1806,11 @@ class AppLocalizationsZh extends AppLocalizations {
       '该模型已开启推理，思考 token 先于正文计入此上限——请在正文所需之上留出余量。';
 
   @override
+  String outputCapStarvesThinking(String min) {
+    return '低于 $min tokens 时，Anthropic 格式的模型放不下思考预算，请求会静默地不带思考发出。';
+  }
+
+  @override
   String get contextPresets => '档位';
 
   @override
@@ -6673,6 +6678,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get outputCapThinkingHint =>
       '該模型已開啟推理，思考 token 先於正文計入此上限——請在正文所需之上留出餘量。';
+
+  @override
+  String outputCapStarvesThinking(String min) {
+    return '低於 $min tokens 時，Anthropic 格式的模型放不下思考預算，請求會靜默地不帶思考送出。';
+  }
 
   @override
   String get contextPresets => '檔位';
