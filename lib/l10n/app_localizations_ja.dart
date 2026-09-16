@@ -386,6 +386,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get renameConflictAutoRename => '改名';
 
   @override
+  String get renameOverwriteDuplicateHint =>
+      'この名前はリスト内の別の行が使う予定です。ディスク上にはまだ存在しないため、上書きする対象がありません。どちらかを改名するかスキップしてください。';
+
+  @override
   String get renameNoModelsTitle => '利用できるモデルがありません';
 
   @override

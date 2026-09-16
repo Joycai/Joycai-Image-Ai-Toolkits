@@ -9,8 +9,10 @@ import 'package:path/path.dart' as p;
 /// anything reaches [AiRenameAgent.applyProposals].
 ///
 /// A row that reads "resolved" goes to the executor as-is, so the cases that
-/// must hold are about what counts as resolved: a clash is never hidden, and
-/// an answer is never silently dropped.
+/// must hold are about what counts as resolved: a clash is never hidden, an
+/// answer is never silently dropped, an answer that picks a new name picks one
+/// nothing else in the run is about to take, and no answer lets one row's
+/// file be deleted to make room for another's.
 void main() {
   late Directory dir;
 
@@ -67,7 +69,7 @@ void main() {
     final rows = [row('a.jpg', 'beach.jpg'), row('b.jpg', 'beach.jpg')];
     await recomputeRenameConflicts(rows);
 
-    resolveRenameConflict(rows[1], RenameConflictChoice.skip);
+    resolveRenameConflict(rows[1], RenameConflictChoice.skip, among: rows);
     await recomputeRenameConflicts(rows);
 
     expect(rows[0].conflict, RenameConflict.none, reason: 'the skipped row no longer claims the name');
@@ -82,7 +84,7 @@ void main() {
     final rows = [row('a.jpg', 'beach.jpg')];
     await recomputeRenameConflicts(rows);
 
-    resolveRenameConflict(rows.single, RenameConflictChoice.overwrite);
+    resolveRenameConflict(rows.single, RenameConflictChoice.overwrite, among: rows);
     await recomputeRenameConflicts(rows);
 
     expect(rows.single.conflict, RenameConflict.targetExists);
@@ -95,7 +97,7 @@ void main() {
     touch('beach.jpg');
     final rows = [row('a.jpg', 'beach.jpg')];
     await recomputeRenameConflicts(rows);
-    resolveRenameConflict(rows.single, RenameConflictChoice.overwrite);
+    resolveRenameConflict(rows.single, RenameConflictChoice.overwrite, among: rows);
 
     rows.single.newName = 'dunes.jpg';
     await recomputeRenameConflicts(rows);
@@ -109,12 +111,77 @@ void main() {
     final rows = [row('a.jpg', 'beach.jpg')];
     await recomputeRenameConflicts(rows);
 
-    resolveRenameConflict(rows.single, RenameConflictChoice.rename);
+    resolveRenameConflict(rows.single, RenameConflictChoice.rename, among: rows);
     await recomputeRenameConflicts(rows);
 
     expect(rows.single.newName, 'beach (2).jpg');
     expect(rows.single.autoRenamed, isTrue);
     expect(rows.single.conflict, RenameConflict.none);
     expect(rows.single.willApply, isTrue);
+  });
+
+  test('rename on a clash between two rows picks a name neither row takes', () async {
+    final rows = [row('a.jpg', 'beach.jpg'), row('b.jpg', 'beach.jpg')];
+    await recomputeRenameConflicts(rows);
+
+    resolveRenameConflict(rows[1], RenameConflictChoice.rename, among: rows);
+    await recomputeRenameConflicts(rows);
+
+    expect(rows[1].newName, isNot('beach.jpg'));
+    expect(rows.map((r) => r.conflict), everyElement(RenameConflict.none));
+    expect(rows.map((r) => r.willApply), [true, true]);
+  });
+
+  test('rename steers clear of a name another row takes in a different case', () async {
+    final rows = [row('a.jpg', 'Beach.JPG'), row('b.jpg', 'beach (2).jpg'), row('c.jpg', 'beach.jpg')];
+    await recomputeRenameConflicts(rows);
+    expect(rows[2].conflict, RenameConflict.duplicate);
+
+    resolveRenameConflict(rows[2], RenameConflictChoice.rename, among: rows);
+    await recomputeRenameConflicts(rows);
+
+    expect(rows[2].newName, 'beach (3).jpg');
+    expect(rows.map((r) => r.conflict), everyElement(RenameConflict.none));
+  });
+
+  test('overwrite is refused on a clash between two rows', () async {
+    final rows = [row('a.jpg', 'beach.jpg'), row('b.jpg', 'beach.jpg')];
+    await recomputeRenameConflicts(rows);
+
+    expect(
+      () => resolveRenameConflict(rows[1], RenameConflictChoice.overwrite, among: rows),
+      throwsStateError,
+    );
+    expect(rows[1].choice, isNull, reason: 'a refused answer leaves the row unanswered');
+    expect(rows[1].willApply, isFalse);
+  });
+
+  // The case that lost a photo: one row answered "rename", which handed back
+  // the shared name, and the other "overwrite", which then deleted the first
+  // row's file to make room. Driven end to end, the way the dialog drives it.
+  test('no answers to a clash between two rows delete either file', () async {
+    final rows = [row('a.jpg', 'beach.jpg'), row('b.jpg', 'beach.jpg')];
+    await recomputeRenameConflicts(rows);
+    resolveRenameConflict(rows[0], RenameConflictChoice.rename, among: rows);
+    await recomputeRenameConflicts(rows);
+    // The first answer cleared the clash, so the second row has nothing left
+    // to answer and goes ahead under the name it asked for.
+    expect(rows[1].conflict, RenameConflict.none);
+
+    final applying = rows.where((r) => r.willApply).toList();
+    await AiRenameAgent.applyProposals([
+      for (final r in applying)
+        RenameProposal(
+          path: r.path,
+          oldName: r.oldName,
+          newName: r.newName,
+          overwrite: r.choice == RenameConflictChoice.overwrite,
+        ),
+    ]);
+
+    final contents = {
+      for (final f in dir.listSync().whereType<File>()) p.basename(f.path): f.readAsStringSync(),
+    };
+    expect(contents, {'beach (2).jpg': 'a.jpg', 'beach.jpg': 'b.jpg'});
   });
 }

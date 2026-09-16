@@ -749,6 +749,12 @@ abstract class AppLocalizations {
   /// **'Rename'**
   String get renameConflictAutoRename;
 
+  /// No description provided for @renameOverwriteDuplicateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Another row in this list is taking this name — nothing on disk has it yet, so there is nothing to overwrite. Rename or skip one of the two.'**
+  String get renameOverwriteDuplicateHint;
+
   /// No description provided for @renameNoModelsTitle.
   ///
   /// In en, this message translates to:

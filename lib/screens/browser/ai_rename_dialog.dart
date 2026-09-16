@@ -240,7 +240,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   }
 
   void _resolve(RenameReviewRow row, RenameConflictChoice choice) {
-    _update(() => resolveRenameConflict(row, choice));
+    _update(() => resolveRenameConflict(row, choice, among: _rows));
     _recomputeConflicts();
   }
 
@@ -1168,13 +1168,19 @@ class _ResultRow extends StatelessWidget {
           onTap: () => onResolve(RenameConflictChoice.rename),
         ),
         // Overwrite is the only answer that destroys a file, so it is the
-        // only one in the error colour.
+        // only one in the error colour. On a clash between two rows there is
+        // no file to replace yet — only the other row's result — so it stays
+        // visible but unavailable, and says why (`resolveRenameConflict`
+        // refuses it too).
         _RowAction(
           icon: Icons.swap_horiz,
           label: l10n.conflictOverwrite,
           color: colorScheme.error,
           iconOnly: iconOnly,
-          onTap: () => onResolve(RenameConflictChoice.overwrite),
+          onTap: row.conflict == RenameConflict.duplicate
+              ? null
+              : () => onResolve(RenameConflictChoice.overwrite),
+          disabledHint: l10n.renameOverwriteDuplicateHint,
         ),
         _RowAction(
           icon: Icons.block,
@@ -1263,7 +1269,10 @@ class _RowAction extends StatelessWidget {
   final Color color;
   final bool iconOnly;
   final bool active;
-  final VoidCallback onTap;
+
+  /// Null draws the action disabled; [disabledHint] then says why.
+  final VoidCallback? onTap;
+  final String? disabledHint;
 
   const _RowAction({
     required this.icon,
@@ -1272,6 +1281,7 @@ class _RowAction extends StatelessWidget {
     required this.iconOnly,
     required this.onTap,
     this.active = false,
+    this.disabledHint,
   });
 
   /// Everything a labelled action takes besides its label: 8px of padding a
@@ -1283,10 +1293,12 @@ class _RowAction extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm));
 
+    final String? hint = onTap == null ? disabledHint : null;
+
     if (iconOnly) {
       return IconButton(
         icon: Icon(icon, size: AppSize.iconSm),
-        tooltip: label,
+        tooltip: hint == null ? label : '$label — $hint',
         onPressed: onTap,
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints.tightFor(width: AppSize.compact, height: AppSize.compact),
@@ -1298,7 +1310,7 @@ class _RowAction extends StatelessWidget {
       );
     }
 
-    return TextButton.icon(
+    final button = TextButton.icon(
       onPressed: onTap,
       icon: Icon(icon, size: AppSize.iconSm),
       label: Text(label, maxLines: 1),
@@ -1313,6 +1325,7 @@ class _RowAction extends StatelessWidget {
         shape: shape,
       ),
     );
+    return hint == null ? button : Tooltip(message: hint, child: button);
   }
 }
 

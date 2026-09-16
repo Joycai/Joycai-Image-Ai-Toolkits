@@ -92,16 +92,55 @@ Future<void> recomputeRenameConflicts(List<RenameReviewRow> rows) async {
 
 /// Records the user's answer to [row]'s clash. Follow with
 /// [recomputeRenameConflicts]: an answer can clear this clash or cause another.
-void resolveRenameConflict(RenameReviewRow row, RenameConflictChoice choice) {
+///
+/// [among] is the whole review list. A rename has to steer clear of the names
+/// the *other* rows are about to take, not only of the disk — otherwise, on a
+/// clash between two rows, it hands back the very name they share, and the
+/// row reads as answered while still colliding.
+///
+/// Overwrite is refused on a clash between two rows. It means "replace the
+/// file already at that name", and when the clash is between rows there is no
+/// such file yet — the only thing it could replace is what another row in the
+/// same run has just renamed there. The dialog shows the action disabled; this
+/// is the check that holds if it ever is not.
+void resolveRenameConflict(
+  RenameReviewRow row,
+  RenameConflictChoice choice, {
+  required List<RenameReviewRow> among,
+}) {
+  if (choice == RenameConflictChoice.overwrite && row.conflict == RenameConflict.duplicate) {
+    throw StateError(
+      'Overwrite answers a clash with a file on disk. "${row.newName}" clashes '
+      'with another row in this run, so it would replace that row\'s result.',
+    );
+  }
   row.choice = choice;
   switch (choice) {
     case RenameConflictChoice.rename:
-      final unique = FileTransferService.uniqueTargetPath(row.directory, row.newName);
-      row.newName = p.basename(unique);
+      row.newName = _freeName(row, among);
       row.autoRenamed = true;
     case RenameConflictChoice.skip:
       row.skipped = true;
     case RenameConflictChoice.overwrite:
       break;
+  }
+}
+
+/// The first name for [row] that is free on disk and that no other live row in
+/// [among] is taking, compared ignoring case as [recomputeRenameConflicts] does.
+String _freeName(RenameReviewRow row, List<RenameReviewRow> among) {
+  final claimed = {
+    for (final other in among)
+      if (!identical(other, row) && !other.skipped)
+        p.join(other.directory, other.newName).toLowerCase(),
+  };
+  // `uniqueTargetPath` knows the disk and the numbering; its `reserved` set is
+  // compared exactly, so each candidate another row claims goes back in as
+  // itself, which moves the search on to the next number.
+  final reserved = <String>{};
+  while (true) {
+    final candidate = FileTransferService.uniqueTargetPath(row.directory, row.newName, reserved: reserved);
+    if (!claimed.contains(candidate.toLowerCase())) return p.basename(candidate);
+    reserved.add(candidate);
   }
 }

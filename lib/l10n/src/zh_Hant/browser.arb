@@ -295,6 +295,7 @@
   "renameActionEdit": "就地改名",
   "renameActionUndo": "撤銷跳過",
   "renameConflictAutoRename": "改名",
+  "renameOverwriteDuplicateHint": "這個名稱是清單裡另一列要用的——磁碟上還沒有這個檔案，沒有東西可覆蓋。請替其中一列改名或跳過。",
   "renameNoModelsTitle": "沒有可用的語言模型",
   "renameNoModelsDesc": "批次重新命名需要一個對話模型來閱讀圖片並產生名字。請先在「模型與通道」裡設定至少一個可用通道。",
   "renameGoToSettings": "前往設定",
