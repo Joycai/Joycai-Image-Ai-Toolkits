@@ -8,6 +8,7 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../widgets/glass/glass_controls.dart' show measureGlassText;
+import '../../widgets/ui/app_disclosure_chevron.dart';
 
 /// What a folder row shows while something is dragged over it (`00d · 1d`).
 enum FolderDropTone {
@@ -393,10 +394,11 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
           dimension: 10,
           child: CircularProgressIndicator(strokeWidth: 1.5, color: colorScheme.outline),
         ),
-      TreeDisclosure.collapsed =>
-        Icon(Icons.chevron_right, size: FolderTreeMetrics.disclosureSize, color: colorScheme.outline),
-      TreeDisclosure.expanded =>
-        Icon(Icons.expand_more, size: FolderTreeMetrics.disclosureSize, color: colorScheme.outline),
+      TreeDisclosure.collapsed || TreeDisclosure.expanded => AppDisclosureChevron(
+          open: disclosure == TreeDisclosure.expanded,
+          size: FolderTreeMetrics.disclosureSize,
+          color: colorScheme.outline,
+        ),
     };
 
     // The gap after the chevron is part of its hit area: a 14px glyph alone

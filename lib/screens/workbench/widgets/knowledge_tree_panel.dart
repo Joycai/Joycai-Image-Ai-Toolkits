@@ -8,6 +8,7 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/assistant/knowledge_base_service.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
+import '../../../widgets/ui/app_disclosure_chevron.dart';
 import '../../../widgets/ui/app_search_field.dart';
 import 'optimizer_context_card.dart';
 
@@ -571,8 +572,8 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
                   SizedBox(
                     width: _chevronBox,
                     child: entry.isDir
-                        ? Icon(
-                            open ? Icons.expand_more : Icons.chevron_right,
+                        ? AppDisclosureChevron(
+                            open: open,
                             size: _chevronBox,
                             color: colorScheme.outline,
                           )
