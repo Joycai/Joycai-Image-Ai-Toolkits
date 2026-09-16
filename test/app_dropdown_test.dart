@@ -41,4 +41,29 @@ void main() {
 
     expect(tester.widget<DropdownButton<int>>(find.byType(DropdownButton<int>)).onChanged, isNull);
   });
+
+  testWidgets('the open menu checks the current value, and the field does not', (tester) async {
+    await tester.pumpWidget(host(SizedBox(
+      width: 240,
+      child: AppDropdown<int>(
+        value: 2,
+        items: const [
+          AppDropdownItem(value: 1, label: 'One'),
+          AppDropdownItem(value: 2, label: 'Two'),
+        ],
+        onChanged: (_) {},
+      ),
+    )));
+    expect(find.byIcon(Icons.check), findsNothing, reason: 'the closed field carries no check');
+
+    await tester.tap(find.byType(AppDropdown<int>));
+    await tester.pumpAndSettle();
+    final check = find.byIcon(Icons.check);
+    expect(check, findsOneWidget);
+    // On the row that says Two.
+    final row = find.ancestor(of: check, matching: find.byType(Row)).first;
+    expect(find.descendant(of: row, matching: find.text('Two')), findsOneWidget);
+    await tester.tap(find.text('Two').last);
+    await tester.pumpAndSettle();
+  });
 }

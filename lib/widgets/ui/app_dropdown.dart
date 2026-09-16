@@ -257,6 +257,19 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
           ),
         );
 
+    Widget menuRow(AppDropdownItem<T> item) => hasRichItems
+        ? richItem(item)
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (item.icon != null) ...[
+                Icon(item.icon, size: AppSize.iconSm),
+                const SizedBox(width: 8),
+              ],
+              Flexible(child: itemText(item, item.label)),
+            ],
+          );
+
     Widget field = InputDecorator(
       decoration: InputDecoration(
         labelText: widget.label,
@@ -295,31 +308,35 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
               : Text(widget.hint!, style: valueStyle?.copyWith(color: outline), overflow: TextOverflow.ellipsis),
           // Only built when some item reads differently once chosen; the
           // builder has to answer for every item, so the rest repeat [label].
-          selectedItemBuilder: hasSelectedLabels
-              ? (context) => [
-                    for (final item in widget.items)
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: itemText(item, item.selectedLabel ?? item.label),
-                      ),
-                  ]
-              : null,
+          // Always built: the menu rows carry a check the closed field must
+          // not, so the field draws its own copy of each row.
+          selectedItemBuilder: (context) => [
+            for (final item in widget.items)
+              hasSelectedLabels
+                  ? Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: itemText(item, item.selectedLabel ?? item.label),
+                    )
+                  : menuRow(item),
+          ],
           items: [
             for (final item in widget.items)
               DropdownMenuItem<T>(
                 value: item.value,
-                child: hasRichItems
-                    ? richItem(item)
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (item.icon != null) ...[
-                            Icon(item.icon, size: AppSize.iconSm),
-                            const SizedBox(width: 8),
-                          ],
-                          Flexible(child: itemText(item, item.label)),
-                        ],
-                      ),
+                // `D2a`: the current value carries a check. The slot is kept on
+                // every row so the labels do not shift with the selection.
+                child: Row(
+                  children: [
+                    Expanded(child: menuRow(item)),
+                    const SizedBox(width: AppSpace.s6),
+                    SizedBox.square(
+                      dimension: AppSize.iconSm,
+                      child: item.value == widget.value
+                          ? Icon(Icons.check, size: AppSize.iconSm, color: colorScheme.onAccentTint)
+                          : null,
+                    ),
+                  ],
+                ),
               ),
           ],
           onChanged: enabled ? widget.onChanged : null,

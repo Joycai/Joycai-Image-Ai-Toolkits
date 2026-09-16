@@ -797,10 +797,18 @@ class ModelEditHelperText extends StatelessWidget {
   }
 }
 
-/// The indented parameter summary under the request method: a 2px hairline
-/// guide, 12px in, 「Parameters」 and a wrap of r4 mono chips.
+/// The indented parameter summary under the request method: a 2px guide,
+/// 12px in, 「Parameters」 and a wrap of r4 mono chips.
+///
+/// The guide rests in the hairline colour and, while [governed] — a protocol
+/// is pinned — takes the accent's rule tone (`D2a`: 引导线主色 35%), tweened
+/// over M2, so the parameters read as following that choice.
 class ModelEditParamBlock extends StatelessWidget {
-  const ModelEditParamBlock({super.key, required this.items});
+  const ModelEditParamBlock({super.key, required this.items, this.governed = false});
+
+  static const double railWidth = 2;
+
+  final bool governed;
 
   /// In the surface's fixed order. Empty prints the "no specific parameters"
   /// sentence instead.
@@ -818,11 +826,17 @@ class ModelEditParamBlock extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsetsDirectional.only(start: AppSpace.s6),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsetsDirectional.only(start: 12, top: 2, bottom: 2),
-        decoration: BoxDecoration(
-          border: BorderDirectional(start: BorderSide(color: scheme.outlineVariant, width: 2)),
+      child: TweenAnimationBuilder<Color?>(
+        tween: ColorTween(end: governed ? scheme.accentRule : scheme.outlineVariant),
+        duration: AppMotion.durationOf(context, AppMotion.state),
+        curve: AppMotion.enter,
+        builder: (context, rail, child) => Container(
+          width: double.infinity,
+          padding: const EdgeInsetsDirectional.only(start: 12, top: 2, bottom: 2),
+          decoration: BoxDecoration(
+            border: BorderDirectional(start: BorderSide(color: rail!, width: railWidth)),
+          ),
+          child: child,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1152,6 +1166,16 @@ class _ModelEditMenuFieldState<T> extends State<ModelEditMenuField<T>> {
                         style: textTheme.labelSmall?.mono.copyWith(color: scheme.outline),
                       ),
                     ],
+                    // `D2a`: the current value carries a check beside its wash.
+                    // The slot is kept on every row so the labels do not shift
+                    // when the selection moves.
+                    const SizedBox(width: AppSpace.s6),
+                    SizedBox.square(
+                      dimension: AppSize.iconSm,
+                      child: entry.value == widget.selected
+                          ? Icon(Icons.check, size: AppSize.iconSm, color: scheme.onAccentTint)
+                          : null,
+                    ),
                   ],
                 ),
               ),

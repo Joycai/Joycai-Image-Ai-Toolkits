@@ -84,7 +84,7 @@
 | 16 | S3：新 `CookieRepository`（保留期 不记住 / 7 天 / 30 天默认 / 直到清除，读时裁剪；逐条删除；清空）；历史面板加保留期分段与每行移除、全部清除；设置「数据」加「清除 Cookie 历史」；任务行落库剥掉 `cookies`、启动时清洗旧行，重启后恢复的下载按页面 host 回查历史 | `repositories/cookie_repository.dart` · `task_repository.dart` · `database_service.dart` · `task_executors.dart` · `downloader_state.dart` · `downloader_advanced_dialog.dart` · `data_section.dart` · l10n downloader / settings | `cookie_retention_test.dart`（八条）· `downloader_cookie_history_ui_test.dart`（390 / 1280） | ✅ |
 | 17 | `runTurn` 拆出 `_systemPromptFor` · `_warnIfSystemPromptCrowds` · `_prepareTurn`（取消返回 false）· `_dispatchToolCall`（ask_user 暂存返回 null），控制流不变；602 → 464 行 | `prompt_optimizer_agent.dart` | 助手全部测试绿（未新增测试：纯搬家） | ✅ |
 | 18 | `render_probe` 加助手一项并量：一次 session 通知 1,122 次 build → 29 次（debug 37.7 → 6.3 ms）。新原语 `ListenableSelector`；对话宿主、工具条、左侧知识树、右侧配置面板只在所读字段变化时重建，上下文用量卡自己监听；对话视图按所画字段门控；知识库编辑卡的 diff 按 edit id 缓存 | `widgets/ui/listenable_selector.dart` · `workbench_screen.dart` · `optimizer_left_panel.dart` · `optimizer_config_panel.dart` · `prompt_optimizer_view.dart` · `optimizer_kb_edit_card.dart` · `render_probe.dart` | `rebuild_scope_test.dart` 加一条；`listenable_selector_test.dart` | ✅ |
-| 19 | D2a 三条：引导线与缩进、菜单选中 check、点单态值用主色深 | `model_edit_controls.dart` · `model_edit_capabilities.dart` · `model_protocol_section.dart` · `model_edit_identity.dart` | 组件画廊 / 编辑器截图 | ☐ |
+| 19 | D2a 三条：参数块引导线点单时补间到主色 35%（新 token `accentRule`）；`ModelEditMenuField` 与共享 `AppDropdown` 的菜单选中行加 check（槽位每行都留）；点单态协议值用主色深（桌面与手机） | `design_tokens.dart` · `model_edit_controls.dart` · `model_protocol_section.dart` · `widgets/ui/app_dropdown.dart` | `model_edit_param_block_test.dart` · `app_dropdown_test.dart` 加一条；编辑器截图看过点单 / 自动两态 | ✅ |
 | 20+ | 1000–1500 行文件拆分，一文件一片（有接缝的才拆；单张表 / 注册表记理由不拆） | 见施工记录 | 搬家不改行为，截图像素一致 | ☐ |
 | R3 | 第三期 code review | — | — | ☐ |
 
@@ -108,3 +108,8 @@
   `ListenableBuilder` 下，任何通知（每个请求都有的 `recordRequestBasis`）都整棵重建。所以没有按原计划
   把卡片抽成独立 widget，改为收窄宿主；卡片的 diff 另做缓存。量前 1,122 builds / 37.7 ms，量后
   29 builds / 6.3 ms（debug JIT，只比相对值）。
+- 片 19：设计稿读不到，但 `git show 6a4f358` 里的 D2a 简报写着「引导线缩进 12、宽 2px」「点单态：描边主色、
+  底主色 8%、引导线主色 35%」。一查代码，缩进 12 的 2px 引导线 `ModelEditParamBlock` 早就画了，台账说
+  「没实现」指的是它不随点单变色；先做了一个包住所有下级行的新组件，截图里成了双线，撤回，改为让参数块
+  自己的线补间。能力 / 代理行为两个区块没有「受管辖的下级行」，未动。菜单选中项的 10% 底：阶梯上没有
+  10%，`ModelEditMenuField` 已用 12% 的 `accentTint`；`AppDropdown` 的选中底仍是 Material 自带的，只加了 check。

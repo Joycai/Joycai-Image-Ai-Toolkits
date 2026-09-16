@@ -248,6 +248,10 @@ extension AppAccent on ColorScheme {
   /// The shadow tinted glass casts in its own hue (`--p` at 35%).
   Color get accentGlow => primary.withValues(alpha: 0.35);
 
+  /// A guide line in its governing state (`D2a`: 引导线主色 35%) — the rail
+  /// beside the rows a pinned choice rules.
+  Color get accentRule => primary.withValues(alpha: 0.35);
+
   /// The accent *as text on a surface* — a text button, a link, a group
   /// caption, a live-status label.
   ///
