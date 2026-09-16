@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass.dart';
 import 'package:joycai_image_ai_toolkits/widgets/tasks/task_capsule_monitor.dart';
@@ -110,5 +111,34 @@ void main() {
     await tester.tap(capsuleBody);
     await settle(tester);
     expect(tester.getRect(capsuleBody).top, closeTo(parked.top, 1));
+  });
+
+  testWidgets('the content height follows a tap at M3 and anything else at M2',
+      (WidgetTester tester) async {
+    // `plans/README.md`: the running count crossing zero resized the capsule
+    // at panel weight once per task in a batch run.
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.prompts,
+      size: const Size(1440, 900),
+      label: 'capsule-size-timing',
+    );
+    Duration sizeDuration() => tester
+        .widget<AnimatedSize>(find.descendant(
+          of: find.byType(TaskCapsuleMonitor),
+          matching: find.byType(AnimatedSize),
+        ).first)
+        .duration;
+
+    expect(sizeDuration(), AppMotion.state);
+    await tester.tap(capsuleBody);
+    await tester.pump();
+    expect(sizeDuration(), AppMotion.panel, reason: 'opening moves with the width');
+    await settle(tester);
+    // Any later rebuild that is not a tap is back on M2.
+    tester.element(find.byType(TaskCapsuleMonitor)).markNeedsBuild();
+    await tester.pump();
+    expect(sizeDuration(), AppMotion.state);
   });
 }

@@ -31,6 +31,13 @@ class TaskCapsuleMonitor extends StatefulWidget {
 class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
+
+  /// The expansion the content's height last followed. The height animates
+  /// at M3 when the user opens or closes the capsule — in step with its width
+  /// — and at M2 otherwise: the other thing that resizes it is the running
+  /// count crossing zero, which in a batch run happens once per task, and a
+  /// panel-weight motion that often is noise (`plans/README.md`).
+  bool _sizedForExpanded = false;
   Offset? _offset;
 
   /// Apple's `spring(duration:bounce:)` at the audit's recommended setting. A
@@ -270,9 +277,13 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor>
                                 fontWeight: FontWeight.w400,
                               );
 
+                      final bool userResize = _sizedForExpanded != _isExpanded;
+                      _sizedForExpanded = _isExpanded;
                       return AnimatedSize(
-                        duration: AppMotion.sceneOf(context),
-                        curve: AppMotion.emphasized,
+                        duration: userResize
+                            ? AppMotion.sceneOf(context)
+                            : AppMotion.durationOf(context, AppMotion.state),
+                        curve: userResize ? AppMotion.emphasized : AppMotion.enter,
                         alignment: Alignment.bottomCenter,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
