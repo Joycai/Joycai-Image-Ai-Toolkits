@@ -59,7 +59,7 @@
 | 3 | AI 重命名「覆盖」禁用态的测试：给 `AiRenameDialog` 留 `@visibleForTesting` 初始行入口 | `screens/browser/ai_rename_dialog.dart` · 新测试 | `test/ai_rename_overwrite_ui_test.dart`（去掉禁用即失败） | ✅ |
 | 4 | 截断标记跨重启：`LLMMessage` JSON 带可选 `truncated` / `modelDbId`，恢复时读回 | `llm_types.dart` · `prompt_optimizer_session.dart` · `prompt_optimizer_agent.dart` | `optimizer_truncation_test.dart` 两条：重启往返、旧行无键 | ✅ |
 | 5 | 按节写入的预览标明位置：条目带 `KbEditScope` + 节标题，卡片头下一行写「替换小节 / 追加到小节 / 追加到文件末尾」，每个 hunk 头带所在标题（`@@ -a +b @@ ## 节`） | `prompt_optimizer_session.dart` · `assistant_tool_calls.dart` · `knowledge_base_service.dart`（`headingAbove`）· `optimizer_kb_edit_card.dart` · l10n workbench | `optimizer_kb_section_scope_test.dart`；卡片两条；`headingAbove` 一条 | ✅ |
-| 6 | ① 「no choices」等裸 `Exception` 改 `LLMApiException`；`LLMMessage.fromJson` 未知 role 抛 `FormatException` | `openai_chat_protocol.dart` · `dashscope_images_protocol.dart` · `midjourney_protocol.dart` · `gemini_veo_protocol.dart` · `llm_types.dart` | 单测 | ☐ |
+| 6 | ① 「no choices」等裸 `Exception` 改 `LLMApiException`；`LLMMessage.fromJson` 未知 role 抛 `FormatException` | 九个协议里的 `throw Exception(`（Midjourney 提交被拒标 `isEnvelope`）· `llm_types.dart` · `assistant_session_repository.dart`（注释） | `test/llm_typed_failures_test.dart` | ✅ |
 | 7 | 非 Anthropic vendor 的 ④ 面不发 `web_search`（谓词与 `serverWebSearch` 同源）；编辑器保存时不支持即清零 | `anthropic_payload.dart` · `llm_dispatcher.dart` · `model_edit_dialog.dart` | payload 测试 | ☐ |
 | R1 | 第一期 code review，修 CONFIRMED 项 | — | — | ☐ |
 

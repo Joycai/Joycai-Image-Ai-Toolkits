@@ -65,7 +65,7 @@ class GeminiVeoProtocol implements VideoJobProtocol {
 
       final name = data['name'] as String?;
       if (name == null) {
-        throw Exception('Failed to get operation name from response');
+        throw LLMApiException('Failed to get operation name from response');
       }
 
       return name;

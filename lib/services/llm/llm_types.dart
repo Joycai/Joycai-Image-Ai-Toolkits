@@ -568,8 +568,11 @@ class LLMMessage {
         if (modelDbId != null) 'modelDbId': modelDbId,
       };
 
+  /// Throws [FormatException] for a role this app does not know: guessing
+  /// one would replay a damaged row as something the user said.
   factory LLMMessage.fromJson(Map<String, dynamic> json) => LLMMessage(
-        role: LLMRole.values.asNameMap()[json['role']] ?? LLMRole.user,
+        role: LLMRole.values.asNameMap()[json['role']] ??
+            (throw FormatException('Unknown message role', json['role'])),
         content: json['content'] as String? ?? '',
         reasoningContent: json['reasoningContent'] as String?,
         reasoningFieldName: json['reasoningFieldName'] as String?,

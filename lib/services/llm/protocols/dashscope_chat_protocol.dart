@@ -119,7 +119,7 @@ class DashScopeChatProtocol implements ChatProtocol {
         // to say nothing", which is how a `result_format` mistake or an
         // expired key would look like a silent no-op.
         final body = response.body;
-        throw Exception(
+        throw LLMApiException(
           'DashScope Chat API returned no choices: '
           '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
         );

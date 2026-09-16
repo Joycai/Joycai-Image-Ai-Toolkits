@@ -126,7 +126,7 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
         // success — the task executor cannot tell those apart and would
         // report a generation that produced no file as done.
         final body = response.body;
-        throw Exception('DashScope Images API returned no image: '
+        throw LLMApiException('DashScope Images API returned no image: '
             '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
       }
 

@@ -100,7 +100,7 @@ class OpenAIChatProtocol implements ChatProtocol {
         // (the assistant loop above all) read as "the model chose to say
         // nothing" — an expired key looked like a silent no-op.
         final body = response.body;
-        throw Exception(
+        throw LLMApiException(
           'OpenAI API returned no choices: '
           '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
         );

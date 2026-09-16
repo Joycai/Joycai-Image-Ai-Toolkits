@@ -190,11 +190,11 @@ class MidjourneyProtocol implements ChatProtocol {
       final submitCode = submitData['code'];
       // code 1 = success, 22 = queued (also acceptable — task is created).
       if (submitCode != 1 && submitCode != 22) {
-        throw Exception('Midjourney submit rejected: $submitData');
+        throw LLMApiException('Midjourney submit rejected: $submitData', isEnvelope: true);
       }
       final taskId = submitData['result']?.toString();
       if (taskId == null || taskId.isEmpty) {
-        throw Exception('Midjourney submit returned no task id: $submitData');
+        throw LLMApiException('Midjourney submit returned no task id: $submitData');
       }
 
       // INFO, the moment it exists: a submitted MJ task is billed, and if

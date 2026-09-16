@@ -133,7 +133,7 @@ class XaiImagesProtocol implements ImageGenProtocol {
 
       if (images.isEmpty) {
         // e.g. respect_moderation=false leaves url/b64 empty.
-        throw Exception('xAI Images API returned no image data (possibly filtered by moderation): ${response.body}');
+        throw LLMApiException('xAI Images API returned no image data (possibly filtered by moderation): ${response.body}');
       }
 
       logger?.call('xAI Images parse complete. Images: ${images.length}', level: 'DEBUG');

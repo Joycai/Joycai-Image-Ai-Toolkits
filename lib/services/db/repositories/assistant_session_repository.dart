@@ -192,11 +192,11 @@ class AssistantSessionRepository {
     for (final row in rows) {
       try {
         final json = (jsonDecode(row['message'] as String) as Map).cast<String, dynamic>();
-        // LLMMessage.fromJson degrades an unrecognized role to `user`, which
-        // for a damaged row means replaying garbage as something the user
-        // said. Dropping it is the honest outcome; the pairing repair on
-        // restore (PromptOptimizerAgent.repairToolCallPairing) absorbs the
-        // gap it leaves.
+        // An unrecognized role would make LLMMessage.fromJson throw; checked
+        // first so the log names the row. Dropping it is the honest outcome;
+        // the pairing repair on restore
+        // (PromptOptimizerAgent.repairToolCallPairing) absorbs the gap it
+        // leaves.
         if (!LLMRole.values.asNameMap().containsKey(json['role'])) {
           debugPrint('assistant_messages: dropping row seq=${row['seq']} '
               'with unknown role ${json['role']}');
