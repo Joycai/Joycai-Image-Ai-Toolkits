@@ -85,6 +85,21 @@ void main() {
           reason: 'the hunk deep in the file says which section it is in');
     });
 
+    testWidgets('a deletion is named by the section it was cut from, not the next one',
+        (tester) async {
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      final filler = [for (var i = 0; i < 30; i++) '- rule $i'].join('\n');
+      final old = '# Rules\n\n## Lighting\n\n$filler\n- soft\n- hard\n## Composition\n\n- thirds\n';
+      session.stageKbEditForTest(
+        relPath: 'rules.md',
+        oldContent: old,
+        newContent: old.replaceFirst('- soft\n- hard\n', ''),
+      );
+      await pumpChat(tester, session);
+      expect(find.textContaining(RegExp(r'@@ ## Lighting$')), findsOneWidget);
+      expect(find.textContaining(RegExp(r'@@ ## Composition$')), findsNothing);
+    });
+
     testWidgets('a whole-file edit carries no scope line', (tester) async {
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
       session.stageKbEditForTest(relPath: 'a.md', oldContent: 'x\n', newContent: 'y\n');

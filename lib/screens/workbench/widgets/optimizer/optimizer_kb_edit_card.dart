@@ -400,10 +400,18 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
 
 /// `@@ -old +new` and, when the change sits under one, the heading above its
 /// first changed line in the proposed file.
+///
+/// A removed line has no line of its own in the proposed file: counted
+/// there, it lands on the line that now follows the gap — which is the next
+/// section's heading when a section's tail (or the whole section) was
+/// deleted. The heading is looked up from the line before the gap instead.
 String _hunkHeader(DiffHunk hunk, String newContent) {
-  final firstChange = hunk.lines.indexWhere((l) => l.kind != DiffLineKind.context);
-  final line = hunk.newStart + (firstChange < 0 ? 0 : firstChange);
-  final heading = KnowledgeBaseService.headingAbove(newContent, line);
+  var firstChange = hunk.lines.indexWhere((l) => l.kind != DiffLineKind.context);
+  if (firstChange < 0) firstChange = 0;
+  final removal = hunk.lines.isNotEmpty && hunk.lines[firstChange].kind == DiffLineKind.removed;
+  // The context lines before the change each take one line of the new file.
+  final line = hunk.newStart + firstChange - (removal ? 1 : 0);
+  final heading = line < 1 ? null : KnowledgeBaseService.headingAbove(newContent, line);
   final base = '@@ -${hunk.oldStart} +${hunk.newStart}';
   return heading == null ? base : '$base @@ $heading';
 }

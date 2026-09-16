@@ -61,7 +61,7 @@
 | 5 | 按节写入的预览标明位置：条目带 `KbEditScope` + 节标题，卡片头下一行写「替换小节 / 追加到小节 / 追加到文件末尾」，每个 hunk 头带所在标题（`@@ -a +b @@ ## 节`） | `prompt_optimizer_session.dart` · `assistant_tool_calls.dart` · `knowledge_base_service.dart`（`headingAbove`）· `optimizer_kb_edit_card.dart` · l10n workbench | `optimizer_kb_section_scope_test.dart`；卡片两条；`headingAbove` 一条 | ✅ |
 | 6 | ① 「no choices」等裸 `Exception` 改 `LLMApiException`；`LLMMessage.fromJson` 未知 role 抛 `FormatException` | 九个协议里的 `throw Exception(`（Midjourney 提交被拒标 `isEnvelope`）· `llm_types.dart` · `assistant_session_repository.dart`（注释） | `test/llm_typed_failures_test.dart` | ✅ |
 | 7 | 非 Anthropic vendor 的 ④ 面不发 `web_search`：`VendorProfile.webSearchOn(face)` 成为编辑器（经 `serverWebSearch`）与三个 payload 的同一个答案 | `vendor_profile.dart` · `llm_dispatcher.dart` · `anthropic_payload.dart` · `openai_chat_payload.dart` · `dashscope_chat_protocol.dart` | `server_web_search_test.dart` ④ 组（去掉闸门即失败） | ✅ |
-| R1 | 第一期 code review，修 CONFIRMED 项 | — | — | ☐ |
+| R1 | 第一期 code review，修 CONFIRMED 项 | `optimizer_kb_edit_card.dart` | 1 条：只删行的 hunk 头标成了下一节 → 从缺口前一行找标题；测试一条 | ✅ |
 
 ### 第二期：动效
 
