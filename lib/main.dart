@@ -25,7 +25,7 @@ import 'screens/wizard/setup_wizard.dart';
 import 'screens/workbench/workbench_screen.dart';
 import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
 import 'services/notification_service.dart';
-import 'services/task_queue_service.dart';
+import 'services/tasks/task_queue_service.dart';
 import 'services/temp_storage_service.dart';
 import 'services/video_thumbnail_service.dart';
 import 'services/window_chrome_service.dart';

@@ -23,10 +23,10 @@ import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt_history_entry.dart';
 import 'package:joycai_image_ai_toolkits/models/tag.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
-import 'package:joycai_image_ai_toolkits/services/database_service.dart';
-import 'package:joycai_image_ai_toolkits/services/knowledge_base_service.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:path/path.dart' as p;
 

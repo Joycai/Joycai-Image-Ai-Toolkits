@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'llm/context_budget.dart';
+import '../llm/context_budget.dart';
 
 /// One coloured slice of the context bar.
 ///

@@ -4,17 +4,17 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
-import '../models/result_feedback.dart';
+import '../../models/result_feedback.dart';
 import 'assistant_context_usage.dart';
-import 'database_service.dart';
+import '../db/database_service.dart';
 import 'knowledge_base_service.dart';
-import 'llm/context_budget.dart';
-import 'llm/image_compression.dart';
-import 'llm/llm_dispatcher.dart';
-import 'llm/llm_service.dart';
-import 'llm/llm_types.dart';
-import 'repositories/assistant_note_repository.dart';
-import 'repositories/assistant_session_repository.dart';
+import '../llm/context_budget.dart';
+import '../llm/image_compression.dart';
+import '../llm/llm_dispatcher.dart';
+import '../llm/llm_service.dart';
+import '../llm/llm_types.dart';
+import '../db/repositories/assistant_note_repository.dart';
+import '../db/repositories/assistant_session_repository.dart';
 import 'sub_agent_runner.dart';
 
 /// Operating mode of the prompt assistant.

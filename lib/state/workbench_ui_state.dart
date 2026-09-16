@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import '../models/app_image.dart';
 import '../models/result_feedback.dart';
 import '../models/task_item.dart';
-import '../services/assistant_kb_distill.dart';
-import '../services/prompt_optimizer_agent.dart';
-import '../services/prompt_provenance.dart';
-import '../services/repositories/assistant_session_repository.dart';
-import '../services/repositories/task_repository.dart';
+import '../services/assistant/assistant_kb_distill.dart';
+import '../services/assistant/prompt_optimizer_agent.dart';
+import '../services/assistant/prompt_provenance.dart';
+import '../services/db/repositories/assistant_session_repository.dart';
+import '../services/db/repositories/task_repository.dart';
 
 /// How the comparator arranges the two images.
 ///

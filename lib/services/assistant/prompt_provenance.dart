@@ -1,4 +1,4 @@
-import '../models/task_item.dart';
+import '../../models/task_item.dart';
 import 'prompt_optimizer_agent.dart';
 
 /// Generation-task → prompt-version provenance.

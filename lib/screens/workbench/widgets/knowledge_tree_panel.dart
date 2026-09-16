@@ -6,8 +6,8 @@ import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../services/knowledge_base_service.dart';
-import '../../../services/prompt_optimizer_agent.dart';
+import '../../../services/assistant/knowledge_base_service.dart';
+import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../widgets/ui/app_search_field.dart';
 import 'optimizer_context_card.dart';
 

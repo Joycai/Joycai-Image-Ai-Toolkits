@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/sub_agent_runner.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/sub_agent_runner.dart';
 
 /// Pins what "stop" means once it reaches the LLM layer.
 ///

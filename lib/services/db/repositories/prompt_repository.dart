@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import '../../models/prompt.dart';
-import '../../models/prompt_history_entry.dart';
-import '../../models/tag.dart';
+import '../../../models/prompt.dart';
+import '../../../models/prompt_history_entry.dart';
+import '../../../models/tag.dart';
 import '../database_service.dart';
 
 class PromptRepository {

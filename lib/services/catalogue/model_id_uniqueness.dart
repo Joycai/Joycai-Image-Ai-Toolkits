@@ -1,4 +1,4 @@
-import '../models/llm_model.dart';
+import '../../models/llm_model.dart';
 
 /// Whether [modelId] is already used by another model on [channelId].
 ///

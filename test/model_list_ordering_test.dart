@@ -8,7 +8,7 @@
 // and 「降序」 is the exact reverse of 「升序」 — ties included.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
-import 'package:joycai_image_ai_toolkits/services/model_list_ordering.dart';
+import 'package:joycai_image_ai_toolkits/services/catalogue/model_list_ordering.dart';
 
 void main() {
   LLMModel model(int id, String name, String tag, {String? modelId}) => LLMModel(

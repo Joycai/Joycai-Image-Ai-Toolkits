@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../database_service.dart';
-import '../llm/llm_types.dart';
-import '../prompt_optimizer_agent.dart';
+import '../../llm/llm_types.dart';
+import '../../assistant/prompt_optimizer_agent.dart';
 
 /// Metadata row of a persisted assistant conversation.
 class AssistantSessionMeta {

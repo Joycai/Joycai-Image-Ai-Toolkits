@@ -6,7 +6,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../../services/database_service.dart';
+import '../../services/db/database_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_search_field.dart';

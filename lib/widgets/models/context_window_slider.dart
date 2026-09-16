@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
-import '../../services/context_window_scale.dart';
+import '../../services/catalogue/context_window_scale.dart';
 
 /// The context window's Specify slider (`D1c · 1a`): nine equidistant stops
 /// in two ranks, a magnet that pulls a drag onto a stop, and tick labels

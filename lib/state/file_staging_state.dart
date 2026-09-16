@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 
 import '../core/file_utils.dart';
 import '../models/browser_file.dart';
-import '../services/database_service.dart';
+import '../services/db/database_service.dart';
 
 /// The file browser's staging area: a list of files the user has marked for a
 /// later move or copy.

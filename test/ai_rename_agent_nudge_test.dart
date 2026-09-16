@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/ai_rename_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/tasks/ai_rename_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 
 /// A batch whose model answers in plain text without ever calling a tool used

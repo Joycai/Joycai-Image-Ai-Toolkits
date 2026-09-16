@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt_history_entry.dart';
-import 'package:joycai_image_ai_toolkits/services/database_migrations.dart';
-import 'package:joycai_image_ai_toolkits/services/database_service.dart';
-import 'package:joycai_image_ai_toolkits/services/repositories/prompt_repository.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_migrations.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/db/repositories/prompt_repository.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Covers the workbench prompt history against a real (in-memory) schema.

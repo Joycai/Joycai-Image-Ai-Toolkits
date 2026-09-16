@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../services/database_service.dart';
+import '../services/db/database_service.dart';
 import '../services/web_scraper_service.dart';
 
 class DownloaderState extends ChangeNotifier {

@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
 
-import 'llm/llm_service.dart';
-import 'llm/llm_types.dart';
+import '../llm/llm_service.dart';
+import '../llm/llm_types.dart';
 
 /// A single rename suggestion collected from the model via tool calls.
 class RenameProposal {

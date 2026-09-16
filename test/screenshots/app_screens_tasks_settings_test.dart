@@ -11,8 +11,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/task_list_ordering.dart';
-import 'package:joycai_image_ai_toolkits/services/task_queue_service.dart';
+import 'package:joycai_image_ai_toolkits/services/tasks/task_list_ordering.dart';
+import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/tasks/task_capsule_monitor.dart';
 

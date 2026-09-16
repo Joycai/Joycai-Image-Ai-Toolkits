@@ -132,7 +132,7 @@ Supports `en`, `zh`, `zh_Hant`, `ja`. **All four languages must be updated toget
 ## Extension Patterns
 
 **New task type:** add a value to `TaskType` in `lib/models/task_item.dart` → implement
-`_executeXxxTask()` in `services/task_executors.dart` → add its branch to `_executeTask()`
+`_executeXxxTask()` in `services/tasks/task_executors.dart` → add its branch to `_executeTask()`
 in `task_queue_service.dart`. `addTask()` takes the type as a parameter and needs no change.
 
 **New LLM vendor (OpenAI/Gemini-compatible supplier):** add a `VendorProfile` in

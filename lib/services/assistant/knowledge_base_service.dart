@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-import 'database_service.dart';
+import '../db/database_service.dart';
 
 /// Validation outcome for the configured knowledge-base folder.
 enum KbStatus { ok, notSet, missingDir, missingEntry }

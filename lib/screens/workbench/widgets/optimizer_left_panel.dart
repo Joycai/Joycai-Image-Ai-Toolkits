@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../services/prompt_optimizer_agent.dart';
+import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
 import 'knowledge_tree_panel.dart';
 import 'optimizer_reference_panel.dart';

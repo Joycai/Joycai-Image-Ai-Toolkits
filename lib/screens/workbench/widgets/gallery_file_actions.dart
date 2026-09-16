@@ -11,7 +11,7 @@ import '../../../core/constants.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../models/task_item.dart';
-import '../../../services/prompt_optimizer_agent.dart';
+import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../models/llm_model.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';

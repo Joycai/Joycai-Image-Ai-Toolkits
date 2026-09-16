@@ -9,7 +9,7 @@ import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../services/database_service.dart';
+import '../../../services/db/database_service.dart';
 import '../../../services/temp_storage_service.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/ui/app_button.dart';

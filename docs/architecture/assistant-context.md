@@ -112,7 +112,7 @@ measured ratio. When it doesn't, the conservative default stands.
 The 上下文占用 card in the assistant's right panel shows the same accounting the
 budget runs on, so the user can see a turn approaching compaction instead of
 discovering it afterwards. `PromptOptimizerAgent.measureContext` builds it;
-`ContextUsageSnapshot` (`services/assistant_context_usage.dart`) carries it; the
+`ContextUsageSnapshot` (`services/assistant/assistant_context_usage.dart`) carries it; the
 card is presentational and does no arithmetic beyond formatting — and turning
 the snapshot's characters back into tokens with the ratio the snapshot carries.
 The window is configured in tokens; printing characters made a 1M-token model

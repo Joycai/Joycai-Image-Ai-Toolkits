@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/knowledge_base_service.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
 
 /// Page boundaries for knowledge files.
 ///

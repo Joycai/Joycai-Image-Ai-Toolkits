@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../widgets/settings/backup_error_text.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/database_service.dart';
+import '../../services/db/database_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/dialogs/import_options_dialog.dart';

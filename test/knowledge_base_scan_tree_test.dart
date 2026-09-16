@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/knowledge_base_service.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
 import 'package:path/path.dart' as p;
 
 /// Counts behind the knowledge-base status card.

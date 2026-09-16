@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/task_item.dart';
-import '../services/database_service.dart';
-import '../services/task_list_ordering.dart';
+import '../services/db/database_service.dart';
+import '../services/tasks/task_list_ordering.dart';
 
 /// How the task list is filtered, ordered and grouped.
 ///

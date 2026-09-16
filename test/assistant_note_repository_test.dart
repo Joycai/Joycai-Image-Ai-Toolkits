@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/database_migrations.dart';
-import 'package:joycai_image_ai_toolkits/services/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_migrations.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
-import 'package:joycai_image_ai_toolkits/services/repositories/assistant_note_repository.dart';
-import 'package:joycai_image_ai_toolkits/services/repositories/assistant_session_repository.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/db/repositories/assistant_note_repository.dart';
+import 'package:joycai_image_ai_toolkits/services/db/repositories/assistant_session_repository.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Pins the M3.2 note store (assistant_notes, v34): slug hygiene, session

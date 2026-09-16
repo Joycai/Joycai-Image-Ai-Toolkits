@@ -1,5 +1,5 @@
 import '../../l10n/app_localizations.dart';
-import '../../services/database_service.dart';
+import '../../services/db/database_service.dart';
 
 /// User-facing text for a failed backup import.
 ///

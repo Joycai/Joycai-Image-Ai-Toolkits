@@ -8,7 +8,7 @@ import '../../core/app_theme.dart';
 import '../../core/app_paths.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/database_service.dart';
+import '../../services/db/database_service.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../services/llm/model_family.dart';

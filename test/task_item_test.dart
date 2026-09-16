@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/task_queue_service.dart';
+import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 
 void main() {
   group('TaskItem', () {

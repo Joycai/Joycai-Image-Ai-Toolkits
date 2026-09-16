@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
-import 'package:joycai_image_ai_toolkits/services/model_id_uniqueness.dart';
+import 'package:joycai_image_ai_toolkits/services/catalogue/model_id_uniqueness.dart';
 
 /// `isModelIdTaken`: the model editor's 「该渠道下已有同名 Model ID」 check.
 void main() {

@@ -8,7 +8,7 @@ import '../../core/app_semantic_colors.dart';
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/task_queue_service.dart';
+import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../ui/app_breathing_dot.dart';
 import '../ui/app_button.dart';

@@ -6,24 +6,24 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import '../core/image_magic.dart';
-import '../core/file_utils.dart';
-import '../core/video_magic.dart';
-import '../models/llm_model.dart';
-import '../models/task_item.dart';
+import '../../core/image_magic.dart';
+import '../../core/file_utils.dart';
+import '../../core/video_magic.dart';
+import '../../models/llm_model.dart';
+import '../../models/task_item.dart';
 import 'ai_rename_agent.dart';
-import 'database_service.dart';
-import 'knowledge_base_service.dart';
-import 'llm/image_compression.dart';
-import 'llm/job_poll.dart';
-import 'llm/llm_service.dart';
-import 'llm/llm_types.dart';
-import 'llm/model_descriptor.dart';
-import 'prompt_optimizer_agent.dart';
-import 'web_scraper_service.dart';
+import '../db/database_service.dart';
+import '../assistant/knowledge_base_service.dart';
+import '../llm/image_compression.dart';
+import '../llm/job_poll.dart';
+import '../llm/llm_service.dart';
+import '../llm/llm_types.dart';
+import '../llm/model_descriptor.dart';
+import '../assistant/prompt_optimizer_agent.dart';
+import '../web_scraper_service.dart';
 
 // Re-export the task data model so existing importers of this file keep working.
-export '../models/task_item.dart';
+export '../../models/task_item.dart';
 
 part 'task_executors.dart';
 

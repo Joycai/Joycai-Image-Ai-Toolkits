@@ -9,7 +9,7 @@ import '../core/file_utils.dart';
 import '../core/thumbnail_decode.dart';
 import '../models/browser_file.dart';
 import '../services/browser_file_scanner.dart';
-import '../services/database_service.dart';
+import '../services/db/database_service.dart';
 import '../services/file_permission_service.dart';
 
 enum BrowserViewMode { grid, list }

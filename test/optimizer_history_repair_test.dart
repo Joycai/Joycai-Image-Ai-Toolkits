@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 
 /// Pins `repairToolCallPairing` (standard 07 §3.2, 10 §4.3): a restored or
 /// interrupted history must come back sendable, because an unanswered call or

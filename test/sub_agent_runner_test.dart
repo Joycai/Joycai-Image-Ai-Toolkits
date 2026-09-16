@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
-import 'package:joycai_image_ai_toolkits/services/sub_agent_runner.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/sub_agent_runner.dart';
 
 /// Pins the sub-agent loop's invariants (pairing, cancellation stubs, the
 /// force-text last round) and the delegate routing/template rules from M3 of

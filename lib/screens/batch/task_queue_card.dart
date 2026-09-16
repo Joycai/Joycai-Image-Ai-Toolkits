@@ -12,7 +12,7 @@ import '../../core/design_tokens.dart';
 import '../../core/file_utils.dart';
 import '../../widgets/tasks/task_type_glyph.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/task_queue_service.dart';
+import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/ui/app_breathing_dot.dart';
 import '../../widgets/ui/app_button.dart';

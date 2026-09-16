@@ -1,6 +1,6 @@
-import 'llm/llm_types.dart';
+import '../llm/llm_types.dart';
 import 'prompt_optimizer_agent.dart';
-import 'repositories/assistant_session_repository.dart';
+import '../db/repositories/assistant_session_repository.dart';
 
 /// One generation-feedback round attached to a prompt version.
 class IterationFeedback {

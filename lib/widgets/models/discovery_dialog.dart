@@ -8,7 +8,7 @@ import '../../models/llm_channel.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../services/llm/model_family.dart';
-import '../../services/model_id_uniqueness.dart';
+import '../../services/catalogue/model_id_uniqueness.dart';
 import '../../state/app_state.dart';
 import 'model_tag_chip.dart';
 import '../ui/app_button.dart';

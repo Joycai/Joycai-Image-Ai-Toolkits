@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/database_service.dart';
+import '../../services/db/database_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/glass/app_glass.dart';
 import '../../widgets/glass/glass_controls.dart';

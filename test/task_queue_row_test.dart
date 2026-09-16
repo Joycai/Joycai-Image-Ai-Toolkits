@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/screens/batch/task_queue_card.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/dashed_border.dart';
-import 'package:joycai_image_ai_toolkits/services/task_queue_service.dart';
+import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 
 import 'screenshots/harness/fixture_env.dart';

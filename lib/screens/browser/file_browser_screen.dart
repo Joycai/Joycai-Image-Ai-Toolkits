@@ -15,7 +15,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/browser_file.dart';
-import '../../services/database_service.dart';
+import '../../services/db/database_service.dart';
 import '../../services/file_permission_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';

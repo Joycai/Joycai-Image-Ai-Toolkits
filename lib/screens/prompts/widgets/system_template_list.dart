@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
-import '../../../services/database_service.dart';
+import '../../../services/db/database_service.dart';
 import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';

@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import 'llm/llm_dispatcher.dart';
-import 'llm/llm_service.dart';
-import 'llm/llm_types.dart';
+import '../llm/llm_dispatcher.dart';
+import '../llm/llm_service.dart';
+import '../llm/llm_types.dart';
 
 /// How one sub-agent run ended.
 class SubAgentResult {

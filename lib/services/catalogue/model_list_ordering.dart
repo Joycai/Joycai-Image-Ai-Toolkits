@@ -1,4 +1,4 @@
-import '../models/llm_model.dart';
+import '../../models/llm_model.dart';
 
 /// Which key the right-hand model list runs on (`D1d` 排序键).
 ///

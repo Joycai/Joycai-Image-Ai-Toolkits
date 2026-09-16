@@ -6,7 +6,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
-import '../../services/database_service.dart';
+import '../../services/db/database_service.dart';
 import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
 import '../../widgets/ui/app_button.dart';
