@@ -35,8 +35,8 @@
 
 | 片 | 内容 | 涉及文件 | 验收 | 状态 |
 |---|---|---|---|---|
-| 6 | B4 子代理 note 限长；B5 编辑器在推理非默认且上限已指定时提示「思考计入上限」 | `assistant_system_prompts.dart` · `model_edit_output_cap.dart` · l10n | 文案存在；截图 | ☐ |
-| 7 | 发现时预填：Anthropic `/v1/models` 的 `max_tokens`、OpenRouter `top_provider.max_completion_tokens`；只在列为 null 时写 | `model_discovery_service.dart` 及其消费方 | 单测：有值预填、已有用户值不覆盖 | ☐ |
+| 6 | B4 子代理 note 限长；B5 编辑器在推理非默认且上限已指定时提示「思考计入上限」 | `assistant_system_prompts.dart` · `model_edit_output_cap.dart` · l10n | 文案存在；截图 | ✅ |
+| 7 | 发现时预填：Anthropic `/v1/models` 的 `max_tokens`、OpenRouter `top_provider.max_completion_tokens`；只在列为 null 时写 | `model_discovery_service.dart` 及其消费方 | 单测：有值预填、已有用户值不覆盖 | ✅ |
 | R2 | 第二期 code review | — | — | ☐ |
 
 ### 第三期
@@ -62,3 +62,5 @@
 - 片 3 · 编辑器区块 + 卡片 chip + 四语。与计划两处出入：刻度用既有的 `ModelEditTrackSlider`（推理档位那条，snap）而不是再写一个画条形 tick 的滑杆；输入框不带「档位」菜单（那个菜单绑死在九档上）。截图夹具 `gpt-5-chat` 种了 65536，编辑器与卡片截图能看到指定态。
 - 片 4 · B0。`truncatedToolResult` 与 `maxTruncatedRounds` 放在 `sub_agent_runner.dart`（agent 库已引它，反向引会成环），两个循环共用；`LLMService.outputTokensOf` 去掉 `@visibleForTesting` 供助手报「在 N tokens 处被截」。跳转走 `PromptOptimizerChatView.onOpenModelSettings` 注入，workbench 直接开 `ModelEditDialog`。
 - 片 5 · B1 + B3。测试逼出一个设计漏洞：第二次压缩时 `submit_prompt` 调用已被折掉，只剩上一份摘要尾部附的那份——`_latestSubmittedPrompt` 现在也从上一份摘要里接力（无更新的调用时），并且序列化时把上一份摘要附的提示词切掉不喂给摘要模型。提示词正文从摘要输入里一律省略（保留 note）。
+- 片 6 · B4（知识子代理 ≤ ~1500 词、草稿子代理 ≤ ~800 词）+ B5（推理非默认且已指定上限时一行提示，四语）。
+- 片 7 · `discoveredLimitsOf` 按键形读四家列表（Anthropic / Gemini / OpenRouter / LM Studio），发现对话框只给**新建**行种 `context_window` 与 `max_output_tokens`——「已有用户值不覆盖」由发现对话框只加新模型这一事实保证，没有另写守卫。
