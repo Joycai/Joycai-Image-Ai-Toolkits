@@ -1,6 +1,6 @@
 # 大文件拆分方案
 
-**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–7 已做
+**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 八片全部已做
 
 `lib/` 的结构债在 PR #287（目录间循环）和 #288（目录内平铺）之后只剩最后一项：单个文件
 太大。这份方案把它切成八片，一片一个 PR。
@@ -344,23 +344,34 @@ A 行点改名、B 行点覆盖 → 结果目录里只剩一个文件：**A 的�
 
 ---
 
-### 片 8 · `video_config_panel.dart` 1947 → 5 个文件，**放最后**
+### 片 8 · `video_config_panel.dart` 1947 → 7 个文件 ✅ 已做
 
-| 新文件 | 内容 | 原行 | ~行 |
-|---|---|---|---|
-| `video/video_frame_slots.dart` | `_announceDrop` · `_DropSlot` · `_PlateLabel` · `_PlateCloseButton` · `_FrameDropTarget` · `_FilledFrameSlot` | 1003–1516 | 510 |
-| `video/video_reference_images.dart` | `_ReferenceImagesSection` + `_ReferenceThumbnail` | 1517–1861 | 345 |
-| `video/video_param_controls.dart` | `_buildVideoParamControl` · `_videoParamLabel` · `_paramGrid` · `_ParamCell` | 751–901 · 953–1002 | 200 |
-| `video/video_panel_chrome.dart` | `_PanelCard` · `_EditorWell` · `_ToggleRow` · `_WarningNotice` | 902–952 · 1862–1947 | 140 |
-| `video_config_panel.dart` | Panel + State + `build`（366 行）+ `_buildModelSection`（189 行）+ 提交 | 81–750 | 700 |
+**原计划说它「连 screenshot 都没有」—— 这是错的。** 当时是在测试代码里 grep 类名得出的结论，
+而 harness 渲染的是真实页面，从不写 `VideoConfigPanel` 这个名字：`workbench_*_video.png` 和
+`*_videoModelCard.png` 一直拍着它。真正缺的是**填满之后**的样子（帧铭牌、说明、关闭钮、参考缩略图）。
+所以这片先加了一个 `video_filled` 截图（`seedVideoInputs`：两张首尾帧 + 两张参考图，放在 tab 列表
+最后，因为 `WorkbenchUIState` 跨 shot 存活），单独一个 commit，其余 175 张像素不变。
 
-**风险最高的一片**：`VideoConfigPanel` 在 `test/` 里零引用，`test/screenshots/` 里也没有
-任何拍到它的 case。**这一片要先补 screenshot 再动手** —— 把工作台视频 tab 纳进
-`app_screens_workbench_tabs_test.dart`（或新开一个 case），存下 PNG 作为基线。
+| part（`widgets/video/`） | 内容 | 实际行 |
+|---|---|---|
+| `video_model_section.dart` | 模型卡（extension `_ModelSection`） | 191 |
+| `video_param_controls.dart` | 按模型声明渲染的参数网格（extension `_ParamControls`）+ `_ParamCell` | 188 |
+| `video_drop_parts.dart` | 帧与参考图共用的：`_DropSlot`、铭牌说明与关闭钮、拖放辅助函数 | 264 |
+| `video_frame_slots.dart` | `_FrameDropTarget` · `_FilledFrameSlot` | 257 |
+| `video_reference_images.dart` | `_ReferenceImagesSection` · `_ReferenceThumbnail` + 它们的常量 | 358 |
+| `video_panel_chrome.dart` | `_PanelCard` · `_EditorWell` · `_ToggleRow` · `_WarningNotice` | 142 |
+| `video_config_panel.dart` | widget + State：字段、提示词、提交、364 行的 `build` | 573 |
 
-`video_param_controls` 那组要注意：按模型声明渲染参数（`model_capabilities.dart` 读来的）
-是这个面板的核心契约 —— 参数**声明在模型上，不在面板里**。抽的时候只搬渲染，不要顺手
-在新文件里加任何 `if (modelId == ...)`。
+`_DropSlot`、`_PlateLabel`、`_PlateCloseButton` 被帧和参考图两边用，所以单独成一个共享 part，
+而不是跟着任何一边。拆分脚本在这一片学会了顶层常量和函数 —— 这个文件在类之间夹着几个，不认识的话
+它们会被悄悄归到前一个类里。
+
+**结果**：`flutter analyze` 零问题；`flutter test -x screenshots` 2195 passed；screenshot
+177 / 177 像素一致（含新加的填满态）。
+
+**顺带看到、没有动的**：1440×900 下参考图区只露出一条，缩略图被裁掉大半（空态和填满态都是）；
+`WorkbenchUIState.addVideoReferenceImage` 原地修改列表后 `notifyListeners()`，与 CLAUDE.md 的
+state 规则不符。两条都记进台账。
 
 ---
 
@@ -408,7 +419,7 @@ git diff -M25% --stat main...HEAD               # 看到的应该是 rename / �
 | 5 tree | `rebuild_scope_test` + 文件浏览器 screenshot | — |
 | 6 model_edit | **仅 screenshot（不断言）** | 靠 PNG 逐像素对比 |
 | 7 ai_rename | **零** | ✅ 补了 `ai_rename_review_test.dart`（11 条）+ executor 1 条 |
-| 8 video | **零，连 screenshot 都没有** | **本片先补 screenshot** |
+| 8 video | 有 screenshot（空态、模型卡），**没有填满态**；原计划写的「零」是 grep 类名的误判 | ✅ 补了 `video_filled` |
 
 ---
 
