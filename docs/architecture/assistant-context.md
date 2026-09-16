@@ -9,6 +9,29 @@ away from the code it explains. What is written here is what the code *cannot*
 say locally: how the pieces fit, which invariants span more than one file, and
 which alternatives were tried and rejected (so they don't get "fixed" back in).
 
+## Where it lives
+
+`PromptOptimizerAgent` is one library in seven files, joined with `part`. The
+class in `prompt_optimizer_agent.dart` holds every public entry point (the turn
+loop, the measures, the staging and ask-user APIs, the markers); the private
+machinery sits beside it as library-private top-level declarations, so the
+names below are written unqualified wherever they appear.
+
+| File | What is in it |
+|---|---|
+| `prompt_optimizer_agent.dart` | the class: `runTurn`, `_request`, persistence, `occupiedChars` / `toolSchemaChars` / `measureContext`, `shouldCompact` / `compactionBoundary`, KB-edit staging, ask-user resolution |
+| `assistant_context_window.dart` | everything on this page that starts with `_`: the tuning constants, `_readCapNow`, the turn classifiers and `_boundaryOf`, liveness (`_liveReadPages` / `_staleFrom` / `_liveViewedPaths` / `_liveAttachmentIndices`), `_trimForSend` / `_elide`, `_maybeCompact` / `_serializeForSummary` |
+| `assistant_tool_calls.dart` | `_executeTool` and the delegate / note / write-knowledge executors |
+| `assistant_toolset.dart` | the tool schemas (`toolsetFor` and `delegateToolFor` stay on the class) |
+| `assistant_history_repair.dart` | tool-call pairing repair and dangling `ask_user` handling |
+| `assistant_system_prompts.dart` | the four mode prompts and the two sub-agent prompts |
+| `prompt_optimizer_session.dart` | `PromptOptimizerSession`, `OptimizerChatEntry`, the ask-user and mode types |
+
+Why `part` and not separate libraries: the coupling runs both ways through
+private members (the session calls `_isRealUserTurn`; the loop calls thirteen
+different `session._*`). Separate libraries would mean publishing ~30 members
+that are private on purpose.
+
 ## The shape
 
 Two layers and one gate. All three measure the same way, with

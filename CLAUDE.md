@@ -55,7 +55,9 @@ lib/
                                   #   task_list_ordering.dart (created_at is the only key) ·
                                   #   ai_rename_agent.dart (the aiRename task's agent)
     assistant/                    # the Prompt Assistant (see architecture note): prompt_optimizer_agent.dart
-                                  #   (tool loop, modes, session persistence + compaction) · sub_agent_runner.dart ·
+                                  #   (the public class + tool loop) with six `part`s — session, context_window
+                                  #   (elide / compact), tool_calls, toolset, history_repair, system_prompts ·
+                                  #   sub_agent_runner.dart ·
                                   #   knowledge_base_service.dart (README.md entry, paged reads) ·
                                   #   knowledge_base_starter.dart · assistant_context_usage.dart ·
                                   #   assistant_kb_distill.dart · prompt_provenance.dart
@@ -105,7 +107,7 @@ Read the relevant note before changing that subsystem — each records invariant
 that fail silently when broken, and alternatives already tried and rejected.
 
 - **[LLM three-layer API stack](docs/architecture/llm-three-layer.md)** — protocol / vendor / model layering, the dispatcher routing table, and the layering rules (no model-id sniffing outside `ModelDescriptor`, no vendor branches inside protocols). Required reading before touching anything under `lib/services/llm/`.
-- **[Prompt Assistant context management](docs/architecture/assistant-context.md)** — elide/compact layers, the `context_window` tri-state, knowledge-read budgeting and paging. Required reading before touching `prompt_optimizer_agent.dart`, `context_budget.dart`, or `knowledge_base_service.dart`.
+- **[Prompt Assistant context management](docs/architecture/assistant-context.md)** — elide/compact layers, the `context_window` tri-state, knowledge-read budgeting and paging. Required reading before touching `prompt_optimizer_agent.dart` or any of its parts (`assistant_context_window.dart` above all), `context_budget.dart`, or `knowledge_base_service.dart`.
 - **[Design tokens & multi-theme rule](docs/architecture/design-tokens.md)** — how the design spec's single blue maps onto 8 seed colours: the `onAccentTint` brightness branch, the alpha ladder (and its dark-mode ceiling), which colours must *not* follow the seed, and the deliberate divergences from the spec. Required reading before touching `design_tokens.dart`, `app_semantic_colors.dart`, `app_theme.dart`, or any accent/status colour in `widgets/`.
 
 [docs/README.md](docs/README.md) indexes the rest: protocol facts under `docs/api/`,

@@ -1,6 +1,6 @@
 # 大文件拆分方案
 
-**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–2 已做
+**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–3 已做
 
 `lib/` 的结构债在 PR #287（目录间循环）和 #288（目录内平铺）之后只剩最后一项：单个文件
 太大。这份方案把它切成八片，一片一个 PR。
@@ -132,42 +132,53 @@ payload 只引 `protocol.dart`；protocol ← 全部。
 
 ---
 
-### 片 3 · `prompt_optimizer_agent.dart` 4207 → 用 `part` 拆成 7 个
+### 片 3 · `prompt_optimizer_agent.dart` 4207 → 用 `part` 拆成 7 个 ✅ 已做
 
-**这个文件不能拆成独立库。** 耦合方向查过，是双向的：
+**这个文件不能拆成独立库。** 耦合是双向的：session 一侧调
+`PromptOptimizerAgent._isRealUserTurn` / `._isFreeTextAskUserReply`；agent 一侧调 13 个不同的
+`session._*`（`_addEntry` 13 次、`_setRunning`、`_resolveKbEdit`、`_stageAskUser`…）。拆成
+独立库要把 ~30 个故意私有的成员变 public。所以用 `part`（`app_state.dart`、
+`task_queue_service.dart` 已有先例）。
 
-- session 一侧调 `PromptOptimizerAgent._isRealUserTurn`（343）、
-  `._isFreeTextAskUserReply`（358）
-- agent 一侧调 13 个不同的 `session._*`：`_addEntry`（13 次）· `_setRunning`（3）·
-  `_resolveKbEdit`（3）· `_resolveAskUser`（3）· `_reportedKbEditIds` · `_findKbEdit` ·
-  `_backedUpPaths` · `_stagePrompt` · `_stageKbEdit` · `_stageAskUser` ·
-  `_repairToolCallPairing` · `_markViewed` · `_carryStaleMarker`
+**原计划漏了一件事：Dart 没有 partial class。** `part` 文件放不下「半个类体」，所以
+「`part` 拆、零改动」只对顶层那一半（session 等）自动成立。类这一半的做法：
 
-拆成独立库要把 ~30 个私有成员变 public。那比现在更糟：它们是**故意**私有的（`_stageKbEdit`
-之外还专门有一个 `stageKbEditForTest`，就是为了不把 staging 暴露出去）。
+- `PromptOptimizerAgent` 本来就**只有 static 成员**（一个命名空间）。**公有成员全部留在类上**
+  —— 42 个外部用到的 `PromptOptimizerAgent.X` 一个不动，类就是 API，文档也都在这。
+- **私有 static 搬进 part，变成库私有的顶层声明**（去掉 `static`、去两格缩进）。类里的
+  无限定调用照旧解析到它们。
+- 反过来，搬出去的代码里用到的类成员（marker 常量、`_request`、`measureContext`…）
+  由 analyzer 报出 22 处，脚本补上 `PromptOptimizerAgent.` 前缀；session 里原来带前缀
+  调私有 static 的 3 处去掉前缀。
 
-用 `part`。`lib/state/app_state.dart`（两个 part）和
-`lib/services/tasks/task_queue_service.dart`（`task_executors.dart`）已有先例，
-`use_string_in_part_of_directives` 已开，写字符串形式。
+| 文件 | 内容 | 实际行 |
+|---|---|---|
+| `prompt_optimizer_session.dart` | 三个 enum + AskUser 三件套 + `OptimizerChatEntry` + `PromptOptimizerSession` + `AgentRequestFn` | 973 |
+| `assistant_context_window.dart` | 调参常量 · `_readCapNow` · 轮次判定与 `_boundaryOf` · liveness · `_trimForSend` / `_elide` · `_maybeCompact` / `_serializeForSummary` | 557 |
+| `assistant_tool_calls.dart` | `_executeTool` + delegate / note / write-knowledge 执行器 + `_clipPreview` · `_fileSizeKb` · `_mimeTypeFor` | 690 |
+| `assistant_toolset.dart` | 四组 tool schema（`toolsetFor` / `delegateToolFor` 是公有的，留在类上） | 207 |
+| `assistant_history_repair.dart` | `_repairPairingWithOrigins` · `_pairDanglingAskUser` · `_cancelDanglingAskUser` | 169 |
+| `assistant_system_prompts.dart` | 四个 mode prompt + 两个 sub-agent prompt + `_finalRoundNudge` · `_feedbackRoundNote` | 272 |
+| `prompt_optimizer_agent.dart` | 类：全部公有入口（`runTurn` 541 行）+ `_maxTurns` · `_request` · 持久化 · `_drainKbEditOutcomes` | 1352 |
 
-| part 文件 | 内容 | 原行 | ~行 |
-|---|---|---|---|
-| `prompt_optimizer_session.dart` | 三个 enum + AskUser 三件套 + `OptimizerChatEntry` + `PromptOptimizerSession` + `AgentRequestFn` | 35–1011 | 975 |
-| `assistant_toolset.dart` | `_tools` · `_knowledgeTools` · `_knowledgeWriteTools` · `_noteTools` · `delegateToolFor` · `toolsetFor` | 1324–1641 | 320 |
-| `assistant_context_window.dart` | `shouldCompact` · `compactionBoundary` · `occupiedChars` · `toolSchemaChars` · `measureContext` · `_trimForSend` · `_elide` · `_maybeCompact` · `_serializeForSummary` + liveness 判定 + 调参常量 | 1121–1268 · 2368–2927 | 700 |
-| `assistant_tool_calls.dart` | `_executeTool` + `_executeDelegate` · `_runDraftDelegate` · `_finishDelegateRun` · `_executeReadNote` · `_executeSubAgentKbTool` · `_executeWriteKnowledge` · `buildDelegateTask` | 2947–3637 | 690 |
-| `assistant_history_repair.dart` | `repairToolCallPairing` · `_repairPairingWithOrigins` · `_pairDanglingAskUser` · `_cancelDanglingAskUser` · `answerAskUser` · `resolvePendingAskUserAsFreeText` | 3724–3959 | 240 |
-| `assistant_system_prompts.dart` | 四个 `_build*SystemPrompt` + 两个 sub-agent prompt + `_finalRoundNudge` · `_feedbackRoundNote` · `notRunStubMessage` | 2928–2946 · 3050–3063 · 3960–4207 | 300 |
-| `prompt_optimizer_agent.dart` | marker 常量 + `tryParseResultFeedback` + `_request` + `sessions` + `runTurn`（536 行）+ 持久化 + KB edit 落盘 | 1012–1120 · 1269–1323 · 1642–2367 · 3639–3723 | 1000 |
+**两个 analyzer 看不见的坑，都查了**
 
-**代价要说清楚：`part` 只减文件体积，不减耦合。** 但这个文件本来就是一个状态机，耦合是真的，
-假装成七个独立模块才是撒谎。换来的是零风险：
+1. **字符串插值。** 补前缀的脚本把 `'$summaryMarker\n…'` 改成了
+   `'$PromptOptimizerAgent.summaryMarker\n…'` —— 这**能编译**，插进去的是类型名，压缩摘要
+   会以字面的 `PromptOptimizerAgent.summaryMarker` 开头。analyzer 只在另一处 `const` 字符串
+   上报了错；两处都改成 `${…}`，脚本也改了。**以后任何「补限定前缀」的批量改动都要 grep
+   `\$类名\.`。**
+2. **静默改绑。** 搬出去的代码里如果有个类成员名在库作用域里恰好也有定义，不会报错而是
+   绑到别处。逐名查过 49 个留在类上的名字：命中的 6 处全是参数 / 字段，和搬之前一样遮蔽。
 
-- 42 个 importer 一个都不用改（`PromptOptimizerAgent.X` 全部原样可达）
-- 31 个 `optimizer_*` 测试原样通过 —— **行为等价是现成的证明**，不用另外论证
+另外 6 处 dartdoc 链接（`[viewResultMarker]` 之类）补了类名，否则搬出去之后指向空。
 
-`runTurn` 自己 536 行，拆完还是主文件里最大的一块。它是 tool loop 的主体，拆它要动控制流，
-本轮不动。
+按「去 static、去前缀、`${}` 还原」归一后做多重集比对，一行不差。
+
+**结果**：`flutter analyze` 零问题；`flutter test -x screenshots` 2183 passed；42 个 importer
+零改动。`assistant-context.md` 加了「Where it lives」一节，CLAUDE.md 的 map 与必读说明跟着改。
+
+`runTurn` 541 行仍是主文件里最大的一块，拆它要动控制流，本轮不动。
 
 ---
 
