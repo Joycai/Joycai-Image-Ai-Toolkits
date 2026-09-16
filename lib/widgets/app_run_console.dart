@@ -10,7 +10,7 @@ import '../models/log_entry.dart';
 import '../services/task_queue_service.dart';
 import '../state/app_state.dart';
 import '../state/log_state.dart';
-import 'app_breathing_dot.dart';
+import 'ui/app_breathing_dot.dart';
 import 'log_console.dart';
 
 /// Shared run-status console: status dot, running/planned task summary, the

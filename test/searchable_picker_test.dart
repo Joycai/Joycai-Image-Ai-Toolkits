@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/model_tag_chip.dart';
-import 'package:joycai_image_ai_toolkits/widgets/searchable_picker.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/searchable_picker.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers [SearchablePickerField]'s load-bearing behaviours, each of which

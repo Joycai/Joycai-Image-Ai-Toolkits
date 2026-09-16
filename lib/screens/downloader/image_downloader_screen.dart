@@ -15,7 +15,7 @@ import '../../services/web_scraper_service.dart';
 import '../../state/app_state.dart';
 import '../../state/downloader_state.dart';
 import '../../widgets/app_run_console.dart';
-import '../../widgets/app_snackbar.dart';
+import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/app_window_frame.dart';
 import '../../widgets/shell/app_destinations.dart';
 import '../batch/task_queue_screen.dart';

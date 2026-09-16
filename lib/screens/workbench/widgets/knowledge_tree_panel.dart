@@ -8,7 +8,7 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/knowledge_base_service.dart';
 import '../../../services/prompt_optimizer_agent.dart';
-import '../../../widgets/app_search_field.dart';
+import '../../../widgets/ui/app_search_field.dart';
 import 'optimizer_context_card.dart';
 
 /// Row, field and inset sizes for the three places this column is drawn:

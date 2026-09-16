@@ -6,12 +6,12 @@ import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/llm/model_capabilities.dart';
-import '../../widgets/app_dropdown.dart';
-import '../../widgets/app_field_size.dart';
-import '../../widgets/app_segmented_control.dart';
+import '../../widgets/ui/app_dropdown.dart';
+import '../../widgets/ui/app_field_size.dart';
+import '../../widgets/ui/app_segmented_control.dart';
 import '../../widgets/dialogs/image_size_picker_dialog.dart';
 import '../../widgets/models/model_picker_options.dart';
-import '../../widgets/searchable_picker.dart';
+import '../../widgets/ui/searchable_picker.dart';
 
 /// Vertical rhythm inside the card: header → pickers → parameter grid
 /// (`A1 · 1a`, `gap:8`).

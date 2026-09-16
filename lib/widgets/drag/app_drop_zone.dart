@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_semantic_colors.dart';
 import '../../core/design_tokens.dart';
-import '../dashed_border.dart';
+import '../ui/dashed_border.dart';
 
 /// The ladder of a slot or zone that takes a drop (`00d · 1c` 投放进容器).
 enum AppDropZoneState {

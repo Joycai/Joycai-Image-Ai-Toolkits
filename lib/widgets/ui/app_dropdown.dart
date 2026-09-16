@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
 import 'app_field_size.dart';
 
 /// One choice in an [AppDropdown].

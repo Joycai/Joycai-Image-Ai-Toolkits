@@ -8,9 +8,9 @@ import '../core/design_tokens.dart';
 import '../l10n/app_localizations.dart';
 import '../models/log_entry.dart';
 import '../state/log_state.dart';
-import 'app_search_field.dart';
-import 'app_snackbar.dart';
-import 'scroll_edge_fade.dart';
+import 'ui/app_search_field.dart';
+import 'ui/app_snackbar.dart';
+import 'ui/scroll_edge_fade.dart';
 
 /// `HH:MM:SS` for a log line — the clock both the log panel and the run
 /// console's tail line print, so the two always agree.

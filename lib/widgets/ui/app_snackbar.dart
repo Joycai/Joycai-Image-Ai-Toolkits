@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_semantic_colors.dart';
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
-import '../core/responsive.dart';
-import 'glass/app_glass.dart';
-import 'shell/phone_dock.dart';
+import '../../core/app_semantic_colors.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
+import '../../core/responsive.dart';
+import '../glass/app_glass.dart';
+import '../shell/phone_dock.dart';
 
 enum _AppSnackBarKind { success, error, warning, info }
 

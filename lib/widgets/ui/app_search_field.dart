@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../core/design_tokens.dart';
+import '../../core/design_tokens.dart';
 import 'app_field_size.dart';
 
 /// A "type to narrow this list" field: search glyph, hint, and a clear button

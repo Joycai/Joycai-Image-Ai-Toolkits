@@ -8,7 +8,7 @@ import '../../widgets/backup_error_text.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
-import '../../widgets/app_snackbar.dart';
+import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/dialogs/import_options_dialog.dart';
 
 /// Backup-import flow for the setup wizard.

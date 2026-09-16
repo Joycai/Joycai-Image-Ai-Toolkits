@@ -11,9 +11,9 @@ import '../../services/llm/model_family.dart';
 import '../../services/model_id_uniqueness.dart';
 import '../../state/app_state.dart';
 import 'model_tag_chip.dart';
-import '../app_button.dart';
-import '../app_search_field.dart';
-import '../app_dialog.dart';
+import '../ui/app_button.dart';
+import '../ui/app_search_field.dart';
+import '../ui/app_dialog.dart';
 
 /// Fetches a channel's model list and adds the ones picked (`D1a · 1c`).
 ///

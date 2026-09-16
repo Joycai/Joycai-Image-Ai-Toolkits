@@ -8,7 +8,7 @@ import '../../services/database_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/glass/app_glass.dart';
 import '../../widgets/glass/glass_controls.dart';
-import '../../widgets/panel_resizer.dart';
+import '../../widgets/ui/panel_resizer.dart';
 import 'widgets/workbench_glass_toolbar.dart';
 
 /// Narrowest the centre column is allowed to get. Below this the gallery

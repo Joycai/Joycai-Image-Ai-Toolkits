@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/tag.dart';
-import '../../../widgets/scroll_edge_fade.dart';
+import '../../../widgets/ui/scroll_edge_fade.dart';
 import 'prompt_library_parts.dart';
 
 /// The horizontal category filter (`C1 · 1c`): a 52px column-coloured strip

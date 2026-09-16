@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_text_field.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_side_panel.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_text_field.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_side_panel.dart';
 
 /// Pins the app's answer to the platform's reduce-motion flag.
 ///

@@ -8,9 +8,9 @@ import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../services/font_service.dart';
 import '../state/app_state.dart';
-import 'app_button.dart';
-import 'app_dialog.dart';
-import 'app_section_label.dart';
+import 'ui/app_button.dart';
+import 'ui/app_dialog.dart';
+import 'ui/app_section_label.dart';
 import 'theme_accent_picker.dart';
 
 /// The caption every appearance block opens with — `E1`'s 11/500 tracked

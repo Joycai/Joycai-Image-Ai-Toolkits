@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/design_tokens.dart';
+import '../../core/design_tokens.dart';
 import 'panel_resizer.dart';
 
 /// A rounded content card for grouping related widgets inside a panel — a

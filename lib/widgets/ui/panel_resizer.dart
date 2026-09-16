@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/design_tokens.dart';
+import '../../core/design_tokens.dart';
 
 /// The shape a [PanelCard] and its neighbouring [PanelResizer] take.
 ///

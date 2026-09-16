@@ -36,7 +36,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_breathing_dot.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_breathing_dot.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/fixture_seed.dart';

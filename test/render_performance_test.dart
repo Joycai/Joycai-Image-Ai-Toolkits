@@ -9,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:joycai_image_ai_toolkits/core/thumbnail_decode.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_breathing_dot.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_breathing_dot.dart';
 
 void main() {
   group('thumbnail size snapping', () {

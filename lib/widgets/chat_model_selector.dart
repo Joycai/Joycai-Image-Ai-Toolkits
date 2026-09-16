@@ -5,9 +5,9 @@ import '../l10n/app_localizations.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
 import '../state/app_state.dart';
-import 'app_field_size.dart';
+import 'ui/app_field_size.dart';
 import 'models/model_picker_options.dart';
-import 'searchable_picker.dart';
+import 'ui/searchable_picker.dart';
 
 /// How a [ChatModelSelector] presents itself.
 enum ChatModelSelectorStyle {

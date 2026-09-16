@@ -5,7 +5,7 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/prompt_optimi
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 import 'package:provider/provider.dart';
 
 /// Pins the ask_user question card: a pending card gates its confirm button on

@@ -9,7 +9,7 @@ import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../state/app_state.dart';
-import '../../../widgets/app_search_field.dart';
+import '../../../widgets/ui/app_search_field.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';
 import '../../../widgets/glass/app_glass_menu.dart';

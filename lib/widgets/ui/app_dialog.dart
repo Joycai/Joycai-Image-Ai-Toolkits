@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../core/design_tokens.dart';
-import '../core/responsive.dart';
-import '../l10n/app_localizations.dart';
+import '../../core/design_tokens.dart';
+import '../../core/responsive.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Corner radius shared by every dialog (`01 · 1h`: r22).
 ///

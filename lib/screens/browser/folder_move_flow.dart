@@ -15,9 +15,9 @@ import '../../services/file_transfer_service.dart';
 import '../../services/folder_operations_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_staging_state.dart';
-import '../../widgets/app_button.dart';
-import '../../widgets/app_dialog.dart';
-import '../../widgets/app_snackbar.dart';
+import '../../widgets/ui/app_button.dart';
+import '../../widgets/ui/app_dialog.dart';
+import '../../widgets/ui/app_snackbar.dart';
 import 'widgets/transfer_dialog_parts.dart';
 
 /// Brings every list that named a folder at [from] into step with its new

@@ -22,7 +22,7 @@ import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/file_staging_state.dart';
 import '../../state/gallery_state.dart';
-import '../../widgets/app_snackbar.dart';
+import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/drag/app_drag_follower.dart';
 import '../../widgets/drag/app_drag_session.dart';
 import '../../widgets/drag/app_drop_zone.dart';

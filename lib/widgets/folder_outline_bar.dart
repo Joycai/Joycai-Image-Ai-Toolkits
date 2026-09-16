@@ -9,7 +9,7 @@ import '../l10n/app_localizations.dart';
 import 'glass/app_glass.dart';
 import 'glass/app_glass_menu.dart';
 import 'glass/glass_controls.dart' show measureGlassText;
-import 'scroll_edge_fade.dart';
+import 'ui/scroll_edge_fade.dart';
 
 /// One folder of the outline: the chip's text, the folder it stands for,
 /// how many files its section holds, and whether the last scan could read it.

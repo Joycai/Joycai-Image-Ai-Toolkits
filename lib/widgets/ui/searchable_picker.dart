@@ -2,15 +2,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
-import '../l10n/app_localizations.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
+import '../../l10n/app_localizations.dart';
 import 'app_dialog.dart';
 import 'app_empty_state.dart';
 import 'app_field_size.dart';
 import 'app_search_field.dart';
-import 'models/channel_avatar.dart';
-import 'models/model_tag_chip.dart';
+import '../models/channel_avatar.dart';
+import '../models/model_tag_chip.dart';
 
 /// One row of a [SearchablePickerField]'s picker.
 ///

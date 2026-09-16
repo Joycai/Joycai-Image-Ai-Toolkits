@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_side_panel.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_side_panel.dart';
 
 /// Covers the panel shell the prompt library and prompt history share.
 ///

@@ -12,7 +12,7 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
-import '../../../widgets/app_button.dart';
+import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/drawing_canvas.dart';
 import 'canvas_overlays.dart';
 

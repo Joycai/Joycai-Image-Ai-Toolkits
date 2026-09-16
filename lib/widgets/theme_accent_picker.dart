@@ -11,11 +11,11 @@ import '../core/design_tokens.dart';
 import '../core/responsive.dart';
 import '../core/theme_accent.dart';
 import '../l10n/app_localizations.dart';
-import 'app_button.dart';
-import 'app_dialog.dart';
-import 'app_field_size.dart';
-import 'app_section_label.dart';
-import 'app_switch.dart';
+import 'ui/app_button.dart';
+import 'ui/app_dialog.dart';
+import 'ui/app_field_size.dart';
+import 'ui/app_section_label.dart';
+import 'ui/app_switch.dart';
 import 'dual_tone_swatch.dart';
 
 /// The theme-colour chooser on the appearance page — design `E1 · 1a / 1b / 1e`.

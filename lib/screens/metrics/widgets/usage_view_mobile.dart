@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
-import '../../../widgets/app_segmented_control.dart';
+import '../../../widgets/ui/app_segmented_control.dart';
 import 'usage_chrome.dart';
 import 'usage_controller.dart';
 import 'usage_list.dart';

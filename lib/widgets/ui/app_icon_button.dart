@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/design_tokens.dart';
+import '../../core/design_tokens.dart';
 
 /// An icon action in a box of its own.
 ///

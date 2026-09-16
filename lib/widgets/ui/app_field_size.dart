@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../core/design_tokens.dart';
+import '../../core/design_tokens.dart';
 
 /// The vertical content inset that makes a dense single-line text field
 /// exactly [height] tall in [style].

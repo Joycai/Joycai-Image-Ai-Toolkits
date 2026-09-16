@@ -13,12 +13,12 @@ import '../../../services/image_metadata_service.dart';
 import '../../../services/image_processing_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_dialog.dart';
-import '../../../widgets/app_dropdown.dart';
-import '../../../widgets/app_field_size.dart';
-import '../../../widgets/app_setting_row.dart';
-import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_dropdown.dart';
+import '../../../widgets/ui/app_field_size.dart';
+import '../../../widgets/ui/app_setting_row.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
 

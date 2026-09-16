@@ -9,7 +9,7 @@ import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../../services/web_scraper_service.dart';
-import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 
 /// Inset of the tick and the meta plate from the card's edge (`left/top 8`).

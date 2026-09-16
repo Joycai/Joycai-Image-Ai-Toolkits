@@ -7,7 +7,7 @@ import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/model_selection_section.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_dropdown.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_dropdown.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers the two ways the workbench's model card can disagree with itself.

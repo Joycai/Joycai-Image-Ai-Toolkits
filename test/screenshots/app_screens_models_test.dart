@@ -13,7 +13,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/shoot.dart';

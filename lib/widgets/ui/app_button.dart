@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
 
 /// Which of the app's four button treatments to draw.
 ///

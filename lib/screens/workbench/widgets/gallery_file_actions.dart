@@ -15,9 +15,9 @@ import '../../../services/prompt_optimizer_agent.dart';
 import '../../../models/llm_model.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_dialog.dart';
-import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import 'result_feedback_dialog.dart';
 
 /// File-system side effects for gallery items (save / share / delete).

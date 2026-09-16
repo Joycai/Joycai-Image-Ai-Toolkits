@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
 import 'app_switch.dart';
 
 /// One setting: what it is, what it does, and the control that changes it.

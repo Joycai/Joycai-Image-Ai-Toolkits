@@ -4,11 +4,11 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../app_button.dart';
-import '../app_empty_state.dart';
-import '../app_search_field.dart';
-import '../app_side_panel.dart';
-import '../scroll_edge_fade.dart';
+import '../ui/app_button.dart';
+import '../ui/app_empty_state.dart';
+import '../ui/app_search_field.dart';
+import '../ui/app_side_panel.dart';
+import '../ui/scroll_edge_fade.dart';
 
 class PromptLibrarySheet extends StatefulWidget {
   final List<Prompt> allPrompts;

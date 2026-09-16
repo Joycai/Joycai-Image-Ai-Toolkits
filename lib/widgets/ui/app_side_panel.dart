@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../core/design_tokens.dart';
-import '../core/responsive.dart';
+import '../../core/design_tokens.dart';
+import '../../core/responsive.dart';
 
 /// Width a side panel takes on a window wide enough to slide one in.
 const double appSidePanelWidth = 450;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/design_tokens.dart';
+import '../../core/design_tokens.dart';
 
 /// One choice in an [AppSegmentedControl].
 class AppSegment<T> {

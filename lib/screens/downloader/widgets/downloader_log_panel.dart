@@ -5,7 +5,7 @@ import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../widgets/scroll_edge_fade.dart';
+import '../../../widgets/ui/scroll_edge_fade.dart';
 import 'downloader_inputs.dart';
 
 enum _LogTone { plain, ok, warn, err }

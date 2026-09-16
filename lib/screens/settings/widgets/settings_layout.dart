@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
-import '../../../widgets/app_section_label.dart';
+import '../../../widgets/ui/app_section_label.dart';
 
 /// The rhythm of a settings page — `E1` 「尺寸」: 32 between sections on a
 /// desktop (the last followed by 24), 24 on a tablet, 18 on a phone.

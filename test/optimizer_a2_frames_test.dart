@@ -17,7 +17,7 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/optimizer_con
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/prompt_optimizer_view.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 import 'package:provider/provider.dart';
 
 void main() {

@@ -14,7 +14,7 @@ import '../../../../core/responsive.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/app_image.dart';
 import '../../../../state/workbench_ui_state.dart';
-import '../../../../widgets/app_snackbar.dart';
+import '../../../../widgets/ui/app_snackbar.dart';
 import '../../../../widgets/shell/shell_cover.dart';
 import 'preview_handler.dart';
 

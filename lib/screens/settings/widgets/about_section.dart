@@ -7,10 +7,10 @@ import '../../../core/file_utils.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/runtime_info.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_section_label.dart';
-import '../../../widgets/app_setting_row.dart';
-import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_section_label.dart';
+import '../../../widgets/ui/app_setting_row.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/app_window_frame.dart';
 import 'settings_layout.dart';
 

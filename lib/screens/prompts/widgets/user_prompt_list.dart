@@ -5,7 +5,7 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../services/database_service.dart';
-import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';
 import '../../../widgets/prompt_card.dart';

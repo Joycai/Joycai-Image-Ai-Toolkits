@@ -10,10 +10,10 @@ import '../../models/llm_model.dart';
 import '../../models/pricing_group.dart';
 import '../../services/llm/context_budget.dart';
 import '../../services/llm/llm_dispatcher.dart';
-import './fee_group_summary.dart';
-import './model_tag_chip.dart';
-import './wire_protocol_labels.dart';
-import './models_controls.dart';
+import 'fee_group_summary.dart';
+import 'model_tag_chip.dart';
+import 'wire_protocol_labels.dart';
+import 'models_controls.dart';
 
 /// The three densities a [ModelCard] is drawn at.
 enum ModelCardSize {

@@ -26,7 +26,7 @@ import '../../widgets/app_window_frame.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/folder_group_header.dart';
 import '../../widgets/folder_outline_bar.dart';
-import '../../widgets/panel_resizer.dart';
+import '../../widgets/ui/panel_resizer.dart';
 import '../../widgets/shell/app_destinations.dart';
 import '../batch/task_queue_screen.dart';
 import '../workbench/unified_sidebar.dart';

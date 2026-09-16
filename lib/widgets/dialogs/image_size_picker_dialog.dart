@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/llm/model_capabilities.dart';
-import '../app_button.dart';
-import '../app_dialog.dart';
+import '../ui/app_button.dart';
+import '../ui/app_dialog.dart';
 
 /// Picker for image-size parameters whose values aren't exhaustively
 /// enumerable (currently used by gpt-image-2). Renders the spec's preset

@@ -18,13 +18,13 @@ import '../../../services/knowledge_base_service.dart';
 import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_dialog.dart';
-import '../../../widgets/app_dropdown.dart';
-import '../../../widgets/app_field_size.dart';
-import '../../../widgets/app_setting_row.dart';
-import '../../../widgets/app_switch.dart';
-import '../../../widgets/searchable_picker.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_dropdown.dart';
+import '../../../widgets/ui/app_field_size.dart';
+import '../../../widgets/ui/app_setting_row.dart';
+import '../../../widgets/ui/app_switch.dart';
+import '../../../widgets/ui/searchable_picker.dart';
 import 'settings_layout.dart';
 
 /// `E1 · 1c` left: three groups — notifications and logging, the directories

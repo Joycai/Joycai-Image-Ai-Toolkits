@@ -12,9 +12,9 @@ import '../../../l10n/app_localizations.dart';
 import '../../../services/folder_operations_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/file_staging_state.dart';
-import '../../../widgets/app_button.dart';
-import '../../../widgets/app_dialog.dart';
-import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import 'transfer_dialog_parts.dart';
 
 /// Confirms and performs the deletion of a folder in the browser's tree —

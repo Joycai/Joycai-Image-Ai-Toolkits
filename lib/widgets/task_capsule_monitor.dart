@@ -10,7 +10,7 @@ import 'task_type_glyph.dart';
 import '../l10n/app_localizations.dart';
 import '../services/task_queue_service.dart';
 import '../state/app_state.dart';
-import 'app_breathing_dot.dart';
+import 'ui/app_breathing_dot.dart';
 import 'glass/app_glass.dart';
 import 'shell/app_destinations.dart';
 import 'shell/phone_dock.dart';

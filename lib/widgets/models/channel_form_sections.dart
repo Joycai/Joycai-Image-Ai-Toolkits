@@ -7,11 +7,11 @@ import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
-import '../color_hue_picker.dart';
-import '../app_button.dart';
-import '../app_dialog.dart';
-import '../app_switch.dart';
-import '../app_field_size.dart';
+import '../ui/color_hue_picker.dart';
+import '../ui/app_button.dart';
+import '../ui/app_dialog.dart';
+import '../ui/app_switch.dart';
+import '../ui/app_field_size.dart';
 
 /// The shared vocabulary of the add-channel wizard and the channel editor
 /// (design `D1b`): one field, one label row, one badge, one note strip, one
