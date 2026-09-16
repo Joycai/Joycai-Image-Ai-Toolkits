@@ -23,7 +23,7 @@ import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/models/channel_preset_picker.dart';
 import '../../widgets/models/channel_provider_presets.dart';
-import '../../widgets/settings_widgets.dart';
+import '../../widgets/settings/settings_widgets.dart';
 import 'wizard_import.dart';
 
 class SetupWizard extends StatefulWidget {

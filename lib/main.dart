@@ -30,12 +30,12 @@ import 'services/temp_storage_service.dart';
 import 'services/video_thumbnail_service.dart';
 import 'services/window_chrome_service.dart';
 import 'state/app_state.dart';
-import 'widgets/app_window_frame.dart';
+import 'widgets/shell/app_window_frame.dart';
 import 'widgets/shell/app_destinations.dart';
 import 'widgets/shell/app_top_bar.dart';
 import 'widgets/shell/phone_dock.dart';
 import 'widgets/shell/shell_cover.dart';
-import 'widgets/task_capsule_monitor.dart';
+import 'widgets/tasks/task_capsule_monitor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -29,7 +29,7 @@ git show 46d5a72:plans/012-task-capsule-spring-settle.md
 
 按价值排序。前两条是第三轮审计发现、当轮明确留在范围外的。
 
-- **胶囊内容区的 `AnimatedSize` 还挂在 M3 档**（`lib/widgets/task_capsule_monitor.dart:252-255`）。
+- **胶囊内容区的 `AnimatedSize` 还挂在 M3 档**（`lib/widgets/tasks/task_capsule_monitor.dart:252-255`）。
   它每次 `runningCount` 跨过 0 就重放一次——批量跑任务时是每个任务一次，按频率该降到 M2。
 - **选择栏退场的两半时钟对不上**（`lib/screens/browser/widgets/browser_selection_bar.dart:50-63`、
   `lib/screens/workbench/widgets/gallery_selection_bar.dart:77-90`）：滑动走 `sceneOf`（280ms），

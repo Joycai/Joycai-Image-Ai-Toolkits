@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../l10n/app_localizations.dart';
-import '../models/llm_channel.dart';
-import '../models/llm_model.dart';
-import '../state/app_state.dart';
-import 'ui/app_field_size.dart';
-import 'models/model_picker_options.dart';
-import 'ui/searchable_picker.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/llm_channel.dart';
+import '../../models/llm_model.dart';
+import '../../state/app_state.dart';
+import '../ui/app_field_size.dart';
+import 'model_picker_options.dart';
+import '../ui/searchable_picker.dart';
 
 /// How a [ChatModelSelector] presents itself.
 enum ChatModelSelectorStyle {

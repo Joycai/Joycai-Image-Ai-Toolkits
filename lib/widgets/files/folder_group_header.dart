@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
 
 /// The row over one folder's run of files in a grouped grid or list
 /// (`A1 · 1a`, `A1b · 1d/1e`): a folder glyph, the full path in mono, and

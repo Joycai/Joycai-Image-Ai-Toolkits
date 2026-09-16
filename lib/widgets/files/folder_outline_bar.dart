@@ -2,14 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
-import '../core/responsive.dart';
-import '../l10n/app_localizations.dart';
-import 'glass/app_glass.dart';
-import 'glass/app_glass_menu.dart';
-import 'glass/glass_controls.dart' show measureGlassText;
-import 'ui/scroll_edge_fade.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
+import '../../core/responsive.dart';
+import '../../l10n/app_localizations.dart';
+import '../glass/app_glass.dart';
+import '../glass/app_glass_menu.dart';
+import '../glass/glass_controls.dart' show measureGlassText;
+import '../ui/scroll_edge_fade.dart';
 
 /// One folder of the outline: the chip's text, the folder it stands for,
 /// how many files its section holds, and whether the last scan could read it.

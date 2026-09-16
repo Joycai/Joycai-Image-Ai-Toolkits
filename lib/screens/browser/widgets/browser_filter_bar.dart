@@ -9,7 +9,7 @@ import '../../../state/file_browser_state.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
-import '../../../widgets/thumbnail_fit_toggle.dart';
+import '../../../widgets/files/thumbnail_fit_toggle.dart';
 
 /// The 40px control row under the header — `B1a · 1a`.
 ///

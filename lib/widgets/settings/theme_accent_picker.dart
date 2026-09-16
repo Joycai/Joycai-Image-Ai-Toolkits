@@ -3,19 +3,19 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../core/app_semantic_colors.dart';
-import '../core/app_theme.dart';
-import '../core/constants.dart';
-import '../core/custom_accent.dart';
-import '../core/design_tokens.dart';
-import '../core/responsive.dart';
-import '../core/theme_accent.dart';
-import '../l10n/app_localizations.dart';
-import 'ui/app_button.dart';
-import 'ui/app_dialog.dart';
-import 'ui/app_field_size.dart';
-import 'ui/app_section_label.dart';
-import 'ui/app_switch.dart';
+import '../../core/app_semantic_colors.dart';
+import '../../core/app_theme.dart';
+import '../../core/constants.dart';
+import '../../core/custom_accent.dart';
+import '../../core/design_tokens.dart';
+import '../../core/responsive.dart';
+import '../../core/theme_accent.dart';
+import '../../l10n/app_localizations.dart';
+import '../ui/app_button.dart';
+import '../ui/app_dialog.dart';
+import '../ui/app_field_size.dart';
+import '../ui/app_section_label.dart';
+import '../ui/app_switch.dart';
 import 'dual_tone_swatch.dart';
 
 /// The theme-colour chooser on the appearance page — design `E1 · 1a / 1b / 1e`.

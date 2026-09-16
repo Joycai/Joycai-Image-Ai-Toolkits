@@ -22,7 +22,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-import '../core/app_effects.dart';
+import '../../core/app_effects.dart';
 
 /// The aurora's recipe, as [Gradient] objects so the baked and the live
 /// versions cannot drift apart.

@@ -2,25 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
-import '../core/responsive.dart';
-import '../l10n/app_localizations.dart';
-import '../models/pricing_group.dart';
-import '../state/app_state.dart';
-import 'ui/app_button.dart';
-import 'ui/app_icon_button.dart';
-import 'ui/app_search_field.dart';
-import 'ui/app_section_label.dart';
-import 'ui/dashed_border.dart';
-import 'drag/app_drag_lift.dart';
-import 'drag/app_reorder_gap.dart';
-import 'glass/app_glass_menu.dart';
-import 'models/fee_group_dialogs.dart';
-import 'models/fee_group_draft.dart';
-import 'models/fee_group_edit_page.dart';
-import 'models/fee_group_editor_fields.dart';
-import 'models/fee_group_row.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
+import '../../core/responsive.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/pricing_group.dart';
+import '../../state/app_state.dart';
+import '../ui/app_button.dart';
+import '../ui/app_icon_button.dart';
+import '../ui/app_search_field.dart';
+import '../ui/app_section_label.dart';
+import '../ui/dashed_border.dart';
+import '../drag/app_drag_lift.dart';
+import '../drag/app_reorder_gap.dart';
+import '../glass/app_glass_menu.dart';
+import 'fee_group_dialogs.dart';
+import 'fee_group_draft.dart';
+import 'fee_group_edit_page.dart';
+import 'fee_group_editor_fields.dart';
+import 'fee_group_row.dart';
 
 enum PricingGroupManagerMode {
   /// Embedded in a page that scrolls it — the usage screen's fee-group tab

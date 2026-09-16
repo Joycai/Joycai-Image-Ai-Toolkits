@@ -4,8 +4,8 @@ import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
-import 'package:joycai_image_ai_toolkits/widgets/dual_tone_swatch.dart';
-import 'package:joycai_image_ai_toolkits/widgets/theme_accent_picker.dart';
+import 'package:joycai_image_ai_toolkits/widgets/settings/dual_tone_swatch.dart';
+import 'package:joycai_image_ai_toolkits/widgets/settings/theme_accent_picker.dart';
 
 /// Covers the theme-colour chooser's two forms (design `D1a 20b` / `20e`).
 ///

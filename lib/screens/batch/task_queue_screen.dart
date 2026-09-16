@@ -14,7 +14,7 @@ import '../../state/task_list_state.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_icon_button.dart';
-import '../../widgets/app_run_console.dart';
+import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_segmented_control.dart';
 import '../../widgets/ui/app_switch.dart';
 import '../../widgets/glass/app_glass.dart';

@@ -32,7 +32,7 @@ import '../../state/workbench_ui_state.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_field_size.dart';
-import '../../widgets/app_run_console.dart';
+import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/drawing_canvas.dart';
 import '../batch/task_queue_screen.dart';

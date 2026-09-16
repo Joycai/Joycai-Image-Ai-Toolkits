@@ -3,17 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:provider/provider.dart';
 
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
-import '../core/responsive.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
+import '../../core/responsive.dart';
 import 'task_type_glyph.dart';
-import '../l10n/app_localizations.dart';
-import '../services/task_queue_service.dart';
-import '../state/app_state.dart';
-import 'ui/app_breathing_dot.dart';
-import 'glass/app_glass.dart';
-import 'shell/app_destinations.dart';
-import 'shell/phone_dock.dart';
+import '../../l10n/app_localizations.dart';
+import '../../services/task_queue_service.dart';
+import '../../state/app_state.dart';
+import '../ui/app_breathing_dot.dart';
+import '../glass/app_glass.dart';
+import '../shell/app_destinations.dart';
+import '../shell/phone_dock.dart';
 import 'smooth_progress.dart';
 
 /// The floating summary of the queue (`01 · 1d` collapsed, `1e` expanded,

@@ -18,7 +18,7 @@ import '../../widgets/models/channel_wizard_dialog.dart';
 import '../../widgets/models/discovery_dialog.dart';
 import '../../widgets/models/model_edit_dialog.dart';
 import '../../widgets/ui/panel_resizer.dart';
-import '../../widgets/pricing_group_manager.dart';
+import '../../widgets/models/pricing_group_manager.dart';
 import 'widgets/channel_column.dart';
 import 'widgets/model_detail_column.dart';
 import 'widgets/models_actions.dart';

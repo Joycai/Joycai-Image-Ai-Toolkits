@@ -20,8 +20,8 @@ import 'workbench_layout.dart';
 import '../../core/folder_outline_geometry.dart';
 import '../../core/folder_outline_labels.dart';
 import '../../core/folder_outline_spy.dart';
-import '../../widgets/folder_group_header.dart';
-import '../../widgets/folder_outline_bar.dart';
+import '../../widgets/files/folder_group_header.dart';
+import '../../widgets/files/folder_outline_bar.dart';
 
 /// Everything the grid reads out of [GalleryState], gathered so the selector
 /// in `build` can compare it in one go.

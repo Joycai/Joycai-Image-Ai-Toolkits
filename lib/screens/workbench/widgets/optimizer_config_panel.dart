@@ -18,7 +18,7 @@ import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_segmented_control.dart';
 import '../../../widgets/ui/app_switch.dart';
-import '../../../widgets/chat_model_selector.dart';
+import '../../../widgets/models/chat_model_selector.dart';
 import '../../../widgets/ui/searchable_picker.dart';
 import 'optimizer_context_card.dart';
 import 'result_feedback_labels.dart';

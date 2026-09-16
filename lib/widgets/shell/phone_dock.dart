@@ -8,7 +8,7 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
-import '../app_window_frame.dart';
+import 'app_window_frame.dart';
 import '../glass/app_glass.dart';
 import 'app_destinations.dart';
 

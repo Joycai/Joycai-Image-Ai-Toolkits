@@ -2,9 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
-import '../core/theme_accent.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
+import '../../core/theme_accent.dart';
 
 /// A theme-colour swatch that shows both halves of the pair: the light-mode
 /// accent on the upper-left, the dark-mode accent on the lower-right, split

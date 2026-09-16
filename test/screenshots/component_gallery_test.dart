@@ -49,8 +49,8 @@ import 'package:joycai_image_ai_toolkits/widgets/ui/app_search_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_section_label.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_text_field.dart';
-import 'package:joycai_image_ai_toolkits/widgets/dual_tone_swatch.dart';
-import 'package:joycai_image_ai_toolkits/widgets/theme_accent_picker.dart';
+import 'package:joycai_image_ai_toolkits/widgets/settings/dual_tone_swatch.dart';
+import 'package:joycai_image_ai_toolkits/widgets/settings/theme_accent_picker.dart';
 
 void main() {
   for (final MapEntry<String, ThemeAccent> seed in AppConstants.presetThemes.entries) {

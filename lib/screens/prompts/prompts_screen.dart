@@ -8,7 +8,7 @@ import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
-import '../../widgets/app_run_console.dart';
+import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_search_field.dart';
 import '../../widgets/glass/app_glass.dart';
 import '../../widgets/ui/panel_resizer.dart';

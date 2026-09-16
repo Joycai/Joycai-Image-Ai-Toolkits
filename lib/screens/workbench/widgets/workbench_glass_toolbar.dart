@@ -18,7 +18,7 @@ import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
-import '../../../widgets/thumbnail_fit_toggle.dart';
+import '../../../widgets/files/thumbnail_fit_toggle.dart';
 import '../workbench_layout.dart';
 import 'gallery_selection_bar.dart';
 

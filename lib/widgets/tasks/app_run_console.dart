@@ -2,15 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
-import '../core/responsive.dart';
-import '../l10n/app_localizations.dart';
-import '../models/log_entry.dart';
-import '../services/task_queue_service.dart';
-import '../state/app_state.dart';
-import '../state/log_state.dart';
-import 'ui/app_breathing_dot.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
+import '../../core/responsive.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/log_entry.dart';
+import '../../services/task_queue_service.dart';
+import '../../state/app_state.dart';
+import '../../state/log_state.dart';
+import '../ui/app_breathing_dot.dart';
 import 'log_console.dart';
 
 /// Shared run-status console: status dot, running/planned task summary, the

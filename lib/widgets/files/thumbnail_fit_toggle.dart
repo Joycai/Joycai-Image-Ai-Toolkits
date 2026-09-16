@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/thumbnail_fit.dart';
-import '../l10n/app_localizations.dart';
-import '../state/app_state.dart';
+import '../../core/thumbnail_fit.dart';
+import '../../l10n/app_localizations.dart';
+import '../../state/app_state.dart';
 
 /// The name a [ThumbnailFit] goes by in the UI.
 String thumbnailFitLabel(AppLocalizations l10n, ThumbnailFit fit) =>

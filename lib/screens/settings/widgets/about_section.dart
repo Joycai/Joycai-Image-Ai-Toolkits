@@ -11,7 +11,7 @@ import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_section_label.dart';
 import '../../../widgets/ui/app_setting_row.dart';
 import '../../../widgets/ui/app_snackbar.dart';
-import '../../../widgets/app_window_frame.dart';
+import '../../../widgets/shell/app_window_frame.dart';
 import 'settings_layout.dart';
 
 const String _githubUrl = 'https://github.com/Joycai/Joycai-Image-Ai-Toolkits';

@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../core/app_semantic_colors.dart';
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
-import '../l10n/app_localizations.dart';
-import '../models/log_entry.dart';
-import '../state/log_state.dart';
-import 'ui/app_search_field.dart';
-import 'ui/app_snackbar.dart';
-import 'ui/scroll_edge_fade.dart';
+import '../../core/app_semantic_colors.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/log_entry.dart';
+import '../../state/log_state.dart';
+import '../ui/app_search_field.dart';
+import '../ui/app_snackbar.dart';
+import '../ui/scroll_edge_fade.dart';
 
 /// `HH:MM:SS` for a log line — the clock both the log panel and the run
 /// console's tail line print, so the two always agree.

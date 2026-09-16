@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../core/design_tokens.dart';
+import '../../core/design_tokens.dart';
 
 /// The task queue's own tick.
 ///

@@ -9,7 +9,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../state/downloader_state.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_switch.dart';
-import '../../../widgets/chat_model_selector.dart';
+import '../../../widgets/models/chat_model_selector.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import 'downloader_inputs.dart';
 

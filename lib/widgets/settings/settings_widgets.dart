@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_semantic_colors.dart';
-import '../core/app_theme.dart';
-import '../core/constants.dart';
-import '../core/design_tokens.dart';
-import '../core/responsive.dart';
-import '../l10n/app_localizations.dart';
-import '../services/font_service.dart';
-import '../state/app_state.dart';
-import 'ui/app_button.dart';
-import 'ui/app_dialog.dart';
-import 'ui/app_section_label.dart';
+import '../../core/app_semantic_colors.dart';
+import '../../core/app_theme.dart';
+import '../../core/constants.dart';
+import '../../core/design_tokens.dart';
+import '../../core/responsive.dart';
+import '../../l10n/app_localizations.dart';
+import '../../services/font_service.dart';
+import '../../state/app_state.dart';
+import '../ui/app_button.dart';
+import '../ui/app_dialog.dart';
+import '../ui/app_section_label.dart';
 import 'theme_accent_picker.dart';
 
 /// The caption every appearance block opens with — `E1`'s 11/500 tracked

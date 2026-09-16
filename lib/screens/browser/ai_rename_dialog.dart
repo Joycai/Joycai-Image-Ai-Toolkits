@@ -24,7 +24,7 @@ import '../../widgets/ui/app_dropdown.dart';
 import '../../widgets/ui/app_field_size.dart';
 import '../../widgets/ui/app_segmented_control.dart';
 import '../../widgets/ui/app_snackbar.dart';
-import '../../widgets/chat_model_selector.dart';
+import '../../widgets/models/chat_model_selector.dart';
 import '../../widgets/glass/glass_controls.dart';
 import 'widgets/transfer_dialog_parts.dart';
 

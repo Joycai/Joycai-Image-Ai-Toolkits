@@ -10,7 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:joycai_image_ai_toolkits/widgets/app_window_frame.dart';
+import 'package:joycai_image_ai_toolkits/widgets/shell/app_window_frame.dart';
 import 'package:joycai_image_ai_toolkits/widgets/shell/shell_cover.dart';
 
 /// The route's own transition, short enough to settle in one pump.
