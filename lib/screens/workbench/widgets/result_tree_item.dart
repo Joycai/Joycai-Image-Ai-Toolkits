@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 import '../directory_tree_item.dart';
+import '../folder_tree_row.dart';
 
 /// Read-only folder tree for the RESULTS section. Unlike [DirectoryTreeItem],
 /// there is no selection/aggregate concept — tapping a row browses just that
