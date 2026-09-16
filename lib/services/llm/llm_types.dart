@@ -675,6 +675,18 @@ class LLMModelConfig {
   /// interprets it.
   final int? contextWindow;
 
+  /// The model's configured output cap (`llm_models.max_output_tokens`
+  /// verbatim), or null when unset or when the caller has no model row.
+  ///
+  /// Read by exactly one place in the protocol layer, `outputCapFor`, which
+  /// ranks it below a per-request `options['maxTokens']` (the channel
+  /// probe's one token) and above the family's own default. Carried on the
+  /// config rather than passed as an option for the same reason as
+  /// [enableThinking]: it is a property of this model on this channel, and
+  /// every caller — the assistant, refine, rename, the scraper — should honor
+  /// it without remembering to pass it along.
+  final int? maxOutputTokens;
+
   final double inputFee;
 
   /// Rate for cached input tokens, or null when the fee group leaves it unset —
@@ -709,6 +721,7 @@ class LLMModelConfig {
     this.wireProtocol,
     this.tag,
     this.contextWindow,
+    this.maxOutputTokens,
     this.inputFee = 0.0,
     this.cacheInputFee,
     this.outputFee = 0.0,
