@@ -236,8 +236,8 @@ child 是输入框自己的不透明底色，会把虚线盖住。所以保留�
 
 | 文件 | 形式 | 内容 | 实际行 |
 |---|---|---|---|
-| `lib/widgets/files/folder_drop_feedback.dart` | 库 | `FolderDropRejection` + 标签扩展 + `FolderDropFeedback` + `FolderDropFollower` | 97 |
-| `screens/workbench/folder_tree_row.dart` | 库 | `FolderDropTone` · `TreeDisclosure` · `FolderTreeMetrics` · `FolderTreeRow` · `FolderTreeRowAction` · `_DropNoteSlot` | 578 |
+| `lib/widgets/files/folder_drop_feedback.dart` | 库 | `FolderDropRejection` + 标签扩展 + `FolderDropFeedback` + `FolderDropFollower` | 96 |
+| `screens/workbench/folder_tree_row.dart` | 库 | `FolderDropTone` · `TreeDisclosure` · `FolderTreeMetrics` · `FolderTreeRow` · `FolderTreeRowAction` · `_DropNoteSlot` | 556 |
 | `screens/workbench/folder_drop_target.dart` | `part` | `_RowDrop` · `_CopyModifierListener` · `_MaybeDropTarget` | 262 |
 | `screens/workbench/directory_tree_item.dart` | 库 | `FolderDragPayload` · `DirectoryTreeItem` + State · `_Pulsed` · `_FolderDragChip` | 706 |
 
