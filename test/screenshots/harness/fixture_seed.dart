@@ -674,6 +674,22 @@ void seedImageSelection(AppState appState, {int count = 2}) {
   }
 }
 
+/// Fills the video panel's inputs: the first two gallery images as the first
+/// and last frames, the next two as reference images.
+///
+/// The `video` shot leaves them empty, and the filled slots — the image plate,
+/// its caption and its close button, the reference thumbnails — are most of
+/// what the panel draws once someone uses it.
+void seedVideoInputs(AppState appState) {
+  final List<AppImage> images = _galleryImages(appState).take(4).toList();
+  if (images.length < 4) return;
+  final ui = appState.workbenchUIState;
+  ui.setVideoFirstFrame(images[0]);
+  ui.setVideoLastFrame(images[1]);
+  ui.addVideoReferenceImage(images[2]);
+  ui.addVideoReferenceImage(images[3]);
+}
+
 /// A finished knowledge-base conversation: a question, a run of tool calls, a
 /// submitted prompt and a closing reply.
 ///

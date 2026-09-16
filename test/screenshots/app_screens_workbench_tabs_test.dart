@@ -152,4 +152,8 @@ final List<_WorkbenchTab> _workbenchTabs = <_WorkbenchTab>[
   // the workbench was never photographed at all. Seeded with a selection, as
   // the frame slots are the point and they are empty without one.
   _WorkbenchTab('video', 5, (AppState s) => seedImageSelection(s), seedOnSettled: true),
+  // The same panel once it is used: both frames and two references filled.
+  // Last in the list because `WorkbenchUIState` outlives the shots, and every
+  // shot after this one would otherwise inherit the filled slots.
+  _WorkbenchTab('video_filled', 5, seedVideoInputs, seedOnSettled: true),
 ];
