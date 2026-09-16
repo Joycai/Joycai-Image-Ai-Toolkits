@@ -708,7 +708,7 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
 
 ## 输出上限（2026-09-16）
 
-> 立项与实测证据在 `git show 671f987:docs/plans/2026-09-assistant-output-cap.md`
+> 立项与实测证据在 `git show 2e7f443:docs/plans/2026-09-assistant-output-cap.md`
 > （执行清单同目录 `-execution.md`）。这里只留分层结论。
 
 四族里只有 ④ 的输出上限必填；①②③ 不发就是服务端默认，而中转站的默认常常是
