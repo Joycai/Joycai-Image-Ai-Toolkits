@@ -6,7 +6,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:image_size_getter/file_input.dart';
 import 'package:image_size_getter/image_size_getter.dart';
 
-import '../core/constants.dart';
+import '../../core/constants.dart';
 
 class ImageMetadata {
   final int width;

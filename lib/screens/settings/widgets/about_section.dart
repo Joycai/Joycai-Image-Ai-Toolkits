@@ -6,7 +6,7 @@ import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../services/runtime_info.dart';
+import '../../../services/system/runtime_info.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_section_label.dart';
 import '../../../widgets/ui/app_setting_row.dart';

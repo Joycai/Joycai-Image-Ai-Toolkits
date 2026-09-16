@@ -60,7 +60,7 @@ import 'package:window_manager/window_manager.dart';
 import '../core/app_effects.dart';
 import '../core/app_theme.dart';
 import '../core/constants.dart';
-import '../services/gpu_info_service.dart';
+import '../services/system/gpu_info_service.dart';
 import '../widgets/shell/app_window_frame.dart';
 import '../widgets/glass/app_glass.dart';
 import '../widgets/shell/shell_cover.dart';

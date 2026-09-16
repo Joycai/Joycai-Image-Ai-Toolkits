@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
-import 'package:joycai_image_ai_toolkits/services/window_chrome_service.dart';
+import 'package:joycai_image_ai_toolkits/services/system/window_chrome_service.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers the channel that recolours the Windows title bar.

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/file_transfer_service.dart';
+import 'package:joycai_image_ai_toolkits/services/files/file_transfer_service.dart';
 import 'package:path/path.dart' as p;
 
 /// Covers the move/copy behind the file browser's staging area.

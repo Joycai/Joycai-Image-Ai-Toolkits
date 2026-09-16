@@ -7,10 +7,10 @@ import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 import 'package:path/path.dart' as p;
 
-import '../core/app_paths.dart';
-import 'llm/context_budget.dart';
-import 'llm/llm_service.dart';
-import 'llm/llm_types.dart';
+import '../../core/app_paths.dart';
+import '../llm/context_budget.dart';
+import '../llm/llm_service.dart';
+import '../llm/llm_types.dart';
 
 class DiscoveredImage {
   final String url;

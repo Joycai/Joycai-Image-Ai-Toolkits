@@ -11,7 +11,7 @@ import '../../core/app_semantic_colors.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/tasks/task_queue_service.dart';
-import '../../services/web_scraper_service.dart';
+import '../../services/media/web_scraper_service.dart';
 import '../../state/app_state.dart';
 import '../../state/downloader_state.dart';
 import '../../widgets/tasks/app_run_console.dart';

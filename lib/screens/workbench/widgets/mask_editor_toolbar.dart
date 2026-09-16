@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../services/image_metadata_service.dart';
+import '../../../services/media/image_metadata_service.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';

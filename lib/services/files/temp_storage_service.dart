@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
-import '../core/app_paths.dart';
+import '../../core/app_paths.dart';
 
 /// The app's own scratch space under the OS temp directory, and the only thing
 /// that reaps it.

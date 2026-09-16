@@ -20,7 +20,7 @@ import '../llm/llm_service.dart';
 import '../llm/llm_types.dart';
 import '../llm/model_descriptor.dart';
 import '../assistant/prompt_optimizer_agent.dart';
-import '../web_scraper_service.dart';
+import '../media/web_scraper_service.dart';
 
 // Re-export the task data model so existing importers of this file keep working.
 export '../../models/task_item.dart';

@@ -16,7 +16,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/browser_file.dart';
 import '../../services/db/database_service.dart';
-import '../../services/file_permission_service.dart';
+import '../../services/files/file_permission_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/file_staging_state.dart';

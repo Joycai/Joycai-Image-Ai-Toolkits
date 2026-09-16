@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
-import 'package:joycai_image_ai_toolkits/services/image_processing_service.dart';
+import 'package:joycai_image_ai_toolkits/services/media/image_processing_service.dart';
 import 'package:path/path.dart' as p;
 
 /// Pins the format of what a crop/resize actually writes.

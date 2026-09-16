@@ -5,7 +5,7 @@ import 'package:flutter/services.dart' show FontLoader;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 
-import '../core/app_paths.dart';
+import '../../core/app_paths.dart';
 
 /// A single downloadable font file (one weight of a family).
 class FontAsset {

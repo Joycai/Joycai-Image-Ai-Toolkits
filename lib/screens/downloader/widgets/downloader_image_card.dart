@@ -7,8 +7,8 @@ import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../services/image_metadata_service.dart';
-import '../../../services/web_scraper_service.dart';
+import '../../../services/media/image_metadata_service.dart';
+import '../../../services/media/web_scraper_service.dart';
 import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 

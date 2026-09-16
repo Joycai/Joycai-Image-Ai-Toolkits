@@ -6,7 +6,7 @@ import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/font_service.dart';
+import '../../services/system/font_service.dart';
 import '../../state/app_state.dart';
 import '../ui/app_button.dart';
 import '../ui/app_dialog.dart';

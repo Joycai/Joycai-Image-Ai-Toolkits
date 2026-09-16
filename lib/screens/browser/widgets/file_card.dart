@@ -7,7 +7,7 @@ import '../../../core/thumbnail_decode.dart';
 import '../../../core/thumbnail_fit.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
-import '../../../services/image_metadata_service.dart';
+import '../../../services/media/image_metadata_service.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/drag/app_drag_session.dart';
 import '../../../widgets/glass/glass_controls.dart' show measureGlassText;

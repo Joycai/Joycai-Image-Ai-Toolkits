@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
 
-import '../core/app_paths.dart';
+import '../../core/app_paths.dart';
 
 enum SamplingMethod {
   nearest,

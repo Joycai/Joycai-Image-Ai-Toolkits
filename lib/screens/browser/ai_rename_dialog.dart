@@ -14,7 +14,7 @@ import '../../models/browser_file.dart';
 import '../../models/prompt.dart';
 import '../../services/tasks/ai_rename_agent.dart';
 import '../../services/db/database_service.dart';
-import '../../services/file_transfer_service.dart';
+import '../../services/files/file_transfer_service.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';

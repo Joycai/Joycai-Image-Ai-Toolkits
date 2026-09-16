@@ -9,7 +9,7 @@ import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
-import '../../services/file_permission_service.dart';
+import '../../services/files/file_permission_service.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/drag/app_drop_zone.dart';
 import '../../widgets/placeholders/permission_placeholder.dart';

@@ -4,7 +4,7 @@ import 'dart:isolate';
 
 import 'package:path/path.dart' as p;
 
-import '../models/browser_file.dart';
+import '../../models/browser_file.dart';
 
 /// Lists the files directly inside [paths] (not their subfolders) as the maps
 /// `BrowserFile.fromMap` reads, on an isolate of its own.

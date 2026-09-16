@@ -13,7 +13,7 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_model.dart';
 import '../../../services/db/database_service.dart';
-import '../../../services/gpu_info_service.dart';
+import '../../../services/system/gpu_info_service.dart';
 import '../../../services/assistant/knowledge_base_service.dart';
 import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';

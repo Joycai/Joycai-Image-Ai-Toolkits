@@ -7,7 +7,7 @@ import 'package:path/path.dart' as p;
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/folder_operations_service.dart';
+import '../../services/files/folder_operations_service.dart';
 import '../ui/app_button.dart';
 import '../ui/app_dialog.dart';
 import '../ui/app_snackbar.dart';

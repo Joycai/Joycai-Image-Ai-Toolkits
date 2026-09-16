@@ -11,7 +11,7 @@ import '../core/file_utils.dart';
 import '../core/thumbnail_decode.dart';
 import '../models/app_image.dart';
 import '../services/db/database_service.dart';
-import '../services/file_permission_service.dart';
+import '../services/files/file_permission_service.dart';
 import 'file_browser_state.dart' show FolderFlash;
 
 /// Top-level function for background disk scanning to keep UI smooth.

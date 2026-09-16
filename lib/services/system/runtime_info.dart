@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../core/app_paths.dart';
+import '../../core/app_paths.dart';
 
 /// What the About page's 「运行信息」 block reports — `E1 · 2a`.
 ///
