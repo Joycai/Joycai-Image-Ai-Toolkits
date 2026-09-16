@@ -568,7 +568,7 @@ Map<String, dynamic> buildDashScopeChatPayload(
   // for, so no sources come back and nothing is parsed for them (pitfalls 11
   // §A10).
   if (target.config.enableWebSearch &&
-      target.vendor.serverWebSearchFaces.contains(WireProtocol.dashscopeChat)) {
+      target.vendor.sendsWebSearchOn(WireProtocol.dashscopeChat)) {
     parameters['enable_search'] = true;
   }
 

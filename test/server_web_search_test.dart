@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_payload.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/dashscope_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
@@ -140,6 +141,38 @@ void main() {
       final b = body(target(Vendors.dashscopeNative, 'qwen3-max',
           webSearch: false, endpoint: 'https://dashscope.aliyuncs.com/api/v1'));
       expect((b['parameters'] as Map).containsKey('enable_search'), isFalse);
+    });
+  });
+
+  group('④ face', () {
+    List<dynamic>? tools(LLMTarget t) =>
+        prepareAnthropicPayload(t, hi, isStreaming: false)['tools'] as List?;
+
+    test('a ④ vendor sends the server tool', () {
+      final declared = tools(target(Vendors.anthropicRest, 'claude-opus-5',
+          endpoint: 'https://api.anthropic.com'));
+      expect(declared, isNotNull);
+      expect(declared!.single['name'], 'web_search');
+    });
+
+    test("a switch that travelled to Bailian's ④ face stays home", () {
+      // The editor hides the switch there (serverWebSearch answers
+      // unsupported); a flag stored while the model used another face used
+      // to be sent anyway.
+      expect(
+        tools(target(Vendors.dashscope, 'qwen3-max',
+            endpoint: 'https://dashscope.aliyuncs.com/apps/anthropic')),
+        isNull,
+      );
+    });
+
+    test('the payload and the editor ask the same question', () {
+      for (final id in [Vendors.anthropicRest, Vendors.minimaxAnthropic, Vendors.dashscope]) {
+        final vendor = Vendors.byId(id);
+        expect(vendor.sendsWebSearchOn(WireProtocol.anthropicChat),
+            vendor.webSearchOn(WireProtocol.anthropicChat) != ServerWebSearch.unsupported,
+            reason: id);
+      }
     });
   });
 }

@@ -935,20 +935,7 @@ class LLMDispatcher {
     if (menu.surface != Surface.chat) return ServerWebSearch.unsupported;
     final face = _validPin(menu, wireProtocol) ?? menu.auto;
     if (face == null) return ServerWebSearch.unsupported;
-    final vendor = Vendors.byId(channelType);
-    switch (face) {
-      case WireProtocol.anthropicChat:
-        return vendor.family == ProtocolFamily.anthropic
-            ? ServerWebSearch.withSources
-            : ServerWebSearch.unsupported;
-      case WireProtocol.openaiChat:
-      case WireProtocol.dashscopeChat:
-        return vendor.serverWebSearchFaces.contains(face)
-            ? ServerWebSearch.traceless
-            : ServerWebSearch.unsupported;
-      default:
-        return ServerWebSearch.unsupported;
-    }
+    return Vendors.byId(channelType).webSearchOn(face);
   }
 
   Stream<LLMResponseChunk> generateStream(

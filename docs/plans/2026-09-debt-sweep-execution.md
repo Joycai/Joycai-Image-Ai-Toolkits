@@ -60,7 +60,7 @@
 | 4 | 截断标记跨重启：`LLMMessage` JSON 带可选 `truncated` / `modelDbId`，恢复时读回 | `llm_types.dart` · `prompt_optimizer_session.dart` · `prompt_optimizer_agent.dart` | `optimizer_truncation_test.dart` 两条：重启往返、旧行无键 | ✅ |
 | 5 | 按节写入的预览标明位置：条目带 `KbEditScope` + 节标题，卡片头下一行写「替换小节 / 追加到小节 / 追加到文件末尾」，每个 hunk 头带所在标题（`@@ -a +b @@ ## 节`） | `prompt_optimizer_session.dart` · `assistant_tool_calls.dart` · `knowledge_base_service.dart`（`headingAbove`）· `optimizer_kb_edit_card.dart` · l10n workbench | `optimizer_kb_section_scope_test.dart`；卡片两条；`headingAbove` 一条 | ✅ |
 | 6 | ① 「no choices」等裸 `Exception` 改 `LLMApiException`；`LLMMessage.fromJson` 未知 role 抛 `FormatException` | 九个协议里的 `throw Exception(`（Midjourney 提交被拒标 `isEnvelope`）· `llm_types.dart` · `assistant_session_repository.dart`（注释） | `test/llm_typed_failures_test.dart` | ✅ |
-| 7 | 非 Anthropic vendor 的 ④ 面不发 `web_search`（谓词与 `serverWebSearch` 同源）；编辑器保存时不支持即清零 | `anthropic_payload.dart` · `llm_dispatcher.dart` · `model_edit_dialog.dart` | payload 测试 | ☐ |
+| 7 | 非 Anthropic vendor 的 ④ 面不发 `web_search`：`VendorProfile.webSearchOn(face)` 成为编辑器（经 `serverWebSearch`）与三个 payload 的同一个答案 | `vendor_profile.dart` · `llm_dispatcher.dart` · `anthropic_payload.dart` · `openai_chat_payload.dart` · `dashscope_chat_protocol.dart` | `server_web_search_test.dart` ④ 组（去掉闸门即失败） | ✅ |
 | R1 | 第一期 code review，修 CONFIRMED 项 | — | — | ☐ |
 
 ### 第二期：动效
@@ -102,3 +102,5 @@
 - 片 5：`TextDiff.unified` 本来就只出变动的 hunk（上下各 2 行），台账说的「整文件 diff」并不是把整个文件摊开；
   长文件里真正缺的是「这是哪一节」。所以没有改成只 diff 节的片段（那样 hunk 行号会与文件对不上，
   应用路径看到的也仍是整文件），改为在卡片与 hunk 头上标出位置。
+- 片 7：原计划「编辑器保存时不支持即清零」没做。线上闸门已经让存着的开关无害，而百炼同一个模型在
+  ①/原生面上这个开关是有效的——在 ④ 与 ① 之间来回切协议时清掉它，会悄悄丢掉用户的选择。
