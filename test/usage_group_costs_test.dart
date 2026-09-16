@@ -59,7 +59,8 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
+    // The share bars grow in; read them where they settle.
+    await tester.pumpAndSettle();
   }
 
   for (final entry in {
@@ -87,6 +88,26 @@ void main() {
     expect(bars.length, 2);
     expect(bars[0].value, closeTo(0.75, 1e-9)); // 1.5 of 2.0
     expect(bars[1].value, closeTo(0.25, 1e-9)); // 0.5 of 2.0
+  });
+
+  testWidgets('a bar grows from nothing the first time it is shown', (tester) async {
+    await pumpCosts(tester, stats({1: 0.5, 2: 1.5}), const Size(1920, 1080));
+    // Mounted afresh: the first frame starts at zero.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: UsageGroupCosts(stats: stats({1: 0.5, 2: 1.5}), groups: groups)),
+    ));
+    double first() => tester
+        .widgetList<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
+        .first
+        .value!;
+    expect(first(), 0);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(first(), inExclusiveRange(0, 0.75));
+    await tester.pumpAndSettle();
+    expect(first(), closeTo(0.75, 1e-9));
   });
 
   testWidgets('orders groups by what they cost', (tester) async {

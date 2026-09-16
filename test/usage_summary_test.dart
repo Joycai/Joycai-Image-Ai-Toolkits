@@ -50,7 +50,8 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
+    // The share bars grow in; read them where they settle.
+    await tester.pumpAndSettle();
   }
 
   for (final entry in {

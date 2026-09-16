@@ -380,11 +380,14 @@ class UsageSummary extends StatelessWidget {
         ),
         if (showBar) ...[
           const SizedBox(height: AppSpace.s6),
-          LinearProgressIndicator(
+          UsageShareGrow(
             value: rate ?? 0,
-            minHeight: 4,
-            color: colorScheme.primary,
-            backgroundColor: colorScheme.surfaceContainerHighest,
+            builder: (context, value) => LinearProgressIndicator(
+              value: value,
+              minHeight: 4,
+              color: colorScheme.primary,
+              backgroundColor: colorScheme.surfaceContainerHighest,
+            ),
           ),
         ],
       ]),

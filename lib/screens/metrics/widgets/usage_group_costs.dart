@@ -280,39 +280,42 @@ class _GroupBar extends StatelessWidget {
 
     return Tooltip(
       message: tooltip,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.xs),
-        child: SizedBox(
-          height: _height,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              LinearProgressIndicator(
-                value: share,
-                minHeight: _height,
-                color: neutral,
-                backgroundColor: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.zero,
-              ),
-              if (segments.isNotEmpty)
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: FractionallySizedBox(
-                    widthFactor: share,
-                    heightFactor: 1,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (final (part, color) in segments)
-                          Expanded(
-                            flex: (part / usage!.totalCost * 1000).round().clamp(1, 1000),
-                            child: ColoredBox(color: color),
-                          ),
-                      ],
+      child: UsageShareGrow(
+        value: share,
+        builder: (context, share) => ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+          child: SizedBox(
+            height: _height,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                LinearProgressIndicator(
+                  value: share,
+                  minHeight: _height,
+                  color: neutral,
+                  backgroundColor: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.zero,
+                ),
+                if (segments.isNotEmpty)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: FractionallySizedBox(
+                      widthFactor: share,
+                      heightFactor: 1,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final (part, color) in segments)
+                            Expanded(
+                              flex: (part / usage!.totalCost * 1000).round().clamp(1, 1000),
+                              child: ColoredBox(color: color),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -73,7 +73,7 @@
 | 11 | 胶囊内容区 `AnimatedSize`：用户点开 / 收起仍 M3（与宽度同步），其余（运行数跨 0）降到 M2 | `widgets/tasks/task_capsule_monitor.dart` | `task_capsule_bounds_test.dart` 加一条 | ✅ |
 | 12 | 选择栏退场：滑动与淡出同一时钟（新 `AppMotion.sceneFor(entering:)`） | `design_tokens.dart` · `browser_selection_bar.dart` · `gallery_selection_bar.dart` | `test/selection_bar_exit_clock_test.dart` | ✅ |
 | 13 | 渠道向导步骤切换带方向（前进右入、后退左入，位移 5% 宽，M2） | `channel_wizard_dialog.dart` | `channel_wizard_dialog_test.dart` 加一条 | ✅ |
-| 14 | 用量比例条 0 → 值生长（M3，仅首次） | `usage_summary.dart` · `usage_group_costs.dart` | 现有读 widget 的测试仍绿 | ☐ |
+| 14 | 用量比例条 0 → 值生长（M3）；换区间时从旧值滑到新值（同一个 tween，未单独区分） | `usage_chrome.dart`（`UsageShareGrow`）· `usage_summary.dart` · `usage_group_costs.dart` | 两个测试的 pump 改 settle；新增生长一条 | ✅ |
 | R2 | 第二期 code review | — | — | ☐ |
 
 ### 第三期：需要先决策的
