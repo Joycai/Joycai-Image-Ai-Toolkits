@@ -56,6 +56,16 @@ class ChannelWizardDialog extends StatefulWidget {
 class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   int _stepIndex = 0;
 
+  /// The step the body last showed, and which way the wizard went to leave
+  /// it: +1 forward, −1 back. The step enum is declared in wizard order, so
+  /// its index is the order whether or not the variant step is in the list.
+  _WizardStep? _shownStep;
+  int _stepDirection = 1;
+
+  /// How far a step body travels as it changes, as a fraction of its width.
+  /// A hint of direction, not a page turn.
+  static const double _stepShift = 0.05;
+
   String _selectedProviderId = 'openai-official';
 
   /// Which of a multi-face preset's [ChannelProviderVariant]s is selected;
@@ -632,12 +642,35 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         ),
     };
 
+    final shown = _shownStep;
+    if (shown != null && shown != step) {
+      _stepDirection = step.index > shown.index ? 1 : -1;
+    }
+    _shownStep = step;
+    final direction = _stepDirection.toDouble();
+
+    // Forward, the next step comes in from the right and the last one leaves
+    // to the left; back, the other way round. A plain cross-fade looked the
+    // same both ways, and only the step dots said which way the wizard went.
     return AnimatedSwitcher(
       duration: AppMotion.durationOf(context, AppMotion.state),
       switchInCurve: AppMotion.enter,
       switchOutCurve: AppMotion.enter,
-      transitionBuilder: (child, animation) =>
-          FadeTransition(opacity: animation, child: child),
+      transitionBuilder: (child, animation) {
+        // The outgoing body runs the same animation in reverse, so its
+        // `begin` is where it leaves to.
+        final incoming = child.key == ValueKey(step);
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset((incoming ? 1 : -1) * direction * _stepShift, 0),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
+      },
       child: KeyedSubtree(key: ValueKey(step), child: body),
     );
   }
