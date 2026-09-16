@@ -1,6 +1,6 @@
 # 大文件拆分方案
 
-**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–5 已做
+**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–6 已做
 
 `lib/` 的结构债在 PR #287（目录间循环）和 #288（目录内平铺）之后只剩最后一项：单个文件
 太大。这份方案把它切成八片，一片一个 PR。
@@ -262,33 +262,31 @@ browser"* 通过。多重集比对只多出两个新方法的 doc。
 
 ---
 
-### 片 6 · `model_edit_dialog.dart` 1497 → 按 section 抽
+### 片 6 · `model_edit_dialog.dart` 1497 → 6 个文件 ✅ 已做
 
-已有先例 —— `model_edit_controls.dart`（1166 行，本身也在 1000+ 名单上）、
-`model_protocol_section.dart`、`protocol_section_form.dart` 就是这么抽出来的。
+和片 4 同一手法：`part` + State 上的具名 extension，放在 `widgets/models/model_edit/`。
 
-| 新文件 | 内容 | 原行 | ~行 |
+| part | extension | 内容 | 实际行 |
 |---|---|---|---|
-| `model_edit_identity_section.dart` | 身份段 + id / channel / kind / 费用组四个字段 | 581–794 | 250 |
-| `model_edit_capability_sections.dart` | 能力段 + agent 段 + reasoning 段 + `_reasoningLadder` | 795–860 · 1080–1208 · 1345–1379 | 240 |
-| `model_edit_context_section.dart` | 上下文窗口段 + Specify 字段 | 912–1079 | 170 |
-| `model_edit_provider_section.dart` | provider 段 + protocol 段 + `_streamIgnoredBy` | 1209–1344 · 1380–1431 | 190 |
-| `model_edit_dialog.dart` | State + draft 字段 + 三种外壳（edit / phone / add）+ 头尾 + 双栏 + 预览 + `_confirmDelete` | 49–580 · 861–911 · 1432–1497 | 650 |
+| `model_edit_layouts.dart` | `_Layouts` | edit 对话框 / 手机页 / add 对话框、头尾与玻璃条、双栏 / 单栏排布 | 388 |
+| `model_edit_identity.dart` | `_IdentitySection` | id · name · channel · kind · 费用组 + `_selectKind` | 240 |
+| `model_edit_capabilities.dart` | `_CapabilitySections` | 能力 · 卡片预览 · agent · reasoning 阶梯 | 274 |
+| `model_edit_context.dart` | `_ContextSection` | 上下文窗口段 | 176 |
+| `model_edit_protocol.dart` | `_ProtocolSections` | provider 特性 + 按 surface 的协议点单及其过期判定 | 161 |
+| `model_edit_dialog.dart` | — | widget + State：draft 字段、生命周期、校验、保存、删除 | 290 |
 
-**难点**：所有 section 读写同一份 draft —— 三个 `TextEditingController` + 一个
-`FocusNode` + `channelId` / `tag` / `feeGroupId` / `supportsStream` / `supportsStandard` /
-`forceViewAllImages` / `reasoningEffort` / `enableWebSearch` / `contextMode` /
-`wireProtocol` / `_pinBySurface` + 三个 `_*Touched`。两条路：
+**原计划担心的「共享 draft 怎么传」没有发生。** 原方案在「draft 对象 + `onChanged`」和
+「draft 提成 `ChangeNotifier`」之间选；extension 通过 `this` 直接读写 draft，元素树也不变，
+两条路都不用走。
 
-- **(a) 传一个 draft 对象 + `onChanged`** —— 改动局限在这一片
-- (b) 把 draft 提成 `ChangeNotifier` —— 更干净，但动静大得多，而且 CLAUDE.md 的 state
-  规则会把它拉进「共享状态该不该进 `state/`」的讨论
+语言逼出来的改动同片 4：23 处 static 补类名、15 处 `setState` 改走 `_rebuild`。
+extension 经 `this` 碰到的 82 个名字逐个在 import 和库顶层名下探测过，没有碰撞。
+（探测脚本在这一片里修过一次：第一版把调用处当成了成员名、把缩进行当成了顶层名，报了一大堆
+假阳性；收紧之后对片 4 也重跑了一遍，仍是零。）
 
-**建议 (a)**。真觉得不够再单独立项 (b)。
-
-**覆盖是弱点**：只有 `app_screens_model_editor_test.dart`（screenshot，不断言）+
-`model_edit_track_slider_test.dart`（打的是 `model_edit_controls`）。所以拆前先跑
-`flutter test test/screenshots/app_screens_model_editor_test.dart` 存 PNG，拆完逐张比。
+**结果**：`flutter analyze` 零问题；`flutter test -x screenshots` 2183 passed；screenshot
+175 / 175 像素一致 —— 模型编辑器三个布局带、两种亮度、new / protocol / relay 各态都在其中。
+多重集比对只多出 5 个 extension 外壳和 `_rebuild`。
 
 ---
 
