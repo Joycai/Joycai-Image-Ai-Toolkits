@@ -310,7 +310,6 @@ class ModelSelectionSection extends StatelessWidget {
             if (v != null) onImageParamChanged(model, spec.key, v);
           },
         );
-        break;
       case ParamControl.segmented:
         // `1a` 「质量」: every option `flex:1` on the track, the chosen one
         // lifted out on the panel's ground.
@@ -327,7 +326,6 @@ class ModelSelectionSection extends StatelessWidget {
           expand: true,
           style: AppSegmentStyle.raised,
         );
-        break;
       case ParamControl.customSize:
         // A field-shaped button showing the current value; it opens the
         // size-picker dialog (preset chips + free-form WxH + per-rule live
@@ -367,11 +365,9 @@ class ModelSelectionSection extends StatelessWidget {
             ],
           ),
         );
-        break;
       case ParamControl.slider:
         // Filtered out above; kept so the switch stays exhaustive.
         control = const SizedBox.shrink();
-        break;
     }
 
     return MergeSemantics(

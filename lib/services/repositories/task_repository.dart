@@ -5,7 +5,7 @@ import '../database_service.dart';
 class TaskRepository {
   final DatabaseService _dbService = DatabaseService();
 
-  Future<Database> get _db async => await _dbService.database;
+  Future<Database> get _db async => _dbService.database;
 
   Future<void> saveTask(Map<String, dynamic> task) async {
     final db = await _db;
@@ -97,7 +97,7 @@ class TaskRepository {
     await db.update(
       'tasks',
       {'status': 'pending'},
-      where: "status = ? AND type = ? AND operation_name IS NOT NULL "
+      where: 'status = ? AND type = ? AND operation_name IS NOT NULL '
           "AND operation_name != ''",
       whereArgs: ['processing', 'videoGenerate'],
     );

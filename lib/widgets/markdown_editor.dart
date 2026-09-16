@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
-import '../../l10n/app_localizations.dart';
+import '../l10n/app_localizations.dart';
 import 'app_dialog.dart';
 import 'app_segmented_control.dart';
 import '../core/design_tokens.dart';
@@ -263,7 +263,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
                 },
               ),
               Text(
-                "Markdown",
+                'Markdown',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ] else

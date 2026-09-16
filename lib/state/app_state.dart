@@ -9,6 +9,7 @@ import '../core/safety_settings.dart';
 import '../core/theme_accent.dart';
 import '../core/thumbnail_fit.dart';
 import '../l10n/app_localizations.dart';
+import '../services/llm/llm_debug_logger.dart';
 import '../services/llm/llm_dispatcher.dart';
 import '../services/llm/llm_types.dart';
 import '../services/llm/model_capabilities.dart';
@@ -150,6 +151,9 @@ class AppState extends ChangeNotifier {
   /// Only new installs see this — an existing width is restored from settings.
   double sidebarWidth = 220.0;
   double consoleHeight = 200.0;
+  /// Kept in step with [LLMDebugLogger.enabled], which is what the protocols
+  /// actually read — they must not import `lib/state/`. Write it through
+  /// [setEnableApiDebug] (or [_syncApiDebug]) so the two never drift.
   bool enableApiDebug = false;
   // Skips the costliest cosmetic draws (backdrop blurs). Off by default so the
   // designed look stays; users on weak/integrated GPUs can trade it for frame
@@ -216,8 +220,8 @@ class AppState extends ChangeNotifier {
   String? lastVideoModelId;
   VeoResolution lastVideoResolution = VeoResolution.r720p;
   VeoAspectRatio lastVideoAspectRatio = VeoAspectRatio.r16_9;
-  String lastPrompt = "";
-  String lastVideoPrompt = "";
+  String lastPrompt = '';
+  String lastVideoPrompt = '';
 
   /// The prompt most recently applied from the assistant, for
   /// generation-task provenance. In-memory by design (see the class doc);
@@ -469,7 +473,7 @@ class AppState extends ChangeNotifier {
       sidebarWidth = double.tryParse(savedSidebarWidth) ?? 220.0;
     }
 
-    enableApiDebug = (await _db.getSetting('enable_api_debug') ?? 'false') == 'true';
+    _syncApiDebug((await _db.getSetting('enable_api_debug') ?? 'false') == 'true');
     reduceVisualEffects = (await _db.getSetting('reduce_visual_effects') ?? 'false') == 'true';
     thumbnailFit = ThumbnailFit.fromString(await _db.getSetting('thumbnail_fit'));
 
@@ -522,8 +526,8 @@ class AppState extends ChangeNotifier {
     lastVideoModelId = await _db.getSetting('last_video_model_id');
     lastVideoResolution = VeoResolution.fromString(await _db.getSetting('last_video_resolution'));
     lastVideoAspectRatio = VeoAspectRatio.fromString(await _db.getSetting('last_video_aspect_ratio'));
-    lastPrompt = await _db.getSetting('last_prompt') ?? "";
-    lastVideoPrompt = await _db.getSetting('last_video_prompt') ?? "";
+    lastPrompt = await _db.getSetting('last_prompt') ?? '';
+    lastVideoPrompt = await _db.getSetting('last_video_prompt') ?? '';
     useStream = (await _db.getSetting('workbench_use_stream') ?? 'true') == 'true';
     compressReferenceImages = (await _db.getSetting('workbench_compress_reference_images') ?? 'false') == 'true';
 
@@ -706,8 +710,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setEnableApiDebug(bool value) async {
+  /// Sets the flag and the logger's copy of it together.
+  void _syncApiDebug(bool value) {
     enableApiDebug = value;
+    LLMDebugLogger.enabled = value;
+  }
+
+  Future<void> setEnableApiDebug(bool value) async {
+    _syncApiDebug(value);
     await _db.saveSetting('enable_api_debug', value.toString());
     notifyListeners();
   }

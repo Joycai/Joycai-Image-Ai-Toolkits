@@ -401,7 +401,7 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     final double rightMax = (row * 0.40).clamp(kRightPanelMin, 600.0);
 
     bool leftInline = wantsLeft;
-    bool rightInline = wantsRight;
+    final bool rightInline = wantsRight;
     double left = wantsLeft ? _leftWidth.clamp(kLeftPanelMin, kLeftPanelMax) : 0;
     double right = wantsRight ? _rightWidth.clamp(kRightPanelMin, rightMax) : 0;
 

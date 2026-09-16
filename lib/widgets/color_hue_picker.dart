@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../core/design_tokens.dart';
+import '../core/design_tokens.dart';
 
 /// Saturation and value every picked hue is drawn at, shared by the bar and
 /// the wheel so a category keeps its colour whichever one chose it.
@@ -134,7 +134,7 @@ class _ColorHuePickerState extends State<ColorHuePicker> {
   void _handleGesture(Offset localPosition, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     
-    double rad = (localPosition - center).direction; // -pi to pi
+    final double rad = (localPosition - center).direction; // -pi to pi
     double deg = (rad * 180 / 3.1415926535) + 90;
     if (deg < 0) deg += 360;
 

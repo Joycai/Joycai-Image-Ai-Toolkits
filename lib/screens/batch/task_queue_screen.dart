@@ -33,6 +33,32 @@ import 'task_queue_card.dart';
 /// The floating task capsule stays off this screen — the queue's own header
 /// already reports what the capsule would. The shell decides that
 /// (`task_capsule_monitor.dart`), not this file.
+/// Raises the queue in a modal sheet.
+///
+/// Lives with the screen it presents rather than in [AppRunConsole], which
+/// takes it as `onExpand`: a shared widget cannot reach into a feature screen.
+/// Top-level, so the hosts can pass it as a tear-off inside a `const`
+/// constructor.
+void showTaskQueueSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    // The queue screen draws task cards on a canvas; on `surface` the cards
+    // would be the same colour as the sheet they sit on.
+    backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+    builder: (context) => DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.8,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return const TaskQueueScreen();
+      },
+    ),
+  );
+}
+
 class TaskQueueScreen extends StatefulWidget {
   const TaskQueueScreen({super.key});
 
@@ -122,7 +148,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
     if (inBottomSheet) return content;
     return Scaffold(
       backgroundColor: Colors.transparent,
-      bottomNavigationBar: const AppRunConsole(),
+      bottomNavigationBar: const AppRunConsole(onExpand: showTaskQueueSheet),
       body: content,
     );
   }
@@ -506,7 +532,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
           ? null
           : Padding(
               padding: EdgeInsets.only(bottom: bottomInset),
-              child: const AppRunConsole(),
+              child: const AppRunConsole(onExpand: showTaskQueueSheet),
             ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

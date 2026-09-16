@@ -14,11 +14,11 @@ class PromptRepository {
 
   final DatabaseService _dbService = DatabaseService();
 
-  Future<Database> get _db async => await _dbService.database;
+  Future<Database> get _db async => _dbService.database;
 
   Future<int> addPrompt(Prompt prompt, {List<int>? tagIds}) async {
     final db = await _db;
-    return await db.transaction((txn) async {
+    return db.transaction((txn) async {
       // Use includeId: false because it's AUTOINCREMENT
       final id = await txn.insert('prompts', prompt.toMap(includeId: false));
       if (tagIds != null && tagIds.isNotEmpty) {
@@ -204,7 +204,7 @@ class PromptRepository {
 
   Future<int> addPromptTag(PromptTag tag) async {
     final db = await _db;
-    return await db.insert('prompt_tags', tag.toMap(includeId: false));
+    return db.insert('prompt_tags', tag.toMap(includeId: false));
   }
 
   Future<void> updatePromptTag(int id, PromptTag tag) async {
@@ -235,7 +235,7 @@ class PromptRepository {
   // System Prompts Methods
   Future<int> addSystemPrompt(SystemPrompt prompt, {List<int>? tagIds}) async { 
     final db = await _db;
-    return await db.transaction((txn) async {
+    return db.transaction((txn) async {
       final id = await txn.insert('system_prompts', prompt.toMap(includeId: false));
       if (tagIds != null && tagIds.isNotEmpty) {
         for (var tagId in tagIds) {

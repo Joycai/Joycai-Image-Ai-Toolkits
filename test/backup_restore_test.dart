@@ -339,7 +339,7 @@ void main() {
       });
 
       expect((await db.query('prompts')).map((p) => p['title']), ['Imported']);
-      expect((await db.query('llm_channels')), isEmpty,
+      expect(await db.query('llm_channels'), isEmpty,
           reason: 'prompt import must not touch channels');
       await db.close();
     });

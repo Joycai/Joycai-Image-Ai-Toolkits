@@ -18,6 +18,7 @@ import '../../widgets/app_run_console.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/app_window_frame.dart';
 import '../../widgets/shell/app_destinations.dart';
+import '../batch/task_queue_screen.dart';
 import 'widgets/downloader_inputs.dart';
 import 'widgets/downloader_log_panel.dart';
 import 'widgets/downloader_results_area.dart';
@@ -138,7 +139,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.error(context, "Analysis failed: $e");
+        AppSnackBar.error(context, 'Analysis failed: $e');
       }
     }
   }
@@ -224,7 +225,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     try {
       final content = utf8.decode(await picked.readAsBytes());
 
-      String parsedCookies = "";
+      String parsedCookies = '';
       int count = 0;
 
       if (content.contains('# Netscape HTTP Cookie File')) {
@@ -300,7 +301,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       // column ground and the grid between them does not. The canvas colour
       // where there is no custom window frame to show through to.
       backgroundColor: usesCustomWindowChrome ? Colors.transparent : colorScheme.surfaceContainer,
-      bottomNavigationBar: const AppRunConsole(),
+      bottomNavigationBar: const AppRunConsole(onExpand: showTaskQueueSheet),
       body: Column(
         children: [
           DownloaderToolbar(

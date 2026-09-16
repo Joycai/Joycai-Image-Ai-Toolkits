@@ -104,10 +104,10 @@ Map<String, dynamic> prepareImagenPayload(List<LLMMessage> history, Map<String, 
   }
 
   return {
-    "instances": [
-      {"prompt": userMsg.content}
+    'instances': [
+      {'prompt': userMsg.content}
     ],
-    "parameters": parameters,
+    'parameters': parameters,
   };
 }
 
@@ -117,7 +117,7 @@ Map<String, dynamic> prepareVeoPayload(List<LLMMessage> history, Map<String, dyn
   final userMsg = history.lastWhere((m) => m.role == LLMRole.user);
 
   final instance = <String, dynamic>{
-    "prompt": userMsg.content,
+    'prompt': userMsg.content,
   };
 
   final referenceImages = <Map<String, dynamic>>[];
@@ -143,27 +143,24 @@ Map<String, dynamic> prepareVeoPayload(List<LLMMessage> history, Map<String, dyn
 
       // Google Gen API doc is wrong, this code is get from ai studio, fuck google
       final mediaDataLegacy = {
-          "mimeType": attachment.mimeType,
-          "bytesBase64Encoded": b64Data
+          'mimeType': attachment.mimeType,
+          'bytesBase64Encoded': b64Data
       };
 
       switch (attachment.referenceType) {
         case LLMReferenceType.firstFrame:
           instance['image'] = mediaDataLegacy;
-          break;
         case LLMReferenceType.lastFrame:
           instance['lastFrame'] = mediaDataLegacy;
-          break;
         case LLMReferenceType.asset:
           referenceImages.add({
-            "image": mediaDataLegacy,
-            "referenceType": "asset"
+            'image': mediaDataLegacy,
+            'referenceType': 'asset'
           });
-          break;
         default:
           referenceImages.add({
-            "image": mediaDataLegacy,
-            "referenceType": "asset"
+            'image': mediaDataLegacy,
+            'referenceType': 'asset'
           });
       }
     }
@@ -182,8 +179,8 @@ Map<String, dynamic> prepareVeoPayload(List<LLMMessage> history, Map<String, dyn
   }
 
   return {
-    "instances": [instance],
-    if (parameters.isNotEmpty) "parameters": parameters,
+    'instances': [instance],
+    if (parameters.isNotEmpty) 'parameters': parameters,
   };
 }
 
@@ -515,7 +512,7 @@ Map<String, dynamic> prepareGooglePayload(
   Map<String, dynamic>? systemInstruction;
   if (systemMessages.isNotEmpty) {
     systemInstruction = {
-      "parts": systemMessages.map((m) => {"text": m.content}).toList()
+      'parts': systemMessages.map((m) => {'text': m.content}).toList()
     };
   }
 
@@ -544,25 +541,25 @@ Map<String, dynamic> prepareGooglePayload(
       Map<String, dynamic> responsePayload;
       try {
         final decoded = jsonDecode(msg.content);
-        responsePayload = decoded is Map<String, dynamic> ? decoded : {"result": decoded};
+        responsePayload = decoded is Map<String, dynamic> ? decoded : {'result': decoded};
       } catch (_) {
-        responsePayload = {"result": msg.content};
+        responsePayload = {'result': msg.content};
       }
       final toolName = msg.toolName;
       final part = <String, dynamic>{
-        "functionResponse": {
-          "name": (toolName != null && toolName.isNotEmpty)
+        'functionResponse': {
+          'name': (toolName != null && toolName.isNotEmpty)
               ? toolName
               : (callNames[msg.toolCallId] ?? ''),
-          "response": responsePayload,
+          'response': responsePayload,
         }
       };
       if (lastIsResults) {
         (contents.last['parts'] as List).add(part);
       } else {
         contents.add({
-          "role": "user",
-          "parts": [part],
+          'role': 'user',
+          'parts': [part],
         });
         lastIsResults = true;
       }
@@ -589,7 +586,7 @@ Map<String, dynamic> prepareGooglePayload(
       }
     } else {
       if (msg.content.isNotEmpty) {
-        parts.add({"text": msg.content});
+        parts.add({'text': msg.content});
       }
 
       // Rebuilt: assistant tool calls → functionCall parts. Gemini requires
@@ -597,9 +594,9 @@ Map<String, dynamic> prepareGooglePayload(
       // replayed verbatim on the same part.
       for (final tc in msg.toolCalls) {
         parts.add({
-          "functionCall": {
-            "name": tc.name,
-            "args": tc.arguments,
+          'functionCall': {
+            'name': tc.name,
+            'args': tc.arguments,
           },
           // Only to the model that produced it: another model has no use
           // for the signature and it still travels as input.
@@ -607,7 +604,7 @@ Map<String, dynamic> prepareGooglePayload(
               (msg.rawThinkingModelId == null ||
                   modelId == null ||
                   msg.rawThinkingModelId == modelId))
-            "thoughtSignature": tc.thoughtSignature,
+            'thoughtSignature': tc.thoughtSignature,
         });
       }
     }
@@ -621,9 +618,9 @@ Map<String, dynamic> prepareGooglePayload(
       // rather than rejecting them — so `inline_data` used to mean the model
       // never saw the picture, with a 200 and a perfectly normal answer.
       parts.add({
-        "inlineData": {
-          "mimeType": resolved.mimeType,
-          "data": base64Encode(resolved.bytes)
+        'inlineData': {
+          'mimeType': resolved.mimeType,
+          'data': base64Encode(resolved.bytes)
         }
       });
     }
@@ -632,8 +629,8 @@ Map<String, dynamic> prepareGooglePayload(
     // assistant message with neither text nor calls — is simply not sent.
     if (parts.isEmpty) continue;
     contents.add({
-      "role": msg.role == LLMRole.user ? "user" : "model",
-      "parts": parts
+      'role': msg.role == LLMRole.user ? 'user' : 'model',
+      'parts': parts
     });
     lastIsResults = false;
   }
@@ -677,20 +674,20 @@ Map<String, dynamic> prepareGooglePayload(
   return {
     // camelCase for the same reason as `inlineData` above: a relay that reads
     // only `systemInstruction` silently drops a snake_case system prompt.
-    "systemInstruction": ?systemInstruction,
-    "contents": contents,
+    'systemInstruction': ?systemInstruction,
+    'contents': contents,
     if (tools != null && tools.isNotEmpty)
-      "tools": [
+      'tools': [
         {
-          "functionDeclarations": tools.map((t) => {
-            "name": t.name,
-            "description": t.description,
-            "parameters": t.parameters,
+          'functionDeclarations': tools.map((t) => {
+            'name': t.name,
+            'description': t.description,
+            'parameters': t.parameters,
           }).toList(),
         }
       ],
-    "generationConfig": generationConfig,
-    "safetySettings":
+    'generationConfig': generationConfig,
+    'safetySettings':
         SafetySettings.toApiList(options?[SafetySettings.paramKey]),
   };
 }

@@ -71,6 +71,20 @@ class LLMDebugLog {
 }
 
 class LLMDebugLogger {
+  /// Whether protocols should write request/response debug logs.
+  ///
+  /// Mirrors the `enable_api_debug` setting, and is the flag every protocol
+  /// reads before calling [startLog]. It lives here rather than on `AppState`
+  /// because `lib/services/` must not depend on `lib/state/`: eighteen
+  /// protocol files reaching into the global notifier for this one boolean was
+  /// the only thing holding that cycle open, and a wire format has no business
+  /// knowing the app has a settings screen. Same reasoning as
+  /// [currentCorrelation] — the protocol asks the logger, not its caller.
+  ///
+  /// `AppState` owns the value and is its only writer, on settings load and on
+  /// the toggle.
+  static bool enabled = false;
+
   static Future<String> _getLogDir() async {
     final dataDir = await AppPaths.getDataDirectory();
     final logDir = Directory(p.join(dataDir, 'api_logs'));

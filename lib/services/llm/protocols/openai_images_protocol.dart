@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'protocol.dart';
@@ -61,7 +60,6 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     final quality = _resolveQuality(options);
     final client = config.createClient();
     try {
-      final appState = AppState();
       LLMDebugLog? debugFile;
       http.Response response;
 
@@ -98,7 +96,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           ));
         }
 
-        if (appState.enableApiDebug) {
+        if (LLMDebugLogger.enabled) {
           debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Image Edit)', {
             'url': redactUrl(url),
             'fields': request.fields,
@@ -118,7 +116,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           'quality': ?quality,
         };
 
-        if (appState.enableApiDebug) {
+        if (LLMDebugLogger.enabled) {
           debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Image Generate)', {
             'url': redactUrl(url),
             'headers': headers,

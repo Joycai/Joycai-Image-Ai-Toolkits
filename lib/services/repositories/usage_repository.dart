@@ -5,7 +5,7 @@ import '../database_service.dart';
 class UsageRepository {
   final DatabaseService _dbService = DatabaseService();
 
-  Future<Database> get _db async => await _dbService.database;
+  Future<Database> get _db async => _dbService.database;
 
   Future<void> recordTokenUsage(Map<String, dynamic> usage) async {
     final db = await _db;
@@ -29,8 +29,8 @@ class UsageRepository {
     int? offset,
   }) async {
     final db = await _db;
-    String where = "1=1";
-    List<dynamic> args = [];
+    String where = '1=1';
+    final List<dynamic> args = [];
 
     if (modelIds != null && modelIds.isNotEmpty) {
       where += " AND model_id IN (${modelIds.map((_) => '?').join(',')})";
@@ -38,16 +38,16 @@ class UsageRepository {
     }
 
     if (start != null) {
-      where += " AND timestamp >= ?";
+      where += ' AND timestamp >= ?';
       args.add(start.toIso8601String());
     }
 
     if (end != null) {
-      where += " AND timestamp <= ?";
+      where += ' AND timestamp <= ?';
       args.add(end.toIso8601String());
     }
 
-    return await db.query(
+    return db.query(
       'token_usage', 
       where: where, 
       whereArgs: args, 

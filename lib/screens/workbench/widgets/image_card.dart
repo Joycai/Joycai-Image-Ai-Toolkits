@@ -82,7 +82,7 @@ class ImageCard extends StatefulWidget {
 }
 
 class _ImageCardState extends State<ImageCard> {
-  String _dimensions = "";
+  String _dimensions = '';
   bool _isHovering = false;
   bool _isPressed = false;
   String? _videoThumbnailPath;
@@ -93,7 +93,7 @@ class _ImageCardState extends State<ImageCard> {
     // Seed from the cache first: a tile scrolled back into view already has its
     // measurement, and going through the async path for it would cost a
     // scheduled task and a second build to show a value that was in hand.
-    _dimensions = ImageMetadataService().peek(widget.imageFile.path)?.displayString ?? "";
+    _dimensions = ImageMetadataService().peek(widget.imageFile.path)?.displayString ?? '';
     if (_dimensions.isEmpty) _getImageDimensions();
     _loadVideoThumbnail();
   }
@@ -106,7 +106,7 @@ class _ImageCardState extends State<ImageCard> {
       // file the grid has already measured.
       final known = ImageMetadataService().peek(widget.imageFile.path);
       setState(() {
-        _dimensions = known?.displayString ?? "";
+        _dimensions = known?.displayString ?? '';
         _videoThumbnailPath = null;
       });
       if (known == null) _getImageDimensions();

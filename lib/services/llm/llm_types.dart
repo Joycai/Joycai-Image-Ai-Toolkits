@@ -811,7 +811,7 @@ class LLMModelConfig {
 
     final httpClient = HttpClient();
     httpClient.findProxy = (uri) {
-      return "PROXY $hostPort";
+      return 'PROXY $hostPort';
     };
 
     if (proxyUsername != null && proxyUsername!.isNotEmpty && proxyPassword != null) {

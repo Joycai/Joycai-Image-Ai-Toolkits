@@ -4,7 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/backup_error_text.dart';
+import '../../../widgets/backup_error_text.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';

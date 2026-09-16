@@ -150,7 +150,7 @@ class AssistantSessionRepository {
         'SELECT MAX(seq) AS m FROM assistant_messages WHERE session_id = ?',
         [sessionId],
       );
-      int seq = ((rows.first['m'] as int?) ?? -1) + 1;
+      final int seq = ((rows.first['m'] as int?) ?? -1) + 1;
       for (int i = 0; i < active.length; i++) {
         await txn.insert('assistant_messages', {
           'session_id': sessionId,

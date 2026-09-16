@@ -282,7 +282,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   Future<void> _reAuthorize(BuildContext context, AppState appState) async {
     final String? newPath = await FilePermissionService().reAuthorize(
       widget.path,
-      title: "Authorize Access to: ${widget.path}",
+      title: 'Authorize Access to: ${widget.path}',
     );
 
     if (newPath != null) {
@@ -555,7 +555,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       marker = SizedBox(width: metrics.markerBox);
     } else if (isUnreachable) {
       marker = Tooltip(
-        message: "Access Denied (Click to re-authorize)",
+        message: 'Access Denied (Click to re-authorize)',
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => _reAuthorize(context, appState),

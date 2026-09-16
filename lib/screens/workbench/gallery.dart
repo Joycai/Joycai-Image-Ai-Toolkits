@@ -284,7 +284,7 @@ class _GalleryState extends State<Gallery> {
   Future<void> _reAuthorize(BuildContext context, GalleryState state, String path, bool isResult) async {
     final String? newPath = await FilePermissionService().reAuthorize(
       path,
-      title: isResult ? "Authorize Output Directory" : "Authorize Folder: $path",
+      title: isResult ? 'Authorize Output Directory' : 'Authorize Folder: $path',
     );
 
     if (newPath != null) {

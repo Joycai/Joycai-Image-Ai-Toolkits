@@ -104,7 +104,7 @@ extension TaskExecutors on TaskQueueService {
       ),
     ];
 
-    List<Uint8List> generatedImages = [];
+    final List<Uint8List> generatedImages = [];
     final actualUseStream = await _shouldUseStream(task);
 
     // A fresh map, not a mutation of task.parameters: the probe is a function
@@ -380,7 +380,7 @@ extension TaskExecutors on TaskQueueService {
       ),
     );
 
-    String resultText = "";
+    String resultText = '';
     final actualUseStream = await _shouldUseStream(task);
     final requestOptions = <String, dynamic>{
       ...task.parameters,
@@ -918,7 +918,7 @@ extension TaskExecutors on TaskQueueService {
   /// Checks if primary output is writable, returns it or falls back to Result Cache.
   Future<String> _getEffectiveOutputDir(TaskItem task) async {
     final db = DatabaseService();
-    String? primary = await db.getSetting('output_directory');
+    final String? primary = await db.getSetting('output_directory');
 
     // Result Cache is always initialized in GalleryState for iOS/macOS
     String? fallback;

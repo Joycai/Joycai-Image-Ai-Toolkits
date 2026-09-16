@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import '../../../core/image_magic.dart';
-import '../../../state/app_state.dart';
 import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
@@ -85,9 +84,8 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
 
     final client = config.createClient();
     try {
-      final appState = AppState();
       LLMDebugLog? debugFile;
-      if (appState.enableApiDebug) {
+      if (LLMDebugLogger.enabled) {
         debugFile = await LLMDebugLogger.startLog(
           config.modelId,
           'DashScope (Image ${isEdit ? 'Edit' : 'Generate'})',

@@ -10,8 +10,8 @@ class DatabaseMigration {
       await _addColumnIfNotExists(db, 'llm_models', 'output_fee', 'REAL DEFAULT 0.0');
     }
     if (oldVersion < 6) {
-      var tableInfo = await db.rawQuery('PRAGMA table_info(tasks)');
-      bool hasModelId = tableInfo.any((column) => column['name'] == 'model_id');
+      final tableInfo = await db.rawQuery('PRAGMA table_info(tasks)');
+      final bool hasModelId = tableInfo.any((column) => column['name'] == 'model_id');
       if (!hasModelId) {
         await db.execute('ALTER TABLE tasks ADD COLUMN model_id TEXT');
       }
@@ -195,9 +195,9 @@ class DatabaseMigration {
     if (!await _tableExists(db, 'tasks')) return;
     await _addColumnIfNotExists(db, 'tasks', 'created_at', 'TEXT');
     await db.execute(
-      "UPDATE tasks SET created_at = COALESCE(start_time, end_time, "
+      'UPDATE tasks SET created_at = COALESCE(start_time, end_time, '
       "strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime')) "
-      "WHERE created_at IS NULL",
+      'WHERE created_at IS NULL',
     );
   }
 
@@ -661,7 +661,7 @@ class DatabaseMigration {
       final apiKey = settingsMap['${prefix}_apikey'];
       final endpoint = settingsMap['${prefix}_endpoint'];
       if (apiKey == null || apiKey.isEmpty) return null;
-      return await db.insert('llm_channels', {
+      return db.insert('llm_channels', {
         'display_name': defaultName,
         'endpoint': endpoint ?? (type.contains('google') ? 'https://generativelanguage.googleapis.com' : 'https://api.openai.com/v1'),
         'api_key': apiKey,
@@ -785,8 +785,8 @@ class DatabaseMigration {
   /// upgrade that introduced it — re-running the backfill on every launch
   /// would overwrite whatever the user has arranged since.
   static Future<bool> _addColumnIfNotExists(Database db, String tableName, String columnName, String columnType) async {
-    var tableInfo = await db.rawQuery('PRAGMA table_info($tableName)');
-    bool columnExists = tableInfo.any((column) => column['name'] == columnName);
+    final tableInfo = await db.rawQuery('PRAGMA table_info($tableName)');
+    final bool columnExists = tableInfo.any((column) => column['name'] == columnName);
     if (columnExists) return false;
     await db.execute('ALTER TABLE $tableName ADD COLUMN $columnName $columnType');
     return true;

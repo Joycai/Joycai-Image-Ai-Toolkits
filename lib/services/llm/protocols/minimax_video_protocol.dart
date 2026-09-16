@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'minimax_payload.dart';
@@ -76,9 +75,8 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
     logger?.call('Submitting MiniMax video task to: ${url.host}',
         level: 'DEBUG');
 
-    final appState = AppState();
     LLMDebugLog? debugFile;
-    if (appState.enableApiDebug) {
+    if (LLMDebugLogger.enabled) {
       debugFile = await LLMDebugLogger.startLog(
         config.modelId,
         'MiniMax (Video Submit)',

@@ -419,7 +419,7 @@ class TaskQueueService extends ChangeNotifier {
     );
 
     if (model != null) {
-      int count = model.tasksSinceUpdate + 1;
+      final int count = model.tasksSinceUpdate + 1;
       final mean = model.estMeanMs ?? 0.0;
 
       if (count >= 10 || mean == 0) {

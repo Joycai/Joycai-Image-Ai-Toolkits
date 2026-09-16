@@ -49,7 +49,7 @@ class PromptLibrarySheet extends StatefulWidget {
 class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
   final TextEditingController _searchCtrl = TextEditingController();
   final Set<int> _selectedFilterTagIds = {};
-  String _searchQuery = "";
+  String _searchQuery = '';
 
   @override
   void initState() {

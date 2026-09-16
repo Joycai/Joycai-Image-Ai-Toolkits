@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../screens/workbench/folder_list.dart';
+import './folder_list.dart';
 
 class UnifiedSidebar extends StatelessWidget {
   final bool useFileBrowserState;

@@ -426,16 +426,13 @@ class FileBrowserState extends ChangeNotifier {
     switch (sortField) {
       case BrowserSortField.name:
         cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
-        break;
       case BrowserSortField.date:
         cmp = a.modified.compareTo(b.modified);
-        break;
       case BrowserSortField.type:
         cmp = a.category.index.compareTo(b.category.index);
         if (cmp == 0) {
           cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
         }
-        break;
     }
     return sortAscending ? cmp : -cmp;
   }

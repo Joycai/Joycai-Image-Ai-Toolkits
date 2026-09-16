@@ -81,51 +81,39 @@ class _SetupWizardState extends State<SetupWizard> {
       case Vendors.openAIRest:
       case Vendors.openAIResponsesRest:
         _endpointController.text = 'https://api.openai.com/v1';
-        break;
       case Vendors.newApiOpenAI:
       case Vendors.newApiOpenAIResponses:
         // New API is a self-hosted relay; only the path suffix is known.
         _endpointController.text = 'https://your-newapi-host.com/v1';
-        break;
       case Vendors.newApiGemini:
         _endpointController.text = 'https://your-newapi-host.com/v1beta';
-        break;
       case Vendors.xaiApi:
         _endpointController.text = 'https://api.x.ai/v1';
-        break;
       case Vendors.deepseek:
         _endpointController.text = 'https://api.deepseek.com';
-        break;
       case Vendors.minimax:
         _endpointController.text = 'https://api.minimaxi.com/v1';
-        break;
       case Vendors.anthropicRest:
         _endpointController.text = 'https://api.anthropic.com/v1';
-        break;
       case Vendors.newApiAnthropic:
         _endpointController.text = 'https://your-newapi-host.com/v1';
-        break;
       case Vendors.minimaxAnthropic:
         // Not `/v1`: MiniMax puts its ④-format endpoint beside the ① one.
         _endpointController.text = 'https://api.minimaxi.com/anthropic/v1';
-        break;
       case Vendors.dashscope:
         // Mainland host. The international one (dashscope-intl.aliyuncs.com)
         // is reached by typing over this, exactly as in the add-channel
         // wizard's preset.
         _endpointController.text =
             'https://dashscope.aliyuncs.com/compatible-mode/v1';
-        break;
       case Vendors.dashscopeNative:
         // Same host, the other face — `/api/v1` is where DashScope's own
         // request format lives. Every other face is derived from whichever
         // of the two is stored, so this choice only sets the default wire.
         _endpointController.text = 'https://dashscope.aliyuncs.com/api/v1';
-        break;
       case Vendors.midjourneyProxy:
         // A self-hosted proxy; only the shape of the host is knowable.
         _endpointController.text = 'https://your-midjourney-proxy.com';
-        break;
       default:
         _endpointController.text = 'https://generativelanguage.googleapis.com/v1beta';
     }
@@ -452,7 +440,7 @@ class _SetupWizardState extends State<SetupWizard> {
               suffixIcon: const Icon(Icons.folder_open),
             ),
             onTap: () async {
-              String? path = await FilePicker.getDirectoryPath();
+              final String? path = await FilePicker.getDirectoryPath();
               if (path != null) {
                 setState(() => _outputDirController.text = path);
                 appState.updateOutputDirectory(path);
@@ -498,7 +486,7 @@ class _SetupWizardState extends State<SetupWizard> {
             controller: _channelNameController,
             decoration: InputDecoration(
               labelText: l10n.displayName,
-              hintText: "e.g. My OpenAI",
+              hintText: 'e.g. My OpenAI',
             ),
           ),
           const SizedBox(height: 16),
@@ -553,7 +541,7 @@ class _SetupWizardState extends State<SetupWizard> {
                   controller: _modelIdController,
                   decoration: InputDecoration(
                     labelText: l10n.modelIdLabel,
-                    hintText: "e.g. gpt-4o",
+                    hintText: 'e.g. gpt-4o',
                   ),
                 ),
               ),
@@ -572,7 +560,7 @@ class _SetupWizardState extends State<SetupWizard> {
             controller: _modelNameController,
             decoration: InputDecoration(
               labelText: l10n.displayName,
-              hintText: "e.g. My Model",
+              hintText: 'e.g. My Model',
             ),
           ),
           const SizedBox(height: 16),

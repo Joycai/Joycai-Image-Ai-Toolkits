@@ -23,7 +23,7 @@ import 'protocol.dart';
 /// host, or either with trailing slashes, all resolve to the same base. The
 /// rule keys off the *path* only, so the international host works too.
 String dashscopeNativeBase(String endpoint) {
-  var base = _dashscopeHostBase(endpoint);
+  final base = _dashscopeHostBase(endpoint);
   return base.endsWith('/api/v1') ? base : '$base/api/v1';
 }
 
@@ -36,7 +36,7 @@ String dashscopeNativeBase(String endpoint) {
 /// SDK base is `…/apps/anthropic` *without* `/v1` — this returns the full
 /// `/v1` base because the ④ protocol appends only `/messages`.
 String dashscopeAnthropicBase(String endpoint) {
-  var base = _dashscopeHostBase(endpoint);
+  final base = _dashscopeHostBase(endpoint);
   if (base.endsWith('/apps/anthropic/v1')) return base;
   if (base.endsWith('/apps/anthropic')) return '$base/v1';
   return '$base/apps/anthropic/v1';
@@ -160,7 +160,7 @@ String dashscopeQwenDefaultSize(({int width, int height})? input) {
   // long edge from the snapped short one keeps it at or under the target.
   final landscape = ratio >= 1;
   final longOverShort = landscape ? ratio : 1 / ratio;
-  var short = _floorToGrid(math.sqrt(dashscopeQwenDefaultArea / longOverShort));
+  final short = _floorToGrid(math.sqrt(dashscopeQwenDefaultArea / longOverShort));
   var long = _floorToGrid(short * longOverShort);
   // Snapping the short edge down lets the derived long edge overshoot the
   // area by a step (21:9 lands at 1568×672, 0.5 % over); the 1K tier is a

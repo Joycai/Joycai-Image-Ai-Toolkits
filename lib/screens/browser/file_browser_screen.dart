@@ -28,7 +28,8 @@ import '../../widgets/folder_group_header.dart';
 import '../../widgets/folder_outline_bar.dart';
 import '../../widgets/panel_resizer.dart';
 import '../../widgets/shell/app_destinations.dart';
-import '../../widgets/unified_sidebar.dart';
+import '../batch/task_queue_screen.dart';
+import '../workbench/unified_sidebar.dart';
 import '../workbench/widgets/preview/media_preview_dialog.dart';
 import 'ai_rename_dialog.dart';
 import 'staging_paste_flow.dart';
@@ -129,7 +130,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   Future<void> _reAuthorizeFolder(FileBrowserState browser, String path) async {
     final String? newPath = await FilePermissionService().reAuthorize(
       path,
-      title: "Authorize Access to: $path",
+      title: 'Authorize Access to: $path',
     );
     if (newPath != null) browser.refresh();
   }
@@ -373,7 +374,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         onEndDrawerChanged: (open) {
           if (open != _stagingDrawerOpen) setState(() => _stagingDrawerOpen = open);
         },
-        bottomNavigationBar: const AppRunConsole(),
+        bottomNavigationBar: const AppRunConsole(onExpand: showTaskQueueSheet),
         body: Row(
           children: [
             if (!isNarrow) ...[

@@ -104,6 +104,21 @@ executed, so an empty directory does not mean the work is open.
 - **Data persistence:** all user data goes through `DatabaseService` and the repository layer. Never persist columns derivable from another table (the deleted `llm_models.type` is the cautionary tale — see the v32 migration). Every schema change needs both an `onUpgrade` step and the matching `onCreate` call.
 - **LLM layering:** no model-id sniffing outside `model_family.dart`/`model_descriptor.dart`; no `vendor.id`/channel-type string comparisons outside `vendors/` and `llm_dispatcher.dart`; all routing branches live in `llm_dispatcher.dart` only. The greppable red-flag list is in [docs/architecture/llm-three-layer.md](docs/architecture/llm-three-layer.md).
 - **Business logic:** belongs in `lib/services/`, not in widgets or screens.
+- **Directory layering:** the top-level directories under `lib/` are ranked, and a file
+  may import its own directory plus anything of strictly *lower* rank — never sideways,
+  never up:
+
+  `core`, `l10n` (0) → `models` (1) → `services` (2) → `state` (3) → `widgets` (4) →
+  `screens` (5) → `bench` (6) → `main.dart` (7)
+
+  So `core` imports nothing else in `lib/` at all, a service may not read `AppState`
+  (pass the value in, or park it beside the thing that needs it — `LLMDebugLogger.enabled`
+  is the worked example), and a shared widget may not import a feature screen (inject the
+  dependency — `AppRunConsole`'s `onExpand` is the worked example). `test/source_layout_test.dart`
+  asserts the ranks, the absence of cycles and that no relative import climbs past `lib/`;
+  it prints the offending file and line, and adding a genuinely new layer means re-ranking
+  there on purpose. The three cycles it now prevents each survived a long time because
+  none of them breaks a build.
 - **Shell commands:** detect host OS before running shell commands. Never use Unix commands on Windows or PowerShell commands on macOS/Linux. No trial-and-error retries.
 
 ## Localization Workflow

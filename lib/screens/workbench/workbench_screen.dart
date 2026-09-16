@@ -35,7 +35,8 @@ import '../../widgets/app_field_size.dart';
 import '../../widgets/app_run_console.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/drawing_canvas.dart';
-import '../../widgets/unified_sidebar.dart';
+import '../batch/task_queue_screen.dart';
+import './unified_sidebar.dart';
 import '../prompts/widgets/prompt_dialogs.dart';
 import 'gallery.dart';
 import 'widgets/gallery_selection_bar.dart';
@@ -813,7 +814,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
 
     try {
-      RenderRepaintBoundary? boundary = _maskRepaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final RenderRepaintBoundary? boundary = _maskRepaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return;
       
       // Get image dimensions to maintain resolution
@@ -822,9 +823,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       final frame = await codec.getNextFrame();
       final img = frame.image;
 
-      double pixelRatio = img.width / boundary.size.width;
-      ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
-      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final double pixelRatio = img.width / boundary.size.width;
+      final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final pngBytes = byteData!.buffer.asUint8List();
 
       final tempDir = await AppPaths.getTempDirectory();
@@ -920,7 +921,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         // selection bar (`A1 · 1a`), so it takes the whole column.
         centerContent = const Gallery();
         showRightPanel = !isNarrow; // Only show on desktop by default
-        break;
       case 1: // Comparator
         // `A5`: the tool's controls sit in the glass bar's slot, so the images
         // take the whole column below it.
@@ -931,7 +931,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         // the panel is a drawer the same button opens instead.
         showRightPanel = !isNarrow && context.watch<WorkbenchUIState>().comparatorShowMetadata;
         showLeftPanel = false; // Auto-hide sidebar
-        break;
       case 2: // Mask Editor
         // `A6`: the brush, the colours and the saves sit in the glass bar's
         // slot, so the canvas takes the whole column below it.
@@ -982,7 +981,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         );
         showRightPanel = false;
         showLeftPanel = false;
-        break;
       case 3: // Crop & Resize
         // `A4`: the tool's controls sit in the glass bar's slot, so the canvas
         // takes the whole column below it.
@@ -991,7 +989,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         toolControlsWidth = CropResizeToolbar.preferredWidth(context);
         showRightPanel = false;
         showLeftPanel = false;
-        break;
       case 4: // Prompt Optimizer
         centerContent = Consumer<WorkbenchUIState>(
           builder: (context, wui, _) {
@@ -1135,14 +1132,12 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         // draws the chat column `#F5F7FD`, a recess between the `#FAFBFF`
         // panels either side. Every other tab leaves the column bare.
         centerGround = Theme.of(context).colorScheme.surface;
-        break;
       case 5: // Video Generation
         // The gallery with the last result's player over its bottom edge,
         // padded so the grid's last row clears it (`A2 · 1a`).
         centerContent = const VideoGalleryArea();
         showRightPanel = !isNarrow;
         showLeftPanel = appState.isSidebarExpanded;
-        break;
       default:
         centerContent = Center(child: Text(AppLocalizations.of(context)!.comingSoon));
         showRightPanel = false;
@@ -1277,7 +1272,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             return const SizedBox.shrink();
         }
       },
-      bottomPanel: const AppRunConsole(),
+      bottomPanel: const AppRunConsole(onExpand: showTaskQueueSheet),
       showLeftPanel: showLeftPanel,
       showRightPanel: showRightPanel,
       fabIcon: fabIcon,
