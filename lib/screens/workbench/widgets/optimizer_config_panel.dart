@@ -67,6 +67,12 @@ class OptimizerConfigPanel extends StatefulWidget {
   /// caller for the same reason as [citedKnowledgeFiles].
   final ContextUsageSnapshot contextUsage;
 
+  /// When given, the context card measures itself through [contextUsageOf]
+  /// whenever this notifies, instead of showing [contextUsage]: the usage
+  /// moves on every request of a turn, and nothing else on the panel does.
+  final Listenable? contextUsageListenable;
+  final ContextUsageSnapshot Function()? contextUsageOf;
+
   /// The session transcript, for the iteration timeline. Passed in whole: the
   /// timeline is a projection of prompt and feedback entries, and the
   /// projection is this panel's presentation concern.
@@ -117,6 +123,8 @@ class OptimizerConfigPanel extends StatefulWidget {
     this.onWritePolicyChanged,
     this.citedKnowledgeFiles = const [],
     this.contextUsage = ContextUsageSnapshot.placeholder,
+    this.contextUsageListenable,
+    this.contextUsageOf,
     this.transcript = const [],
     required this.onModelChanged,
     required this.onSysPromptChanged,
@@ -247,7 +255,13 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       ?_buildIterationTimeline(l10n, colorScheme, textTheme),
       // In every mode: a system-prompt session fills the same window, and a
       // long custom prompt is exactly what fills it unsuspected.
-      OptimizerContextCard(usage: widget.contextUsage),
+      if (widget.contextUsageListenable != null && widget.contextUsageOf != null)
+        ListenableBuilder(
+          listenable: widget.contextUsageListenable!,
+          builder: (context, _) => OptimizerContextCard(usage: widget.contextUsageOf!()),
+        )
+      else
+        OptimizerContextCard(usage: widget.contextUsage),
     ];
 
     // Expanded inside a Column, not a bare SingleChildScrollView: on its own

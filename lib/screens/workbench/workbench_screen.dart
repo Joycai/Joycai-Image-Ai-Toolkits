@@ -34,6 +34,7 @@ import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_field_size.dart';
 import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_snackbar.dart';
+import '../../widgets/ui/listenable_selector.dart';
 import '../../widgets/models/model_edit_dialog.dart';
 import 'widgets/drawing_canvas.dart';
 import '../batch/task_queue_screen.dart';
@@ -1012,9 +1013,13 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         centerContent = Consumer<WorkbenchUIState>(
           builder: (context, wui, _) {
             final session = wui.optimizerSession;
-            return ListenableBuilder(
+            // The chat view listens to the session itself; this host only
+            // reads the two flags below. Rebuilding it for every notification
+            // handed the view a new widget each time, past its own gating.
+            return ListenableSelector<Object>(
               listenable: session,
-              builder: (context, _) {
+              selector: () => (session.isRunning, session.usesKnowledgeBase),
+              builder: (context) {
                 // A Selector, not a `Provider.of(context)` up in the enclosing
                 // build. Reading the queue there subscribed the *screen* to it,
                 // so the 500ms progress tick of any unrelated image or video
@@ -1079,9 +1084,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         toolControls = Consumer<WorkbenchUIState>(
           builder: (context, wui, _) {
             final session = wui.optimizerSession;
-            return ListenableBuilder(
+            return ListenableSelector<Object>(
               listenable: session,
-              builder: (context, _) => Selector<TaskQueueService, String?>(
+              // Steps and pending edits derive from the transcript.
+              selector: () => (session.transcript, session.isRunning, session.refinedPrompt),
+              builder: (context) => Selector<TaskQueueService, String?>(
                 selector: (_, queue) => queue.queue
                     .cast<TaskItem?>()
                     .firstWhere(
@@ -1234,9 +1241,18 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             // against it. The ListenableBuilder catches what moves during a
             // turn: the cited files and the context usage.
             return Consumer<WorkbenchUIState>(
-              builder: (context, wui, _) => ListenableBuilder(
+              builder: (context, wui, _) => ListenableSelector<Object>(
                 listenable: wui.optimizerSession,
-                builder: (context, _) => OptimizerConfigPanel(
+                // Only what the panel draws from the session. It notifies
+                // several times a request for the usage readout alone, which
+                // listens on its own below; rebuilding the whole panel for each
+                // was ~1,100 widget builds (render_probe, assistant).
+                selector: () => (
+                  wui.optimizerSession.transcript,
+                  wui.optimizerSession.history.length,
+                  _optRunningForSession(wui.optimizerSession),
+                ),
+                builder: (context) => OptimizerConfigPanel(
                   scrollController: scrollController,
                   selectedModelDbId: wui.optSelectedModelDbId,
                   selectedSysPrompt: wui.optSelectedSysPrompt,
@@ -1257,7 +1273,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                     wui.optimizerSession,
                   ),
                   transcript: wui.optimizerSession.transcript,
-                  contextUsage: PromptOptimizerAgent.measureContext(
+                  contextUsageListenable: wui.optimizerSession,
+                  contextUsageOf: () => PromptOptimizerAgent.measureContext(
                     wui.optimizerSession,
                     // Read from the picker rather than from the last turn: pick a
                     // different model and the same conversation is measured against

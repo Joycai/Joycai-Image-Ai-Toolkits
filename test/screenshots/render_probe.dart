@@ -393,6 +393,42 @@ void main() {
     }
     await drain(tester);
   });
+
+  testWidgets('assistant — what one session notification rebuilds',
+      (WidgetTester tester) async {
+    // A running turn notifies the session several times a request (the
+    // request basis, streaming, entries). The chat view listens to all of
+    // it and setStates the whole transcript; the staged-edit card re-runs
+    // its line diff on each.
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.workbench,
+      size: _kWindow,
+      label: 'probe-assistant',
+      before: (_) async {
+        final AppState appState = AppState();
+        appState.setWorkbenchTab(4);
+        seedOptimizerKbEdit(appState);
+      },
+    );
+    final session = AppState().workbenchUIState.optimizerSession;
+    say('\n══ ASSISTANT · ${session.transcript.length} entries ══');
+    var flip = 0;
+    void notify() => session.recordRequestBasis(systemPromptChars: 1000 + (flip++ % 2), toolSchemaChars: 10);
+    final List<String> lines = await rebuildsFrom(tester, notify);
+    say('  session notify                ${lines.length} builds  '
+        '${(await costOf(tester, notify)).toStringAsFixed(2)} ms');
+    reportDependents(lines, 'WorkbenchUIState');
+    final Map<String, int> byType = <String, int>{};
+    for (final String l in lines) {
+      final String name = l.trim().split(RegExp(r'[(\-<]')).first;
+      byType[name] = (byType[name] ?? 0) + 1;
+    }
+    final top = byType.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    say('      top: ${top.take(8).map((e) => '${e.key}×${e.value}').join(', ')}');
+    await drain(tester);
+  });
 }
 
 /// Synthetic queue rows, to see whether a cost grows with the queue.

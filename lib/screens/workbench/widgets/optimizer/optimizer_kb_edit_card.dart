@@ -28,8 +28,8 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
         entry.oldContent!.length > 200 &&
         content.length < entry.oldContent!.length ~/ 2;
 
-    final (added, removed) =
-        isCreate ? (_lineCount(content), 0) : TextDiff.counts(entry.oldContent!, content);
+    final diff = isCreate ? null : _kbDiffFor(editId, entry.oldContent!, content);
+    final (added, removed) = diff == null ? (_lineCount(content), 0) : (diff.added, diff.removed);
 
     void toggleContent() => _rebuild(() {
           if (!_expandedKbEdits.remove(editId)) _expandedKbEdits.add(editId);
@@ -162,7 +162,7 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
                   ),
                 if (expanded) _buildKbEditFullContent(content, colorScheme, textTheme),
               ] else
-                _buildKbEditDiff(entry.oldContent!, content, colorScheme, textTheme, semantic),
+                _buildKbEditDiff(diff!.hunks, content, colorScheme, textTheme, semantic),
               if (pending)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -280,13 +280,12 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
   /// what lets the eye run down the changed region without reading the
   /// `+`/`−` on every line.
   Widget _buildKbEditDiff(
-    String oldContent,
+    List<DiffHunk> hunks,
     String newContent,
     ColorScheme colorScheme,
     TextTheme textTheme,
     AppSemanticColors semantic,
   ) {
-    final hunks = TextDiff.unified(oldContent, newContent);
     if (hunks.isEmpty) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),

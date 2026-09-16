@@ -83,7 +83,7 @@
 | 15 | S1：文案如实（向导、渠道编辑框、首次配置三处）、数据库 600 与数据目录 700（macOS/Linux，便携模式只收紧文件）、导出置空代理密码且恢复时保留本机的 | `database_service.dart` · `channel_edit_dialog.dart` · `setup_wizard.dart` · l10n models | `test/data_secrets_test.dart`（五条） | ✅ |
 | 16 | S3：新 `CookieRepository`（保留期 不记住 / 7 天 / 30 天默认 / 直到清除，读时裁剪；逐条删除；清空）；历史面板加保留期分段与每行移除、全部清除；设置「数据」加「清除 Cookie 历史」；任务行落库剥掉 `cookies`、启动时清洗旧行，重启后恢复的下载按页面 host 回查历史 | `repositories/cookie_repository.dart` · `task_repository.dart` · `database_service.dart` · `task_executors.dart` · `downloader_state.dart` · `downloader_advanced_dialog.dart` · `data_section.dart` · l10n downloader / settings | `cookie_retention_test.dart`（八条）· `downloader_cookie_history_ui_test.dart`（390 / 1280） | ✅ |
 | 17 | `runTurn` 拆出 `_systemPromptFor` · `_warnIfSystemPromptCrowds` · `_prepareTurn`（取消返回 false）· `_dispatchToolCall`（ask_user 暂存返回 null），控制流不变；602 → 464 行 | `prompt_optimizer_agent.dart` | 助手全部测试绿（未新增测试：纯搬家） | ✅ |
-| 18 | 先用 `render_probe` 量助手视图；把知识库编辑卡抽成独立 widget（diff 按条目缓存） | `optimizer_kb_edit_card.dart` · `prompt_optimizer_view.dart` · `render_probe.dart` | 量前量后数字写进施工记录 | ☐ |
+| 18 | `render_probe` 加助手一项并量：一次 session 通知 1,122 次 build → 29 次（debug 37.7 → 6.3 ms）。新原语 `ListenableSelector`；对话宿主、工具条、左侧知识树、右侧配置面板只在所读字段变化时重建，上下文用量卡自己监听；对话视图按所画字段门控；知识库编辑卡的 diff 按 edit id 缓存 | `widgets/ui/listenable_selector.dart` · `workbench_screen.dart` · `optimizer_left_panel.dart` · `optimizer_config_panel.dart` · `prompt_optimizer_view.dart` · `optimizer_kb_edit_card.dart` · `render_probe.dart` | `rebuild_scope_test.dart` 加一条；`listenable_selector_test.dart` | ✅ |
 | 19 | D2a 三条：引导线与缩进、菜单选中 check、点单态值用主色深 | `model_edit_controls.dart` · `model_edit_capabilities.dart` · `model_protocol_section.dart` · `model_edit_identity.dart` | 组件画廊 / 编辑器截图 | ☐ |
 | 20+ | 1000–1500 行文件拆分，一文件一片（有接缝的才拆；单张表 / 注册表记理由不拆） | 见施工记录 | 搬家不改行为，截图像素一致 | ☐ |
 | R3 | 第三期 code review | — | — | ☐ |
@@ -104,3 +104,7 @@
   应用路径看到的也仍是整文件），改为在卡片与 hunk 头上标出位置。
 - 片 7：原计划「编辑器保存时不支持即清零」没做。线上闸门已经让存着的开关无害，而百炼同一个模型在
   ①/原生面上这个开关是有效的——在 ④ 与 ① 之间来回切协议时清掉它，会悄悄丢掉用户的选择。
+- 片 18：量出来的大头不在卡片，而在四个宿主——对话宿主、工具条、知识树、配置面板都挂在 session 的
+  `ListenableBuilder` 下，任何通知（每个请求都有的 `recordRequestBasis`）都整棵重建。所以没有按原计划
+  把卡片抽成独立 widget，改为收窄宿主；卡片的 diff 另做缓存。量前 1,122 builds / 37.7 ms，量后
+  29 builds / 6.3 ms（debug JIT，只比相对值）。
