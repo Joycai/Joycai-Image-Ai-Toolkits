@@ -67,7 +67,7 @@
 
 | 片 | 内容 | 涉及文件 | 验收 | 状态 |
 |---|---|---|---|---|
-| 8 | 加载 → 网格：网格接替占位时淡入（M2），网格常驻时不重播 | `screens/workbench/gallery.dart` | widget 测试 | ☐ |
+| 8 | 加载 → 网格：网格接替占位时淡入（M2），网格常驻时不重播 | `screens/workbench/gallery.dart` | `test/gallery_reveal_test.dart` | ✅ |
 | 9 | 两棵树的展开箭头改旋转（`AnimatedRotation` + M2） | `folder_tree_row.dart` · `knowledge_tree_panel.dart` | widget 测试 | ☐ |
 | 10 | `ScrollEdgeFade` 两端强度补间（M1） | `widgets/ui/scroll_edge_fade.dart` | widget 测试 | ☐ |
 | 11 | 胶囊内容区 `AnimatedSize` 降到 M2 | `widgets/tasks/task_capsule_monitor.dart` | — | ☐ |
