@@ -52,7 +52,8 @@ lib/
     db/                           # database_service.dart (sqflite / sqflite_common_ffi) ·
                                   #   database_migrations.dart (onCreate + onUpgrade in lockstep) ·
                                   #   repositories/ — the DAOs over it: model, prompt, task, usage,
-                                  #   assistant session, assistant note
+                                  #   assistant session, assistant note, cookie (the downloader's
+                                  #   remembered cookies and their retention; task rows never store one)
     tasks/                        # task_queue_service.dart (concurrency, Stream<TaskEvent>, ETA) ·
                                   #   task_executors.dart (`part of` it, one _executeXxxTask per TaskType) ·
                                   #   task_list_ordering.dart (created_at is the only key) ·
@@ -60,8 +61,9 @@ lib/
                                   #   ai_rename_review.dart (the review list's clash rules — it and the
                                   #   agent's applyProposals both refuse to delete a file the run placed)
     assistant/                    # the Prompt Assistant (see architecture note): prompt_optimizer_agent.dart
-                                  #   (the public class + tool loop) with six `part`s — session, context_window
-                                  #   (elide / compact), tool_calls, toolset, history_repair, system_prompts ·
+                                  #   (the public class + tool loop) with eight `part`s — session, chat_entries,
+                                  #   turn (around the loop), context_window (elide / compact), tool_calls,
+                                  #   toolset, history_repair, system_prompts ·
                                   #   sub_agent_runner.dart ·
                                   #   knowledge_base_service.dart (README.md entry, paged reads) ·
                                   #   knowledge_base_starter.dart · assistant_context_usage.dart ·
@@ -87,7 +89,9 @@ lib/
     ui/                           # the design system: the spec's controls (app_*), the generic inputs
                                   #   (searchable_picker · markdown_editor · api_key_field · color_hue_picker ·
                                   #   model_tag_chip · tag_avatar), the drawing primitives (dashed_border ·
-                                  #   scroll_edge_fade) and the layout pair (app_card / panel_resizer)
+                                  #   scroll_edge_fade · app_disclosure_chevron), the layout pair
+                                  #   (app_card / panel_resizer) and listenable_selector (a Selector for a
+                                  #   plain Listenable — rebuild only when what you read changed)
     glass/                        # the glass materials · drag/ # lift, drop zones, reorder gaps
     shell/                        # nav chrome: app_window_frame · app_top_bar · phone_dock · app_destinations ·
                                   #   shell_cover · baked_backdrop.dart (the window ground, baked into an image)

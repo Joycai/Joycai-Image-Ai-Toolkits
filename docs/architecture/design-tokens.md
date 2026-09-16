@@ -66,7 +66,7 @@ Color get onAccentTint =>
     brightness == Brightness.light ? onPrimaryFixedVariant : primaryFixedDim;
 ```
 
-`buildAppColorScheme` 用 `vibrant` 变体长出调色板（`tonalSpot` 会把鲜色压成影子），但**只有主色角色活下来**：灰阶被上面那张表覆盖，容器角色（`primaryContainer` / `onPrimaryContainer`）被改写成主色自己彩度的对应 tone，界面代码不读它们——`design_tokens_test`「the container roles stay out of the UI」扫源码钉住，同时拦截手搓的 `primary.withValues(alpha: …)`：需要一个新的主色透明度，就在 `AppAccent` 上加一个有名字的派生（`accentGlassFill` / `accentGlow` 就是这么来的）。
+`buildAppColorScheme` 用 `vibrant` 变体长出调色板（`tonalSpot` 会把鲜色压成影子），但**只有主色角色活下来**：灰阶被上面那张表覆盖，容器角色（`primaryContainer` / `onPrimaryContainer`）被改写成主色自己彩度的对应 tone，界面代码不读它们——`design_tokens_test`「the container roles stay out of the UI」扫源码钉住，同时拦截手搓的 `primary.withValues(alpha: …)`：需要一个新的主色透明度，就在 `AppAccent` 上加一个有名字的派生（`accentGlassFill` / `accentGlow` 就是这么来的；`accentRule`——引导线的受管辖态，主色 35%，`D2a`——也是）。
 
 **自定义主题色**（`00 · 1g`，设置页 `E1 · 1b`）走同一条路，派生在 `lib/core/custom_accent.dart`（纯函数，无状态）：亮色半取种子色相与彩度在 tone 44，琥珀到黄绿（HCT 48°–112°）与 Orange 预设同一例外改 tone 55；暗色半从 tone 62 起逐档上抬（至多 80），直到压暗色卡与自带暗墨都 ≥ 4.5:1。白字压不住时不单独特判——`ThemeAccent.onLight` 本来就会换成同色相深墨字。结果分通过 / 改深墨字 / 失败三态，附六项对比度。存储：`theme_accent` 写 `custom:#RRGGBB`，只存种子，加载时重新派生（`AppState.setCustomThemeAccent`）。
 
@@ -111,7 +111,7 @@ Color get onAccentTint =>
 
 **字号只有七级**：28/600 · 20/600 · 16/600 · 14/500 · 13/400 · 12/400 · 11/500，另加 mono 12 / 11（`TextStyle.mono`，系统等宽栈 + 等宽数字，不打包字体）。槽位分配见 `_buildTextTheme` 的表。字距是**字号**的函数（`AppType.trackingFor`），分组小标题例外：`.06em`（`AppType.trackedLabelSpacing` = 0.66）。
 
-**动效**（`00 · 1e`）：M1 100ms `quick` 管 hover / 选中 / 玻璃按下；M2 180ms `enter` 管分段透镜、开关、菜单、降级；M3 280ms `emphasized`、退场 ×0.6 管 sheet、浮动条出入、胶囊形变、对话框。切导航目的地无过渡；运行中状态点 1.6s 呼吸是唯一循环（`AppBreathingDot`）。平台「减少动态」→ 一切归零（`AppMotion.durationOf`）；应用「减少视觉效果」→ M3 降为 M2、呼吸停（`AppMotion.sceneOf` / `breathes`）。
+**动效**（`00 · 1e`）：M1 100ms `quick` 管 hover / 选中 / 玻璃按下；M2 180ms `enter` 管分段透镜、开关、菜单、降级；M3 280ms `emphasized`、退场 ×0.6 管 sheet、浮动条出入、胶囊形变、对话框。切导航目的地无过渡；运行中状态点 1.6s 呼吸是唯一循环（`AppBreathingDot`）。平台「减少动态」→ 一切归零（`AppMotion.durationOf`）；应用「减少视觉效果」→ M3 降为 M2、呼吸停（`AppMotion.sceneOf` / `breathes`）。一次出入场里所有属性共用一个时长：`AppMotion.sceneFor(context, entering:)` 进场给 `sceneOf`、退场给它的 ×0.6——选择栏的滑动和淡出曾各走各的钟。
 
 ## 5 · 液态玻璃
 

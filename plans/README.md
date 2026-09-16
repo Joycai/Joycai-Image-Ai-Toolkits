@@ -21,39 +21,18 @@ git show 46d5a72:plans/012-task-capsule-spring-settle.md
 | 一（001–005） | `b2d4b9c` 2026-08-22 | `93919c9` | 工作台模式切换的死区动画、**AppMotion 令牌体系**（消灭 19 处 linear 默认曲线）、媒体预览键盘翻页去动画、半动画展开控件、视频覆盖层改可中断淡入淡出 |
 | 二（006–010） | `07906de` 2026-08-27 v3.24.0 | `81e3cf2` | 顶层导航整屏交叉淡入（Ctrl+1..8 也走它）、渠道行悬停从整屏下沉到行内、进度条 2Hz 阶跃改连续推进、Snackbar 连发不再退场再进场、模型编辑对话框的令牌漂移 |
 | 三（011–014） | `0b97136` 2026-09-12 v4.0.0 | `e3e4845` `6191279` `69e075b` | 玻璃菜单从触发它的角长出、任务胶囊弹簧归位（位移改走 transform）、对话框拿回 M 档时钟与回程曲线、侧边面板退场不再是入场倒放 |
+| 四（无编号，欠账清扫 2026-09-16 v4.9.0，片 8–14 + R2） | `4a23e37` | 分支 `claude/debt-sweep-4.9` | 「还欠的」七条全部做完：网格接替占位时淡入（`gallery.dart`，只在占位 → 网格时，常驻不重播）；两棵树的箭头改旋转（新原语 `AppDisclosureChevron`；知识库树行按路径 key，否则箭头会转到没点的文件夹上）；`ScrollEdgeFade` 两端强度 M1 补间（顺带：子组件 GlobalKey 跨有无遮罩两种结构，列表开始溢出时不再重建）；胶囊内容区高度：点开 / 收起 M3（与宽度同步，计时器保持整段），运行数跨 0 降到 M2；选择栏滑动与淡出同一时钟（`AppMotion.sceneFor`）；渠道向导步骤带方向（每次切换一个序号、按序号记方向，快速前进又后退也不串）；用量比例条 0 → 值生长（`UsageShareGrow`，换区间时从旧值滑到新值）。每条都有测试 |
 
 三轮合计触及约 30 个 `lib/` 文件；每轮结束时 `flutter analyze` 零问题，`flutter test` 全绿
 （第三轮 1763 个测试），截图无新增溢出。
 
-## 还欠的（2026-09-12 对照 `main` 逐条复核过行号）
+## 还欠的（2026-09-16 欠账清扫之后）
 
-按价值排序。前两条是第三轮审计发现、当轮明确留在范围外的。
+四轮之后动效本身没有欠账了。剩下的一条不是动效：
 
-- **胶囊内容区的 `AnimatedSize` 还挂在 M3 档**（`lib/widgets/tasks/task_capsule_monitor.dart:252-255`）。
-  它每次 `runningCount` 跨过 0 就重放一次——批量跑任务时是每个任务一次，按频率该降到 M2。
-- **选择栏退场的两半时钟对不上**（`lib/screens/browser/widgets/browser_selection_bar.dart:50-63`、
-  `lib/screens/workbench/widgets/gallery_selection_bar.dart:77-90`）：滑动走 `sceneOf`（280ms），
-  淡出走 `exitFactor` 后的 168ms，同一次退场里两个属性不同步。
-- **加载 → 网格硬切**（`lib/screens/workbench/gallery.dart:218-238`）：扫描占位在一帧内换成满屏
-  图块。仍是全应用视觉上最猛的一次跳变，一段 `AppMotion.reveal` 的淡入即可消解。
-  **这条从第一轮就在单子上，三轮未做——下一轮若无新的 HIGH，它应当优先立项。**
-- **两棵树的展开都是硬跳**：目录树在 `directory_tree_item.dart:583` 直接把子树插进 `Column`，
-  箭头在 `folder_tree_row.dart:388-400` 的 `_disclosure()` 里用 `chevron_right`/`expand_more`
-  两个图标互换而非旋转（行号 2026-09-16 大文件拆分后复核）；
-  知识库树 `knowledge_tree_panel.dart:575` 同样是互换。箭头旋转（`AnimatedRotation` +
-  `AppMotion.state`）两处都能低成本拿下；子树伸缩只有目录树能用 `AnimatedSize`，知识库树是
-  扁平化过滤列表，要动就得换 `AnimatedList`，不划算。
-- **`ScrollEdgeFade` 的边缘渐变 0/1 硬切**（`lib/widgets/ui/scroll_edge_fade.dart:96-101`）：两个 bool
-  直接决定渐变端点是白还是透明，于是滚动离开顶端的第一个像素就让渐变**满强度弹出**。用
-  `TweenAnimationBuilder<double>` 配 `AppMotion.hover` 把这两个 bool 补间成 0..1，可以在不引入
-  逐帧 `setState` 的前提下消掉这个 pop。
-- **渠道向导步骤切换无方向感**（`channel_wizard_dialog.dart:635-640`）：`AnimatedSwitcher` 纯淡入
-  淡出，后退与前进看起来一样。现在只剩两步且有步点指示位置，优先级低。
-- **用量比例条不生长**（`lib/screens/metrics/widgets/usage_summary.dart`、
-  `usage_group_costs.dart`）：占比条首帧即到位。一次 `0 → 值` 的 `AppMotion.panel` 生长是标准的
-  「稀有场景可以用愉悦预算」的位置。注意这两处有测试直接读取其 widget。
 - **性能（非动效本身）**：工作台分栏拖拽每个指针事件全行重布局；标题栏毛玻璃在任务运行期间
   随脉冲动画全程重绘。二者是架构级取舍，不属于动效修缮。
+- 下一轮若立项，编号仍从 `015` 开始（第四轮是欠账清扫的一部分，没有单独编号）。
 
 ## 判定「正确、勿改」的动效
 

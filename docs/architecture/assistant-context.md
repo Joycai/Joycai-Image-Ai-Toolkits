@@ -11,7 +11,7 @@ which alternatives were tried and rejected (so they don't get "fixed" back in).
 
 ## Where it lives
 
-`PromptOptimizerAgent` is one library in seven files, joined with `part`. The
+`PromptOptimizerAgent` is one library in nine files, joined with `part`. The
 class in `prompt_optimizer_agent.dart` holds every public entry point (the turn
 loop, the measures, the staging and ask-user APIs, the markers); the private
 machinery sits beside it as library-private top-level declarations, so the
@@ -19,13 +19,15 @@ names below are written unqualified wherever they appear.
 
 | File | What is in it |
 |---|---|
-| `prompt_optimizer_agent.dart` | the class: `runTurn`, `_request`, persistence, `occupiedChars` / `toolSchemaChars` / `measureContext`, `shouldCompact` / `compactionBoundary`, KB-edit staging, ask-user resolution |
+| `prompt_optimizer_agent.dart` | the class: `runTurn` (the loop itself), `_request`, persistence, `occupiedChars` / `toolSchemaChars` / `measureContext`, `shouldCompact` / `compactionBoundary`, KB-edit staging, ask-user resolution |
 | `assistant_context_window.dart` | everything on this page that starts with `_`: the tuning constants, `_readCapNow`, the turn classifiers and `_boundaryOf`, liveness (`_liveReadPages` / `_staleFrom` / `_liveViewedPaths` / `_liveAttachmentIndices`), `_trimForSend` / `_elide`, `_maybeCompact` / `_serializeForSummary` |
+| `assistant_turn.dart` | what `runTurn` calls around the loop: `_systemPromptFor`, `_warnIfSystemPromptCrowds`, `_prepareTurn` (pairing repair, edit outcomes, persistence, compaction), `_drainKbEditOutcomes`, and `_dispatchToolCall` — one call of a batch, `null` when it staged an ask_user card |
 | `assistant_tool_calls.dart` | `_executeTool` and the delegate / note / write-knowledge executors |
 | `assistant_toolset.dart` | the tool schemas (`toolsetFor` and `delegateToolFor` stay on the class) |
 | `assistant_history_repair.dart` | tool-call pairing repair and dangling `ask_user` handling |
 | `assistant_system_prompts.dart` | the four mode prompts and the two sub-agent prompts |
-| `prompt_optimizer_session.dart` | `PromptOptimizerSession`, `OptimizerChatEntry`, the ask-user and mode types |
+| `prompt_optimizer_session.dart` | `PromptOptimizerSession` |
+| `assistant_chat_entries.dart` | `OptimizerChatEntry` (with `KbEditScope`), the ask-user and mode types |
 
 Why `part` and not separate libraries: the coupling runs both ways through
 private members (the session calls `_isRealUserTurn`; the loop calls thirteen
@@ -312,7 +314,10 @@ around it:
   thinking spent the whole cap, ③ with a small `maxOutputTokens` does this —
   counts toward the stop like a cut call, or the user would see nothing at
   all. Entries record `modelDbId`, so the card's jump opens the editor of
-  the model that produced the reply, not whatever the picker shows now. The
+  the model that produced the reply, not whatever the picker shows now. Both
+  survive a restart: the agent stamps them on the stored assistant message
+  (`LLMMessage.truncated` / `modelDbId`, host bookkeeping no protocol reads,
+  written to the JSON only when set) and `fromStored` reads them back. The
   sub-agent loop applies the same rule (`maxTruncatedRounds`, in
   `sub_agent_runner.dart` because the agent library imports it, not the
   reverse). Pinned by `optimizer_truncation_test.dart`.

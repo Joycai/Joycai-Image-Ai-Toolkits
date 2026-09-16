@@ -283,7 +283,8 @@ LLMService.request(modelIdentifier, messages, ...)
   `app_state.dart`（"这个渠道能不能出视频"）、`channel_provider_presets.dart`
   的 `genericVendorForFamily` / `protocolFamilyLabel`、以及编辑器与向导的
   endpoint 提示。全是 UI/state 对 Layer 2 的只读消费。
-- **新增模型能力**：只动 Layer 3（`model_capabilities.dart` 的参数表、
+- **新增模型能力**：只动 Layer 3（`model_capability_tables.dart` 的参数表——`model_capabilities.dart`
+  的 part，按 id 分流的 `forModel` / `forProtocol` / `forFamily` 仍在主文件——、
   必要时 `model_family.dart` 的分类规则）。
 - **新增任务类型**：与本层无关，见 CLAUDE.md 的 task type 扩展流程。
 
@@ -321,7 +322,7 @@ review 时用下面的模式全仓库 grep 一遍即可：
   异步任务的 **poll** 面传 `checkEnvelope: false`：失败的任务以
   `{status:"failed", error:{…}}` 形式装在 200 里，由 poll 自己的状态机报错
   （带上 operation 名），通用信封检查会先一步抢走并丢掉这个上下文。
-- **`LLMApiException`**（`llm_types.dart`）—— 非 2xx 与信封错误一律抛它。
+- **`LLMApiException`**（`llm_errors.dart`，经 `llm_types.dart` 再导出）—— 非 2xx 与信封错误一律抛它。
   `LLMService.isRetryable` 读它的 `statusCode` 决定重试（仅 5xx/429）；
   **但计费路由例外**：`LLMDispatcher.isBilledOnSubmit` 为真（单发图像面、
   Midjourney、一切非 chat surface）时只重试"可证明未被上游受理"的失败
@@ -597,6 +598,14 @@ C2 与 Responses 协议都从这两个文件引，不经过 `openai_chat_protoco
 「搜索无痕」。① 适配器发之前再查一次声明：模型行上存着的开关会随导入、改渠道
 类型旅行到 api.openai.com，那里未知顶层字段直接 400（tools 05 §5）。百炼的 ④ 面
 未声明，开关不出现。
+
+**同一个答案，编辑器和线上共用**（2026-09-16）：`VendorProfile.webSearchOn(face)` 是
+「这个开关在这个面上变成什么」的唯一出处——④ 面只对 ④ 家族的 vendor 是 `withSources`，
+①/原生面看 `serverWebSearchFaces`。`serverWebSearch` 返回它，三个 payload 构造器
+（① `openai_chat_payload`、原生 `dashscope_chat_protocol`、④ `anthropic_payload`）问
+`sendsWebSearchOn`。此前 ④ 构造器对任何 vendor 都声明 `web_search`：百炼模型在 ① 面开过
+开关、再点单到 ④ 面，编辑器里开关已隐藏，请求里却还带着工具。存着的开关不在保存时清掉——
+它在同一模型的 ①/原生面上仍然有效。
 
 三个 ④ vendor（`anthropicRest` / `newApiAnthropic` / `minimaxAnthropic`）
 除 thinking 方言外 chat 行为一致，分开还为记录供货方。**MiniMax 是唯一 base path

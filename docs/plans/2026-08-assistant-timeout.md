@@ -237,7 +237,7 @@ App 不给 ①/③ 发 `max_tokens`，真实上限由服务端定（`_outputCap`
    型 400。这个键不进任何 payload，只是在调用方已经知道答案时让
    `generateTimeout` 别再猜。Prompt Assistant 和 sub-agent 都声明 8192，于是两个
    家族对「同一件活要多久」不再各说各话。
-3. ⬜ **① 的累积器**，单独一个 PR。
+3. ✅ **① 的累积器**，单独一个 PR（`protocols/streaming_tool_calls.dart`；2026-09-16 复核时补勾）。
 
 **留了一个没答的问题**：①/③ 至今不发 `max_tokens`，服务端默认是多少无从得知。如
 果某个中转站默认 1024，`submit_prompt` 会被**截断**而不是超时——agent 已经有
