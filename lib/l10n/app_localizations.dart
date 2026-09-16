@@ -3008,7 +3008,7 @@ abstract class AppLocalizations {
   /// No description provided for @apiKeyStorageNotice.
   ///
   /// In en, this message translates to:
-  /// **'Your key is stored locally and never sent to our servers.'**
+  /// **'Stored unencrypted in this app\'s database on this device, readable only by your user account. Never written to backups; sent only to this provider.'**
   String get apiKeyStorageNotice;
 
   /// No description provided for @nameHint.

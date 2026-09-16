@@ -1717,7 +1717,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apiKeyStorageNotice =>
-      'Your key is stored locally and never sent to our servers.';
+      'Stored unencrypted in this app\'s database on this device, readable only by your user account. Never written to backups; sent only to this provider.';
 
   @override
   String get nameHint => 'e.g. My Production API';

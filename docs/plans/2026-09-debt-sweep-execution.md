@@ -80,7 +80,7 @@
 
 | 片 | 内容 | 涉及文件 | 验收 | 状态 |
 |---|---|---|---|---|
-| 15 | S1：文案如实、数据库与数据目录仅属主、导出置空代理密码 | `database_service.dart` · l10n models · settings | 单测：导出无代理密码；权限（非 Windows） | ☐ |
+| 15 | S1：文案如实（向导、渠道编辑框、首次配置三处）、数据库 600 与数据目录 700（macOS/Linux，便携模式只收紧文件）、导出置空代理密码且恢复时保留本机的 | `database_service.dart` · `channel_edit_dialog.dart` · `setup_wizard.dart` · l10n models | `test/data_secrets_test.dart`（五条） | ✅ |
 | 16 | S3：Cookie 保留期、逐条删除、清除入口、任务参数不落 cookie | `database_service.dart` · `downloader_state.dart` · `downloader_advanced_dialog.dart` · `data_section.dart` · `task_repository.dart` · l10n | 单测：过期裁剪、任务行无 cookie | ☐ |
 | 17 | `runTurn` 拆出系统提示、前导、单个调用分派三个私有方法（控制流不变） | `prompt_optimizer_agent.dart` 及 part | 助手全部测试绿 | ☐ |
 | 18 | 先用 `render_probe` 量助手视图；把知识库编辑卡抽成独立 widget（diff 按条目缓存） | `optimizer_kb_edit_card.dart` · `prompt_optimizer_view.dart` · `render_probe.dart` | 量前量后数字写进施工记录 | ☐ |

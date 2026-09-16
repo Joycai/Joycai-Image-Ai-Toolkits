@@ -519,6 +519,15 @@ class _SetupWizardState extends State<SetupWizard> {
             label: l10n.apiKey,
             onChanged: (v) => setState(() {}),
           ),
+          // First run is where the key's storage is said (S1): plain text in
+          // the local database, private to this user, never in a backup.
+          const SizedBox(height: 6),
+          Text(
+            l10n.apiKeyStorageNotice,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
         ],
       ),
     );

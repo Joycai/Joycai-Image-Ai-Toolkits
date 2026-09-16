@@ -1660,7 +1660,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashscopeApiV1Hint => '提示：DashScope 原生接口以 \'/api/v1\' 结尾';
 
   @override
-  String get apiKeyStorageNotice => '您的密钥仅存储在本地，不会发送到我们的服务器。';
+  String get apiKeyStorageNotice =>
+      '密钥以明文保存在本机的应用数据库中，仅当前系统用户可读；不会写入备份，只发送给该服务商。';
 
   @override
   String get nameHint => '例如：生产环境 API';
@@ -6547,7 +6548,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get dashscopeApiV1Hint => '提示：DashScope 原生端點以「/api/v1」結尾';
 
   @override
-  String get apiKeyStorageNotice => '您的金鑰會儲存在本機，絕不會傳送至我們的伺服器。';
+  String get apiKeyStorageNotice =>
+      '金鑰以明文儲存在本機的應用程式資料庫中，僅目前系統使用者可讀取；不會寫入備份，只會傳送給該服務商。';
 
   @override
   String get nameHint => '例如：我的正式版 API';

@@ -1669,7 +1669,8 @@ class AppLocalizationsJa extends AppLocalizations {
       'ヒント：DashScope ネイティブのエンドポイントは「/api/v1」で終わります';
 
   @override
-  String get apiKeyStorageNotice => 'キーはローカルに保存され、当社のサーバーには送信されません。';
+  String get apiKeyStorageNotice =>
+      'キーは暗号化されずにこの端末のアプリのデータベースに保存され、現在のユーザーだけが読み取れます。バックアップには含まれず、このプロバイダーにのみ送信されます。';
 
   @override
   String get nameHint => '例：本番API';

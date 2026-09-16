@@ -932,7 +932,7 @@
   "googleV1BetaHint": "ヒント：Google GenAIのエンドポイントは通常「/v1beta」で終わります",
   "anthropicV1Hint": "ヒント：Anthropic のエンドポイントは通常「/v1」で終わります",
   "dashscopeApiV1Hint": "ヒント：DashScope ネイティブのエンドポイントは「/api/v1」で終わります",
-  "apiKeyStorageNotice": "キーはローカルに保存され、当社のサーバーには送信されません。",
+  "apiKeyStorageNotice": "キーは暗号化されずにこの端末のアプリのデータベースに保存され、現在のユーザーだけが読み取れます。バックアップには含まれず、このプロバイダーにのみ送信されます。",
   "nameHint": "例：本番API",
   "enableDiscoveryDesc": "このエンドポイントから利用可能なモデルを自動的にリストアップする",
   "tagHint": "例：GPT4, Local, など",

@@ -64,6 +64,11 @@ class DatabaseService {
     'result_cache_directory',
   };
 
+  /// Settings holding a credential. Blanked on export, like channel keys and
+  /// cookies, and kept from the live database on restore when the file's copy
+  /// is blank.
+  static const Set<String> secretSettingKeys = {'proxy_password'};
+
   /// Table keys that only a full backup carries.
   static const Set<String> _backupTableKeys = {
     'settings',
@@ -136,7 +141,32 @@ class DatabaseService {
       );
     }
     await db.execute('PRAGMA foreign_keys = ON');
+    await restrictToOwner(dbPath, directory: await AppPaths.isPortableMode() ? null : dataDir);
     return db;
+  }
+
+  /// Makes the database — and, outside portable mode, the data folder —
+  /// readable and writable by the signed-in user only, on macOS and Linux.
+  ///
+  /// The API keys and the proxy password in it are not encrypted (an OS
+  /// keychain does not survive this app's ad-hoc macOS signing, a Linux
+  /// desktop without a keyring daemon, or a portable copy), so this is the
+  /// protection the file itself gets: other accounts on the machine cannot
+  /// read it. A default umask leaves both world-readable on Linux. SQLite
+  /// creates its journal files with the database's own mode, so they follow.
+  /// Windows profiles are already private to their user; mobile apps are
+  /// sandboxed. A portable folder sits beside the executable and is the
+  /// user's to arrange, so only the file is tightened there. Best effort: a
+  /// failure is logged, never fatal.
+  @visibleForTesting
+  static Future<void> restrictToOwner(String file, {String? directory}) async {
+    if (!(Platform.isMacOS || Platform.isLinux)) return;
+    try {
+      if (directory != null) await Process.run('chmod', ['700', directory]);
+      await Process.run('chmod', ['600', file]);
+    } catch (e) {
+      debugPrint('Could not restrict data file permissions: $e');
+    }
   }
 
   Future<String> getDatabasePath() async {
@@ -363,9 +393,14 @@ class DatabaseService {
 
     // Filter settings if directories are excluded
     final settingsRows = await db.query('settings');
-    var filteredSettings = settingsRows;
+    var filteredSettings = [
+      for (final row in settingsRows)
+        secretSettingKeys.contains(row['key'])
+            ? (Map<String, Object?>.from(row)..['value'] = '') // Redact on export
+            : row,
+    ];
     if (!includeDirectories) {
-      filteredSettings = settingsRows.where((row) => !_directorySettingKeys.contains(row['key'])).toList();
+      filteredSettings = filteredSettings.where((row) => !_directorySettingKeys.contains(row['key'])).toList();
     }
 
     final channels = await db.query('llm_channels');
@@ -500,6 +535,12 @@ class DatabaseService {
     // API keys are redacted on export, so carry the live ones across the wipe
     // rather than overwriting working keys with the blanks from the file.
     final preservedKeys = await _collectChannelKeys(txn);
+    final preservedSecrets = {
+      for (final row in await txn.query('settings',
+          where: 'key IN (${List.filled(secretSettingKeys.length, '?').join(', ')})',
+          whereArgs: secretSettingKeys.toList()))
+        if ((row['value'] as String? ?? '').isNotEmpty) row['key'] as String: row['value'] as String,
+    };
 
     await clearAllData(txn,
       includePrompts: includePrompts,
@@ -541,6 +582,14 @@ class DatabaseService {
         filteredSettings = settingsRows.where((row) => !_directorySettingKeys.contains(row['key'])).toList();
       }
       await _importSimpleTable(txn, 'settings', filteredSettings);
+    }
+    // A redacted credential in the file does not blank the one this machine
+    // has — the same rule as the channel keys above.
+    for (final entry in preservedSecrets.entries) {
+      final current = await txn.query('settings', where: 'key = ?', whereArgs: [entry.key]);
+      if (current.isNotEmpty && (current.first['value'] as String? ?? '').isNotEmpty) continue;
+      await txn.insert('settings', {'key': entry.key, 'value': entry.value},
+          conflictAlgorithm: ConflictAlgorithm.replace);
     }
 
     if (includeDirectories && data['source_directories'] != null) {
