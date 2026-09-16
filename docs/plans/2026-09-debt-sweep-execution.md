@@ -55,7 +55,7 @@
 | 片 | 内容 | 涉及文件 | 验收 | 状态 |
 |---|---|---|---|---|
 | 1 | state 换新列表：视频参考图增删、`GalleryState.toggleDirectory`、下载器日志 | `state/workbench_ui_state.dart` · `state/gallery_state.dart` · `state/downloader_state.dart` | `test/state_list_identity_test.dart` | ✅ |
-| 2 | 视频面板桌面分栏：头部内容放不下时整栏单滚动，不再把参考图卡裁成一条 | `screens/workbench/widgets/video_config_panel.dart` | 1440 截图参考图区完整；新 widget 测试 | ☐ |
+| 2 | 视频面板桌面分栏：头部内容放不下时整栏单滚动，不再把参考图卡裁成一条 | `screens/workbench/widgets/video_config_panel.dart` | 1440 截图参考图区完整；`test/video_panel_head_fit_test.dart` | ✅ |
 | 3 | AI 重命名「覆盖」禁用态的测试：给 `AiRenameDialog` 留 `@visibleForTesting` 初始行入口 | `screens/browser/ai_rename_dialog.dart` · 新测试 | 重名行「覆盖」不可点且有说明 | ☐ |
 | 4 | 截断标记跨重启：`LLMMessage` JSON 带可选 `truncated` / `modelDbId`，恢复时读回 | `llm_types.dart` · `prompt_optimizer_session.dart` · `prompt_optimizer_agent.dart` | 往返测试；旧行无键照常 | ☐ |
 | 5 | 按节写入预览只 diff 那一节：条目带 `section` / `mode`，卡片取节的旧新片段 | `prompt_optimizer_session.dart` · `assistant_tool_calls.dart` · `knowledge_base_service.dart` · `optimizer_kb_edit_card.dart` | 单测：节切片；卡片测试 | ☐ |

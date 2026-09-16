@@ -140,3 +140,34 @@ class _WarningNotice extends StatelessWidget {
     );
   }
 }
+
+/// Reports its child's laid-out height after the frame, whenever it changes.
+class _ExtentReporter extends SingleChildRenderObjectWidget {
+  const _ExtentReporter({required this.onExtent, required super.child});
+
+  final ValueChanged<double> onExtent;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderExtentReporter(onExtent);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderExtentReporter renderObject) {
+    renderObject.onExtent = onExtent;
+  }
+}
+
+class _RenderExtentReporter extends RenderProxyBox {
+  _RenderExtentReporter(this.onExtent);
+
+  ValueChanged<double> onExtent;
+  double? _reported;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final double extent = size.height;
+    if (extent == _reported) return;
+    _reported = extent;
+    WidgetsBinding.instance.addPostFrameCallback((_) => onExtent(extent));
+  }
+}
