@@ -1,6 +1,6 @@
 # 大文件拆分方案
 
-**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–6 已做
+**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–7 已做
 
 `lib/` 的结构债在 PR #287（目录间循环）和 #288（目录内平铺）之后只剩最后一项：单个文件
 太大。这份方案把它切成八片，一片一个 PR。
@@ -290,27 +290,57 @@ extension 经 `this` 碰到的 82 个名字逐个在 import 和库顶层名下�
 
 ---
 
-### 片 7 · `ai_rename_dialog.dart` 1510 → 先把业务逻辑还给 service
+### 片 7 · `ai_rename_dialog.dart` 1510 → 业务逻辑下沉 + 3 个 part ✅ 已做 —— **顺带修了一个会删照片的 bug**
 
-**这个文件里有一块本来就不该在 widget 里的东西。** `_RenameRow` · `_RowConflict` ·
-`_ConflictChoice` · `_recomputeConflicts` · `_resolve` 是纯业务逻辑：判互相重名、
-判大小写（`toLowerCase` 建 key）、`File(targetPath).exists()`、判「目标就是自己」
-（`p.equals(targetPath, row.path)`）、skip 传播。CLAUDE.md：「Business logic belongs in
-`lib/services/`, not in widgets or screens」。
+**第一步：冲突逻辑变成 service，并第一次有了测试。** `_RenameRow` · 两个 enum ·
+`_recomputeConflicts`（会 stat 磁盘）· `_resolve` 原样搬到
+**`services/tasks/ai_rename_review.dart`**（`RenameReviewRow` · `RenameConflict` ·
+`RenameConflictChoice` · `recomputeRenameConflicts` · `resolveRenameConflict`），dialog 只留两个
+「调完再 rebuild」的薄壳。**没放进原计划的 `services/files/`**：行包着 `RenameProposal`
+（`services/tasks/ai_rename_agent.dart`），而 `files/` 今天不引任何其他 service 子目录。
 
-而且这个文件**零测试覆盖**（`AiRenameDialog` 在 `test/` 里零引用；
-`ai_rename_apply_test.dart` 打的是 `services/tasks/ai_rename_agent.dart`）。
+`test/ai_rename_review_test.dart` 先钉住现状（7 条）。写到「两行重名时点改名」这一条时它失败了。
 
-所以这一片的价值一半在拆，一半在**把这块逻辑变成可测的**。顺序：先 service + 测试，
-再抽 widget。
+**找到的 bug（修复前的行为，用真实的 review + executor 端到端复现过）**
 
-| | 内容 | 原行 | ~行 |
+两行都提议 `beach.jpg`（「重名」），review 对每行都提供 改名 / 覆盖 / 跳过：
+
+- **改名**调 `uniqueTargetPath` 时没传 `reserved`，只看磁盘 —— 共享的那个名字磁盘上还不存在 ——
+  于是把同一个名字原样还回来，行上却显示「已改名」、算作已回答。
+- **覆盖**在这种冲突上也可点，可磁盘上根本没有要替换的文件；它唯一能替换的是另一行刚改过去的结果。
+- `applyProposals` 在 `overwrite` 为真时会删掉目标处的任何文件，包括同一批里前一条刚放过去的。
+
+A 行点改名、B 行点覆盖 → 结果目录里只剩一个文件：**A 的照片被 `File.delete` 删了（不进回收站）**，
+界面上没有任何提示。两行都点覆盖也一样。
+
+**修法按项目对破坏性操作的规矩，两层都拦**（单独一个 `fix` commit）：
+
+| 层 | 改动 |
+|---|---|
+| service | `resolveRenameConflict` 必须传整张表（`among:`，required），改名时避开其他活动行占用的名字（与冲突检查一样忽略大小写）；行间冲突上的覆盖直接抛 `StateError` |
+| service | `applyProposals` 不会替换本批次里刚放到位的文件，无论 flag 是什么（大小写折叠，照顾会折叠大小写的文件系统） |
+| UI | 这种行上的「覆盖」保持可见但禁用，tooltip 说明原因（新 key `renameOverwriteDuplicateHint`，四种语言） |
+
+新增 12 个测试：重名改名、异大小写占用、覆盖被拒、executor 闸门（去掉闸门会失败，验过）、以及上面那个
+端到端场景（现在两个文件都在）。executor 那条用同大小写的名字 —— CI 是 ubuntu，大小写敏感。
+
+**没有覆盖到的**：禁用的覆盖按钮本身没有 screenshot 也没有 widget 测试。harness 从不展示 review 行，
+而要种出这些行得先 stub 一次模型调用，dialog 没有给测试留这个口子。
+
+**第二步：界面拆成 3 个 part**（同片 4 的手法，放在 `screens/browser/ai_rename/`）：
+
+| part | extension | 内容 | 实际行 |
 |---|---|---|---|
-| `services/files/rename_plan.dart` | `RenameRow` + `RenameConflict` + `ConflictChoice` + `recomputeConflicts` + `resolve` | 50–100 · 285–330 | 200 |
-| `test/rename_plan_test.dart` | **新增**：两行互相重名 · 只差大小写 · 目标已存在 · 目标就是自己（no-op）· skip 后冲突消失 · 自动改名取唯一名 | — | 新 |
-| `browser/widgets/ai_rename_config_column.dart` | 配置列（147 行）+ `_NarrowConfigSummary` + 窄屏抽屉 | 469–643 · 1407–1510 | 280 |
-| `browser/widgets/ai_rename_result_rows.dart` | `_GeneratingRow` · `_ResultRow`（189 行）· `_RowAction` · `_Caption` · `_CenteredScroll` | 1051–1406 | 360 |
-| `ai_rename_dialog.dart` | State + `_generate` + build + filter / footer / empty / no-models | 101–468 · 644–1050 | 620 |
+| `ai_rename_config.dart` | `_ConfigColumn` | 配置列 + 窄屏摘要行与抽屉 | 289 |
+| `ai_rename_results.dart` | `_ResultsArea` | 过滤行、失败批次卡、空态 / 无模型态、review 列表、跳到下一个冲突 | 321 |
+| `ai_rename_rows.dart` | — | `_GeneratingRow` · `_ResultRow` · `_RowAction` · 两个小部件 | 369 |
+| `ai_rename_dialog.dart` | — | State：生成 / 合并 / 应用、计数、`build`、驱动应用的 footer | 477 |
+| `services/tasks/ai_rename_review.dart` | 库 | 见上 | 146 |
+
+2 处 static 补类名、3 处 `setState` 改走 `_rebuild`；54 个名字探测无碰撞。
+
+**结果**：`flutter analyze` 零问题；`flutter test -x screenshots` **2195** passed（+12）；screenshot
+175 / 175 像素一致。
 
 ---
 
@@ -377,7 +407,7 @@ git diff -M25% --stat main...HEAD               # 看到的应该是 rename / �
 | 4 view | 4 个 UI 测试 + screenshot | — |
 | 5 tree | `rebuild_scope_test` + 文件浏览器 screenshot | — |
 | 6 model_edit | **仅 screenshot（不断言）** | 靠 PNG 逐张对比 |
-| 7 ai_rename | **零** | **本片补 `rename_plan_test.dart`** |
+| 7 ai_rename | **零** | ✅ 补了 `ai_rename_review_test.dart`（11 条）+ executor 1 条 |
 | 8 video | **零，连 screenshot 都没有** | **本片先补 screenshot** |
 
 ---
@@ -388,7 +418,7 @@ git diff -M25% --stat main...HEAD               # 看到的应该是 rename / �
    拷贝的第四份。换成 `drawDashedRRect`。
 2. **片 5** ✅ — `FolderDropFollower` 一组从 workbench 移到 `widgets/files/`：它的唯一
    使用者在 browser，住在 workbench 是错位（browser 因此不再横向引 workbench）。
-3. **片 7** — 重命名冲突检测从 dialog 下到 `services/files/`，并第一次拥有测试。
+3. **片 7** ✅ — 重命名冲突检测从 dialog 下到 `services/tasks/ai_rename_review.dart`，第一次拥有测试 —— 并因此找到、修掉了一个会删用户照片的 bug（见片 7）。
 
 ---
 

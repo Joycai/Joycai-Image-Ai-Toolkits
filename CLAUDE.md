@@ -53,7 +53,9 @@ lib/
     tasks/                        # task_queue_service.dart (concurrency, Stream<TaskEvent>, ETA) ·
                                   #   task_executors.dart (`part of` it, one _executeXxxTask per TaskType) ·
                                   #   task_list_ordering.dart (created_at is the only key) ·
-                                  #   ai_rename_agent.dart (the aiRename task's agent)
+                                  #   ai_rename_agent.dart (the aiRename task's agent) ·
+                                  #   ai_rename_review.dart (the review list's clash rules — it and the
+                                  #   agent's applyProposals both refuse to delete a file the run placed)
     assistant/                    # the Prompt Assistant (see architecture note): prompt_optimizer_agent.dart
                                   #   (the public class + tool loop) with six `part`s — session, context_window
                                   #   (elide / compact), tool_calls, toolset, history_repair, system_prompts ·
