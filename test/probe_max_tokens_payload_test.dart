@@ -30,14 +30,20 @@ void main() {
           options: options, isStreaming: false);
     }
 
-    test('the probe cap reaches max_tokens', () {
-      expect(payload(const {'maxTokens': 1})['max_tokens'], 1);
+    // OpenAI's own host is declared on the new spelling: its reasoning
+    // models 400 on `max_tokens`, so a probe sending it there read as
+    // "connected" only by accident (see `OutputCapField`).
+    test('the probe cap reaches the vendor\'s cap field', () {
+      final body = payload(const {'maxTokens': 1});
+      expect(body['max_completion_tokens'], 1);
+      expect(body.containsKey('max_tokens'), isFalse);
     });
 
-    test('no cap asked for sends no max_tokens', () {
-      expect(payload(null).containsKey('max_tokens'), isFalse);
-      expect(payload(const {'retryCount': 2}).containsKey('max_tokens'),
-          isFalse);
+    test('no cap asked for sends neither spelling', () {
+      for (final body in [payload(null), payload(const {'retryCount': 2})]) {
+        expect(body.containsKey('max_tokens'), isFalse);
+        expect(body.containsKey('max_completion_tokens'), isFalse);
+      }
     });
   });
 

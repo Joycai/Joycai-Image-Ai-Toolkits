@@ -63,6 +63,7 @@ class DashScopeChatProtocol implements ChatProtocol {
     final payload = buildDashScopeChatPayload(
       target,
       history,
+      options: options,
       tools: tools,
       multimodal: multimodal,
       isStreaming: false,
@@ -193,6 +194,7 @@ class DashScopeChatProtocol implements ChatProtocol {
     final payload = buildDashScopeChatPayload(
       target,
       history,
+      options: options,
       tools: tools,
       multimodal: multimodal,
       isStreaming: true,
@@ -524,6 +526,7 @@ int dashscopeAttachmentCount(List<LLMMessage> history) =>
 Map<String, dynamic> buildDashScopeChatPayload(
   LLMTarget target,
   List<LLMMessage> history, {
+  Map<String, dynamic>? options,
   List<LLMTool>? tools,
   required bool multimodal,
   required bool isStreaming,
@@ -552,6 +555,12 @@ Map<String, dynamic> buildDashScopeChatPayload(
     target.config.effectiveReasoningEffort,
   );
   if (thinking != null) parameters['enable_thinking'] = thinking;
+
+  // The output cap lives in `parameters` like every other generation knob
+  // (a key in the wrong section is ignored, not rejected). Only when set —
+  // see [outputCapFor]; the native face never sent one before.
+  final outputCap = outputCapFor(target, options);
+  if (outputCap != null) parameters['max_tokens'] = outputCap;
 
   // The host's own web search: `parameters.enable_search` on this face
   // (help.aliyun.com Model Studio web-search, native HTTP body). Guarded by

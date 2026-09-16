@@ -34,7 +34,7 @@ class AnthropicChatProtocol implements ChatProtocol {
     final carried = anthropicThinkingRequest(
       sent,
       effort: target.config.effectiveReasoningEffort,
-      maxTokens: anthropicMaxTokens(options),
+      maxTokens: anthropicMaxTokens(target, options),
     );
     if (carried == null) return null;
     final alternate = learnAnthropicThinkingDialect(target, sent);

@@ -27,7 +27,7 @@ Map<String, dynamic> prepareAnthropicPayload(
     history,
     modelId: target.config.modelId,
   );
-  final maxTokens = anthropicMaxTokens(options);
+  final maxTokens = anthropicMaxTokens(target, options);
   final thinkingDialect = dialect ?? resolveAnthropicThinkingDialect(target);
   final effort = target.config.effectiveReasoningEffort;
   final payload = <String, dynamic>{

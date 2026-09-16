@@ -41,6 +41,7 @@ class GeminiChatProtocol implements ChatProtocol {
       // Layer 3 says which field generation; the config says how hard.
       thinking: target.model.geminiThinking,
       reasoningEffort: config.effectiveReasoningEffort,
+      outputCap: outputCapFor(target, options),
     );
     logger?.call(
       'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',
@@ -184,6 +185,7 @@ class GeminiChatProtocol implements ChatProtocol {
       // Layer 3 says which field generation; the config says how hard.
       thinking: target.model.geminiThinking,
       reasoningEffort: config.effectiveReasoningEffort,
+      outputCap: outputCapFor(target, options),
     );
     logger?.call(
       'Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}',

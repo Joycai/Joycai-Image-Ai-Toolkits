@@ -505,6 +505,11 @@ Map<String, dynamic> prepareGooglePayload(
   String? modelId,
   GeminiThinkingGeneration thinking = GeminiThinkingGeneration.none,
   ReasoningEffort? reasoningEffort,
+
+  /// The cap already ranked by `outputCapFor` — this builder has no target
+  /// of its own. Falls back to the raw option so a caller without a target
+  /// (the probe's test, the scraper) keeps its cap.
+  int? outputCap,
 }) {
   final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
   final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
@@ -665,10 +670,11 @@ Map<String, dynamic> prepareGooglePayload(
     }
     if (imageConfig.isNotEmpty) generationConfig['imageConfig'] = imageConfig;
   }
-  // Only when a caller explicitly capped the output — the channel probe asks
-  // for one token so a connection test does not pay for a generation.
-  // Absent otherwise, so ordinary requests stay byte-identical.
-  final maxTokens = requestedMaxTokens(options);
+  // Only when something capped the output — the channel probe's one token or
+  // the model's stored cap. Absent otherwise, so a model with no cap sends a
+  // body byte-identical to before. On 2.5+ this bounds thinking *and* the
+  // answer together (usage 04 §3), which the editor's caption says.
+  final maxTokens = outputCap ?? requestedMaxTokens(options);
   if (maxTokens != null) generationConfig['maxOutputTokens'] = maxTokens;
 
   return {

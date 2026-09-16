@@ -56,6 +56,22 @@ class LLMTarget {
   Uri decorateUrl(Uri url) => vendor.decorateUrl(url, config.apiKey);
 }
 
+/// The output cap this request carries, in tokens, or null for "send none".
+///
+/// The one place the protocol layer ranks its sources, so every chat wire
+/// agrees: a per-request `options['maxTokens']` first (the channel probe asks
+/// for one token so a connection test does not pay for a generation), then
+/// the model's stored cap ([LLMModelConfig.maxOutputTokens], the user's
+/// declaration in the model editor), then nothing. Null means the family's
+/// own behaviour — ①②③ leave the field off and the host applies its default,
+/// ④ substitutes `anthropicDefaultMaxTokens` because its field is mandatory.
+/// A stored cap is deliberately not clamped against the context window here:
+/// a hosted endpoint refuses an impossible request audibly, a local runtime
+/// truncates on its own, and a silent rewrite would be a third behaviour the
+/// user cannot see. The editor warns instead.
+int? outputCapFor(LLMTarget target, Map<String, dynamic>? options) =>
+    requestedMaxTokens(options) ?? target.config.maxOutputTokens;
+
 typedef LLMLogger = Function(String, {String level});
 
 /// Synchronous + streaming conversation surface.

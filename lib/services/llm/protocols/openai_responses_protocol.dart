@@ -162,7 +162,8 @@ Map<String, dynamic> buildResponsesPayload(
 }) {
   final config = target.config;
   final reasoning = responsesReasoningField(config.effectiveReasoningEffort);
-  final maxTokens = requestedMaxTokens(options);
+  // The probe's one token or the model's stored cap; see [outputCapFor].
+  final maxTokens = outputCapFor(target, options);
   return {
     'model': config.modelId,
     'instructions': responsesInstructions(history),

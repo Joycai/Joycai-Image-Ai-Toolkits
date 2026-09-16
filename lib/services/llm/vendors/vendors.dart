@@ -157,6 +157,9 @@ class Vendors {
       id: openAIRest,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // OpenAI's reasoning models take only the new spelling of the output
+      // cap; the old name is a 400 there (usage 04 §3).
+      outputCapField: OutputCapField.maxCompletionTokens,
       // ① stays the default; the Responses API is a per-model alternate on
       // the same base and key (OpenAI has Responses-only models — provider
       // layering 01 §8.1).
@@ -170,6 +173,9 @@ class Vendors {
       id: newApiOpenAI,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // New API passes both spellings through; the new one reaches OpenAI's
+      // reasoning models, which reject the old.
+      outputCapField: OutputCapField.maxCompletionTokens,
       // New API relays `/v1/responses` beside `/v1/chat/completions`
       // (provider layering 01 §9.2).
       chatMenu: _openaiChatFaces,
@@ -179,6 +185,9 @@ class Vendors {
       id: openAIResponsesRest,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // OpenAI's reasoning models take only the new spelling of the output
+      // cap; the old name is a 400 there (usage 04 §3).
+      outputCapField: OutputCapField.maxCompletionTokens,
       // The same menu as [openAIRest], Responses first: the first entry is
       // the chat default, the other stays a per-model alternate.
       chatMenu: _responsesLedChatFaces,
@@ -188,6 +197,9 @@ class Vendors {
       id: newApiOpenAIResponses,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // New API passes both spellings through; the new one reaches OpenAI's
+      // reasoning models, which reject the old.
+      outputCapField: OutputCapField.maxCompletionTokens,
       chatMenu: _responsesLedChatFaces,
       offersFamilyMediaSurfaces: true,
     ),
