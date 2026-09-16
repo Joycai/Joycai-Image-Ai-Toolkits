@@ -3,13 +3,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
-import '../core/app_theme.dart';
-import '../core/design_tokens.dart';
-import '../core/responsive.dart';
-import '../l10n/app_localizations.dart';
-import '../models/prompt.dart';
-import '../models/tag.dart';
-import 'glass/glass_controls.dart';
+import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
+import '../../../core/responsive.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../models/prompt.dart';
+import '../../../models/tag.dart';
+import '../../../widgets/glass/glass_controls.dart';
 
 /// One action a [PromptCard] offers — drawn as a 28px glyph when the card has
 /// room, and as a row of its overflow menu when it does not.

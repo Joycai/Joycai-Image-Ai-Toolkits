@@ -15,7 +15,7 @@ import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_labelled_field.dart';
 import '../../../widgets/ui/app_segmented_control.dart';
-import '../../../widgets/color_picker_widget.dart';
+import 'color_picker_widget.dart';
 import '../../../widgets/ui/markdown_editor.dart';
 import 'prompt_library_parts.dart';
 

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
-import '../core/constants.dart';
-import '../core/design_tokens.dart';
-import '../l10n/app_localizations.dart';
-import 'ui/color_hue_picker.dart';
-import 'ui/app_field_size.dart';
+import '../../../core/app_theme.dart';
+import '../../../core/constants.dart';
+import '../../../core/design_tokens.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../widgets/ui/color_hue_picker.dart';
+import '../../../widgets/ui/app_field_size.dart';
 
 /// Picks a category's identity colour (`C1 · 1d`): a hue bar, the preset
 /// swatches, and a hex field.

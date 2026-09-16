@@ -34,7 +34,7 @@ import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_field_size.dart';
 import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_snackbar.dart';
-import '../../widgets/drawing_canvas.dart';
+import 'widgets/drawing_canvas.dart';
 import '../batch/task_queue_screen.dart';
 import 'unified_sidebar.dart';
 import '../prompts/widgets/prompt_dialogs.dart';

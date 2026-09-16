@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../services/assistant_context_usage.dart';
+import '../../../services/assistant_context_usage.dart';
 
 /// Identity colours for the assistant's context bar.
 ///

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
-import '../../../widgets/context_usage_palette.dart';
+import 'context_usage_palette.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/assistant_context_usage.dart';
