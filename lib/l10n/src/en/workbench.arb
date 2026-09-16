@@ -576,6 +576,17 @@
   },
   "kbEditProposedCreate": "New file",
   "kbEditProposedUpdate": "Update file",
+  "kbEditScopeReplace": "Replaces section {heading}",
+  "@kbEditScopeReplace": {
+    "description": "Under a staged knowledge-file edit: the section it replaces. heading is the heading line as the file spells it.",
+    "placeholders": {"heading": {"type": "String"}}
+  },
+  "kbEditScopeAppend": "Appends to section {heading}",
+  "@kbEditScopeAppend": {
+    "description": "Under a staged knowledge-file edit: the section it adds to.",
+    "placeholders": {"heading": {"type": "String"}}
+  },
+  "kbEditScopeAppendEnd": "Appends to the end of the file",
   "kbEditApply": "Write file",
   "kbEditReject": "Discard",
   "kbEditApplied": "Written to disk",

@@ -4631,6 +4631,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kbEditProposedUpdate => 'Update file';
 
   @override
+  String kbEditScopeReplace(String heading) {
+    return 'Replaces section $heading';
+  }
+
+  @override
+  String kbEditScopeAppend(String heading) {
+    return 'Appends to section $heading';
+  }
+
+  @override
+  String get kbEditScopeAppendEnd => 'Appends to the end of the file';
+
+  @override
   String get kbEditApply => 'Write file';
 
   @override

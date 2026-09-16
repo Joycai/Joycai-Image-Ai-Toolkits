@@ -93,6 +93,23 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
                   if (isCreate && wide) ...[const SizedBox(width: 8), showToggle],
                 ],
               ),
+              if (!isCreate && entry.editScope != KbEditScope.file)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                  child: Text(
+                    switch (entry.editScope) {
+                      KbEditScope.replaceSection => l10n.kbEditScopeReplace(entry.editSection ?? ''),
+                      _ when entry.editSection == null => l10n.kbEditScopeAppendEnd,
+                      _ => l10n.kbEditScopeAppend(entry.editSection!),
+                    },
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelSmall?.mono.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
               if (entry.note != null)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
@@ -254,6 +271,10 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
 
   /// The diff body: hunk headers over context, removed and added lines.
   ///
+  /// A hunk header names the heading its change sits under, as `git diff`
+  /// names the enclosing function: in a long knowledge file `@@ -212 +214`
+  /// alone does not say which rule is being rewritten.
+  ///
   /// Each line is a full-width band with a coloured left rule — the fill
   /// alone is too pale at 12% to survive being read past, and the rule is
   /// what lets the eye run down the changed region without reading the
@@ -296,7 +317,9 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
                 child: Text(
-                  '@@ -${hunk.oldStart} +${hunk.newStart}',
+                  _hunkHeader(hunk, newContent),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: mono?.copyWith(color: colorScheme.outline),
                 ),
               ),
@@ -373,6 +396,16 @@ extension _KbEditCard on _PromptOptimizerChatViewState {
       ),
     );
   }
+}
+
+/// `@@ -old +new` and, when the change sits under one, the heading above its
+/// first changed line in the proposed file.
+String _hunkHeader(DiffHunk hunk, String newContent) {
+  final firstChange = hunk.lines.indexWhere((l) => l.kind != DiffLineKind.context);
+  final line = hunk.newStart + (firstChange < 0 ? 0 : firstChange);
+  final heading = KnowledgeBaseService.headingAbove(newContent, line);
+  final base = '@@ -${hunk.oldStart} +${hunk.newStart}';
+  return heading == null ? base : '$base @@ $heading';
 }
 
 int _lineCount(String text) {

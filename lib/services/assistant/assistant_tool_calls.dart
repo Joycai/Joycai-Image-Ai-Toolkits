@@ -549,6 +549,12 @@ Future<Map<String, dynamic>> _executeWriteKnowledge(
       oldContent: base,
       knowledgeRoot: knowledgeRoot,
       note: call.arguments['note']?.toString(),
+      scope: switch (mode) {
+        'replace_section' => KbEditScope.replaceSection,
+        'append' => KbEditScope.append,
+        _ => KbEditScope.file,
+      },
+      section: mode == 'replace_file' || section == null || section.isEmpty ? null : section,
     );
     // Staged either way, then applied here when the user has turned per-edit
     // confirmation off. Going through the same card rather than writing

@@ -4495,6 +4495,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get kbEditProposedUpdate => 'ファイル更新';
 
   @override
+  String kbEditScopeReplace(String heading) {
+    return 'セクション $heading を置換';
+  }
+
+  @override
+  String kbEditScopeAppend(String heading) {
+    return 'セクション $heading に追記';
+  }
+
+  @override
+  String get kbEditScopeAppendEnd => 'ファイル末尾に追記';
+
+  @override
   String get kbEditApply => '書き込む';
 
   @override

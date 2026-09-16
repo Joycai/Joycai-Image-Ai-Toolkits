@@ -8098,6 +8098,24 @@ abstract class AppLocalizations {
   /// **'Update file'**
   String get kbEditProposedUpdate;
 
+  /// Under a staged knowledge-file edit: the section it replaces. heading is the heading line as the file spells it.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaces section {heading}'**
+  String kbEditScopeReplace(String heading);
+
+  /// Under a staged knowledge-file edit: the section it adds to.
+  ///
+  /// In en, this message translates to:
+  /// **'Appends to section {heading}'**
+  String kbEditScopeAppend(String heading);
+
+  /// No description provided for @kbEditScopeAppendEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Appends to the end of the file'**
+  String get kbEditScopeAppendEnd;
+
   /// No description provided for @kbEditApply.
   ///
   /// In en, this message translates to:

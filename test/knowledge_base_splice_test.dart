@@ -118,4 +118,14 @@ void main() {
         ['# Rules', '## Lighting', '### Golden hour', '## Composition']);
     expect(KnowledgeBaseService.sectionHeadings('```\n# no\n```\n#nospace\n####### seven\n'), isEmpty);
   });
+
+  test('headingAbove names the section a line sits in', () {
+    // Line numbers are 1-based, as a diff hunk writes them.
+    expect(KnowledgeBaseService.headingAbove(file, 3), '# Rules');
+    expect(KnowledgeBaseService.headingAbove(file, 7), '## Lighting');
+    expect(KnowledgeBaseService.headingAbove(file, 11), '### Golden hour');
+    expect(KnowledgeBaseService.headingAbove(file, 15), '## Composition');
+    expect(KnowledgeBaseService.headingAbove('intro\n# Later\n', 1), isNull);
+    expect(KnowledgeBaseService.headingAbove('## A\n```\n## fenced\n```\nx\n', 5), '## A');
+  });
 }

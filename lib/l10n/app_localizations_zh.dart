@@ -4448,6 +4448,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get kbEditProposedUpdate => '更新文件';
 
   @override
+  String kbEditScopeReplace(String heading) {
+    return '替换小节 $heading';
+  }
+
+  @override
+  String kbEditScopeAppend(String heading) {
+    return '追加到小节 $heading';
+  }
+
+  @override
+  String get kbEditScopeAppendEnd => '追加到文件末尾';
+
+  @override
   String get kbEditApply => '写入文件';
 
   @override
@@ -9321,6 +9334,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get kbEditProposedUpdate => '更新檔案';
+
+  @override
+  String kbEditScopeReplace(String heading) {
+    return '取代小節 $heading';
+  }
+
+  @override
+  String kbEditScopeAppend(String heading) {
+    return '追加到小節 $heading';
+  }
+
+  @override
+  String get kbEditScopeAppendEnd => '追加到檔案結尾';
 
   @override
   String get kbEditApply => '寫入檔案';

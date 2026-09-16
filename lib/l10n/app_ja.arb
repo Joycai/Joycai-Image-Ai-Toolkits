@@ -2393,6 +2393,23 @@
   },
   "kbEditProposedCreate": "新規ファイル",
   "kbEditProposedUpdate": "ファイル更新",
+  "kbEditScopeReplace": "セクション {heading} を置換",
+  "@kbEditScopeReplace": {
+    "placeholders": {
+      "heading": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditScopeAppend": "セクション {heading} に追記",
+  "@kbEditScopeAppend": {
+    "placeholders": {
+      "heading": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditScopeAppendEnd": "ファイル末尾に追記",
   "kbEditApply": "書き込む",
   "kbEditReject": "破棄",
   "kbEditApplied": "ディスクに書き込みました",

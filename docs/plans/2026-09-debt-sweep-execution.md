@@ -58,7 +58,7 @@
 | 2 | 视频面板桌面分栏：头部内容放不下时整栏单滚动，不再把参考图卡裁成一条 | `screens/workbench/widgets/video_config_panel.dart` | 1440 截图参考图区完整；`test/video_panel_head_fit_test.dart` | ✅ |
 | 3 | AI 重命名「覆盖」禁用态的测试：给 `AiRenameDialog` 留 `@visibleForTesting` 初始行入口 | `screens/browser/ai_rename_dialog.dart` · 新测试 | `test/ai_rename_overwrite_ui_test.dart`（去掉禁用即失败） | ✅ |
 | 4 | 截断标记跨重启：`LLMMessage` JSON 带可选 `truncated` / `modelDbId`，恢复时读回 | `llm_types.dart` · `prompt_optimizer_session.dart` · `prompt_optimizer_agent.dart` | `optimizer_truncation_test.dart` 两条：重启往返、旧行无键 | ✅ |
-| 5 | 按节写入预览只 diff 那一节：条目带 `section` / `mode`，卡片取节的旧新片段 | `prompt_optimizer_session.dart` · `assistant_tool_calls.dart` · `knowledge_base_service.dart` · `optimizer_kb_edit_card.dart` | 单测：节切片；卡片测试 | ☐ |
+| 5 | 按节写入的预览标明位置：条目带 `KbEditScope` + 节标题，卡片头下一行写「替换小节 / 追加到小节 / 追加到文件末尾」，每个 hunk 头带所在标题（`@@ -a +b @@ ## 节`） | `prompt_optimizer_session.dart` · `assistant_tool_calls.dart` · `knowledge_base_service.dart`（`headingAbove`）· `optimizer_kb_edit_card.dart` · l10n workbench | `optimizer_kb_section_scope_test.dart`；卡片两条；`headingAbove` 一条 | ✅ |
 | 6 | ① 「no choices」等裸 `Exception` 改 `LLMApiException`；`LLMMessage.fromJson` 未知 role 抛 `FormatException` | `openai_chat_protocol.dart` · `dashscope_images_protocol.dart` · `midjourney_protocol.dart` · `gemini_veo_protocol.dart` · `llm_types.dart` | 单测 | ☐ |
 | 7 | 非 Anthropic vendor 的 ④ 面不发 `web_search`（谓词与 `serverWebSearch` 同源）；编辑器保存时不支持即清零 | `anthropic_payload.dart` · `llm_dispatcher.dart` · `model_edit_dialog.dart` | payload 测试 | ☐ |
 | R1 | 第一期 code review，修 CONFIRMED 项 | — | — | ☐ |
@@ -98,3 +98,7 @@
 ## 施工记录
 
 （偏离计划处与量出来的数字记在这里。）
+
+- 片 5：`TextDiff.unified` 本来就只出变动的 hunk（上下各 2 行），台账说的「整文件 diff」并不是把整个文件摊开；
+  长文件里真正缺的是「这是哪一节」。所以没有改成只 diff 节的片段（那样 hunk 行号会与文件对不上，
+  应用路径看到的也仍是整文件），改为在卡片与 hunk 头上标出位置。

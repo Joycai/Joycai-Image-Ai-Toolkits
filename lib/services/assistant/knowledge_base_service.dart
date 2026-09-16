@@ -211,6 +211,23 @@ class KnowledgeBaseService {
     return out;
   }
 
+  /// The nearest heading at or above 1-based [line] of [content], trimmed,
+  /// or null when the line sits before the first heading. What a diff hunk
+  /// header names so a change deep in a long file says which section it is
+  /// in. Fenced code is skipped, as [sectionHeadings] skips it.
+  static String? headingAbove(String content, int line) {
+    String? found;
+    var inFence = false;
+    final lines = content.split(_lineBreak);
+    for (var i = 0; i < lines.length && i < line; i++) {
+      final t = lines[i].trim();
+      if (t.startsWith('```') || t.startsWith('~~~')) inFence = !inFence;
+      if (inFence) continue;
+      if (_headingLevel(lines[i]) > 0) found = t;
+    }
+    return found;
+  }
+
   /// Either line ending: a file may carry both (a pasted CRLF line inside an
   /// LF file), and splitting on one of them would glue the others into a
   /// single line that then swallows every section after it.

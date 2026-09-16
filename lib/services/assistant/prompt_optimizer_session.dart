@@ -17,6 +17,20 @@ part of 'prompt_optimizer_agent.dart';
 /// [systemPrompt] rather than failing.
 enum AssistantMode { systemPrompt, knowledgeBase, knowledgeEdit }
 
+/// Which part of a file a staged knowledge-base edit targeted — what the
+/// preview card names above its diff, so a hunk in a long file says where
+/// it is.
+enum KbEditScope {
+  /// The whole file was sent (`replace_file`) — or a create.
+  file,
+
+  /// One section was replaced (`replace_section`).
+  replaceSection,
+
+  /// Text was added at the end of a section, or of the file (`append`).
+  append,
+}
+
 /// Lifecycle of a knowledge-base edit proposed by the agent.
 ///
 /// [failed] is a real state, not defensive padding: the disk write happens when
@@ -175,6 +189,14 @@ class OptimizerChatEntry {
   /// For [OptimizerEntryKind.kbEdit]: approval state.
   final KbEditState? editState;
 
+  /// For [OptimizerEntryKind.kbEdit]: which part of the file was sent.
+  final KbEditScope editScope;
+
+  /// For [OptimizerEntryKind.kbEdit]: the heading line the section modes
+  /// targeted, as the model spelled it; null for the whole file and for an
+  /// append at the end of the file.
+  final String? editSection;
+
   /// For [OptimizerEntryKind.kbEdit]: the knowledge-base root the edit was
   /// staged against. Apply writes there rather than re-reading the setting,
   /// which can be switched while the card waits.
@@ -232,6 +254,8 @@ class OptimizerChatEntry {
     this.newContent,
     this.oldContent,
     this.editState,
+    this.editScope = KbEditScope.file,
+    this.editSection,
     this.knowledgeRoot,
     this.editError,
     this.askCallId,
@@ -261,6 +285,8 @@ class OptimizerChatEntry {
         newContent: newContent,
         oldContent: oldContent,
         editState: editState ?? this.editState,
+        editScope: editScope,
+        editSection: editSection,
         knowledgeRoot: knowledgeRoot,
         editError: editError ?? this.editError,
         askCallId: askCallId,
@@ -558,6 +584,8 @@ class PromptOptimizerSession extends ChangeNotifier {
     required String? oldContent,
     String? knowledgeRoot,
     String? note,
+    KbEditScope scope = KbEditScope.file,
+    String? section,
   }) {
     final editId = 'kbedit_${id}_${_kbEditCounter++}';
     _addEntry(OptimizerChatEntry(
@@ -569,6 +597,8 @@ class PromptOptimizerSession extends ChangeNotifier {
       oldContent: oldContent,
       knowledgeRoot: knowledgeRoot,
       editState: KbEditState.pending,
+      editScope: scope,
+      editSection: section,
       note: (note == null || note.trim().isEmpty) ? null : note.trim(),
     ));
     return editId;
@@ -609,6 +639,8 @@ class PromptOptimizerSession extends ChangeNotifier {
     String? oldContent,
     String? knowledgeRoot,
     String? note,
+    KbEditScope scope = KbEditScope.file,
+    String? section,
   }) =>
       _stageKbEdit(
         relPath: relPath,
@@ -616,6 +648,8 @@ class PromptOptimizerSession extends ChangeNotifier {
         oldContent: oldContent,
         knowledgeRoot: knowledgeRoot,
         note: note,
+        scope: scope,
+        section: section,
       );
 
   /// The proposed content of the newest still-pending edit to [relPath], or

@@ -576,6 +576,23 @@
   },
   "kbEditProposedCreate": "新增檔案",
   "kbEditProposedUpdate": "更新檔案",
+  "kbEditScopeReplace": "取代小節 {heading}",
+  "@kbEditScopeReplace": {
+    "placeholders": {
+      "heading": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditScopeAppend": "追加到小節 {heading}",
+  "@kbEditScopeAppend": {
+    "placeholders": {
+      "heading": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditScopeAppendEnd": "追加到檔案結尾",
   "kbEditApply": "寫入檔案",
   "kbEditReject": "捨棄",
   "kbEditApplied": "已寫入磁碟",
