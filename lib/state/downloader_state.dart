@@ -100,13 +100,14 @@ class DownloaderState extends ChangeNotifier {
   }
 
   void addLog(String msg) {
-    logs.add('[${DateTime.now().toIso8601String().split('T').last.substring(0, 8)}] $msg');
+    final stamp = DateTime.now().toIso8601String().split('T').last.substring(0, 8);
+    logs = [...logs, '[$stamp] $msg'];
     notifyListeners();
   }
 
   void reset() {
     discoveredImages = [];
-    logs.clear();
+    logs = [];
     notifyListeners();
   }
 

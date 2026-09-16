@@ -428,11 +428,12 @@ class GalleryState extends ChangeNotifier {
   Future<void> toggleDirectory(String path) async {
     bool isSelected;
     if (activeSourceDirectories.contains(path)) {
-      activeSourceDirectories.remove(path);
+      activeSourceDirectories = List<String>.of(activeSourceDirectories)
+        ..remove(path);
       isSelected = false;
       _log('Deselected directory: $path');
     } else {
-      activeSourceDirectories.add(path);
+      activeSourceDirectories = <String>[...activeSourceDirectories, path];
       isSelected = true;
       _log('Selected directory: $path');
     }

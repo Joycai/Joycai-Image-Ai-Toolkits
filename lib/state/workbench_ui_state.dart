@@ -404,13 +404,16 @@ class WorkbenchUIState extends ChangeNotifier {
   // Video Methods
   void addVideoReferenceImage(AppImage image) {
     if (!videoReferenceImages.any((i) => i.path == image.path)) {
-      videoReferenceImages.add(image);
+      videoReferenceImages = [...videoReferenceImages, image];
       notifyListeners();
     }
   }
 
   void removeVideoReferenceImage(AppImage image) {
-    videoReferenceImages.removeWhere((i) => i.path == image.path);
+    if (!videoReferenceImages.any((i) => i.path == image.path)) return;
+    videoReferenceImages = videoReferenceImages
+        .where((i) => i.path != image.path)
+        .toList();
     notifyListeners();
   }
 
