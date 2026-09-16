@@ -39,8 +39,11 @@ lib/
       llm_service.dart            # facade the app calls
       llm_dispatcher.dart         # the ONLY routing table (surface × protocol × vendor)
       protocols/                  # layer 1 — wire formats: openai chat/images/videos · xai images/videos ·
-                                  #   gemini chat/imagen/veo · anthropic chat ·
-                                  #   dashscope chat/images/images-async/video · minimax images/video · midjourney
+                                  #   gemini chat/imagen/veo · anthropic chat (seven anthropic_* files, mapped
+                                  #   in the architecture note) · dashscope chat/images/images-async/video ·
+                                  #   minimax images/video · midjourney; the ①-shaped parts other protocols
+                                  #   share: openai_chat_parsing · streaming_tool_calls · inline_think ·
+                                  #   chat_image_extraction
       vendors/                    # layer 2 — VendorProfile registry (auth, per-surface protocol menus);
                                   #   ProtocolFamily lives in vendor_profile.dart; ids stored in llm_channels.type
       model_descriptor.dart       # layer 3 — family + capabilities; with model_family.dart, the only
@@ -115,7 +118,7 @@ that fail silently when broken, and alternatives already tried and rejected.
 
 [docs/README.md](docs/README.md) indexes the rest: protocol facts under `docs/api/`,
 the portable AI-agent playbook, and the two ledgers of retired work —
-[docs/plans/README.md](docs/plans/README.md) (seven feature/refactor rounds, where each
+[docs/plans/README.md](docs/plans/README.md) (every executed feature/refactor round, where each
 conclusion now lives, and **what is still owed**) and [plans/README.md](plans/README.md)
 (fourteen animation plans, plus the effects ruled deliberate — do not "fix" those).
 Read the relevant ledger before proposing a round of work; plan files are deleted once
