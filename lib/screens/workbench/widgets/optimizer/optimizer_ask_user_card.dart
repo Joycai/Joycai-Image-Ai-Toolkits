@@ -395,15 +395,17 @@ class _AskUserCardState extends State<_AskUserCard> {
   }
 }
 
-/// A 1px dashed rounded-rect edge, which [Border] cannot draw.
+/// A 1px dashed rounded-rect edge drawn *over* the field.
+///
+/// Not [DashedBorder]: that paints behind its child, and here the child is the
+/// field's own opaque fill. The dash rhythm is [drawDashedRRect]'s, like every
+/// other dashed edge in the app; the half-pixel inset keeps a 1px stroke on
+/// whole pixels, as `app_reorder_gap.dart` does.
 class _DashedOutlinePainter extends CustomPainter {
   final Color color;
   final double radius;
 
   const _DashedOutlinePainter({required this.color, required this.radius});
-
-  static const double _dash = 4;
-  static const double _gap = 3;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -412,14 +414,7 @@ class _DashedOutlinePainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
-    for (final metric in (Path()..addRRect(rrect)).computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        final end = distance + _dash < metric.length ? distance + _dash : metric.length;
-        canvas.drawPath(metric.extractPath(distance, end), paint);
-        distance += _dash + _gap;
-      }
-    }
+    drawDashedRRect(canvas, rrect, paint);
   }
 
   @override

@@ -17,6 +17,7 @@ import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/ui/app_breathing_dot.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_snackbar.dart';
+import '../../../widgets/ui/dashed_border.dart';
 import 'result_feedback_labels.dart';
 
 part 'optimizer/optimizer_agent_timeline.dart';
