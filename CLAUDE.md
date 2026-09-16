@@ -90,7 +90,8 @@ lib/
     tasks/                        # app_run_console · task_capsule_monitor · log_console · smooth_progress ·
                                   #   task_type_glyph
     settings/                     # theme_accent_picker · settings_widgets · dual_tone_swatch · backup_error_text
-    files/                        # folder_group_header · folder_outline_bar · thumbnail_fit_toggle
+    files/                        # folder_group_header · folder_outline_bar · thumbnail_fit_toggle ·
+                                  #   folder_drop_feedback (a folder row's refusal, shown by the browser's drag chip)
     dialogs/ · placeholders/
   bench/                          # render_bench.dart — raster/GPU benchmark, inert unless RBENCH=1
   l10n/                           # generated — do NOT edit directly (see l10n workflow below)

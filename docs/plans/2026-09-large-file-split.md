@@ -1,6 +1,6 @@
 # 大文件拆分方案
 
-**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–4 已做
+**基线** `6e55653` 2026-09-16 v4.7.7（PR #288 合入后）· **状态** 片 1–5 已做
 
 `lib/` 的结构债在 PR #287（目录间循环）和 #288（目录内平铺）之后只剩最后一项：单个文件
 太大。这份方案把它切成八片，一片一个 PR。
@@ -232,39 +232,33 @@ child 是输入框自己的不透明底色，会把虚线盖住。所以保留�
 
 ---
 
-### 片 5 · `directory_tree_item.dart` 1593 → 4 个文件，顺手修一处错位
+### 片 5 · `directory_tree_item.dart` 1593 → 4 个文件 ✅ 已做
 
-**查消费者时发现的错位**：`FolderDropFollower` 住在 `screens/workbench/` 的文件里，
-**唯一使用者是 `screens/browser/widgets/browser_drag_chip.dart`**。它和
-`FolderDropRejection` / `FolderDropFeedback` 是一组（一个进程级 `ValueNotifier` +
-读它的 follower），依赖只有 `AppLocalizations` · `AppDragFollower` · `AppDragTone` ·
-`AppCopyModifier` —— 全在 `core` / `l10n` / `widgets/drag` 里。
-
-跨 workbench 和 browser 两个 feature 用，按 #288 的规则该上 `lib/widgets/`。去哪：
-
-- **不去 `widgets/drag/`**：拒绝理由是文件夹语义（`intoItself` · `root` · `readOnly` ·
-  `nameTaken`），设计系统不该知道这些，而且 `drag/` 的命名是 `App*`。
-- **去 `widgets/files/`**（已有 `folder_group_header` · `folder_outline_bar` ·
-  `thumbnail_fit_toggle`）。它不在设计系统白名单里，可以引 `widgets/drag/` 和 `l10n`。
-
-代价：`FolderDropFeedback._post` / `._withdraw` 目前私有，由同文件的行调用。行留在
-workbench，所以这两个要变 public（`post` / `withdraw`），doc 里写清「只有指针下的那一行
-可以调，并且只有它能清」。
-
-| 新文件 | 内容 | 原行 | ~行 |
+| 文件 | 形式 | 内容 | 实际行 |
 |---|---|---|---|
-| `widgets/files/folder_drop_feedback.dart` | `FolderDropRejection` + 标签扩展 + `FolderDropFeedback` + `FolderDropFollower` | 47–130 | 120 |
-| `workbench/folder_tree_row.dart` | `TreeDisclosure` · `FolderTreeMetrics` · `FolderTreeRow` · `FolderTreeRowAction` · `_Pulsed` | 750–1247 | 500 |
-| `workbench/folder_drop_targets.dart` | `_FolderDragChip` · `_DropNoteSlot` · `_CopyModifierListener` · `_MaybeDropTarget` | 1248–1593 | 350 |
-| `workbench/directory_tree_item.dart` | `FolderDragPayload` · `FolderDropTone` · `DirectoryTreeItem` + State | 40–46 · 131–749 | 620 |
+| `lib/widgets/files/folder_drop_feedback.dart` | 库 | `FolderDropRejection` + 标签扩展 + `FolderDropFeedback` + `FolderDropFollower` | 97 |
+| `screens/workbench/folder_tree_row.dart` | 库 | `FolderDropTone` · `TreeDisclosure` · `FolderTreeMetrics` · `FolderTreeRow` · `FolderTreeRowAction` · `_DropNoteSlot` | 578 |
+| `screens/workbench/folder_drop_target.dart` | `part` | `_RowDrop` · `_CopyModifierListener` · `_MaybeDropTarget` | 262 |
+| `screens/workbench/directory_tree_item.dart` | 库 | `FolderDragPayload` · `DirectoryTreeItem` + State · `_Pulsed` · `_FolderDragChip` | 706 |
 
-`FolderTreeRow` / `FolderTreeMetrics` / `TreeDisclosure` 只被 `folder_list.dart` 和
-`workbench/widgets/result_tree_item.dart` 用，**两者都在 workbench 内**，所以按同一条规则留在原地，
-只是拿到自己的文件。
+**错位修掉了，而且比原先以为的更实在**：`screens/browser/widgets/browser_drag_chip.dart`
+原来 `import '../../workbench/directory_tree_item.dart' show FolderDropFollower` —— **一个
+feature 直接引另一个 feature 的文件**（层级测试只管顶层目录，`screens/` 内部的横向引用它看不到）。
+现在改引 `widgets/files/`，这条横向边没了。去 `widgets/files/` 而不是 `widgets/drag/` 的理由
+见上一版：拒绝理由是文件夹语义，设计系统不该知道。
 
-**守护**：`rebuild_scope_test.dart` 的
-*"a folder pulse reaches one tree row, not the browser"* 正好压住这块 +
-`app_screens_file_browser_test.dart`。
+`FolderDropFeedback._post` / `._withdraw` 被留在 workbench 的 drop target 调用，所以变成公有的
+`post` / `withdraw`，doc 里写明「只有发出判定的那一行能清掉它」。
+
+`FolderTreeRow` 一组做成独立库（`folder_list.dart` 和 `result_tree_item.dart` 直接引它）；
+drop target 只有 tree item 用，做成 `part`，名字保持私有。
+
+`plans/README.md`（动效台账）里引的 `directory_tree_item.dart:647` 与 `:1073-1085` 本来就已经过期，
+按拆分后的位置改成 `directory_tree_item.dart:583` 和 `folder_tree_row.dart:388-400`。
+
+**结果**：`flutter analyze` 零问题；`flutter test -x screenshots` 2183 passed；screenshot
+175 / 175 像素一致；`rebuild_scope_test` 的 *"a folder pulse reaches one tree row, not the
+browser"* 通过。多重集比对只多出两个新方法的 doc。
 
 ---
 
@@ -392,10 +386,10 @@ git diff -M25% --stat main...HEAD               # 看到的应该是 rename / �
 
 ## 5. 顺手修的三件事（不要漏，它们是拆这几个文件的一半价值）
 
-1. **片 4** — `_DashedOutlinePainter` 是 `widgets/ui/dashed_border.dart` 明确要消灭的那种
+1. **片 4** ✅ — `_DashedOutlinePainter` 是 `widgets/ui/dashed_border.dart` 明确要消灭的那种
    拷贝的第四份。换成 `drawDashedRRect`。
-2. **片 5** — `FolderDropFollower` 一组从 workbench 下到 `widgets/files/`：它的唯一
-   使用者在 browser，住在 workbench 是错位。
+2. **片 5** ✅ — `FolderDropFollower` 一组从 workbench 移到 `widgets/files/`：它的唯一
+   使用者在 browser，住在 workbench 是错位（browser 因此不再横向引 workbench）。
 3. **片 7** — 重命名冲突检测从 dialog 下到 `services/files/`，并第一次拥有测试。
 
 ---
