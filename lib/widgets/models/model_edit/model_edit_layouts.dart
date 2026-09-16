@@ -345,6 +345,7 @@ extension _Layouts on _ModelEditDialogState {
             // nothing to choose and nothing to explain.
             if (_showProtocolSection) _protocolSection(context),
             _contextSection(context),
+            if (_hasOutputCap) _outputCapSection(context),
             _agentSection(context),
             _reasoningSection(context),
             if (_isAnthropicChannel || _webSearch != ServerWebSearch.unsupported) _providerSection(context),
@@ -360,12 +361,17 @@ extension _Layouts on _ModelEditDialogState {
       if (_showProtocolSection) _protocolSection(context),
       _capabilitiesSection(context),
       _contextSection(context),
+      if (_hasOutputCap) _outputCapSection(context),
       _agentSection(context),
       _reasoningSection(context),
       if (_isAnthropicChannel || _webSearch != ServerWebSearch.unsupported) _providerSection(context),
       _previewSection(context),
     ]);
   }
+
+  /// An image or video model has no reply to cap: the section is absent for
+  /// those kinds, as the window section's copy says for them.
+  bool get _hasOutputCap => tag != 'image' && tag != 'video';
 
   Widget _stack(List<Widget> sections) => Column(
         mainAxisSize: MainAxisSize.min,

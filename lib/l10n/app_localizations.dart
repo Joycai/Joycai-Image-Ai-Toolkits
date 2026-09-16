@@ -3191,6 +3191,72 @@ abstract class AppLocalizations {
   /// **'tokens'**
   String get contextTokensUnit;
 
+  /// No description provided for @outputCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Output'**
+  String get outputCap;
+
+  /// No description provided for @outputCapAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get outputCapAuto;
+
+  /// No description provided for @outputCapSpecify.
+  ///
+  /// In en, this message translates to:
+  /// **'Specify'**
+  String get outputCapSpecify;
+
+  /// No description provided for @outputCapAutoDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'No cap is sent; the host decides. Relays often default to 4k–8k while one Prompt Assistant delivery runs 6–8k tokens — switch to Specify if replies get cut off.'**
+  String get outputCapAutoDesc;
+
+  /// No description provided for @outputCapAutoAnthropicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The Anthropic format requires a cap, so 8192 is sent when none is set. Thinking and the answer share it — with reasoning on, 32k or more is advisable.'**
+  String get outputCapAutoAnthropicDesc;
+
+  /// No description provided for @outputCapSpecifyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent with every request; thinking and the answer share it. Below 8k the Prompt Assistant is likely to be cut off. Claude and GPT-5 take 64k–128k.'**
+  String get outputCapSpecifyDesc;
+
+  /// No description provided for @outputCapSliderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Six presets from 4k to 128k. The field takes 64k shorthand and ←→ step through the presets; a typed value wins.'**
+  String get outputCapSliderHint;
+
+  /// No description provided for @outputCapSpecifyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive whole number; blank or 0 can\'t be saved.'**
+  String get outputCapSpecifyInvalid;
+
+  /// No description provided for @outputCapExceedsWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not below the context window ({window} tokens). The part beyond the window never takes effect: hosted endpoints refuse the request, local runtimes truncate silently. It can be saved — check both figures.'**
+  String outputCapExceedsWindow(String window);
+
+  /// No description provided for @outputCapDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'default {size}'**
+  String outputCapDefault(String size);
+
+  /// No description provided for @outputCapChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Out {size}'**
+  String outputCapChip(String size);
+
   /// No description provided for @contextPresets.
   ///
   /// In en, this message translates to:

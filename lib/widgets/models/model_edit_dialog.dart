@@ -10,9 +10,11 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/pricing_group.dart';
 import '../../services/catalogue/context_window_scale.dart';
+import '../../services/catalogue/output_cap_scale.dart';
 import '../../services/llm/context_budget.dart';
 import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/llm_types.dart';
+import '../../services/llm/protocols/anthropic_wire.dart' show anthropicDefaultMaxTokens;
 import '../../services/llm/vendors/vendors.dart';
 import '../../services/catalogue/model_id_uniqueness.dart';
 import '../../state/app_state.dart';
@@ -37,6 +39,7 @@ part 'model_edit/model_edit_capabilities.dart';
 part 'model_edit/model_edit_context.dart';
 part 'model_edit/model_edit_identity.dart';
 part 'model_edit/model_edit_layouts.dart';
+part 'model_edit/model_edit_output_cap.dart';
 part 'model_edit/model_edit_protocol.dart';
 
 /// Edits a model, or adds one (design D1c).
@@ -80,6 +83,13 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   /// Focus on the Specify field, watched so a `128k` typed there becomes
   /// `131072` once the user moves on.
   final FocusNode _contextFocus = FocusNode();
+
+  /// The output cap's Specify field. Two states only (Auto = no cap sent),
+  /// so a bool rather than a mode enum; see `_OutputCapSection`.
+  late TextEditingController outputCapCtrl;
+  final FocusNode _outputCapFocus = FocusNode();
+  late bool outputCapSpecified;
+  bool _outputCapTouched = false;
 
   int? channelId;
   late String tag;
@@ -159,6 +169,22 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     contextMode = ContextBudget.modeOf(cw);
     contextCtrl = TextEditingController(text: cw != null && cw > 0 ? '$cw' : '');
     _contextFocus.addListener(_normaliseContextOnBlur);
+
+    // Output cap: null = Auto (nothing sent). A new model starts on Auto for
+    // the same reason the window starts unset — a cap nobody chose would be
+    // sent as a fact.
+    final cap = model?.maxOutputTokens;
+    outputCapSpecified = cap != null && cap > 0;
+    outputCapCtrl = TextEditingController(text: outputCapSpecified ? '$cap' : '');
+    _outputCapFocus.addListener(_normaliseOutputCapOnBlur);
+  }
+
+  void _normaliseOutputCapOnBlur() {
+    if (_outputCapFocus.hasFocus) return;
+    final tokens = _outputCapTokens;
+    if (tokens != null && outputCapCtrl.text != '$tokens') {
+      setState(() => outputCapCtrl.text = '$tokens');
+    }
   }
 
   void _normaliseContextOnBlur() {
@@ -175,6 +201,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     nameCtrl.dispose();
     contextCtrl.dispose();
     _contextFocus.dispose();
+    outputCapCtrl.dispose();
+    _outputCapFocus.dispose();
     super.dispose();
   }
 
@@ -185,8 +213,18 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   bool get _contextValid =>
       contextMode != ContextWindowMode.specified || (_contextTokens ?? 0) > 0;
 
+  /// The output cap's Specify figure, in the context field's grammar.
+  int? get _outputCapTokens => OutputCapScale.parse(outputCapCtrl.text);
+
+  /// Same rule as the window: Specify with nothing savable blocks Save.
+  bool get _outputCapValid => !outputCapSpecified || (_outputCapTokens ?? 0) > 0;
+
+  /// What the row stores: null on Auto, the figure on Specify.
+  int? get _storedOutputCap => outputCapSpecified ? _outputCapTokens : null;
+
   /// The ID is the only required field — a blank name saves as the ID.
-  bool get _canSave => channelId != null && idCtrl.text.trim().isNotEmpty && !_idTaken && _contextValid;
+  bool get _canSave =>
+      channelId != null && idCtrl.text.trim().isNotEmpty && !_idTaken && _contextValid && _outputCapValid;
 
   /// The ID is already on the selected channel, under another model.
   bool get _idTaken => isModelIdTaken(
@@ -277,6 +315,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       'fee_group_id': feeGroupId,
       'channel_id': channelId,
       'context_window': ContextBudget.store(contextMode, _contextTokens ?? 0),
+      'max_output_tokens': _storedOutputCap,
     };
 
     if (widget.model == null) {

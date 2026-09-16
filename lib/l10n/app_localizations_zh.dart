@@ -1760,6 +1760,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contextTokensUnit => 'tokens';
 
   @override
+  String get outputCap => '最大输出';
+
+  @override
+  String get outputCapAuto => '自动';
+
+  @override
+  String get outputCapSpecify => '指定上限';
+
+  @override
+  String get outputCapAutoDesc =>
+      '不发送上限，由服务端决定。中转站的默认值常为 4k–8k，而提示词助手的一次交付约 6–8k tokens——回复被截断时请改为指定上限。';
+
+  @override
+  String get outputCapAutoAnthropicDesc =>
+      'Anthropic 格式必须携带上限，未指定时发送 8192。思考与正文共用它——开启推理后建议指定 32k 以上。';
+
+  @override
+  String get outputCapSpecifyDesc =>
+      '随每次请求发送，思考与正文共用。低于 8k 时提示词助手很可能被截断；Claude 与 GPT-5 系可到 64k–128k。';
+
+  @override
+  String get outputCapSliderHint => '六档 4k–128k。输入框接受 64k 简写，←→ 走相邻档；以手填为准。';
+
+  @override
+  String get outputCapSpecifyInvalid => '请填正整数；留空或 0 无法保存。';
+
+  @override
+  String outputCapExceedsWindow(String window) {
+    return '不小于上下文大小（$window tokens）。超出上下文的部分不会生效：托管端点会拒绝请求，本地运行时会静默截短。可以保存，但请核对两个数字。';
+  }
+
+  @override
+  String outputCapDefault(String size) {
+    return '默认 $size';
+  }
+
+  @override
+  String outputCapChip(String size) {
+    return '输出 $size';
+  }
+
+  @override
   String get contextPresets => '档位';
 
   @override
@@ -6565,6 +6607,48 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get contextTokensUnit => 'tokens';
+
+  @override
+  String get outputCap => '最大輸出';
+
+  @override
+  String get outputCapAuto => '自動';
+
+  @override
+  String get outputCapSpecify => '指定上限';
+
+  @override
+  String get outputCapAutoDesc =>
+      '不傳送上限，由伺服端決定。中轉站的預設值常為 4k–8k，而提示詞助手的一次交付約 6–8k tokens——回覆被截斷時請改為指定上限。';
+
+  @override
+  String get outputCapAutoAnthropicDesc =>
+      'Anthropic 格式必須攜帶上限，未指定時傳送 8192。思考與正文共用它——開啟推理後建議指定 32k 以上。';
+
+  @override
+  String get outputCapSpecifyDesc =>
+      '隨每次請求傳送，思考與正文共用。低於 8k 時提示詞助手很可能被截斷；Claude 與 GPT-5 系可到 64k–128k。';
+
+  @override
+  String get outputCapSliderHint => '六檔 4k–128k。輸入框接受 64k 簡寫，←→ 走相鄰檔；以手填為準。';
+
+  @override
+  String get outputCapSpecifyInvalid => '請填正整數；留空或 0 無法儲存。';
+
+  @override
+  String outputCapExceedsWindow(String window) {
+    return '不小於上下文大小（$window tokens）。超出上下文的部分不會生效：託管端點會拒絕請求，本機執行時會靜默截短。可以儲存，但請核對兩個數字。';
+  }
+
+  @override
+  String outputCapDefault(String size) {
+    return '預設 $size';
+  }
+
+  @override
+  String outputCapChip(String size) {
+    return '輸出 $size';
+  }
 
   @override
   String get contextPresets => '檔位';
