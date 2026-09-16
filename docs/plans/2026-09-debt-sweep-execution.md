@@ -87,6 +87,7 @@
 | 19 | D2a 三条：参数块引导线点单时补间到主色 35%（新 token `accentRule`）；`ModelEditMenuField` 与共享 `AppDropdown` 的菜单选中行加 check（槽位每行都留）；点单态协议值用主色深（桌面与手机） | `design_tokens.dart` · `model_edit_controls.dart` · `model_protocol_section.dart` · `widgets/ui/app_dropdown.dart` | `model_edit_param_block_test.dart` · `app_dropdown_test.dart` 加一条；编辑器截图看过点单 / 自动两态 | ✅ |
 | 20 | 1000–1500 行文件拆分，十五个文件、十五个提交（20.A1–A4 · B1–B3 · C1–C4 · D1–D4），四个子代理各在自己的 worktree 里做、这边 cherry-pick | 见施工记录 | 每组截图 177/177 像素一致；合并后门禁绿 | ✅ |
 | R3 | 第三期 code review | `cookie_repository.dart` · `task_executors.dart` | 1 条：清空 cookie 字段后入队的下载，任务行里的空值也被剥掉，重启后会借用历史里的 cookie → 空值保留作「不带 cookie」的记号；测试一条。片 15 在 R2 与 R3 的范围之间漏审，单独补审见下一行 | ✅ |
+| R3b | 片 15 补审 | `database_service.dart` · l10n models | 2 条：`Process.run` 不因 chmod 失败抛异常，失败没被记录 → 查退出码并记 stderr；文案「仅当前用户可读」在 Windows 便携模式与 chmod 失败时不成立 → 改为「只受系统账户的文件权限保护」 | ✅ |
 
 ### 收尾
 

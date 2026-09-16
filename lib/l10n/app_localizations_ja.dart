@@ -1695,7 +1695,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get apiKeyStorageNotice =>
-      'キーは暗号化されずにこの端末のアプリのデータベースに保存され、現在のユーザーだけが読み取れます。バックアップには含まれず、このプロバイダーにのみ送信されます。';
+      'キーは暗号化されずにこの端末のアプリのデータベースに保存され、アカウントのファイル権限でのみ保護されます。バックアップには含まれず、このプロバイダーにのみ送信されます。';
 
   @override
   String get nameHint => '例：本番API';

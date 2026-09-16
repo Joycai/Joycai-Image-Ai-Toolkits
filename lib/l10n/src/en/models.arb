@@ -148,7 +148,7 @@
   "googleV1BetaHint": "Hint: Google GenAI endpoints usually end with '/v1beta'",
   "anthropicV1Hint": "Hint: Anthropic endpoints usually end with '/v1'",
   "dashscopeApiV1Hint": "Hint: DashScope native endpoints end with '/api/v1'",
-  "apiKeyStorageNotice": "Stored unencrypted in this app's database on this device, readable only by your user account. Never written to backups; sent only to this provider.",
+  "apiKeyStorageNotice": "Stored unencrypted in this app's database on this device, protected only by your account's file permissions. Never written to backups; sent only to this provider.",
   "nameHint": "e.g. My Production API",
   "enableDiscoveryDesc": "Automatically list available models from this endpoint",
   "tagHint": "e.g. GPT4, Local, etc.",

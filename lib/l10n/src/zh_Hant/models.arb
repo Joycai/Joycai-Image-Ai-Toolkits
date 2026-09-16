@@ -99,7 +99,7 @@
   "googleV1BetaHint": "提示：Google GenAI 端點通常以「/v1beta」結尾",
   "anthropicV1Hint": "提示：Anthropic 端點通常以「/v1」結尾",
   "dashscopeApiV1Hint": "提示：DashScope 原生端點以「/api/v1」結尾",
-  "apiKeyStorageNotice": "金鑰以明文儲存在本機的應用程式資料庫中，僅目前系統使用者可讀取；不會寫入備份，只會傳送給該服務商。",
+  "apiKeyStorageNotice": "金鑰以明文儲存在本機的應用程式資料庫中，只受系統帳戶的檔案權限保護；不會寫入備份，只會傳送給該服務商。",
   "nameHint": "例如：我的正式版 API",
   "enableDiscoveryDesc": "從此端點自動列出可用的模型",
   "tagHint": "例如：GPT4、Local 等。",

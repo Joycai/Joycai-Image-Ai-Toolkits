@@ -164,8 +164,15 @@ class DatabaseService {
   static Future<void> restrictToOwner(String file, {String? directory}) async {
     if (!(Platform.isMacOS || Platform.isLinux)) return;
     try {
-      if (directory != null) await Process.run('chmod', ['700', directory]);
-      await Process.run('chmod', ['600', file]);
+      // `Process.run` reports a failed chmod through its exit code, not by
+      // throwing — a filesystem that ignores Unix modes, a file owned by
+      // someone else.
+      for (final (mode, path) in [if (directory != null) ('700', directory), ('600', file)]) {
+        final result = await Process.run('chmod', [mode, path]);
+        if (result.exitCode != 0) {
+          debugPrint('Could not restrict $path to $mode: ${result.stderr}');
+        }
+      }
     } catch (e) {
       debugPrint('Could not restrict data file permissions: $e');
     }

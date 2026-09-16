@@ -148,7 +148,7 @@
   "googleV1BetaHint": "提示：Google GenAI 接口通常以 '/v1beta' 结尾",
   "anthropicV1Hint": "提示：Anthropic 接口通常以 '/v1' 结尾",
   "dashscopeApiV1Hint": "提示：DashScope 原生接口以 '/api/v1' 结尾",
-  "apiKeyStorageNotice": "密钥以明文保存在本机的应用数据库中，仅当前系统用户可读；不会写入备份，只发送给该服务商。",
+  "apiKeyStorageNotice": "密钥以明文保存在本机的应用数据库中，只受系统账户的文件权限保护；不会写入备份，只发送给该服务商。",
   "nameHint": "例如：生产环境 API",
   "enableDiscoveryDesc": "自动从端点获取可用模型列表",
   "tagHint": "例如：GPT4, 核心, 等",
