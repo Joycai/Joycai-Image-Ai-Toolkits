@@ -121,6 +121,12 @@ void main() {
       find.text('Tools').evaluate().isNotEmpty ||
       find.byIcon(Icons.handyman_outlined).evaluate().isNotEmpty;
 
+  /// The view switch (全部来源 / 全部结果 / 工作区): the one three-item
+  /// segmented control, found by shape because it may be showing icons.
+  final viewSwitch = find.byWidgetPredicate((w) => w is GlassSegmented && w.segments.length == 3);
+  bool viewLabelsShown(WidgetTester tester) =>
+      tester.widget<GlassSegmented>(viewSwitch).showLabels;
+
   Future<void> openMore(WidgetTester tester) async {
     await tester.tap(find.byTooltip('More'));
     await tester.pumpAndSettle();
@@ -157,10 +163,12 @@ void main() {
           reason: 'At ${width}px an icon folded while the labels were still shown');
       expect(toolsCollapsed() && refreshInline(), isFalse,
           reason: 'At ${width}px the tools collapsed while refresh was still inline');
+      expect(!viewLabelsShown(tester) && !toolsCollapsed(), isFalse,
+          reason: 'At ${width}px the view switch lost its labels before the tools collapsed');
 
       // The view switch is never pushed outside the bar.
       final bar = tester.getRect(find.byKey(barKey));
-      final toggle = tester.getRect(find.text('All Sources'));
+      final toggle = tester.getRect(viewSwitch);
       expect(toggle.left, greaterThanOrEqualTo(bar.left - 0.01), reason: 'at ${width}px');
       expect(bar.right + 0.01, greaterThanOrEqualTo(tester.getRect(find.byTooltip('More')).right),
           reason: 'More fell off the bar at ${width}px');
@@ -209,6 +217,29 @@ void main() {
     expect(appState.galleryState.droppedImages, isEmpty);
   });
 
+  testWidgets('the workspace segment stays after leaving the workspace, and leads back', (tester) async {
+    final appState = await pumpAtWidth(tester, 1700, workspaceCount: 3);
+
+    await tester.tap(find.text('All Sources'));
+    await tester.pumpAndSettle();
+    expect(appState.galleryState.viewMode, GalleryViewMode.all);
+    expect(find.text('Workspace'), findsOneWidget);
+
+    await tester.tap(find.text('Workspace'));
+    await tester.pumpAndSettle();
+    expect(appState.galleryState.viewMode, GalleryViewMode.temp);
+
+    // The gallery state outlives the test; leave it as the others expect.
+    appState.galleryState
+      ..clearDroppedImages()
+      ..setViewMode(GalleryViewMode.all);
+  });
+
+  testWidgets('the workspace segment is offered while the workspace is empty', (tester) async {
+    await pumpAtWidth(tester, 1700);
+    expect(find.text('Workspace'), findsOneWidget);
+  });
+
   testWidgets('clear workspace is not offered outside the workspace view', (tester) async {
     await pumpAtWidth(tester, 1700);
     await openMore(tester);
@@ -234,10 +265,22 @@ void main() {
     expect(find.text('${after.toInt()}px'), findsOneWidget);
   });
 
-  testWidgets('the phone bar fits a phone', (tester) async {
+  testWidgets('the phone bar fits a phone, all three views visible', (tester) async {
     for (final width in [360.0, 390.0, 430.0]) {
       await pumpAtWidth(tester, width, phone: true);
       expect(tester.takeException(), isNull, reason: 'Overflow at ${width}px');
+
+      // Whole, not scrolled out of sight: the switch's viewport is as wide
+      // as the switch itself. At 360 even the icons are 14px short, and the
+      // switch takes its last step — it scrolls.
+      if (width >= 390) {
+        final viewport = tester.getSize(
+            find.ancestor(of: viewSwitch, matching: find.byType(SingleChildScrollView)).first);
+        expect(viewport.width, greaterThanOrEqualTo(tester.getSize(viewSwitch).width - 0.01),
+            reason: 'the view switch scrolls at ${width}px');
+      }
+      final workspace = viewLabelsShown(tester) ? find.text('Workspace') : find.byTooltip('Temp Workspace');
+      expect(workspace, findsOneWidget, reason: 'at ${width}px');
     }
   });
 

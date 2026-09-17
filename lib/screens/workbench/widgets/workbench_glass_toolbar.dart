@@ -104,16 +104,37 @@ List<GlassSegment<int>> _modeSegments(AppLocalizations l10n) => [
       GlassSegment(value: WorkbenchTab.video, label: l10n.wbModeVideo, icon: Icons.movie_outlined),
     ];
 
+/// The three views, always all three: a segment that appeared only while it
+/// was the view could be left but never returned to, and it moved the bar's
+/// width on the way in and out.
+///
+/// [iconOnly] is the switch's last step before it scrolls: the sidebar's
+/// icons for the three views, their names kept as tooltips. The labelled form
+/// carries no icons, as the spec draws it.
 List<GlassSegment<_View>> _viewSegments(
   AppLocalizations l10n, {
   required bool phone,
-  required bool workspace,
+  bool iconOnly = false,
 }) =>
     [
-      GlassSegment(value: _View.sources, label: phone ? l10n.galleryViewSourcesShort : l10n.allSources),
-      GlassSegment(value: _View.results, label: phone ? l10n.galleryViewResultsShort : l10n.allResults),
-      // The workspace segment only offers itself while it is the view.
-      if (workspace) GlassSegment(value: _View.workspace, label: l10n.galleryViewWorkspace),
+      GlassSegment(
+        value: _View.sources,
+        label: phone ? l10n.galleryViewSourcesShort : l10n.allSources,
+        icon: iconOnly ? Icons.photo_library_outlined : null,
+        tooltip: l10n.allSources,
+      ),
+      GlassSegment(
+        value: _View.results,
+        label: phone ? l10n.galleryViewResultsShort : l10n.allResults,
+        icon: iconOnly ? Icons.auto_awesome_motion_outlined : null,
+        tooltip: l10n.allResults,
+      ),
+      GlassSegment(
+        value: _View.workspace,
+        label: l10n.galleryViewWorkspace,
+        icon: iconOnly ? Icons.inbox_outlined : null,
+        tooltip: l10n.tempWorkspace,
+      ),
     ];
 
 /// The Tools menu button's width; [label] is what it shows — the active
@@ -144,7 +165,7 @@ bool _tabLabelsFit(BuildContext context, double width) {
         _tabStripWidth(context, _tabs(l10n), labels: true),
         GlassDivider.extent,
         GlassSegmented.widthFor(context, _modeSegments(l10n), showLabels: true),
-        GlassSegmented.widthFor(context, _viewSegments(l10n, phone: false, workspace: false), showLabels: true),
+        GlassSegmented.widthFor(context, _viewSegments(l10n, phone: false), showLabels: true),
         GlassDivider.extent,
         ..._Fold.values.map((_) => AppSize.control),
         AppSize.control, // more
@@ -372,7 +393,8 @@ class _GalleryRow extends StatelessWidget {
     final tabs = _tabs(l10n);
 
     final modeSegments = _modeSegments(l10n);
-    final viewSegments = _viewSegments(l10n, phone: phone, workspace: view == _View.workspace);
+    final labelledViews = _viewSegments(l10n, phone: phone);
+    final iconViews = _viewSegments(l10n, phone: phone, iconOnly: true);
 
     final tabLabels = !phone && _tabLabelsFit(context, width);
     bool labels = true;
@@ -381,7 +403,10 @@ class _GalleryRow extends StatelessWidget {
     final folded = <_Fold>{if (phone) ..._Fold.values};
     final showTune = layout.rightInDrawer && !phone;
 
-    final viewNatural = GlassSegmented.widthFor(context, viewSegments, showLabels: true);
+    bool viewLabels = true;
+    double viewNatural() => viewLabels
+        ? GlassSegmented.widthFor(context, labelledViews, showLabels: true)
+        : GlassSegmented.widthFor(context, iconViews, showLabels: false);
     final barIcon = phone ? _kPhoneIcon : AppSize.control;
 
     double measure() {
@@ -394,7 +419,7 @@ class _GalleryRow extends StatelessWidget {
           _toolsMenuWidth(context, l10n, compact: toolsMenuCompact),
         if (!phone) GlassDivider.extent,
         GlassSegmented.widthFor(context, modeSegments, showLabels: labels),
-        viewNatural,
+        viewNatural(),
         if (inlineIcons > 0) GlassDivider.extent,
         for (int i = 0; i < inlineIcons; i++) AppSize.control,
         barIcon, // more
@@ -412,9 +437,10 @@ class _GalleryRow extends StatelessWidget {
       if (measure() > width) toolsInline = false;
     }
     if (measure() > width) toolsMenuCompact = true;
-    // The view switch never gives way: past every other step it keeps what
-    // is left and scrolls inside it.
-    final viewWidth = math.max(0.0, math.min(viewNatural, width - (measure() - viewNatural)));
+    // The view switch gives way last: its labels go only once everything else
+    // has, and past that it keeps what is left and scrolls inside it.
+    if (measure() > width) viewLabels = false;
+    final viewWidth = math.max(0.0, math.min(viewNatural(), width - (measure() - viewNatural())));
 
     final appState = context.read<AppState>();
     void goTo(int index) => tabController.index = index;
@@ -460,8 +486,9 @@ class _GalleryRow extends StatelessWidget {
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: GlassSegmented<_View>(
-            segments: viewSegments,
+            segments: viewLabels ? labelledViews : iconViews,
             value: view,
+            showLabels: viewLabels,
             segmentHeight: phone ? AppSize.control : AppSize.compact,
             onChanged: (v) => gallery.setViewMode(switch (v) {
               _View.sources => GalleryViewMode.all,
