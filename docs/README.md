@@ -78,6 +78,21 @@ security findings that are still open.
   `test/screenshots/rebuild_scope_test.dart` and
   `test/render_performance_test.dart`.
 
+* **GPU render bench** (`lib/bench/render_bench.dart`) — the raster/GPU side,
+  inert unless `RBENCH=1`. Build profile, then drive the exe with
+  `RBENCH_SCENE` (`blank`, `aurora-live`/`aurora`, `glass0`…`glass4`,
+  `app-lightbox-legacy`/`app-lightbox`, …) at a fixed `RBENCH_SIZE`; it prints
+  `FrameTiming` percentiles and a layer census. Three traps:
+  * **`rasterDuration` does not see GPU time on Windows.** The app pins Skia on
+    ANGLE (`windows/runner/main.cpp`, for video_player_win's DXGI textures),
+    which executes asynchronously — a scene reading 0.9ms of raster was really
+    11ms of GPU. Read `\GPU Engine(pid_<pid>*engtype_3d)\Running Time` instead.
+  * **Check which adapter the process landed on.** The dev machine's display
+    hangs off the integrated Radeon, and Windows puts the app there.
+  * **Absolute numbers drift up to 2x between sessions** — always take before
+    and after in one pass, which is what the `*-live` / `*-legacy` scene pairs
+    exist for.
+
 ## Release notes
 
 [`release_notes/`](release_notes/) archives v1.1.0 – v2.3.0. From v2.4.0
