@@ -165,7 +165,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         // that produced nothing, which is indistinguishable from a model
         // refusing — so say what actually came back instead.
         final body = response.body;
-        throw Exception('OpenAI Images API returned no image: '
+        throw LLMApiException('OpenAI Images API returned no image: '
             '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
       }
 

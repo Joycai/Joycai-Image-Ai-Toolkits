@@ -7,6 +7,30 @@ import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
 import 'usage_controller.dart';
 
+/// A share bar's fraction, grown from zero the first time it is shown and
+/// glided to its new value when the range changes (M3 — a screen opened now
+/// and then, where a little motion is affordable).
+///
+/// Only the number moves; [builder] draws the bar at whatever fraction it is
+/// handed, so a progress indicator and the segments painted over it stay the
+/// same length on every frame.
+class UsageShareGrow extends StatelessWidget {
+  const UsageShareGrow({super.key, required this.value, required this.builder});
+
+  final double value;
+  final Widget Function(BuildContext context, double value) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: value),
+      duration: AppMotion.sceneOf(context),
+      curve: AppMotion.emphasized,
+      builder: (context, v, _) => builder(context, v),
+    );
+  }
+}
+
 /// `D2`'s card: the panel ground, a hairline, r16.
 ///
 /// Opaque on purpose. This screen is all numbers and spends no glass beyond

@@ -755,6 +755,14 @@
   "manualHtmlEmptyTitle": "HTML がまだ貼り付けられていません",
   "manualHtmlEmptyDesc": "ブラウザーでページのソースを表示して全選択・コピーし、上の貼り付けを押してください。",
   "cookieHistoryUse": "使用",
+  "cookieRetention": "Cookie を記憶",
+  "cookieRetentionOff": "記憶しない",
+  "cookieRetentionWeek": "7 日",
+  "cookieRetentionMonth": "30 日",
+  "cookieRetentionForever": "消去するまで",
+  "cookieRetentionNote": "この端末に暗号化せずに保存され、バックアップには含まれません。「記憶しない」にすると今ある記録も消去します。",
+  "cookieHistoryForget": "削除",
+  "cookieHistoryClearAll": "すべて消去",
   "cookieHistoryPairs": "{count} 組",
   "cookieHistoryEmptyDesc": "貼り付けた Cookie はここに記録され、同じサイトで再利用できます。",
   "usage": "使用状況",
@@ -932,7 +940,7 @@
   "googleV1BetaHint": "ヒント：Google GenAIのエンドポイントは通常「/v1beta」で終わります",
   "anthropicV1Hint": "ヒント：Anthropic のエンドポイントは通常「/v1」で終わります",
   "dashscopeApiV1Hint": "ヒント：DashScope ネイティブのエンドポイントは「/api/v1」で終わります",
-  "apiKeyStorageNotice": "キーはローカルに保存され、当社のサーバーには送信されません。",
+  "apiKeyStorageNotice": "キーは暗号化されずにこの端末のアプリのデータベースに保存され、アカウントのファイル権限でのみ保護されます。バックアップには含まれず、このプロバイダーにのみ送信されます。",
   "nameHint": "例：本番API",
   "enableDiscoveryDesc": "このエンドポイントから利用可能なモデルを自動的にリストアップする",
   "tagHint": "例：GPT4, Local, など",
@@ -1544,6 +1552,10 @@
   "enableNotifications": "システム通知を有効にする",
   "runSetupWizard": "セットアップウィザードを実行",
   "clearTempFiles": "一時ファイルを削除",
+  "clearCookieHistory": "Cookie 履歴を消去",
+  "clearCookieHistoryNote": "ダウンローダーが記憶したサイトの Cookie",
+  "clearCookieHistoryConfirm": "ダウンローダーが記憶したサイトの Cookie をすべて消去しますか？キューに追加済みのダウンロードには影響しません。",
+  "cookieHistoryCleared": "Cookie 履歴を消去しました。",
   "clearTempFilesConfirmTitle": "一時ファイルを削除しますか？",
   "clearTempFilesConfirmMessage": "マスク、切り抜きのコピー、ダウンローダーのキャッシュ、動画サムネイル {size} を削除します。一時ワークスペース内でこれらを参照している項目も併せて取り除かれます。ご自身のフォルダ内のファイルはそのままです。",
   "@clearTempFilesConfirmMessage": {
@@ -2393,6 +2405,23 @@
   },
   "kbEditProposedCreate": "新規ファイル",
   "kbEditProposedUpdate": "ファイル更新",
+  "kbEditScopeReplace": "セクション {heading} を置換",
+  "@kbEditScopeReplace": {
+    "placeholders": {
+      "heading": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditScopeAppend": "セクション {heading} に追記",
+  "@kbEditScopeAppend": {
+    "placeholders": {
+      "heading": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditScopeAppendEnd": "ファイル末尾に追記",
   "kbEditApply": "書き込む",
   "kbEditReject": "破棄",
   "kbEditApplied": "ディスクに書き込みました",

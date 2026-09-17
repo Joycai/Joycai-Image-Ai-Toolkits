@@ -59,7 +59,11 @@ enum _RowFilter { all, conflicts, skipped }
 /// batch at a time and are reviewable as they arrive; they are applied only
 /// once generation has finished.
 class AiRenameDialog extends StatefulWidget {
-  const AiRenameDialog({super.key});
+  const AiRenameDialog({super.key, @visibleForTesting this.debugInitialRows});
+
+  /// Review rows to open with, as if a run had produced them. Lets a test reach
+  /// the review list — the clash actions above all — without a model call.
+  final List<RenameReviewRow>? debugInitialRows;
 
   @override
   State<AiRenameDialog> createState() => _AiRenameDialogState();
@@ -109,6 +113,8 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   @override
   void initState() {
     super.initState();
+    final seeded = widget.debugInitialRows;
+    if (seeded != null) _rows = List.of(seeded);
     _loadLastSettings();
   }
 

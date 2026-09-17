@@ -144,7 +144,7 @@ class AnthropicChatProtocol implements ChatProtocol {
         // Same rule the other two families now follow: a body carrying no
         // content is a failed request, not a model that chose to say nothing.
         final body = response.body;
-        throw Exception(
+        throw LLMApiException(
           'Anthropic API returned no content: '
           '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
         );

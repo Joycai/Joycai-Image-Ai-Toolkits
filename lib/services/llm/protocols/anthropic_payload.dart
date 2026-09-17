@@ -56,7 +56,11 @@ Map<String, dynamic> prepareAnthropicPayload(
         // under `function.parameters`.
         'input_schema': t.parameters,
       },
-    if (target.config.enableWebSearch)
+    // Only where the vendor declares it (`VendorProfile.webSearchOn`): a
+    // switch stored on a model that now reaches a non-Anthropic ④ face
+    // (Bailian's) is hidden in the editor and must not be sent either.
+    if (target.config.enableWebSearch &&
+        target.vendor.sendsWebSearchOn(WireProtocol.anthropicChat))
       {
         'type': anthropicWebSearchToolType,
         'name': 'web_search',

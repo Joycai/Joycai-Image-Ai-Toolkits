@@ -1233,6 +1233,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cookieHistoryUse => 'Use';
 
   @override
+  String get cookieRetention => 'Remember cookies';
+
+  @override
+  String get cookieRetentionOff => 'Off';
+
+  @override
+  String get cookieRetentionWeek => '7 days';
+
+  @override
+  String get cookieRetentionMonth => '30 days';
+
+  @override
+  String get cookieRetentionForever => 'Until cleared';
+
+  @override
+  String get cookieRetentionNote =>
+      'Kept unencrypted on this device and never written to backups. Off forgets them now.';
+
+  @override
+  String get cookieHistoryForget => 'Remove';
+
+  @override
+  String get cookieHistoryClearAll => 'Clear all';
+
+  @override
   String cookieHistoryPairs(int count) {
     return '$count pairs';
   }
@@ -1717,7 +1742,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apiKeyStorageNotice =>
-      'Your key is stored locally and never sent to our servers.';
+      'Stored unencrypted in this app\'s database on this device, protected only by your account\'s file permissions. Never written to backups; sent only to this provider.';
 
   @override
   String get nameHint => 'e.g. My Production API';
@@ -3165,6 +3190,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearTempFiles => 'Clear Temporary Files';
+
+  @override
+  String get clearCookieHistory => 'Clear Cookie History';
+
+  @override
+  String get clearCookieHistoryNote => 'Site cookies the downloader remembered';
+
+  @override
+  String get clearCookieHistoryConfirm =>
+      'Forget every site cookie the downloader remembered? Downloads already queued keep theirs.';
+
+  @override
+  String get cookieHistoryCleared => 'Cookie history cleared.';
 
   @override
   String get clearTempFilesConfirmTitle => 'Clear Temporary Files?';
@@ -4629,6 +4667,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kbEditProposedUpdate => 'Update file';
+
+  @override
+  String kbEditScopeReplace(String heading) {
+    return 'Replaces section $heading';
+  }
+
+  @override
+  String kbEditScopeAppend(String heading) {
+    return 'Appends to section $heading';
+  }
+
+  @override
+  String get kbEditScopeAppendEnd => 'Appends to the end of the file';
 
   @override
   String get kbEditApply => 'Write file';

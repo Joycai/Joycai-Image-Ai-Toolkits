@@ -2153,6 +2153,54 @@ abstract class AppLocalizations {
   /// **'Use'**
   String get cookieHistoryUse;
 
+  /// No description provided for @cookieRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember cookies'**
+  String get cookieRetention;
+
+  /// No description provided for @cookieRetentionOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get cookieRetentionOff;
+
+  /// No description provided for @cookieRetentionWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'7 days'**
+  String get cookieRetentionWeek;
+
+  /// No description provided for @cookieRetentionMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'30 days'**
+  String get cookieRetentionMonth;
+
+  /// No description provided for @cookieRetentionForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Until cleared'**
+  String get cookieRetentionForever;
+
+  /// No description provided for @cookieRetentionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept unencrypted on this device and never written to backups. Off forgets them now.'**
+  String get cookieRetentionNote;
+
+  /// No description provided for @cookieHistoryForget.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get cookieHistoryForget;
+
+  /// No description provided for @cookieHistoryClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get cookieHistoryClearAll;
+
   /// No description provided for @cookieHistoryPairs.
   ///
   /// In en, this message translates to:
@@ -3008,7 +3056,7 @@ abstract class AppLocalizations {
   /// No description provided for @apiKeyStorageNotice.
   ///
   /// In en, this message translates to:
-  /// **'Your key is stored locally and never sent to our servers.'**
+  /// **'Stored unencrypted in this app\'s database on this device, protected only by your account\'s file permissions. Never written to backups; sent only to this provider.'**
   String get apiKeyStorageNotice;
 
   /// No description provided for @nameHint.
@@ -5506,6 +5554,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear Temporary Files'**
   String get clearTempFiles;
+
+  /// No description provided for @clearCookieHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Cookie History'**
+  String get clearCookieHistory;
+
+  /// No description provided for @clearCookieHistoryNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Site cookies the downloader remembered'**
+  String get clearCookieHistoryNote;
+
+  /// No description provided for @clearCookieHistoryConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget every site cookie the downloader remembered? Downloads already queued keep theirs.'**
+  String get clearCookieHistoryConfirm;
+
+  /// No description provided for @cookieHistoryCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookie history cleared.'**
+  String get cookieHistoryCleared;
 
   /// No description provided for @clearTempFilesConfirmTitle.
   ///
@@ -8097,6 +8169,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update file'**
   String get kbEditProposedUpdate;
+
+  /// Under a staged knowledge-file edit: the section it replaces. heading is the heading line as the file spells it.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaces section {heading}'**
+  String kbEditScopeReplace(String heading);
+
+  /// Under a staged knowledge-file edit: the section it adds to.
+  ///
+  /// In en, this message translates to:
+  /// **'Appends to section {heading}'**
+  String kbEditScopeAppend(String heading);
+
+  /// No description provided for @kbEditScopeAppendEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Appends to the end of the file'**
+  String get kbEditScopeAppendEnd;
 
   /// No description provided for @kbEditApply.
   ///

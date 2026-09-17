@@ -81,6 +81,10 @@
   "enableNotifications": "システム通知を有効にする",
   "runSetupWizard": "セットアップウィザードを実行",
   "clearTempFiles": "一時ファイルを削除",
+  "clearCookieHistory": "Cookie 履歴を消去",
+  "clearCookieHistoryNote": "ダウンローダーが記憶したサイトの Cookie",
+  "clearCookieHistoryConfirm": "ダウンローダーが記憶したサイトの Cookie をすべて消去しますか？キューに追加済みのダウンロードには影響しません。",
+  "cookieHistoryCleared": "Cookie 履歴を消去しました。",
   "clearTempFilesConfirmTitle": "一時ファイルを削除しますか？",
   "clearTempFilesConfirmMessage": "マスク、切り抜きのコピー、ダウンローダーのキャッシュ、動画サムネイル {size} を削除します。一時ワークスペース内でこれらを参照している項目も併せて取り除かれます。ご自身のフォルダ内のファイルはそのままです。",
   "@clearTempFilesConfirmMessage": {

@@ -248,6 +248,10 @@ extension AppAccent on ColorScheme {
   /// The shadow tinted glass casts in its own hue (`--p` at 35%).
   Color get accentGlow => primary.withValues(alpha: 0.35);
 
+  /// A guide line in its governing state (`D2a`: 引导线主色 35%) — the rail
+  /// beside the rows a pinned choice rules.
+  Color get accentRule => primary.withValues(alpha: 0.35);
+
   /// The accent *as text on a surface* — a text button, a link, a group
   /// caption, a live-status label.
   ///
@@ -391,6 +395,16 @@ class AppMotion {
         context,
         AppEffects.reduced(context) ? state : panel,
       );
+
+  /// [sceneOf] for a piece coming in, and [exitFactor] of it for one going
+  /// out. Every property of one scene change takes this one duration, so a
+  /// slide and a fade that leave together also arrive together.
+  static Duration sceneFor(BuildContext context, {required bool entering}) {
+    final enter = sceneOf(context);
+    return entering
+        ? enter
+        : Duration(milliseconds: (enter.inMilliseconds * exitFactor).round());
+  }
 
   /// Whether the running dot may breathe.
   static bool breathes(BuildContext context) =>

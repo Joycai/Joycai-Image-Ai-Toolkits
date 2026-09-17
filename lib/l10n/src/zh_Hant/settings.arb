@@ -81,6 +81,10 @@
   "enableNotifications": "啟用系統通知",
   "runSetupWizard": "執行設定精靈",
   "clearTempFiles": "清理暫存檔案",
+  "clearCookieHistory": "清除 Cookie 紀錄",
+  "clearCookieHistoryNote": "下載器記住的網站 Cookie",
+  "clearCookieHistoryConfirm": "清除下載器記住的所有網站 Cookie？已加入佇列的下載不受影響。",
+  "cookieHistoryCleared": "Cookie 紀錄已清除。",
   "clearTempFilesConfirmTitle": "清理暫存檔案？",
   "clearTempFilesConfirmMessage": "將刪除 {size} 的遮罩、裁切副本、下載器快取與影片縮圖。暫存工作區中指向這些檔案的項目會一併移除；你自己資料夾中的檔案不受影響。",
   "@clearTempFilesConfirmMessage": {

@@ -42,6 +42,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | D2 `用量统计` 稿 1d–1h（无方案文件，直接按稿施工） | 费用组页面：头行 + 桌面双栏 / 平板单栏 / 手机全屏页，拖拽排序（v43 `fee_groups.sort_order`） | `widgets/models/pricing_group_manager.dart` 与 `widgets/models/fee_group_*.dart`；与稿的出入见下面「还欠的」 |
 | `2026-09-large-file-split.md`（八片，分支 `claude/split-*`，一片一个 PR） | 1500 行以上的八个文件拆开：`prompt_optimizer_agent` 4207→1352 · `prompt_optimizer_view` 2759→595 · `video_config_panel` 1947→573 · `openai_chat_protocol` 1784→796 · `anthropic_chat_protocol` 1670→420 · `directory_tree_item` 1593→701 · `ai_rename_dialog` 1510→477 · `model_edit_dialog` 1497→290。两种手法：并列的顶层单元拆成独立库（两个协议、`widgets/files/folder_drop_feedback.dart`、`folder_tree_row.dart`）；一个大类或大 State 用 `part` 拆，私有 static 变库私有顶层声明、State 的 builder 变 State 上的具名 extension —— **元素树一个节点不变**，所以没有把卡片改成独立 widget。顺带：`browser` 不再横向引 `workbench`；问答卡的虚线用回共享节奏；**AI 重命名的冲突逻辑下沉到 `services/tasks/ai_rename_review.dart` 并第一次有了测试，由此找到并修掉一个会删用户照片的 bug**（两行重名时点「改名」原样还回同名、「覆盖」删掉另一行刚放好的文件；现在 review 与 executor 两层都拒绝，UI 上禁用并说明）。**`llm_dispatcher.dart`（1586 行）刻意没拆：它是唯一路由表，拆开就违反那条不变量 —— 按行数扫到它不要立项。** | ④ 的文件 ↔ 不变量对照在 `architecture/llm-three-layer.md` ④ 一节；助手七个文件在 `architecture/assistant-context.md`「Where it lives」；CLAUDE.md 的 map。拆分手法与各片的坑（插值里补类名会静默编译通过、extension 里库作用域优先于 `this`、截图要比像素不比字节）在上面 `git show` 的方案原文里 |
 | `2026-09-assistant-output-cap.md` + `-execution.md`（八片，分支 `claude/assistant-output-cap`，一片一个 commit） | 提示词助手输出截断：模型级「最大输出」（v44 `llm_models.max_output_tokens`、协议唯一读口 `outputCapFor`、① 字段名按 `VendorProfile.outputCapField` 声明、④ 的 8192 退为兜底、编辑器区块 + 卡片 chip、发现时按键形预填上下文窗口——上限刻意不预填）；截断对策（`length` 的半截调用一个不跑、配有指向的 `output_truncated` 结果、连续两次即停并跳到模型设置，子代理同款）；压缩摘要由 App 附最新提示词而不再让模型重抄（跨次压缩接力）；四个模式提示加「交付前不写散文」；子代理 note 限长；`write_knowledge_file` 按节写入（`replace_section` / `append`，拼好后仍 stage 整文件） | `architecture/llm-three-layer.md`「输出上限」、`architecture/assistant-context.md`「The output side」与不变量 12–13、`api/usage.md` §3；设计稿链接在前者。方案原文 `git show 2e7f443:docs/plans/2026-09-assistant-output-cap.md`。欠的并入下面「还欠的」 |
+| `2026-09-debt-sweep-execution.md`（二十二片 + 四次 review，分支 `claude/debt-sweep-4.9`，v4.9.0） | 清「还欠的」里用户点名的三组。① 代码：state 换新列表（视频参考图 / 文件夹切换 / 下载器日志）；视频面板头部放不下时整栏单滚动；AI 重命名「覆盖」禁用态的测试口子；截断标记与 `modelDbId` 跨重启（`LLMMessage` 上的宿主簿记字段）；按节写入的卡片标出节名、hunk 头带所在标题；九个协议的「200 里什么都没有」改抛 `LLMApiException`、`fromJson` 拒收未知 role；`VendorProfile.webSearchOn` 让编辑器与三个 payload 同答，百炼 ④ 面不再带 `web_search`。② 动效：「还欠的」七条全做（见 `plans/README.md` 第四轮）。④ 决策项：S1 / S3 走「明说 + 文件权限 + 生命周期」不上钥匙串（理由见执行文档「决策记录」）；`runTurn` 拆出四个 helper；助手一次 session 通知 1,122 → 29 次 build（`ListenableSelector`）；D2a 三条；十五个 1000–1500 行文件拆分。**与台账不符的两条**：视频 / MJ 请求早已走 `sendJsonRequest`；timeout 取证的「① 累积器」早已落地 | `architecture/assistant-context.md`（Where it lives 九个文件、截断标记持久化）、`architecture/llm-three-layer.md`（联网搜索同一答案、`llm_errors.dart`、`model_capability_tables.dart`）、`architecture/design-tokens.md`（`accentRule`、`AppMotion.sceneFor`）、`plans/README.md`、CLAUDE.md map。执行文档原文 `git show 99b2784:docs/plans/2026-09-debt-sweep-execution.md`（施工记录里有每片的偏离与量出来的数字）。欠的并入下面「还欠的」 |
 
 三份审计报告（`code-review-report-20260613.md` v2.3.0、`api-standards-audit.md`
 基线 `d03047e`、`2026-08-ai-capability-review.md` 基线 `6a4920d`）都是带完整
@@ -49,7 +50,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 带着「⚠️ 历史文档」抬头。要重新体检跑一次 `/code-review` 或 `/security-review`，
 不要照着旧快照改。
 
-## 还欠的（2026-09-12 对照 main 逐条复核过）
+## 还欠的（2026-09-12 对照 main 逐条复核过；2026-09-16 欠账清扫后更新）
 
 ### 输出上限（2026-09-16）
 
@@ -65,28 +66,16 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 
 **明确留作后续的**：
 
-- 截断标记（`OptimizerChatEntry.truncated` / `modelDbId`）只在内存里；重启后恢复的会话不再显示尾部标记与跳转（历史里没有 finish reason）。
-- 按节写入的预览卡仍是整文件 diff；一节的改动在长文件里要滚着看。
 - 按节写入在「逐条确认关闭」时：第一条写入落盘后 `knowledgeStaleAt` 让该文件的读失效，第二条同文件的节写入被要求先重读——与整文件模式一样，是先读后写护栏的既有行为，没有为节模式放宽。
 - 发现时只预填新行的上下文窗口；上限不预填（列表报的是模型最大值，存进去就会随每次请求发出）；已存在的模型不会因为重新「拉取模型」而补上窗口（存量行是用户的）。
 - `KbSectionNotFound` 列出的标题包括模型没读过的页；页级读护栏只拦改写，不拦「看见标题名」。
 
-### 大文件拆分（2026-09-16，八片之后）
+### 大文件拆分（2026-09-16 欠账清扫之后）
 
-- **`runTurn` 仍是 541 行**（`prompt_optimizer_agent.dart`）。它是 tool loop 本体，拆它要动控制流，
-  和「搬家」不是一类工作。
-- **拆出来的卡片还是 State 上的 extension，不是独立 widget。** 要收窄 rebuild 范围（例如
-  `PromptOptimizerChatView` 每次 session 通知都 `setState` 整个 view）得真的抽 widget —— 先用
-  `render_probe` 量，再决定值不值。
-- **AI 重命名的「覆盖」禁用态没有任何截图或 widget 测试。** harness 从不展示 review 行；要种出这些行
-  得 stub 一次模型调用，`AiRenameDialog` 没有给测试留这个口子。
-- **视频面板在 1440×900 下参考图区只露出一条**，缩略图被裁掉大半（`workbench_*_video_filled.png`，
-  空态也一样）。没查是刻意的折叠还是布局问题。
-- **`WorkbenchUIState.addVideoReferenceImage` / `removeVideoReferenceImage` 原地改列表再
-  `notifyListeners()`**，与 CLAUDE.md「先建新实例」的规则不符；任何 `select` 这个列表的地方都看不到变化。
-- **1000–1500 行之间还有 14 个文件**（`crop_resize_toolbar` 1472、`llm_service` 1431、
-  `model_capabilities` 1330、`task_queue_card` 1294 领头）。这一轮只做了 1500 以上的。
 - `buildAnthropicHistory` 没有直接测试，只经 payload 测试间接覆盖（拆分前就是如此）。
+- **`llm_dispatcher.dart` 仍在 1500 行以上，刻意不拆**（唯一路由表，见上面 `2026-09-large-file-split` 一行）。
+  其余 1000–1500 行的文件这一轮拆过一遍（十五个），行数与留下的部分记在欠账清扫那一行指向的执行文档「施工记录」里。
+- `modelKindIcon` 在 `widgets/ui/model_tag_chip.dart` 与 `widgets/models/model_edit_controls.dart` 各声明一份（拆分时发现，未合并）。
 
 ### 需要真实 key 才能定论（来自端点审计第 3 节）
 
@@ -116,13 +105,10 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 
 **明确留作后续的**：
 
-- 视频提交、Midjourney 提交与各轮询 GET 未走 `sendJsonRequest`，取消不能中止在途请求。
 - ② Responses 未接 `text.format` 结构化输出、内置 web search、`previous_response_id`。（xAI 默认面已于 2026-09-15 切到 Responses；OpenAI / NewAPI 的渠道级 Responses 预设见 #271。）
 - 百炼 ① 面按 vendor 声明走 `enable_thinking`，Qwen 3.7+ 因此失去强度档；要保留需要模型级方言列。
 - ③ 协议类停止原因（`MISSING_THOUGHT_SIGNATURE` 等）有部分内容时仍按成功交付 + WARN。
-- 旧存的 `enable_web_search` 标记在百炼 ④ 面上仍会发 `web_search` 工具（编辑器已不再提供该开关）。
 - 结构化输出链（强制工具 → JSON mode）整体未接；目前没有调用方需要，`toolChoice` 选项协议侧已能读。
-- ① 同步路径「no choices」仍抛裸 `Exception`；`LLMMessage.fromJson` 仍把未知 role 强转为 user（恢复时的修复已兜住后果）。
 
 ### 按规格计费（D2b 稿，已合入；三处与稿不同）
 
@@ -144,25 +130,26 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 - **名字里的括号**：稿没有；组名里成对的 `()` / `[]`（含全角）内容拆成名字旁的 badge（`parseFeeGroupName`），只在组卡上，编辑框和下拉仍显示原名。
 - **桌面的滚动**：稿是整页滚动；实现改为卡片撑满标签页、头行固定、左列表和右编辑卡各自滚动（`PricingGroupManager.fill`）。整页滚时点下方的组，编辑卡被带到视口上方，每改一格都要来回滚。带着组进来（用量页「去补档位」）和 Alt+↑↓ 移动时列表会把选中行滚进视野。平板仍整页滚，编辑卡就插在被点的行下面。
 
-### 模型编辑框（D2a 稿，三条当轮明确留在范围外）
+### 模型编辑框（D2a 稿，欠账清扫之后）
 
-- **18a 右栏的 2px 引导线与下级缩进**：18a 时期就没实现，D2a 的「引导线补间到主色」
-  依赖它；补上要重排能力 / 代理行为两个区块的结构，单开一轮。
-- **菜单选中项的 check + 主色 10% 底**：`AppDropdown` 基于 Material `DropdownButton`，
-  选中高亮是它自带的；自绘选中态要换组件。
-- **点单态的协议字段值用主色深**：只换了描边与底两个 token，值仍是正文色。
+三条已做（参数块引导线点单时补间到主色 35%、菜单选中行 check、点单态值用主色深）。与稿的出入：
 
-### 安全（2026-06 审查里复核后仍成立的两条）
+- 设计稿这轮没读到（DesignSync 未授权），数值取自 `git show 6a4f358` 里的 D2a 简报；**没有对照稿复核**。
+- 「能力 / 代理行为区块的下级缩进」没做：这两个区块没有受管辖的下级行，引导线只属于请求方式下的参数块。
+- 共享 `AppDropdown` 的选中底仍是 Material 自带的；只加了 check。`ModelEditMenuField` 用的是 12% `accentTint`（阶梯上没有 10%）。
 
-同批的 S2（备份导出带明文 key）、S4（拼接 SQL）、S5（AI 改名不消毒文件名）都已修
-（`database_service.dart:373`、`prompt_repository.dart:62`、`ai_rename_agent.dart:297`）。
-剩下这两条没有：
+### 安全（2026-06 审查的 S1 / S3，欠账清扫里按「明说」处理）
 
-- **S1 · API Key 明文存于 SQLite**（`llm_channels.api_key TEXT NOT NULL`）。桌面上
-  数据库就在应用数据目录里，本机任何进程可读。`pubspec.yaml` 至今没有
-  `flutter_secure_storage`。要么换钥匙串存储，要么在首次配置时明说。
-- **S3 · Cookie 明文存于 `downloader_cookies` 且无过期**。导出那一半已经修了
-  （`database_service.dart:380` 同样置空），至今没有的是加密存储、会话生命周期
-  选项，和一个「清除 Cookie 历史」的入口。
+同批的 S2、S4、S5 早已修。S1 与 S3 这一轮做了，**但没有做加密**，理由写在欠账清扫的执行文档
+「决策记录」：本机构建是 ad-hoc 签名，`flutter_secure_storage` 在 macOS 上要么失败要么每次重签都弹授权；
+Linux 构建没装 libsecret、最小桌面常无 keyring；便携模式下钥匙串不跟着数据库走。做了的：
+
+- **S1**：三处填 key 的地方如实写明「明文存于本机数据库、只受系统账户的文件权限保护、不进备份」；macOS / Linux
+  上数据库 600、数据目录 700（便携模式只收紧文件）；代理密码导出置空、恢复时保留本机的。
+- **S3**：`CookieRepository` 的保留期（不记住 / 7 天 / 30 天默认 / 直到清除）、逐条删除、清空入口；
+  任务行不再存 cookie（旧行启动时清洗，重启后恢复的下载按 host 回查历史）。
+
+仍然成立的：key 与 cookie 在本机数据库里是明文，同一用户的其他进程可读。要真加密，前提是
+正式签名的 macOS 构建（带 `keychain-access-groups`）和 Linux 的 libsecret 依赖，单开一轮。
 
 其余 66 条按 v2.3.0 的行号写成，未逐条复核。

@@ -178,6 +178,8 @@ class ModelProtocolSection extends StatelessWidget {
                   padding: const EdgeInsets.only(top: AppSpace.s10),
                   child: ModelEditParamBlock(
                     items: paramSummaryItems(l10n, paramsCapabilities, menu.surface),
+                    // `D2a`: the rows a pinned protocol rules take its accent.
+                    governed: pin != null,
                   ),
                 ),
               if (unrecognized != null)
@@ -305,7 +307,11 @@ class ModelProtocolSection extends StatelessWidget {
               wireProtocolLabel(l10n, pin),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              // `D2a`: a pinned value reads in the accent's deep ink.
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.accentText,
+              ),
             )
           : _autoFace(context, l10n),
     );
@@ -370,7 +376,10 @@ class ModelProtocolSection extends StatelessWidget {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: pin != null ? theme.colorScheme.accentText : null,
+            ),
           ),
           if (path != null)
             Text(

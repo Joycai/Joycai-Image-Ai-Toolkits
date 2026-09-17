@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -99,6 +99,12 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
 
   List<Prompt> _allUserPrompts = [];
   List<PromptTag> _tags = [];
+
+  /// The head's natural height, as last laid out, and the key that carries it
+  /// between the split and the single-scroll column without remounting it.
+  /// Null until the first layout.
+  double? _headExtent;
+  final GlobalKey _headKey = GlobalKey();
 
   /// [setState] for the builders in the parts. They are extensions on this
   /// class, and an extension may not call a protected member itself.
@@ -512,14 +518,33 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
               builder: (context, box) {
                 const double promptFloor = _kMinPromptEditorHeight + _kPromptCardChrome + _kCardGap;
 
-                if (box.maxHeight < promptFloor + _kMinHeadHeight) {
+                final Widget measuredHead = KeyedSubtree(
+                  key: _headKey,
+                  child: _ExtentReporter(
+                    onExtent: (extent) {
+                      if (!mounted || extent == _headExtent) return;
+                      setState(() => _headExtent = extent);
+                    },
+                    child: head,
+                  ),
+                );
+                final double headRoom = box.maxHeight - promptFloor;
+                // Scroll as one when the head does not fit above the prompt
+                // floor. Pinning a head taller than its room clipped it inside
+                // its own scroll — at 1440×900 with the console open the
+                // reference card showed one strip of thumbnails, and the
+                // edge fade hid that there was more. The head lays out at its
+                // natural height in both arrangements, so the measurement is
+                // the same either side of the switch and cannot oscillate.
+                if (headRoom < _kMinHeadHeight ||
+                    (_headExtent != null && _headExtent! > headRoom)) {
                   return ScrollEdgeFade(
                     child: SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          head,
+                          measuredHead,
                           const SizedBox(height: _kCardGap),
                           buildPrompt(fill: false),
                         ],
@@ -532,9 +557,9 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: box.maxHeight - promptFloor),
+                      constraints: BoxConstraints(maxHeight: headRoom),
                       child: ScrollEdgeFade(
-                        child: SingleChildScrollView(child: head),
+                        child: SingleChildScrollView(child: measuredHead),
                       ),
                     ),
                     const SizedBox(height: _kCardGap),

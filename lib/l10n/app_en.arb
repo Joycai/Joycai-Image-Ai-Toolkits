@@ -939,6 +939,14 @@
   "manualHtmlEmptyTitle": "No HTML pasted yet",
   "manualHtmlEmptyDesc": "View the page source in your browser, select all and copy, then click Paste above.",
   "cookieHistoryUse": "Use",
+  "cookieRetention": "Remember cookies",
+  "cookieRetentionOff": "Off",
+  "cookieRetentionWeek": "7 days",
+  "cookieRetentionMonth": "30 days",
+  "cookieRetentionForever": "Until cleared",
+  "cookieRetentionNote": "Kept unencrypted on this device and never written to backups. Off forgets them now.",
+  "cookieHistoryForget": "Remove",
+  "cookieHistoryClearAll": "Clear all",
   "cookieHistoryPairs": "{count} pairs",
   "@cookieHistoryPairs": {
     "placeholders": {
@@ -1213,7 +1221,7 @@
   "googleV1BetaHint": "Hint: Google GenAI endpoints usually end with '/v1beta'",
   "anthropicV1Hint": "Hint: Anthropic endpoints usually end with '/v1'",
   "dashscopeApiV1Hint": "Hint: DashScope native endpoints end with '/api/v1'",
-  "apiKeyStorageNotice": "Your key is stored locally and never sent to our servers.",
+  "apiKeyStorageNotice": "Stored unencrypted in this app's database on this device, protected only by your account's file permissions. Never written to backups; sent only to this provider.",
   "nameHint": "e.g. My Production API",
   "enableDiscoveryDesc": "Automatically list available models from this endpoint",
   "tagHint": "e.g. GPT4, Local, etc.",
@@ -2035,6 +2043,10 @@
   "enableNotifications": "Enable System Notifications",
   "runSetupWizard": "Run Setup Wizard",
   "clearTempFiles": "Clear Temporary Files",
+  "clearCookieHistory": "Clear Cookie History",
+  "clearCookieHistoryNote": "Site cookies the downloader remembered",
+  "clearCookieHistoryConfirm": "Forget every site cookie the downloader remembered? Downloads already queued keep theirs.",
+  "cookieHistoryCleared": "Cookie history cleared.",
   "clearTempFilesConfirmTitle": "Clear Temporary Files?",
   "clearTempFilesConfirmMessage": "Deletes {size} of masks, crop copies, downloader cache and video thumbnails. Entries in the temporary workspace that point at these files are removed with them; files in your own folders are untouched.",
   "@clearTempFilesConfirmMessage": {
@@ -2891,6 +2903,25 @@
   },
   "kbEditProposedCreate": "New file",
   "kbEditProposedUpdate": "Update file",
+  "kbEditScopeReplace": "Replaces section {heading}",
+  "@kbEditScopeReplace": {
+    "description": "Under a staged knowledge-file edit: the section it replaces. heading is the heading line as the file spells it.",
+    "placeholders": {
+      "heading": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditScopeAppend": "Appends to section {heading}",
+  "@kbEditScopeAppend": {
+    "description": "Under a staged knowledge-file edit: the section it adds to.",
+    "placeholders": {
+      "heading": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditScopeAppendEnd": "Appends to the end of the file",
   "kbEditApply": "Write file",
   "kbEditReject": "Discard",
   "kbEditApplied": "Written to disk",

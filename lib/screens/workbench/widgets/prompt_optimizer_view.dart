@@ -12,6 +12,7 @@ import '../../../core/responsive.dart';
 import '../../../core/text_diff.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
+import '../../../services/assistant/knowledge_base_service.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/ui/app_breathing_dot.dart';
@@ -115,6 +116,19 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   PromptOptimizerSession? _session;
   int _lastTranscriptLength = 0;
 
+  /// What this view draws from the session, as of the last rebuild. The
+  /// session notifies for things drawn elsewhere too — the request basis the
+  /// usage readout shows, several times a request — and a full transcript
+  /// rebuild for each cost ~1,100 widget builds (render_probe, assistant).
+  /// The transcript list is replaced on every change, so identity is enough.
+  Object? _drawn;
+
+  /// Each staged edit's diff, keyed by edit id and kept while its two texts
+  /// are the same objects: the card re-runs on every transcript change, the
+  /// diff only when the edit itself does.
+  final Map<String, ({String old, String next, List<DiffHunk> hunks, int added, int removed})>
+      _kbDiffs = {};
+
   /// Edit ids whose full proposed content is expanded. Purely presentational.
   final Set<String> _expandedKbEdits = {};
 
@@ -195,16 +209,49 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     _session?.removeListener(_onSessionChanged);
     _session = session;
     _lastTranscriptLength = session.transcript.length;
+    _drawn = _drawnFrom(session);
     session.addListener(_onSessionChanged);
   }
 
+  static Object _drawnFrom(PromptOptimizerSession s) => (
+        s.transcript,
+        s.isRunning,
+        s.runStartedAt,
+        s.promptVersions,
+        s.refinedPrompt,
+        s.usesKnowledgeBase,
+      );
+
+  /// [TextDiff] for a staged edit, computed once per edit content.
+  ({List<DiffHunk> hunks, int added, int removed}) _kbDiffFor(String editId, String old, String next) {
+    final cached = _kbDiffs[editId];
+    if (cached != null && identical(cached.old, old) && identical(cached.next, next)) {
+      return (hunks: cached.hunks, added: cached.added, removed: cached.removed);
+    }
+    final hunks = TextDiff.unified(old, next);
+    var added = 0;
+    var removed = 0;
+    for (final hunk in hunks) {
+      for (final line in hunk.lines) {
+        if (line.kind == DiffLineKind.added) added++;
+        if (line.kind == DiffLineKind.removed) removed++;
+      }
+    }
+    _kbDiffs[editId] = (old: old, next: next, hunks: hunks, added: added, removed: removed);
+    return (hunks: hunks, added: added, removed: removed);
+  }
+
   void _onSessionChanged() {
-    if (!mounted) return;
-    final length = _session?.transcript.length ?? 0;
+    final session = _session;
+    if (!mounted || session == null) return;
+    final length = session.transcript.length;
     if (length != _lastTranscriptLength) {
       _lastTranscriptLength = length;
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     }
+    final drawn = _drawnFrom(session);
+    if (drawn == _drawn) return;
+    _drawn = drawn;
     setState(() {});
   }
 

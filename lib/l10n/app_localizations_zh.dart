@@ -1195,6 +1195,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cookieHistoryUse => '使用';
 
   @override
+  String get cookieRetention => '记住 Cookie';
+
+  @override
+  String get cookieRetentionOff => '不记住';
+
+  @override
+  String get cookieRetentionWeek => '7 天';
+
+  @override
+  String get cookieRetentionMonth => '30 天';
+
+  @override
+  String get cookieRetentionForever => '直到清除';
+
+  @override
+  String get cookieRetentionNote => '以明文保存在本机，不会写入备份。选「不记住」会立即清除已记住的。';
+
+  @override
+  String get cookieHistoryForget => '移除';
+
+  @override
+  String get cookieHistoryClearAll => '全部清除';
+
+  @override
   String cookieHistoryPairs(int count) {
     return '$count 对';
   }
@@ -1660,7 +1684,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashscopeApiV1Hint => '提示：DashScope 原生接口以 \'/api/v1\' 结尾';
 
   @override
-  String get apiKeyStorageNotice => '您的密钥仅存储在本地，不会发送到我们的服务器。';
+  String get apiKeyStorageNotice =>
+      '密钥以明文保存在本机的应用数据库中，只受系统账户的文件权限保护；不会写入备份，只发送给该服务商。';
 
   @override
   String get nameHint => '例如：生产环境 API';
@@ -3028,6 +3053,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get clearTempFiles => '清理临时文件';
+
+  @override
+  String get clearCookieHistory => '清除 Cookie 历史';
+
+  @override
+  String get clearCookieHistoryNote => '下载器记住的网站 Cookie';
+
+  @override
+  String get clearCookieHistoryConfirm => '清除下载器记住的所有网站 Cookie？已加入队列的下载不受影响。';
+
+  @override
+  String get cookieHistoryCleared => 'Cookie 历史已清除。';
 
   @override
   String get clearTempFilesConfirmTitle => '清理临时文件？';
@@ -4446,6 +4483,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get kbEditProposedUpdate => '更新文件';
+
+  @override
+  String kbEditScopeReplace(String heading) {
+    return '替换小节 $heading';
+  }
+
+  @override
+  String kbEditScopeAppend(String heading) {
+    return '追加到小节 $heading';
+  }
+
+  @override
+  String get kbEditScopeAppendEnd => '追加到文件末尾';
 
   @override
   String get kbEditApply => '写入文件';
@@ -6069,6 +6119,30 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get cookieHistoryUse => '使用';
 
   @override
+  String get cookieRetention => '記住 Cookie';
+
+  @override
+  String get cookieRetentionOff => '不記住';
+
+  @override
+  String get cookieRetentionWeek => '7 天';
+
+  @override
+  String get cookieRetentionMonth => '30 天';
+
+  @override
+  String get cookieRetentionForever => '直到清除';
+
+  @override
+  String get cookieRetentionNote => '以明文儲存在本機，不會寫入備份。選「不記住」會立即清除已記住的。';
+
+  @override
+  String get cookieHistoryForget => '移除';
+
+  @override
+  String get cookieHistoryClearAll => '全部清除';
+
+  @override
   String cookieHistoryPairs(int count) {
     return '$count 組';
   }
@@ -6534,7 +6608,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get dashscopeApiV1Hint => '提示：DashScope 原生端點以「/api/v1」結尾';
 
   @override
-  String get apiKeyStorageNotice => '您的金鑰會儲存在本機，絕不會傳送至我們的伺服器。';
+  String get apiKeyStorageNotice =>
+      '金鑰以明文儲存在本機的應用程式資料庫中，只受系統帳戶的檔案權限保護；不會寫入備份，只會傳送給該服務商。';
 
   @override
   String get nameHint => '例如：我的正式版 API';
@@ -7902,6 +7977,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get clearTempFiles => '清理暫存檔案';
+
+  @override
+  String get clearCookieHistory => '清除 Cookie 紀錄';
+
+  @override
+  String get clearCookieHistoryNote => '下載器記住的網站 Cookie';
+
+  @override
+  String get clearCookieHistoryConfirm => '清除下載器記住的所有網站 Cookie？已加入佇列的下載不受影響。';
+
+  @override
+  String get cookieHistoryCleared => 'Cookie 紀錄已清除。';
 
   @override
   String get clearTempFilesConfirmTitle => '清理暫存檔案？';
@@ -9321,6 +9408,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get kbEditProposedUpdate => '更新檔案';
+
+  @override
+  String kbEditScopeReplace(String heading) {
+    return '取代小節 $heading';
+  }
+
+  @override
+  String kbEditScopeAppend(String heading) {
+    return '追加到小節 $heading';
+  }
+
+  @override
+  String get kbEditScopeAppendEnd => '追加到檔案結尾';
 
   @override
   String get kbEditApply => '寫入檔案';

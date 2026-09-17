@@ -96,7 +96,7 @@ class GeminiChatProtocol implements ChatProtocol {
       final promptBlocked = feedback is Map && feedback['blockReason'] != null;
       if (!promptBlocked && (candidates is! List || candidates.isEmpty)) {
         final body = response.body;
-        throw Exception(
+        throw LLMApiException(
           'Google GenAI returned no candidates: '
           '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
         );

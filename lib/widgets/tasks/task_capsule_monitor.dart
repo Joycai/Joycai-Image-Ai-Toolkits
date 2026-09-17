@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
@@ -31,6 +33,29 @@ class TaskCapsuleMonitor extends StatefulWidget {
 class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
+
+  /// Whether the content's height is following an open or close the user
+  /// asked for. It animates at M3 then — in step with the width — and at M2
+  /// otherwise: the other thing that resizes it is the running count
+  /// crossing zero, which in a batch run happens once per task, and a
+  /// panel-weight motion that often is noise (`plans/README.md`).
+  ///
+  /// Held for the whole M3 rather than decided per build: progress rebuilds
+  /// the capsule many times a second, and a curve swapped under a running
+  /// AnimatedSize makes the height jump.
+  bool _userResizing = false;
+  Timer? _userResizeTimer;
+
+  void _setExpanded(bool expanded) {
+    _userResizeTimer?.cancel();
+    _userResizeTimer = Timer(AppMotion.panel, () {
+      if (mounted) setState(() => _userResizing = false);
+    });
+    setState(() {
+      _isExpanded = expanded;
+      _userResizing = true;
+    });
+  }
   Offset? _offset;
 
   /// Apple's `spring(duration:bounce:)` at the audit's recommended setting. A
@@ -111,6 +136,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor>
   @override
   void dispose() {
     _progressTick?.removeListener(_onProgress);
+    _userResizeTimer?.cancel();
     _settle.dispose();
     super.dispose();
   }
@@ -231,7 +257,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor>
             _settleAt(target, v);
           },
           onPanCancel: () => setState(() => _dragOffset = null),
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
+          onTap: () => _setExpanded(!_isExpanded),
           child: AnimatedOpacity(
             opacity: visible ? 1.0 : 0.0,
             duration: AppMotion.sceneOf(context),
@@ -270,9 +296,12 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor>
                                 fontWeight: FontWeight.w400,
                               );
 
+                      final bool userResize = _userResizing;
                       return AnimatedSize(
-                        duration: AppMotion.sceneOf(context),
-                        curve: AppMotion.emphasized,
+                        duration: userResize
+                            ? AppMotion.sceneOf(context)
+                            : AppMotion.durationOf(context, AppMotion.state),
+                        curve: userResize ? AppMotion.emphasized : AppMotion.enter,
                         alignment: Alignment.bottomCenter,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -373,7 +402,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor>
                                     context
                                         .read<AppState>()
                                         .navigateToScreen(AppDestination.tasks.index);
-                                    setState(() => _isExpanded = false);
+                                    _setExpanded(false);
                                   },
                                   child: Text(l10n.viewAll),
                                 ),

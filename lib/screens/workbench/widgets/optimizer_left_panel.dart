@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/ui/listenable_selector.dart';
 import 'knowledge_tree_panel.dart';
 import 'optimizer_reference_panel.dart';
 
@@ -31,9 +32,12 @@ class OptimizerLeftPanel extends StatelessWidget {
     // The pending list does have to be watched here — it drives the tree's
     // badges and its footer.
     return Consumer<WorkbenchUIState>(
-      builder: (context, wui, _) => ListenableBuilder(
+      builder: (context, wui, _) => ListenableSelector<Object>(
         listenable: wui.optimizerSession,
-        builder: (context, _) => KnowledgeTreePanel(
+        // The pending list is derived from the transcript, which the session
+        // replaces on every change; nothing else it notifies for shows here.
+        selector: () => wui.optimizerSession.transcript,
+        builder: (context) => KnowledgeTreePanel(
           kbPath: kbPath,
           pendingKbEdits: PromptOptimizerAgent.pendingKbEdits(wui.optimizerSession),
         ),

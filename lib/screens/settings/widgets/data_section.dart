@@ -59,6 +59,13 @@ class DataSection extends StatelessWidget {
             // throw something away stay together at the end.
             const _TempFilesRow(),
             _DataActionRow(
+              title: l10n.clearCookieHistory,
+              note: l10n.clearCookieHistoryNote,
+              verb: l10n.actionClear,
+              icon: Icons.cookie_outlined,
+              onPressed: () => _clearCookieHistory(context, l10n),
+            ),
+            _DataActionRow(
               title: l10n.runSetupWizard,
               verb: l10n.actionRun,
               icon: Icons.play_arrow_outlined,
@@ -281,6 +288,32 @@ class DataSection extends StatelessWidget {
       if (!context.mounted) return;
       AppSnackBar.error(context, backupImportErrorText(l10n, e));
     }
+  }
+
+  /// S3: the downloader's remembered cookies, forgotten on request. Queued
+  /// downloads keep the copy they were created with.
+  Future<void> _clearCookieHistory(BuildContext context, AppLocalizations l10n) async {
+    final confirmed = await AppDialog.show<bool>(
+      context,
+      icon: Icons.cookie_outlined,
+      title: l10n.clearCookieHistory,
+      content: Text(l10n.clearCookieHistoryConfirm),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        AppButton(
+          label: l10n.actionClear,
+          variant: AppButtonVariant.destructive,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+    if (confirmed != true || !context.mounted) return;
+    await Provider.of<AppState>(context, listen: false).downloaderState.clearCookieHistory();
+    if (context.mounted) AppSnackBar.success(context, l10n.cookieHistoryCleared);
   }
 
   void _resetSettings(BuildContext context, AppLocalizations l10n) {

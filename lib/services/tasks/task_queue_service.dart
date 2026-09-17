@@ -13,6 +13,7 @@ import '../../models/llm_model.dart';
 import '../../models/task_item.dart';
 import 'ai_rename_agent.dart';
 import '../db/database_service.dart';
+import '../db/repositories/cookie_repository.dart';
 import '../assistant/knowledge_base_service.dart';
 import '../llm/image_compression.dart';
 import '../llm/job_poll.dart';

@@ -119,7 +119,7 @@ class DashScopeChatProtocol implements ChatProtocol {
         // to say nothing", which is how a `result_format` mistake or an
         // expired key would look like a silent no-op.
         final body = response.body;
-        throw Exception(
+        throw LLMApiException(
           'DashScope Chat API returned no choices: '
           '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
         );
@@ -568,7 +568,7 @@ Map<String, dynamic> buildDashScopeChatPayload(
   // for, so no sources come back and nothing is parsed for them (pitfalls 11
   // §A10).
   if (target.config.enableWebSearch &&
-      target.vendor.serverWebSearchFaces.contains(WireProtocol.dashscopeChat)) {
+      target.vendor.sendsWebSearchOn(WireProtocol.dashscopeChat)) {
     parameters['enable_search'] = true;
   }
 

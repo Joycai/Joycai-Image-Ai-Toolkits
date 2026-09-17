@@ -76,6 +76,32 @@ void main() {
       .map((t) => t.data ?? '')
       .toList();
 
+  testWidgets('a chevron turns only for the folder that was clicked', (tester) async {
+    // Rows shift when a folder closes; unkeyed, the folder that slid into an
+    // open folder's slot inherited its chevron and turned on its own.
+    writeFile('a/a1/f.md');
+    writeFile('b/g.md');
+    await pumpTree(tester);
+
+    await tester.tap(find.text('a'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('a1'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('f.md'), findsOneWidget);
+
+    await tester.tap(find.text('a'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 30));
+    final bChevron = tester.widget<RotationTransition>(find.descendant(
+      of: find.ancestor(of: find.text('b'), matching: find.byType(KeyedSubtree)).first,
+      matching: find.byType(RotationTransition),
+    ));
+    expect(bChevron.turns.value, 0, reason: 'b never opened, so its chevron never moves');
+    await tester.pump(const Duration(milliseconds: 300));
+  });
+
   testWidgets('a folder with a staged edit inside it starts open', (tester) async {
     writeFile('01_rules/01a_light.md');
     writeFile('07_shoes/07b_socks.md');

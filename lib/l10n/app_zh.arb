@@ -818,6 +818,14 @@
   "manualHtmlEmptyTitle": "还没有粘贴 HTML",
   "manualHtmlEmptyDesc": "在浏览器里「查看源代码」全选复制，然后点上面的粘贴。",
   "cookieHistoryUse": "使用",
+  "cookieRetention": "记住 Cookie",
+  "cookieRetentionOff": "不记住",
+  "cookieRetentionWeek": "7 天",
+  "cookieRetentionMonth": "30 天",
+  "cookieRetentionForever": "直到清除",
+  "cookieRetentionNote": "以明文保存在本机，不会写入备份。选「不记住」会立即清除已记住的。",
+  "cookieHistoryForget": "移除",
+  "cookieHistoryClearAll": "全部清除",
   "cookieHistoryPairs": "{count} 对",
   "cookieHistoryEmptyDesc": "粘贴过的 Cookie 会记在这里，方便下次同一站点复用。",
   "usage": "用量",
@@ -1058,7 +1066,7 @@
   "googleV1BetaHint": "提示：Google GenAI 接口通常以 '/v1beta' 结尾",
   "anthropicV1Hint": "提示：Anthropic 接口通常以 '/v1' 结尾",
   "dashscopeApiV1Hint": "提示：DashScope 原生接口以 '/api/v1' 结尾",
-  "apiKeyStorageNotice": "您的密钥仅存储在本地，不会发送到我们的服务器。",
+  "apiKeyStorageNotice": "密钥以明文保存在本机的应用数据库中，只受系统账户的文件权限保护；不会写入备份，只发送给该服务商。",
   "nameHint": "例如：生产环境 API",
   "enableDiscoveryDesc": "自动从端点获取可用模型列表",
   "tagHint": "例如：GPT4, 核心, 等",
@@ -1677,6 +1685,10 @@
   "enableNotifications": "启用系统通知",
   "runSetupWizard": "运行设置向导",
   "clearTempFiles": "清理临时文件",
+  "clearCookieHistory": "清除 Cookie 历史",
+  "clearCookieHistoryNote": "下载器记住的网站 Cookie",
+  "clearCookieHistoryConfirm": "清除下载器记住的所有网站 Cookie？已加入队列的下载不受影响。",
+  "cookieHistoryCleared": "Cookie 历史已清除。",
   "clearTempFilesConfirmTitle": "清理临时文件？",
   "clearTempFilesConfirmMessage": "将删除 {size} 的蒙版、裁剪副本、下载器缓存与视频缩略图。临时工作区中指向这些文件的条目会一并移除；你自己文件夹中的文件不受影响。",
   "@clearTempFilesConfirmMessage": {
@@ -2526,6 +2538,23 @@
   },
   "kbEditProposedCreate": "新建文件",
   "kbEditProposedUpdate": "更新文件",
+  "kbEditScopeReplace": "替换小节 {heading}",
+  "@kbEditScopeReplace": {
+    "placeholders": {
+      "heading": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditScopeAppend": "追加到小节 {heading}",
+  "@kbEditScopeAppend": {
+    "placeholders": {
+      "heading": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditScopeAppendEnd": "追加到文件末尾",
   "kbEditApply": "写入文件",
   "kbEditReject": "放弃",
   "kbEditApplied": "已写入磁盘",

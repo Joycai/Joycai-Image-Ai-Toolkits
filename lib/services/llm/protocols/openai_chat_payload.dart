@@ -172,7 +172,7 @@ Map<String, dynamic> prepareOpenAIChatPayload(
   // sources come back), so nothing is parsed or logged for it (pitfalls 11
   // §A10).
   if (target.config.enableWebSearch &&
-      target.vendor.serverWebSearchFaces.contains(WireProtocol.openaiChat)) {
+      target.vendor.sendsWebSearchOn(WireProtocol.openaiChat)) {
     payload['enable_search'] = true;
   }
 

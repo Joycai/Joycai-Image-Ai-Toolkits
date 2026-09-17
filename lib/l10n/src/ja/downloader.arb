@@ -54,6 +54,14 @@
   "manualHtmlEmptyTitle": "HTML がまだ貼り付けられていません",
   "manualHtmlEmptyDesc": "ブラウザーでページのソースを表示して全選択・コピーし、上の貼り付けを押してください。",
   "cookieHistoryUse": "使用",
+  "cookieRetention": "Cookie を記憶",
+  "cookieRetentionOff": "記憶しない",
+  "cookieRetentionWeek": "7 日",
+  "cookieRetentionMonth": "30 日",
+  "cookieRetentionForever": "消去するまで",
+  "cookieRetentionNote": "この端末に暗号化せずに保存され、バックアップには含まれません。「記憶しない」にすると今ある記録も消去します。",
+  "cookieHistoryForget": "削除",
+  "cookieHistoryClearAll": "すべて消去",
   "cookieHistoryPairs": "{count} 組",
   "cookieHistoryEmptyDesc": "貼り付けた Cookie はここに記録され、同じサイトで再利用できます。"
 }

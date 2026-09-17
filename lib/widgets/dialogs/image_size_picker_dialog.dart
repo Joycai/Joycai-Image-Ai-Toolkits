@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/llm/model_capabilities.dart';
+import '../../services/llm/image_size_rules.dart';
+import '../../services/llm/param_spec.dart';
 import '../ui/app_button.dart';
 import '../ui/app_dialog.dart';
 

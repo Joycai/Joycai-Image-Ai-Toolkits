@@ -312,9 +312,39 @@ class VendorProfile {
   /// adapter checks this set before sending the flag, because a stored
   /// `enable_web_search` travels with the model row (imports, channel-type
   /// changes) to hosts that never had it (tools 05 §5). Empty for every
-  /// vendor but Bailian's two. ④'s server tool is not listed here: that
-  /// protocol declares it for every ④ vendor.
+  /// vendor but Bailian's two. ④'s server tool is not listed here — see
+  /// [webSearchOn].
   final Set<WireProtocol> serverWebSearchFaces;
+
+  /// What a stored web-search switch becomes on [face] for this vendor — the
+  /// one answer the editor (through `LLMDispatcher.serverWebSearch`) and the
+  /// payload builders share, so a switch the editor hides is never sent.
+  ///
+  /// ④'s `web_search` server tool belongs to the ④ vendors themselves; a
+  /// vendor of another family reaching its ④ face (Bailian's
+  /// compatible-mode Anthropic endpoint) never declared it, and a flag that
+  /// travelled there with the model row must stay home. ① and DashScope
+  /// native follow [serverWebSearchFaces].
+  ServerWebSearch webSearchOn(WireProtocol face) {
+    switch (face) {
+      case WireProtocol.anthropicChat:
+        return family == ProtocolFamily.anthropic
+            ? ServerWebSearch.withSources
+            : ServerWebSearch.unsupported;
+      case WireProtocol.openaiChat:
+      case WireProtocol.dashscopeChat:
+        return serverWebSearchFaces.contains(face)
+            ? ServerWebSearch.traceless
+            : ServerWebSearch.unsupported;
+      default:
+        return ServerWebSearch.unsupported;
+    }
+  }
+
+  /// Whether a stored web-search switch is sent on [face] — [webSearchOn]
+  /// for the payload builders, which only need yes or no.
+  bool sendsWebSearchOn(WireProtocol face) =>
+      webSearchOn(face) != ServerWebSearch.unsupported;
 
   /// Stable id, stored verbatim in `llm_channels.type`.
   final String id;

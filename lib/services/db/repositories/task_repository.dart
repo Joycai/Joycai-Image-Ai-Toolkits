@@ -1,19 +1,43 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../database_service.dart';
+import 'cookie_repository.dart';
 
 class TaskRepository {
   final DatabaseService _dbService = DatabaseService();
 
   Future<Database> get _db async => _dbService.database;
 
+  /// Stores [task] — never with the cookies a download was queued with
+  /// (S3): those are session credentials, and task rows outlive every
+  /// retention setting and survive a data reset.
   Future<void> saveTask(Map<String, dynamic> task) async {
     final db = await _db;
+    final params = task['parameters'];
+    final row = params is String
+        ? (Map<String, dynamic>.from(task)..['parameters'] = CookieRepository.withoutCookies(params))
+        : task;
     await db.insert(
       'tasks',
-      task,
+      row,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  /// Strips cookies from task rows written before [saveTask] stopped storing
+  /// them. The LIKE is a cheap prefilter; [CookieRepository.withoutCookies]
+  /// decides. Runs once per launch and finds nothing after the first.
+  Future<void> scrubStoredCookies() async {
+    final db = await _db;
+    final rows = await db.query('tasks',
+        columns: ['id', 'parameters'], where: 'parameters LIKE ?', whereArgs: ['%"cookies"%']);
+    for (final row in rows) {
+      final params = row['parameters'];
+      if (params is! String) continue;
+      final cleaned = CookieRepository.withoutCookies(params);
+      if (cleaned == params) continue;
+      await db.update('tasks', {'parameters': cleaned}, where: 'id = ?', whereArgs: [row['id']]);
+    }
   }
 
   /// The newest [limit] tasks by creation time.

@@ -1199,6 +1199,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cookieHistoryUse => '使用';
 
   @override
+  String get cookieRetention => 'Cookie を記憶';
+
+  @override
+  String get cookieRetentionOff => '記憶しない';
+
+  @override
+  String get cookieRetentionWeek => '7 日';
+
+  @override
+  String get cookieRetentionMonth => '30 日';
+
+  @override
+  String get cookieRetentionForever => '消去するまで';
+
+  @override
+  String get cookieRetentionNote =>
+      'この端末に暗号化せずに保存され、バックアップには含まれません。「記憶しない」にすると今ある記録も消去します。';
+
+  @override
+  String get cookieHistoryForget => '削除';
+
+  @override
+  String get cookieHistoryClearAll => 'すべて消去';
+
+  @override
   String cookieHistoryPairs(int count) {
     return '$count 組';
   }
@@ -1669,7 +1694,8 @@ class AppLocalizationsJa extends AppLocalizations {
       'ヒント：DashScope ネイティブのエンドポイントは「/api/v1」で終わります';
 
   @override
-  String get apiKeyStorageNotice => 'キーはローカルに保存され、当社のサーバーには送信されません。';
+  String get apiKeyStorageNotice =>
+      'キーは暗号化されずにこの端末のアプリのデータベースに保存され、アカウントのファイル権限でのみ保護されます。バックアップには含まれず、このプロバイダーにのみ送信されます。';
 
   @override
   String get nameHint => '例：本番API';
@@ -3064,6 +3090,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get clearTempFiles => '一時ファイルを削除';
+
+  @override
+  String get clearCookieHistory => 'Cookie 履歴を消去';
+
+  @override
+  String get clearCookieHistoryNote => 'ダウンローダーが記憶したサイトの Cookie';
+
+  @override
+  String get clearCookieHistoryConfirm =>
+      'ダウンローダーが記憶したサイトの Cookie をすべて消去しますか？キューに追加済みのダウンロードには影響しません。';
+
+  @override
+  String get cookieHistoryCleared => 'Cookie 履歴を消去しました。';
 
   @override
   String get clearTempFilesConfirmTitle => '一時ファイルを削除しますか？';
@@ -4493,6 +4532,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get kbEditProposedUpdate => 'ファイル更新';
+
+  @override
+  String kbEditScopeReplace(String heading) {
+    return 'セクション $heading を置換';
+  }
+
+  @override
+  String kbEditScopeAppend(String heading) {
+    return 'セクション $heading に追記';
+  }
+
+  @override
+  String get kbEditScopeAppendEnd => 'ファイル末尾に追記';
 
   @override
   String get kbEditApply => '書き込む';

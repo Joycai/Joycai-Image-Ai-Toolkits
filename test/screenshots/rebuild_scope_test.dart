@@ -109,6 +109,48 @@ void main() {
             'even drawn — the screen must not subscribe to it');
   });
 
+  testWidgets('a session notification reaches the usage card, not the assistant',
+      (WidgetTester tester) async {
+    // The session notifies several times a request for the usage readout
+    // alone. The chat host, the toolbar, the left tree and the config panel
+    // each rebuilt everything under them for it — 1,122 widget builds per
+    // notification with a staged edit on screen.
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.workbench,
+      size: const Size(1440, 900),
+      label: 'rebuild-scope-assistant',
+      before: (_) async {
+        final AppState appState = AppState();
+        appState.setWorkbenchTab(4);
+        seedOptimizerKbEdit(appState);
+      },
+    );
+    final session = AppState().workbenchUIState.optimizerSession;
+
+    final lines = await rebuiltBy(
+      tester,
+      () => session.recordRequestBasis(systemPromptChars: 4242, toolSchemaChars: 42),
+    );
+    expect(lines, rebuilt('OptimizerContextCard'), reason: 'the readout must follow');
+    expect(lines, isNot(rebuilt('PromptOptimizerChatView')));
+    expect(lines, isNot(rebuilt('OptimizerConfigPanel')));
+    expect(lines, isNot(rebuilt('KnowledgeTreePanel')));
+    expect(lines, isNot(rebuilt('PromptOptimizerToolbar')));
+    expect(lines.length, lessThan(100));
+
+    // A new transcript entry still reaches everything that shows one.
+    final grown = await rebuiltBy(tester, () => session.addUserTurn('one more'));
+    expect(grown, rebuilt('PromptOptimizerChatView'));
+    expect(grown, rebuilt('OptimizerConfigPanel'));
+    AppState().workbenchUIState.newOptimizerSession();
+    AppState().setWorkbenchTab(0);
+    // The tree's walk and the chat's scroll leave timers; let them run out.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 5));
+  });
+
   testWidgets('dragging the size slider does not rebuild the chrome',
       (WidgetTester tester) async {
     await mountApp(

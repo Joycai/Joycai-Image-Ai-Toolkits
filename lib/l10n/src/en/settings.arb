@@ -81,6 +81,10 @@
   "enableNotifications": "Enable System Notifications",
   "runSetupWizard": "Run Setup Wizard",
   "clearTempFiles": "Clear Temporary Files",
+  "clearCookieHistory": "Clear Cookie History",
+  "clearCookieHistoryNote": "Site cookies the downloader remembered",
+  "clearCookieHistoryConfirm": "Forget every site cookie the downloader remembered? Downloads already queued keep theirs.",
+  "cookieHistoryCleared": "Cookie history cleared.",
   "clearTempFilesConfirmTitle": "Clear Temporary Files?",
   "clearTempFilesConfirmMessage": "Deletes {size} of masks, crop copies, downloader cache and video thumbnails. Entries in the temporary workspace that point at these files are removed with them; files in your own folders are untouched.",
   "@clearTempFilesConfirmMessage": {

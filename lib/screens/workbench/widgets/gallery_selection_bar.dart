@@ -98,7 +98,10 @@ class GallerySelectionBar extends StatelessWidget {
     final menuOpen = context.select<WorkbenchUIState, bool>((s) => s.galleryMenuOpen);
     final count = inputs.selected.length;
     final visible = count > 0 && !menuOpen;
-    final duration = AppMotion.sceneOf(context);
+    // One clock for both properties: the slide used to run the full M3 on
+    // the way out while the fade ran the shortened exit, so the bar was gone
+    // before it had finished moving.
+    final duration = AppMotion.sceneFor(context, entering: visible);
 
     return IgnorePointer(
       ignoring: !visible,
@@ -108,9 +111,7 @@ class GallerySelectionBar extends StatelessWidget {
         curve: AppMotion.emphasized,
         child: AnimatedOpacity(
           opacity: visible ? 1 : 0,
-          duration: visible
-              ? duration
-              : Duration(milliseconds: (duration.inMilliseconds * AppMotion.exitFactor).round()),
+          duration: duration,
           curve: AppMotion.emphasized,
           child: LayoutBuilder(
             builder: (context, constraints) =>

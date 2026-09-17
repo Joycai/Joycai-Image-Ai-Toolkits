@@ -59,6 +59,57 @@ void main() {
   }
 
   group('staged edit card', () {
+    testWidgets('a section edit names its section, and each hunk its heading', (tester) async {
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      final filler = [for (var i = 0; i < 30; i++) '- rule $i'].join('\n');
+      final old = '# Rules\n\n## Lighting\n\n$filler\n\n## Composition\n\n- thirds\n';
+      session.stageKbEditForTest(
+        relPath: 'rules.md',
+        oldContent: old,
+        newContent: old.replaceFirst('- thirds', '- golden ratio'),
+        scope: KbEditScope.replaceSection,
+        section: '## Composition',
+      );
+      session.stageKbEditForTest(
+        relPath: 'notes.md',
+        oldContent: '# Notes\n',
+        newContent: '# Notes\n\n## New\n',
+        scope: KbEditScope.append,
+      );
+      await pumpChat(tester, session);
+
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(find.text(l10n.kbEditScopeReplace('## Composition')), findsOneWidget);
+      expect(find.text(l10n.kbEditScopeAppendEnd), findsOneWidget);
+      expect(find.textContaining(RegExp(r'^@@ -\d+ \+\d+ @@ ## Composition$')), findsOneWidget,
+          reason: 'the hunk deep in the file says which section it is in');
+    });
+
+    testWidgets('a deletion is named by the section it was cut from, not the next one',
+        (tester) async {
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      final filler = [for (var i = 0; i < 30; i++) '- rule $i'].join('\n');
+      final old = '# Rules\n\n## Lighting\n\n$filler\n- soft\n- hard\n## Composition\n\n- thirds\n';
+      session.stageKbEditForTest(
+        relPath: 'rules.md',
+        oldContent: old,
+        newContent: old.replaceFirst('- soft\n- hard\n', ''),
+      );
+      await pumpChat(tester, session);
+      expect(find.textContaining(RegExp(r'@@ ## Lighting$')), findsOneWidget);
+      expect(find.textContaining(RegExp(r'@@ ## Composition$')), findsNothing);
+    });
+
+    testWidgets('a whole-file edit carries no scope line', (tester) async {
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      session.stageKbEditForTest(relPath: 'a.md', oldContent: 'x\n', newContent: 'y\n');
+      await pumpChat(tester, session);
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(find.text(l10n.kbEditScopeAppendEnd), findsNothing);
+      expect(find.textContaining('Replaces section'), findsNothing);
+      expect(find.text('@@ -1 +1'), findsOneWidget, reason: 'no heading above, no suffix');
+    });
+
     testWidgets('a pending edit offers both approve and discard', (tester) async {
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
       final id = session.stageKbEditForTest(

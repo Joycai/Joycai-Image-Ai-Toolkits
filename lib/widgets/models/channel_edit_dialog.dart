@@ -620,6 +620,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             label: _keyOptional
                 ? '${l10n.apiKey} · ${l10n.apiKeyOptional}'
                 : l10n.apiKey,
+            // Where the key goes, said where it is typed (S1): the database
+            // keeps it in plain text, private to the user's account.
+            helper: _keyOptional ? null : l10n.apiKeyStorageNotice,
             child: ChannelField(
               controller: keyCtrl,
               mono: true,

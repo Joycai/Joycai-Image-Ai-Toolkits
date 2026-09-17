@@ -101,6 +101,15 @@ class _GalleryState extends State<Gallery> {
   final ScrollController _scroll = ScrollController();
   final FolderOutlineSpy _outline = FolderOutlineSpy();
 
+  /// Whether the last build showed a placeholder instead of the grid, and how
+  /// many times the grid has replaced one. A scan used to swap its spinner for
+  /// a screenful of tiles in one frame; the grid now fades in (M2) whenever it
+  /// takes over from a placeholder, and only then — a grid that stays up while
+  /// its images change keeps its key, so nothing re-fades or remounts. Starts
+  /// `false` so returning to a gallery that is already full does not fade.
+  bool _lastBuiltEmpty = false;
+  int _reveal = 0;
+
   /// Above the group header row, so the header extent the spy is told is
   /// the row plus this.
   static const double _headerTopPad = AppSpace.s10;
@@ -357,6 +366,7 @@ class _GalleryState extends State<Gallery> {
       } else {
         empty = _NothingHereState(isResult: isResult);
       }
+      _lastBuiltEmpty = true;
       return Padding(
         padding: insets,
         // scaleDown so a short host shrinks the placeholder instead of
@@ -364,6 +374,9 @@ class _GalleryState extends State<Gallery> {
         child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: empty)),
       );
     }
+    final bool revealing = _lastBuiltEmpty;
+    if (revealing) _reveal++;
+    _lastBuiltEmpty = false;
 
     // Grouping is memoized in GalleryState — only recomputed when the list identity changes.
     final grouped = state.getGrouped(images);
@@ -371,7 +384,7 @@ class _GalleryState extends State<Gallery> {
     final sortedPaths = isResult ? grouped.keys.toList() : state.getSortedPaths(images);
 
 
-    return LayoutBuilder(
+    final Widget gridView = LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth <= 0) return const SizedBox.shrink();
 
@@ -495,6 +508,15 @@ class _GalleryState extends State<Gallery> {
           ),
         );
       },
+    );
+
+    return TweenAnimationBuilder<double>(
+      key: ValueKey<int>(_reveal),
+      tween: Tween<double>(begin: revealing ? 0 : 1, end: 1),
+      duration: AppMotion.durationOf(context, AppMotion.reveal),
+      curve: AppMotion.enter,
+      builder: (context, opacity, child) => Opacity(opacity: opacity, child: child),
+      child: gridView,
     );
   }
 }
