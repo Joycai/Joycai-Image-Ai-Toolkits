@@ -1,8 +1,7 @@
 # CLAUDE.md
 
 Cross-platform Flutter desktop/mobile app for AI image and video generation, built
-around a multi-vendor LLM layer. Designed for artists and designers working with
-AI-generated media.
+around a multi-vendor LLM layer, for artists and designers working with AI media.
 
 **Version:** 4.9.0 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
 
@@ -10,194 +9,164 @@ AI-generated media.
 
 ```bash
 flutter pub get                                    # install dependencies
-dart tool/merge_l10n.dart && flutter gen-l10n      # regenerate l10n (run after editing .arb files)
+dart tool/merge_l10n.dart && flutter gen-l10n      # regenerate l10n (after editing .arb files)
 flutter run                                        # run the app
-flutter analyze                                    # MUST show "No issues found!" before any commit
-flutter test -x screenshots                        # the gate — everything but the screenshot harness
+flutter analyze                                    # gate 1 — must print "No issues found!"
+flutter test -x screenshots                        # gate 2 — everything but the screenshot harness
 flutter build macos                                # or windows / linux / apk / ipa
 flutter test test/screenshots                      # render every screen to build/ui-screenshots/*.png
 flutter test test/screenshots/component_gallery_test.dart  # every component, 8 theme seeds × light/dark
+flutter test test/screenshots/render_probe.dart    # UI-thread rebuild/repaint cost (not in CI)
 ```
 
-CI (`.github/workflows/flutter-ci.yml`) runs `flutter analyze` and `flutter test -x screenshots`
-in parallel jobs, the tests split by file across three shards. Both gates must be green
-locally before you push. The `screenshots` tag (declared in `dart_test.yaml`) marks the
-harness files that write PNGs and assert nothing; `rebuild_scope_test.dart` asserts and
-stays in the gate.
+**Both gates must be green after every code change, before any commit.** CI
+(`.github/workflows/flutter-ci.yml`) runs them in parallel jobs, tests sharded by file
+across three runners. The `screenshots` tag (`dart_test.yaml`) marks harness files that
+write PNGs and assert nothing; `rebuild_scope_test.dart` sits beside them but asserts,
+so it stays in the gate.
 
 ## Project Map
 
+`lib/` — each top-level folder is a layer (see *Layering* below).
+
 ```
-lib/
-  main.dart                       # entry: MultiProvider root → MyApp → AppWindowFrame → MainNavigationScreen
-                                  #   (title-bar nav · tablet top bar · phone dock — see widgets/shell/)
-  state/                          # ChangeNotifier singletons: AppState (split across app_state{,_data,_workbench}.dart),
-                                  #   GalleryState, FileBrowserState, FileStagingState, DownloaderState,
-                                  #   WorkbenchUIState, TaskListState, LogState
-  services/                       # all business logic — nothing loose in the root, nine domains
-    llm/                          # the API stack (see architecture note); also model_family.dart
-      llm_service.dart            # facade the app calls
-      llm_dispatcher.dart         # the ONLY routing table (surface × protocol × vendor)
-      protocols/                  # layer 1 — wire formats: openai chat/images/videos · xai images/videos ·
-                                  #   gemini chat/imagen/veo · anthropic chat (seven anthropic_* files, mapped
-                                  #   in the architecture note) · dashscope chat/images/images-async/video ·
-                                  #   minimax images/video · midjourney; the ①-shaped parts other protocols
-                                  #   share: openai_chat_parsing · streaming_tool_calls · inline_think ·
-                                  #   chat_image_extraction
-      vendors/                    # layer 2 — VendorProfile registry (auth, per-surface protocol menus);
-                                  #   ProtocolFamily lives in vendor_profile.dart; ids stored in llm_channels.type
-      model_descriptor.dart       # layer 3 — family + capabilities; with model_family.dart, the only
-                                  #   place model-id sniffing is allowed
-      context_budget.dart         # sole interpreter of a model's context window (see architecture note)
-    db/                           # database_service.dart (sqflite / sqflite_common_ffi) ·
-                                  #   database_migrations.dart (onCreate + onUpgrade in lockstep) ·
-                                  #   repositories/ — the DAOs over it: model, prompt, task, usage,
-                                  #   assistant session, assistant note, cookie (the downloader's
-                                  #   remembered cookies and their retention; task rows never store one)
-    tasks/                        # task_queue_service.dart (concurrency, Stream<TaskEvent>, ETA) ·
-                                  #   task_executors.dart (`part of` it, one _executeXxxTask per TaskType) ·
-                                  #   task_list_ordering.dart (created_at is the only key) ·
-                                  #   ai_rename_agent.dart (the aiRename task's agent) ·
-                                  #   ai_rename_review.dart (the review list's clash rules — it and the
-                                  #   agent's applyProposals both refuse to delete a file the run placed)
-    assistant/                    # the Prompt Assistant (see architecture note): prompt_optimizer_agent.dart
-                                  #   (the public class + tool loop) with eight `part`s — session, chat_entries,
-                                  #   turn (around the loop), context_window (elide / compact), tool_calls,
-                                  #   toolset, history_repair, system_prompts ·
-                                  #   sub_agent_runner.dart ·
-                                  #   knowledge_base_service.dart (README.md entry, paged reads) ·
-                                  #   knowledge_base_starter.dart · assistant_context_usage.dart ·
-                                  #   assistant_kb_distill.dart · prompt_provenance.dart
-    catalogue/                    # what backs the models page: model_list_ordering · model_id_uniqueness ·
-                                  #   context_window_scale · output_cap_scale — NOT llm/, which is only the API stack
-    files/                        # filesystem on the user's behalf: browser_file_scanner (isolate) ·
-                                  #   file_permission · file_transfer (staging) · folder_operations ·
-                                  #   trash · temp_storage
-    media/                        # image_processing · image_metadata · video_thumbnail ·
-                                  #   web_scraper_service.dart (HTML image extraction with cookie support)
-    system/                       # host-platform adapters: font · gpu_info · notification ·
-                                  #   runtime_info (the About page's block) · window_chrome
-    billing/                      # spec_billing · spec_known_values
-  screens/                        # workbench · browser · batch · downloader · prompts · settings · metrics · models · wizard
-  models/                         # LLMModel, LLMChannel, PricingGroup, Prompt/SystemPrompt, PromptTag,
-                                  #   PromptHistoryEntry, TaskItem (+ TaskType, TaskEvent), AppImage, BrowserFile, LogEntry
-  core/                           # Responsive (breakpoints), AppConstants/enums, AppPaths, file utils,
-                                  #   design_tokens.dart (incl. AppDock — the phone dock's dimensions, so a
-                                  #   primitive can clear it without importing the shell) · app_theme.dart ·
-                                  #   app_semantic_colors.dart · theme_accent.dart
-  widgets/                        # shared UI — nothing loose in the root, ten folders
-    ui/                           # the design system: the spec's controls (app_*), the generic inputs
-                                  #   (searchable_picker · markdown_editor · api_key_field · color_hue_picker ·
-                                  #   model_tag_chip · tag_avatar), the drawing primitives (dashed_border ·
-                                  #   scroll_edge_fade · app_disclosure_chevron), the layout pair
-                                  #   (app_card / panel_resizer) and listenable_selector (a Selector for a
-                                  #   plain Listenable — rebuild only when what you read changed)
-    glass/                        # the glass materials · drag/ # lift, drop zones, reorder gaps
-    shell/                        # nav chrome: app_window_frame · app_top_bar · phone_dock · app_destinations ·
-                                  #   shell_cover · baked_backdrop.dart (the window ground, baked into an image)
-    models/                       # model & channel management UI, incl. the fee-group editor
-    tasks/                        # app_run_console · task_capsule_monitor · log_console · smooth_progress ·
-                                  #   task_type_glyph
-    settings/                     # theme_accent_picker · settings_widgets · dual_tone_swatch · backup_error_text
-    files/                        # folder_group_header · folder_outline_bar · thumbnail_fit_toggle ·
-                                  #   folder_drop_feedback (a folder row's refusal, shown by the browser's drag chip)
-    dialogs/ · placeholders/
-  bench/                          # render_bench.dart — raster/GPU benchmark, inert unless RBENCH=1
-  l10n/                           # generated — do NOT edit directly (see l10n workflow below)
-    src/<lang>/                   # source .arb files, one per module: en · zh · zh_Hant · ja
+main.dart          MultiProvider root → MyApp → AppWindowFrame → MainNavigationScreen
+core/              Responsive breakpoints, AppConstants/enums, AppPaths, file utils, design_tokens
+                     (incl. AppDock, the phone dock's size), app_theme, app_semantic_colors, theme_accent
+l10n/              generated — never edit; sources are l10n/src/<lang>/<module>.arb
+models/            LLMModel, LLMChannel, PricingGroup, Prompt/SystemPrompt, PromptTag, PromptHistoryEntry,
+                     TaskItem (+ TaskType, TaskEvent), AppImage, BrowserFile, LogEntry
+services/          all business logic, in domain folders only:
+  llm/               the API stack — llm_service (facade) · llm_dispatcher (the ONLY routing table) ·
+                       protocols/ (layer 1, wire formats) · vendors/ (layer 2, VendorProfile registry,
+                       ProtocolFamily) · model_descriptor + model_family (layer 3, the only place
+                       model-id sniffing is allowed) · context_budget (sole reader of a context window)
+  db/                database_service · database_migrations (onCreate + onUpgrade in lockstep) ·
+                       repositories/ (model, prompt, task, usage, assistant session/note, cookie)
+  tasks/             task_queue_service (concurrency, Stream<TaskEvent>, ETA) · task_executors
+                       (`part of` it, one _executeXxxTask per TaskType) · task_list_ordering ·
+                       ai_rename_agent · ai_rename_review (neither deletes a file the run placed)
+  assistant/         Prompt Assistant — prompt_optimizer_agent + its eight `part`s (assistant_*,
+                       prompt_optimizer_session), sub_agent_runner, knowledge_base_*, prompt_provenance
+  catalogue/         what backs the models page (ordering, id uniqueness, context/output scales) — not llm/
+  files/ media/ system/ billing/   filesystem ops · image/video/scraping · host adapters · spec billing
+state/             ChangeNotifier singletons: AppState (app_state{,_data,_workbench}.dart), GalleryState,
+                     FileBrowserState, FileStagingState, DownloaderState, ModelListState,
+                     WorkbenchUIState, TaskListState, LogState
+widgets/           shared UI, in domain folders only:
+  ui/ glass/ drag/   the design system — app_* controls, generic inputs, drawing primitives,
+                       listenable_selector (a Selector for a plain Listenable)
+  shell/             nav chrome: window frame, top bar, phone dock, destinations, shell_cover, baked_backdrop
+  models/ tasks/ settings/ files/ dialogs/ placeholders/
+screens/           workbench · browser · batch · downloader · prompts · settings · metrics · models · wizard
+bench/             render_bench.dart — GPU benchmark, inert unless RBENCH=1
 ```
 
-**Task types** (`lib/models/task_item.dart`): `imageProcess` · `imageDownload` · `promptRefine` · `aiRename` · `videoGenerate`  
-**LLM protocol families** (`ProtocolFamily`): `openai` · `gemini` · `anthropic` · `midjourney` · `dashscope` — routing lives in `lib/services/llm/llm_dispatcher.dart`  
-**Key dependencies:** see `pubspec.yaml` — `provider`, `sqflite`, `http`, `extended_image`, `video_player`, `desktop_drop`, `file_picker`, `image`, `flutter_local_notifications`, `gal`
+Protocol files are named `<family>_<surface>_protocol.dart` (openai chat/responses/images/videos,
+xai, gemini chat/imagen/veo, anthropic, dashscope, minimax, midjourney); shared `*_payload`,
+`openai_chat_parsing`, `streaming_tool_calls`, `inline_think` and `chat_image_extraction` are
+reused across families. The anthropic protocol is split over seven `anthropic_*` files —
+mapped in the LLM architecture note.
 
-## Architecture Notes
+**Task types** (`TaskType`): `imageProcess` · `imageDownload` · `promptRefine` · `aiRename` · `videoGenerate`
+**Protocol families** (`ProtocolFamily`): `openai` · `gemini` · `anthropic` · `midjourney` · `dashscope`
 
-Read the relevant note before changing that subsystem — each records invariants
-that fail silently when broken, and alternatives already tried and rejected.
+## Read Before You Touch
 
-- **[LLM three-layer API stack](docs/architecture/llm-three-layer.md)** — protocol / vendor / model layering, the dispatcher routing table, and the layering rules (no model-id sniffing outside `ModelDescriptor`, no vendor branches inside protocols). Required reading before touching anything under `lib/services/llm/`.
-- **[Prompt Assistant context management](docs/architecture/assistant-context.md)** — elide/compact layers, the `context_window` tri-state, knowledge-read budgeting and paging. Required reading before touching `prompt_optimizer_agent.dart` or any of its parts (`assistant_context_window.dart` above all), `context_budget.dart`, or `knowledge_base_service.dart`.
-- **[Design tokens & multi-theme rule](docs/architecture/design-tokens.md)** — how the design spec's single blue maps onto 8 seed colours: the `onAccentTint` brightness branch, the alpha ladder (and its dark-mode ceiling), which colours must *not* follow the seed, and the deliberate divergences from the spec. Required reading before touching `design_tokens.dart`, `app_semantic_colors.dart`, `app_theme.dart`, or any accent/status colour in `widgets/`.
+Each note records invariants that fail silently when broken, and alternatives already
+tried and rejected.
 
-[docs/README.md](docs/README.md) indexes the rest: protocol facts under `docs/api/`,
-the portable AI-agent playbook, and the two ledgers of retired work —
-[docs/plans/README.md](docs/plans/README.md) (every executed feature/refactor round, where each
-conclusion now lives, and **what is still owed**) and [plans/README.md](plans/README.md)
-(fourteen animation plans, plus the effects ruled deliberate — do not "fix" those).
-Read the relevant ledger before proposing a round of work; plan files are deleted once
-executed, so an empty directory does not mean the work is open.
+| Touching… | Read first |
+|---|---|
+| anything under `lib/services/llm/` | [docs/architecture/llm-three-layer.md](docs/architecture/llm-three-layer.md) — layering, routing table, greppable red-flag list |
+| `services/assistant/` (esp. `assistant_context_window.dart`), `context_budget.dart`, `knowledge_base_service.dart` | [docs/architecture/assistant-context.md](docs/architecture/assistant-context.md) — elide/compact layers, `context_window` tri-state, knowledge paging |
+| `design_tokens.dart`, `app_semantic_colors.dart`, `app_theme.dart`, any accent/status colour in `widgets/` | [docs/architecture/design-tokens.md](docs/architecture/design-tokens.md) — one spec blue → 8 seeds, `onAccentTint`, alpha ladder, colours that must *not* follow the seed |
+| proposing a new round of work | [docs/plans/README.md](docs/plans/README.md) (executed rounds, **what is still owed**) and [plans/README.md](plans/README.md) (animation plans, and effects ruled deliberate — do not "fix" those). Plan files are deleted once executed: an empty directory does not mean the work is open |
+
+[docs/README.md](docs/README.md) indexes the rest: protocol facts (`docs/api/`), the
+AI-agent playbook, and the tooling (screenshot harness, render probe, GPU bench).
 
 ## Development Rules
 
-- **`flutter analyze` must pass** (zero issues, info-level included) and **`flutter test -x screenshots` must be green** after every code change.
-- **Responsive UI:** all changes must work on Mobile (<600px), Tablet (<1000px), Desktop (≥1000px). Use `Responsive`/`ResponsiveBuilder` (`lib/core/responsive.dart`). File Browser and Downloader are hidden on *mobile platforms* (`desktopOnly` in `widgets/shell/app_destinations.dart`, a `Platform.isAndroid || Platform.isIOS` check) — that is a platform gate, not a width gate, so both still render in a narrow desktop window.
-- **Render performance:** measure it, do not reason about it, and know which thread you are measuring.
-  - **UI thread** — `flutter test test/screenshots/render_probe.dart` mounts the real tree and reports what one state change rebuilds, what a gesture costs, glass layers per screen, and what an animation drags into its repaint (see [docs/README.md](docs/README.md#tooling)). The invariants it found are pinned by `test/screenshots/rebuild_scope_test.dart` and `test/render_performance_test.dart` — a state class hands out a **new** list rather than mutating one, because list identity is the only signal a `select` has.
-  - **GPU** — `lib/bench/render_bench.dart`, inert unless `RBENCH=1`. Build profile, then drive the exe with `RBENCH_SCENE` (`blank`, `aurora-live`/`aurora`, `glass0`…`glass4`, `app-lightbox-legacy`/`app-lightbox`, …) at a fixed `RBENCH_SIZE`; it prints `FrameTiming` percentiles and a layer census. **`rasterDuration` does not see GPU time here** — this app pins Skia on ANGLE (`windows/runner/main.cpp`, for video_player_win's DXGI textures), which executes asynchronously, so a scene reading 0.9ms of raster was really 11ms of GPU. Take the GPU number from `\GPU Engine(pid_<pid>*engtype_3d)\Running Time` instead. Before believing anything, check which adapter the process landed on: this machine's display hangs off the integrated Radeon and Windows puts the app there. Absolute numbers drift up to 2x between sessions — **always take before and after in one pass**, which is what the `*-live` / `*-legacy` scenes exist for.
-  - **What painting has already been stopped:** the window ground is one baked image rather than four full-window fills (`widgets/shell/baked_backdrop.dart`), and a settled full-screen cover stops the shell under it (`widgets/shell/shell_cover.dart` — `FullScreenCoverRoute` flips its own overlay entry opaque, the ground shrinks to the strip behind the title bar). Both are pinned by tests that assert the mechanism, never a frame time.
-- **Visual debugging:** to *see* a layout instead of inferring it, run `flutter test test/screenshots` and open the PNGs in `build/ui-screenshots/` — the real screens with seeded data at four widths (390 / 834 / 1024 / 1440), light and dark. Overflows are printed, never asserted: this is not a regression gate. See [docs/ui-screenshot-harness.md](docs/ui-screenshot-harness.md).
-  For anything touching accent or status colour use `component_gallery_test.dart` instead — every component on one page under all 8 theme seeds in both brightnesses (16 PNGs) is the only way to see whether a colour rule survives a seed change. `shoot()` also takes an `accent` (a `ThemeAccent` from `AppConstants.presetThemes`) for a whole screen at one theme colour.
-- **State:** use the existing state classes. Never use `StatefulWidget` for shared or persistent data. Always create new list/object instances before `notifyListeners()` — do not mutate in place.
-- **Data persistence:** all user data goes through `DatabaseService` and the repository layer. Never persist columns derivable from another table (the deleted `llm_models.type` is the cautionary tale — see the v32 migration). Every schema change needs both an `onUpgrade` step and the matching `onCreate` call.
-- **LLM layering:** no model-id sniffing outside `model_family.dart`/`model_descriptor.dart`; no `vendor.id`/channel-type string comparisons outside `vendors/` and `llm_dispatcher.dart`; all routing branches live in `llm_dispatcher.dart` only. The greppable red-flag list is in [docs/architecture/llm-three-layer.md](docs/architecture/llm-three-layer.md).
-- **Business logic:** belongs in `lib/services/`, not in widgets or screens.
-- **Directory layering:** the top-level directories under `lib/` are ranked, and a file
-  may import its own directory plus anything of strictly *lower* rank — never sideways,
-  never up:
+### Layering
 
-  `core`, `l10n` (0) → `models` (1) → `services` (2) → `state` (3) → `widgets` (4) →
-  `screens` (5) → `bench` (6) → `main.dart` (7)
+`lib/` directories are ranked; a file may import its own directory plus anything of
+strictly **lower** rank — never sideways, never up:
 
-  So `core` imports nothing else in `lib/` at all, a service may not read `AppState`
-  (pass the value in, or park it beside the thing that needs it — `LLMDebugLogger.enabled`
-  is the worked example), and a shared widget may not import a feature screen (inject the
-  dependency — `AppRunConsole`'s `onExpand` is the worked example).
+`core`, `l10n` (0) → `models` (1) → `services` (2) → `state` (3) → `widgets` (4) → `screens` (5) → `bench` (6) → `main.dart` (7)
 
-  Two rules hold *inside* those directories:
+- A service may not read `AppState` — pass the value in, or park it beside the thing that
+  needs it (`LLMDebugLogger.enabled`). A shared widget may not import a screen — inject
+  the dependency (`AppRunConsole`'s `onExpand`).
+- **`widgets/` and `services/` keep nothing in their root.** Every file sits in a domain
+  folder. And `lib/widgets/` means *more than one feature uses it*: a widget with one
+  screen's worth of callers belongs under that screen.
+- **The design system (`widgets/{ui,glass,drag}`) imports only `core`, `l10n` and
+  itself.** When a primitive seems to need something higher, either it is not a
+  primitive or the dependency belongs lower (the dock's size became `AppDock` in
+  `core/design_tokens.dart` so `AppSnackbar` could clear it).
+- **Business logic belongs in `lib/services/`**, not in widgets or screens.
+- **LLM layering:** no model-id sniffing outside `model_family.dart`/`model_descriptor.dart`;
+  no `vendor.id`/channel-type string comparisons outside `vendors/` and `llm_dispatcher.dart`;
+  every routing branch lives in `llm_dispatcher.dart`.
 
-  - **`widgets/` and `services/` keep nothing in their root.** Every file sits in a
-    domain folder (see the project map). One loose file is how a flat root comes back —
-    it names no domain, so the next one lands beside it. And being in `lib/widgets/` is
-    a claim that more than one feature uses the file: a shared widget with exactly one
-    screen's worth of callers belongs under that screen.
-  - **The design system — `widgets/{ui,glass,drag}` — imports `core`, `l10n` and itself,
-    and nothing else in `lib/`.** No model, no service, no state, no sibling feature
-    folder. That is what makes it a design system rather than a naming convention: a
-    screen taking a button does not also take `AppState`. When a primitive seems to need
-    something higher, either it is not a primitive, or the thing it needs belongs lower
-    down — `AppSnackbar` needed the phone dock's height, so the dock's dimensions became
-    `AppDock` in `core/design_tokens.dart`, and `TagAvatar` came out of
-    `widgets/models/channel_avatar.dart` because the picker only ever needed the
-    bare-string half.
+`test/source_layout_test.dart` enforces the import rules (ranks, no cycles, empty roots,
+the design-system boundary, no relative import climbing out of `lib/`) and prints the
+offending file and line. A genuinely new layer or folder means changing that test on purpose.
 
-  `test/source_layout_test.dart` asserts all of it — the ranks, the absence of cycles,
-  the two rules above, and that no relative import climbs past `lib/` — and prints the
-  offending file and line. Adding a genuinely new layer or folder means changing that
-  test on purpose. The three cycles it now prevents each survived a long time because
-  none of them breaks a build.
-- **Shell commands:** detect host OS before running shell commands. Never use Unix commands on Windows or PowerShell commands on macOS/Linux. No trial-and-error retries.
+### State and data
 
-## Localization Workflow
+- Use the existing state classes; never a `StatefulWidget` for shared or persistent data.
+- **Hand out a new list/object before `notifyListeners()` — never mutate in place.**
+  List identity is the only signal a `select` has; `rebuild_scope_test.dart` pins this.
+- All user data goes through `DatabaseService` and the repositories. Never persist a column
+  derivable from another table (the deleted `llm_models.type` — see the v32 migration).
+  Every schema change needs an `onUpgrade` step **and** the matching `onCreate` call.
 
-Supports `en`, `zh`, `zh_Hant`, `ja`. **All four languages must be updated together.**
+### UI
 
-1. Edit keys in `lib/l10n/src/<lang>/<module>.arb` (e.g., `lib/l10n/src/en/settings.arb`).
-2. **Never edit** `lib/l10n/app_*.arb` — auto-generated by `merge_l10n.dart`, will be overwritten.
-3. `dart tool/merge_l10n.dart && flutter gen-l10n`
+- **Responsive:** every change must work on Mobile (<600px), Tablet (<1000px) and Desktop
+  (≥1000px) via `Responsive`/`ResponsiveBuilder` (`lib/core/responsive.dart`). File Browser
+  and Downloader are hidden on mobile *platforms* (`desktopOnly` in
+  `widgets/shell/app_destinations.dart`) — a platform gate, not a width gate, so both still
+  render in a narrow desktop window.
+- **See, don't infer:** run the screenshot harness and open `build/ui-screenshots/` — real
+  screens with seeded data at 390 / 834 / 1024 / 1440, light and dark. Overflows are printed,
+  not asserted ([docs/ui-screenshot-harness.md](docs/ui-screenshot-harness.md)). For accent
+  or status colour use `component_gallery_test.dart` — the only way to see whether a colour
+  rule survives a seed change; `shoot()` also takes an `accent` for a whole screen.
+- **Render performance — measure, don't reason, and know which thread you measure.**
+  UI thread: `render_probe.dart`; its findings are pinned by `rebuild_scope_test.dart` and
+  `test/render_performance_test.dart`. GPU: `lib/bench/render_bench.dart` — read its traps in
+  [docs/README.md](docs/README.md#tooling) first (on Windows `rasterDuration` misses GPU time;
+  numbers drift 2x between sessions, so take before and after in one pass).
+  Already stopped: the window ground is one baked image (`widgets/shell/baked_backdrop.dart`),
+  and a settled full-screen cover stops the shell under it (`widgets/shell/shell_cover.dart`).
+  Both are pinned by tests that assert the mechanism, never a frame time.
+
+### Shell
+
+Detect the host OS before running shell commands — no Unix commands on Windows, no
+PowerShell on macOS/Linux, no trial-and-error retries.
+
+## Localization
+
+Languages: `en`, `zh`, `zh_Hant`, `ja` — **update all four together** (the `joycai-l10n`
+skill has the checklist).
+
+1. Edit `lib/l10n/src/<lang>/<module>.arb`. **Never** edit `lib/l10n/app_*.arb` — generated.
+2. `dart tool/merge_l10n.dart && flutter gen-l10n`
 
 ## Extension Patterns
 
-**New task type:** add a value to `TaskType` in `lib/models/task_item.dart` → implement
-`_executeXxxTask()` in `services/tasks/task_executors.dart` → add its branch to `_executeTask()`
-in `task_queue_service.dart`. `addTask()` takes the type as a parameter and needs no change.
-
-**New LLM vendor (OpenAI/Gemini-compatible supplier):** add a `VendorProfile` in
-`lib/services/llm/vendors/vendors.dart` → add a preset in
-`widgets/models/channel_provider_presets.dart` (one catalogue — the add-channel rail,
-the editor's preset overlay and first-run all read it).
-
-**New wire protocol:** implement the interfaces in `lib/services/llm/protocols/protocol.dart`
-→ add a `WireProtocol` value (and a `ProtocolFamily` only if the auth/discovery shape is
-genuinely new) → extend the switches in `lib/services/llm/llm_dispatcher.dart`.
-See [docs/architecture/llm-three-layer.md](docs/architecture/llm-three-layer.md).
+- **New task type** (skill: `joycai-add-task-type`): add a `TaskType` value in
+  `lib/models/task_item.dart` → implement `_executeXxxTask()` in
+  `services/tasks/task_executors.dart` → add its branch to `_executeTask()` in
+  `task_queue_service.dart`. `addTask()` needs no change.
+- **New LLM vendor** (OpenAI/Gemini-compatible; skill: `joycai-add-llm-provider`): add a
+  `VendorProfile` in `lib/services/llm/vendors/vendors.dart` → add a preset in
+  `widgets/models/channel_provider_presets.dart` (the one catalogue the add-channel rail,
+  preset overlay and first-run all read).
+- **New wire protocol:** implement `lib/services/llm/protocols/protocol.dart` → add a
+  `WireProtocol` value (and a `ProtocolFamily` only if the auth/discovery shape is genuinely
+  new) → extend the switches in `llm_dispatcher.dart`.
