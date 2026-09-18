@@ -112,6 +112,52 @@ void main() {
     expect(moved.enableThinking, isFalse);
   });
 
+  group('an effort off the ladder keeps the request it sends', () {
+    const boolean = [null, ReasoningEffort.off, ReasoningEffort.medium];
+    const gemini = [
+      null,
+      ReasoningEffort.off,
+      ReasoningEffort.low,
+      ReasoningEffort.medium,
+      ReasoningEffort.high,
+    ];
+    const adaptive = [
+      null,
+      ReasoningEffort.low,
+      ReasoningEffort.medium,
+      ReasoningEffort.high,
+      ReasoningEffort.max,
+    ];
+    RouteParams at(String effort, List<ReasoningEffort?> ladder) =>
+        RouteSwitching.forRoute(
+          RouteParams(reasoningEffort: effort, enableThinking: true),
+          ladder,
+        );
+
+    test('a boolean switch keeps any "on" as on', () {
+      for (final e in ['low', 'high', 'max']) {
+        expect(at(e, boolean).reasoningEffort, 'medium', reason: e);
+        expect(at(e, boolean).enableThinking, isTrue, reason: e);
+      }
+    });
+
+    test('Max on Gemini is its top rung', () {
+      expect(at('max', gemini).reasoningEffort, 'high');
+    });
+
+    test('Off where there is no Off rung, or no rung at all, is unset', () {
+      expect(at('off', adaptive), RouteParams.empty);
+      expect(at('high', const []), RouteParams.empty);
+    });
+
+    test('a rung below every on rung takes the lowest', () {
+      expect(
+        at('low', const [null, ReasoningEffort.medium]).reasoningEffort,
+        'medium',
+      );
+    });
+  });
+
   test('saving applies the same rule as switching', () {
     final stale = model(effort: 'telepathy', thinking: false, cap: -1);
     final saved = RouteSwitching.normalizedForSave(stale, routes);

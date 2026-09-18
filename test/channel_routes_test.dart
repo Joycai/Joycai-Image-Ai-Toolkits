@@ -214,6 +214,20 @@ void main() {
       expect(rewritten.kinds, [RouteKind.gemini, RouteKind.chat]);
     });
 
+    test('a flat rewrite onto another platform replaces the routes', () {
+      final routes = ChannelRoutes.create(
+        Platforms.byId(Platforms.newapi),
+        'https://relay.example.com',
+        [RouteKind.chat, RouteKind.gemini],
+      );
+      // The pre-route channel editor switched the preset to Custom Anthropic.
+      const type = Vendors.anthropicRest;
+      const endpoint = 'https://proxy.example.com/v1';
+      final rewritten = ChannelRoutes.resolve(type, endpoint, routes.encode());
+      expect(rewritten.entries, ChannelRoutes.legacy(type, endpoint).entries);
+      expect(rewritten.has(RouteKind.gemini), isFalse);
+    });
+
     test('malformed or foreign documents read as absent, never as values', () {
       const type = Vendors.newApiOpenAI;
       const endpoint = 'https://r.example/v1';
@@ -226,6 +240,7 @@ void main() {
         '{"host": 3, "routes": []}',
         '{"host": "https://r.example", "routes": "x"}',
         '{"host": "https://r.example", "routes": [{"kind": "telepathy"}]}',
+        '{"host": "https://r.example", "routes": [{"kind": 3}, {"kind": null}]}',
       ]) {
         expect(
           ChannelRoutes.resolve(type, endpoint, doc).entries,

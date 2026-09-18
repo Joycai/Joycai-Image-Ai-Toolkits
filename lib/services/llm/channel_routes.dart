@@ -139,7 +139,9 @@ class ChannelRoutes {
   /// * No document, or one that parses to nothing usable → [legacy].
   /// * A document whose write mark no longer matches the flat columns →
   ///   someone else rewrote the channel through the flat columns alone: the
-  ///   primary route is rebuilt from them and the other routes are kept.
+  ///   primary route is rebuilt from them and the other routes are kept —
+  ///   unless the rewrite moved the channel to another platform, which
+  ///   replaces it: then only the flat columns' own routes ([legacy]).
   /// * Otherwise the document, narrowed: unknown kinds, duplicate kinds and
   ///   kinds no vendor on this platform can serve are dropped.
   static ChannelRoutes resolve(String type, String endpoint, String? doc) {
@@ -160,6 +162,17 @@ class ChannelRoutes {
     if (parsed == null || parsed.entries.isEmpty) return legacyRoutes;
 
     if (parsed.markType != type || parsed.markEndpoint != endpoint) {
+      // A rewrite that moved the channel to another platform replaced it:
+      // the document's routes were that platform's, and read under this one
+      // they would be served by vendors and defaults nobody chose.
+      final markType = parsed.markType;
+      final markEndpoint = parsed.markEndpoint;
+      if (markType != null &&
+          markEndpoint != null &&
+          Platforms.inferPlatform(markType, markEndpoint).id !=
+              legacyRoutes.platform.id) {
+        return legacyRoutes;
+      }
       // Primary from the flat columns; the document's other routes after it,
       // then any face the flat vendor offered that neither mentions.
       final seen = <RouteKind>{legacyRoutes.primary.kind};
@@ -381,7 +394,8 @@ class _Doc {
     final entries = <RouteEntry>[];
     for (final r in routes) {
       if (r is! Map) continue;
-      final kind = RouteKind.tryParse(r['kind'] as String?);
+      final rawKind = r['kind'];
+      final kind = RouteKind.tryParse(rawKind is String ? rawKind : null);
       if (kind == null) continue;
       final path = r['path'];
       entries.add(RouteEntry(kind, path is String ? path : null));

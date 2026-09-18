@@ -57,8 +57,12 @@ class RouteSwitching {
   /// [params] with everything the route cannot say removed — **the** rule,
   /// applied when saving the current route and when parking or loading one.
   ///
-  /// * A reasoning effort not on the route's ladder is dropped: a rung means
-  ///   something different, or nothing, on another face.
+  /// * A reasoning effort not on the route's ladder is replaced by the rung
+  ///   that sends the same request there — the highest rung at or below it,
+  ///   else the lowest above it (a boolean switch sends any "on" as its one
+  ///   on rung; Gemini sends Max as the top of its scale). Off, and any
+  ///   effort on a route with no "on" rung at all, becomes unset: there it
+  ///   reaches the wire as nothing.
   /// * The legacy thinking flag follows the effort, exactly as the editor has
   ///   always written it (on for any effort but Off), so the flag can never
   ///   outlive the effort it stood for.
@@ -71,13 +75,29 @@ class RouteSwitching {
     final effort =
         ReasoningEffort.tryParse(params.reasoningEffort) ??
         (params.enableThinking ? ReasoningEffort.medium : null);
-    final kept = effort != null && ladder.contains(effort) ? effort : null;
+    final kept = _onLadder(effort, ladder);
     final cap = params.maxOutputTokens;
     return RouteParams(
       maxOutputTokens: cap != null && cap > 0 ? cap : null,
       reasoningEffort: kept?.name,
       enableThinking: kept != null && kept != ReasoningEffort.off,
     );
+  }
+
+  static ReasoningEffort? _onLadder(
+    ReasoningEffort? effort,
+    List<ReasoningEffort?> ladder,
+  ) {
+    if (effort == null) return null;
+    if (ladder.contains(effort)) return effort;
+    if (effort == ReasoningEffort.off) return null;
+    final on = [
+      for (final r in ladder)
+        if (r != null && r != ReasoningEffort.off) r,
+    ]..sort((a, b) => a.index.compareTo(b.index));
+    if (on.isEmpty) return null;
+    final below = on.where((r) => r.index <= effort.index);
+    return below.isNotEmpty ? below.last : on.first;
   }
 
   /// The `wire_protocol` a chat model on [kind] keeps for builds that

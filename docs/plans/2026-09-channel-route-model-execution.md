@@ -17,7 +17,7 @@
 | A5 | 切线路：`RouteParams.forRoute` 一条规则同时用于保存与切换；`LLMModel.switchRoute`（停放 / 载入 / 覆盖全部 / id 不变）；改主线路前钉住跟随者（纯函数） | `models/llm_model.dart`（`withRouteState`）、`services/catalogue/route_switching.dart` | 标准 03 §6 的六条性质各一条测试 | ☑ |
 | A6 | 备份：`schema_version` 45；旧备份新列为空 → 同一读时迁移；导入/导出往返保留线路与停放参数 | `database_service.dart` | 旧版本备份导入后请求地址不变；新备份在 44 版被拒（已有检查，补测试） | ☑ |
 
-A 期末：`/code-review high`，修复。
+A 期末：`/code-review high`，修复。☑（3 条，见施工记录「A 期评审」）
 
 ## B 期 · 合并
 
@@ -77,3 +77,10 @@ C 期末：`/code-review high`，修复。
 - **A6**：备份格式本身不用改——行是原样导出导入的，新列随行走；`schema_version` 跟着 dbVersion 到 45，旧版本的「更新的版本 → 拒绝」检查早已存在。
   唯一要改的是恢复时保留密钥用的渠道身份 `_channelIdentity`：改成比较**规范化后的**主线路 vendor 与地址，否则本机库里还是旧写法、
   备份里是规范化写法的同一个渠道（MiniMax 带尾斜杠）会认不出，密钥丢失。
+- **A 期评审**（`/code-review high`，3 条全修）：
+  1. `_Doc.tryParse` 把 `kind` 强转 `String?`，非字符串会抛错、拖垮所有渠道读取 → 改为收窄，跳过该条。
+  2. 写标记失配且扁平列已换到**另一个平台**（旧编辑器换预设）时，文档里的其余线路被按新平台的 vendor/默认路径重新解读并保留
+     → 判定平台变更（由 mark 推断旧平台）时只取扁平列自己的线路（`legacy`），视为换了渠道。同平台改地址仍保留其余线路。
+  3. `RouteSwitching.forRoute` 把不在阶梯上的档位一律丢掉，但有的面仍会发出它（开关式面把 High 发成 on，Gemini 把 Max 发成顶档），
+     保存/停放会悄悄关掉思考 → 改为映射到在该面发出同样请求的档：不高于它的最高「开」档，否则最低「开」档；Off 或无「开」档 → 不设。
+     这偏离了设计文档「不在阶梯上即丢弃」的原话，理由是那条规则会改变已发出的请求。
