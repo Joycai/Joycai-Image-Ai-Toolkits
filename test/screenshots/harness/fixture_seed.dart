@@ -153,6 +153,17 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     tagColor: 0xFF6D4C41,
   ).toMap(includeId: false));
 
+  // Volcengine Ark on its subscription-plan base (D1e): the channel the
+  // Seedream parameter cards are photographed on.
+  final int arkId = await db.addChannel(LLMChannel(
+    displayName: '火山方舟',
+    endpoint: 'https://ark.cn-beijing.volces.com/api/plan/v3',
+    apiKey: 'fixture-key-ark',
+    type: Vendors.volcengineArk,
+    tag: '官方',
+    tagColor: 0xFF2196F3,
+  ).toMap(includeId: false));
+
   final int flashFee = await db.addPricingGroup(PricingGroup(
     name: 'Gemini Flash',
     inputPrice: 0.075,
@@ -299,6 +310,24 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
       tag: ModelTag.video.value,
       channelId: claudeRelayId,
       sortOrder: 11,
+    ),
+    // D1e 3c: two Seedream generations whose parameter tables differ the
+    // most (task modes vs group generation and web search).
+    LLMModel(
+      modelId: 'doubao-seedream-5-0-pro-260628',
+      modelName: 'Seedream 5.0 pro',
+      tag: ModelTag.image.value,
+      channelId: arkId,
+      feeGroupId: perImageFee,
+      sortOrder: 12,
+    ),
+    LLMModel(
+      modelId: 'doubao-seedream-5.0-lite',
+      modelName: 'Seedream 5.0 lite',
+      tag: ModelTag.image.value,
+      channelId: arkId,
+      feeGroupId: perImageFee,
+      sortOrder: 13,
     ),
   ];
 

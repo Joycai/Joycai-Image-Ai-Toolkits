@@ -82,11 +82,14 @@ void main() {
     test('no other vendor gained a catalog', () {
       // The self-hosted H3-Base vendor is the third legitimate holder: its
       // one served model lives behind the video surface a /models listing
-      // has no vocabulary for, same reasoning as the two cloud faces.
+      // has no vocabulary for, same reasoning as the two cloud faces. Ark is
+      // the fourth: its plan base answers `GET /models` with a 404
+      // (measured), and Seedream is what the channel type exists for.
       for (final v in Vendors.all) {
         if (v.id == Vendors.minimax ||
             v.id == Vendors.minimaxAnthropic ||
-            v.id == Vendors.minimaxH3Base) {
+            v.id == Vendors.minimaxH3Base ||
+            v.id == Vendors.volcengineArk) {
           continue;
         }
         expect(v.unlistedModels, isEmpty, reason: v.id);

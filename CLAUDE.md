@@ -3,7 +3,7 @@
 Cross-platform Flutter desktop/mobile app for AI image and video generation, built
 around a multi-vendor LLM layer, for artists and designers working with AI media.
 
-**Version:** 4.9.0 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
+**Version:** 4.10.0 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
 
 ## Key Commands
 
@@ -63,7 +63,7 @@ bench/             render_bench.dart — GPU benchmark, inert unless RBENCH=1
 ```
 
 Protocol files are named `<family>_<surface>_protocol.dart` (openai chat/responses/images/videos,
-xai, gemini chat/imagen/veo, anthropic, dashscope, minimax, midjourney); shared `*_payload`,
+xai, gemini chat/imagen/veo, anthropic, dashscope, minimax, midjourney, ark images); shared `*_payload`,
 `openai_chat_parsing`, `streaming_tool_calls`, `inline_think` and `chat_image_extraction` are
 reused across families. The anthropic protocol is split over seven `anthropic_*` files —
 mapped in the LLM architecture note.

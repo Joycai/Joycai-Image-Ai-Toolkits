@@ -40,12 +40,14 @@ class SpecKnownValues {
     final qualities = <String>{};
     final seconds = <int>{};
 
-    // Every table there is: the ones a family owns, and the ones only a
-    // wire protocol reaches (the xAI, DashScope and MiniMax video tables
-    // have no family of their own — `forModel` routes to them by id).
+    // Every table there is: the ones a family owns, the ones only a wire
+    // protocol reaches, and the ones `forModel` reaches by id alone (a
+    // version whose table differs from its family's — Seedream 5.0 pro's
+    // `1.5K` tier exists nowhere else).
     final tables = [
       for (final family in ModelFamily.values) ModelCapabilities.forFamily(family),
       for (final protocol in WireProtocol.values) ModelCapabilities.forProtocol(protocol),
+      ...ModelCapabilities.idRoutedTables,
     ];
 
     for (final caps in tables) {
@@ -93,7 +95,7 @@ class SpecKnownValues {
   /// legacy 4K) follow.
   static List<String> _sortSizes(Set<String> raw, {bool video = false}) {
     int rank(String s) {
-      if (RegExp(r'^\d+K$').hasMatch(s)) return video ? 1 : 0;
+      if (RegExp(r'^\d+(?:\.\d+)?K$').hasMatch(s)) return video ? 1 : 0;
       if (RegExp(r'^\d+p$').hasMatch(s)) return video ? 0 : 1;
       if (RegExp(r'^\d+x\d+$').hasMatch(s)) return 2;
       return 3;
@@ -102,7 +104,8 @@ class SpecKnownValues {
     num magnitude(String s) {
       final m = RegExp(r'^(\d+)x(\d+)$').firstMatch(s);
       if (m != null) return int.parse(m.group(1)!) * int.parse(m.group(2)!);
-      return int.tryParse(s.replaceAll(RegExp(r'[^\d]'), '')) ?? 0;
+      // `1.5K` sits between `1K` and `2K`, so the decimal point is kept.
+      return num.tryParse(s.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
     }
 
     return raw.toList()

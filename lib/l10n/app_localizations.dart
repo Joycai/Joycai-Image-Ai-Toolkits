@@ -2927,6 +2927,12 @@ abstract class AppLocalizations {
   /// **'Alibaba DashScope (OpenAI compatible)'**
   String get providerDashScopeCompat;
 
+  /// No description provided for @providerVolcengineArk.
+  ///
+  /// In en, this message translates to:
+  /// **'Volcengine Ark'**
+  String get providerVolcengineArk;
+
   /// No description provided for @providerDashScopeNative.
   ///
   /// In en, this message translates to:
@@ -3016,6 +3022,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OpenAI-compatible /v1 endpoint'**
   String get providerMiniMaxDesc;
+
+  /// No description provided for @providerVolcengineArkDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Seedream image generation · Doubao chat'**
+  String get providerVolcengineArkDesc;
 
   /// No description provided for @newApiBaseUrl.
   ///
@@ -3701,6 +3713,12 @@ abstract class AppLocalizations {
   /// **'MiniMax offers two interfaces; pick one — you can still change it later.'**
   String get variantHintMiniMax;
 
+  /// No description provided for @variantHintArk.
+  ///
+  /// In en, this message translates to:
+  /// **'The two keys do not cross over: a plan key works only on /api/plan/v3, a pay-as-you-go key only on /api/v3. Switching rewrites the address only.'**
+  String get variantHintArk;
+
   /// No description provided for @variantHintNewApi.
   ///
   /// In en, this message translates to:
@@ -3730,6 +3748,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OpenAI interface'**
   String get variantMiniMaxOpenAI;
+
+  /// No description provided for @variantArkPayg.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay-as-you-go'**
+  String get variantArkPayg;
+
+  /// No description provided for @variantArkPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription plan'**
+  String get variantArkPlan;
 
   /// No description provided for @variantMiniMaxAnthropic.
   ///
@@ -4018,6 +4048,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'MiniMax Images'**
   String get protocolMinimaxImages;
+
+  /// No description provided for @protocolArkImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Ark Images'**
+  String get protocolArkImages;
+
+  /// No description provided for @protocolArkImagesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Seedream’s native endpoint; reference images ride the same JSON request'**
+  String get protocolArkImagesDesc;
 
   /// No description provided for @protocolMinimaxVideo.
   ///
@@ -6730,6 +6772,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Auto'**
   String get optionAuto;
+
+  /// No description provided for @paramImageTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Task'**
+  String get paramImageTask;
+
+  /// No description provided for @paramMaxImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Max images'**
+  String get paramMaxImages;
+
+  /// No description provided for @paramOutputFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Format'**
+  String get paramOutputFormat;
+
+  /// No description provided for @paramOptimizeMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt optimization'**
+  String get paramOptimizeMode;
+
+  /// No description provided for @paramWebSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Web search'**
+  String get paramWebSearch;
+
+  /// No description provided for @paramWatermark.
+  ///
+  /// In en, this message translates to:
+  /// **'Watermark'**
+  String get paramWatermark;
+
+  /// No description provided for @taskGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate'**
+  String get taskGenerate;
+
+  /// No description provided for @taskLayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Split layers'**
+  String get taskLayers;
+
+  /// No description provided for @taskTransparent.
+  ///
+  /// In en, this message translates to:
+  /// **'Transparent edit'**
+  String get taskTransparent;
+
+  /// No description provided for @maxImagesUpTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count}'**
+  String maxImagesUpTo(int count);
+
+  /// No description provided for @optimizeStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get optimizeStandard;
+
+  /// No description provided for @optimizeFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get optimizeFast;
 
   /// No description provided for @qualityLow.
   ///

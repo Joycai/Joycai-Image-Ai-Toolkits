@@ -76,6 +76,25 @@
   "promptExtendOn": "オン",
   "promptExtendOff": "オフ",
   "optionAuto": "自動",
+  "paramImageTask": "タスク",
+  "paramMaxImages": "組画像の上限",
+  "paramOutputFormat": "形式",
+  "paramOptimizeMode": "プロンプト最適化",
+  "paramWebSearch": "Web 検索",
+  "paramWatermark": "透かし",
+  "taskGenerate": "生成",
+  "taskLayers": "レイヤー分解",
+  "taskTransparent": "透過編集",
+  "maxImagesUpTo": "最大 {count} 枚",
+  "@maxImagesUpTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optimizeStandard": "標準",
+  "optimizeFast": "高速",
   "qualityLow": "低",
   "qualityMedium": "中",
   "qualityHigh": "高",

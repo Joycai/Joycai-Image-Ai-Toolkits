@@ -205,8 +205,7 @@ extension _ProviderSteps on _ChannelWizardDialogState {
               ),
               const SizedBox(height: 2),
               Text(
-                protocolFamilyLabel(
-                    l10n, Vendors.byId(variant.channelType).family),
+                channelProviderVariantCaption(l10n, preset, variant),
                 style: theme.textTheme.labelSmall?.mono.copyWith(
                   fontWeight: FontWeight.w400,
                   color: colorScheme.onSurfaceVariant,

@@ -75,6 +75,13 @@ enum WireProtocol {
   dashscopeImagesSync('dashscope-images-sync', Surface.imageGen),
   dashscopeImagesAsync('dashscope-images-async', Surface.imageGen),
   minimaxImages('minimax-images', Surface.imageGen),
+
+  /// Volcengine Ark's Seedream surface: `POST {base}/images/generations` with
+  /// Ark's JSON body (references inline as `image`, tier-or-pixel `size`,
+  /// group generation, watermark). The OpenAI Images path, so — unlike the
+  /// other vendor-native image faces — a relay that passes the body through
+  /// serves it at the same place.
+  arkImages('ark-images', Surface.imageGen),
   openaiVideos('openai-videos', Surface.videoJob),
   xaiVideos('xai-videos', Surface.videoJob),
   geminiVeo('gemini-veo', Surface.videoJob),

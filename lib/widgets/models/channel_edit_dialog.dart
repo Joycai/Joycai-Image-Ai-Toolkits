@@ -113,7 +113,8 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   String? get _presetEndpoint {
     final preset = _preset;
     if (preset == null) return null;
-    return variantForChannelType(preset, type)?.defaultEndpoint ??
+    return variantForChannelType(preset, type, endpoint: epCtrl.text)
+            ?.defaultEndpoint ??
         preset.defaultEndpoint;
   }
 
@@ -383,7 +384,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final preset = _preset;
-    final variant = preset == null ? null : variantForChannelType(preset, type);
+    final variant = preset == null
+        ? null
+        : variantForChannelType(preset, type, endpoint: epCtrl.text);
 
     final String title = preset == null
         ? l10n.presetUnmatched

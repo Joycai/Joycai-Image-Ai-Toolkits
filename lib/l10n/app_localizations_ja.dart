@@ -1628,6 +1628,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get providerDashScopeCompat => 'Alibaba DashScope（OpenAI 互換）';
 
   @override
+  String get providerVolcengineArk => 'Volcengine Ark（火山方舟）';
+
+  @override
   String get providerDashScopeNative => 'Alibaba DashScope（ネイティブ）';
 
   @override
@@ -1673,6 +1676,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get providerMiniMaxDesc => 'OpenAI 互換 /v1 エンドポイント';
+
+  @override
+  String get providerVolcengineArkDesc => 'Seedream 画像生成 · Doubao チャット';
 
   @override
   String get newApiBaseUrl => 'New API ベース URL';
@@ -2063,6 +2069,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'MiniMax は 2 つのインターフェースを提供しています。どちらかを選択（後から変更可）。';
 
   @override
+  String get variantHintArk =>
+      '2 種類のキーは互換性がありません：プランのキーは /api/plan/v3 のみ、従量課金のキーは /api/v3 のみで使えます。切り替えはアドレスだけを書き換えます。';
+
+  @override
   String get variantHintNewApi => 'ホストはご自身で入力。バージョンパスは選んだフォーマットに追従します。';
 
   @override
@@ -2076,6 +2086,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get variantMiniMaxOpenAI => 'OpenAI 面';
+
+  @override
+  String get variantArkPayg => '従量課金';
+
+  @override
+  String get variantArkPlan => 'サブスクリプションプラン';
 
   @override
   String get variantMiniMaxAnthropic => 'Anthropic 面';
@@ -2234,6 +2250,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get protocolMinimaxImages => 'MiniMax 画像';
+
+  @override
+  String get protocolArkImages => 'Ark 画像';
+
+  @override
+  String get protocolArkImagesDesc => 'Seedream のネイティブ画像エンドポイント。参照画像は JSON で同送';
 
   @override
   String get protocolMinimaxVideo => 'MiniMax 動画';
@@ -3733,6 +3755,44 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optionAuto => '自動';
+
+  @override
+  String get paramImageTask => 'タスク';
+
+  @override
+  String get paramMaxImages => '組画像の上限';
+
+  @override
+  String get paramOutputFormat => '形式';
+
+  @override
+  String get paramOptimizeMode => 'プロンプト最適化';
+
+  @override
+  String get paramWebSearch => 'Web 検索';
+
+  @override
+  String get paramWatermark => '透かし';
+
+  @override
+  String get taskGenerate => '生成';
+
+  @override
+  String get taskLayers => 'レイヤー分解';
+
+  @override
+  String get taskTransparent => '透過編集';
+
+  @override
+  String maxImagesUpTo(int count) {
+    return '最大 $count 枚';
+  }
+
+  @override
+  String get optimizeStandard => '標準';
+
+  @override
+  String get optimizeFast => '高速';
 
   @override
   String get qualityLow => '低';

@@ -14,6 +14,11 @@ void main() {
     expect(known.imageSizes, isNot(contains('not_set')));
   });
 
+  test('id-only tiers are collected and a decimal tier sorts between', () {
+    // Seedream 5.0 pro's 1.5K and 5.0 lite's 3K exist in no family table.
+    expect(known.imageSizes, containsAllInOrder(['1K', '1.5K', '2K', '3K', '4K']));
+  });
+
   test('video resolutions carry the p suffix in lower case, in ascending order', () {
     expect(known.videoResolutions, containsAllInOrder(['480p', '720p', '768p', '1080p']));
     expect(known.videoResolutions, isNot(contains('768P')));

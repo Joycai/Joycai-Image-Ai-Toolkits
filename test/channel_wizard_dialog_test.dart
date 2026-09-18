@@ -99,7 +99,7 @@ void main() {
           reason: '${preset.id} is defined as a preset but not rendered',
         );
       }
-      expect(kChannelProviderPresets.length, 16);
+      expect(kChannelProviderPresets.length, 17);
       expect(tester.takeException(), isNull);
     });
 

@@ -76,6 +76,25 @@
   "promptExtendOn": "On",
   "promptExtendOff": "Off",
   "optionAuto": "Auto",
+  "paramImageTask": "Task",
+  "paramMaxImages": "Max images",
+  "paramOutputFormat": "Format",
+  "paramOptimizeMode": "Prompt optimization",
+  "paramWebSearch": "Web search",
+  "paramWatermark": "Watermark",
+  "taskGenerate": "Generate",
+  "taskLayers": "Split layers",
+  "taskTransparent": "Transparent edit",
+  "maxImagesUpTo": "Up to {count}",
+  "@maxImagesUpTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optimizeStandard": "Standard",
+  "optimizeFast": "Fast",
   "qualityLow": "Low",
   "qualityMedium": "Medium",
   "qualityHigh": "High",

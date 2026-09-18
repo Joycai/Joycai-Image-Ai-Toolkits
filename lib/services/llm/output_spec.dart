@@ -65,7 +65,7 @@ class OutputSpec {
     if (_unset.contains(s.toLowerCase())) return null;
     final wxh = parseWxH(s);
     if (wxh != null) return '${wxh.width}x${wxh.height}';
-    if (RegExp(r'^\d+[kK]$').hasMatch(s)) return s.toUpperCase();
+    if (RegExp(r'^\d+(?:\.\d+)?[kK]$').hasMatch(s)) return s.toUpperCase();
     if (RegExp(r'^\d+[pP]$').hasMatch(s)) return s.toLowerCase();
     return s;
   }

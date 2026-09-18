@@ -401,6 +401,48 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
     need: ChannelProviderNeed.keyless,
     icon: Icons.movie_outlined,
   ),
+  // --- 厂商, appended last on purpose ---------------------------------------
+  // A row's avatar colour is derived from its place in this list
+  // (`channelPresetIdentityColor`), so a preset inserted in the middle would
+  // recolour every row after it. The picker groups by [group], so this still
+  // renders at the end of 厂商.
+  //
+  // Two variants of the *same* channel type: Ark's pay-as-you-go and
+  // subscription-plan bases serve identical paths with keys that do not cross
+  // over (docs/api/volcengine-ark.md §7). The difference is the address and
+  // nothing else, which is exactly what a variant rewrites; the variant a
+  // stored channel sits on is read back from its endpoint
+  // ([variantForChannelType]).
+  ChannelProviderPreset(
+    id: 'volcengine-ark',
+    channelType: Vendors.volcengineArk,
+    group: ChannelProviderGroup.vendor,
+    defaultEndpoint: 'https://ark.cn-beijing.volces.com/api/v3',
+    variants: [
+      ChannelProviderVariant(
+        id: 'payg',
+        channelType: Vendors.volcengineArk,
+        defaultEndpoint: 'https://ark.cn-beijing.volces.com/api/v3',
+      ),
+      ChannelProviderVariant(
+        id: 'plan',
+        channelType: Vendors.volcengineArk,
+        defaultEndpoint: 'https://ark.cn-beijing.volces.com/api/plan/v3',
+      ),
+    ],
+    searchAliases: [
+      '火山',
+      '方舟',
+      'volcengine',
+      'ark',
+      '豆包',
+      'doubao',
+      'seedream',
+      '字节',
+      'bytedance',
+    ],
+    icon: Icons.local_fire_department_outlined,
+  ),
 ];
 
 /// The preset a stored channel came from, or null when none matches.
@@ -462,15 +504,29 @@ String? _normalizedEndpoint(String? endpoint) {
   return value.isEmpty ? null : value.toLowerCase();
 }
 
-/// The variant of [preset] a stored channel type corresponds to, or null.
+/// The variant of [preset] a stored channel corresponds to, or null.
+///
+/// The type decides, except where two variants share one — Ark's
+/// pay-as-you-go and plan bases are the same channel type at two addresses.
+/// There [endpoint] picks the variant whose default it sits on; without that,
+/// a plan channel read back as pay-as-you-go, the editor saw its address as
+/// diverging from the preset and offered a one-tap "restore" to a base its
+/// key is rejected on.
 ChannelProviderVariant? variantForChannelType(
   ChannelProviderPreset preset,
-  String channelType,
-) {
-  for (final variant in preset.variants) {
-    if (variant.channelType == channelType) return variant;
-  }
-  return null;
+  String channelType, {
+  String? endpoint,
+}) {
+  final matches = [
+    for (final variant in preset.variants)
+      if (variant.channelType == channelType) variant,
+  ];
+  if (matches.length <= 1) return matches.firstOrNull;
+  final address = _normalizedEndpoint(endpoint);
+  return matches.firstWhere(
+    (v) => address != null && _normalizedEndpoint(v.defaultEndpoint) == address,
+    orElse: () => matches.first,
+  );
 }
 
 /// Heading a group sits under, in the picker's declaration order.
@@ -557,6 +613,8 @@ String channelProviderTitle(AppLocalizations l10n, String id) {
       return 'LM Studio';
     case 'minimax-h3-base':
       return 'MiniMax H3 (SGLang)';
+    case 'volcengine-ark':
+      return l10n.providerVolcengineArk;
     default:
       return l10n.providerCustom;
   }
@@ -599,6 +657,8 @@ String channelProviderSubtitle(
       return 'localhost:1234';
     case 'minimax-h3-base':
       return 'localhost:30010';
+    case 'volcengine-ark':
+      return l10n.providerVolcengineArkDesc;
     default:
       return l10n.providerCustomDesc;
   }
@@ -633,6 +693,8 @@ String channelProviderVariantHint(AppLocalizations l10n, String presetId) {
       return l10n.variantHintNewApi;
     case 'openai-official':
       return l10n.variantHintOpenAI;
+    case 'volcengine-ark':
+      return l10n.variantHintArk;
     default:
       return l10n.variantHintGeneric;
   }
@@ -664,9 +726,41 @@ String channelProviderVariantLabel(
       return l10n.variantNewApiGemini;
     case 'newapi/anthropic':
       return l10n.variantNewApiAnthropic;
+    case 'volcengine-ark/payg':
+      return l10n.variantArkPayg;
+    case 'volcengine-ark/plan':
+      return l10n.variantArkPlan;
     default:
       return variantId;
   }
+}
+
+/// The mono line under a variant's name: what switching to it changes.
+///
+/// Usually the wire format (`OpenAI · chat/completions` vs
+/// `Anthropic · messages`). When every sibling speaks the same format but at
+/// a different address — Ark's pay-as-you-go `/api/v3` and plan
+/// `/api/plan/v3` — the format would print the same line under both cards,
+/// so the address path is what gets said.
+String channelProviderVariantCaption(
+  AppLocalizations l10n,
+  ChannelProviderPreset preset,
+  ChannelProviderVariant variant,
+) {
+  final family = Vendors.byId(variant.channelType).family;
+  final sameFormat = preset.variants
+      .every((v) => Vendors.byId(v.channelType).family == family);
+  final paths = {
+    for (final v in preset.variants) Uri.tryParse(v.defaultEndpoint ?? '')?.path,
+  };
+  final path = Uri.tryParse(variant.defaultEndpoint ?? '')?.path;
+  if (sameFormat &&
+      paths.length == preset.variants.length &&
+      path != null &&
+      path.isNotEmpty) {
+    return path;
+  }
+  return protocolFamilyLabel(l10n, family);
 }
 
 /// The generic vendor that represents a protocol family on its own — what a
@@ -754,6 +848,8 @@ String channelTypeLabel(AppLocalizations l10n, String type) {
       return l10n.providerDashScopeCompat;
     case Vendors.dashscopeNative:
       return l10n.providerDashScopeNative;
+    case Vendors.volcengineArk:
+      return l10n.providerVolcengineArk;
     case Vendors.ollama:
       return 'Ollama';
     case Vendors.lmStudio:

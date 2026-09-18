@@ -4,6 +4,7 @@ import 'model_capabilities.dart';
 import 'model_descriptor.dart';
 import 'model_family.dart';
 import 'protocols/anthropic_chat_protocol.dart';
+import 'protocols/ark_images_protocol.dart';
 import 'protocols/anthropic_thinking.dart';
 import 'protocols/anthropic_wire.dart';
 import 'protocols/dashscope_chat_protocol.dart';
@@ -83,6 +84,7 @@ class LLMDispatcher {
   static final _dashscopeImagesAsync = DashScopeImagesAsyncProtocol();
   static final _dashscopeVideo = DashScopeVideoProtocol();
   static final _minimaxImages = MiniMaxImagesProtocol();
+  static final _arkImages = ArkImagesProtocol();
   static final _minimaxVideo = MiniMaxVideoProtocol();
   static final _minimaxH3BaseVideo = MiniMaxH3BaseVideoProtocol();
   static final _xaiVideos = XaiVideosProtocol();
@@ -224,7 +226,7 @@ class LLMDispatcher {
       // `/videos`), exactly as startLongRunning treats it.
       if (vendor.offersFamilyMediaSurfaces &&
           (surface == Surface.imageGen || vendor.videoProtocol == null))
-        ..._familyMediaSurfaces(vendor.family, surface),
+        ..._familyMediaSurfaces(vendor.family, surface, family),
     }.toList();
     // Video alone falls back to the menu. An image model always has chat to
     // ride, so its auto is never null; a video model the family rules do not
@@ -269,14 +271,22 @@ class LLMDispatcher {
   /// A protocol family's generic media surfaces — the ones a relay or a
   /// generic host of that family can be expected to serve. Images through
   /// chat is listed last: it is the fallback, not the headline.
+  ///
+  /// A Seedream id leads with Ark's body on the ① family: it lives at the
+  /// Images API's own path (`{base}/images/generations`), so a relay that
+  /// passes the body through serves it there — the one vendor-native image
+  /// face whose path means something on a relay host.
   static List<WireProtocol> _familyMediaSurfaces(
-      ProtocolFamily family, Surface surface) {
+      ProtocolFamily family, Surface surface, ModelFamily modelFamily) {
     final image = surface == Surface.imageGen;
     switch (family) {
       case ProtocolFamily.openai:
-        return image
-            ? const [WireProtocol.openaiImages, WireProtocol.chatImage]
-            : const [WireProtocol.openaiVideos];
+        if (!image) return const [WireProtocol.openaiVideos];
+        return [
+          if (modelFamily == ModelFamily.seedreamImage) WireProtocol.arkImages,
+          WireProtocol.openaiImages,
+          WireProtocol.chatImage,
+        ];
       case ProtocolFamily.gemini:
         return image
             ? const [WireProtocol.geminiImagen, WireProtocol.chatImage]
@@ -319,6 +329,10 @@ class LLMDispatcher {
               return vendor.imageMenu.contains(WireProtocol.xaiImages)
                   ? WireProtocol.xaiImages
                   : WireProtocol.openaiImages;
+            }
+            // Seedream off Ark: the same body at the relay's Images path.
+            if (family == ModelFamily.seedreamImage) {
+              return WireProtocol.arkImages;
             }
             return WireProtocol.chatImage;
           case ProtocolFamily.anthropic:
@@ -389,6 +403,8 @@ class LLMDispatcher {
         ];
       case ModelFamily.minimaxImage:
         return const [WireProtocol.minimaxImages];
+      case ModelFamily.seedreamImage:
+        return const [WireProtocol.arkImages];
       default:
         return const [];
     }
@@ -503,6 +519,8 @@ class LLMDispatcher {
         return _dashscopeImagesAsync;
       case WireProtocol.minimaxImages:
         return _minimaxImages;
+      case WireProtocol.arkImages:
+        return _arkImages;
       default:
         return _dashscopeImages;
     }
@@ -583,6 +601,17 @@ class LLMDispatcher {
           WireProtocol.dashscopeImagesAsync) {
         return const Duration(minutes: 10);
       }
+      // A group is still one synchronous request that returns once every
+      // image exists — Seedream's `maxImages` ceiling, or 5.0 pro's layer
+      // decomposition (base + up to 16 layers). One 1K image measured 43 s,
+      // so the single-image guard is widened per image the request may
+      // draw.
+      final images = _requestedImageCount(options);
+      if (images > 1) {
+        final scaled = const Duration(minutes: 5) +
+            Duration(seconds: _perExtraImage.inSeconds * (images - 1));
+        return scaled > _maxGroupDeadline ? _maxGroupDeadline : scaled;
+      }
       return const Duration(minutes: 5);
     }
 
@@ -592,6 +621,22 @@ class LLMDispatcher {
     if (deadline < const Duration(seconds: 120)) return const Duration(seconds: 120);
     if (deadline > _maxChatDeadline) return _maxChatDeadline;
     return deadline;
+  }
+
+  /// Deadline added per image beyond the first in a group request.
+  static const Duration _perExtraImage = Duration(seconds: 40);
+
+  /// Ceiling for a group request's deadline.
+  static const Duration _maxGroupDeadline = Duration(minutes: 15);
+
+  /// How many images one single-shot request may produce, read off the
+  /// workbench options: the group ceiling (`maxImages`), or 17 for a layer
+  /// decomposition (a base and up to 16 layers — docs/api/volcengine-ark.md
+  /// §6). The keys only exist on tables that declare them, so every other
+  /// model answers 1.
+  static int _requestedImageCount(Map<String, dynamic>? options) {
+    if (options?['imageTask'] == 'layers') return 17;
+    return int.tryParse('${options?['maxImages'] ?? ''}') ?? 1;
   }
 
   /// How much output to size the deadline against, best source first.
@@ -689,6 +734,16 @@ class LLMDispatcher {
           return protocol.generateImage(target, history, options: options, logger: logger);
         }
 
+        // Seedream on a relay (Ark itself is the native route above): Ark's
+        // body at the relay's Images path, the same place its
+        // `/images/generations` lives. A pin to chat or to the Images API
+        // re-describes the model into that route's family, so it never
+        // reaches here.
+        if (target.model.family == ModelFamily.seedreamImage) {
+          return _arkImages.generateImage(target, history,
+              options: options, logger: logger);
+        }
+
         // The chat surface itself can be multi-face (DashScope's
         // ④-compatible `/apps/anthropic/v1/messages` and its own
         // `/api/v1/services/aigc/*` beside its ①). The pinned selection
@@ -761,7 +816,10 @@ class LLMDispatcher {
         // wires answer true today — each has its own tool-call accumulator
         // — while an image model routed off chat entirely has no tools to
         // declare.
-        if (_hasNativeImageRoute(target)) return false;
+        if (_hasNativeImageRoute(target) ||
+            target.model.family == ModelFamily.seedreamImage) {
+          return false;
+        }
         return _chatProtocolFor(_chatFace(target)).streamingDeclaresTools;
       case ProtocolFamily.midjourney:
         return false;
@@ -1068,6 +1126,7 @@ class LLMDispatcher {
       case ProtocolFamily.openai:
         return target.model.family == ModelFamily.openaiImage ||
             target.model.family == ModelFamily.xaiImage ||
+            target.model.family == ModelFamily.seedreamImage ||
             _hasNativeImageRoute(target);
       case ProtocolFamily.dashscope:
         return _hasNativeImageRoute(target);

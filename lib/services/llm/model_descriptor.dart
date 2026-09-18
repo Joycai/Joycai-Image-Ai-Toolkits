@@ -105,6 +105,9 @@ class ModelDescriptor {
       case WireProtocol.minimaxImages:
         return unlessServes(
             const [ModelFamily.minimaxImage], ModelFamily.minimaxImage);
+      case WireProtocol.arkImages:
+        return unlessServes(
+            const [ModelFamily.seedreamImage], ModelFamily.seedreamImage);
       case WireProtocol.openaiVideos:
       case WireProtocol.xaiVideos:
       case WireProtocol.dashscopeVideo:
@@ -145,6 +148,7 @@ class ModelDescriptor {
       case ModelFamily.xaiImage:
       case ModelFamily.dashscopeImage:
       case ModelFamily.minimaxImage:
+      case ModelFamily.seedreamImage:
       case ModelFamily.openaiVideo:
         return ModelFamily.other;
       case ModelFamily.geminiImage:

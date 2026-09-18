@@ -60,6 +60,17 @@ enum ModelFamily {
   /// dispatcher keeps routing these through chat.
   minimaxImage,
 
+  /// ByteDance Seedream on Volcengine Ark (`doubao-seedream-*`). Served at
+  /// `POST {base}/images/generations` — the OpenAI Images path, but Ark's own
+  /// body: references travel as a JSON `image` field rather than an
+  /// `/images/edits` multipart, sizes are resolution tiers (`2K`) or pixels,
+  /// and group generation, watermark and 5.0 pro's layer decomposition have
+  /// no OpenAI equivalent (docs/api/volcengine-ark.md). Because the path is
+  /// the Images API's, a relay that passes the body through serves it too —
+  /// unlike [dashscopeImage] / [minimaxImage], whose native paths mean
+  /// nothing on a relay host.
+  seedreamImage,
+
   /// Anything else routed through an OpenAI-compatible relay (Claude, etc.).
   /// Treated as a plain chat model with no provider-specific extensions.
   other,
@@ -146,6 +157,18 @@ class ModelFamilyClassifier {
     // the catalog starts with `image-0`.
     if (id.startsWith('image-01')) {
       return ModelFamily.minimaxImage;
+    }
+
+    // --- Volcengine Ark Seedream ---
+    // `doubao-seedream-4-0-250828`, `doubao-seedream-5-0-pro-260628`, and the
+    // subscription plan's undated `doubao-seedream-5.0-lite` — matched on the
+    // product name alone, since the vendor prefix, the version separator
+    // (`-` or `.`) and the date suffix all vary. Which *version* an id is
+    // decides its parameter table; that reading is [seedreamVersion]. Nothing
+    // else in any catalog contains `seedream` — ByteDance's video line is
+    // `seedance`, a different word.
+    if (id.contains('seedream')) {
+      return ModelFamily.seedreamImage;
     }
 
     // --- MiniMax native video (H3, async-task only) ---
@@ -357,8 +380,29 @@ class ModelFamilyClassifier {
         f == ModelFamily.xaiImage ||
         f == ModelFamily.dashscopeImage ||
         f == ModelFamily.minimaxImage ||
+        f == ModelFamily.seedreamImage ||
         f == ModelFamily.midjourney;
   }
+
+  /// The Seedream generation an id names, as `(major, minor)` — `(5, 0)` for
+  /// `doubao-seedream-5-0-pro-260628` and for `doubao-seedream-5.0-lite`
+  /// alike — or null when the id carries no readable version.
+  ///
+  /// The separator is `-` in the dated ids and `.` in the plan's aliases; the
+  /// six-digit date after the version (`-250828`) is never read as a minor.
+  static (int, int)? seedreamVersion(String modelId) {
+    final m = RegExp(r'seedream[-_]?(\d+)(?:[-_.](\d{1,2}))?(?!\d)')
+        .firstMatch(modelId.toLowerCase());
+    if (m == null) return null;
+    return (int.parse(m.group(1)!), int.tryParse(m.group(2) ?? '') ?? 0);
+  }
+
+  /// Whether a Seedream id is the **pro** tier of its generation
+  /// (`doubao-seedream-5-0-pro-260628`, `doubao-seedream-5.0-pro`). Lite is
+  /// spelled three ways — `-lite-260128`, `.0-lite`, and the bare dated
+  /// `5-0-260128` — so pro is the one worth naming.
+  static bool isSeedreamPro(String modelId) =>
+      RegExp(r'seedream.*[-_.]pro(?:[-_.]|$)').hasMatch(modelId.toLowerCase());
 
   /// True for long-running video generation.
   static bool isVideo(ModelFamily f) =>

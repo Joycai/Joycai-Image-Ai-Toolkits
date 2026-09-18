@@ -1670,6 +1670,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerDashScopeCompat => 'Alibaba DashScope (OpenAI compatible)';
 
   @override
+  String get providerVolcengineArk => 'Volcengine Ark';
+
+  @override
   String get providerDashScopeNative => 'Alibaba DashScope (native)';
 
   @override
@@ -1716,6 +1719,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get providerMiniMaxDesc => 'OpenAI-compatible /v1 endpoint';
+
+  @override
+  String get providerVolcengineArkDesc =>
+      'Seedream image generation · Doubao chat';
 
   @override
   String get newApiBaseUrl => 'New API Base URL';
@@ -2120,6 +2127,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'MiniMax offers two interfaces; pick one — you can still change it later.';
 
   @override
+  String get variantHintArk =>
+      'The two keys do not cross over: a plan key works only on /api/plan/v3, a pay-as-you-go key only on /api/v3. Switching rewrites the address only.';
+
+  @override
   String get variantHintNewApi =>
       'You supply the host; the version path follows the format you pick.';
 
@@ -2134,6 +2145,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get variantMiniMaxOpenAI => 'OpenAI interface';
+
+  @override
+  String get variantArkPayg => 'Pay-as-you-go';
+
+  @override
+  String get variantArkPlan => 'Subscription plan';
 
   @override
   String get variantMiniMaxAnthropic => 'Anthropic interface';
@@ -2297,6 +2314,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get protocolMinimaxImages => 'MiniMax Images';
+
+  @override
+  String get protocolArkImages => 'Ark Images';
+
+  @override
+  String get protocolArkImagesDesc =>
+      'Seedream’s native endpoint; reference images ride the same JSON request';
 
   @override
   String get protocolMinimaxVideo => 'MiniMax Video';
@@ -3852,6 +3876,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optionAuto => 'Auto';
+
+  @override
+  String get paramImageTask => 'Task';
+
+  @override
+  String get paramMaxImages => 'Max images';
+
+  @override
+  String get paramOutputFormat => 'Format';
+
+  @override
+  String get paramOptimizeMode => 'Prompt optimization';
+
+  @override
+  String get paramWebSearch => 'Web search';
+
+  @override
+  String get paramWatermark => 'Watermark';
+
+  @override
+  String get taskGenerate => 'Generate';
+
+  @override
+  String get taskLayers => 'Split layers';
+
+  @override
+  String get taskTransparent => 'Transparent edit';
+
+  @override
+  String maxImagesUpTo(int count) {
+    return 'Up to $count';
+  }
+
+  @override
+  String get optimizeStandard => 'Standard';
+
+  @override
+  String get optimizeFast => 'Fast';
 
   @override
   String get qualityLow => 'Low';

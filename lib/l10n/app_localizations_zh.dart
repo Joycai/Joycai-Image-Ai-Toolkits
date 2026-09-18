@@ -1620,6 +1620,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerDashScopeCompat => '阿里云百炼（OpenAI 兼容）';
 
   @override
+  String get providerVolcengineArk => '火山方舟';
+
+  @override
   String get providerDashScopeNative => '阿里云百炼（DashScope 原生）';
 
   @override
@@ -1664,6 +1667,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get providerMiniMaxDesc => 'OpenAI 兼容 /v1 端点';
+
+  @override
+  String get providerVolcengineArkDesc => 'Seedream 生图 · 豆包对话';
 
   @override
   String get newApiBaseUrl => 'New API 基础地址';
@@ -2044,6 +2050,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get variantHintMiniMax => 'MiniMax 同时提供两套接口，选一套即可，之后仍可改。';
 
   @override
+  String get variantHintArk =>
+      '两种密钥不通用：套餐密钥只认 /api/plan/v3，按量密钥只认 /api/v3。切换只改写地址。';
+
+  @override
   String get variantHintNewApi => 'host 由你填，尾段跟着你选的格式走。';
 
   @override
@@ -2057,6 +2067,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get variantMiniMaxOpenAI => 'OpenAI 面';
+
+  @override
+  String get variantArkPayg => '按量付费';
+
+  @override
+  String get variantArkPlan => '订阅套餐';
 
   @override
   String get variantMiniMaxAnthropic => 'Anthropic 面';
@@ -2212,6 +2228,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get protocolMinimaxImages => 'MiniMax 图像';
+
+  @override
+  String get protocolArkImages => '火山方舟图像';
+
+  @override
+  String get protocolArkImagesDesc => 'Seedream 的原生出图接口，参考图随 JSON 一起发送';
 
   @override
   String get protocolMinimaxVideo => 'MiniMax 视频';
@@ -3690,6 +3712,44 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optionAuto => '自动';
+
+  @override
+  String get paramImageTask => '任务';
+
+  @override
+  String get paramMaxImages => '组图上限';
+
+  @override
+  String get paramOutputFormat => '格式';
+
+  @override
+  String get paramOptimizeMode => '提示词优化';
+
+  @override
+  String get paramWebSearch => '联网搜索';
+
+  @override
+  String get paramWatermark => '水印';
+
+  @override
+  String get taskGenerate => '生成';
+
+  @override
+  String get taskLayers => '拆图层';
+
+  @override
+  String get taskTransparent => '透明编辑';
+
+  @override
+  String maxImagesUpTo(int count) {
+    return '最多 $count 张';
+  }
+
+  @override
+  String get optimizeStandard => '标准';
+
+  @override
+  String get optimizeFast => '极速';
 
   @override
   String get qualityLow => '低';
@@ -6544,6 +6604,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get providerDashScopeCompat => '阿里雲百煉（OpenAI 相容）';
 
   @override
+  String get providerVolcengineArk => '火山方舟';
+
+  @override
   String get providerDashScopeNative => '阿里雲百煉（DashScope 原生）';
 
   @override
@@ -6588,6 +6651,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get providerMiniMaxDesc => 'OpenAI 相容 /v1 端點';
+
+  @override
+  String get providerVolcengineArkDesc => 'Seedream 生圖 · 豆包對話';
 
   @override
   String get newApiBaseUrl => 'New API 基礎位址';
@@ -6968,6 +7034,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get variantHintMiniMax => 'MiniMax 同時提供兩套介面，選一套即可，之後仍可改。';
 
   @override
+  String get variantHintArk =>
+      '兩種金鑰不通用：套餐金鑰只認 /api/plan/v3，按量金鑰只認 /api/v3。切換只改寫位址。';
+
+  @override
   String get variantHintNewApi => 'host 由你填，尾段跟著你選的格式走。';
 
   @override
@@ -6981,6 +7051,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get variantMiniMaxOpenAI => 'OpenAI 面';
+
+  @override
+  String get variantArkPayg => '按量付費';
+
+  @override
+  String get variantArkPlan => '訂閱套餐';
 
   @override
   String get variantMiniMaxAnthropic => 'Anthropic 面';
@@ -7136,6 +7212,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get protocolMinimaxImages => 'MiniMax 圖像';
+
+  @override
+  String get protocolArkImages => '火山方舟圖像';
+
+  @override
+  String get protocolArkImagesDesc => 'Seedream 的原生出圖介面，參考圖隨 JSON 一起發送';
 
   @override
   String get protocolMinimaxVideo => 'MiniMax 影片';
@@ -8615,6 +8697,44 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optionAuto => '自動';
+
+  @override
+  String get paramImageTask => '任務';
+
+  @override
+  String get paramMaxImages => '組圖上限';
+
+  @override
+  String get paramOutputFormat => '格式';
+
+  @override
+  String get paramOptimizeMode => '提示詞最佳化';
+
+  @override
+  String get paramWebSearch => '聯網搜尋';
+
+  @override
+  String get paramWatermark => '浮水印';
+
+  @override
+  String get taskGenerate => '生成';
+
+  @override
+  String get taskLayers => '拆圖層';
+
+  @override
+  String get taskTransparent => '透明編輯';
+
+  @override
+  String maxImagesUpTo(int count) {
+    return '最多 $count 張';
+  }
+
+  @override
+  String get optimizeStandard => '標準';
+
+  @override
+  String get optimizeFast => '極速';
 
   @override
   String get qualityLow => '低';

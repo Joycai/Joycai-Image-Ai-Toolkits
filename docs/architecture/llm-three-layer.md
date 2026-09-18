@@ -21,7 +21,7 @@
 
 | 层 | 回答的问题 | 代码 |
 |----|-----------|------|
-| **1 Protocol** | 线上格式长什么样：endpoint 形状、请求体、响应/流解析 | `protocols/` — openai_chat · openai_responses · openai_images · openai_videos · xai_images · xai_videos · gemini_chat · gemini_imagen · gemini_veo · anthropic_chat · midjourney · dashscope_chat · dashscope_images · dashscope_images_async · dashscope_video |
+| **1 Protocol** | 线上格式长什么样：endpoint 形状、请求体、响应/流解析 | `protocols/` — openai_chat · openai_responses · openai_images · openai_videos · ark_images · xai_images · xai_videos · gemini_chat · gemini_imagen · gemini_veo · anthropic_chat · midjourney · dashscope_chat · dashscope_images · dashscope_images_async · dashscope_video |
 | **2 Vendor** | 谁在提供这个格式：认证方式、每个 surface 的协议菜单 | `vendors/vendor_profile.dart` + `vendors/vendors.dart`（id 即 `llm_channels.type`） |
 | **3 Model** | 这个模型是什么：family 分类、能力、参数表 | `model_descriptor.dart`（包装 `model_family.dart` + `model_capabilities.dart`） |
 
@@ -757,6 +757,47 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
 - 测试：`test/output_cap_payload_test.dart`（五条 wire 逐字节、① 按 vendor 选名、④ 兜底与
   budget 折半、探针压过模型配置、deadline）、`test/model_discovery_limits_test.dart`、
   `test/output_cap_scale_test.dart`。
+
+## 火山方舟 · Seedream（2026-09-18）
+
+> 协议事实与实测在 [`docs/api/volcengine-ark.md`](../api/volcengine-ark.md)；当轮的执行清单
+> 已退役，正文在台账指向的 `git show` 里。设计稿 Claude Design `D1e 火山方舟 · Seedream`。
+
+- **一个 vendor、一个协议，不加家族。** `Vendors.volcengineArk`（`volcengine-ark`）是 ①：
+  chat 走 `{base}/chat/completions`；生图是 `WireProtocol.arkImages`（`ark-images`，
+  `protocols/ark_images_protocol.dart`，body 规则在纯函数的 `ark_payload.dart`），声明为
+  `imageMenu`。与 `xaiImages` 同类：同一族下由 vendor 选的替代面。
+- **两个 base 是一个 vendor 的两个向导变体。** 按量 `/api/v3`、套餐 `/api/plan/v3`，路径相同、
+  key 不通用。这是**第一个两个变体同一 `channelType` 的预设**：`variantForChannelType` 因此按
+  地址回读（只看类型时套餐渠道被读成按量，编辑器会提议把地址「恢复」到它的 key 必 401 的
+  base）；变体卡副行在兄弟变体同协议族时印路径（`channelProviderVariantCaption`）。
+- **发现靠目录。** 套餐 base 的 `GET /models` 是 404（实测），`unlistedModels` 给出按量四款
+  带日期 id 与套餐两款点号别名，404 时退回目录。
+- **Layer 3：`ModelFamily.seedreamImage`，按版本出表。** 分类只认 `seedream`；版本由
+  `ModelFamilyClassifier.seedreamVersion` 读（`5-0` 与 `5.0` 同一代，六位日期不当次版本），
+  pro 由 `isSeedreamPro` 认（lite 有三种拼写）。五张表 + 协议兜底表，控件跟着版本走。
+  尺寸是「档位 + 比例」两个控件：比例自动 = 只发档位，选了比例 = 查
+  `ModelCapabilities.tierPixelSizes`（各版本文档的映射，协议只查表）。**水印永远明发、默认关**
+  （上游默认开且照常计费）。5.0 pro 的拆图层 / 透明编辑收成一个「任务」三段控件，恰好 1 张
+  参考图的前置条件在发请求前检查（无状态码的 `LLMApiException`，不重试、不计费）。
+- **中转站是这条规矩的例外：** 认得出的 Seedream id 在 ① 族 vendor 上 auto = `arkImages`，
+  菜单首项（`_familyMediaSurfaces` 按模型 family 加），Images API / 对话出图仍可点单。理由：
+  它的路径就是 Images API 的 `{base}/images/generations`，在中转 host 上有意义——「中转不提供
+  厂商原生协议」防的是从 endpoint 推导出的私有路径，这里没有推导。先例是 grok-imagine 在
+  中转上走 Images API。
+- **路由答案**：单发、提交即计费、不声明工具；超时 5 分钟起，按一次请求可能画的张数
+  （`maxImages`，拆图层按 17）每多一张 +40 s，封顶 15 分钟。计费按张：`image_count`；方舟的
+  `output_tokens`（像素/256）不进 token 键，放在 `ark_usage` 下，免得按 token 的费用组算出假钱；
+  不发布 `output_size`，按规格的档位行写的是 `2K`。
+- 按规格计费的条件选单顺带收了 `ModelCapabilities.idRoutedTables`（按 id 才走到的表），
+  `1.5K` 这类小数档位能选能排。
+- **测试**：`seedream_capabilities_test`（分类、每表、像素落在各版本文档区间）、
+  `ark_images_payload_test`（body 逐字段、组图收紧、任务前置条件、单张失败、图层排序）、
+  `seedream_routing_test`（菜单 / auto / 点单 / 超时 / 本地 HTTP 端到端）、
+  `ark_channel_preset_test`。截图：`models_desktop_light_wizardArk{,2}`、
+  `workbench_desktop_*_seedream{Pro,Lite}`。
+- **没做**：流式（逐张推送）、图层 `bounding_box` / `z_index` 落库与画布还原、Seedance 视频面、
+  方舟 chat 面的 `thinking` 方言——记在台账「还欠的」。
 
 ## 遗留与已知取舍
 

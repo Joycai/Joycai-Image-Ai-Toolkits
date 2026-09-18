@@ -53,6 +53,12 @@ String? _paramName(AppLocalizations l10n, String labelKey, bool video) => switch
       'quality' => l10n.quality,
       'videoSeconds' => l10n.videoSeconds,
       'promptExtend' => l10n.promptExtend,
+      'imageTask' => l10n.paramImageTask,
+      'maxImages' => l10n.paramMaxImages,
+      'outputFormat' => l10n.paramOutputFormat,
+      'optimizeMode' => l10n.paramOptimizeMode,
+      'webSearch' => l10n.paramWebSearch,
+      'watermark' => l10n.paramWatermark,
       _ => null,
     };
 
