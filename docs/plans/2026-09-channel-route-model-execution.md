@@ -10,7 +10,7 @@
 
 | 片 | 内容 | 文件 | 验收 | 状态 |
 |---|---|---|---|---|
-| A1 | `RouteKind`（六值、稳定 id、↔ 对话 wire）+ `PlatformProfile` 表 + 平台推断（主线路 vendor + 主机）+ 线路 vendor 解析规则 | `services/llm/vendors/platforms.dart` | 每个 vendor × 官方/非官方主机推断正确；迁移后线路 vendor = 今天的点单 vendor | ☐ |
+| A1 | `RouteKind`（六值、稳定 id、↔ 对话 wire）+ `PlatformProfile` 表 + 平台推断（主线路 vendor + 主机）+ 线路 vendor 解析规则 | `services/llm/vendors/platforms.dart` | 每个 vendor × 官方/非官方主机推断正确；迁移后线路 vendor = 今天的点单 vendor | ☑ |
 | A2 | `ChannelRoutes`（内嵌文档：主机、线路表、写入标记）：解析逐字段收窄、序列化、读时由旧 (type, endpoint) 推出、规范化（扁平字段 = 主线路）、地址拼接（缺省 / 相对 / 绝对） | `models/channel_route.dart` | **每个预设 × 每个面迁移后地址逐字节等于今天的推导**；非 URL 地址整条保留；规范化幂等 | ☐ |
 | A3 | v45：`llm_channels.routes`、`llm_models.active_route`、`llm_models.route_params`；`LLMChannel` / `LLMModel` 字段；`RouteParams`（三字段一类）+ 模型读时迁移（旧对话面点单 → `active_route`）；仓库读写都过规范化 | `database_migrations.dart`、`llm_channel.dart`、`llm_model.dart`、`model_repository.dart` | onCreate 与 onUpgrade 同步；旧行读出 = 今天；写入标记识别扁平字段被他方改写 | ☐ |
 | A4 | 按模型的线路看渠道：`ChannelRouteView`；`LLMConfigResolver` 走它，线路不存在 → `LLMConfigErrorKind.routeNotFound`；`LLMModelConfig.faceBases` + `_faceTarget` 先查它；`AppState` 的 `descriptorForModel` / `_supportsVideoForType`、模型编辑、卡片、发现改走视图；源码扫描测试挡住 `channel.type` 直读 | `services/llm/channel_route_view.dart`、`llm_config_resolver.dart`、`llm_model_config.dart`、`llm_dispatcher.dart`、`state/app_state.dart`、调用方 | 旧数据下所有 `wire_protocol_routing_test` 不变；线路缺失请求侧报错、展示侧回退 | ☐ |
