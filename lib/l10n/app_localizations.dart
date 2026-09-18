@@ -3023,6 +3023,12 @@ abstract class AppLocalizations {
   /// **'OpenAI-compatible /v1 endpoint'**
   String get providerMiniMaxDesc;
 
+  /// No description provided for @providerVolcengineArkDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Seedream image generation · Doubao chat'**
+  String get providerVolcengineArkDesc;
+
   /// No description provided for @newApiBaseUrl.
   ///
   /// In en, this message translates to:
@@ -3707,6 +3713,12 @@ abstract class AppLocalizations {
   /// **'MiniMax offers two interfaces; pick one — you can still change it later.'**
   String get variantHintMiniMax;
 
+  /// No description provided for @variantHintArk.
+  ///
+  /// In en, this message translates to:
+  /// **'The two keys do not cross over: a plan key works only on /api/plan/v3, a pay-as-you-go key only on /api/v3. Switching rewrites the address only.'**
+  String get variantHintArk;
+
   /// No description provided for @variantHintNewApi.
   ///
   /// In en, this message translates to:
@@ -3736,6 +3748,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OpenAI interface'**
   String get variantMiniMaxOpenAI;
+
+  /// No description provided for @variantArkPayg.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay-as-you-go'**
+  String get variantArkPayg;
+
+  /// No description provided for @variantArkPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription plan'**
+  String get variantArkPlan;
 
   /// No description provided for @variantMiniMaxAnthropic.
   ///

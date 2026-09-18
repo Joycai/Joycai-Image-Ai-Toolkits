@@ -1669,6 +1669,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerMiniMaxDesc => 'OpenAI 兼容 /v1 端点';
 
   @override
+  String get providerVolcengineArkDesc => 'Seedream 生图 · 豆包对话';
+
+  @override
   String get newApiBaseUrl => 'New API 基础地址';
 
   @override
@@ -2047,6 +2050,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get variantHintMiniMax => 'MiniMax 同时提供两套接口，选一套即可，之后仍可改。';
 
   @override
+  String get variantHintArk =>
+      '两种密钥不通用：套餐密钥只认 /api/plan/v3，按量密钥只认 /api/v3。切换只改写地址。';
+
+  @override
   String get variantHintNewApi => 'host 由你填，尾段跟着你选的格式走。';
 
   @override
@@ -2060,6 +2067,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get variantMiniMaxOpenAI => 'OpenAI 面';
+
+  @override
+  String get variantArkPayg => '按量付费';
+
+  @override
+  String get variantArkPlan => '订阅套餐';
 
   @override
   String get variantMiniMaxAnthropic => 'Anthropic 面';
@@ -6602,6 +6615,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get providerMiniMaxDesc => 'OpenAI 相容 /v1 端點';
 
   @override
+  String get providerVolcengineArkDesc => 'Seedream 生圖 · 豆包對話';
+
+  @override
   String get newApiBaseUrl => 'New API 基礎位址';
 
   @override
@@ -6980,6 +6996,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get variantHintMiniMax => 'MiniMax 同時提供兩套介面，選一套即可，之後仍可改。';
 
   @override
+  String get variantHintArk =>
+      '兩種金鑰不通用：套餐金鑰只認 /api/plan/v3，按量金鑰只認 /api/v3。切換只改寫位址。';
+
+  @override
   String get variantHintNewApi => 'host 由你填，尾段跟著你選的格式走。';
 
   @override
@@ -6993,6 +7013,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get variantMiniMaxOpenAI => 'OpenAI 面';
+
+  @override
+  String get variantArkPayg => '按量付費';
+
+  @override
+  String get variantArkPlan => '訂閱套餐';
 
   @override
   String get variantMiniMaxAnthropic => 'Anthropic 面';

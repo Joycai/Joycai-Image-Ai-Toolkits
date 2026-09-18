@@ -1678,6 +1678,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get providerMiniMaxDesc => 'OpenAI 互換 /v1 エンドポイント';
 
   @override
+  String get providerVolcengineArkDesc => 'Seedream 画像生成 · Doubao チャット';
+
+  @override
   String get newApiBaseUrl => 'New API ベース URL';
 
   @override
@@ -2066,6 +2069,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'MiniMax は 2 つのインターフェースを提供しています。どちらかを選択（後から変更可）。';
 
   @override
+  String get variantHintArk =>
+      '2 種類のキーは互換性がありません：プランのキーは /api/plan/v3 のみ、従量課金のキーは /api/v3 のみで使えます。切り替えはアドレスだけを書き換えます。';
+
+  @override
   String get variantHintNewApi => 'ホストはご自身で入力。バージョンパスは選んだフォーマットに追従します。';
 
   @override
@@ -2079,6 +2086,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get variantMiniMaxOpenAI => 'OpenAI 面';
+
+  @override
+  String get variantArkPayg => '従量課金';
+
+  @override
+  String get variantArkPlan => 'サブスクリプションプラン';
 
   @override
   String get variantMiniMaxAnthropic => 'Anthropic 面';

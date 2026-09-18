@@ -126,6 +126,56 @@ void main() {
     }
   }
 
+  // The Volcengine Ark preset (design D1e · 3a): picked from the rail, its
+  // two access variants, then the connection step on the subscription plan —
+  // whose endpoint the switch rewrote.
+  for (final (String suffix, bool connect) in const <(String, bool)>[
+    ('wizardArk', false),
+    ('wizardArk2', true),
+  ]) {
+    testWidgets('channelWizard ark @ desktop light $suffix', (
+      WidgetTester tester,
+    ) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.models,
+        size: kShotSizes.firstWhere((ShotSize s) => s.label == 'desktop'),
+        brightness: Brightness.light,
+        suffix: suffix,
+        after: (WidgetTester tester) async {
+          Future<void> settle() async {
+            for (int i = 0; i < 5; i++) {
+              await tester.pump(const Duration(milliseconds: 100));
+            }
+          }
+
+          Future<bool> tapText(String label) async {
+            final Finder finder = find.text(label);
+            if (finder.evaluate().isEmpty) return false;
+            await tester.tap(finder.first, warnIfMissed: false);
+            await settle();
+            return true;
+          }
+
+          final Finder add = find.text('添加渠道');
+          if (add.evaluate().isEmpty) return;
+          await tester.tap(add.first, warnIfMissed: false);
+          await settle();
+          await tester.enterText(
+              find.descendant(
+                  of: find.byType(Dialog), matching: find.byType(TextField)),
+              '火山');
+          await settle();
+          await tapText('火山方舟');
+          await tapText('下一步');
+          await tapText('订阅套餐');
+          if (connect) await tapText('下一步');
+        },
+      );
+    });
+  }
+
   // The channel editor (spec D2 15a / 15c). Desktop is a 680-wide two-column
   // dialog reached from the detail header's pencil; mobile is a fullscreen
   // page reached by tapping a row in the channels tab.

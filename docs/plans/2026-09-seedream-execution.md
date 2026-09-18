@@ -66,7 +66,7 @@
 | S3 | B Layer 1 | `ArkImagesProtocol` + `ark_payload.dart`（纯函数 body 构造 / 响应解析）+ `WireProtocol.arkImages` 与它的穷尽消费点 | `protocols/ark_*.dart`、`vendor_profile.dart`、`wire_protocol_labels.dart` | 单测：body 逐字段、组图收紧、任务前置条件、单张失败、全失败 | ✅ |
 | S4 | B Layer 2 + 路由 | `Vendors.volcengineArk`、dispatcher（菜单 / auto / 生成 / 单发 / 计费 / 超时）、目录 | `vendors.dart`、`llm_dispatcher.dart` | 路由单测：方舟、中转、点单、未识别 id、本地 HTTP 端到端 | ✅ |
 | — | B review | `/code-review high` S2..S4 | | 发现全修 | ⏳ |
-| S5 | C 渠道 | 向导预设「火山方舟」+ 标题 / 副标题 / 类型名 + 协议名 / 路径 / 说明 + l10n 四语 | `channel_provider_presets.dart`、`wire_protocol_labels.dart`、`l10n/src/*` | 截图：向导 | ⏳ |
+| S5 | C 渠道 | 向导预设「火山方舟」（按量 / 套餐两个变体）+ 标题 / 副标题 / 变体文案 + l10n 四语；变体按地址回读 | `channel_provider_presets.dart`、`wizard_provider_steps.dart`、`channel_edit_dialog.dart`、`setup_wizard.dart`、`l10n/src/*` | 截图：`models_desktop_light_wizardArk{,2}` | ✅ |
 | S6 | C 参数 | 工作台参数标签与选项、编辑器参数摘要 + l10n 四语 | `model_selection_section.dart`、`model_protocol_section.dart` | 截图：工作台 Seedream 四表 | ⏳ |
 | — | C review | `/code-review high` S5..S6 | | 发现全修 | ⏳ |
 | S7 | D 收尾 | llm-three-layer 一节、CLAUDE.md、台账行、退役本清单；bump 4.10.0；PR | docs、版本文件 | 两道门绿 | ⏳ |
@@ -96,3 +96,10 @@
   实测）。**实机**：套餐端点、5.0 lite、2K + 16:9、水印关，经 `LLMDispatcher.generate`
   一次出图 26 s，2848×1600（= 表里的映射），右下角无水印；`ark_usage.output_tokens` 17800
   = 2848×1600/256。
+- **S5**：两个变体同一渠道类型是第一次出现，暴露两处按「类型唯一」写的旧假设：
+  ① `variantForChannelType` 只看类型——套餐渠道会被读回按量变体，编辑器把它的地址判为
+  「偏离预设」并给出一键恢复到 `/api/v3`（套餐 key 在那里 401）。改为同类型多变体时按
+  地址挑，三个调用点传入当前地址。② 变体卡副行印的是协议族，方舟两张卡都是
+  「OpenAI · chat/completions」；新增 `channelProviderVariantCaption`：兄弟变体同协议族
+  且地址不同时印路径（`/api/v3` · `/api/plan/v3`），OpenAI 官方两张卡地址相同，照旧印协议族。
+  截图 harness 新增方舟向导两张（变体步、连接步）。

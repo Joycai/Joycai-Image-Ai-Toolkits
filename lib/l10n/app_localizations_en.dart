@@ -1721,6 +1721,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerMiniMaxDesc => 'OpenAI-compatible /v1 endpoint';
 
   @override
+  String get providerVolcengineArkDesc =>
+      'Seedream image generation · Doubao chat';
+
+  @override
   String get newApiBaseUrl => 'New API Base URL';
 
   @override
@@ -2123,6 +2127,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'MiniMax offers two interfaces; pick one — you can still change it later.';
 
   @override
+  String get variantHintArk =>
+      'The two keys do not cross over: a plan key works only on /api/plan/v3, a pay-as-you-go key only on /api/v3. Switching rewrites the address only.';
+
+  @override
   String get variantHintNewApi =>
       'You supply the host; the version path follows the format you pick.';
 
@@ -2137,6 +2145,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get variantMiniMaxOpenAI => 'OpenAI interface';
+
+  @override
+  String get variantArkPayg => 'Pay-as-you-go';
+
+  @override
+  String get variantArkPlan => 'Subscription plan';
 
   @override
   String get variantMiniMaxAnthropic => 'Anthropic interface';

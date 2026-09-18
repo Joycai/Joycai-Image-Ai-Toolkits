@@ -124,8 +124,10 @@ class _SetupWizardState extends State<SetupWizard> {
     final preset = _presetId == null
         ? null
         : kChannelProviderPresets.firstWhere((p) => p.id == _presetId);
-    final variant =
-        preset == null ? null : variantForChannelType(preset, _channelType);
+    final variant = preset == null
+        ? null
+        : variantForChannelType(preset, _channelType,
+            endpoint: _endpointController.text);
 
     return InkWell(
       onTap: () => _pickProvider(l10n),
