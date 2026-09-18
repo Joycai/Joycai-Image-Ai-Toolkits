@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
+import '../db/repositories/image_layer_repository.dart';
+
 /// Which way a staged file travels.
 enum FileTransferMode { move, copy }
 
@@ -346,6 +348,9 @@ class FileTransferService {
           }
         }
 
+        if (plan.mode != FileTransferMode.copy) {
+          await ImageLayerRepository().move(entry.sourcePath, target);
+        }
         succeeded.add(target);
         bytesDone += entry.size;
       } on FileSystemException catch (e) {

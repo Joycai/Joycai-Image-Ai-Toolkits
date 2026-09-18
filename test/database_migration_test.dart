@@ -655,4 +655,29 @@ void main() {
       expect(await columnsOf(db, 'llm_models'), contains('max_output_tokens'));
     });
   });
+
+  group('v46 adds the layer table', () {
+    test('an existing database gains an empty table, idempotently', () async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      addTearDown(db.close);
+      await DatabaseMigration.migrate(db, 45, 46);
+      await db.insert('image_layers', {
+        'path': '/out/base.jpeg',
+        'set_id': 's',
+        'z_index': 0,
+        'created_at': '2026-09-18T00:00:00',
+      });
+      await DatabaseMigration.migrate(db, 45, 46);
+      expect(await db.query('image_layers'), hasLength(1));
+      expect(await columnsOf(db, 'image_layers'),
+          containsAll(['set_id', 'z_index', 'box_left', 'box_bottom']));
+    });
+
+    test('a fresh database is created with the table', () async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      addTearDown(db.close);
+      await DatabaseMigration.onCreate(db);
+      expect(await columnsOf(db, 'image_layers'), contains('description'));
+    });
+  });
 }

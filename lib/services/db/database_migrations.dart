@@ -70,6 +70,7 @@ class DatabaseMigration {
     if (oldVersion < 43) await _createV43Columns(db);
     if (oldVersion < 44) await _createV44Columns(db);
     if (oldVersion < 45) await _createV45Columns(db);
+    if (oldVersion < 46) await _createV46Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -114,7 +115,37 @@ class DatabaseMigration {
     await _createV43Columns(db);
     await _createV44Columns(db);
     await _createV45Columns(db);
+    await _createV46Tables(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// Layer decompositions (`image_layers`): one row per saved file of a
+  /// Seedream 5.0 pro decomposition — the base (`z_index` 0, no box) and
+  /// each layer with where it sits on the base, in the base's pixels.
+  ///
+  /// Keyed by the file's path, like `source_directories`: the file is the
+  /// thing a row describes, and a renamed or deleted file simply leaves an
+  /// orphan row that readers filter out by existence. Not in the backup
+  /// (paths are this machine's) and kept by `clearAllData`, for the reason
+  /// `tasks` is. Nothing here is derivable from another table: the
+  /// placement exists only in the response that produced the files.
+  static Future<void> _createV46Tables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS image_layers (
+        path TEXT PRIMARY KEY,
+        set_id TEXT NOT NULL,
+        z_index INTEGER NOT NULL,
+        name TEXT,
+        description TEXT,
+        box_left INTEGER,
+        box_top INTEGER,
+        box_right INTEGER,
+        box_bottom INTEGER,
+        created_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_image_layers_set ON image_layers (set_id)');
   }
 
   /// Channel × route × model (2026-09): three embedded-document columns, all

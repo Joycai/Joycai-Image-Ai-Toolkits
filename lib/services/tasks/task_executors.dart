@@ -121,7 +121,9 @@ extension TaskExecutors on TaskQueueService {
       '${task.parameters['imagePrefix'] ?? 'result'}',
       fallback: 'result',
     );
-    Future<void> save(Uint8List bytes) async {
+    // One decomposition per request: every layer this run saves shares it.
+    final layerSetId = '${task.id}_${DateTime.now().millisecondsSinceEpoch}';
+    Future<void> save(Uint8List bytes, [GeneratedImageLayer? layer]) async {
       final i = received++;
       // Refused rather than defaulted to `.png`: bytes no image format
       // recognises are an HTML error page or a truncated body, and writing
@@ -146,6 +148,7 @@ extension TaskExecutors on TaskQueueService {
       final file = File(filePath);
       await file.writeAsBytes(bytes);
       task.resultPaths.add(filePath);
+      if (layer != null) await _recordLayer(task, filePath, layerSetId, layer);
       _emit(task.id, TaskEventType.imageResult, filePath);
       task.addLog('Saved result image to: $filePath');
 
@@ -175,7 +178,7 @@ extension TaskExecutors on TaskQueueService {
         // longer takes the finished — and billed — ones with it.
         if (chunk.imagePart != null) {
           task.addLog('Received image chunk.');
-          await save(chunk.imagePart!);
+          await save(chunk.imagePart!, chunk.imageLayer);
           refreshQueue();
         }
       }
@@ -193,8 +196,9 @@ extension TaskExecutors on TaskQueueService {
       }
 
       if (task.status != TaskStatus.cancelled) {
-        for (final bytes in response.generatedImages) {
-          await save(bytes);
+        for (final (i, bytes) in response.generatedImages.indexed) {
+          await save(bytes,
+              i < response.imageLayers.length ? response.imageLayers[i] : null);
         }
       }
     }
@@ -208,6 +212,31 @@ extension TaskExecutors on TaskQueueService {
         'None of the $received returned result(s) is a '
         'recognisable image; nothing was saved.',
       );
+    }
+  }
+
+  /// Records where a saved decomposition file belongs, so the layer canvas
+  /// can stack it back. Before the result event, so a gallery refreshed by
+  /// that event already sees the row. A failure costs the placement, never
+  /// the image: it is logged and the task carries on.
+  Future<void> _recordLayer(TaskItem task, String path, String setId,
+      GeneratedImageLayer layer) async {
+    try {
+      await ImageLayerRepository().save(ImageLayer(
+        path: path,
+        setId: setId,
+        zIndex: layer.zIndex,
+        name: layer.name,
+        description: layer.description,
+        box: layer.box,
+      ));
+      task.addLog(layer.zIndex == 0
+          ? 'Layer decomposition: saved the base.'
+          : 'Layer decomposition: saved layer ${layer.zIndex}'
+              '${layer.name == null ? '' : ' (${layer.name})'} at ${layer.box}.');
+    } catch (e) {
+      task.addLog('Warning: could not record layer ${layer.zIndex} of '
+          '$path — the image is saved, its placement is not ($e).');
     }
   }
 

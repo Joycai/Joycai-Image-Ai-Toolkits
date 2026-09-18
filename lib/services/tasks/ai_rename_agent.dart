@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
 
+import '../db/repositories/image_layer_repository.dart';
 import '../llm/llm_service.dart';
 import '../llm/llm_types.dart';
 
@@ -376,6 +377,7 @@ class AiRenameAgent {
           onLog?.call('Overwrote: ${proposal.newName}');
         }
         await oldFile.rename(newPath);
+        await ImageLayerRepository().move(oldFile.path, newPath);
         placedThisRun.add(newPath.toLowerCase());
         renamed++;
         onLog?.call('Renamed: ${proposal.oldName} -> ${proposal.newName}');
