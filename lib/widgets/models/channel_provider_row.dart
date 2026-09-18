@@ -5,8 +5,10 @@ import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../ui/app_button.dart';
+import 'app_route_badge.dart';
 import 'channel_form_sections.dart';
 import 'channel_provider_presets.dart';
+import 'route_labels.dart';
 
 /// The identity colour a provider's avatar is drawn in.
 ///
@@ -127,14 +129,10 @@ class ChannelProviderRow extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (preset.hasVariants) ...[
-                    const SizedBox(width: AppSpace.s6),
-                    ChannelBadge(
-                      l10n.providerVariantCount(preset.variants.length),
-                      mono: true,
-                      onTint: selected,
-                    ),
-                  ],
+                  // The routes a channel from this row gets (`D1f · 4b` ①),
+                  // in place of the old count of ways in.
+                  const SizedBox(width: AppSpace.s6),
+                  Flexible(child: _PresetRouteBadges(l10n: l10n, preset: preset)),
                   if (isDeprecatedChannelType(preset.channelType)) ...[
                     const SizedBox(width: AppSpace.s6),
                     ChannelBadge(
@@ -218,6 +216,38 @@ class ChannelProviderNoMatch extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PresetRouteBadges extends StatelessWidget {
+  const _PresetRouteBadges({required this.l10n, required this.preset});
+
+  final AppLocalizations l10n;
+  final ChannelProviderPreset preset;
+
+  @override
+  Widget build(BuildContext context) {
+    // A relay's host is the user's; any host shows which routes its
+    // platform has.
+    final endpoint = preset.defaultEndpoint ??
+        'https://relay.invalid${preset.endpointSuffix}';
+    final routes =
+        plannedChannelRoutes(preset, preset.channelType, endpoint);
+    // One line, clipped where it runs out: a narrow row keeps its name.
+    return SizedBox(
+      height: RouteBadgeSize.small.height,
+      child: Wrap(
+        spacing: AppSpace.s4,
+        clipBehavior: Clip.hardEdge,
+        children: [
+          for (final k in routes.kinds)
+            AppRouteBadge(
+              label: routeLabel(l10n, k, short: true),
+              state: RouteBadgeState.quiet,
+            ),
+        ],
       ),
     );
   }

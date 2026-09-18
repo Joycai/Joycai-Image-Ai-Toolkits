@@ -5,6 +5,8 @@ extension _FormSteps on _ChannelWizardDialogState {
   // --- Step 3: endpoint & key ------------------------------------------------
 
   Widget _buildConnectionStep(AppLocalizations l10n) {
+    final routes = _plannedRoutes;
+    final multi = routes.entries.length > 1;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -17,7 +19,11 @@ extension _FormSteps on _ChannelWizardDialogState {
           label: _keyOptional
               ? '${l10n.apiKey} · ${l10n.apiKeyOptional}'
               : l10n.apiKey,
-          helper: _keyOptional ? l10n.apiKeyLocalNote : l10n.apiKeyStorageNotice,
+          helper: _keyOptional
+              ? l10n.apiKeyLocalNote
+              : multi
+                  ? '${l10n.routeKeyShared} · ${l10n.apiKeyStorageNotice}'
+                  : l10n.apiKeyStorageNotice,
           child: ChannelField(
             controller: _apiKeyCtrl,
             mono: true,
@@ -27,6 +33,10 @@ extension _FormSteps on _ChannelWizardDialogState {
             onChanged: (_) => _rebuild(_clearProbe),
           ),
         ),
+        if (multi && !_endpointMissing) ...[
+          const SizedBox(height: AppSpace.s16),
+          _buildPlannedRoutes(l10n, routes),
+        ],
         const SizedBox(height: AppSpace.s16),
         Row(
           children: [
@@ -58,6 +68,81 @@ extension _FormSteps on _ChannelWizardDialogState {
             onRetry: _probing ? null : _runProbe,
           ),
         ],
+      ],
+    );
+  }
+
+  /// `D1f · 4b` 将建立的线路: every route the channel will be created with,
+  /// the address each is actually sent to, and which one new models use.
+  Widget _buildPlannedRoutes(AppLocalizations l10n, ChannelRoutes routes) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ChannelFieldLabel(l10n.routesToCreate),
+        Text(
+          l10n.routesToCreateHint,
+          style: theme.textTheme.labelSmall?.copyWith(color: scheme.outline),
+        ),
+        const SizedBox(height: AppSpace.s6),
+        Container(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            border: Border.all(color: scheme.outlineVariant),
+          ),
+          child: Column(
+            children: [
+              for (final (i, e) in routes.entries.indexed)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.s10,
+                    vertical: AppSpace.s6,
+                  ),
+                  decoration: BoxDecoration(
+                    border: i == 0
+                        ? null
+                        : Border(top: BorderSide(color: scheme.outlineVariant)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, size: AppSize.iconSm, color: scheme.primary),
+                      const SizedBox(width: AppSpace.s6),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              i == 0
+                                  ? '${routeLabel(l10n, e.kind)} · ${l10n.routePrimarySuffix}'
+                                  : routeLabel(l10n, e.kind),
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: scheme.onSurface,
+                                fontWeight: i == 0 ? FontWeight.w600 : FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              'POST ${LLMDispatcher.chatRequestUrl(e.kind.face, routes.addressOf(e.kind)!)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelSmall?.mono
+                                  .copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpace.s6),
+        ChannelNoteStrip(
+          l10n.routeWizardNote(routeLabel(l10n, routes.primary.kind)),
+          icon: Icons.info_outline,
+        ),
       ],
     );
   }

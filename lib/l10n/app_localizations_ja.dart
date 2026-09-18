@@ -2900,7 +2900,7 @@ class AppLocalizationsJa extends AppLocalizations {
       '現在のルートは Web 検索を送信しません。スイッチはオンのまま、送信できるルートで有効になります。';
 
   @override
-  String get platformDashScope => 'Alibaba Cloud Bailian';
+  String get platformDashScope => 'Alibaba DashScope';
 
   @override
   String get platformCustom => 'カスタム';

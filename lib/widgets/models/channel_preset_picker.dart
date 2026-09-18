@@ -67,8 +67,8 @@ class _ChannelPresetPickerState extends State<_ChannelPresetPicker> {
 
   List<ChannelProviderPreset> get _matches {
     final query = _searchCtrl.text.trim().toLowerCase();
-    if (query.isEmpty) return kChannelProviderPresets;
-    return kChannelProviderPresets.where((p) {
+    if (query.isEmpty) return kListedChannelProviderPresets;
+    return kListedChannelProviderPresets.where((p) {
       final haystack = [
         p.id,
         p.channelType,
@@ -146,16 +146,20 @@ class _ChannelPresetPickerState extends State<_ChannelPresetPicker> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isExpanded = _expandedId == preset.id;
+    // Route variants are not a choice here either: the editor's route table
+    // enables the rest once the preset is picked.
+    final expands =
+        preset.hasVariants && !channelPresetVariantsAreRoutes(preset);
 
     return [
       ChannelProviderRow(
         l10n: l10n,
         preset: preset,
         selected: isExpanded,
-        onTap: () => preset.hasVariants
+        onTap: () => expands
             ? setState(() => _expandedId = isExpanded ? null : preset.id)
             : _pick(preset, null),
-        trailing: preset.hasVariants
+        trailing: expands
             ? Icon(
                 isExpanded ? Icons.expand_less : Icons.expand_more,
                 size: AppSize.iconMd,

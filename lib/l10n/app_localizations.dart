@@ -5167,7 +5167,7 @@ abstract class AppLocalizations {
   /// No description provided for @platformDashScope.
   ///
   /// In en, this message translates to:
-  /// **'Alibaba Bailian'**
+  /// **'Alibaba DashScope'**
   String get platformDashScope;
 
   /// No description provided for @platformCustom.

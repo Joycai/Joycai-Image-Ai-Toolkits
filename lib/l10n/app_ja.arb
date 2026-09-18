@@ -1448,7 +1448,7 @@
   "routeSwitchConfirm": "切り替え",
   "routeWebSearchPerRoute": "ルート別",
   "routeWebSearchNotSent": "現在のルートは Web 検索を送信しません。スイッチはオンのまま、送信できるルートで有効になります。",
-  "platformDashScope": "Alibaba Cloud Bailian",
+  "platformDashScope": "Alibaba DashScope",
   "platformCustom": "カスタム",
   "routePrimaryCantRemove": "メインルートはオフにできません。先に別のルートをメインにしてください",
   "routeEnableShort": "有効にする",

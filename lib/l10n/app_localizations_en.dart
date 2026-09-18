@@ -3021,7 +3021,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'The current route doesn\'t send web search. The switch stays on and takes effect on a route that can.';
 
   @override
-  String get platformDashScope => 'Alibaba Bailian';
+  String get platformDashScope => 'Alibaba DashScope';
 
   @override
   String get platformCustom => 'Custom';

@@ -202,11 +202,9 @@ void main() {
 
       // The section caption is tracked upper case (`D1b · 1e`).
       expect(find.text('PROVIDER PRESET'), findsOneWidget);
-      // The chip names the supplier — and, since DashScope's two faces are
-      // two presets, which face this channel is on comes with the name. The
-      // route table below names the routes the channel speaks.
-      expect(find.text('Alibaba DashScope (OpenAI compatible)'),
-          findsOneWidget);
+      // The chip names the platform; the route table below names the routes
+      // the channel speaks (its two faces are routes now, `D1f · 4b`).
+      expect(find.text('Alibaba DashScope'), findsOneWidget);
       expect(find.text('Chat Completions · Primary'), findsOneWidget);
       expect(find.text('Change preset'), findsWidgets);
     });
