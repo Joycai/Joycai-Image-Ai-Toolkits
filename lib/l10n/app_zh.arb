@@ -1574,6 +1574,8 @@
   "routeSwitchConfirm": "切换",
   "routeWebSearchPerRoute": "各线路",
   "routeWebSearchNotSent": "当前线路不发联网搜索。开关保持开启，切到能发的线路时生效。",
+  "platformDashScope": "阿里云百炼",
+  "platformCustom": "自定义",
   "prompts": "提示词",
   "promptLibrary": "提示词库",
   "newPrompt": "新建提示词",

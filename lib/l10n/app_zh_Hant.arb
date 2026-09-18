@@ -1448,6 +1448,8 @@
   "routeSwitchConfirm": "切換",
   "routeWebSearchPerRoute": "各線路",
   "routeWebSearchNotSent": "目前線路不發送聯網搜尋。開關保持開啟，切到能發送的線路時生效。",
+  "platformDashScope": "阿里雲百煉",
+  "platformCustom": "自訂",
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",

@@ -606,5 +606,7 @@
   "routeSwitchNote": "{route} のパラメータはそのルートに残り、戻すと元どおりになります。Web 検索はモデルの許可で、ルートでは変わりません。",
   "routeSwitchConfirm": "切り替え",
   "routeWebSearchPerRoute": "ルート別",
-  "routeWebSearchNotSent": "現在のルートは Web 検索を送信しません。スイッチはオンのまま、送信できるルートで有効になります。"
+  "routeWebSearchNotSent": "現在のルートは Web 検索を送信しません。スイッチはオンのまま、送信できるルートで有効になります。",
+  "platformDashScope": "Alibaba Cloud Bailian",
+  "platformCustom": "カスタム"
 }

@@ -2866,6 +2866,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routeWebSearchNotSent => '当前线路不发联网搜索。开关保持开启，切到能发的线路时生效。';
 
   @override
+  String get platformDashScope => '阿里云百炼';
+
+  @override
+  String get platformCustom => '自定义';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -8028,6 +8034,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get routeWebSearchNotSent => '目前線路不發送聯網搜尋。開關保持開啟，切到能發送的線路時生效。';
+
+  @override
+  String get platformDashScope => '阿里雲百煉';
+
+  @override
+  String get platformCustom => '自訂';
 
   @override
   String get prompts => '提示';

@@ -2001,6 +2001,8 @@
   "routeSwitchConfirm": "Switch",
   "routeWebSearchPerRoute": "Per route",
   "routeWebSearchNotSent": "The current route doesn't send web search. The switch stays on and takes effect on a route that can.",
+  "platformDashScope": "Alibaba Bailian",
+  "platformCustom": "Custom",
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",

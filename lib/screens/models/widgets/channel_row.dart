@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
-import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
+import '../../../services/llm/model_routes.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
+import '../../../widgets/models/app_route_badge.dart';
 import '../../../widgets/models/channel_avatar.dart';
-import '../../../widgets/ui/model_tag_chip.dart';
+import '../../../widgets/models/route_labels.dart';
 
 /// What a channel row shows at its right edge while hovered.
 enum ChannelHandle {
@@ -59,8 +60,8 @@ Widget channelDragProxy(
   return appReorderLiftDecorator(lifted, index, animation, slotPadding: slotPadding, edge: false);
 }
 
-/// One channel (`D1a · 1a`): the identity plate, the name, and a subline
-/// pairing the channel's own tag with its model count.
+/// One channel (`D1a · 1a`, `D1f · 4a`): the identity plate, the name with
+/// its model count, and a subline naming the platform and its routes.
 ///
 /// Hover is the row's own state, never the screen's: on the screen it rebuilt
 /// both columns on every pointer crossing. At rest a draggable row and a
@@ -141,28 +142,25 @@ class _ChannelRowState extends State<ChannelRow> {
         ? scheme.outline
         : (lifted || _handleHovering ? scheme.primary : scheme.onSurfaceVariant);
 
-    final String? tag = channel.tag;
+    // `D1f · 4a`: the platform and its enabled routes, primary solid — in
+    // place of the channel's own tag, which said 官方 / 中转 before the
+    // platform could.
+    final routes = RoutedChannel.routesOf(channel);
     final Widget subline = Row(
       children: [
-        if (tag != null && tag.isNotEmpty) ...[
-          Flexible(
-            child: ModelTagChip(
-              tag,
-              color: Color(channel.tagColor ?? AppConstants.defaultTagColor),
-              uppercase: false,
-              mono: true,
-            ),
-          ),
-          const SizedBox(width: AppSpace.s6),
-        ],
-        Flexible(
+        // The name at its own width up to a cap; the badges take the rest
+        // and clip, so a long platform name cannot squeeze them out.
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 112),
           child: Text(
-            l10n.countModels(widget.modelCount),
+            platformLabel(l10n, routes.platform),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: textTheme.labelSmall?.mono.copyWith(color: scheme.onSurfaceVariant),
+            style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ),
+        const SizedBox(width: AppSpace.s6),
+        Expanded(child: ChannelRouteBadges(routes)),
       ],
     );
 
@@ -203,13 +201,25 @@ class _ChannelRowState extends State<ChannelRow> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  channel.displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.titleSmall?.copyWith(
-                    color: selected ? scheme.onAccentTint : scheme.onSurface,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        channel.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleSmall?.copyWith(
+                          color: selected ? scheme.onAccentTint : scheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpace.s6),
+                    Text(
+                      l10n.countModels(widget.modelCount),
+                      maxLines: 1,
+                      style: textTheme.labelSmall?.mono.copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 3),
                 subline,

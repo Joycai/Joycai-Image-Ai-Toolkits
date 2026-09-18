@@ -1448,6 +1448,8 @@
   "routeSwitchConfirm": "切り替え",
   "routeWebSearchPerRoute": "ルート別",
   "routeWebSearchNotSent": "現在のルートは Web 検索を送信しません。スイッチはオンのまま、送信できるルートで有効になります。",
+  "platformDashScope": "Alibaba Cloud Bailian",
+  "platformCustom": "カスタム",
   "prompts": "プロンプト",
   "promptLibrary": "プロンプトライブラリ",
   "newPrompt": "新しいプロンプト",

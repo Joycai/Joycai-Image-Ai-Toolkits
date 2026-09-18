@@ -240,7 +240,9 @@ void main() {
           final TestGesture pointer = await tester.createGesture(kind: PointerDeviceKind.mouse);
           await pointer.addPointer(location: Offset.zero);
           addTearDown(pointer.removePointer);
-          await pointer.moveTo(tester.getCenter(find.text('阿里云百炼')));
+          // The first: the row's name. Its subline names the platform, which here
+          // is the same words.
+          await pointer.moveTo(tester.getCenter(find.text('阿里云百炼').first));
           for (int i = 0; i < 4; i++) {
             await tester.pump(const Duration(milliseconds: 60));
           }

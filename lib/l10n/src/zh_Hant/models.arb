@@ -606,5 +606,7 @@
   "routeSwitchNote": "{route} 上的參數會留在 {route} 名下，切回來原樣恢復。聯網搜尋是模型的授權，不隨線路變。",
   "routeSwitchConfirm": "切換",
   "routeWebSearchPerRoute": "各線路",
-  "routeWebSearchNotSent": "目前線路不發送聯網搜尋。開關保持開啟，切到能發送的線路時生效。"
+  "routeWebSearchNotSent": "目前線路不發送聯網搜尋。開關保持開啟，切到能發送的線路時生效。",
+  "platformDashScope": "阿里雲百煉",
+  "platformCustom": "自訂"
 }

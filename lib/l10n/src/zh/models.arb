@@ -655,5 +655,7 @@
   "routeSwitchNote": "{route} 上的参数会留在 {route} 名下，切回来原样恢复。联网搜索是模型的授权，不随线路变。",
   "routeSwitchConfirm": "切换",
   "routeWebSearchPerRoute": "各线路",
-  "routeWebSearchNotSent": "当前线路不发联网搜索。开关保持开启，切到能发的线路时生效。"
+  "routeWebSearchNotSent": "当前线路不发联网搜索。开关保持开启，切到能发的线路时生效。",
+  "platformDashScope": "阿里云百炼",
+  "platformCustom": "自定义"
 }

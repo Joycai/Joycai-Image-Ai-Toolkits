@@ -5164,6 +5164,18 @@ abstract class AppLocalizations {
   /// **'The current route doesn\'t send web search. The switch stays on and takes effect on a route that can.'**
   String get routeWebSearchNotSent;
 
+  /// No description provided for @platformDashScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Alibaba Bailian'**
+  String get platformDashScope;
+
+  /// No description provided for @platformCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get platformCustom;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:
