@@ -310,6 +310,7 @@ extension _RouteSections on _ModelEditDialogState {
           wireProtocol: k.face.id,
         ) !=
         ServerWebSearch.unsupported;
+    bool untested(RouteKind k) => routes.platform.untestedWebSearch.contains(k);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -327,11 +328,26 @@ extension _RouteSections on _ModelEditDialogState {
                 spacing: AppSpace.s4,
                 runSpacing: AppSpace.s4,
                 children: [
+                  // Three answers (`4d`): sent (check), cannot be sent
+                  // (block), sent but never seen to work here (help).
                   for (final k in routes.kinds)
                     AppRouteBadge(
                       label: routeLabel(l10n, k, short: true),
-                      state: sends(k) ? RouteBadgeState.configured : RouteBadgeState.quiet,
-                      trailingIcon: sends(k) ? Icons.check : Icons.block,
+                      state: !sends(k)
+                          ? RouteBadgeState.quiet
+                          : untested(k)
+                          ? RouteBadgeState.off
+                          : RouteBadgeState.configured,
+                      trailingIcon: !sends(k)
+                          ? Icons.block
+                          : untested(k)
+                          ? Icons.help_outline
+                          : Icons.check,
+                      tooltip: !sends(k)
+                          ? l10n.routeWebSearchCannot
+                          : untested(k)
+                          ? l10n.routeWebSearchUntested
+                          : l10n.routeWebSearchSends,
                     ),
                 ],
               ),
@@ -341,6 +357,9 @@ extension _RouteSections on _ModelEditDialogState {
         if (enableWebSearch && current != null && !sends(current)) ...[
           const SizedBox(height: AppSpace.s6),
           ModelEditNotice(tone: ModelEditTone.warning, text: l10n.routeWebSearchNotSent),
+        ] else if (enableWebSearch && current != null && untested(current)) ...[
+          const SizedBox(height: AppSpace.s6),
+          ModelEditNotice(tone: ModelEditTone.info, text: l10n.routeWebSearchUntestedNote),
         ],
       ],
     );

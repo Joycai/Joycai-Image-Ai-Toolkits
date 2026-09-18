@@ -5224,6 +5224,30 @@ abstract class AppLocalizations {
   /// **'The current route doesn\'t send web search. The switch stays on and takes effect on a route that can.'**
   String get routeWebSearchNotSent;
 
+  /// No description provided for @routeWebSearchSends.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent on this route'**
+  String get routeWebSearchSends;
+
+  /// No description provided for @routeWebSearchCannot.
+  ///
+  /// In en, this message translates to:
+  /// **'This route can\'t send it'**
+  String get routeWebSearchCannot;
+
+  /// No description provided for @routeWebSearchUntested.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent, but not yet tested on this platform'**
+  String get routeWebSearchUntested;
+
+  /// No description provided for @routeWebSearchUntestedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The current route sends web search, but whether this platform acts on it hasn\'t been tested. If replies show no sign of searching, switch to a tested route.'**
+  String get routeWebSearchUntestedNote;
+
   /// No description provided for @platformDashScope.
   ///
   /// In en, this message translates to:

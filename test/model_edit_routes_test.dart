@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
@@ -147,5 +148,50 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Switch to Responses'), findsNothing);
     expect(find.widgetWithText(TextField, '8000'), findsOneWidget);
+  });
+
+  // `4d` 联网搜索各线路, three answers: New API's Anthropic face sends ④'s
+  // server tool but no live run has seen a relay act on it (help); its Chat
+  // face has no web search to send (block).
+  testWidgets('the web-search matrix marks a route never tested', (tester) async {
+    final (state, model) = (await tester.runAsync(() async {
+      final state = AppState();
+      await state.refreshDataCache();
+      for (final m in [...state.allModels]) {
+        await state.deleteModel(m.id!);
+      }
+      for (final c in [...state.allChannels]) {
+        await state.deleteChannel(c.id!);
+      }
+      final routes = ChannelRoutes.resolve(
+        Vendors.newApiAnthropic,
+        'https://relay.example.com/v1',
+        null,
+      ).withRoute(RouteKind.chat);
+      final channelId = await state.addChannel({
+        'display_name': 'Relay',
+        'type': routes.primaryVendorId,
+        'endpoint': routes.primaryAddress,
+        'routes': routes.encode(),
+        'api_key': 'k',
+      });
+      final modelId = await state.addModel({
+        'model_id': 'claude-sonnet-4-5',
+        'model_name': 'Sonnet',
+        'tag': 'chat',
+        'channel_id': channelId,
+        'enable_web_search': 1,
+      });
+      return (state, state.allModels.firstWhere((m) => m.id == modelId));
+    }))!;
+    await pump(tester, state, model);
+
+    AppRouteBadge cell(String label) => tester.widget<AppRouteBadge>(find.byWidgetPredicate(
+      (w) => w is AppRouteBadge && w.label == label && w.onTap == null,
+    ));
+    expect(cell('Anth').trailingIcon, Icons.help_outline);
+    expect(cell('Anth').state, RouteBadgeState.off);
+    expect(cell('Chat').trailingIcon, Icons.block);
+    expect(find.textContaining("hasn't been tested"), findsOneWidget);
   });
 }

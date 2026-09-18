@@ -3079,6 +3079,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'The current route doesn\'t send web search. The switch stays on and takes effect on a route that can.';
 
   @override
+  String get routeWebSearchSends => 'Sent on this route';
+
+  @override
+  String get routeWebSearchCannot => 'This route can\'t send it';
+
+  @override
+  String get routeWebSearchUntested =>
+      'Sent, but not yet tested on this platform';
+
+  @override
+  String get routeWebSearchUntestedNote =>
+      'The current route sends web search, but whether this platform acts on it hasn\'t been tested. If replies show no sign of searching, switch to a tested route.';
+
+  @override
   String get platformDashScope => 'Alibaba DashScope';
 
   @override

@@ -254,7 +254,8 @@ surface 开关"表达不了它。绑定关系升级为：
   参数**：`RouteParams` 只有三个——推理强度、思考开关、最大输出（各有「同一模型换线
   路会变」的证据，见 `model_routes.dart` 注释）；其余线路的参数停放在
   `llm_models.route_params`。联网搜索是模型的**授权**，不随线路变，发不发得出按线路
-  问 `serverWebSearch`。图像 / 视频模型不走线路，恒取主线路，媒体点单照旧。
+  问 `serverWebSearch`；发得出但没在该平台实机验过的线路由画像声明
+  （`PlatformProfile.untestedWebSearch`，New API 与自定义的 Anthropic 面），编辑器标「未实测」，发送不变。图像 / 视频模型不走线路，恒取主线路，媒体点单照旧。
 
 **存储（v45）**：`llm_channels.routes` 内嵌 JSON 文档（主机、线路表、写入标记），
 `llm_models.active_route / route_params`。**扁平列永远是主线路**——`type` / `endpoint`

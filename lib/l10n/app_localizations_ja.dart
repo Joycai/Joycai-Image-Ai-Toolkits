@@ -2942,6 +2942,19 @@ class AppLocalizationsJa extends AppLocalizations {
       '現在のルートは Web 検索を送信しません。スイッチはオンのまま、送信できるルートで有効になります。';
 
   @override
+  String get routeWebSearchSends => 'このルートで送信されます';
+
+  @override
+  String get routeWebSearchCannot => 'このルートでは送信できません';
+
+  @override
+  String get routeWebSearchUntested => '送信はしますが、このプラットフォームでは未検証です';
+
+  @override
+  String get routeWebSearchUntestedNote =>
+      '現在のルートはウェブ検索を送信しますが、このプラットフォームが実行するかは未検証です。返信に検索の形跡がなければ、検証済みのルートに切り替えてください。';
+
+  @override
   String get platformDashScope => 'Alibaba DashScope';
 
   @override

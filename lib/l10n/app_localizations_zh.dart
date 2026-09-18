@@ -2908,6 +2908,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routeWebSearchNotSent => '当前线路不发联网搜索。开关保持开启，切到能发的线路时生效。';
 
   @override
+  String get routeWebSearchSends => '这条线路会发出';
+
+  @override
+  String get routeWebSearchCannot => '这条线路发不出';
+
+  @override
+  String get routeWebSearchUntested => '会发出，但还没在这个平台上实测过';
+
+  @override
+  String get routeWebSearchUntestedNote =>
+      '当前线路会发出联网搜索，但这个平台是否照做还没实测过。回复里看不出搜索过的话，换到实测过的线路。';
+
+  @override
   String get platformDashScope => '阿里云百炼';
 
   @override
@@ -8129,6 +8142,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get routeWebSearchNotSent => '目前線路不發送聯網搜尋。開關保持開啟，切到能發送的線路時生效。';
+
+  @override
+  String get routeWebSearchSends => '這條線路會發出';
+
+  @override
+  String get routeWebSearchCannot => '這條線路發不出';
+
+  @override
+  String get routeWebSearchUntested => '會發出，但還沒在這個平台上實測過';
+
+  @override
+  String get routeWebSearchUntestedNote =>
+      '當前線路會發出聯網搜尋，但這個平台是否照做還沒實測過。回覆裡看不出搜尋過的話，換到實測過的線路。';
 
   @override
   String get platformDashScope => '阿里雲百煉';
