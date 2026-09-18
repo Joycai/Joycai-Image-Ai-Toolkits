@@ -89,6 +89,22 @@ class ChannelRoutes {
     return Platforms.routeVendor(platform, primaryVendorId, kind);
   }
 
+  /// What [kind]'s route sends beyond the protocol's standard part — the
+  /// add-channel preview's one word per route (`D1f · 4b`): the host's own
+  /// web search where its vendor sends it and the platform is known to act
+  /// on it ([PlatformProfile.untestedWebSearch] stays quiet), and ④'s
+  /// prompt-cache breakpoints. Read off the vendor profile, never the id.
+  ({bool webSearch, bool promptCaching}) featuresOf(RouteKind kind) {
+    final vendorId = vendorOf(kind);
+    if (vendorId == null) return (webSearch: false, promptCaching: false);
+    final vendor = Vendors.byId(vendorId);
+    return (
+      webSearch: vendor.sendsWebSearchOn(kind.face) &&
+          !platform.untestedWebSearch.contains(kind),
+      promptCaching: vendor.promptCaching && kind.face == WireProtocol.anthropicChat,
+    );
+  }
+
   /// The platform default path for [kind], or null when the platform does
   /// not offer it (then the route always carries its own path).
   String? defaultPathOf(RouteKind kind) => platform.route(kind)?.defaultPath;

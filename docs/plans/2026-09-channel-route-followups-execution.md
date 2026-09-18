@@ -33,7 +33,7 @@
 | 片 | 内容 | 文件 | 验收 | 状态 |
 |---|---|---|---|---|
 | 5 | 联网矩阵第三态「未实测」 | `platforms.dart`、`channel_routes.dart`、`model_edit_routes.dart`、l10n | 小部件测试：New API 的 Anth 格 help、Chat 格 block、提示条出现 | ☑ |
-| 6 | 向导「将建立的线路」每行私有能力一词 | `channel_routes.dart`（`featuresOf`）、`wizard_form_steps.dart`、l10n | 单测；截图 4b | ☐ |
+| 6 | 向导「将建立的线路」每行私有能力一词 | `channel_routes.dart`（`featuresOf`）、`wizard_form_steps.dart`、l10n | 单测 `featuresOf`（中转 Anth 只缓存、官方 Anth 两样、百炼 Chat 联网）；截图 4b | ☑ |
 | 7 | 作用域灰字紧跟标题；手机线路条横向滚动 | `app_section_label`、`model_edit_layouts.dart`、`model_edit_routes.dart` | 截图 4d / 4g；组件画廊不变 | ☐ |
 | 8 | 文档收尾：欠账表划掉六条、架构笔记补裁定、退役本清单 | `docs/plans/README.md`、`docs/architecture/llm-three-layer.md` | — | ☐ |
 

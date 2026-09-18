@@ -608,6 +608,8 @@
   "routePinnedSnack": "{count} 個模型保持在 {route}",
   "routeMovedSnack": "{count} 個模型改走 {route}：原線路已移除",
   "routesToCreate": "將建立的線路",
+  "routeFeatureWebSearch": "聯網",
+  "routeFeaturePromptCache": "提示快取",
   "routesToCreateHint": "建好後可在渠道編輯裡關掉不用的",
   "routeKeyShared": "一把金鑰，所有線路共用",
   "routeWizardNote": "新模型預設走主線路（{route}）。某個模型要走別的線路，在模型編輯頂部的線路條裡切，參數各自獨立。",

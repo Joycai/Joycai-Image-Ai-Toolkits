@@ -2908,6 +2908,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get routesToCreate => '作成するルート';
 
   @override
+  String get routeFeatureWebSearch => 'ウェブ検索';
+
+  @override
+  String get routeFeaturePromptCache => 'プロンプトキャッシュ';
+
+  @override
   String get routesToCreateHint => '使わないものは後でチャンネル編集からオフにできます';
 
   @override

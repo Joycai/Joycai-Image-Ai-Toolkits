@@ -382,4 +382,32 @@ void main() {
       );
     });
   });
+
+  // `D1f · 4b`: the wizard's one word per route.
+  group('route features', () {
+    ({bool webSearch, bool promptCaching}) f(String type, String endpoint, RouteKind k) {
+      final r = ChannelRoutes.resolve(type, endpoint, null).withRoute(k);
+      return r.featuresOf(k);
+    }
+
+    test('a relay caches on its Anthropic face; its web search is untested', () {
+      expect(f(Vendors.newApiOpenAI, 'https://r.example/v1', RouteKind.anthropic),
+          (webSearch: false, promptCaching: true));
+      expect(f(Vendors.newApiOpenAI, 'https://r.example/v1', RouteKind.chat),
+          (webSearch: false, promptCaching: false));
+    });
+
+    test("Anthropic's own host does both; Bailian searches on its Chat face", () {
+      expect(f(Vendors.anthropicRest, 'https://api.anthropic.com/v1', RouteKind.anthropic),
+          (webSearch: true, promptCaching: true));
+      expect(
+          f(Vendors.dashscope, 'https://dashscope.aliyuncs.com/compatible-mode/v1', RouteKind.chat),
+          (webSearch: true, promptCaching: false));
+    });
+
+    test('a route the channel lacks carries nothing', () {
+      final r = ChannelRoutes.resolve(Vendors.deepseek, 'https://api.deepseek.com', null);
+      expect(r.featuresOf(RouteKind.anthropic), (webSearch: false, promptCaching: false));
+    });
+  });
 }

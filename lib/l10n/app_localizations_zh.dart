@@ -2875,6 +2875,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routesToCreate => '将建立的线路';
 
   @override
+  String get routeFeatureWebSearch => '联网';
+
+  @override
+  String get routeFeaturePromptCache => '提示缓存';
+
+  @override
   String get routesToCreateHint => '建好后可在渠道编辑里关掉不用的';
 
   @override
@@ -8109,6 +8115,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get routesToCreate => '將建立的線路';
+
+  @override
+  String get routeFeatureWebSearch => '聯網';
+
+  @override
+  String get routeFeaturePromptCache => '提示快取';
 
   @override
   String get routesToCreateHint => '建好後可在渠道編輯裡關掉不用的';

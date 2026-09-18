@@ -3044,6 +3044,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routesToCreate => 'Routes to create';
 
   @override
+  String get routeFeatureWebSearch => 'Web search';
+
+  @override
+  String get routeFeaturePromptCache => 'Prompt caching';
+
+  @override
   String get routesToCreateHint =>
       'You can turn off unused ones later in the channel editor';
 

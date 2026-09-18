@@ -5170,6 +5170,18 @@ abstract class AppLocalizations {
   /// **'Routes to create'**
   String get routesToCreate;
 
+  /// No description provided for @routeFeatureWebSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Web search'**
+  String get routeFeatureWebSearch;
+
+  /// No description provided for @routeFeaturePromptCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt caching'**
+  String get routeFeaturePromptCache;
+
   /// No description provided for @routesToCreateHint.
   ///
   /// In en, this message translates to:

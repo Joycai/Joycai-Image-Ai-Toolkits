@@ -953,6 +953,8 @@
     }
   },
   "routesToCreate": "Routes to create",
+  "routeFeatureWebSearch": "Web search",
+  "routeFeaturePromptCache": "Prompt caching",
   "routesToCreateHint": "You can turn off unused ones later in the channel editor",
   "routeKeyShared": "One key, shared by every route",
   "routeWizardNote": "New models use the primary route ({route}). To send a model over another route, switch it in the route strip at the top of the model editor; each route keeps its own parameters.",

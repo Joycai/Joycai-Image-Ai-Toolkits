@@ -608,6 +608,8 @@
   "routePinnedSnack": "{count} 個のモデルは {route} のままです",
   "routeMovedSnack": "{count} 個のモデルを {route} に移しました：元のルートが削除されたため",
   "routesToCreate": "作成するルート",
+  "routeFeatureWebSearch": "ウェブ検索",
+  "routeFeaturePromptCache": "プロンプトキャッシュ",
   "routesToCreateHint": "使わないものは後でチャンネル編集からオフにできます",
   "routeKeyShared": "1 つのキーをすべてのルートで共有します",
   "routeWizardNote": "新しいモデルはメインルート（{route}）を使います。別のルートにするにはモデル編集上部のルートバーで切り替えます。パラメータはルートごとに独立です。",

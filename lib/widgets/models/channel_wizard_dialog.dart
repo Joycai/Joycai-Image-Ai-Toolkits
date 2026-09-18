@@ -9,6 +9,7 @@ import '../../services/llm/channel_probe_service.dart';
 import '../../services/llm/channel_routes.dart';
 import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/llm_types.dart';
+import '../../services/llm/vendors/platforms.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../ui/app_button.dart';
