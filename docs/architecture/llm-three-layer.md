@@ -233,6 +233,68 @@ surface 开关"表达不了它。绑定关系升级为：
   一组代表性 id，`tag = inferTag(id)` 时 descriptor 与 auto 必须和不带 tag 时
   是同一个对象 / 同一个值。
 
+## 渠道 × 线路 × 模型（2026-09）
+
+> 当轮的设计与执行清单已随执行完毕退役（[台账](../plans/README.md)）：
+> `git show 9e90547:docs/plans/2026-09-channel-route-model.md`（设计 · 四个决定）与
+> `…-execution.md`（十六片 + 三次评审的施工记录，每条偏离的理由都在那里）。标准是
+> `channel-route-model` skill；设计稿 Claude Design `D1f 渠道与线路`。
+
+以前「渠道类型」一个字段同时说「哪家平台」和「对话走哪个协议」：一把 New API 密钥
+打四个协议就得建四个渠道、同一个模型建四次，点单换协议时推理强度与最大输出原样带过去。
+拆成三层：
+
+- **渠道 = 一份密钥。** 下面挂**线路**：每个 `RouteKind`（chat · responses ·
+  anthropic · gemini · dashscope · midjourney，各对应一个对话 `WireProtocol`）至多
+  一条，各带路径。**平台**（`vendors/platforms.dart` 的 `PlatformProfile` 表）不存，
+  由（主线路 vendor, 主机）推断；决定标签、默认路径与能加哪些线路。线路的 vendor 也
+  不存：主线路 vendor 的 chat 菜单含该面 → 主线路 vendor，否则平台表（按构造与迁移前
+  逐字节一致）。
+- **模型选当前线路**（`llm_models.active_route`，空 = 跟随主线路），**每条线路一份
+  参数**：`RouteParams` 只有三个——推理强度、思考开关、最大输出（各有「同一模型换线
+  路会变」的证据，见 `model_routes.dart` 注释）；其余线路的参数停放在
+  `llm_models.route_params`。联网搜索是模型的**授权**，不随线路变，发不发得出按线路
+  问 `serverWebSearch`。图像 / 视频模型不走线路，恒取主线路，媒体点单照旧。
+
+**存储（v45）**：`llm_channels.routes` 内嵌 JSON 文档（主机、线路表、写入标记），
+`llm_models.active_route / route_params`。**扁平列永远是主线路**——`type` / `endpoint`
+= 主线路的 vendor 与完整地址，读写都过 `ChannelRoutes.resolve` 的幂等规范化
+（`ModelRepository.normalizedChannel`）。无文档 → 读时由旧 (type, endpoint) 推出
+（每个预设 × 每个面迁移后地址逐字节等于旧推导，`channel_routes_test`）；写入标记与
+扁平列不符 → 别的写入方（旧版本、旧备份）只改了扁平列：同平台只重建主线路，换了平台
+就整张换掉。
+
+**请求**：`RoutedChannel.forModel(channel, model)` 是「按模型的线路看渠道」——
+`LLMConfigResolver`、`AppState.descriptorForModel`、模型编辑器、模型卡都经它；
+模型选的线路已不在 → 请求抛 `LLMConfigErrorKind.routeNotFound`，展示侧退回主线路。
+`LLMModelConfig.faceBases` 让 `_faceTarget` 先用线路自己的地址，没有线路的面照旧推导。
+界面上的「实际请求地址」是 `LLMDispatcher.chatRequestUrl`，与协议共用同一组地址函数。
+
+**切线路**（`services/catalogue/route_switching.dart`）：保存与切换共用一条
+`forRoute`——不在该面挡位表上的强度映射到在该面**发出同样请求**的档（不是丢弃，丢弃
+会悄悄关掉思考）；切换 = 当前参数停放到来源线路、载入目标线路停放的（**没配过 = 全空**，
+不复制）、覆盖全部三字段，模型 id 不变。来源线路已从渠道消失时参数停放在它自己名下
+（`recoverMissingRoute`），绝不记到主线路名下。**改主线路前先钉住跟随者**
+（`pinFollowers`），否则它们会带着为旧线路设的参数悄悄换协议。
+
+**合并**（`channel_merge.dart` + `channel_merge_executor.dart`）：只检测、用户逐组
+确认，永不自动。候选 = 同平台、同主机（忽略大小写）、**逐字节同密钥**、线路不相交、
+每渠道至多一组；再加一道**请求不变**闸：合并后每条线路的 vendor 与地址、每个搬过去的
+模型的请求都与合并前相同，否则不成对（换了保留方可能换线路 vendor；没有同名对应的
+图像 / 视频模型会换地址——这时试反方向）。执行：一个事务（渠道 → 模型只写四列 →
+删被并模型 → 删余下 → 删渠道），提交后先改写设置里的模型选择、再改写
+`token_usage` / `tasks` 的 `model_pk`。密钥在渠道行里，随事务消失。
+
+**界面**：`widgets/models/app_route_badge.dart`（四态徽标）· `route_labels.dart`
+（线路名 / 平台名唯一一张表）· `channel_route_table.dart`（渠道编辑的线路表）；
+模型编辑的线路条在 `model_edit/model_edit_routes.dart`；合并提示与审阅在
+`screens/models/widgets/channel_merge_review.dart`。**单线路渠道零负担**：渠道 ≥2 条线路
+（或平台提供第二条）才出线路界面，否则与改前一样。
+
+**红线**：渠道的 `type` / `endpoint` 只许线路解析（`model_routes.dart`）、仓库规范化与
+渠道编辑表单三处直读（`test/channel_flat_columns_scan_test.dart`）。其余任何地方读它
+们，回答的是主线路——模型换到别的线路后就静默错。
+
 ## 分层纪律（违反会静默腐化）
 
 1. **只有 `ModelDescriptor` 允许嗅探 modelId。**
@@ -255,7 +317,8 @@ surface 开关"表达不了它。绑定关系升级为：
 
 ```
 LLMService.request(modelIdentifier, messages, ...)
-  → LLMConfigResolver: DB 查 model 行 + channel 行 + 计费组 → LLMModelConfig
+  → LLMConfigResolver: DB 查 model 行 + channel 行 + 计费组
+      → RoutedChannel.forModel: 模型的线路 → vendor + 地址 + faceBases → LLMModelConfig
   → LLMDispatcher.generate(config, ...)
       vendor = Vendors.byId(config.channelType)      // Layer 2
       model  = descriptorFor(modelId, tag, wireProtocol)
@@ -301,6 +364,7 @@ review 时用下面的模式全仓库 grep 一遍即可：
 | `llm_models.wire_protocol` 在 `LLMConfigResolver` 之外被读取 | 点单是偏好不是路由事实，多个读取点会各自发明失效语义 | 列 → resolver → `LLMModelConfig.wireProtocol` → dispatcher 消费，一条线 |
 | `llm_models.tag` 在 `LLMConfigResolver` 之外被当成路由事实读（按它选协议、判 surface） | 类型已参与路由；第二个读取点会和 dispatcher 的 surface 判定分叉 | 列 → resolver → `LLMModelConfig.tag` → dispatcher；UI 只把它原样传给 `LLMDispatcher.protocolMenu` / `isStaleProtocolSelection` / `descriptorFor` 的 `tag:` 参数。工作台选择器按 tag 过滤列表不在此列 |
 | `ModelCapabilities.forModel(...)` / `ModelDescriptor.of(...)` 在 `services/llm/` 之外用于**一个已存储的模型**（参数面板、参考图上限、参数记忆键） | 只按 id 解析，绕过了点单：中转上点了 Images API 的模型会拿到空参数表，参数写进请求读不到的命名空间，不报错 | `AppState.descriptorForModel(model)`（内部走 `LLMDispatcher.descriptorFor`）。按 id 问的是 chat 事实（如 `acceptsImageInput`）时不受点单影响，可以直接用 |
+| `channel.type` / `channel.endpoint` 被直读（线路解析、仓库规范化、渠道编辑表单之外） | 扁平列是**主线路**；模型换到别的线路后按它们回答的协议、能力、地址全是错的，且不报错 | `RoutedChannel.forModel(channel, model)`（关于一个模型）或 `RoutedChannel.primary(channel)`（关于渠道本身：发现、探测）；`channel_flat_columns_scan_test` 钉住 |
 | `channelType ==` / `channel.type ==` 出现在 `vendors/`、`llm_dispatcher.dart` 之外 | 这是重构前 `isXai`/`isNewApiGemini` 散点判断的复活形态 | 语义抬升为 `Vendors.byId(...)` 后读 profile 字段 |
 | UI/state 里出现 `'openai-api-rest'` 这类裸字符串字面量 | 拼错静默失效；重命名时漏改（`Vendors.byId` 对未知 id 静默回退 openAIRest，错拼永远不报错） | 引用 `Vendors.openAIRest` 等常量。**两条豁免**：`database_migrations.dart`（迁移代码按当时的字面量冻结，改成常量反而会让未来的常量重命名悄悄改写历史迁移）；`channel_provider_presets.dart` 的 `ChannelProviderPreset.id`（那是向导自己的预设命名空间，与 vendor id 拼写雷同但语义无关——真正进 `llm_channels.type` 的是 `preset.channelType` 字段，它已全部引用 `Vendors.*`） |
 | `if (family == ...)` 路由分支出现在 `llm_dispatcher.dart` 和 Layer 3 之外 | 路由规则必须单点可审计 | 挪进 dispatcher 对应 switch，加注释说明规则来源 |
