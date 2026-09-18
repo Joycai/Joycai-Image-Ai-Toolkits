@@ -610,5 +610,6 @@
   "platformDashScope": "阿里雲百煉",
   "platformCustom": "自訂",
   "routePrimaryCantRemove": "主線路不能關，先把別的線路設為主線路",
-  "routeEnableShort": "啟用"
+  "routeEnableShort": "啟用",
+  "mergeFailed": "合併失敗，未做任何變更：{error}"
 }

@@ -244,6 +244,46 @@ void main() {
     });
   });
 
+  group('a route gone from the channel', () {
+    // Chose Gemini, which this channel no longer offers; Chat has its own
+    // values parked.
+    LLMModel stranded() => model(
+      activeRoute: 'gemini',
+      cap: 32768,
+      effort: 'low',
+      routeParams: ModelRoutes.encodeParked({
+        RouteKind.chat: const RouteParams(maxOutputTokens: 4096),
+      }),
+    );
+
+    test("opens on the primary with the primary's own values", () {
+      final recovered = RouteSwitching.recoverMissingRoute(stranded(), routes);
+      expect(recovered.activeRoute, 'chat');
+      expect(recovered.maxOutputTokens, 4096);
+      expect(recovered.reasoningEffort, isNull);
+      // The gone route's values are kept under it, not lost.
+      final parked = ModelRoutes.parked(recovered);
+      expect(parked[RouteKind.gemini]?.maxOutputTokens, 32768);
+      expect(parked.containsKey(RouteKind.chat), isFalse);
+    });
+
+    test("switching away never files its values under the primary", () {
+      final moved = RouteSwitching.switchRoute(
+        stranded(),
+        routes,
+        RouteKind.responses,
+      );
+      final parked = ModelRoutes.parked(moved);
+      expect(parked[RouteKind.chat]?.maxOutputTokens, 4096);
+      expect(parked[RouteKind.gemini]?.maxOutputTokens, 32768);
+    });
+
+    test('a model whose route is there is returned as is', () {
+      final fine = model(activeRoute: 'responses');
+      expect(identical(RouteSwitching.recoverMissingRoute(fine, routes), fine), isTrue);
+    });
+  });
+
   test('modelsOnRoute counts the route each model rides', () {
     final ms = [
       model(),

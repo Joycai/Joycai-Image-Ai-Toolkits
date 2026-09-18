@@ -139,7 +139,16 @@ Future<void> reviewChannelMerges(BuildContext context, AppState appState) async 
     );
     switch (choice) {
       case _MergeChoice.merge:
-        await appState.mergeChannels(candidate.plan);
+        try {
+          await appState.mergeChannels(candidate.plan);
+        } catch (e) {
+          // The transaction rolled back: both channels are as they were.
+          // Say so and end the review; the prompt is still in the rail.
+          if (context.mounted) {
+            AppSnackBar.error(context, AppLocalizations.of(context)!.mergeFailed('$e'));
+          }
+          return;
+        }
         if (context.mounted) {
           AppSnackBar.success(context, AppLocalizations.of(context)!.mergeDone);
         }

@@ -610,5 +610,6 @@
   "platformDashScope": "Alibaba DashScope",
   "platformCustom": "カスタム",
   "routePrimaryCantRemove": "メインルートはオフにできません。先に別のルートをメインにしてください",
-  "routeEnableShort": "有効にする"
+  "routeEnableShort": "有効にする",
+  "mergeFailed": "統合に失敗しました。何も変更していません：{error}"
 }

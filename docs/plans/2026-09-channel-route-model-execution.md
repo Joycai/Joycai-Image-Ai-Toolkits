@@ -40,7 +40,7 @@ B 期末：`/code-review high`，修复。☑（2 条，见施工记录「B 期�
 | C6 | 合并提示卡 + 预览对话框（逐组） | ☑ |
 | C7 | 截图场景：多线路渠道列表、渠道编辑线路表、模型编辑三态、合并预览、手机 | ☑ |
 
-C 期末：`/code-review high`，修复。
+C 期末：`/code-review high`，修复。☑（2 条，见施工记录「C 期评审」）
 
 ## D 期 · 收尾
 
@@ -146,3 +146,9 @@ C 期末：`/code-review high`，修复。
 - **C7**：`test/screenshots/app_screens_channel_routes_test.dart`（`routesRail` / `routesChannelEdit` / `routesEditor1-3` / `routesMerge`，
   桌面与手机、亮暗）。固定数据加一对按协议拆开的 New API 渠道（同主机同密钥：OpenAI 格式 + Gemini 格式），一个同名模型、一个只在
   Gemini 格式上的模型，加 `gpt-5.2`（65536 上限、推理高）走线路条三态——都追加在末尾，已有截图与用 fixture 的门内测试不受影响（全绿核过）。
+- **C 期评审**（`/code-review high`，2 条全修）：
+  1. 显式线路已从渠道消失的对话模型，编辑器把它显示在主线路上、字段里却是那条消失线路的参数；保存（`normalizedForSave` 移除主线路的
+     停放）或切走（`switchRoute` 以显示线路为来源）都会把它们记到主线路名下、覆盖主线路原本停放的值 → `RouteSwitching` 以「参数所属的线路」
+     为来源（消失的线路仍算它自己的），新增 `recoverMissingRoute`：编辑器打开这种模型时先落到主线路、载入主线路自己的停放值、把原值停放在
+     原线路名下（线路回来时还能取回）。这也修正了 C5 施工记录里「显示主线路、保存即写成主线路」那条已知项——现在写的是主线路**自己的**值。
+  2. 合并审阅对 `mergeChannels` 失败不做处理，事务回滚后界面无任何提示、只剩未捕获的异步异常 → 捕获、snackbar 说明「未做任何改动」并结束审阅。

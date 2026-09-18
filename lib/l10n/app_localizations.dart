@@ -5188,6 +5188,12 @@ abstract class AppLocalizations {
   /// **'Enable'**
   String get routeEnableShort;
 
+  /// No description provided for @mergeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge failed, nothing was changed: {error}'**
+  String mergeFailed(String error);
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

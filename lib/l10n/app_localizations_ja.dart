@@ -2912,6 +2912,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get routeEnableShort => '有効にする';
 
   @override
+  String mergeFailed(String error) {
+    return '統合に失敗しました。何も変更していません：$error';
+  }
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

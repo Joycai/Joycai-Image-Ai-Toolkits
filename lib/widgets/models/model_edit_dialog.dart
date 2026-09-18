@@ -159,7 +159,19 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   @override
   void initState() {
     super.initState();
-    final model = widget.model;
+    // A chat model whose route is gone opens on the primary with the
+    // primary's own values, its chosen route's values parked under that
+    // route (`RouteSwitching.recoverMissingRoute`) — never the gone route's
+    // values shown, and then saved, as the primary's.
+    final stored = widget.model;
+    final storedChannel = stored == null
+        ? null
+        : widget.appState.allChannels
+            .cast<LLMChannel?>()
+            .firstWhere((c) => c?.id == stored.channelId, orElse: () => null);
+    final model = stored == null || storedChannel == null
+        ? stored
+        : RouteSwitching.recoverMissingRoute(stored, RoutedChannel.routesOf(storedChannel));
     idCtrl = TextEditingController(text: model?.modelId ?? '');
     nameCtrl = TextEditingController(text: model?.modelName ?? '');
 

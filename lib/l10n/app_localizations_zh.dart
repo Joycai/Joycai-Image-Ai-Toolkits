@@ -2878,6 +2878,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routeEnableShort => '启用';
 
   @override
+  String mergeFailed(String error) {
+    return '合并失败，未做任何改动：$error';
+  }
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -8052,6 +8057,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get routeEnableShort => '啟用';
+
+  @override
+  String mergeFailed(String error) {
+    return '合併失敗，未做任何變更：$error';
+  }
 
   @override
   String get prompts => '提示';

@@ -3034,6 +3034,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routeEnableShort => 'Enable';
 
   @override
+  String mergeFailed(String error) {
+    return 'Merge failed, nothing was changed: $error';
+  }
+
+  @override
   String get prompts => 'Prompts';
 
   @override

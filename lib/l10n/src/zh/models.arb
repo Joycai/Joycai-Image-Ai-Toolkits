@@ -659,5 +659,6 @@
   "platformDashScope": "阿里云百炼",
   "platformCustom": "自定义",
   "routePrimaryCantRemove": "主线路不能关，先把别的线路设为主线路",
-  "routeEnableShort": "启用"
+  "routeEnableShort": "启用",
+  "mergeFailed": "合并失败，未做任何改动：{error}"
 }

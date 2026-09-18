@@ -2005,6 +2005,14 @@
   "platformCustom": "Custom",
   "routePrimaryCantRemove": "The primary route can't be turned off — make another route primary first",
   "routeEnableShort": "Enable",
+  "mergeFailed": "Merge failed, nothing was changed: {error}",
+  "@mergeFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",

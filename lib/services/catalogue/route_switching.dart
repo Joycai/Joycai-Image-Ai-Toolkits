@@ -143,7 +143,7 @@ class RouteSwitching {
     RouteKind to,
   ) {
     assert(ModelRoutes.usesRoutes(model));
-    final from = ModelRoutes.displayRoute(model, routes);
+    final from = _heldRoute(model, routes);
     if (from == to) return normalizedForSave(model, routes);
     final parked = {...ModelRoutes.parked(model)};
     parked[from] = forRoute(
@@ -164,6 +164,26 @@ class RouteSwitching {
     );
   }
 
+  /// The route [model]'s flat parameters belong to: the route it rides, or —
+  /// when the route it chose is gone from the channel — that route still.
+  /// Its values are parked under it rather than filed under the primary the
+  /// model is merely *shown* on, which would overwrite what the primary had.
+  static RouteKind _heldRoute(LLMModel model, ChannelRoutes routes) =>
+      ModelRoutes.requestRoute(model, routes) ??
+      ModelRoutes.explicitRoute(model) ??
+      routes.primary.kind;
+
+  /// [model] with a route that is gone from its channel moved onto the
+  /// primary — its values parked under the route it chose, the primary's
+  /// own parked values loaded — or [model] itself when its route is there.
+  /// What the editor opens such a model as, so that what it shows under the
+  /// primary are the primary's values.
+  static LLMModel recoverMissingRoute(LLMModel model, ChannelRoutes routes) {
+    if (!ModelRoutes.usesRoutes(model)) return model;
+    if (ModelRoutes.requestRoute(model, routes) != null) return model;
+    return switchRoute(model, routes, routes.primary.kind);
+  }
+
   /// What [switchRoute] would change, for the preview shown before the user
   /// confirms. Only the fields that differ.
   static List<RouteParamChange> preview(
@@ -171,7 +191,7 @@ class RouteSwitching {
     ChannelRoutes routes,
     RouteKind to,
   ) {
-    final from = ModelRoutes.displayRoute(model, routes);
+    final from = _heldRoute(model, routes);
     final before = forRoute(
       RouteParams.ofModel(model),
       ladderFor(model, routes, from),

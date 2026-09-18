@@ -1452,6 +1452,7 @@
   "platformCustom": "自訂",
   "routePrimaryCantRemove": "主線路不能關，先把別的線路設為主線路",
   "routeEnableShort": "啟用",
+  "mergeFailed": "合併失敗，未做任何變更：{error}",
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",
