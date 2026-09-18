@@ -2774,6 +2774,37 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mergeRouteAdded => '統合';
 
   @override
+  String mergeReferencesNote(String what, String channel) {
+    return '$whatが残すモデルを指すようになります。統合したモデルは「$channel」側の名前・料金グループ・コンテキスト設定を保ちます。';
+  }
+
+  @override
+  String mergeReferencesNone(String channel) {
+    return '統合で消えるモデルを指す保存済みの項目はありません。統合したモデルは「$channel」側の名前・料金グループ・コンテキスト設定を保ちます。';
+  }
+
+  @override
+  String mergeRefSelections(int count) {
+    return '選択中のモデル $count 件';
+  }
+
+  @override
+  String mergeRefRecords(int count) {
+    return '$count 件の使用記録';
+  }
+
+  @override
+  String mergeRefLinks(int count) {
+    return 'アシスタントの会話内の $count 件のモデルリンク';
+  }
+
+  @override
+  String get mergeRefSeparator => '、';
+
+  @override
+  String get mergeRefLast => 'と';
+
+  @override
   String mergeModelJoin(String route) {
     return '同名モデルを統合 · $route のパラメータを引き継ぎ';
   }
@@ -2784,11 +2815,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String mergeModelMove(String route) {
     return '移動 · $route に固定';
-  }
-
-  @override
-  String mergeReferencesNote(int count, String channel) {
-    return '$count 件の選択と使用記録が残すモデルを指すようになります。統合したモデルは「$channel」側の名前・料金グループ・コンテキスト設定を保ちます。';
   }
 
   @override

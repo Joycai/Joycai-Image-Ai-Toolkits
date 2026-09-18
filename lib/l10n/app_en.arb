@@ -1884,6 +1884,51 @@
   "mergeAbsorb": "Deleted after merging",
   "mergeRoutesAfter": "Routes after merging",
   "mergeRouteAdded": "Merged in",
+  "mergeReferencesNote": "{what} will point at the kept models. Merged models keep the name, fee group and context settings of the one in {channel}.",
+  "@mergeReferencesNote": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      },
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "mergeReferencesNone": "Nothing saved points at a merged-away model. Merged models keep the name, fee group and context settings of the one in {channel}.",
+  "@mergeReferencesNone": {
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "mergeRefSelections": "{count, plural, =1{1 saved model selection} other{{count} saved model selections}}",
+  "@mergeRefSelections": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mergeRefRecords": "{count, plural, =1{1 usage record} other{{count} usage records}}",
+  "@mergeRefRecords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mergeRefLinks": "{count, plural, =1{1 model link in assistant conversations} other{{count} model links in assistant conversations}}",
+  "@mergeRefLinks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mergeRefSeparator": ", ",
+  "mergeRefLast": " and ",
   "mergeModelJoin": "Same model, merged · {route} parameters carried over",
   "@mergeModelJoin": {
     "placeholders": {
@@ -1897,17 +1942,6 @@
   "@mergeModelMove": {
     "placeholders": {
       "route": {
-        "type": "String"
-      }
-    }
-  },
-  "mergeReferencesNote": "{count, plural, =0{No saved selection or usage record points at a merged-away model.} =1{1 saved selection or usage record will point at the kept model.} other{{count} saved selections and usage records will point at the kept models.}} Merged models keep the name, fee group and context settings of the one in {channel}.",
-  "@mergeReferencesNote": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "channel": {
         "type": "String"
       }
     }

@@ -4,6 +4,23 @@ import '../db/repositories/model_repository.dart';
 import '../db/repositories/usage_repository.dart';
 import 'channel_merge.dart';
 
+/// What a merge will rewrite, by kind — the preview says each on its own
+/// (`D1f · 4f`).
+class MergeReferences {
+  /// Stored model selections (workbench, video, AI rename).
+  final int selections;
+
+  /// Usage and task rows.
+  final int records;
+
+  /// Model links inside saved assistant conversations.
+  final int links;
+
+  const MergeReferences({this.selections = 0, this.records = 0, this.links = 0});
+
+  int get total => selections + records + links;
+}
+
 /// Where a merge is written. One method per step so the order the executor
 /// takes them in is the thing a test pins.
 abstract class MergeStore {
@@ -21,8 +38,8 @@ abstract class MergeStore {
   /// [idMap].
   Future<void> remapConversations(Map<int, int> idMap);
 
-  /// How many stored references name one of [ids] — the preview's count.
-  Future<int> countReferences(Iterable<int> ids);
+  /// How many stored references name one of [ids] — the preview's counts.
+  Future<MergeReferences> countReferences(Iterable<int> ids);
 }
 
 /// Carries out a confirmed [MergePlan] (standard 04 §4): the plan in one
@@ -49,7 +66,7 @@ class ChannelMergeExecutor {
   }
 
   /// References [plan] will rewrite, for the preview.
-  Future<int> referenceCount(MergePlan plan) =>
+  Future<MergeReferences> referenceCount(MergePlan plan) =>
       store.countReferences(plan.idMap.keys);
 }
 
@@ -88,14 +105,18 @@ class DatabaseMergeStore implements MergeStore {
       AssistantSessionRepository().remapModelLinks(idMap);
 
   @override
-  Future<int> countReferences(Iterable<int> ids) async {
+  Future<MergeReferences> countReferences(Iterable<int> ids) async {
     final set = ids.toSet();
-    var n = 0;
+    var selections = 0;
     for (final key in selectionKeys) {
-      if (set.contains(int.tryParse(await _db.getSetting(key) ?? ''))) n++;
+      if (set.contains(int.tryParse(await _db.getSetting(key) ?? ''))) {
+        selections++;
+      }
     }
-    return n +
-        await UsageRepository().countModelRows(set) +
-        await AssistantSessionRepository().countModelLinks(set);
+    return MergeReferences(
+      selections: selections,
+      records: await UsageRepository().countModelRows(set),
+      links: await AssistantSessionRepository().countModelLinks(set),
+    );
   }
 }

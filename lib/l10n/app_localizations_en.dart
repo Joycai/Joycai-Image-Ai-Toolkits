@@ -2872,6 +2872,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mergeRouteAdded => 'Merged in';
 
   @override
+  String mergeReferencesNote(String what, String channel) {
+    return '$what will point at the kept models. Merged models keep the name, fee group and context settings of the one in $channel.';
+  }
+
+  @override
+  String mergeReferencesNone(String channel) {
+    return 'Nothing saved points at a merged-away model. Merged models keep the name, fee group and context settings of the one in $channel.';
+  }
+
+  @override
+  String mergeRefSelections(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count saved model selections',
+      one: '1 saved model selection',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mergeRefRecords(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count usage records',
+      one: '1 usage record',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mergeRefLinks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count model links in assistant conversations',
+      one: '1 model link in assistant conversations',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mergeRefSeparator => ', ';
+
+  @override
+  String get mergeRefLast => ' and ';
+
+  @override
   String mergeModelJoin(String route) {
     return 'Same model, merged · $route parameters carried over';
   }
@@ -2882,19 +2931,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String mergeModelMove(String route) {
     return 'Moved · pinned to $route';
-  }
-
-  @override
-  String mergeReferencesNote(int count, String channel) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other:
-          '$count saved selections and usage records will point at the kept models.',
-      one: '1 saved selection or usage record will point at the kept model.',
-      zero: 'No saved selection or usage record points at a merged-away model.',
-    );
-    return '$_temp0 Merged models keep the name, fee group and context settings of the one in $channel.';
   }
 
   @override

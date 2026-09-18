@@ -4960,6 +4960,48 @@ abstract class AppLocalizations {
   /// **'Merged in'**
   String get mergeRouteAdded;
 
+  /// No description provided for @mergeReferencesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{what} will point at the kept models. Merged models keep the name, fee group and context settings of the one in {channel}.'**
+  String mergeReferencesNote(String what, String channel);
+
+  /// No description provided for @mergeReferencesNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing saved points at a merged-away model. Merged models keep the name, fee group and context settings of the one in {channel}.'**
+  String mergeReferencesNone(String channel);
+
+  /// No description provided for @mergeRefSelections.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 saved model selection} other{{count} saved model selections}}'**
+  String mergeRefSelections(int count);
+
+  /// No description provided for @mergeRefRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 usage record} other{{count} usage records}}'**
+  String mergeRefRecords(int count);
+
+  /// No description provided for @mergeRefLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 model link in assistant conversations} other{{count} model links in assistant conversations}}'**
+  String mergeRefLinks(int count);
+
+  /// No description provided for @mergeRefSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **', '**
+  String get mergeRefSeparator;
+
+  /// No description provided for @mergeRefLast.
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get mergeRefLast;
+
   /// No description provided for @mergeModelJoin.
   ///
   /// In en, this message translates to:
@@ -4977,12 +5019,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Moved · pinned to {route}'**
   String mergeModelMove(String route);
-
-  /// No description provided for @mergeReferencesNote.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =0{No saved selection or usage record points at a merged-away model.} =1{1 saved selection or usage record will point at the kept model.} other{{count} saved selections and usage records will point at the kept models.}} Merged models keep the name, fee group and context settings of the one in {channel}.'**
-  String mergeReferencesNote(int count, String channel);
 
   /// No description provided for @mergeIrreversible.
   ///

@@ -21,7 +21,7 @@
 | 片 | 内容 | 文件 | 验收 | 状态 |
 |---|---|---|---|---|
 | 1 | 合并改写助手对话里的模型链接（`LLMMessage.modelDbId`） | `assistant_session_repository.dart`、`channel_merge_executor.dart` | 仓库测试：改写与计数只动命中的消息；执行器顺序测试 | ☑ |
-| 2 | 合并引用计数分写：选择 · 用量记录 · 对话链接 | `channel_merge_executor.dart`、`channel_merge_review.dart`、l10n | 执行器测试；截图 4f | ☐ |
+| 2 | 合并引用计数分写：选择 · 用量记录 · 对话链接 | `channel_merge_executor.dart`、`channel_merge_review.dart`、l10n | 执行器测试；截图 4f | ☑ |
 | 3 | 换预设建平台全部线路 | `channel_edit_dialog.dart` | 单测 `plannedChannelRoutes` 与换预设同源 | ☐ |
 | 4 | 空串路径「主机本身」 | `channel_routes.dart`、`channel_route_table.dart`、l10n | `withPath(k,'')` 存空串、默认为空的平台归一为 null；小部件测试 | ☐ |
 
@@ -40,4 +40,5 @@
 
 ## 施工记录
 
-（偏离写在这里）
+- 片 2：设计写「工作台、提示词助手里选着的 3 处」；助手的模型选择不落库（只有工作台、视频、AI 重命名三个设置键），
+  所以文案是「N 处已选的模型」。第三类「助手对话里的模型链接」是片 1 新增的改写对象，一并分写；为零的类不出现。

@@ -36,7 +36,8 @@ class _RecordingStore implements MergeStore {
       calls.add('conversations');
 
   @override
-  Future<int> countReferences(Iterable<int> ids) async => 0;
+  Future<MergeReferences> countReferences(Iterable<int> ids) async =>
+      const MergeReferences();
 }
 
 MergePlan _plan(Map<int, int> idMap) => MergePlan(
@@ -144,7 +145,11 @@ void main() {
       final executor = ChannelMergeExecutor();
       // Two usage/task rows, one selection and one conversation link name
       // the merged-away model.
-      expect(await executor.referenceCount(plan), 4);
+      final refs = await executor.referenceCount(plan);
+      expect(
+        (refs.selections, refs.records, refs.links),
+        (1, 2, 1),
+      );
 
       // Written after the plan was computed, e.g. by a task finishing while
       // the preview is open: the merge must not revert it.

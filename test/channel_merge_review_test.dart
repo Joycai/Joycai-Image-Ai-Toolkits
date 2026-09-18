@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/models/widgets/channel_merge_review.dart';
+import 'package:joycai_image_ai_toolkits/services/catalogue/channel_merge_executor.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
@@ -94,6 +95,34 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
     }
   }
+
+  group('the reference note says each kind on its own', () {
+    final en = lookupAppLocalizations(const Locale('en'));
+    final zh = lookupAppLocalizations(const Locale('zh'));
+
+    test('two kinds', () {
+      const refs = MergeReferences(selections: 3, records: 128);
+      expect(mergeReferencesText(zh, refs, 'R'), startsWith('3 处已选的模型与 128 条用量记录会改指向'));
+      expect(mergeReferencesText(en, refs, 'R'),
+          startsWith('3 saved model selections and 128 usage records will point'));
+    });
+
+    test('three kinds, and a kind with none left out', () {
+      expect(
+        mergeReferencesText(en, const MergeReferences(selections: 1, records: 2, links: 1), 'R'),
+        startsWith('1 saved model selection, 2 usage records and 1 model link in'),
+      );
+      expect(
+        mergeReferencesText(en, const MergeReferences(links: 2), 'R'),
+        startsWith('2 model links in assistant conversations will point'),
+      );
+    });
+
+    test('none', () {
+      expect(mergeReferencesText(en, const MergeReferences(), 'R'),
+          startsWith('Nothing saved points'));
+    });
+  });
 
   testWidgets('the prompt counts the groups', (tester) async {
     final state = await seed(tester);

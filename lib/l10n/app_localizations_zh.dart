@@ -2742,6 +2742,37 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mergeRouteAdded => '并入';
 
   @override
+  String mergeReferencesNote(String what, String channel) {
+    return '$what会改指向保留下来的模型。同名合一的模型保留「$channel」里那一个的名字、费率组与上下文设置。';
+  }
+
+  @override
+  String mergeReferencesNone(String channel) {
+    return '没有任何保存的选择或记录指向被并掉的模型。同名合一的模型保留「$channel」里那一个的名字、费率组与上下文设置。';
+  }
+
+  @override
+  String mergeRefSelections(int count) {
+    return '$count 处已选的模型';
+  }
+
+  @override
+  String mergeRefRecords(int count) {
+    return '$count 条用量记录';
+  }
+
+  @override
+  String mergeRefLinks(int count) {
+    return '$count 个助手对话里的模型链接';
+  }
+
+  @override
+  String get mergeRefSeparator => '、';
+
+  @override
+  String get mergeRefLast => '与 ';
+
+  @override
   String mergeModelJoin(String route) {
     return '同名合一 · $route 线路的参数并入';
   }
@@ -2752,11 +2783,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String mergeModelMove(String route) {
     return '搬过来 · 钉在 $route 线路';
-  }
-
-  @override
-  String mergeReferencesNote(int count, String channel) {
-    return '$count 处选择与用量记录会改指向保留下来的模型。同名合一的模型保留「$channel」里那一个的名字、费率组与上下文设置。';
   }
 
   @override
@@ -7928,6 +7954,37 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get mergeRouteAdded => '併入';
 
   @override
+  String mergeReferencesNote(String what, String channel) {
+    return '$what會改指向保留下來的模型。同名合一的模型保留「$channel」裡那一個的名稱、費率組與上下文設定。';
+  }
+
+  @override
+  String mergeReferencesNone(String channel) {
+    return '沒有任何保存的選擇或紀錄指向被併掉的模型。同名合一的模型保留「$channel」裡那一個的名稱、費率組與上下文設定。';
+  }
+
+  @override
+  String mergeRefSelections(int count) {
+    return '$count 處已選的模型';
+  }
+
+  @override
+  String mergeRefRecords(int count) {
+    return '$count 條用量紀錄';
+  }
+
+  @override
+  String mergeRefLinks(int count) {
+    return '$count 個助手對話裡的模型連結';
+  }
+
+  @override
+  String get mergeRefSeparator => '、';
+
+  @override
+  String get mergeRefLast => '與 ';
+
+  @override
   String mergeModelJoin(String route) {
     return '同名合一 · $route 線路的參數併入';
   }
@@ -7938,11 +7995,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String mergeModelMove(String route) {
     return '搬過來 · 釘在 $route 線路';
-  }
-
-  @override
-  String mergeReferencesNote(int count, String channel) {
-    return '$count 處選擇與用量紀錄會改指向保留下來的模型。同名合一的模型保留「$channel」裡那一個的名稱、費率組與上下文設定。';
   }
 
   @override
