@@ -132,6 +132,12 @@ extension _FormSteps on _ChannelWizardDialogState {
                           ],
                         ),
                       ),
+                      // `4b`: what this route carries beyond the protocol's
+                      // standard part, one word each.
+                      for (final word in _routeFeatureWords(l10n, routes, e.kind)) ...[
+                        const SizedBox(width: AppSpace.s6),
+                        AppRouteBadge(label: word, state: RouteBadgeState.quiet),
+                      ],
                     ],
                   ),
                 ),
@@ -145,6 +151,18 @@ extension _FormSteps on _ChannelWizardDialogState {
         ),
       ],
     );
+  }
+
+  List<String> _routeFeatureWords(
+    AppLocalizations l10n,
+    ChannelRoutes routes,
+    RouteKind kind,
+  ) {
+    final f = routes.featuresOf(kind);
+    return [
+      if (f.webSearch) l10n.routeFeatureWebSearch,
+      if (f.promptCaching) l10n.routeFeaturePromptCache,
+    ];
   }
 
   Widget _buildEndpointField(AppLocalizations l10n) {

@@ -2872,6 +2872,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mergeRouteAdded => 'Merged in';
 
   @override
+  String mergeReferencesNote(String what, String channel) {
+    return '$what will point at the kept models. Merged models keep the name, fee group and context settings of the one in $channel.';
+  }
+
+  @override
+  String mergeReferencesNone(String channel) {
+    return 'Nothing saved points at a merged-away model. Merged models keep the name, fee group and context settings of the one in $channel.';
+  }
+
+  @override
+  String mergeRefSelections(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count saved model selections',
+      one: '1 saved model selection',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mergeRefRecords(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count usage records',
+      one: '1 usage record',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mergeRefLinks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count model links in assistant conversations',
+      one: '1 model link in assistant conversations',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mergeRefSeparator => ', ';
+
+  @override
+  String get mergeRefLast => ' and ';
+
+  @override
   String mergeModelJoin(String route) {
     return 'Same model, merged · $route parameters carried over';
   }
@@ -2882,19 +2931,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String mergeModelMove(String route) {
     return 'Moved · pinned to $route';
-  }
-
-  @override
-  String mergeReferencesNote(int count, String channel) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other:
-          '$count saved selections and usage records will point at the kept models.',
-      one: '1 saved selection or usage record will point at the kept model.',
-      zero: 'No saved selection or usage record points at a merged-away model.',
-    );
-    return '$_temp0 Merged models keep the name, fee group and context settings of the one in $channel.';
   }
 
   @override
@@ -2933,6 +2969,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get routePathOwnHost => 'Own host';
+
+  @override
+  String routePathHostItself(String path) {
+    return 'Host itself · default $path';
+  }
+
+  @override
+  String get routePathHostItselfHint => '(the host itself)';
+
+  @override
+  String get routeUseHostItself => 'Use host itself';
 
   @override
   String get routeRestoreDefault => 'Restore default';
@@ -2997,6 +3044,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routesToCreate => 'Routes to create';
 
   @override
+  String get routeFeatureWebSearch => 'Web search';
+
+  @override
+  String get routeFeaturePromptCache => 'Prompt caching';
+
+  @override
   String get routesToCreateHint =>
       'You can turn off unused ones later in the channel editor';
 
@@ -3030,6 +3083,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get routeWebSearchNotSent =>
       'The current route doesn\'t send web search. The switch stays on and takes effect on a route that can.';
+
+  @override
+  String get routeWebSearchSends => 'Sent on this route';
+
+  @override
+  String get routeWebSearchCannot => 'This route can\'t send it';
+
+  @override
+  String get routeWebSearchUntested =>
+      'Sent, but not yet tested on this platform';
+
+  @override
+  String get routeWebSearchUntestedNote =>
+      'The current route sends web search, but whether this platform acts on it hasn\'t been tested. If replies show no sign of searching, switch to a tested route.';
 
   @override
   String get platformDashScope => 'Alibaba DashScope';

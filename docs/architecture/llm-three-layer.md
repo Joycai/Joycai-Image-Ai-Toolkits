@@ -254,7 +254,8 @@ surface 开关"表达不了它。绑定关系升级为：
   参数**：`RouteParams` 只有三个——推理强度、思考开关、最大输出（各有「同一模型换线
   路会变」的证据，见 `model_routes.dart` 注释）；其余线路的参数停放在
   `llm_models.route_params`。联网搜索是模型的**授权**，不随线路变，发不发得出按线路
-  问 `serverWebSearch`。图像 / 视频模型不走线路，恒取主线路，媒体点单照旧。
+  问 `serverWebSearch`；发得出但没在该平台实机验过的线路由画像声明
+  （`PlatformProfile.untestedWebSearch`，New API 与自定义的 Anthropic 面），编辑器标「未实测」，发送不变。图像 / 视频模型不走线路，恒取主线路，媒体点单照旧。
 
 **存储（v45）**：`llm_channels.routes` 内嵌 JSON 文档（主机、线路表、写入标记），
 `llm_models.active_route / route_params`。**扁平列永远是主线路**——`type` / `endpoint`
@@ -283,11 +284,16 @@ surface 开关"表达不了它。绑定关系升级为：
 模型的请求都与合并前相同，否则不成对（换了保留方可能换线路 vendor；没有同名对应的
 图像 / 视频模型会换地址——这时试反方向）。执行：一个事务（渠道 → 模型只写四列 →
 删被并模型 → 删余下 → 删渠道），提交后先改写设置里的模型选择、再改写
-`token_usage` / `tasks` 的 `model_pk`。密钥在渠道行里，随事务消失。
+`token_usage` / `tasks` 的 `model_pk`、最后改写助手对话 JSON 里的 `modelDbId`
+（回复卡「打开该模型」的跳转）。密钥在渠道行里，随事务消失。
 
 **界面**：`widgets/models/app_route_badge.dart`（四态徽标）· `route_labels.dart`
-（线路名 / 平台名唯一一张表）· `channel_route_table.dart`（渠道编辑的线路表）；
-模型编辑的线路条在 `model_edit/model_edit_routes.dart`；合并提示与审阅在
+（线路名 / 平台名唯一一张表）· `channel_route_table.dart`（渠道编辑的线路表；路径
+null = 平台默认，`''` = 主机本身，绝对 URL = 独立主机；「用主机本身」只在
+`PlatformProfile.guessedPaths` 的自定义平台上给，中转与厂商的布局是已知的）；
+模型编辑的线路条在 `model_edit/model_edit_routes.dart`（作用域灰字是
+`AppSectionLabel.suffix` 的行内 span，手机上线路条横向滚动）；向导每条线路的私有能力一词
+读 `ChannelRoutes.featuresOf`（vendor 画像的联网与 ④ 提示缓存，未实测的联网不列）；合并提示与审阅在
 `screens/models/widgets/channel_merge_review.dart`。**单线路渠道零负担**：渠道 ≥2 条线路
 （或平台提供第二条）才出线路界面，否则与改前一样。
 

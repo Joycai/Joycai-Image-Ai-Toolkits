@@ -4960,6 +4960,48 @@ abstract class AppLocalizations {
   /// **'Merged in'**
   String get mergeRouteAdded;
 
+  /// No description provided for @mergeReferencesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{what} will point at the kept models. Merged models keep the name, fee group and context settings of the one in {channel}.'**
+  String mergeReferencesNote(String what, String channel);
+
+  /// No description provided for @mergeReferencesNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing saved points at a merged-away model. Merged models keep the name, fee group and context settings of the one in {channel}.'**
+  String mergeReferencesNone(String channel);
+
+  /// No description provided for @mergeRefSelections.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 saved model selection} other{{count} saved model selections}}'**
+  String mergeRefSelections(int count);
+
+  /// No description provided for @mergeRefRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 usage record} other{{count} usage records}}'**
+  String mergeRefRecords(int count);
+
+  /// No description provided for @mergeRefLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 model link in assistant conversations} other{{count} model links in assistant conversations}}'**
+  String mergeRefLinks(int count);
+
+  /// No description provided for @mergeRefSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **', '**
+  String get mergeRefSeparator;
+
+  /// No description provided for @mergeRefLast.
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get mergeRefLast;
+
   /// No description provided for @mergeModelJoin.
   ///
   /// In en, this message translates to:
@@ -4977,12 +5019,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Moved · pinned to {route}'**
   String mergeModelMove(String route);
-
-  /// No description provided for @mergeReferencesNote.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =0{No saved selection or usage record points at a merged-away model.} =1{1 saved selection or usage record will point at the kept model.} other{{count} saved selections and usage records will point at the kept models.}} Merged models keep the name, fee group and context settings of the one in {channel}.'**
-  String mergeReferencesNote(int count, String channel);
 
   /// No description provided for @mergeIrreversible.
   ///
@@ -5043,6 +5079,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Own host'**
   String get routePathOwnHost;
+
+  /// No description provided for @routePathHostItself.
+  ///
+  /// In en, this message translates to:
+  /// **'Host itself · default {path}'**
+  String routePathHostItself(String path);
+
+  /// No description provided for @routePathHostItselfHint.
+  ///
+  /// In en, this message translates to:
+  /// **'(the host itself)'**
+  String get routePathHostItselfHint;
+
+  /// No description provided for @routeUseHostItself.
+  ///
+  /// In en, this message translates to:
+  /// **'Use host itself'**
+  String get routeUseHostItself;
 
   /// No description provided for @routeRestoreDefault.
   ///
@@ -5116,6 +5170,18 @@ abstract class AppLocalizations {
   /// **'Routes to create'**
   String get routesToCreate;
 
+  /// No description provided for @routeFeatureWebSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Web search'**
+  String get routeFeatureWebSearch;
+
+  /// No description provided for @routeFeaturePromptCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt caching'**
+  String get routeFeaturePromptCache;
+
   /// No description provided for @routesToCreateHint.
   ///
   /// In en, this message translates to:
@@ -5169,6 +5235,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The current route doesn\'t send web search. The switch stays on and takes effect on a route that can.'**
   String get routeWebSearchNotSent;
+
+  /// No description provided for @routeWebSearchSends.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent on this route'**
+  String get routeWebSearchSends;
+
+  /// No description provided for @routeWebSearchCannot.
+  ///
+  /// In en, this message translates to:
+  /// **'This route can\'t send it'**
+  String get routeWebSearchCannot;
+
+  /// No description provided for @routeWebSearchUntested.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent, but not yet tested on this platform'**
+  String get routeWebSearchUntested;
+
+  /// No description provided for @routeWebSearchUntestedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The current route sends web search, but whether this platform acts on it hasn\'t been tested. If replies show no sign of searching, switch to a tested route.'**
+  String get routeWebSearchUntestedNote;
 
   /// No description provided for @platformDashScope.
   ///

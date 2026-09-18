@@ -96,7 +96,7 @@ Future<void> reviewChannelMerges(BuildContext context, AppState appState) async 
     ];
     if (pending.isEmpty) return;
     final candidate = pending.first;
-    final int references;
+    final MergeReferences references;
     try {
       references = await ChannelMergeExecutor().referenceCount(candidate.plan);
     } catch (e) {
@@ -185,7 +185,7 @@ class _MergePreview extends StatelessWidget {
 
   final AppState appState;
   final MergeCandidate candidate;
-  final int references;
+  final MergeReferences references;
 
   @override
   Widget build(BuildContext context) {
@@ -292,7 +292,7 @@ class _MergePreview extends StatelessWidget {
         const SizedBox(height: AppSpace.s16),
         _Note(
           icon: Icons.info_outline,
-          text: l10n.mergeReferencesNote(references, candidate.keep.displayName),
+          text: mergeReferencesText(l10n, references, candidate.keep.displayName),
         ),
         const SizedBox(height: AppSpace.s6),
         _Note(icon: Icons.warning_amber_rounded, text: l10n.mergeIrreversible, warning: true),
@@ -388,4 +388,21 @@ class _Note extends StatelessWidget {
       ),
     );
   }
+}
+
+/// `4f`: each kind of reference said on its own — 「3 处已选的模型与 128 条用量
+/// 记录」 — leaving out the kinds with none.
+@visibleForTesting
+String mergeReferencesText(AppLocalizations l10n, MergeReferences refs, String channel) {
+  final parts = [
+    if (refs.selections > 0) l10n.mergeRefSelections(refs.selections),
+    if (refs.records > 0) l10n.mergeRefRecords(refs.records),
+    if (refs.links > 0) l10n.mergeRefLinks(refs.links),
+  ];
+  if (parts.isEmpty) return l10n.mergeReferencesNone(channel);
+  final what = parts.length == 1
+      ? parts.single
+      : '${parts.sublist(0, parts.length - 1).join(l10n.mergeRefSeparator)}'
+          '${l10n.mergeRefLast}${parts.last}';
+  return l10n.mergeReferencesNote(what, channel);
 }

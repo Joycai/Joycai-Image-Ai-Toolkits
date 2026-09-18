@@ -2742,6 +2742,37 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mergeRouteAdded => '并入';
 
   @override
+  String mergeReferencesNote(String what, String channel) {
+    return '$what会改指向保留下来的模型。同名合一的模型保留「$channel」里那一个的名字、费率组与上下文设置。';
+  }
+
+  @override
+  String mergeReferencesNone(String channel) {
+    return '没有任何保存的选择或记录指向被并掉的模型。同名合一的模型保留「$channel」里那一个的名字、费率组与上下文设置。';
+  }
+
+  @override
+  String mergeRefSelections(int count) {
+    return '$count 处已选的模型';
+  }
+
+  @override
+  String mergeRefRecords(int count) {
+    return '$count 条用量记录';
+  }
+
+  @override
+  String mergeRefLinks(int count) {
+    return '$count 个助手对话里的模型链接';
+  }
+
+  @override
+  String get mergeRefSeparator => '、';
+
+  @override
+  String get mergeRefLast => '与 ';
+
+  @override
   String mergeModelJoin(String route) {
     return '同名合一 · $route 线路的参数并入';
   }
@@ -2752,11 +2783,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String mergeModelMove(String route) {
     return '搬过来 · 钉在 $route 线路';
-  }
-
-  @override
-  String mergeReferencesNote(int count, String channel) {
-    return '$count 处选择与用量记录会改指向保留下来的模型。同名合一的模型保留「$channel」里那一个的名字、费率组与上下文设置。';
   }
 
   @override
@@ -2792,6 +2818,17 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get routePathOwnHost => '独立主机';
+
+  @override
+  String routePathHostItself(String path) {
+    return '主机本身 · 默认 $path';
+  }
+
+  @override
+  String get routePathHostItselfHint => '（主机本身）';
+
+  @override
+  String get routeUseHostItself => '用主机本身';
 
   @override
   String get routeRestoreDefault => '恢复默认';
@@ -2838,6 +2875,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routesToCreate => '将建立的线路';
 
   @override
+  String get routeFeatureWebSearch => '联网';
+
+  @override
+  String get routeFeaturePromptCache => '提示缓存';
+
+  @override
   String get routesToCreateHint => '建好后可在渠道编辑里关掉不用的';
 
   @override
@@ -2869,6 +2912,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get routeWebSearchNotSent => '当前线路不发联网搜索。开关保持开启，切到能发的线路时生效。';
+
+  @override
+  String get routeWebSearchSends => '这条线路会发出';
+
+  @override
+  String get routeWebSearchCannot => '这条线路发不出';
+
+  @override
+  String get routeWebSearchUntested => '会发出，但还没在这个平台上实测过';
+
+  @override
+  String get routeWebSearchUntestedNote =>
+      '当前线路会发出联网搜索，但这个平台是否照做还没实测过。回复里看不出搜索过的话，换到实测过的线路。';
 
   @override
   String get platformDashScope => '阿里云百炼';
@@ -7928,6 +7984,37 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get mergeRouteAdded => '併入';
 
   @override
+  String mergeReferencesNote(String what, String channel) {
+    return '$what會改指向保留下來的模型。同名合一的模型保留「$channel」裡那一個的名稱、費率組與上下文設定。';
+  }
+
+  @override
+  String mergeReferencesNone(String channel) {
+    return '沒有任何保存的選擇或紀錄指向被併掉的模型。同名合一的模型保留「$channel」裡那一個的名稱、費率組與上下文設定。';
+  }
+
+  @override
+  String mergeRefSelections(int count) {
+    return '$count 處已選的模型';
+  }
+
+  @override
+  String mergeRefRecords(int count) {
+    return '$count 條用量紀錄';
+  }
+
+  @override
+  String mergeRefLinks(int count) {
+    return '$count 個助手對話裡的模型連結';
+  }
+
+  @override
+  String get mergeRefSeparator => '、';
+
+  @override
+  String get mergeRefLast => '與 ';
+
+  @override
   String mergeModelJoin(String route) {
     return '同名合一 · $route 線路的參數併入';
   }
@@ -7938,11 +8025,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String mergeModelMove(String route) {
     return '搬過來 · 釘在 $route 線路';
-  }
-
-  @override
-  String mergeReferencesNote(int count, String channel) {
-    return '$count 處選擇與用量紀錄會改指向保留下來的模型。同名合一的模型保留「$channel」裡那一個的名稱、費率組與上下文設定。';
   }
 
   @override
@@ -7978,6 +8060,17 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get routePathOwnHost => '獨立主機';
+
+  @override
+  String routePathHostItself(String path) {
+    return '主機本身 · 預設 $path';
+  }
+
+  @override
+  String get routePathHostItselfHint => '（主機本身）';
+
+  @override
+  String get routeUseHostItself => '用主機本身';
 
   @override
   String get routeRestoreDefault => '恢復預設';
@@ -8024,6 +8117,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get routesToCreate => '將建立的線路';
 
   @override
+  String get routeFeatureWebSearch => '聯網';
+
+  @override
+  String get routeFeaturePromptCache => '提示快取';
+
+  @override
   String get routesToCreateHint => '建好後可在渠道編輯裡關掉不用的';
 
   @override
@@ -8055,6 +8154,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get routeWebSearchNotSent => '目前線路不發送聯網搜尋。開關保持開啟，切到能發送的線路時生效。';
+
+  @override
+  String get routeWebSearchSends => '這條線路會發出';
+
+  @override
+  String get routeWebSearchCannot => '這條線路發不出';
+
+  @override
+  String get routeWebSearchUntested => '會發出，但還沒在這個平台上實測過';
+
+  @override
+  String get routeWebSearchUntestedNote =>
+      '當前線路會發出聯網搜尋，但這個平台是否照做還沒實測過。回覆裡看不出搜尋過的話，換到實測過的線路。';
 
   @override
   String get platformDashScope => '阿里雲百煉';

@@ -1884,6 +1884,51 @@
   "mergeAbsorb": "Deleted after merging",
   "mergeRoutesAfter": "Routes after merging",
   "mergeRouteAdded": "Merged in",
+  "mergeReferencesNote": "{what} will point at the kept models. Merged models keep the name, fee group and context settings of the one in {channel}.",
+  "@mergeReferencesNote": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      },
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "mergeReferencesNone": "Nothing saved points at a merged-away model. Merged models keep the name, fee group and context settings of the one in {channel}.",
+  "@mergeReferencesNone": {
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "mergeRefSelections": "{count, plural, =1{1 saved model selection} other{{count} saved model selections}}",
+  "@mergeRefSelections": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mergeRefRecords": "{count, plural, =1{1 usage record} other{{count} usage records}}",
+  "@mergeRefRecords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mergeRefLinks": "{count, plural, =1{1 model link in assistant conversations} other{{count} model links in assistant conversations}}",
+  "@mergeRefLinks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mergeRefSeparator": ", ",
+  "mergeRefLast": " and ",
   "mergeModelJoin": "Same model, merged · {route} parameters carried over",
   "@mergeModelJoin": {
     "placeholders": {
@@ -1897,17 +1942,6 @@
   "@mergeModelMove": {
     "placeholders": {
       "route": {
-        "type": "String"
-      }
-    }
-  },
-  "mergeReferencesNote": "{count, plural, =0{No saved selection or usage record points at a merged-away model.} =1{1 saved selection or usage record will point at the kept model.} other{{count} saved selections and usage records will point at the kept models.}} Merged models keep the name, fee group and context settings of the one in {channel}.",
-  "@mergeReferencesNote": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "channel": {
         "type": "String"
       }
     }
@@ -1936,6 +1970,16 @@
     }
   },
   "routePathOwnHost": "Own host",
+  "routePathHostItself": "Host itself · default {path}",
+  "@routePathHostItself": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "routePathHostItselfHint": "(the host itself)",
+  "routeUseHostItself": "Use host itself",
   "routeRestoreDefault": "Restore default",
   "routeOfficialLocked": "Official address, locked",
   "routeTest": "Test this route",
@@ -1982,6 +2026,8 @@
     }
   },
   "routesToCreate": "Routes to create",
+  "routeFeatureWebSearch": "Web search",
+  "routeFeaturePromptCache": "Prompt caching",
   "routesToCreateHint": "You can turn off unused ones later in the channel editor",
   "routeKeyShared": "One key, shared by every route",
   "routeWizardNote": "New models use the primary route ({route}). To send a model over another route, switch it in the route strip at the top of the model editor; each route keeps its own parameters.",
@@ -2012,6 +2058,10 @@
   "routeSwitchConfirm": "Switch",
   "routeWebSearchPerRoute": "Per route",
   "routeWebSearchNotSent": "The current route doesn't send web search. The switch stays on and takes effect on a route that can.",
+  "routeWebSearchSends": "Sent on this route",
+  "routeWebSearchCannot": "This route can't send it",
+  "routeWebSearchUntested": "Sent, but not yet tested on this platform",
+  "routeWebSearchUntestedNote": "The current route sends web search, but whether this platform acts on it hasn't been tested. If replies show no sign of searching, switch to a tested route.",
   "platformDashScope": "Alibaba DashScope",
   "platformCustom": "Custom",
   "routePrimaryCantRemove": "The primary route can't be turned off — make another route primary first",

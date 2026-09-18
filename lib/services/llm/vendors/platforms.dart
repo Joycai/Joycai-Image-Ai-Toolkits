@@ -88,12 +88,25 @@ class PlatformProfile {
   /// The user supplies the host (relays and custom endpoints).
   final bool hostFromUser;
 
+  /// The default paths are the protocol's convention, not this platform's
+  /// known layout — a host of the user's own may serve a route at its root,
+  /// so the route table offers "the host itself" as a path.
+  final bool guessedPaths;
+
+  /// Routes on which this app sends the model's web search but no live run
+  /// has shown the platform acting on it — a relay forwarding ④'s server
+  /// tool to an upstream that may drop it. Data, never a branch: the editor
+  /// marks these 「未实测」 (`D1f · 4d`); what is sent does not change.
+  final Set<RouteKind> untestedWebSearch;
+
   const PlatformProfile({
     required this.id,
     required this.routes,
     this.officialHost,
     this.hosts = const [],
     this.hostFromUser = false,
+    this.guessedPaths = false,
+    this.untestedWebSearch = const {},
   });
 
   PlatformRoute? route(RouteKind kind) {
@@ -214,6 +227,7 @@ class Platforms {
     PlatformProfile(
       id: newapi,
       hostFromUser: true,
+      untestedWebSearch: {RouteKind.anthropic},
       routes: [
         PlatformRoute(RouteKind.chat, '/v1', Vendors.newApiOpenAI),
         PlatformRoute(
@@ -250,6 +264,8 @@ class Platforms {
     PlatformProfile(
       id: custom,
       hostFromUser: true,
+      guessedPaths: true,
+      untestedWebSearch: {RouteKind.anthropic},
       routes: [
         PlatformRoute(RouteKind.chat, '/v1', Vendors.openAIRest),
         PlatformRoute(RouteKind.responses, '/v1', Vendors.openAIResponsesRest),

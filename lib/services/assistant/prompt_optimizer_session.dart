@@ -180,6 +180,28 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// ticks per fragment, and only the timeline's working row reads it.
   final ValueNotifier<int?> streamingToolArgumentChars = ValueNotifier(null);
 
+  /// A channel merge moved [idMap]'s models onto the ones they merged into:
+  /// the replies' model links follow, in the transcript and in [history] —
+  /// the stored rows are rewritten by the repository, but a compaction writes
+  /// [history] back whole, and an open conversation's links are these.
+  void remapModelLinks(Map<int, int> idMap) {
+    var changed = false;
+    for (var i = 0; i < history.length; i++) {
+      final to = idMap[history[i].modelDbId];
+      if (to == null) continue;
+      history[i] = history[i].withModelDbId(to);
+      changed = true;
+    }
+    if (_transcript.any((e) => idMap.containsKey(e.modelDbId))) {
+      _transcript = [
+        for (final e in _transcript)
+          idMap[e.modelDbId] == null ? e : e.copyWith(modelDbId: idMap[e.modelDbId]),
+      ];
+      changed = true;
+    }
+    if (changed) notifyListeners();
+  }
+
   void addUserTurn(String text) {
     history.add(LLMMessage(role: LLMRole.user, content: text));
     _addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.user, text: text));

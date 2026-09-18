@@ -138,6 +138,9 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
     final defaultPath = routes.defaultPathOf(kind);
     final locked = _locked(kind);
     final path = e.path;
+    // A path stored empty: requests go to the host itself. Only meaningful
+    // where the default is not already empty (then it is stored as null).
+    final hostItself = path != null && path.isEmpty;
 
     final badge = AppRouteBadge(
       label: primary
@@ -201,7 +204,9 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
         : ChannelField(
             controller: _pathOf(kind),
             mono: true,
-            hint: defaultPath,
+            // An empty field means the default, so a path stored empty — the
+            // host itself — says so in the hint rather than looking default.
+            hint: hostItself ? l10n.routePathHostItselfHint : defaultPath,
             onChanged: (v) {
               final t = v.trim();
               widget.onChanged(routes.withPath(kind, t.isEmpty ? null : t));
@@ -222,6 +227,8 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
         : AppRouteBadge(
             label: ChannelRoutes.isAbsolute(path)
                 ? l10n.routePathOwnHost
+                : hostItself
+                ? l10n.routePathHostItself(defaultPath ?? '/')
                 : l10n.routePathEdited(
                     (defaultPath == null || defaultPath.isEmpty) ? '/' : defaultPath,
                   ),
@@ -247,6 +254,21 @@ class _ChannelRouteTableState extends State<ChannelRouteTable> {
             onPressed: () {
               _pathOf(kind).text = '';
               widget.onChanged(routes.withPath(kind, null));
+            },
+          ),
+        // On a host of the user's own, a route may live at the root — the
+        // one path an empty field cannot say, since empty means default.
+        if (path == null &&
+            !locked &&
+            routes.platform.guessedPaths &&
+            (defaultPath?.isNotEmpty ?? false))
+          AppButton(
+            label: l10n.routeUseHostItself,
+            variant: AppButtonVariant.text,
+            size: AppButtonSize.compact,
+            onPressed: () {
+              _pathOf(kind).text = '';
+              widget.onChanged(routes.withPath(kind, ''));
             },
           ),
         if (url != null)
