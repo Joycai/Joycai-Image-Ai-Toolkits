@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/image_layer.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/ark_payload.dart';
@@ -194,6 +195,51 @@ void main() {
       });
       expect([for (final i in r.images) i.ref], ['base', 'l1', 'l2']);
       expect(r.images[1].name, 'title');
+    });
+
+    test('the live layer response carries names, descriptions and boxes', () {
+      // Captured 2026-09-18 (plan endpoint, 5.0 pro, 1K, no prompt), links
+      // shortened.
+      final r = parseArkImageResponse({
+        'data': [
+          {'url': 'base', 'size': '912x1168', 'z_index': 0, 'output_format': 'jpeg'},
+          {
+            'url': 'layer',
+            'size': '861x1137',
+            'z_index': 1,
+            'output_format': 'png',
+            'name': '魔法少女立绘主体',
+            'description': '一名穿着华丽服饰的魔法少女',
+            'bounding_box': {
+              'absolute': [27, 0, 888, 1137],
+              'normalized': [30, 0, 973, 973],
+            },
+          },
+        ],
+      });
+      final base = r.images.first.layer!;
+      expect(base.zIndex, 0);
+      expect(base.box, isNull);
+      final layer = r.images.last.layer!;
+      expect(layer.zIndex, 1);
+      expect(layer.name, '魔法少女立绘主体');
+      expect(layer.description, '一名穿着华丽服饰的魔法少女');
+      expect(layer.box, const LayerBox(27, 0, 888, 1137));
+      expect(layer.box!.width, 861);
+    });
+
+    test('an ordinary image has no layer; a malformed box is dropped', () {
+      final r = parseArkImageResponse({
+        'data': [
+          {'url': 'plain'},
+          {'url': 'odd', 'z_index': 1, 'bounding_box': {'absolute': [5, 5, 5, 9]}},
+          {'url': 'short', 'z_index': 2, 'bounding_box': {'absolute': [1, 2]}},
+        ],
+      });
+      expect(r.images.map((i) => i.ref), ['odd', 'short', 'plain']);
+      expect(r.images.last.layer, isNull);
+      expect(r.images[0].layer!.box, isNull);
+      expect(r.images[1].layer!.box, isNull);
     });
 
     test('the live 5.0 pro response shape parses', () {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -151,7 +152,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
             delivered++;
             logger?.call('Ark stream: image $delivered received.',
                 level: 'DEBUG');
-            yield LLMResponseChunk(imagePart: bytes);
+            yield LLMResponseChunk(imagePart: bytes, imageLayer: item.layer);
           case ArkStreamFailure(:final failure):
             failures.add(failure);
             logger?.call('Ark: one image of the group failed — $failure',
@@ -203,8 +204,12 @@ class ArkImagesProtocol implements ImageGenProtocol {
   ) async* {
     await _logWholeBody(debugFile, whole);
     final result = await _fromWholeBody(whole, client, options, logger);
-    for (final image in result.generatedImages) {
-      yield LLMResponseChunk(imagePart: image);
+    for (final (i, image) in result.generatedImages.indexed) {
+      yield LLMResponseChunk(
+          imagePart: image,
+          imageLayer: i < result.imageLayers.length
+              ? result.imageLayers[i]
+              : null);
     }
     yield LLMResponseChunk(metadata: result.metadata, isDone: true);
   }
@@ -316,23 +321,39 @@ class ArkImagesProtocol implements ImageGenProtocol {
       throw LLMApiException('Ark Images API returned no image: $why');
     }
 
-    final images = await resolveImageRefs(
-        [for (final item in result.images) item.ref], client, logger,
-        source: 'Ark Images API', abortTrigger: abortTriggerOf(options));
+    // One by one rather than through resolveImageRefs, which drops a link
+    // that fails to download and so would slide every later image off its
+    // layer record: the pairing below is by position.
+    final images = <Uint8List>[];
+    final layers = <GeneratedImageLayer?>[];
+    for (final item in result.images) {
+      final bytes = await resolveImageRef(item.ref, client, logger,
+          abortTrigger: abortTriggerOf(options));
+      if (bytes == null) continue;
+      images.add(bytes);
+      layers.add(item.layer);
+    }
+    if (images.isNotEmpty && images.length < result.images.length) {
+      logger?.call(
+          'Ark Images API: only ${images.length} of ${result.images.length} '
+          'generated image(s) could be retrieved; the rest were billed but '
+          'are not saved.',
+          level: 'WARN');
+    }
     if (images.isEmpty) {
       throw LLMApiException(
           'Ark Images API returned ${result.images.length} image link(s), '
           'none of which could be downloaded.');
     }
 
-    final layers = [
-      for (final item in result.images)
-        if (item.zIndex != null && item.zIndex! > 0) item.name ?? '?',
+    final named = [
+      for (final layer in layers)
+        if (layer != null && layer.zIndex > 0) layer.name ?? '?',
     ];
-    if (layers.isNotEmpty) {
+    if (named.isNotEmpty) {
       logger?.call(
-          'Ark layer decomposition: base + ${layers.length} layer(s) — '
-          '${layers.join(', ')}',
+          'Ark layer decomposition: base + ${named.length} layer(s) — '
+          '${named.join(', ')}',
           level: 'INFO');
     }
     logger?.call(
@@ -343,6 +364,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
     return LLMResponse(
       text: '',
       generatedImages: images,
+      imageLayers: layers.any((l) => l != null) ? layers : const [],
       metadata: _metadata(images.length, result.failures.length, result.usage),
     );
   }

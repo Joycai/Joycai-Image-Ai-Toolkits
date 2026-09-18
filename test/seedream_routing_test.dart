@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/image_layer.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
@@ -286,6 +287,28 @@ void main() {
                 'type': 'BadRequest',
               },
             }));
+          case 'layers':
+            // A decomposition, out of order, whose middle layer's link is
+            // dead: the survivors must keep their own layer records.
+            request.response.headers.contentType = ContentType.json;
+            request.response.write(jsonEncode({
+              'data': [
+                {
+                  'url': '$base/img/top.png',
+                  'z_index': 2,
+                  'name': 'top',
+                  'bounding_box': {'absolute': [10, 20, 30, 40]},
+                },
+                {'url': '$base/img/base.png', 'z_index': 0},
+                {
+                  'url': '$base/gone/mid.png',
+                  'z_index': 1,
+                  'name': 'mid',
+                  'bounding_box': {'absolute': [0, 0, 5, 5]},
+                },
+              ],
+              'usage': {'generated_images': 3},
+            }));
           case 'json':
             request.response.headers.contentType = ContentType.json;
             request.response.write(jsonEncode({
@@ -398,6 +421,33 @@ void main() {
         throwsA(isA<LLMApiException>()
             .having((e) => e.message, 'message', contains('none of which'))),
       );
+    });
+
+    test('a decomposition keeps each image paired with its layer', () async {
+      answer = 'layers';
+      final c = config(Vendors.volcengineArk, pro,
+          endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3');
+      final history = [LLMMessage(role: LLMRole.user, content: 'split')];
+
+      final whole = await dispatcher.generate(c, history,
+          options: {'watermark': 'off'});
+      expect(whole.generatedImages, hasLength(2));
+      expect([for (final l in whole.imageLayers) l?.zIndex], [0, 2]);
+      expect(whole.imageLayers.last!.name, 'top');
+      expect(whole.imageLayers.last!.box, const LayerBox(10, 20, 30, 40));
+
+      // 5.0 pro never streams live; the single-shot stream still carries
+      // the pairing on each image chunk.
+      final chunks = await dispatcher
+          .generateStream(c, history, options: {'watermark': 'off'})
+          .where((ch) => ch.imagePart != null)
+          .toList();
+      expect([for (final ch in chunks) ch.imageLayer?.zIndex], [0, 2]);
+    });
+
+    test('ordinary images carry no layer', () async {
+      final chunks = await run(ark());
+      expect(chunks.where((c) => c.imageLayer != null), isEmpty);
     });
 
     test('a relay gets the synchronous body — no `stream`', () async {

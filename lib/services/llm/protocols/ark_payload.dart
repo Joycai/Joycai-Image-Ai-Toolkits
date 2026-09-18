@@ -1,3 +1,4 @@
+import '../../../models/image_layer.dart';
 import '../llm_types.dart';
 
 /// Pure request/response helpers for Volcengine Ark's image surface
@@ -186,8 +187,42 @@ class ArkImageItem {
   /// A decomposed layer's name, as the model labelled it.
   final String? name;
 
-  const ArkImageItem(this.ref, {this.zIndex, this.name});
+  /// The model's one-line description of a decomposed layer.
+  final String? description;
+
+  /// `bounding_box.absolute` — where a layer sits on the base, in the base
+  /// image's pixels. Null for the base and outside that mode.
+  final LayerBox? box;
+
+  const ArkImageItem(this.ref,
+      {this.zIndex, this.name, this.description, this.box});
+
+  /// This image's place in a decomposition, or null outside that mode.
+  GeneratedImageLayer? get layer => zIndex == null
+      ? null
+      : GeneratedImageLayer(
+          zIndex: zIndex!, name: name, description: description, box: box);
 }
+
+/// One `data[]` item (or a stream's `partial_succeeded` event) that carries
+/// an image → the item, or null when it has neither a link nor base64.
+ArkImageItem? _imageItemFrom(Map item) {
+  final url = item['url'];
+  final b64 = item['b64_json'];
+  final ref = url is String && url.isNotEmpty
+      ? url
+      : (b64 is String && b64.isNotEmpty ? b64 : null);
+  if (ref == null) return null;
+  final z = item['z_index'];
+  final bbox = item['bounding_box'];
+  return ArkImageItem(ref,
+      zIndex: z is num ? z.toInt() : null,
+      name: _nonEmpty(item['name']),
+      description: _nonEmpty(item['description']),
+      box: bbox is Map ? LayerBox.fromList(bbox['absolute']) : null);
+}
+
+String? _nonEmpty(Object? v) => v is String && v.isNotEmpty ? v : null;
 
 /// One image of a group that failed while the rest of the request succeeded.
 class ArkImageFailure {
@@ -230,17 +265,8 @@ ArkImageResult parseArkImageResponse(Map<String, dynamic> body) {
           '${err['code'] ?? ''}', '${err['message'] ?? 'unknown error'}'));
       continue;
     }
-    final url = item['url'];
-    final b64 = item['b64_json'];
-    final ref = url is String && url.isNotEmpty
-        ? url
-        : (b64 is String && b64.isNotEmpty ? b64 : null);
-    if (ref == null) continue;
-    final z = item['z_index'];
-    final name = item['name'];
-    images.add(ArkImageItem(ref,
-        zIndex: z is num ? z.toInt() : null,
-        name: name is String && name.isNotEmpty ? name : null));
+    final image = _imageItemFrom(item);
+    if (image != null) images.add(image);
   }
   // A decomposition answers base + layers; the stacking order is the one
   // that means something on disk (base first, then bottom to top). Stable
@@ -300,14 +326,10 @@ class ArkStreamCompleted extends ArkStreamEvent {
 ArkStreamEvent? parseArkStreamEvent(Map<String, dynamic> data) {
   switch (data['type']) {
     case 'image_generation.partial_succeeded':
-      final url = data['url'];
-      final b64 = data['b64_json'];
-      final ref = url is String && url.isNotEmpty
-          ? url
-          : (b64 is String && b64.isNotEmpty ? b64 : null);
-      if (ref == null) return null;
+      final item = _imageItemFrom(data);
+      if (item == null) return null;
       final index = data['image_index'];
-      return ArkStreamImage(ArkImageItem(ref), index is num ? index.toInt() : null);
+      return ArkStreamImage(item, index is num ? index.toInt() : null);
     case 'image_generation.partial_failed':
       final err = data['error'];
       final source = err is Map ? err : data;
