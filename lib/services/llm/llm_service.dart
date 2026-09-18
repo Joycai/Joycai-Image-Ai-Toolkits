@@ -376,7 +376,8 @@ class LLMService {
     await for (final chunk in _idleGuarded(
       stream,
       first: _firstChunkGapFor(config, options),
-      firstIsDeadline: _dispatcher.streamIsSingleShot(config),
+      subsequent: _dispatcher.imageStreamChunkGap(config),
+      firstIsDeadline: _firstChunkIsDeadline(config),
     )) {
       if (isCancelled?.call() ?? false) {
         // Leaving the loop is the abort. `await for` cancels its
@@ -545,14 +546,29 @@ class LLMService {
   /// exactly that. Never *shorter* than [_firstChunkGap] — the chat formula's
   /// 120 s floor would otherwise tighten the guard on the image routes it
   /// does not describe.
+  ///
+  /// A live image stream ([LLMDispatcher.imageStreamChunkGap]) is the same
+  /// story one image at a time: its first chunk is a whole finished image,
+  /// so it borrows that gap — and, like the single-shot routes, expiring is
+  /// a deadline rather than a dead connection.
   Duration _firstChunkGapFor(
     LLMModelConfig config,
     Map<String, dynamic>? options,
   ) {
+    final imageGap = _dispatcher.imageStreamChunkGap(config);
+    if (imageGap != null) {
+      return imageGap > _firstChunkGap ? imageGap : _firstChunkGap;
+    }
     if (!_dispatcher.streamIsSingleShot(config)) return _firstChunkGap;
     final deadline = _dispatcher.generateTimeout(config, options: options);
     return deadline > _firstChunkGap ? deadline : _firstChunkGap;
   }
+
+  /// Whether the first-chunk gap is a generation deadline ([LLMDeadlineExceeded],
+  /// never retried) rather than a liveness check.
+  bool _firstChunkIsDeadline(LLMModelConfig config) =>
+      _dispatcher.streamIsSingleShot(config) ||
+      _dispatcher.imageStreamChunkGap(config) != null;
 
   @visibleForTesting
   static Stream<T> idleGuardedForTest<T>(
@@ -832,9 +848,11 @@ class LLMService {
         ...?options,
         llmAbortTriggerKey: abort.future,
       };
+      // Per attempt, outside the try: the finally below reads them.
+      int imageCount = 0;
+      Map<String, dynamic>? finalMetadata;
+      var usageSettled = false;
       try {
-        int imageCount = 0;
-        Map<String, dynamic>? finalMetadata;
 
         // Opened and listened to inside the correlation's zone: this method
         // is itself a generator and cannot wrap its own `await for`.
@@ -852,7 +870,8 @@ class LLMService {
         await for (final chunk in _idleGuarded(
           stream,
           first: _firstChunkGapFor(config, options),
-          firstIsDeadline: _dispatcher.streamIsSingleShot(config),
+          subsequent: _dispatcher.imageStreamChunkGap(config),
+          firstIsDeadline: _firstChunkIsDeadline(config),
         )) {
           if (chunk.reasoningPart != null) {
             _emitLog(
@@ -906,6 +925,8 @@ class LLMService {
             imageCount: imageCount,
           );
         }
+
+        usageSettled = true;
 
         await LLMDebugLogger.appendSummaries(correlation, finalMetadata);
 
@@ -963,6 +984,26 @@ class LLMService {
         // out on cancel): a single-shot generation still in flight behind
         // the stream is aborted instead of finishing, and billing, unseen.
         if (!abort.isCompleted) abort.complete();
+        // A billed stream that delivered pictures and then failed, timed
+        // out or was abandoned: those pictures were drawn and billed (Ark
+        // streams them one by one, and the executor has already saved
+        // them), so they are recorded — the success path above never ran.
+        if (!usageSettled && billedOnSubmit && imageCount > 0) {
+          _emitLog(
+            'Stream ended early after $imageCount image(s); recording their '
+            'usage.',
+            level: 'WARN',
+            contextId: contextId,
+          );
+          await _recordUsage(
+            config.modelId,
+            config,
+            {...?finalMetadata, 'image_count': imageCount},
+            modelDbId: modelIdentifier is int ? modelIdentifier : null,
+            options: options,
+            imageCount: imageCount,
+          );
+        }
       }
     }
   }

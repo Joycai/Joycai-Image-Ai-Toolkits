@@ -1069,8 +1069,15 @@ class LLMDispatcher {
         return;
 
       case ProtocolFamily.openai:
-        // The Images APIs do not stream — fall back to a single-shot call
-        // and surface the result as chunks.
+        // Ark's image surface streams for the versions that declare it: one
+        // event per finished image (docs/api/volcengine-ark.md §5).
+        if (_imageStreamIsLive(target)) {
+          yield* _arkImages.generateImageStream(target, history,
+              options: options, logger: logger);
+          return;
+        }
+        // The other Images APIs do not stream — fall back to a single-shot
+        // call and surface the result as chunks.
         if (_streamIsSingleShot(target)) {
           logger?.call('Image model does not support streaming; using Images API.', level: 'DEBUG');
           final response = await generate(config, history, options: options, logger: logger);
@@ -1145,6 +1152,7 @@ class LLMDispatcher {
   }
 
   bool _streamIsSingleShot(LLMTarget target) {
+    if (_imageStreamIsLive(target)) return false;
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
         return false;
@@ -1160,6 +1168,32 @@ class LLMDispatcher {
       case ProtocolFamily.dashscope:
         return _hasNativeImageRoute(target);
     }
+  }
+
+  /// Whether [generateStream] on this route is an image surface that really
+  /// streams — each chunk one finished image. Seedream on Ark's own channel,
+  /// for a version whose table declares `streamsImages`. A relay keeps the
+  /// synchronous body: whether it passes `stream` through, and SSE back, is
+  /// unknown, and one that rejects the field would turn a working channel
+  /// into a 400.
+  bool _imageStreamIsLive(LLMTarget target) =>
+      target.model.family == ModelFamily.seedreamImage &&
+      target.model.capabilities.streamsImages &&
+      _hasNativeImageRoute(target) &&
+      identical(_nativeImageProtocol(target), _arkImages);
+
+  /// How long a live image stream ([_imageStreamIsLive]) may go quiet, or
+  /// null for every other route.
+  ///
+  /// Its chunks are whole images, and upstream sends nothing while it draws,
+  /// so the silence before each one is a generation, not a stalled
+  /// connection: the chat stream's two-minute idle guard would abandon a 4K
+  /// image that is still being drawn — and billed. Each gap gets the
+  /// single-image deadline instead.
+  Duration? imageStreamChunkGap(LLMModelConfig config) {
+    final target = resolveTarget(config);
+    if (!_imageStreamIsLive(target)) return null;
+    return generateTimeout(config);
   }
 
   /// Surface a single-shot [response] through the chunk protocol.

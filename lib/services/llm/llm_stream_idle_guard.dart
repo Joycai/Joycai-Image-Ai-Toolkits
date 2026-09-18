@@ -28,13 +28,17 @@ const Duration _idleGap = Duration(seconds: 120);
 /// plain [TimeoutException] that [LLMService.isRetryable] reads as a dead connection.
 /// The old spelling let a slow single-shot image generation time out and
 /// be re-sent while upstream was still drawing (and billing) the first.
+///
+/// [subsequent] replaces [_idleGap] on a route whose chunks are whole
+/// generations ([LLMDispatcher.imageStreamChunkGap]).
 Stream<LLMResponseChunk> _idleGuarded(
   Stream<LLMResponseChunk> stream, {
   Duration? first,
+  Duration? subsequent,
   bool firstIsDeadline = false,
 }) => _guard(stream,
     first: first ?? _firstChunkGap,
-    subsequent: _idleGap,
+    subsequent: subsequent ?? _idleGap,
     firstIsDeadline: firstIsDeadline);
 
 Stream<T> _guard<T>(

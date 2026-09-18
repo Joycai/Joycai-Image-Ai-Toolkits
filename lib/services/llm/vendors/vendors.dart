@@ -406,6 +406,11 @@ class Vendors {
       // 404, measured), so "fetch models" would otherwise never list the
       // models this channel type exists for.
       unlistedModels: _arkSeedreamModels,
+      // No ThinkingDialect on purpose: the chat face reads ①'s own
+      // `reasoning_effort`, and "none" switches Doubao Seed's thinking off
+      // (0 reasoning tokens, measured on the plan base through the
+      // dispatcher — api/volcengine-ark.md §7.1). Its `thinking` object also
+      // works but adds nothing, and rejects `auto`.
     ),
     VendorProfile(
       id: midjourneyProxy,

@@ -119,7 +119,28 @@ body 是它的超集：`model` / `prompt` / `size` / `response_format` 同名同
 ## 5. 流式
 
 `stream: true`：每画完一张就推一个事件（见《图片生成流式响应事件》页），单图与
-组图都生效。5.0 pro 不支持。
+组图都生效。5.0 pro 不支持（`400 InvalidParameter`，`param: "stream"`）。
+
+实测形状（2026-09-18，套餐 key、5.0 lite）——标准 SSE，`event:` 行与 `data:` 里的 `type` 同名：
+
+```
+event: image_generation.partial_succeeded
+data: {"type":"image_generation.partial_succeeded","model":"doubao-seedream-5.0-lite","created":…,"image_index":0,"url":"https://…","size":"2496x1664"}
+
+event: image_generation.completed
+data: {"type":"image_generation.completed","model":"…","created":…,"usage":{"generated_images":2,"output_tokens":32448,"total_tokens":32448}}
+
+data: [DONE]
+```
+
+- 每张一个 `partial_succeeded`，按 `image_index` 从 0 起；两张组图的两个事件相隔约 21 s——确实边画边推。
+- `usage` 只在 `completed` 里；回显的 `model` 是请求里的拼写。
+- 单张失败的事件文档叫 `image_generation.partial_failed`（未能触发，未实测）。
+- 参数校验失败**不走 SSE**：直接 `400 application/json` 的普通错误信封，与非流式相同。
+
+**本应用的用法**（2026-09-18 起）：只在方舟自家渠道、只对声明了流式的版本（5.0 lite ·
+4.5 · 4.0）发 `stream: true`，每收到一张就下载并落盘；中转和 5.0 pro 照旧同步。细节见
+`../architecture/llm-three-layer.md`「火山方舟 · Seedream」。
 
 ## 6. 5.0 pro 专属
 
@@ -166,3 +187,35 @@ body 是它的超集：`model` / `prompt` / `size` / `response_format` 同名同
   （模型自己选了 3:2），**耗时 43 s**；回显的 `model` 是 `doubao-seedream-5-0-pro`
   （不带日期）；`usage` = `{input_images:0, generated_images:1, output_tokens:4056,
   total_tokens:4056}`（4056 = 1248×832/256）。
+- **图层拆分**（5.0 pro，1500×1920 jpeg 单人立绘、纯灰底，`size:"1K"`，不写 `prompt`）：
+  200，**37 s**。`data[]` 两项：`z_index:0` 底图 `912x1168` jpeg（角色被抹掉、只剩
+  背景）；`z_index:1` 图层 `861x1137` RGBA png，带 `name`（「魔法少女立绘主体」）、
+  中文 `description`、`bounding_box.absolute:[27,0,888,1137]`（**底图像素**，不是输入图）
+  与 `.normalized:[30,0,973,973]`。自动拆时整个角色是**一层**，不会再拆头发、衣服。
+  图层项里有 `output_format:"png"`，底图的是 `jpeg`；`usage` =
+  `{input_images:1, generated_images:2, output_tokens:8322}`，按实出张数记，不是预扣的 17。
+
+### 7.1 套餐上的对话面（2026-09-18）
+
+- 套餐 base 的 `/chat/completions` 也服务对话模型：`doubao-seed-2.0-pro`、别名 `ark-code-latest`
+  可用；`doubao-seed-1-6-250615`、`doubao-seed-1.6`、`doubao-seed-code` 回
+  `404 UnsupportedModel`（「does not support the agent plan feature」）。`max_tokens` 照收。
+- **思考控制就是 ① 的 `reasoning_effort`**（`doubao-seed-2.0-pro` 与 `ark-code-latest` 结果一致）：
+
+  | 发送 | `reasoning_tokens` |
+  |---|---|
+  | 不发（默认） | 60–67（会想） |
+  | `reasoning_effort: "none"` / `"minimal"` | **0** |
+  | `"low"` / `"medium"` / `"high"` / `"max"` / `"xhigh"` | 60–145 |
+  | `thinking: {type: "disabled"}` | 0 |
+  | `thinking: {type: "enabled"}` | 66 |
+  | `thinking: {type: "auto"}` | `400 InvalidParameter`（本模型不支持 auto） |
+  | `thinking: disabled` + `reasoning_effort: "high"` | `400`（组合非法） |
+  | `thinking: enabled` + `reasoning_effort: "none"` | 0（effort 说了算） |
+  | `enable_thinking: false`（百炼的写法） | 照想——**未知字段静默忽略，不报错** |
+
+  所以方舟不需要声明任何 `ThinkingDialect`：App 的 ① 默认写法（关 = `"none"`）实测关得掉。
+  经 `LLMDispatcher.generate` 真发一遍：默认 66、关 0、低 68、最高 145 个 reasoning token。
+- 回包的 `message` 里除 `reasoning_content` 外还有 `encrypted_content`（加密的推理），App 不读也不回传。
+- **Seedance 不在套餐里**：`/contents/generations/tasks` 对 `doubao-seedance-1-0-pro-250528`、
+  `-1.0-pro`、`-2.0`、`-1-0-lite-t2v-250428` 全回 `404 UnsupportedModel`。

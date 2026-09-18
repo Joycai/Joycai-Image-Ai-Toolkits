@@ -104,7 +104,6 @@ extension TaskExecutors on TaskQueueService {
       ),
     ];
 
-    final List<Uint8List> generatedImages = [];
     final actualUseStream = await _shouldUseStream(task);
 
     // A fresh map, not a mutation of task.parameters: the probe is a function
@@ -116,69 +115,25 @@ extension TaskExecutors on TaskQueueService {
       llmCancellationProbeKey: () => task.status == TaskStatus.cancelled,
     };
 
-    if (actualUseStream) {
-      final stream = LLMService().requestStream(
-        modelIdentifier: task.modelDbId ?? task.modelId,
-        messages: messages,
-        contextId: task.id,
-        options: requestOptions,
-      );
-
-      await for (final chunk in stream) {
-        if (task.status == TaskStatus.cancelled) break;
-
-        if (chunk.textPart != null) {
-          _emit(task.id, TaskEventType.textChunk, chunk.textPart);
-          task.addLog('AI: ${chunk.textPart}');
-          refreshQueue();
-        }
-
-        if (chunk.imagePart != null) {
-          generatedImages.add(chunk.imagePart!);
-          task.addLog('Received image chunk.');
-          refreshQueue();
-        }
-      }
-    } else {
-      final response = await LLMService().request(
-        modelIdentifier: task.modelDbId ?? task.modelId,
-        messages: messages,
-        options: requestOptions,
-        useStream: false,
-      );
-
-      if (response.text.isNotEmpty) {
-        _emit(task.id, TaskEventType.textChunk, response.text);
-        task.addLog('AI: ${response.text}');
-      }
-
-      if (response.generatedImages.isNotEmpty) {
-        generatedImages.addAll(response.generatedImages);
-      }
-    }
-
-    task.addLog('LLM Task finished.');
-
-    if (task.status == TaskStatus.cancelled) return;
-
+    var received = 0;
     var unrecognised = 0;
-    for (int i = 0; i < generatedImages.length; i++) {
-      final bytes = generatedImages[i];
+    final prefix = FileUtils.safeFilenamePrefix(
+      '${task.parameters['imagePrefix'] ?? 'result'}',
+      fallback: 'result',
+    );
+    Future<void> save(Uint8List bytes) async {
+      final i = received++;
       // Refused rather than defaulted to `.png`: bytes no image format
       // recognises are an HTML error page or a truncated body, and writing
       // them out put an unopenable file in the gallery under a success.
       if (imageMimeFromBytes(bytes) == null) {
         unrecognised++;
         task.addLog(
-          'Warning: result ${i + 1} of ${generatedImages.length} is not a '
-          'recognisable image (${bytes.length} bytes) and was not saved.',
+          'Warning: result ${i + 1} is not a recognisable image '
+          '(${bytes.length} bytes) and was not saved.',
         );
-        continue;
+        return;
       }
-      final prefix = FileUtils.safeFilenamePrefix(
-        '${task.parameters['imagePrefix'] ?? 'result'}',
-        fallback: 'result',
-      );
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       // Named by what the bytes are, not by what any header claimed. Relays
       // have returned JPEG under `mimeType: image/png`, and `b64_json`
@@ -197,9 +152,60 @@ extension TaskExecutors on TaskQueueService {
       onTaskCompleted?.call(file);
     }
 
-    if (generatedImages.isNotEmpty && unrecognised == generatedImages.length) {
+    if (actualUseStream) {
+      final stream = LLMService().requestStream(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        messages: messages,
+        contextId: task.id,
+        options: requestOptions,
+      );
+
+      await for (final chunk in stream) {
+        if (task.status == TaskStatus.cancelled) break;
+
+        if (chunk.textPart != null) {
+          _emit(task.id, TaskEventType.textChunk, chunk.textPart);
+          task.addLog('AI: ${chunk.textPart}');
+          refreshQueue();
+        }
+
+        // Saved the moment it arrives, not when the stream ends: on a route
+        // that streams images one by one (Seedream on Ark) the first of a
+        // group lands minutes before the last, and one that fails late no
+        // longer takes the finished — and billed — ones with it.
+        if (chunk.imagePart != null) {
+          task.addLog('Received image chunk.');
+          await save(chunk.imagePart!);
+          refreshQueue();
+        }
+      }
+    } else {
+      final response = await LLMService().request(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        messages: messages,
+        options: requestOptions,
+        useStream: false,
+      );
+
+      if (response.text.isNotEmpty) {
+        _emit(task.id, TaskEventType.textChunk, response.text);
+        task.addLog('AI: ${response.text}');
+      }
+
+      if (task.status != TaskStatus.cancelled) {
+        for (final bytes in response.generatedImages) {
+          await save(bytes);
+        }
+      }
+    }
+
+    task.addLog('LLM Task finished.');
+
+    if (task.status == TaskStatus.cancelled) return;
+
+    if (received > 0 && unrecognised == received) {
       throw Exception(
-        'None of the ${generatedImages.length} returned result(s) is a '
+        'None of the $received returned result(s) is a '
         'recognisable image; nothing was saved.',
       );
     }

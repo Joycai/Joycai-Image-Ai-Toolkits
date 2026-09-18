@@ -219,4 +219,86 @@ void main() {
       expect(r.failures, isEmpty);
     });
   });
+
+  group('streaming', () {
+    test('which versions declare it: lite, 4.5, 4.0 — not pro, 3.0, generic',
+        () {
+      for (final id in [
+        'doubao-seedream-5.0-lite',
+        'doubao-seedream-5-0-lite-260128',
+        'doubao-seedream-4-5-251128',
+        'doubao-seedream-4-0-250828',
+      ]) {
+        expect(ModelCapabilities.forModel(id).streamsImages, isTrue,
+            reason: id);
+      }
+      for (final id in [
+        'doubao-seedream-5-0-pro-260628',
+        'doubao-seedream-3-0-t2i-250415',
+        'doubao-seedream-latest', // version unreadable → generic table
+      ]) {
+        final caps = ModelCapabilities.forModel(id);
+        expect(caps.isImageGenerator, isTrue, reason: id);
+        expect(caps.streamsImages, isFalse, reason: id);
+      }
+    });
+
+    test('`stream` is sent only when asked for', () {
+      expect(build().containsKey('stream'), isFalse);
+      final body = buildArkImagePayload(
+          modelId: 'm', prompt: 'p', imageRefs: const [], stream: true);
+      expect(body['stream'], isTrue);
+    });
+
+    test('events, as captured on the plan (§5)', () {
+      final image = parseArkStreamEvent({
+        'type': 'image_generation.partial_succeeded',
+        'model': 'doubao-seedream-5.0-lite',
+        'created': 1,
+        'image_index': 1,
+        'url': 'https://x/1.jpeg',
+        'size': '2496x1664',
+      });
+      expect(image, isA<ArkStreamImage>());
+      image as ArkStreamImage;
+      expect(image.item.ref, 'https://x/1.jpeg');
+      expect(image.index, 1);
+
+      final done = parseArkStreamEvent({
+        'type': 'image_generation.completed',
+        'usage': {'generated_images': 2, 'output_tokens': 32448},
+      });
+      expect(done, isA<ArkStreamCompleted>());
+      expect((done as ArkStreamCompleted).usage['generated_images'], 2);
+    });
+
+    test('a failed image, under `error` or at the top level', () {
+      final nested = parseArkStreamEvent({
+        'type': 'image_generation.partial_failed',
+        'image_index': 0,
+        'error': {'code': 'OutputImageSensitiveContentDetected', 'message': 'x'},
+      });
+      expect((nested as ArkStreamFailure).failure.code,
+          'OutputImageSensitiveContentDetected');
+      final flat = parseArkStreamEvent({
+        'type': 'image_generation.partial_failed',
+        'code': 'C',
+        'message': 'm',
+      });
+      expect((flat as ArkStreamFailure).failure.toString(), 'C: m');
+    });
+
+    test('unknown or empty events are skipped, not fatal', () {
+      expect(parseArkStreamEvent({'type': 'image_generation.progress'}), isNull);
+      expect(parseArkStreamEvent({}), isNull);
+      expect(
+          parseArkStreamEvent(
+              {'type': 'image_generation.partial_succeeded', 'url': ''}),
+          isNull);
+      final b64 = parseArkStreamEvent(
+          {'type': 'image_generation.partial_succeeded', 'b64_json': 'AAAA'});
+      expect((b64 as ArkStreamImage).item.ref, 'AAAA');
+      expect(b64.index, isNull);
+    });
+  });
 }

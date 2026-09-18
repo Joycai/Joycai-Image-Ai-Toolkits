@@ -42,6 +42,10 @@ String? _opt(Map<String, dynamic>? options, String key) {
 /// group ceiling tightened, a JPEG request turned PNG — so the change is
 /// logged rather than silent.
 ///
+/// [stream] asks for the SSE form (docs/api/volcengine-ark.md §5): one event
+/// per image as it is drawn. Only for a model and route that serve it — the
+/// caller decides; 5.0 pro answers the field with a 400.
+///
 /// Throws [LLMApiException] (no status: never retried, nothing was sent) when
 /// a task mode's precondition fails, because upstream would reject the
 /// request anyway — and bill nothing, but only after a round trip that for
@@ -53,6 +57,7 @@ Map<String, dynamic> buildArkImagePayload({
   Map<String, Map<String, String>> tierPixelSizes = const {},
   Map<String, dynamic>? options,
   void Function(String message)? warn,
+  bool stream = false,
 }) {
   final task = _opt(options, 'imageTask') ?? arkTaskGenerate;
   final body = <String, dynamic>{'model': modelId};
@@ -122,6 +127,7 @@ Map<String, dynamic> buildArkImagePayload({
   // body in the hundreds of megabytes. The links live 24 h; results are
   // downloaded before the request returns.
   body['response_format'] = 'url';
+  if (stream) body['stream'] = true;
   return body;
 }
 
@@ -252,4 +258,66 @@ ArkImageResult parseArkImageResponse(Map<String, dynamic> body) {
   final usage = body['usage'];
   return ArkImageResult(images, failures,
       usage is Map ? usage.cast<String, dynamic>() : const {});
+}
+
+/// One decoded event of a streamed Ark image response
+/// (docs/api/volcengine-ark.md §5).
+sealed class ArkStreamEvent {
+  const ArkStreamEvent();
+}
+
+/// `image_generation.partial_succeeded`: one image, finished.
+class ArkStreamImage extends ArkStreamEvent {
+  final ArkImageItem item;
+
+  /// `image_index`, 0-based across the request, or null when absent.
+  final int? index;
+  const ArkStreamImage(this.item, this.index);
+}
+
+/// `image_generation.partial_failed`: one image of the group did not make it
+/// (typically moderation); the rest keep coming.
+class ArkStreamFailure extends ArkStreamEvent {
+  final ArkImageFailure failure;
+  const ArkStreamFailure(this.failure);
+}
+
+/// `image_generation.completed`: the request is over; carries `usage`.
+class ArkStreamCompleted extends ArkStreamEvent {
+  final Map<String, dynamic> usage;
+  const ArkStreamCompleted(this.usage);
+}
+
+/// Reads one SSE `data:` object. Null for an event this client does not
+/// know (and for one it knows but that carries nothing usable) — skipped,
+/// never fatal, so a new event type upstream cannot break the images that
+/// do arrive. The `type` field is read rather than the `event:` line: the two
+/// are identical on the wire, and the data object is self-contained.
+///
+/// `partial_failed` is written from the documentation, not a capture (it
+/// could not be provoked on the plan): its error is read from an `error`
+/// object when there is one, else from top-level `code` / `message`.
+ArkStreamEvent? parseArkStreamEvent(Map<String, dynamic> data) {
+  switch (data['type']) {
+    case 'image_generation.partial_succeeded':
+      final url = data['url'];
+      final b64 = data['b64_json'];
+      final ref = url is String && url.isNotEmpty
+          ? url
+          : (b64 is String && b64.isNotEmpty ? b64 : null);
+      if (ref == null) return null;
+      final index = data['image_index'];
+      return ArkStreamImage(ArkImageItem(ref), index is num ? index.toInt() : null);
+    case 'image_generation.partial_failed':
+      final err = data['error'];
+      final source = err is Map ? err : data;
+      return ArkStreamFailure(ArkImageFailure('${source['code'] ?? ''}',
+          '${source['message'] ?? 'unknown error'}'));
+    case 'image_generation.completed':
+      final usage = data['usage'];
+      return ArkStreamCompleted(
+          usage is Map ? usage.cast<String, dynamic>() : const {});
+    default:
+      return null;
+  }
 }
