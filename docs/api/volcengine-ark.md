@@ -183,6 +183,13 @@ data: [DONE]
   （模型自己选了 3:2），**耗时 43 s**；回显的 `model` 是 `doubao-seedream-5-0-pro`
   （不带日期）；`usage` = `{input_images:0, generated_images:1, output_tokens:4056,
   total_tokens:4056}`（4056 = 1248×832/256）。
+- **图层拆分**（5.0 pro，1500×1920 jpeg 单人立绘、纯灰底，`size:"1K"`，不写 `prompt`）：
+  200，**37 s**。`data[]` 两项：`z_index:0` 底图 `912x1168` jpeg（角色被抹掉、只剩
+  背景）；`z_index:1` 图层 `861x1137` RGBA png，带 `name`（「魔法少女立绘主体」）、
+  中文 `description`、`bounding_box.absolute:[27,0,888,1137]`（**底图像素**，不是输入图）
+  与 `.normalized:[30,0,973,973]`。自动拆时整个角色是**一层**，不会再拆头发、衣服。
+  图层项里有 `output_format:"png"`，底图的是 `jpeg`；`usage` =
+  `{input_images:1, generated_images:2, output_tokens:8322}`，按实出张数记，不是预扣的 17。
 
 ### 7.1 套餐上的对话面（2026-09-18）
 

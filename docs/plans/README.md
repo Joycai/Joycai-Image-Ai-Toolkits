@@ -60,7 +60,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | 条 | 为什么没做 / 要验什么 |
 |---|---|
 | 流式出图（`stream: true`，每画完一张推一个事件） | 组图十几张时能边画边看；要一条新的单发→流式路由与事件解析，本轮只走同步。事件形状 2026-09-18 已在套餐上实测（`api/volcengine-ark.md` §5），只差实现 |
-| 拆图层的 `bounding_box` / `z_index` / `name` 落库与画布还原 | 现在底图 + 图层按叠放次序逐张落盘，位置信息只写日志 |
+| 拆图层的 `bounding_box` / `z_index` / `name` 落库与画布还原 | 现在底图 + 图层按叠放次序逐张落盘，位置信息只写日志。响应形状已实测（`api/volcengine-ark.md` §7），解析无需改 |
 | Seedance 视频面 | 同一 vendor 的另一条 surface，本轮只做生图。套餐 key 打不到（全部 `404 UnsupportedModel`，§7.1），要按量 key 才能做 |
 | 按量 base 的 `GET /api/v3/models` 与 4.5 / 4.0 实机 | 手上只有套餐 key：按量 base 是否有列表、4.x 的档位映射都未实测 |
 | 中转站透传方舟 body 的实机 | 按路径同形推断（New API 的火山渠道），未拿中转 key 验证 |
