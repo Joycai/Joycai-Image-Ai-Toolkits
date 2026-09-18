@@ -267,7 +267,7 @@ void main() {
       expect(parked.containsKey(RouteKind.chat), isFalse);
     });
 
-    test("switching away never files its values under the primary", () {
+    test('switching away never files its values under the primary', () {
       final moved = RouteSwitching.switchRoute(
         stranded(),
         routes,
