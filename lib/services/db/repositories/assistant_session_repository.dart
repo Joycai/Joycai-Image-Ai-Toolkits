@@ -226,6 +226,55 @@ class AssistantSessionRepository {
     return (max ?? -1) + 1;
   }
 
+  /// The stored messages that link a model — a reply's "open this model"
+  /// button, [LLMMessage.modelDbId] inside the JSON blob — as (row id,
+  /// decoded message, linked model id). The LIKE only narrows the scan; the
+  /// id is read from the decoded JSON, never matched as text.
+  Future<List<(int, Map<String, dynamic>, int)>> _modelLinks(DatabaseExecutor db) async {
+    final rows = await db.query(
+      'assistant_messages',
+      columns: ['id', 'message'],
+      where: 'message LIKE ?',
+      whereArgs: ['%"modelDbId"%'],
+    );
+    final links = <(int, Map<String, dynamic>, int)>[];
+    for (final row in rows) {
+      try {
+        final json = (jsonDecode(row['message'] as String) as Map).cast<String, dynamic>();
+        final linked = json['modelDbId'];
+        if (linked is int) links.add((row['id'] as int, json, linked));
+      } catch (_) {
+        // A corrupt row links nothing; loadMessages drops it the same way.
+      }
+    }
+    return links;
+  }
+
+  /// Moves every stored model link through [idMap] — a channel merge's
+  /// merged-away models to the ones they became (standard 04 §4), so a saved
+  /// conversation keeps opening the model its reply came from.
+  Future<void> remapModelLinks(Map<int, int> idMap) async {
+    if (idMap.isEmpty) return;
+    final db = await _getDb();
+    await db.transaction((txn) async {
+      for (final (id, json, linked) in await _modelLinks(txn)) {
+        final to = idMap[linked];
+        if (to == null) continue;
+        json['modelDbId'] = to;
+        await txn.update('assistant_messages', {'message': jsonEncode(json)},
+            where: 'id = ?', whereArgs: [id]);
+      }
+    });
+  }
+
+  /// How many stored messages link one of [ids].
+  Future<int> countModelLinks(Iterable<int> ids) async {
+    final set = ids.toSet();
+    if (set.isEmpty) return 0;
+    final db = await _getDb();
+    return (await _modelLinks(db)).where((l) => set.contains(l.$3)).length;
+  }
+
   Future<void> renameSession(String id, String title) async {
     final db = await _getDb();
     await db.update('assistant_sessions', {'title': title}, where: 'id = ?', whereArgs: [id]);

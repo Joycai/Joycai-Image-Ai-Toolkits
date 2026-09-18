@@ -283,7 +283,8 @@ surface 开关"表达不了它。绑定关系升级为：
 模型的请求都与合并前相同，否则不成对（换了保留方可能换线路 vendor；没有同名对应的
 图像 / 视频模型会换地址——这时试反方向）。执行：一个事务（渠道 → 模型只写四列 →
 删被并模型 → 删余下 → 删渠道），提交后先改写设置里的模型选择、再改写
-`token_usage` / `tasks` 的 `model_pk`。密钥在渠道行里，随事务消失。
+`token_usage` / `tasks` 的 `model_pk`、最后改写助手对话 JSON 里的 `modelDbId`
+（回复卡「打开该模型」的跳转）。密钥在渠道行里，随事务消失。
 
 **界面**：`widgets/models/app_route_badge.dart`（四态徽标）· `route_labels.dart`
 （线路名 / 平台名唯一一张表）· `channel_route_table.dart`（渠道编辑的线路表）；

@@ -2,7 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/services/catalogue/channel_merge.dart';
 import 'package:joycai_image_ai_toolkits/services/catalogue/channel_merge_executor.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/db/repositories/assistant_session_repository.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
@@ -29,6 +32,10 @@ class _RecordingStore implements MergeStore {
   Future<void> remapHistory(Map<int, int> idMap) async => calls.add('history');
 
   @override
+  Future<void> remapConversations(Map<int, int> idMap) async =>
+      calls.add('conversations');
+
+  @override
   Future<int> countReferences(Iterable<int> ids) async => 0;
 }
 
@@ -53,10 +60,10 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   group('order', () {
-    test('the transaction, then selections, then history', () async {
+    test('the transaction, then selections, history, conversations', () async {
       final store = _RecordingStore();
       await ChannelMergeExecutor(store).run(_plan({20: 10}));
-      expect(store.calls, ['write', 'selections', 'history']);
+      expect(store.calls, ['write', 'selections', 'history', 'conversations']);
     });
 
     test('nothing to rewrite when nothing merged away', () async {
@@ -120,6 +127,14 @@ void main() {
         'timestamp': '2026-09-18T00:00:00',
       });
       await raw.insert('tasks', {'id': 't1', 'model_pk': twin});
+      final sessions = AssistantSessionRepository();
+      await sessions.upsertSession(
+          id: 's1', mode: AssistantMode.systemPrompt, refImages: const []);
+      await sessions.appendMessages('s1', 0, [
+        LLMMessage(role: LLMRole.user, content: 'hi'),
+        LLMMessage(role: LLMRole.assistant, content: 'a', modelDbId: twin),
+        LLMMessage(role: LLMRole.assistant, content: 'b', modelDbId: lone),
+      ]);
 
       final channels = await db.getChannels();
       final plan = ChannelMerge.candidates(
@@ -127,8 +142,9 @@ void main() {
         await db.getModels(),
       ).single.plan;
       final executor = ChannelMergeExecutor();
-      // Two usage/task rows and one selection name the merged-away model.
-      expect(await executor.referenceCount(plan), 3);
+      // Two usage/task rows, one selection and one conversation link name
+      // the merged-away model.
+      expect(await executor.referenceCount(plan), 4);
 
       // Written after the plan was computed, e.g. by a task finishing while
       // the preview is open: the merge must not revert it.
@@ -163,6 +179,11 @@ void main() {
       expect(usage.single['model_pk'], keptModel);
       final tasks = await raw.query('tasks');
       expect(tasks.single['model_pk'], keptModel);
+      final replies = [
+        for (final m in await sessions.loadMessages('s1')) m.message.modelDbId,
+      ];
+      // The twin's link follows it; the moved model's id never changed.
+      expect(replies, [null, keptModel, lone]);
     });
   });
 }

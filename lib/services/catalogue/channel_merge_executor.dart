@@ -1,4 +1,5 @@
 import '../db/database_service.dart';
+import '../db/repositories/assistant_session_repository.dart';
 import '../db/repositories/model_repository.dart';
 import '../db/repositories/usage_repository.dart';
 import 'channel_merge.dart';
@@ -16,6 +17,10 @@ abstract class MergeStore {
   /// Usage and task history moved through [idMap].
   Future<void> remapHistory(Map<int, int> idMap);
 
+  /// The model links inside saved assistant conversations moved through
+  /// [idMap].
+  Future<void> remapConversations(Map<int, int> idMap);
+
   /// How many stored references name one of [ids] — the preview's count.
   Future<int> countReferences(Iterable<int> ids);
 }
@@ -23,13 +28,12 @@ abstract class MergeStore {
 /// Carries out a confirmed [MergePlan] (standard 04 §4): the plan in one
 /// transaction, and only once it has committed, every reference to a model
 /// that merged away — the selections first, since they decide what the
-/// next task runs on, then the history.
+/// next task runs on, then the history, then the model links inside saved
+/// assistant conversations.
 ///
 /// A key has no separate cleanup step: it lives in the absorbed channel's
 /// row, which the transaction deletes, and the kept channel holds the same
-/// key. References this build cannot reach — a jump link inside a saved
-/// assistant conversation — then read as a deleted model, exactly as they
-/// would after deleting the model by hand.
+/// key.
 class ChannelMergeExecutor {
   final MergeStore store;
 
@@ -41,6 +45,7 @@ class ChannelMergeExecutor {
     if (plan.idMap.isEmpty) return;
     await store.remapSelections(plan.idMap);
     await store.remapHistory(plan.idMap);
+    await store.remapConversations(plan.idMap);
   }
 
   /// References [plan] will rewrite, for the preview.
@@ -79,12 +84,18 @@ class DatabaseMergeStore implements MergeStore {
       UsageRepository().remapModels(idMap);
 
   @override
+  Future<void> remapConversations(Map<int, int> idMap) =>
+      AssistantSessionRepository().remapModelLinks(idMap);
+
+  @override
   Future<int> countReferences(Iterable<int> ids) async {
     final set = ids.toSet();
     var n = 0;
     for (final key in selectionKeys) {
       if (set.contains(int.tryParse(await _db.getSetting(key) ?? ''))) n++;
     }
-    return n + await UsageRepository().countModelRows(set);
+    return n +
+        await UsageRepository().countModelRows(set) +
+        await AssistantSessionRepository().countModelLinks(set);
   }
 }
