@@ -83,27 +83,39 @@ class ArkImagesProtocol implements ImageGenProtocol {
           options: options);
       final response = await client.send(trackBodySent(request, options));
 
-      final contentType = response.headers['content-type'] ?? '';
-      if (response.statusCode != 200 ||
-          !contentType.contains('text/event-stream')) {
-        final whole = await http.Response.fromStream(response);
-        await _logWholeBody(debugFile, whole);
-        final result = await _fromWholeBody(whole, client, options, logger);
-        for (final image in result.generatedImages) {
-          yield LLMResponseChunk(imagePart: image);
-        }
-        yield LLMResponseChunk(metadata: result.metadata, isDone: true);
+      if (response.statusCode != 200) {
+        yield* _wholeBodyAsChunks(
+            await http.Response.fromStream(response), client, options, logger,
+            debugFile);
         return;
       }
-      await LLMDebugLogger.appendLine(debugFile, 'Status: 200 (stream)');
 
       var delivered = 0;
       var undownloadable = 0;
       final failures = <ArkImageFailure>[];
       var usage = const <String, dynamic>{};
+      // SSE or one JSON body, told apart by the body rather than by
+      // `Content-Type`: the header on a streamed answer was never captured,
+      // and misreading SSE as JSON would throw away a group that is already
+      // drawn and billed. Null until the first non-empty line decides.
+      bool? isSse;
+      final jsonLines = <String>[];
       await for (final line in response.stream
           .transform(utf8.decoder)
           .transform(const LineSplitter())) {
+        if (isSse == null && line.trim().isNotEmpty) {
+          final head = line.trimLeft();
+          isSse = head.startsWith('data:') ||
+              head.startsWith('event:') ||
+              head.startsWith(':');
+          if (isSse) {
+            await LLMDebugLogger.appendLine(debugFile, 'Status: 200 (stream)');
+          }
+        }
+        if (isSse != true) {
+          jsonLines.add(line);
+          continue;
+        }
         if (line.isNotEmpty) {
           await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
@@ -151,6 +163,14 @@ class ArkImagesProtocol implements ImageGenProtocol {
         }
       }
 
+      if (isSse != true) {
+        yield* _wholeBodyAsChunks(
+            http.Response(jsonLines.join('\n'), 200,
+                headers: response.headers),
+            client, options, logger, debugFile);
+        return;
+      }
+
       if (delivered == 0) {
         throw LLMApiException(undownloadable > 0
             ? 'Ark Images API streamed $undownloadable image link(s), none '
@@ -170,6 +190,23 @@ class ArkImagesProtocol implements ImageGenProtocol {
       client.close();
       await LLMDebugLogger.finish(debugFile);
     }
+  }
+
+  /// A whole (non-SSE) answer to a stream request, as the same chunks the
+  /// stream would have produced.
+  Stream<LLMResponseChunk> _wholeBodyAsChunks(
+    http.Response whole,
+    http.Client client,
+    Map<String, dynamic>? options,
+    LLMLogger? logger,
+    LLMDebugLog? debugFile,
+  ) async* {
+    await _logWholeBody(debugFile, whole);
+    final result = await _fromWholeBody(whole, client, options, logger);
+    for (final image in result.generatedImages) {
+      yield LLMResponseChunk(imagePart: image);
+    }
+    yield LLMResponseChunk(metadata: result.metadata, isDone: true);
   }
 
   /// Everything before the send: references encoded, body built, URL and a

@@ -252,7 +252,8 @@ void main() {
 
     late HttpServer server;
     late List<Map<String, dynamic>> bodies;
-    // What the POST answers: 'sse', 'sse-gone', 'json', or 'error'.
+    // What the POST answers: 'sse', 'sse-gone', 'sse-octet', 'json', or
+    // 'error'.
     late String answer;
 
     setUp(() async {
@@ -296,8 +297,10 @@ void main() {
           default:
             // 'sse-gone': links that 404 when fetched.
             final dir = answer == 'sse-gone' ? 'gone' : 'img';
-            request.response.headers.contentType =
-                ContentType('text', 'event-stream');
+            // 'sse-octet': SSE under a Content-Type that does not say so.
+            request.response.headers.contentType = answer == 'sse-octet'
+                ? ContentType('application', 'octet-stream')
+                : ContentType('text', 'event-stream');
             void event(Map<String, dynamic> data) {
               request.response
                 ..write('event: ${data['type']}\n')
@@ -359,6 +362,14 @@ void main() {
         'output_tokens': 32448,
       });
       expect(last.metadata?.containsKey('output_tokens'), isFalse);
+    });
+
+    test('SSE is recognised by its body, whatever the Content-Type says',
+        () async {
+      answer = 'sse-octet';
+      final chunks = await run(ark());
+      expect(chunks.where((c) => c.imagePart != null), hasLength(2));
+      expect(chunks.last.metadata?['image_count'], 2);
     });
 
     test('a JSON answer to a stream request is read as the synchronous one',
