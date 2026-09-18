@@ -608,5 +608,7 @@
   "routeWebSearchPerRoute": "ルート別",
   "routeWebSearchNotSent": "現在のルートは Web 検索を送信しません。スイッチはオンのまま、送信できるルートで有効になります。",
   "platformDashScope": "Alibaba Cloud Bailian",
-  "platformCustom": "カスタム"
+  "platformCustom": "カスタム",
+  "routePrimaryCantRemove": "メインルートはオフにできません。先に別のルートをメインにしてください",
+  "routeEnableShort": "有効にする"
 }

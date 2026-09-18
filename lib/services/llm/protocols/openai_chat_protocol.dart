@@ -33,7 +33,7 @@ class OpenAIChatProtocol implements ChatProtocol {
     // Trimmed like every sibling protocol's base URL. [LLMModelConfig.endpoint]
     // already guarantees no trailing slash; this keeps the call sites uniform
     // so the next one copied from here cannot reintroduce `//chat/completions`.
-    final url = Uri.parse('${trimBaseUrl(config.endpoint)}/chat/completions');
+    final url = Uri.parse(openaiChatUrl(config.endpoint));
     logger?.call('Preparing OpenAI request to: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
     final payload = prepareOpenAIChatPayload(
@@ -270,7 +270,7 @@ class OpenAIChatProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async* {
     final config = target.config;
-    final url = Uri.parse('${trimBaseUrl(config.endpoint)}/chat/completions');
+    final url = Uri.parse(openaiChatUrl(config.endpoint));
     logger?.call('Starting OpenAI stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
     final payload = prepareOpenAIChatPayload(
@@ -794,3 +794,7 @@ class OpenAIDiscoveryProtocol implements DiscoveryProtocol {
     }
   }
 }
+
+/// The Chat Completions request address for base [base] — the one spelling
+/// the requests above and the channel editor's address preview share.
+String openaiChatUrl(String base) => '${trimBaseUrl(base)}/chat/completions';

@@ -5176,6 +5176,18 @@ abstract class AppLocalizations {
   /// **'Custom'**
   String get platformCustom;
 
+  /// No description provided for @routePrimaryCantRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'The primary route can\'t be turned off — make another route primary first'**
+  String get routePrimaryCantRemove;
+
+  /// No description provided for @routeEnableShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get routeEnableShort;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

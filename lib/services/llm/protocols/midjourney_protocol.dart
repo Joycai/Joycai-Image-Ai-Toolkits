@@ -152,7 +152,7 @@ class MidjourneyProtocol implements ChatProtocol {
     try {
       final endpoint = isBlend
           ? Uri.parse('$baseUrl/mj/submit/blend')
-          : Uri.parse('$baseUrl/mj/submit/imagine');
+          : Uri.parse(midjourneyImagineUrl(baseUrl));
 
       final body = <String, dynamic>{
         'botType': botType,
@@ -383,3 +383,7 @@ class _MjResult {
   final Map<String, dynamic> metadata;
   _MjResult({required this.images, required this.metadata});
 }
+
+/// The imagine-submit address for base [base] — shared with the channel
+/// editor's address preview.
+String midjourneyImagineUrl(String base) => '${trimBaseUrl(base)}/mj/submit/imagine';

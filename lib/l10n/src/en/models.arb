@@ -929,5 +929,7 @@
   "routeWebSearchPerRoute": "Per route",
   "routeWebSearchNotSent": "The current route doesn't send web search. The switch stays on and takes effect on a route that can.",
   "platformDashScope": "Alibaba Bailian",
-  "platformCustom": "Custom"
+  "platformCustom": "Custom",
+  "routePrimaryCantRemove": "The primary route can't be turned off — make another route primary first",
+  "routeEnableShort": "Enable"
 }

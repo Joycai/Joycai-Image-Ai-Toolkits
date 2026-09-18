@@ -89,7 +89,7 @@ class AnthropicChatProtocol implements ChatProtocol {
     required ThinkingDialect dialect,
   }) async {
     final config = target.config;
-    final url = Uri.parse('${trimBaseUrl(config.endpoint)}/messages');
+    final url = Uri.parse(anthropicMessagesUrl(config.endpoint));
     logger?.call('Preparing Anthropic request to: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
     final payload = prepareAnthropicPayload(
@@ -258,7 +258,7 @@ class AnthropicChatProtocol implements ChatProtocol {
     required ThinkingDialect dialect,
   }) async* {
     final config = target.config;
-    final url = Uri.parse('${trimBaseUrl(config.endpoint)}/messages');
+    final url = Uri.parse(anthropicMessagesUrl(config.endpoint));
     logger?.call('Starting Anthropic stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
     final payload = prepareAnthropicPayload(
@@ -418,3 +418,7 @@ class AnthropicDiscoveryProtocol implements DiscoveryProtocol {
     }
   }
 }
+
+/// The Messages request address for base [base] — shared with the channel
+/// editor's address preview.
+String anthropicMessagesUrl(String base) => '${trimBaseUrl(base)}/messages';

@@ -156,6 +156,25 @@ class LLMDispatcher {
 
   /// The surface a model's requests belong to: the kind the user declared,
   /// or — for callers without a model row — the one its id classifies into.
+  /// The address a chat request on [face] is sent to from route base
+  /// [base] — computed by the protocol's own spelling, never re-typed, so the
+  /// channel editor's `POST …` line is the request (`D1f · 4c`). [modelId]
+  /// fills Gemini's path; the preview passes a `{id}` placeholder. Streaming
+  /// variants differ only in their suffix and are not previewed.
+  static String chatRequestUrl(
+    WireProtocol face,
+    String base, {
+    String modelId = '{id}',
+  }) =>
+      switch (face) {
+        WireProtocol.openaiResponses => openaiResponsesUrl(base),
+        WireProtocol.anthropicChat => anthropicMessagesUrl(base),
+        WireProtocol.geminiChat => geminiGenerateUrl(trimBaseUrl(base), modelId),
+        WireProtocol.dashscopeChat => dashscopeChatUrl(base, false),
+        WireProtocol.midjourney => midjourneyImagineUrl(base),
+        _ => openaiChatUrl(base),
+      };
+
   static Surface surfaceForModel(String modelId, {String? tag}) =>
       _surfaceOfTag(tag) ??
       _surfaceOfFamily(ModelDescriptor.of(modelId).family);

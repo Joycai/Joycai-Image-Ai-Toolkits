@@ -5,19 +5,26 @@ import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
+import '../../services/catalogue/route_switching.dart';
 import '../../services/llm/channel_probe_service.dart';
+import '../../services/llm/channel_routes.dart';
 import '../../services/llm/llm_types.dart';
+import '../../services/llm/model_routes.dart';
+import '../../services/llm/vendors/platforms.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../ui/app_button.dart';
 import '../ui/app_dialog.dart';
 import '../ui/app_dropdown.dart';
 import '../ui/app_field_size.dart';
+import '../ui/app_snackbar.dart';
 import 'channel_form_sections.dart';
 import 'channel_preset_picker.dart';
 import 'channel_probe_result_card.dart';
 import 'channel_provider_presets.dart';
 import 'channel_provider_row.dart';
+import 'channel_route_table.dart';
+import 'route_labels.dart';
 
 /// Edit-channel dialog (design `D1b 1e`): the wizard's fields laid flat in
 /// four sections — provider preset, basic info, configuration, tag and
@@ -62,6 +69,19 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   bool _probing = false;
   ChannelProbeResult? _probe;
 
+  /// The routes being edited (`D1f · 4c`), and the ones the dialog opened
+  /// with — which the models following the primary are pinned against when
+  /// the primary changes.
+  late ChannelRoutes _routes;
+  late ChannelRoutes _openedRoutes;
+  late TextEditingController hostCtrl;
+  RouteKind? _probingRoute;
+  final Map<RouteKind, ChannelProbeResult> _routeProbes = {};
+
+  /// Bumped when the routes are replaced wholesale (a new preset), so the
+  /// table's path fields start over rather than keep the old channel's text.
+  int _routesGeneration = 0;
+
   /// Which catalogue preset this channel matches, or null for a type no
   /// preset covers. Presentation only — [type] remains the stored truth.
   String? _presetId;
@@ -82,6 +102,11 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     // the official supplier and the "compatible host of your own" preset
     // store the same one, and only the address separates them.
     _presetId = presetForChannelType(type, endpoint: epCtrl.text)?.id;
+    _routes = channel != null
+        ? RoutedChannel.routesOf(channel)
+        : ChannelRoutes.resolve(type, epCtrl.text, null);
+    _openedRoutes = _routes;
+    hostCtrl = TextEditingController(text: _routes.host);
     discovery = channel?.enableDiscovery ?? true;
     tagColor = channel?.tagColor ?? AppConstants.tagColors.first.toARGB32();
     // A dropdown can only show a value it lists: a stored group that no
@@ -97,6 +122,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     epCtrl.dispose();
     keyCtrl.dispose();
     tagCtrl.dispose();
+    hostCtrl.dispose();
     super.dispose();
   }
 
@@ -138,6 +164,48 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   int get _modelCount =>
       widget.appState.getModelsForChannel(widget.channel?.id).length;
 
+  /// Whether the configuration shows the route table: the channel has more
+  /// than one route, or its platform offers another. A single-route channel
+  /// on a single-route platform keeps the one address field it always had
+  /// (`4c` 单线路渠道).
+  bool get _routeMode =>
+      _routes.entries.length > 1 || _routes.platform.routes.length > 1;
+
+  void _setRoutes(ChannelRoutes routes) => setState(() {
+    _routes = routes;
+    // The flat columns are the primary route: keep the preset card's
+    // "address modified" check reading the same thing the save writes.
+    type = routes.primaryVendorId;
+    epCtrl.text = routes.primaryAddress;
+  });
+
+  /// Tests one route with the form's key and that route's own vendor and
+  /// address.
+  Future<void> _probeRoute(RouteKind kind) async {
+    final vendor = _routes.vendorOf(kind);
+    final address = _routes.addressOf(kind);
+    if (vendor == null || address == null) return;
+    setState(() {
+      _probingRoute = kind;
+      _routeProbes.remove(kind);
+    });
+    final result = await ChannelProbeService().probe(
+      LLMModelConfig(
+        modelId: ChannelProbeService.probeModelId,
+        channelType: vendor,
+        endpoint: address,
+        apiKey: keyCtrl.text.trim(),
+        wireProtocol: kind.face.id,
+        faceBases: _routes.faceBases,
+      ),
+    );
+    if (!mounted) return;
+    setState(() {
+      _probingRoute = null;
+      _routeProbes[kind] = result;
+    });
+  }
+
   /// Opens the same catalogue the add-channel wizard uses and applies what
   /// the user picks. One list, two dialogs.
   Future<void> _changePreset(AppLocalizations l10n) async {
@@ -151,15 +219,25 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       // Key, name and tag are the user's, not the preset's, and survive.
       if (endpoint != null) epCtrl.text = endpoint;
       _probe = null;
+      // A new preset is a new channel as far as routes go: the routes its
+      // own vendor and address give, nothing carried from the old platform.
+      _routes = ChannelRoutes.resolve(type, epCtrl.text, null);
+      hostCtrl.text = _routes.host;
+      _routeProbes.clear();
+      _routesGeneration++;
     });
   }
 
   Future<void> _save() async {
+    final routeMode = _routeMode;
     final data = {
       'display_name': nameCtrl.text.trim(),
-      'endpoint': epCtrl.text.trim(),
+      'endpoint': routeMode ? _routes.primaryAddress : epCtrl.text.trim(),
       'api_key': keyCtrl.text.trim(),
-      'type': type,
+      'type': routeMode ? _routes.primaryVendorId : type,
+      // The single-address form carries no document: the stored one is kept
+      // and its write mark folds the edited address back in.
+      if (routeMode) 'routes': _routes.encode(),
       'enable_discovery': discovery ? 1 : 0,
       'tag': tagCtrl.text.trim(),
       'tag_color': tagColor,
@@ -169,10 +247,36 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     if (widget.channel == null) {
       await widget.appState.addChannel(data);
     } else {
+      final pinned = routeMode ? await _pinFollowers() : 0;
       await widget.appState.updateChannel(widget.channel!.id!, data);
+      if (pinned > 0 && mounted) {
+        AppSnackBar.info(
+          context,
+          widget.l10n.routePinnedSnack(
+            pinned,
+            routeLabel(widget.l10n, _openedRoutes.primary.kind),
+          ),
+        );
+      }
     }
 
     if (mounted) Navigator.pop(context);
+  }
+
+  /// Before the primary changes, the models that follow it are written onto
+  /// the primary they have, so none of them quietly moves to another wire
+  /// carrying parameters set for the old one (standard 06 §1). Returns how
+  /// many were pinned.
+  Future<int> _pinFollowers() async {
+    if (_routes.primary.kind == _openedRoutes.primary.kind) return 0;
+    final pinned = RouteSwitching.pinFollowers(
+      widget.appState.getModelsForChannel(widget.channel?.id),
+      _openedRoutes,
+    );
+    for (final m in pinned) {
+      await widget.appState.updateModel(m.id!, m.toMap(includeId: false));
+    }
+    return pinned.length;
   }
 
   /// Delete, confirmed first. Cancel holds focus so Enter never deletes.
@@ -525,6 +629,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       };
 
   Widget _buildConfigSection(AppLocalizations l10n, {required bool stacked}) {
+    if (_routeMode) return _buildRouteConfigSection(l10n, stacked: stacked);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -667,6 +772,65 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             onRetry: _probing ? null : _runProbe,
           ),
         ],
+      ],
+    );
+  }
+
+  /// `D1f · 4c`: host and key once, then the route table. The protocol
+  /// dropdown and the single address give way to it — each route is a
+  /// protocol at an address.
+  Widget _buildRouteConfigSection(AppLocalizations l10n, {required bool stacked}) {
+    final models = widget.appState.getModelsForChannel(widget.channel?.id);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ChannelSectionLabel(l10n.configuration),
+        _pair(
+          ChannelLabelledField(
+            label: l10n.routeHost,
+            helper: l10n.routeHostHint,
+            child: ChannelField(
+              controller: hostCtrl,
+              mono: true,
+              onChanged: (v) => _setRoutes(_routes.withHost(v)),
+            ),
+          ),
+          ChannelLabelledField(
+            label: _keyOptional
+                ? '${l10n.apiKey} · ${l10n.apiKeyOptional}'
+                : l10n.apiKey,
+            helper: _keyOptional ? null : l10n.routeKeyShared,
+            child: ChannelField(
+              controller: keyCtrl,
+              mono: true,
+              obscurable: true,
+              hint: _keyOptional ? l10n.apiKeyLocalPlaceholder : null,
+              onChanged: (_) => setState(_routeProbes.clear),
+            ),
+          ),
+          stacked: stacked,
+        ),
+        const SizedBox(height: AppSpace.s16),
+        ChannelRouteTable(
+          key: ValueKey(_routesGeneration),
+          routes: _routes,
+          onChanged: _setRoutes,
+          stacked: stacked,
+          // Counted against the routes the dialog opened with: a follower of
+          // the primary is pinned to it on save, so it keeps riding that route.
+          modelsOnRoute: (kind) =>
+              RouteSwitching.modelsOnRoute(models, _openedRoutes, kind),
+          onProbe: _probeRoute,
+          probing: _probingRoute,
+          probes: _routeProbes,
+        ),
+        const SizedBox(height: AppSpace.s10),
+        ChannelToggleCard(
+          title: l10n.enableDiscovery,
+          description: l10n.discoveryOffEffect,
+          value: discovery,
+          onChanged: (v) => setState(() => discovery = v),
+        ),
       ],
     );
   }

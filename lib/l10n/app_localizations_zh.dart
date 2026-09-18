@@ -2872,6 +2872,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get platformCustom => '自定义';
 
   @override
+  String get routePrimaryCantRemove => '主线路不能关，先把别的线路设为主线路';
+
+  @override
+  String get routeEnableShort => '启用';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -8040,6 +8046,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get platformCustom => '自訂';
+
+  @override
+  String get routePrimaryCantRemove => '主線路不能關，先把別的線路設為主線路';
+
+  @override
+  String get routeEnableShort => '啟用';
 
   @override
   String get prompts => '提示';

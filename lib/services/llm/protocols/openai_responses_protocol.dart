@@ -707,7 +707,7 @@ class OpenAIResponsesProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final url = Uri.parse('${trimBaseUrl(config.endpoint)}/responses');
+    final url = Uri.parse(openaiResponsesUrl(config.endpoint));
     logger?.call('Preparing OpenAI Responses request to: ${url.host}',
         level: 'DEBUG');
     final headers = target.headers();
@@ -754,7 +754,7 @@ class OpenAIResponsesProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async* {
     final config = target.config;
-    final url = Uri.parse('${trimBaseUrl(config.endpoint)}/responses');
+    final url = Uri.parse(openaiResponsesUrl(config.endpoint));
     logger?.call('Starting OpenAI Responses stream: ${url.host}',
         level: 'DEBUG');
     final headers = target.headers();
@@ -842,3 +842,7 @@ class OpenAIResponsesProtocol implements ChatProtocol {
     yield LLMResponseChunk(isDone: true);
   }
 }
+
+/// The Responses request address for base [base] — shared with the channel
+/// editor's address preview.
+String openaiResponsesUrl(String base) => '${trimBaseUrl(base)}/responses';

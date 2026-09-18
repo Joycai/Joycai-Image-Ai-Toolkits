@@ -1576,6 +1576,8 @@
   "routeWebSearchNotSent": "当前线路不发联网搜索。开关保持开启，切到能发的线路时生效。",
   "platformDashScope": "阿里云百炼",
   "platformCustom": "自定义",
+  "routePrimaryCantRemove": "主线路不能关，先把别的线路设为主线路",
+  "routeEnableShort": "启用",
   "prompts": "提示词",
   "promptLibrary": "提示词库",
   "newPrompt": "新建提示词",

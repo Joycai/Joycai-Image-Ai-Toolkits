@@ -3027,6 +3027,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get platformCustom => 'Custom';
 
   @override
+  String get routePrimaryCantRemove =>
+      'The primary route can\'t be turned off — make another route primary first';
+
+  @override
+  String get routeEnableShort => 'Enable';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

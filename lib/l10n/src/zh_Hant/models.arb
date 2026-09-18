@@ -608,5 +608,7 @@
   "routeWebSearchPerRoute": "各線路",
   "routeWebSearchNotSent": "目前線路不發送聯網搜尋。開關保持開啟，切到能發送的線路時生效。",
   "platformDashScope": "阿里雲百煉",
-  "platformCustom": "自訂"
+  "platformCustom": "自訂",
+  "routePrimaryCantRemove": "主線路不能關，先把別的線路設為主線路",
+  "routeEnableShort": "啟用"
 }

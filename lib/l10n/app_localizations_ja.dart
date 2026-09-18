@@ -2906,6 +2906,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get platformCustom => 'カスタム';
 
   @override
+  String get routePrimaryCantRemove => 'メインルートはオフにできません。先に別のルートをメインにしてください';
+
+  @override
+  String get routeEnableShort => '有効にする';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override
