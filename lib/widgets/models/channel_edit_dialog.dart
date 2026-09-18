@@ -269,6 +269,10 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   /// many were pinned.
   Future<int> _pinFollowers() async {
     if (_routes.primary.kind == _openedRoutes.primary.kind) return 0;
+    // A new preset can leave the old primary behind altogether: pinned to
+    // it, every follower would fail as a missing route, so they follow the
+    // new primary instead, as they did before routes.
+    if (!_routes.has(_openedRoutes.primary.kind)) return 0;
     final pinned = RouteSwitching.pinFollowers(
       widget.appState.getModelsForChannel(widget.channel?.id),
       _openedRoutes,

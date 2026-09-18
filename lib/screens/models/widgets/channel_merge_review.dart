@@ -96,7 +96,15 @@ Future<void> reviewChannelMerges(BuildContext context, AppState appState) async 
     ];
     if (pending.isEmpty) return;
     final candidate = pending.first;
-    final references = await ChannelMergeExecutor().referenceCount(candidate.plan);
+    final int references;
+    try {
+      references = await ChannelMergeExecutor().referenceCount(candidate.plan);
+    } catch (e) {
+      if (context.mounted) {
+        AppSnackBar.error(context, AppLocalizations.of(context)!.mergeFailed('$e'));
+      }
+      return;
+    }
     if (!context.mounted) return;
     final choice = await AppDialog.show<_MergeChoice>(
       context,
