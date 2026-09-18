@@ -15,7 +15,7 @@
 | A3 | v45：`llm_channels.routes`、`llm_models.active_route`、`llm_models.route_params`；`LLMChannel` / `LLMModel` 字段；`RouteParams`（三字段一类）+ 模型读时迁移（旧对话面点单 → `active_route`）；仓库读写都过规范化 | `database_migrations.dart`、`llm_channel.dart`、`llm_model.dart`、`model_repository.dart` | onCreate 与 onUpgrade 同步；旧行读出 = 今天；写入标记识别扁平字段被他方改写 | ☑ |
 | A4 | 按模型的线路看渠道：`ChannelRouteView`；`LLMConfigResolver` 走它，线路不存在 → `LLMConfigErrorKind.routeNotFound`；`LLMModelConfig.faceBases` + `_faceTarget` 先查它；`AppState` 的 `descriptorForModel` / `_supportsVideoForType`、模型编辑、卡片、发现改走视图；源码扫描测试挡住 `channel.type` 直读 | `services/llm/channel_route_view.dart`、`llm_config_resolver.dart`、`llm_model_config.dart`、`llm_dispatcher.dart`、`state/app_state.dart`、调用方 | 旧数据下所有 `wire_protocol_routing_test` 不变；线路缺失请求侧报错、展示侧回退 | ☑ |
 | A5 | 切线路：`RouteParams.forRoute` 一条规则同时用于保存与切换；`LLMModel.switchRoute`（停放 / 载入 / 覆盖全部 / id 不变）；改主线路前钉住跟随者（纯函数） | `models/llm_model.dart`（`withRouteState`）、`services/catalogue/route_switching.dart` | 标准 03 §6 的六条性质各一条测试 | ☑ |
-| A6 | 备份：`schema_version` 45；旧备份新列为空 → 同一读时迁移；导入/导出往返保留线路与停放参数 | `database_service.dart` | 旧版本备份导入后请求地址不变；新备份在 44 版被拒（已有检查，补测试） | ☐ |
+| A6 | 备份：`schema_version` 45；旧备份新列为空 → 同一读时迁移；导入/导出往返保留线路与停放参数 | `database_service.dart` | 旧版本备份导入后请求地址不变；新备份在 44 版被拒（已有检查，补测试） | ☑ |
 
 A 期末：`/code-review high`，修复。
 
@@ -74,3 +74,6 @@ C 期末：`/code-review high`，修复。
   （仅开关 = Medium，与 `effectiveReasoningEffort` 一致）。保存时写显式 `active_route`，并按「主线路 vendor 能否点单到该面」写兼容用的
   `wire_protocol`。钉住跟随者只钉真正在跟随的（含渠道已不提供的旧点单），**已失效的显式线路不钉**——那种模型要继续报错直到用户选择。
   会话中跨线路：回传载体本来就按协议成形、按模型 id 作用域，切线路后新协议读不到旧协议的载体，测试钉在 `route_resolution_test`。
+- **A6**：备份格式本身不用改——行是原样导出导入的，新列随行走；`schema_version` 跟着 dbVersion 到 45，旧版本的「更新的版本 → 拒绝」检查早已存在。
+  唯一要改的是恢复时保留密钥用的渠道身份 `_channelIdentity`：改成比较**规范化后的**主线路 vendor 与地址，否则本机库里还是旧写法、
+  备份里是规范化写法的同一个渠道（MiniMax 带尾斜杠）会认不出，密钥丢失。
