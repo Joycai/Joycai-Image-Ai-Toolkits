@@ -130,6 +130,11 @@ void main() {
       // Two usage/task rows and one selection name the merged-away model.
       expect(await executor.referenceCount(plan), 3);
 
+      // Written after the plan was computed, e.g. by a task finishing while
+      // the preview is open: the merge must not revert it.
+      await raw.update('llm_models', {'est_mean_ms': 1234.0},
+          where: 'id = ?', whereArgs: [keptModel]);
+
       await executor.run(plan);
 
       final after = await db.getChannels();
@@ -148,6 +153,8 @@ void main() {
         )[RouteKind.anthropic]?.maxOutputTokens,
         64000,
       );
+
+      expect(models[keptModel]!.estMeanMs, 1234.0);
 
       expect(await db.getSetting('last_model_id'), '$keptModel');
       // A moved model keeps its id; its selection is left alone.

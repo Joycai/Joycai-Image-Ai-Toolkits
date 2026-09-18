@@ -136,9 +136,20 @@ class ModelRepository {
         where: 'id = ?',
         whereArgs: [channel.id],
       );
+      // Only the columns a merge changes: the plan was computed from a
+      // snapshot, and a whole row would revert anything written since (an
+      // edit, the task queue's duration estimate).
       for (final m in updates) {
-        await txn.update('llm_models', m.toMap(includeId: false),
-            where: 'id = ?', whereArgs: [m.id]);
+        await txn.update(
+            'llm_models',
+            {
+              'channel_id': m.channelId,
+              'active_route': m.activeRoute,
+              'route_params': m.routeParams,
+              'wire_protocol': m.wireProtocol,
+            },
+            where: 'id = ?',
+            whereArgs: [m.id]);
       }
       for (final id in deletes) {
         await txn.delete('llm_models', where: 'id = ?', whereArgs: [id]);

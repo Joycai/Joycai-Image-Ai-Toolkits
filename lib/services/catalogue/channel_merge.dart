@@ -126,7 +126,8 @@ class ChannelMerge {
     if (ra.platform.id != rb.platform.id) return false;
     final host = _hostKey(ra.host);
     if (host.isEmpty || host != _hostKey(rb.host)) return false;
-    if (a.apiKey.trim() != b.apiKey.trim()) return false;
+    // Byte for byte: the kept key is what the absorbed routes send.
+    if (a.apiKey != b.apiKey) return false;
     return !ra.kinds.any(rb.has);
   }
 

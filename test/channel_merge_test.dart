@@ -67,6 +67,11 @@ void main() {
       expect(ChannelMerge.candidates([openai, other], const []), isEmpty);
     });
 
+    test('a key that differs only in whitespace is another key', () {
+      final padded = channel(2, Vendors.newApiAnthropic, key: 'sk-shared ');
+      expect(ChannelMerge.candidates([openai, padded], const []), isEmpty);
+    });
+
     test('overlapping routes never pair', () {
       final twin = channel(2, Vendors.newApiOpenAI);
       expect(ChannelMerge.candidates([openai, twin], const []), isEmpty);
