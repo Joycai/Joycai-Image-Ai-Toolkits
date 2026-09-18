@@ -10,6 +10,10 @@ import '../../models/llm_model.dart';
 import '../../models/pricing_group.dart';
 import '../../services/llm/context_budget.dart';
 import '../../services/llm/llm_dispatcher.dart';
+import '../../services/llm/model_routes.dart';
+import '../../services/llm/vendors/platforms.dart';
+import 'app_route_badge.dart';
+import 'route_labels.dart';
 import 'fee_group_summary.dart';
 import '../ui/model_tag_chip.dart';
 import 'wire_protocol_labels.dart';
@@ -82,12 +86,34 @@ class ModelCard extends StatelessWidget {
 
   bool get _phone => size == ModelCardSize.phone;
 
-  /// Whether the model pins a protocol that its channel can no longer serve.
-  bool get _staleSelection {
-    final pin = model.wireProtocol;
+  /// The name of the selection the model made that its channel can no
+  /// longer serve, or null: for a chat model a route the channel does not
+  /// offer (`D1f` — chat pins are routes), for an image or video model a
+  /// dedicated endpoint its channel's vendor has no menu entry for.
+  String? _staleSelection(AppLocalizations l10n) {
     final channel = this.channel;
-    if (pin == null || pin.isEmpty || channel == null) return false;
-    return LLMDispatcher.isStaleProtocolSelection(channel.type, model.modelId, pin, tag: model.tag);
+    if (channel == null) return null;
+    if (ModelRoutes.usesRoutes(model)) {
+      final chosen = ModelRoutes.explicitRoute(model);
+      if (chosen == null || RoutedChannel.routesOf(channel).has(chosen)) return null;
+      return routeLabel(l10n, chosen);
+    }
+    final pin = model.wireProtocol;
+    if (pin == null || pin.isEmpty) return null;
+    final stale = LLMDispatcher.isStaleProtocolSelection(
+        RoutedChannel.primary(channel).channelType, model.modelId, pin, tag: model.tag);
+    return stale ? storedProtocolLabel(l10n, pin) : null;
+  }
+
+  /// The route the card names at its tail: the model's current one, when
+  /// its channel has more than one to choose from (`D1f · 4a` ④). Null for
+  /// image and video models, which name their dedicated endpoint instead.
+  RouteKind? get _shownRoute {
+    final channel = this.channel;
+    if (channel == null || !ModelRoutes.usesRoutes(model)) return null;
+    final routes = RoutedChannel.routesOf(channel);
+    if (routes.entries.length < 2) return null;
+    return ModelRoutes.requestRoute(model, routes);
   }
 
   @override
@@ -95,7 +121,7 @@ class ModelCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final stale = _staleSelection;
+    final stale = _staleSelection(l10n);
 
     final EdgeInsets padding = switch (size) {
       ModelCardSize.regular => const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -117,9 +143,9 @@ class ModelCard extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         ModelKindBadge(model.tag),
-        if (stale) ...[
+        if (stale != null) ...[
           const SizedBox(width: AppSpace.s6),
-          Flexible(child: _StaleSelectionBadge(pin: model.wireProtocol!)),
+          Flexible(child: _StaleSelectionBadge(label: stale)),
         ],
       ],
     );
@@ -147,7 +173,7 @@ class ModelCard extends StatelessWidget {
           Wrap(
             spacing: AppSpace.s6,
             runSpacing: AppSpace.s6,
-            children: _chips(context, l10n, stale),
+            children: _chips(context, l10n, stale != null),
           ),
           // Absent, not 「—」, when there is no group to summarise.
           if (showBilling && feeGroup != null) ...[
@@ -247,7 +273,14 @@ class ModelCard extends StatelessWidget {
       if (model.forceViewAllImages) _CapabilityChip(l10n.viewAllImagesChip),
       // A valid pin names its protocol as one more capability ("Async task");
       // a stale one is the warning badge beside the name instead.
-      if (pin != null && pin.isNotEmpty && !stale)
+      if (_shownRoute case final route?)
+        AppRouteBadge(
+          label: routeLabel(l10n, route),
+          state: RouteBadgeState.current,
+          size: RouteBadgeSize.card,
+        )
+      // A chat model's pin is its route, named above or not at all.
+      else if (pin != null && pin.isNotEmpty && !stale && !ModelRoutes.usesRoutes(model))
         Tooltip(
           message: storedProtocolLabel(l10n, pin),
           child: _CapabilityChip(storedProtocolLabel(l10n, pin), maxWidth: 128),
@@ -300,9 +333,10 @@ class ModelCard extends StatelessWidget {
 /// 「link_off Selection inactive」 on the warning container, with the reason a
 /// hover away.
 class _StaleSelectionBadge extends StatelessWidget {
-  const _StaleSelectionBadge({required this.pin});
+  const _StaleSelectionBadge({required this.label});
 
-  final String pin;
+  /// The selection that went stale, in the user's words.
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -310,7 +344,7 @@ class _StaleSelectionBadge extends StatelessWidget {
     final semantic = context.semantic;
 
     return Tooltip(
-      message: l10n.protocolStaleTooltip(storedProtocolLabel(l10n, pin)),
+      message: l10n.protocolStaleTooltip(label),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: AppSpace.s6, vertical: 1),
         decoration: BoxDecoration(

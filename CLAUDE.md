@@ -39,8 +39,11 @@ models/            LLMModel, LLMChannel, PricingGroup, Prompt/SystemPrompt, Prom
 services/          all business logic, in domain folders only:
   llm/               the API stack — llm_service (facade) · llm_dispatcher (the ONLY routing table) ·
                        protocols/ (layer 1, wire formats) · vendors/ (layer 2, VendorProfile registry,
-                       ProtocolFamily) · model_descriptor + model_family (layer 3, the only place
-                       model-id sniffing is allowed) · context_budget (sole reader of a context window)
+                       ProtocolFamily; platforms = PlatformProfile + RouteKind) · model_descriptor +
+                       model_family (layer 3, the only place model-id sniffing is allowed) ·
+                       context_budget (sole reader of a context window) · channel_routes (a channel's
+                       routes, v45 document) · model_routes (RouteParams, RoutedChannel = the channel
+                       as one model sees it)
   db/                database_service · database_migrations (onCreate + onUpgrade in lockstep) ·
                        repositories/ (model, prompt, task, usage, assistant session/note, cookie)
   tasks/             task_queue_service (concurrency, Stream<TaskEvent>, ETA) · task_executors
@@ -48,7 +51,8 @@ services/          all business logic, in domain folders only:
                        ai_rename_agent · ai_rename_review (neither deletes a file the run placed)
   assistant/         Prompt Assistant — prompt_optimizer_agent + its eight `part`s (assistant_*,
                        prompt_optimizer_session), sub_agent_runner, knowledge_base_*, prompt_provenance
-  catalogue/         what backs the models page (ordering, id uniqueness, context/output scales) — not llm/
+  catalogue/         what backs the models page (ordering, id uniqueness, context/output scales,
+                       route_switching, channel_merge + its executor) — not llm/
   files/ media/ system/ billing/   filesystem ops · image/video/scraping · host adapters · spec billing
 state/             ChangeNotifier singletons: AppState (app_state{,_data,_workbench}.dart), GalleryState,
                      FileBrowserState, FileStagingState, DownloaderState, ModelListState,

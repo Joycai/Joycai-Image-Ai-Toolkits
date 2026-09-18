@@ -143,7 +143,7 @@ class RouteSwitching {
     RouteKind to,
   ) {
     assert(ModelRoutes.usesRoutes(model));
-    final from = ModelRoutes.displayRoute(model, routes);
+    final from = _heldRoute(model, routes);
     if (from == to) return normalizedForSave(model, routes);
     final parked = {...ModelRoutes.parked(model)};
     parked[from] = forRoute(
@@ -164,6 +164,26 @@ class RouteSwitching {
     );
   }
 
+  /// The route [model]'s flat parameters belong to: the route it rides, or —
+  /// when the route it chose is gone from the channel — that route still.
+  /// Its values are parked under it rather than filed under the primary the
+  /// model is merely *shown* on, which would overwrite what the primary had.
+  static RouteKind _heldRoute(LLMModel model, ChannelRoutes routes) =>
+      ModelRoutes.requestRoute(model, routes) ??
+      ModelRoutes.explicitRoute(model) ??
+      routes.primary.kind;
+
+  /// [model] with a route that is gone from its channel moved onto the
+  /// primary — its values parked under the route it chose, the primary's
+  /// own parked values loaded — or [model] itself when its route is there.
+  /// What the editor opens such a model as, so that what it shows under the
+  /// primary are the primary's values.
+  static LLMModel recoverMissingRoute(LLMModel model, ChannelRoutes routes) {
+    if (!ModelRoutes.usesRoutes(model)) return model;
+    if (ModelRoutes.requestRoute(model, routes) != null) return model;
+    return switchRoute(model, routes, routes.primary.kind);
+  }
+
   /// What [switchRoute] would change, for the preview shown before the user
   /// confirms. Only the fields that differ.
   static List<RouteParamChange> preview(
@@ -171,7 +191,7 @@ class RouteSwitching {
     ChannelRoutes routes,
     RouteKind to,
   ) {
-    final from = ModelRoutes.displayRoute(model, routes);
+    final from = _heldRoute(model, routes);
     final before = forRoute(
       RouteParams.ofModel(model),
       ladderFor(model, routes, from),
@@ -230,6 +250,37 @@ class RouteSwitching {
             reasoningEffort: m.reasoningEffort,
           ),
     ];
+  }
+
+  /// What a channel edit that took its routes from [before] to [after]
+  /// does to [modelsOnChannel]:
+  ///
+  /// * [pinned] — when the primary changed but the old one is still there,
+  ///   the models that followed it, pinned to it ([pinFollowers]);
+  /// * [moved] — the models that rode a route the edit removed (a new
+  ///   preset can drop any route, past the table's in-use guard), moved onto
+  ///   the new primary with their values parked under the route they chose
+  ///   ([recoverMissingRoute]) rather than left failing.
+  ///
+  /// A model whose route was already gone before the edit is not touched:
+  /// that one is the user's to choose.
+  static ({List<LLMModel> pinned, List<LLMModel> moved}) afterChannelEdit(
+    Iterable<LLMModel> modelsOnChannel,
+    ChannelRoutes before,
+    ChannelRoutes after,
+  ) {
+    final oldPrimary = before.primary.kind;
+    final pinned = after.primary.kind != oldPrimary && after.has(oldPrimary)
+        ? pinFollowers(modelsOnChannel, before)
+        : const <LLMModel>[];
+    final moved = [
+      for (final m in modelsOnChannel)
+        if (ModelRoutes.usesRoutes(m))
+          if (RouteKind.tryParse(m.activeRoute) case final chosen?)
+            if (before.has(chosen) && !after.has(chosen))
+              recoverMissingRoute(m, after),
+    ];
+    return (pinned: pinned, moved: moved);
   }
 
   /// How many of [modelsOnChannel] ride [kind] right now — a route in use

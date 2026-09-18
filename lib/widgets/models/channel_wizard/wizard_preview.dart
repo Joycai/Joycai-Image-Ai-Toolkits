@@ -73,12 +73,31 @@ extension _Preview on _ChannelWizardDialogState {
             children: [
               row(l10n.displayName, Text(_resolvedName(), style: valueStyle)),
               row(l10n.tag, Text(_resolvedTag(), style: valueStyle)),
-              row(
-                l10n.protocolField,
-                Text(channelTypeLabel(l10n, _resolvedChannelType()),
-                    style: valueStyle),
-              ),
-              row(l10n.endpointUrl, Text(_resolvedEndpoint(), style: valueStyle)),
+              if (_plannedRoutes.entries.length > 1)
+                row(
+                  l10n.routeSectionTitle,
+                  Wrap(
+                    spacing: AppSpace.s4,
+                    runSpacing: AppSpace.s4,
+                    children: [
+                      for (final k in _plannedRoutes.kinds)
+                        AppRouteBadge(
+                          label: routeLabel(l10n, k, short: true),
+                          state: k == _plannedRoutes.primary.kind
+                              ? RouteBadgeState.current
+                              : RouteBadgeState.configured,
+                        ),
+                    ],
+                  ),
+                )
+              else
+                row(
+                  l10n.protocolField,
+                  Text(channelTypeLabel(l10n, _resolvedChannelType()),
+                      style: valueStyle),
+                ),
+              row(l10n.endpointUrl,
+                  Text(_plannedRoutes.primaryAddress, style: valueStyle)),
               row(
                 l10n.apiKey,
                 Text(

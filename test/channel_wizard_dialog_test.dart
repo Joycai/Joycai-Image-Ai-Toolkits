@@ -92,7 +92,7 @@ void main() {
       // Driven off the catalogue: a preset added later has to appear here
       // without anyone remembering to add it to a list.
       final l10n = AppLocalizations.of(tester.element(find.byType(ChannelWizardDialog)))!;
-      for (final preset in kChannelProviderPresets) {
+      for (final preset in kListedChannelProviderPresets) {
         expect(
           find.text(channelProviderTitle(l10n, preset.id)),
           findsWidgets,
@@ -100,6 +100,9 @@ void main() {
         );
       }
       expect(kChannelProviderPresets.length, 17);
+      // DashScope's native face is a route of the one DashScope row
+      // (`D1f · 4b` ②); its preset stays so stored channels still name it.
+      expect(kListedChannelProviderPresets.length, 16);
       expect(tester.takeException(), isNull);
     });
 
@@ -118,25 +121,21 @@ void main() {
 
       await _typeInto(tester, search, 'deepseek');
       expect(find.text('DeepSeek'), findsWidgets);
-      expect(find.text('Alibaba DashScope (OpenAI compatible)'), findsNothing);
+      expect(find.text('Alibaba DashScope'), findsNothing);
 
       await _typeInto(tester, search, '');
-      expect(find.text('Alibaba DashScope (OpenAI compatible)'), findsWidgets);
+      expect(find.text('Alibaba DashScope'), findsWidgets);
     });
 
     // The separate "Qianwen Platform" row was folded into DashScope, which is
-    // only safe because the names it used to be found under still reach both
-    // of DashScope's faces.
+    // only safe because the names it used to be found under still reach it.
     testWidgets('folded-in names still find DashScope', (tester) async {
       await _pumpWizard(tester);
       final search = _searchField();
 
       for (final alias in const ['qianwen', 'Qwen', '千问', '通义']) {
         await _typeInto(tester, search, alias);
-        for (final row in const [
-          'Alibaba DashScope (OpenAI compatible)',
-          'Alibaba DashScope (native)',
-        ]) {
+        for (final row in const ['Alibaba DashScope']) {
           expect(find.text(row), findsWidgets, reason: '"$alias" no longer reaches "$row"');
         }
       }
@@ -146,7 +145,7 @@ void main() {
   group('endpoint & key step', () {
     testWidgets('preset endpoint is prefilled and still editable', (tester) async {
       await _pumpWizard(tester);
-      await _selectProvider(tester, 'Alibaba DashScope (OpenAI compatible)');
+      await _selectProvider(tester, 'Alibaba DashScope');
       await _toConnection(tester);
 
       expect(
@@ -166,7 +165,7 @@ void main() {
     testWidgets('switching provider replaces the previous host', (tester) async {
       await _pumpWizard(tester);
 
-      await _selectProvider(tester, 'Alibaba DashScope (OpenAI compatible)');
+      await _selectProvider(tester, 'Alibaba DashScope');
       await _selectProvider(tester, 'DeepSeek');
       await _toConnection(tester);
 
@@ -247,71 +246,58 @@ void main() {
     });
   });
 
-  // The presets with more than one way in. Switching face is the one
-  // interaction that rewrites the endpoint, so each pins the address the
-  // switch produces — a wrong one is a 404 that says nothing about which half
-  // of the URL is at fault.
-  group('providers with more than one way in', () {
-    testWidgets('MiniMax switches between its two interfaces', (tester) async {
+  // `D1f · 4b`: a preset whose ways in are protocols gets every route of its
+  // platform, so it no longer asks which one — it previews them instead.
+  group('providers with several routes', () {
+    testWidgets('MiniMax goes straight to its host and lists both routes',
+        (tester) async {
       await _pumpWizard(tester);
       await _selectProvider(tester, 'MiniMax');
       await _tapText(tester, 'Next');
 
-      expect(find.text('OpenAI interface'), findsWidgets);
-      expect(find.text('Anthropic interface'), findsWidgets);
-
-      await _tapText(tester, 'Next');
+      expect(_keyField(), findsOneWidget, reason: 'no way-in step any more');
+      expect(find.text('OpenAI interface'), findsNothing);
       expect(_textOf(tester, _endpointField()), 'https://api.minimaxi.com/v1');
-
-      await _tapText(tester, 'Back');
-      await tester.tap(find.text('Anthropic interface').first);
-      await tester.pumpAndSettle();
-      await _tapText(tester, 'Next');
-      expect(_textOf(tester, _endpointField()), 'https://api.minimaxi.com/anthropic/v1');
-
-      // Switching back restores the first face — the first variant once
-      // carried no address, so this round trip left the field empty.
-      await _tapText(tester, 'Back');
-      await tester.tap(find.text('OpenAI interface').first);
-      await tester.pumpAndSettle();
-      await _tapText(tester, 'Next');
-      expect(_textOf(tester, _endpointField()), 'https://api.minimaxi.com/v1');
+      expect(find.text('Routes to create'), findsOneWidget);
+      expect(find.text('POST https://api.minimaxi.com/v1/chat/completions'),
+          findsOneWidget);
+      expect(
+        find.text('POST https://api.minimaxi.com/anthropic/v1/messages'),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('Google offers its native and OpenAI-compatible faces', (tester) async {
+    testWidgets('Google lists its native and OpenAI-compatible routes',
+        (tester) async {
       await _pumpWizard(tester);
       await _selectProvider(tester, 'Google GenAI');
       await _toConnection(tester);
 
-      expect(_textOf(tester, _endpointField()), 'https://generativelanguage.googleapis.com/v1beta');
-
-      await _tapText(tester, 'Back');
-      await tester.tap(find.text('OpenAI compatible').first);
-      await tester.pumpAndSettle();
-      await _tapText(tester, 'Next');
+      expect(_textOf(tester, _endpointField()),
+          'https://generativelanguage.googleapis.com/v1beta');
+      expect(find.text('Gemini · Primary'), findsOneWidget);
       expect(
-        _textOf(tester, _endpointField()),
-        'https://generativelanguage.googleapis.com/v1beta/openai',
+        find.text('POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'),
+        findsOneWidget,
       );
     });
 
-    testWidgets('NewAPI keeps the typed host and swaps only the version path', (tester) async {
+    testWidgets('NewAPI puts every route on the host the user typed',
+        (tester) async {
       await _pumpWizard(tester);
       await _selectProvider(tester, 'NewAPI');
       await _toConnection(tester);
 
       await _typeInto(tester, _endpointField(), 'https://relay.example.com');
 
-      await _tapText(tester, 'Back');
-      await tester.tap(find.text('Gemini format').first);
-      await tester.pumpAndSettle();
-      await _tapText(tester, 'Next');
-
-      expect(
-        _textOf(tester, _endpointField()),
-        'https://relay.example.com',
-        reason: 'the host the user typed must survive a format switch',
-      );
+      for (final url in const [
+        'POST https://relay.example.com/v1/chat/completions',
+        'POST https://relay.example.com/v1/responses',
+        'POST https://relay.example.com/v1/messages',
+        'POST https://relay.example.com/v1beta/models/{id}:generateContent',
+      ]) {
+        expect(find.text(url), findsOneWidget, reason: url);
+      }
     });
   });
 

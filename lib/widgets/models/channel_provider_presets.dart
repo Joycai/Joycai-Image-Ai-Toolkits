@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../services/llm/channel_routes.dart';
+import '../../services/llm/vendors/platforms.dart';
 import '../../services/llm/vendors/vendors.dart';
 
 /// The headings the provider picker groups presets under, in display order.
@@ -121,6 +123,11 @@ class ChannelProviderPreset {
 
   final IconData icon;
 
+  /// False for a preset kept only so a stored channel still names where it
+  /// came from, and offered by neither picker (`D1f · 4b`: DashScope's
+  /// native face is a route of the one DashScope row now, not a row).
+  final bool listed;
+
   const ChannelProviderPreset({
     required this.id,
     required this.channelType,
@@ -131,6 +138,7 @@ class ChannelProviderPreset {
     this.searchAliases = const [],
     this.need = ChannelProviderNeed.keyOnly,
     required this.icon,
+    this.listed = true,
   });
 
   bool get hasVariants => variants.isNotEmpty;
@@ -236,6 +244,7 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
     channelType: Vendors.dashscopeNative,
     group: ChannelProviderGroup.vendor,
     defaultEndpoint: 'https://dashscope.aliyuncs.com/api/v1',
+    listed: false,
     // Same aliases as the row above: someone searching 千问 has to see both,
     // or the search silently picks the face for them.
     searchAliases: [
@@ -445,6 +454,46 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
   ),
 ];
 
+/// The presets the pickers offer, in catalogue order.
+final List<ChannelProviderPreset> kListedChannelProviderPresets = [
+  for (final p in kChannelProviderPresets)
+    if (p.listed) p,
+];
+
+/// Whether [preset]'s variants are *routes* — ways in that speak different
+/// protocols with one key (Google's two faces, OpenAI's two wires, MiniMax,
+/// New API) — rather than two addresses of one protocol with different keys
+/// (Ark's pay-as-you-go and plan). A channel gets every route anyway, so
+/// the first kind needs no choosing (`D1f · 4b`); the second still does.
+bool channelPresetVariantsAreRoutes(ChannelProviderPreset preset) {
+  final kinds = {
+    for (final v in preset.variants) Platforms.legacyKinds(v.channelType).firstOrNull,
+  };
+  return kinds.length > 1;
+}
+
+/// The routes a channel added from [preset] at [endpoint] starts with: every
+/// route its platform offers, primary first (`D1f · 4b` 新建渠道) — or, for
+/// a custom preset, only the protocol it names, the one thing known to be
+/// there.
+ChannelRoutes plannedChannelRoutes(
+  ChannelProviderPreset preset,
+  String channelType,
+  String endpoint,
+) {
+  var routes = ChannelRoutes.resolve(channelType, endpoint, null);
+  if (preset.group == ChannelProviderGroup.custom) {
+    for (final k in routes.kinds) {
+      routes = routes.withoutRoute(k);
+    }
+    return routes;
+  }
+  for (final r in routes.platform.routes) {
+    routes = routes.withRoute(r.kind);
+  }
+  return routes;
+}
+
 /// The preset a stored channel came from, or null when none matches.
 ///
 /// Used by the editor's shortcut bar to say which preset a channel is sitting
@@ -589,8 +638,10 @@ String channelProviderTitle(AppLocalizations l10n, String id) {
       return 'OpenAI';
     case 'xai-official':
       return 'xAI (Grok)';
+    // One row for the platform (`D1f · 4b` ②): its OpenAI-compatible and
+    // native faces are two routes of the one channel now.
     case 'dashscope':
-      return l10n.providerDashScopeCompat;
+      return l10n.platformDashScope;
     case 'dashscope-native':
       return l10n.providerDashScopeNative;
     case 'minimax':

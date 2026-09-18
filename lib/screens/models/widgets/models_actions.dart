@@ -25,6 +25,7 @@ class ModelsActions {
     required this.deleteModel,
     required this.moveChannel,
     required this.openFeeManager,
+    required this.reviewMerges,
   });
 
   final VoidCallback addChannel;
@@ -42,6 +43,9 @@ class ModelsActions {
   final void Function(int oldIndex, int newIndex) moveChannel;
 
   final VoidCallback openFeeManager;
+
+  /// Opens the merge review (`D1f · 4f`), one group at a time.
+  final VoidCallback reviewMerges;
 }
 
 /// The channel context menu (`D1a · 1b`): move to top / up / down / bottom,

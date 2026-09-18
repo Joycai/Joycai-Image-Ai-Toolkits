@@ -4865,6 +4865,341 @@ abstract class AppLocalizations {
   /// **'Off, every channel\'s models run as one list'**
   String get modelGroupByChannelHint;
 
+  /// No description provided for @routeDashScopeShort.
+  ///
+  /// In en, this message translates to:
+  /// **'DashScope'**
+  String get routeDashScopeShort;
+
+  /// No description provided for @routeDashScopeFull.
+  ///
+  /// In en, this message translates to:
+  /// **'DashScope native'**
+  String get routeDashScopeFull;
+
+  /// No description provided for @routeSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes'**
+  String get routeSectionTitle;
+
+  /// No description provided for @routeScopeModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get routeScopeModel;
+
+  /// No description provided for @routeScopeThisRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'This route · {route}'**
+  String routeScopeThisRoute(String route);
+
+  /// No description provided for @routePrimarySuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary'**
+  String get routePrimarySuffix;
+
+  /// No description provided for @channelMergeBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 group of channels can be merged} other{{count} groups of channels can be merged}}'**
+  String channelMergeBannerTitle(int count);
+
+  /// No description provided for @channelMergeBannerReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Same platform, host and key — only the protocol differs'**
+  String get channelMergeBannerReason;
+
+  /// No description provided for @channelMergeBannerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get channelMergeBannerAction;
+
+  /// No description provided for @mergeDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge channels'**
+  String get mergeDialogTitle;
+
+  /// No description provided for @mergeDialogProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{index} / {total} · {platform} · {host}'**
+  String mergeDialogProgress(
+    int index,
+    int total,
+    String platform,
+    String host,
+  );
+
+  /// No description provided for @mergeKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get mergeKeep;
+
+  /// No description provided for @mergeAbsorb.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted after merging'**
+  String get mergeAbsorb;
+
+  /// No description provided for @mergeRoutesAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes after merging'**
+  String get mergeRoutesAfter;
+
+  /// No description provided for @mergeRouteAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Merged in'**
+  String get mergeRouteAdded;
+
+  /// No description provided for @mergeModelJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Same model, merged · {route} parameters carried over'**
+  String mergeModelJoin(String route);
+
+  /// No description provided for @mergeModelJoinMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Same model, merged'**
+  String get mergeModelJoinMedia;
+
+  /// No description provided for @mergeModelMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved · pinned to {route}'**
+  String mergeModelMove(String route);
+
+  /// No description provided for @mergeReferencesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No saved selection or usage record points at a merged-away model.} =1{1 saved selection or usage record will point at the kept model.} other{{count} saved selections and usage records will point at the kept models.}} Merged models keep the name, fee group and context settings of the one in {channel}.'**
+  String mergeReferencesNote(int count, String channel);
+
+  /// No description provided for @mergeIrreversible.
+  ///
+  /// In en, this message translates to:
+  /// **'Merging can\'t be undone. The two keys were compared in memory on this device; the key itself is never shown or logged.'**
+  String get mergeIrreversible;
+
+  /// No description provided for @mergeSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip this group'**
+  String get mergeSkip;
+
+  /// No description provided for @mergeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get mergeConfirm;
+
+  /// No description provided for @mergeDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels merged'**
+  String get mergeDone;
+
+  /// No description provided for @routeHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get routeHost;
+
+  /// No description provided for @routeHostHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheme, host and port only. Each route\'s path is set below.'**
+  String get routeHostHint;
+
+  /// No description provided for @routeTableCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'At most one per protocol · the first is primary'**
+  String get routeTableCaption;
+
+  /// No description provided for @routePathDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default {path}'**
+  String routePathDefault(String path);
+
+  /// No description provided for @routePathEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited · default {path}'**
+  String routePathEdited(String path);
+
+  /// No description provided for @routePathOwnHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Own host'**
+  String get routePathOwnHost;
+
+  /// No description provided for @routeRestoreDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore default'**
+  String get routeRestoreDefault;
+
+  /// No description provided for @routeOfficialLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Official address, locked'**
+  String get routeOfficialLocked;
+
+  /// No description provided for @routeTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test this route'**
+  String get routeTest;
+
+  /// No description provided for @routeMakePrimary.
+  ///
+  /// In en, this message translates to:
+  /// **'Make primary'**
+  String get routeMakePrimary;
+
+  /// No description provided for @routeIsPrimary.
+  ///
+  /// In en, this message translates to:
+  /// **'Already the primary route'**
+  String get routeIsPrimary;
+
+  /// No description provided for @routeRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off this route'**
+  String get routeRemove;
+
+  /// No description provided for @routeEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable {route}'**
+  String routeEnable(String route);
+
+  /// No description provided for @routeInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 model uses this route, so it can\'t be turned off} other{{count} models use this route, so it can\'t be turned off}}'**
+  String routeInUse(int count);
+
+  /// No description provided for @routeOnlyOne.
+  ///
+  /// In en, this message translates to:
+  /// **'A channel needs at least one route'**
+  String get routeOnlyOne;
+
+  /// No description provided for @routePinnedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 model stays on {route}} other{{count} models stay on {route}}}'**
+  String routePinnedSnack(int count, String route);
+
+  /// No description provided for @routeMovedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 model moved to {route}: its route was removed} other{{count} models moved to {route}: their route was removed}}'**
+  String routeMovedSnack(int count, String route);
+
+  /// No description provided for @routesToCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes to create'**
+  String get routesToCreate;
+
+  /// No description provided for @routesToCreateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can turn off unused ones later in the channel editor'**
+  String get routesToCreateHint;
+
+  /// No description provided for @routeKeyShared.
+  ///
+  /// In en, this message translates to:
+  /// **'One key, shared by every route'**
+  String get routeKeyShared;
+
+  /// No description provided for @routeWizardNote.
+  ///
+  /// In en, this message translates to:
+  /// **'New models use the primary route ({route}). To send a model over another route, switch it in the route strip at the top of the model editor; each route keeps its own parameters.'**
+  String routeWizardNote(String route);
+
+  /// No description provided for @routeSwitchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to {route} · these parameters change'**
+  String routeSwitchTitle(String route);
+
+  /// No description provided for @routeSwitchUnset.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set · not sent'**
+  String get routeSwitchUnset;
+
+  /// No description provided for @routeSwitchNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Parameters on {route} stay with it and come back when you switch back. Web search is the model\'s permission and doesn\'t change with the route.'**
+  String routeSwitchNote(String route);
+
+  /// No description provided for @routeSwitchConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get routeSwitchConfirm;
+
+  /// No description provided for @routeWebSearchPerRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Per route'**
+  String get routeWebSearchPerRoute;
+
+  /// No description provided for @routeWebSearchNotSent.
+  ///
+  /// In en, this message translates to:
+  /// **'The current route doesn\'t send web search. The switch stays on and takes effect on a route that can.'**
+  String get routeWebSearchNotSent;
+
+  /// No description provided for @platformDashScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Alibaba DashScope'**
+  String get platformDashScope;
+
+  /// No description provided for @platformCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get platformCustom;
+
+  /// No description provided for @routePrimaryCantRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'The primary route can\'t be turned off — make another route primary first'**
+  String get routePrimaryCantRemove;
+
+  /// No description provided for @routeEnableShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get routeEnableShort;
+
+  /// No description provided for @mergeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge failed, nothing was changed: {error}'**
+  String mergeFailed(String error);
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

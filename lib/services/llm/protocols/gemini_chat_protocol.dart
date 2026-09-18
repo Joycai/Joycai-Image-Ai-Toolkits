@@ -24,7 +24,7 @@ class GeminiChatProtocol implements ChatProtocol {
   }) async {
     final config = target.config;
     final url = target.decorateUrl(
-      Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent'),
+      Uri.parse(geminiGenerateUrl(config.endpoint, config.modelId)),
     );
     logger?.call(
       'Preparing Google GenAI request to: ${url.host}',
@@ -397,3 +397,8 @@ class GeminiDiscoveryProtocol implements DiscoveryProtocol {
     }
   }
 }
+
+/// The non-streaming generateContent address for [modelId] at base [base] —
+/// shared with the channel editor's address preview.
+String geminiGenerateUrl(String base, String modelId) =>
+    '$base/models/$modelId:generateContent';

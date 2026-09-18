@@ -11,8 +11,8 @@ extension _ProviderSteps on _ChannelWizardDialogState {
   /// hand-written id lists instead of the catalogue itself.
   List<ChannelProviderPreset> _filteredPresets(AppLocalizations l10n) {
     final query = _searchCtrl.text.trim().toLowerCase();
-    if (query.isEmpty) return kChannelProviderPresets;
-    return kChannelProviderPresets.where((p) {
+    if (query.isEmpty) return kListedChannelProviderPresets;
+    return kListedChannelProviderPresets.where((p) {
       final haystack = [
         p.id,
         p.channelType,

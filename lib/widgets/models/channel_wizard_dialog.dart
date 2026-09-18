@@ -6,6 +6,8 @@ import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/llm/channel_probe_service.dart';
+import '../../services/llm/channel_routes.dart';
+import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
@@ -14,7 +16,9 @@ import '../ui/app_dialog.dart';
 import 'channel_form_sections.dart';
 import 'channel_probe_result_card.dart';
 import 'channel_provider_presets.dart';
+import 'app_route_badge.dart';
 import 'channel_provider_row.dart';
+import 'route_labels.dart';
 
 part 'channel_wizard/wizard_chrome.dart';
 part 'channel_wizard/wizard_form_steps.dart';
@@ -121,16 +125,22 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   /// somewhere.
   ChannelProviderVariant? get _variant {
     final preset = _preset;
-    if (!preset.hasVariants) return null;
+    if (!_choosesVariant) return null;
     return preset.variants.firstWhere(
       (v) => v.id == _variantId,
       orElse: () => preset.variants.first,
     );
   }
 
+  /// Whether the preset's ways in are a real choice. Variants that are
+  /// routes are not: the channel gets every route (`D1f · 4b`), so only
+  /// Ark's two addresses — one protocol, two keys — still ask.
+  bool get _choosesVariant =>
+      _preset.hasVariants && !channelPresetVariantsAreRoutes(_preset);
+
   List<_WizardStep> get _steps => [
         _WizardStep.provider,
-        if (_preset.hasVariants) _WizardStep.variant,
+        if (_choosesVariant) _WizardStep.variant,
         _WizardStep.connection,
         _WizardStep.appearance,
       ];
@@ -275,6 +285,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
   String _resolvedChannelType() => _variant?.channelType ?? _preset.channelType;
 
+  /// The routes the channel will be created with — what the connection step
+  /// previews and what is stored.
+  ChannelRoutes get _plannedRoutes => plannedChannelRoutes(
+        _preset,
+        _resolvedChannelType(),
+        _resolvedEndpoint(),
+      );
+
   String _resolvedName() => _nameCtrl.text.trim().isEmpty
       ? _selectedProviderId
       : _nameCtrl.text.trim();
@@ -318,11 +336,13 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     if (_submitting) return;
     setState(() => _submitting = true);
     try {
+      final routes = _plannedRoutes;
       await widget.appState.addChannel({
         'display_name': _resolvedName(),
-        'endpoint': _resolvedEndpoint(),
+        'endpoint': routes.primaryAddress,
         'api_key': _apiKeyCtrl.text.trim(),
-        'type': _resolvedChannelType(),
+        'type': routes.primaryVendorId,
+        'routes': routes.encode(),
         'enable_discovery': _enableDiscovery ? 1 : 0,
         'tag': _resolvedTag(),
         'tag_color': _tagColor,

@@ -121,7 +121,7 @@ extension _WizardChrome on _ChannelWizardDialogState {
           leading: const ChannelIconPlate(Icons.add_link),
           title: l10n.addChannel,
           subtitle: l10n.providerCountSummary(
-            kChannelProviderPresets.length,
+            kListedChannelProviderPresets.length,
             ChannelProviderGroup.values.length,
           ),
           monoSubtitle: true,

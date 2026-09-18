@@ -11,11 +11,14 @@ import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
 import '../../../models/pricing_group.dart';
 import '../../../services/catalogue/model_list_ordering.dart';
+import '../../../services/llm/model_routes.dart';
 import '../../../state/model_list_state.dart';
 import '../../../widgets/ui/app_search_field.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
+import '../../../widgets/models/app_route_badge.dart';
 import '../../../widgets/models/channel_avatar.dart';
+import '../../../widgets/models/route_labels.dart';
 import '../../../widgets/ui/scroll_edge_fade.dart';
 import '../../../widgets/models/model_card.dart';
 import 'models_actions.dart';
@@ -438,16 +441,10 @@ class _ChannelHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(channel.displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: nameStyle),
-                    // Which wire protocol the endpoint speaks, and where it
-                    // is: the two facts that decide what the models below can
-                    // do. Mono so two endpoints differing by a path segment
-                    // line up.
-                    Text(
-                      '${channel.type} · ${channel.endpoint}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: subStyle,
-                    ),
+                    // `D1f · 4a`: platform · host · routes. The vendor id and
+                    // full endpoint it replaces were implementation details;
+                    // the host is entered once and each route owns its path.
+                    _ChannelSubline(channel: channel, style: subStyle),
                   ],
                 ),
               ),
@@ -602,6 +599,34 @@ class _KindChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ChannelSubline extends StatelessWidget {
+  const _ChannelSubline({required this.channel, required this.style});
+
+  final LLMChannel channel;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final routes = RoutedChannel.routesOf(channel);
+    final host = routes.host.isEmpty ? routes.primaryAddress : routes.host;
+    return Row(
+      children: [
+        Flexible(
+          child: Text(
+            '${platformLabel(l10n, routes.platform)} · $host',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          ),
+        ),
+        const SizedBox(width: AppSpace.s6),
+        Flexible(child: ChannelRouteBadges(routes)),
+      ],
     );
   }
 }

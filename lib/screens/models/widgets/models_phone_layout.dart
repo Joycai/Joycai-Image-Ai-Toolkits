@@ -16,6 +16,7 @@ import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/models/channel_avatar.dart';
+import 'channel_merge_review.dart';
 import 'channel_row.dart';
 import '../../../widgets/models/model_card.dart';
 import 'models_actions.dart';
@@ -378,6 +379,7 @@ class _PhoneChannelsTab extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final channels = appState.allChannels;
     final draggable = channels.length > 1;
+    final mergeCount = mergeCandidatesOf(appState).length;
 
     // `00d · 1f`: the gap under the finger says where the row lands, with a
     // selection click per change and a light one on the drop.
@@ -393,6 +395,12 @@ class _PhoneChannelsTab extends StatelessWidget {
         // `1f` 到时：触觉 medium + 抬起.
         onReorderStart: gap.onReorderStart((_) => HapticFeedback.mediumImpact()),
         proxyDecorator: channelDragProxy,
+        header: mergeCount == 0
+            ? null
+            : Padding(
+                padding: const EdgeInsets.only(bottom: AppSpace.s10),
+                child: ChannelMergeBanner(count: mergeCount, onReview: actions.reviewMerges),
+              ),
         footer: Padding(
           padding: EdgeInsets.only(top: channels.isEmpty ? 0 : 8),
           child: FeeManagementEntry(

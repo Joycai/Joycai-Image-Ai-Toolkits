@@ -77,13 +77,17 @@ void main() {
   // and Material asserts that a dropdown's value is one of its items, so an
   // existing DashScope channel could not be opened for editing at all. The
   // list is now derived from the vendor registry; these pin that it stays so.
+  //
+  // The field is the single-route form's (`D1f · 4c` 单线路渠道): a channel
+  // on a platform with a second route edits a route table instead, so these
+  // open a single-route platform.
 
   testWidgets('the protocol field offers every family', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
 
-    await _pumpDialog(tester);
+    await _pumpDialog(tester, type: Vendors.deepseek);
 
     final offered = tester
         .widgetList<DropdownButton<String>>(find.byType(DropdownButton<String>))
@@ -108,17 +112,18 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
 
-    // dashscope-api is not a generic family profile, so it only opens if
+    // volcengine-ark is not a generic family profile, so it only opens if
     // the field lists the stored type itself. This is the exact shape of the
-    // bug that made a DashScope channel impossible to edit.
-    await _pumpDialog(tester, type: Vendors.dashscope);
+    // bug that made a DashScope channel impossible to edit (DashScope itself
+    // now edits a route table).
+    await _pumpDialog(tester, type: Vendors.volcengineArk);
 
     final offered = tester
         .widgetList<DropdownButton<String>>(find.byType(DropdownButton<String>))
         .expand((d) => d.items ?? const <DropdownMenuItem<String>>[])
         .map((item) => item.value)
         .toSet();
-    expect(offered, contains(Vendors.dashscope));
+    expect(offered, contains(Vendors.volcengineArk));
     expect(tester.takeException(), isNull);
   });
 
@@ -197,16 +202,10 @@ void main() {
 
       // The section caption is tracked upper case (`D1b · 1e`).
       expect(find.text('PROVIDER PRESET'), findsOneWidget);
-      // The chip names the supplier — and, since DashScope's two faces are
-      // two presets, which face this channel is on comes with the name. The
-      // protocol field below names the wire format that face speaks.
-      expect(find.text('Alibaba DashScope (OpenAI compatible)'),
-          findsOneWidget);
-      expect(
-        find.text('OpenAI · chat/completions · '
-            'Alibaba DashScope (OpenAI compatible)'),
-        findsOneWidget,
-      );
+      // The chip names the platform; the route table below names the routes
+      // the channel speaks (its two faces are routes now, `D1f · 4b`).
+      expect(find.text('Alibaba DashScope'), findsOneWidget);
+      expect(find.text('Chat Completions · Primary'), findsOneWidget);
       expect(find.text('Change preset'), findsWidgets);
     });
 

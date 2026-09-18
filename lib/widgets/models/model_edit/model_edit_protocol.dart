@@ -3,6 +3,30 @@ part of '../model_edit_dialog.dart';
 /// How the model is *requested*: provider features, and the per-surface
 /// protocol pin with its staleness.
 extension _ProtocolSections on _ModelEditDialogState {
+  /// Whether the provider card shows: extended thinking on the ④ wire, or a
+  /// web search some route can send — with routes the grant is the model's,
+  /// so the switch stays while any route honours it (`D1f · 4d`).
+  bool get _showProviderSection =>
+      _isAnthropicChannel ||
+      _webSearch != ServerWebSearch.unsupported ||
+      (_routeMode && _anyRouteSearches);
+
+  bool get _anyRouteSearches {
+    final routes = _routes;
+    final id = idCtrl.text.trim();
+    if (routes == null || id.isEmpty) return false;
+    return routes.kinds.any(
+      (k) =>
+          LLMDispatcher.serverWebSearch(
+            channelType: routes.vendorOf(k) ?? routes.primaryVendorId,
+            modelId: id,
+            tag: tag,
+            wireProtocol: k.face.id,
+          ) !=
+          ServerWebSearch.unsupported,
+    );
+  }
+
   /// `1d`'s provider card: extended thinking (Anthropic-format channels) and
   /// host web search (wherever the resolved chat face can switch it on).
   ///
@@ -15,7 +39,8 @@ extension _ProtocolSections on _ModelEditDialogState {
     final thinkingOn = reasoningEffort != null && reasoningEffort != 'off';
     final search = _webSearch;
     final showThinking = _isAnthropicChannel;
-    final showSearch = search != ServerWebSearch.unsupported;
+    final showSearch =
+        search != ServerWebSearch.unsupported || (_routeMode && _anyRouteSearches);
 
     return ModelEditCard(
       padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s4),
@@ -50,6 +75,11 @@ extension _ProtocolSections on _ModelEditDialogState {
                 onChanged: (v) => _rebuild(() => enableWebSearch = v),
               ),
             ),
+          if (showSearch && _routeMode)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpace.s6),
+              child: _webSearchMatrix(context),
+            ),
         ],
       ),
     );
@@ -58,14 +88,14 @@ extension _ProtocolSections on _ModelEditDialogState {
   /// What host web search does for the current channel, id, kind and
   /// protocol selection: the dispatcher's answer, never a family check here.
   ServerWebSearch get _webSearch {
-    final channel = _selectedChannel;
+    final routed = _routed;
     final id = idCtrl.text.trim();
-    if (channel == null || id.isEmpty) return ServerWebSearch.unsupported;
+    if (routed == null || id.isEmpty) return ServerWebSearch.unsupported;
     return LLMDispatcher.serverWebSearch(
-      channelType: channel.type,
+      channelType: routed.channelType,
       modelId: id,
       tag: tag,
-      wireProtocol: wireProtocol,
+      wireProtocol: _dispatchPin,
     );
   }
 
@@ -75,10 +105,10 @@ extension _ProtocolSections on _ModelEditDialogState {
   /// when channel or id is missing. The kind is read because it decides the
   /// surface: the same id tagged image offers the image menu.
   ProtocolMenu? get _menu {
-    final channel = _selectedChannel;
+    final routed = _routed;
     final id = idCtrl.text.trim();
-    if (channel == null || id.isEmpty) return null;
-    return LLMDispatcher.protocolMenu(channel.type, id, tag: tag);
+    if (routed == null || id.isEmpty) return null;
+    return LLMDispatcher.protocolMenu(routed.channelType, id, tag: tag);
   }
 
   /// The menu's options, or empty.
@@ -103,7 +133,12 @@ extension _ProtocolSections on _ModelEditDialogState {
   ProtocolSectionForm get _protocolForm => protocolSectionForm(_menu, pinIsStale: _pinIsStale);
 
   /// Whether the protocol section renders at all.
-  bool get _showProtocolSection => _protocolForm != ProtocolSectionForm.none;
+  ///
+  /// A chat model's protocol is its route (`D1f · 4e` ①): the route strip
+  /// replaces this section for it. Image and video keep the dropdown — a
+  /// dedicated endpoint is not a route.
+  bool get _showProtocolSection =>
+      !_usesRoutes && _protocolForm != ProtocolSectionForm.none;
 
   /// The pinned protocol when its route has no streaming form, else null.
   /// Asked of the dispatcher with the form as it stands, so the editor cannot
@@ -112,14 +147,16 @@ extension _ProtocolSections on _ModelEditDialogState {
   WireProtocol? get _streamIgnoredBy {
     final pin = _activePin;
     final channel = _selectedChannel;
-    if (pin == null || channel == null) return null;
+    final routed = _routed;
+    if (pin == null || channel == null || routed == null) return null;
     final singleShot = LLMDispatcher().streamIsSingleShot(LLMModelConfig(
       modelId: idCtrl.text.trim(),
-      channelType: channel.type,
-      endpoint: channel.endpoint,
+      channelType: routed.channelType,
+      endpoint: routed.endpoint,
       apiKey: channel.apiKey,
       tag: tag,
       wireProtocol: pin.id,
+      faceBases: routed.faceBases,
     ));
     return singleShot ? pin : null;
   }
@@ -128,8 +165,8 @@ extension _ProtocolSections on _ModelEditDialogState {
     final l10n = widget.l10n;
     final menu = _menu;
     final family = _channelFamily;
-    final channel = _selectedChannel;
-    if (menu == null || family == null || channel == null) {
+    final routed = _routed;
+    if (menu == null || family == null || routed == null) {
       return const SizedBox.shrink();
     }
     final id = idCtrl.text.trim();
@@ -148,7 +185,7 @@ extension _ProtocolSections on _ModelEditDialogState {
       // As the model will be served once saved: with the choice on screen,
       // not the one in the database.
       paramsCapabilities: LLMDispatcher.descriptorFor(
-        channelType: channel.type,
+        channelType: routed.channelType,
         modelId: id,
         tag: tag,
         wireProtocol: _activePin?.id,

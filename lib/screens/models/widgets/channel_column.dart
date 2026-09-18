@@ -14,6 +14,7 @@ import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
+import 'channel_merge_review.dart';
 import 'channel_row.dart';
 import 'models_actions.dart';
 import '../../../widgets/models/models_controls.dart';
@@ -68,6 +69,7 @@ class ChannelColumn extends StatelessWidget {
     final all = appState.allChannels;
     final bool multiple = all.length > 1;
     final bool canReorder = !reorderLocked && multiple;
+    final mergeCount = mergeCandidatesOf(appState).length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -77,6 +79,12 @@ class ChannelColumn extends StatelessWidget {
           channelCount: all.length,
           onAdd: actions.addChannel,
         ),
+        // `D1f · 4a` ②: above the search, only while there is a group.
+        if (mergeCount > 0)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpace.s10, AppSpace.s10, AppSpace.s10, 0),
+            child: ChannelMergeBanner(count: mergeCount, onReview: actions.reviewMerges),
+          ),
         Padding(
           padding: const EdgeInsets.all(AppSpace.s10),
           child: SizedBox(
