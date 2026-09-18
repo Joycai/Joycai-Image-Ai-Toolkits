@@ -5,6 +5,7 @@ import '../../models/pricing_group.dart';
 import '../../models/spec_rate.dart';
 import '../db/database_service.dart';
 import 'llm_types.dart';
+import 'model_routes.dart';
 import 'vendors/vendors.dart';
 
 /// Why a model identifier could not be turned into a request configuration.
@@ -20,6 +21,12 @@ enum LLMConfigErrorKind {
 
   /// The channel has no API key, and its vendor does not work without one.
   missingApiKey,
+
+  /// The model rides a route its channel no longer offers. Never answered by
+  /// quietly sending over the primary route instead: the model's parameters
+  /// were set for the route it chose, and on another wire they are a
+  /// cross-protocol request (standard 02 §2).
+  routeNotFound,
 }
 
 /// A request that cannot be sent as configured. Thrown before any network
@@ -126,9 +133,19 @@ class LLMConfigResolver {
           'Channel for model $modelId not found (it may have been deleted).');
     }
 
-    final endpoint = channelData.endpoint;
+    // The channel as this model's route sees it — never the flat columns,
+    // which hold the primary route whatever the model rides.
+    final routed = RoutedChannel.forModel(channelData, modelData);
+    if (routed.missing) {
+      throw LLMConfigException(
+          LLMConfigErrorKind.routeNotFound,
+          'Model $modelId is set to the "${modelData.activeRoute}" route, '
+          'which channel "${channelData.displayName}" no longer offers. '
+          'Choose one of its routes in the model settings.');
+    }
+    final endpoint = routed.endpoint;
     final apiKey = channelData.apiKey;
-    final channelType = channelData.type;
+    final channelType = routed.channelType;
 
     requireApiKey(
       channelType: channelType,
@@ -152,7 +169,8 @@ class LLMConfigResolver {
       enableThinking: modelData.enableThinking,
       reasoningEffort: ReasoningEffort.tryParse(modelData.reasoningEffort),
       enableWebSearch: modelData.enableWebSearch,
-      wireProtocol: modelData.wireProtocol,
+      wireProtocol: routed.wireProtocol,
+      faceBases: routed.faceBases,
       tag: modelData.tag,
       // Raw tri-state; ContextBudget alone decodes it (preflight size check).
       contextWindow: modelData.contextWindow,

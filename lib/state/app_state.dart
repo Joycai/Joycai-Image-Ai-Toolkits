@@ -15,6 +15,7 @@ import '../services/llm/llm_types.dart';
 import '../services/llm/model_capabilities.dart';
 import '../services/llm/model_descriptor.dart';
 import '../services/llm/model_family.dart';
+import '../services/llm/model_routes.dart';
 import '../models/app_image.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
@@ -332,13 +333,15 @@ class AppState extends ChangeNotifier {
         (c) => c?.id == m.channelId,
         orElse: () => null);
     if (channel == null) return false;
+    final routed = RoutedChannel.forModel(channel, m);
     return LLMDispatcher().canRunVideoJob(LLMModelConfig(
       modelId: m.modelId,
-      channelType: channel.type,
-      endpoint: channel.endpoint,
+      channelType: routed.channelType,
+      endpoint: routed.endpoint,
       apiKey: channel.apiKey,
       tag: m.tag,
-      wireProtocol: m.wireProtocol,
+      wireProtocol: routed.wireProtocol,
+      faceBases: routed.faceBases,
     ));
   }
 
@@ -358,11 +361,12 @@ class AppState extends ChangeNotifier {
         (c) => c?.id == m.channelId,
         orElse: () => null);
     if (channel == null) return ModelDescriptor.of(m.modelId);
+    final routed = RoutedChannel.forModel(channel, m);
     return LLMDispatcher.descriptorFor(
-      channelType: channel.type,
+      channelType: routed.channelType,
       modelId: m.modelId,
       tag: m.tag,
-      wireProtocol: m.wireProtocol,
+      wireProtocol: routed.wireProtocol,
     );
   }
 

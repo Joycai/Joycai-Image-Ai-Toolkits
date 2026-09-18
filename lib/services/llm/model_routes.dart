@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import 'channel_routes.dart';
 import 'llm_dispatcher.dart';
@@ -30,19 +31,19 @@ class RouteParams {
   static const RouteParams empty = RouteParams();
 
   factory RouteParams.ofModel(LLMModel model) => RouteParams(
-        maxOutputTokens: model.maxOutputTokens,
-        enableThinking: model.enableThinking,
-        reasoningEffort: model.reasoningEffort,
-      );
+    maxOutputTokens: model.maxOutputTokens,
+    enableThinking: model.enableThinking,
+    reasoningEffort: model.reasoningEffort,
+  );
 
   bool get isEmpty =>
       maxOutputTokens == null && !enableThinking && reasoningEffort == null;
 
   Map<String, Object> toJson() => {
-        'max_output_tokens': ?maxOutputTokens,
-        if (enableThinking) 'enable_thinking': true,
-        'reasoning_effort': ?reasoningEffort,
-      };
+    'max_output_tokens': ?maxOutputTokens,
+    if (enableThinking) 'enable_thinking': true,
+    'reasoning_effort': ?reasoningEffort,
+  };
 
   /// Field by field; a malformed value reads as unset, never as something
   /// to send.
@@ -65,7 +66,8 @@ class RouteParams {
       other.reasoningEffort == reasoningEffort;
 
   @override
-  int get hashCode => Object.hash(maxOutputTokens, enableThinking, reasoningEffort);
+  int get hashCode =>
+      Object.hash(maxOutputTokens, enableThinking, reasoningEffort);
 
   @override
   String toString() =>
@@ -96,8 +98,9 @@ class ModelRoutes {
     if (json is! Map) return const {};
     return {
       for (final entry in json.entries)
-        ?RouteKind.tryParse(entry.key as String?):
-            RouteParams.fromJson(entry.value),
+        ?RouteKind.tryParse(entry.key as String?): RouteParams.fromJson(
+          entry.value,
+        ),
     };
   }
 
@@ -155,5 +158,96 @@ class ModelRoutes {
       for (final k in routes.kinds)
         if (k != current && parkedKinds.contains(k)) k,
     ];
+  }
+}
+
+/// A channel as one model sees it: the flat vendor / endpoint / protocol
+/// selection of the route that model rides, which is what every reader that
+/// predates routes asks a channel for (standard 02 §2, "按模型的线路看渠道").
+///
+/// Replaces "find the channel by id, read its `type` and `endpoint`"
+/// wherever the answer feeds a protocol question — a request, a descriptor,
+/// a capability gate. Reading the channel's flat columns there instead would
+/// answer for the primary route after the model moved to another one.
+class RoutedChannel {
+  final ChannelRoutes routes;
+
+  /// The route answered for: the model's, or the primary when the model
+  /// rides none (media) or its route is gone ([missing]).
+  final RouteKind route;
+
+  /// The model chose a route the channel no longer offers. A request must
+  /// fail on this; a list or an estimate uses the primary route instead.
+  final bool missing;
+
+  /// Vendor profile id serving [route] — what `LLMModelConfig.channelType`
+  /// and every dispatcher static take.
+  final String channelType;
+
+  /// [route]'s full base address.
+  final String endpoint;
+
+  /// The protocol selection to hand the dispatcher: the chat face of
+  /// [route] when it is not the vendor's own default, the media selection
+  /// for image and video models.
+  final String? wireProtocol;
+
+  const RoutedChannel._({
+    required this.routes,
+    required this.route,
+    required this.missing,
+    required this.channelType,
+    required this.endpoint,
+    required this.wireProtocol,
+  });
+
+  Map<WireProtocol, String> get faceBases => routes.faceBases;
+
+  static ChannelRoutes routesOf(LLMChannel channel) =>
+      ChannelRoutes.resolve(channel.type, channel.endpoint, channel.routes);
+
+  /// The channel through its primary route — discovery, probes, anything
+  /// asked of the channel rather than of a model on it.
+  factory RoutedChannel.primary(LLMChannel channel) {
+    final routes = routesOf(channel);
+    return RoutedChannel._(
+      routes: routes,
+      route: routes.primary.kind,
+      missing: false,
+      channelType: routes.primaryVendorId,
+      endpoint: routes.primaryAddress,
+      wireProtocol: null,
+    );
+  }
+
+  factory RoutedChannel.forModel(LLMChannel channel, LLMModel model) {
+    final routes = routesOf(channel);
+    if (!ModelRoutes.usesRoutes(model)) {
+      return RoutedChannel._(
+        routes: routes,
+        route: routes.primary.kind,
+        missing: false,
+        channelType: routes.primaryVendorId,
+        endpoint: routes.primaryAddress,
+        wireProtocol: model.wireProtocol,
+      );
+    }
+    final requested = ModelRoutes.requestRoute(model, routes);
+    final kind = requested ?? routes.primary.kind;
+    final vendorId = routes.vendorOf(kind)!;
+    final face = kind.face;
+    final vendorDefault = Vendors.byId(vendorId).menuFor(Surface.chat).first;
+    return RoutedChannel._(
+      routes: routes,
+      route: kind,
+      missing: requested == null,
+      channelType: vendorId,
+      endpoint: routes.addressOf(kind)!,
+      // The default face needs no pin; one the row already spelled out is
+      // kept verbatim so nothing downstream sees a different selection.
+      wireProtocol: face != vendorDefault || model.wireProtocol == face.id
+          ? face.id
+          : null,
+    );
   }
 }

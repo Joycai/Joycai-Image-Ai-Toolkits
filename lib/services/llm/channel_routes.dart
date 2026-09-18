@@ -143,6 +143,18 @@ class ChannelRoutes {
   /// * Otherwise the document, narrowed: unknown kinds, duplicate kinds and
   ///   kinds no vendor on this platform can serve are dropped.
   static ChannelRoutes resolve(String type, String endpoint, String? doc) {
+    final key = '$type\u0000$endpoint\u0000${doc ?? ''}';
+    final hit = _resolved[key];
+    if (hit != null) return hit;
+    if (_resolved.length >= 256) _resolved.clear();
+    return _resolved[key] = _resolve(type, endpoint, doc);
+  }
+
+  /// [resolve] is pure and asked from build methods (a model card, the
+  /// workbench's descriptor lookup), so its answers are kept per input.
+  static final Map<String, ChannelRoutes> _resolved = {};
+
+  static ChannelRoutes _resolve(String type, String endpoint, String? doc) {
     final parsed = _Doc.tryParse(doc);
     final legacyRoutes = legacy(type, endpoint);
     if (parsed == null || parsed.entries.isEmpty) return legacyRoutes;

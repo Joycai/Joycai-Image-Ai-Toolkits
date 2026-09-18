@@ -13,7 +13,7 @@
 | A1 | `RouteKind`（六值、稳定 id、↔ 对话 wire）+ `PlatformProfile` 表 + 平台推断（主线路 vendor + 主机）+ 线路 vendor 解析规则 | `services/llm/vendors/platforms.dart` | 每个 vendor × 官方/非官方主机推断正确；迁移后线路 vendor = 今天的点单 vendor | ☑ |
 | A2 | `ChannelRoutes`（内嵌文档：主机、线路表、写入标记）：解析逐字段收窄、序列化、读时由旧 (type, endpoint) 推出、规范化（扁平字段 = 主线路）、地址拼接（缺省 / 相对 / 绝对） | `services/llm/channel_routes.dart` | **每个预设 × 每个面迁移后地址逐字节等于今天的推导**；非 URL 地址整条保留；规范化幂等 | ☑ |
 | A3 | v45：`llm_channels.routes`、`llm_models.active_route`、`llm_models.route_params`；`LLMChannel` / `LLMModel` 字段；`RouteParams`（三字段一类）+ 模型读时迁移（旧对话面点单 → `active_route`）；仓库读写都过规范化 | `database_migrations.dart`、`llm_channel.dart`、`llm_model.dart`、`model_repository.dart` | onCreate 与 onUpgrade 同步；旧行读出 = 今天；写入标记识别扁平字段被他方改写 | ☑ |
-| A4 | 按模型的线路看渠道：`ChannelRouteView`；`LLMConfigResolver` 走它，线路不存在 → `LLMConfigErrorKind.routeNotFound`；`LLMModelConfig.faceBases` + `_faceTarget` 先查它；`AppState` 的 `descriptorForModel` / `_supportsVideoForType`、模型编辑、卡片、发现改走视图；源码扫描测试挡住 `channel.type` 直读 | `services/llm/channel_route_view.dart`、`llm_config_resolver.dart`、`llm_model_config.dart`、`llm_dispatcher.dart`、`state/app_state.dart`、调用方 | 旧数据下所有 `wire_protocol_routing_test` 不变；线路缺失请求侧报错、展示侧回退 | ☐ |
+| A4 | 按模型的线路看渠道：`ChannelRouteView`；`LLMConfigResolver` 走它，线路不存在 → `LLMConfigErrorKind.routeNotFound`；`LLMModelConfig.faceBases` + `_faceTarget` 先查它；`AppState` 的 `descriptorForModel` / `_supportsVideoForType`、模型编辑、卡片、发现改走视图；源码扫描测试挡住 `channel.type` 直读 | `services/llm/channel_route_view.dart`、`llm_config_resolver.dart`、`llm_model_config.dart`、`llm_dispatcher.dart`、`state/app_state.dart`、调用方 | 旧数据下所有 `wire_protocol_routing_test` 不变；线路缺失请求侧报错、展示侧回退 | ☑ |
 | A5 | 切线路：`RouteParams.forRoute` 一条规则同时用于保存与切换；`LLMModel.switchRoute`（停放 / 载入 / 覆盖全部 / id 不变）；改主线路前钉住跟随者（纯函数） | `models/llm_model.dart`、`services/catalogue/route_switching.dart` | 标准 03 §6 的六条性质各一条测试 | ☐ |
 | A6 | 备份：`schema_version` 45；旧备份新列为空 → 同一读时迁移；导入/导出往返保留线路与停放参数 | `database_service.dart` | 旧版本备份导入后请求地址不变；新备份在 44 版被拒（已有检查，补测试） | ☐ |
 
@@ -65,3 +65,8 @@ C 期末：`/code-review high`，修复。
   `wire_protocol` 读出线路（`explicitRoute`），读法稳定，无需改写。一个区别于标准的点：**旧的对话面点单若渠道已不提供，仍退回主线路**
   （今天它就是这样静默失效的），只有新写的 `active_route` 失效才让请求报错——这是让每一条旧行请求逐字节不变的唯一读法。
   仓库的 `updateChannel` 在调用方没带线路文档时沿用库里的那份，于是 C3 之前的渠道编辑框保存不会丢掉其余线路。
+- **A4**：视图叫 `RoutedChannel`（与 `ModelRoutes` 同在 `model_routes.dart`）。本片只换了**会影响请求或能力判断**的三处：
+  `LLMConfigResolver`、`AppState.descriptorForModel` / `_supportsVideoForType`、模型页的「获取模型」。模型编辑器、模型卡、选择器仍读
+  `channel.type`——它们在 C2 / C5 整体改成按线路，届时再加挡住直读的源码扫描测试（现在加会把要重写的界面一起钉住）。
+  逐字节的证明不再只比地址：`test/route_resolution_test.dart` 起一个本地服务器，**真实发出**旧配置与新配置的请求，比较方法、URL、
+  鉴权头和请求体——每个预设 × 每个对话面 × 有无点单，外加合并后的中转四条线路对照原先四个独立渠道。

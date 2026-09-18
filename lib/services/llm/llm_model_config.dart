@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
 import '../../models/spec_rate.dart';
+import 'vendors/vendor_profile.dart';
 
 /// The app's own reasoning-intensity vocabulary (playbook 03: never let one
 /// vendor's spelling into configuration). Absence — a null wherever this is
@@ -88,6 +89,17 @@ class LLMModelConfig {
   /// auto instead of failing (and survives a save/restore round-trip intact).
   final String? wireProtocol;
 
+  /// The base address of every route on the model's channel, keyed by the
+  /// chat wire each route speaks (`ChannelRoutes.faceBases`).
+  ///
+  /// The dispatcher reads a face's base here before deriving it from
+  /// [endpoint] through `VendorProfile.protocolBases`, so a route whose path
+  /// the user changed is honored on every call that reaches that face —
+  /// chat on the route itself, and model discovery on the channel's chat
+  /// route. A face with no route still derives exactly as before. Empty for
+  /// a config not built from a stored channel (tests, probes of a form).
+  final Map<WireProtocol, String> faceBases;
+
   /// The model's declared kind (`llm_models.tag` verbatim: chat / image /
   /// video / multimodal), or null when the caller has no model row — which
   /// then routes exactly as it did before the kind was read, by classifying
@@ -151,6 +163,7 @@ class LLMModelConfig {
     this.reasoningEffort,
     this.enableWebSearch = false,
     this.wireProtocol,
+    this.faceBases = const {},
     this.tag,
     this.contextWindow,
     this.maxOutputTokens,
@@ -182,6 +195,7 @@ class LLMModelConfig {
         reasoningEffort: reasoningEffort,
         enableWebSearch: enableWebSearch,
         wireProtocol: wireProtocol,
+        faceBases: faceBases,
         tag: tag,
         contextWindow: contextWindow,
         maxOutputTokens: maxOutputTokens,
