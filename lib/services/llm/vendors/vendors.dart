@@ -1,5 +1,5 @@
 import '../protocols/dashscope_payload.dart'
-    show dashscopeAnthropicBase, dashscopeCompatibleBase;
+    show dashscopeAnthropicBase, dashscopeCompatibleBase, dashscopeNativeBase;
 import '../protocols/minimax_payload.dart'
     show minimaxAnthropicBase, minimaxOpenAIBase;
 import 'vendor_profile.dart';
@@ -350,6 +350,10 @@ class Vendors {
       videoProtocol: WireProtocol.dashscopeVideo,
       protocolBases: {
         WireProtocol.anthropicChat: dashscopeAnthropicBase,
+        // The native protocol derives its own base from any face, so this
+        // changes no request; it makes the face's base explicit, which is
+        // what the native route's address is read from.
+        WireProtocol.dashscopeChat: dashscopeNativeBase,
       },
       // For the ④ face: Bailian documents the official
       // `{type: enabled, budget_tokens}` spelling.
@@ -381,6 +385,7 @@ class Vendors {
       protocolBases: {
         WireProtocol.openaiChat: dashscopeCompatibleBase,
         WireProtocol.anthropicChat: dashscopeAnthropicBase,
+        WireProtocol.dashscopeChat: dashscopeNativeBase,
       },
       thinking: ThinkingDialect.anthropicBudget,
       // The same per-face declaration as its compatible sibling: which chat

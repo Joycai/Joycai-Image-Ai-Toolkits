@@ -176,9 +176,7 @@ class Platforms {
       id: deepseek,
       officialHost: 'https://api.deepseek.com',
       hosts: ['api.deepseek.com'],
-      routes: [
-        PlatformRoute(RouteKind.chat, '', Vendors.deepseek),
-      ],
+      routes: [PlatformRoute(RouteKind.chat, '', Vendors.deepseek)],
     ),
     PlatformProfile(
       id: minimax,
@@ -187,7 +185,10 @@ class Platforms {
       routes: [
         PlatformRoute(RouteKind.chat, '/v1', Vendors.minimax),
         PlatformRoute(
-            RouteKind.anthropic, '/anthropic/v1', Vendors.minimaxAnthropic),
+          RouteKind.anthropic,
+          '/anthropic/v1',
+          Vendors.minimaxAnthropic,
+        ),
       ],
     ),
     PlatformProfile(
@@ -195,10 +196,12 @@ class Platforms {
       officialHost: 'https://dashscope.aliyuncs.com',
       hosts: ['dashscope.aliyuncs.com', 'dashscope-intl.aliyuncs.com'],
       routes: [
+        PlatformRoute(RouteKind.chat, '/compatible-mode/v1', Vendors.dashscope),
         PlatformRoute(
-            RouteKind.chat, '/compatible-mode/v1', Vendors.dashscope),
-        PlatformRoute(
-            RouteKind.anthropic, '/apps/anthropic/v1', Vendors.dashscope),
+          RouteKind.anthropic,
+          '/apps/anthropic/v1',
+          Vendors.dashscope,
+        ),
         PlatformRoute(RouteKind.dashscope, '/api/v1', Vendors.dashscopeNative),
       ],
     ),
@@ -206,9 +209,7 @@ class Platforms {
       id: ark,
       officialHost: 'https://ark.cn-beijing.volces.com',
       hosts: ['.volces.com'],
-      routes: [
-        PlatformRoute(RouteKind.chat, '/api/v3', Vendors.volcengineArk),
-      ],
+      routes: [PlatformRoute(RouteKind.chat, '/api/v3', Vendors.volcengineArk)],
     ),
     PlatformProfile(
       id: newapi,
@@ -216,7 +217,10 @@ class Platforms {
       routes: [
         PlatformRoute(RouteKind.chat, '/v1', Vendors.newApiOpenAI),
         PlatformRoute(
-            RouteKind.responses, '/v1', Vendors.newApiOpenAIResponses),
+          RouteKind.responses,
+          '/v1',
+          Vendors.newApiOpenAIResponses,
+        ),
         PlatformRoute(RouteKind.anthropic, '/v1', Vendors.newApiAnthropic),
         PlatformRoute(RouteKind.gemini, '/v1beta', Vendors.newApiGemini),
       ],
@@ -321,7 +325,10 @@ class Platforms {
   /// face the primary vendor never offered takes the platform's own vendor
   /// for it; a face the platform does not offer either resolves to null.
   static String? routeVendor(
-      PlatformProfile platform, String primaryVendorId, RouteKind kind) {
+    PlatformProfile platform,
+    String primaryVendorId,
+    RouteKind kind,
+  ) {
     final primary = Vendors.byId(primaryVendorId);
     if (primary.menuFor(Surface.chat).contains(kind.face)) {
       return primaryVendorId;
@@ -332,7 +339,7 @@ class Platforms {
   /// The routes a legacy channel of [vendorId] reached before routes
   /// existed: every chat face its vendor offered, default first.
   static List<RouteKind> legacyKinds(String vendorId) => [
-        for (final face in Vendors.byId(vendorId).menuFor(Surface.chat))
-          ?RouteKind.ofFace(face),
-      ];
+    for (final face in Vendors.byId(vendorId).menuFor(Surface.chat))
+      ?RouteKind.ofFace(face),
+  ];
 }
