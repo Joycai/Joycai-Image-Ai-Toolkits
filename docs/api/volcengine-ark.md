@@ -144,3 +144,25 @@ body 是它的超集：`model` / `prompt` / `size` / `response_format` 同名同
 
 **原生多语种文字**：俄、阿、菲、泰、土、韩、马来、西、葡、印尼、法、德、越、日
 14 种语言的文字生成。
+
+## 7. 实测（2026-09-18，订阅套餐 key）
+
+- **两个 base、两种 key，互不通用**：按量付费 `https://ark.cn-beijing.volces.com/api/v3`，
+  订阅套餐（Agent / Coding Plan）`https://ark.cn-beijing.volces.com/api/plan/v3`。
+  套餐 key 打 `/api/v3` 得 401；两个 base 下的路径（`/images/generations`、
+  `/chat/completions`）相同。
+- **套餐没有模型列表**：`GET /api/plan/v3/models` → 404，非 JSON body。
+- **套餐只服务 5.0 pro 与 5.0 lite**，且认的拼写有讲究：
+  `doubao-seedream-5.0-pro`、`doubao-seedream-5.0-lite`（套餐文档的写法）与带日期的
+  `doubao-seedream-5-0-pro-260628`、`doubao-seedream-5-0-lite-260128` 都收；
+  **不带 `lite` 的** `doubao-seedream-5-0-260128` 与 4.5 / 4.0 回
+  `404 {"error":{"code":"UnsupportedModel", …}}`。
+- 免费探测一个模型是否可用：发一个非法 `size`（如 `"1x1"`）——支持的模型在生成前就回
+  `400 InvalidParameter`（消息里写该模型的最小像素：pro 921600、lite 3686400），不支持的回
+  404 `UnsupportedModel`。
+- 错误信封是 OpenAI 形：`{"error":{"code","message","param","type"}}`，消息尾带
+  `Request id`。
+- 5.0 pro、`size:"1K"`、`output_format:"png"`、无比例提示：回 `size:"1248x832"`
+  （模型自己选了 3:2），**耗时 43 s**；回显的 `model` 是 `doubao-seedream-5-0-pro`
+  （不带日期）；`usage` = `{input_images:0, generated_images:1, output_tokens:4056,
+  total_tokens:4056}`（4056 = 1248×832/256）。

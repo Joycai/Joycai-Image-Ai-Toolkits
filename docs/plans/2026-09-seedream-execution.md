@@ -44,8 +44,14 @@
    原样放在 `ark_usage` 下留档。
 9. **超时随组图上限放宽**：单发出图面 5 分钟起，`maxImages` 每多一张 +40 s，
    封顶 15 分钟（组图 15 张 4K 是分钟级的同步请求）。
-10. **发现**：方舟有没有 `GET /api/v3/models` 未核实；vendor 声明 4 个
-    Seedream id 为 `unlistedModels`，列表端点 404 时退回目录、成功时合并。
+10. **发现**：实测套餐 base 的 `GET /models` 是 404（按量 base 未能用套餐 key 验证）。
+    vendor 声明 Seedream 目录为 `unlistedModels`：按量四款带日期 id + 套餐两款
+    `doubao-seedream-5.0-pro` / `-5.0-lite`，副行写明属于哪种接入；404 时退回目录、成功时合并。
+12. **两种接入 = 一个渠道类型的两个向导变体**（按量付费 `/api/v3`、订阅套餐
+    `/api/plan/v3`）：key 互不通用、路径相同，区别只在 base，所以不拆 vendor——
+    与 MiniMax / NewAPI 的变体同一句法，但两项的 `channelType` 相同。
+13. **分类认两种版本拼写**：`5-0` 与 `5.0`（套餐用点号、回显不带日期），以及
+    `5-0-lite` / `5.0-lite` / 不带 lite 的 `5-0-2601xx` 都是 5.0 lite。
 11. **不做（记进台账「还欠的」）**：流式（`stream: true`，逐张推送）、联网搜索
     之外的 `tools`、图层的 `bounding_box` / `z_index` 落库与画布还原、Seedance
     视频面、方舟 chat 面的 `thinking` 方言（未经文档核实）。
@@ -55,7 +61,7 @@
 | # | 阶段 | 内容 | 主要文件 | 验收 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | S0 | A 调研 | 协议事实文档 + 本清单 | `docs/api/volcengine-ark.md`、本文件 | 文档齐 | ✅ |
-| S1 | A 设计 | Claude Design `D1e`：向导预设行、模型编辑协议区、工作台四张参数表、手机 | 设计项目 | 稿已推送、规格汇总齐 | ⏳ |
+| S1 | A 设计 | Claude Design `D1e`：向导预设行、模型编辑协议区、工作台四张参数表、手机 | 设计项目 | 稿已推送、规格汇总齐 | ✅ |
 | S2 | B Layer 3 | `ModelFamily.seedreamImage` + 分类 + 六张表 + `tierPixelSizes` + descriptor `servedBy` | `model_family.dart`、`model_capabilities.dart`、`model_capability_tables.dart`、`model_descriptor.dart` | 单测：分类、每表参数、映射 | ⏳ |
 | S3 | B Layer 1 | `ArkImagesProtocol` + `ark_payload.dart`（纯函数 body 构造 / 响应解析） | `protocols/ark_*.dart` | 单测：body 逐字段、组图收紧、任务前置条件、单张失败、全失败 | ⏳ |
 | S4 | B Layer 2 + 路由 | `WireProtocol.arkImages`、`Vendors.volcengineArk`、dispatcher（auto / 生成 / 单发 / 计费 / 超时）、目录 | `vendor_profile.dart`、`vendors.dart`、`llm_dispatcher.dart` | 路由单测：方舟、中转、点单、未识别 id | ⏳ |
@@ -68,3 +74,8 @@
 ## 施工记录
 
 （每片落地时追加偏离与发现。）
+
+- **S1**：用户中途给了套餐 key 与 `…/api/plan/v3`。实测推翻了两处草案：方舟有两个 base
+  且 key 不通用（→ 向导加「接入方式」两段，决策 12），套餐只认 5.0 两款、`lite` 拼写有讲究
+  （→ 目录与分类，决策 10、13）。设计稿 D1e 3a 已按此改。工作台控件名沿用既有的「尺寸」
+  （Gemini 的 1K/2K/4K 档位同一个 labelKey），不另造「分辨率」。
