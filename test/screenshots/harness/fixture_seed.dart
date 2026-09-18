@@ -164,6 +164,27 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     tagColor: 0xFF2196F3,
   ).toMap(includeId: false));
 
+  // D1f 4a / 4f: one New API relay split the way it had to be before routes
+  // — OpenAI format and Gemini format, one host, one key — so the rail offers
+  // a merge, and its review has a namesake to join and a model to move.
+  final int newApiId = await db.addChannel(LLMChannel(
+    displayName: 'NewAPI 中转',
+    endpoint: 'https://relay.example.com/v1',
+    apiKey: 'fixture-key-newapi',
+    type: Vendors.newApiOpenAI,
+    tag: '中转',
+    tagColor: 0xFF009688,
+  ).toMap(includeId: false));
+
+  final int newApiGeminiId = await db.addChannel(LLMChannel(
+    displayName: 'NewAPI · Gemini 格式',
+    endpoint: 'https://relay.example.com/v1beta',
+    apiKey: 'fixture-key-newapi',
+    type: Vendors.newApiGemini,
+    tag: '中转',
+    tagColor: 0xFF795548,
+  ).toMap(includeId: false));
+
   final int flashFee = await db.addPricingGroup(PricingGroup(
     name: 'Gemini Flash',
     inputPrice: 0.075,
@@ -328,6 +349,45 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
       channelId: arkId,
       feeGroupId: perImageFee,
       sortOrder: 13,
+    ),
+    // D1f 4d: a chat model on a relay with two routes — the editor's route
+    // strip, its switch preview and the blank route after switching.
+    LLMModel(
+      modelId: 'gpt-5.2',
+      modelName: 'GPT-5.2',
+      tag: ModelTag.chat.value,
+      channelId: newApiId,
+      feeGroupId: proFee,
+      contextWindow: 400000,
+      maxOutputTokens: 65536,
+      reasoningEffort: 'high',
+      enableThinking: true,
+      sortOrder: 14,
+    ),
+    LLMModel(
+      modelId: 'gemini-3-pro-preview',
+      modelName: 'Gemini 3 Pro',
+      tag: ModelTag.chat.value,
+      channelId: newApiId,
+      feeGroupId: proFee,
+      sortOrder: 15,
+    ),
+    LLMModel(
+      modelId: 'gemini-3-pro-preview',
+      modelName: 'Gemini 3 Pro (Gemini 格式)',
+      tag: ModelTag.chat.value,
+      channelId: newApiGeminiId,
+      feeGroupId: proFee,
+      maxOutputTokens: 32768,
+      sortOrder: 16,
+    ),
+    LLMModel(
+      modelId: 'gemini-2.5-flash',
+      modelName: 'Gemini 2.5 Flash (Gemini 格式)',
+      tag: ModelTag.chat.value,
+      channelId: newApiGeminiId,
+      feeGroupId: flashFee,
+      sortOrder: 17,
     ),
   ];
 
