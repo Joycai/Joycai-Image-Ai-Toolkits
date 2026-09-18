@@ -138,6 +138,15 @@ data: [DONE]
 - 单张失败的事件文档叫 `image_generation.partial_failed`（未能触发，未实测）。
 - 参数校验失败**不走 SSE**：直接 `400 application/json` 的普通错误信封，与非流式相同。
 
+- **响应头**（经 App 真实路径抓到）：`200`、`Content-Type: text/event-stream`、`transfer-encoding: chunked`、
+  `cache-control: no-cache`。**头本身要等第一张画完才回来**（`x-envoy-upstream-service-time: 27362`）——
+  所以首块的空闲等待就是第一张图的生成时间，这正是 App 首块也按单图期限计、不用聊天 120 s 守卫的理由。
+
+**App 内实测**（2026-09-18，套餐、5.0 lite、`2K`、组图上限 2、两张不同主题的提示词，经任务队列 →
+`LLMService.requestStream` → `generateImageStream` → 执行器）：第一张 **27.9 s** 落盘，第二张 **48.4 s**，
+任务 48.5 s 完成；两张都是 2848×1600 jpeg（只发档位时模型自选了 16:9）。第一张在第二张还没画完时就
+出现在结果里——边到边存成立。
+
 **本应用的用法**（2026-09-18 起）：只在方舟自家渠道、只对声明了流式的版本（5.0 lite ·
 4.5 · 4.0）发 `stream: true`，每收到一张就下载并落盘；中转和 5.0 pro 照旧同步。细节见
 `../architecture/llm-three-layer.md`「火山方舟 · Seedream」。
