@@ -765,5 +765,167 @@
         "type": "String"
       }
     }
-  }
+  },
+  "routeDashScopeShort": "DashScope",
+  "routeDashScopeFull": "DashScope native",
+  "routeSectionTitle": "Routes",
+  "routeScopeModel": "Model",
+  "routeScopeThisRoute": "This route · {route}",
+  "@routeScopeThisRoute": {
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "routePrimarySuffix": "Primary",
+  "channelMergeBannerTitle": "{count, plural, =1{1 group of channels can be merged} other{{count} groups of channels can be merged}}",
+  "@channelMergeBannerTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "channelMergeBannerReason": "Same platform, host and key — only the protocol differs",
+  "channelMergeBannerAction": "Review",
+  "mergeDialogTitle": "Merge channels",
+  "mergeDialogProgress": "{index} / {total} · {platform} · {host}",
+  "@mergeDialogProgress": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "platform": {
+        "type": "String"
+      },
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "mergeKeep": "Keep",
+  "mergeAbsorb": "Deleted after merging",
+  "mergeRoutesAfter": "Routes after merging",
+  "mergeRouteAdded": "Merged in",
+  "mergeModelJoin": "Same model, merged · {route} parameters carried over",
+  "@mergeModelJoin": {
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "mergeModelJoinMedia": "Same model, merged",
+  "mergeModelMove": "Moved · pinned to {route}",
+  "@mergeModelMove": {
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "mergeReferencesNote": "{count, plural, =0{No saved selection or usage record points at a merged-away model.} =1{1 saved selection or usage record will point at the kept model.} other{{count} saved selections and usage records will point at the kept models.}} Merged models keep the name, fee group and context settings of the one in {channel}.",
+  "@mergeReferencesNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "mergeIrreversible": "Merging can't be undone. The two keys were compared in memory on this device; the key itself is never shown or logged.",
+  "mergeSkip": "Skip this group",
+  "mergeConfirm": "Merge",
+  "mergeDone": "Channels merged",
+  "routeHost": "Host",
+  "routeHostHint": "Scheme, host and port only. Each route's path is set below.",
+  "routeTableCaption": "At most one per protocol · the first is primary",
+  "routePathDefault": "Default {path}",
+  "@routePathDefault": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "routePathEdited": "Edited · default {path}",
+  "@routePathEdited": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "routePathOwnHost": "Own host",
+  "routeRestoreDefault": "Restore default",
+  "routeOfficialLocked": "Official address, locked",
+  "routeTest": "Test this route",
+  "routeMakePrimary": "Make primary",
+  "routeIsPrimary": "Already the primary route",
+  "routeRemove": "Turn off this route",
+  "routeEnable": "Enable {route}",
+  "@routeEnable": {
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "routeInUse": "{count, plural, =1{1 model uses this route, so it can't be turned off} other{{count} models use this route, so it can't be turned off}}",
+  "@routeInUse": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeOnlyOne": "A channel needs at least one route",
+  "routePinnedSnack": "{count, plural, =1{1 model stays on {route}} other{{count} models stay on {route}}}",
+  "@routePinnedSnack": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "routesToCreate": "Routes to create",
+  "routesToCreateHint": "You can turn off unused ones later in the channel editor",
+  "routeKeyShared": "One key, shared by every route",
+  "routeWizardNote": "New models use the primary route ({route}). To send a model over another route, switch it in the route strip at the top of the model editor; each route keeps its own parameters.",
+  "@routeWizardNote": {
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "routeSwitchTitle": "Switch to {route} · these parameters change",
+  "@routeSwitchTitle": {
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "routeSwitchUnset": "Not set · not sent",
+  "routeSwitchNote": "Parameters on {route} stay with it and come back when you switch back. Web search is the model's permission and doesn't change with the route.",
+  "@routeSwitchNote": {
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "routeSwitchConfirm": "Switch",
+  "routeWebSearchPerRoute": "Per route",
+  "routeWebSearchNotSent": "The current route doesn't send web search. The switch stays on and takes effect on a route that can."
 }

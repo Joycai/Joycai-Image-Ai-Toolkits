@@ -2809,6 +2809,218 @@ class AppLocalizationsEn extends AppLocalizations {
       'Off, every channel\'s models run as one list';
 
   @override
+  String get routeDashScopeShort => 'DashScope';
+
+  @override
+  String get routeDashScopeFull => 'DashScope native';
+
+  @override
+  String get routeSectionTitle => 'Routes';
+
+  @override
+  String get routeScopeModel => 'Model';
+
+  @override
+  String routeScopeThisRoute(String route) {
+    return 'This route · $route';
+  }
+
+  @override
+  String get routePrimarySuffix => 'Primary';
+
+  @override
+  String channelMergeBannerTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count groups of channels can be merged',
+      one: '1 group of channels can be merged',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelMergeBannerReason =>
+      'Same platform, host and key — only the protocol differs';
+
+  @override
+  String get channelMergeBannerAction => 'Review';
+
+  @override
+  String get mergeDialogTitle => 'Merge channels';
+
+  @override
+  String mergeDialogProgress(
+    int index,
+    int total,
+    String platform,
+    String host,
+  ) {
+    return '$index / $total · $platform · $host';
+  }
+
+  @override
+  String get mergeKeep => 'Keep';
+
+  @override
+  String get mergeAbsorb => 'Deleted after merging';
+
+  @override
+  String get mergeRoutesAfter => 'Routes after merging';
+
+  @override
+  String get mergeRouteAdded => 'Merged in';
+
+  @override
+  String mergeModelJoin(String route) {
+    return 'Same model, merged · $route parameters carried over';
+  }
+
+  @override
+  String get mergeModelJoinMedia => 'Same model, merged';
+
+  @override
+  String mergeModelMove(String route) {
+    return 'Moved · pinned to $route';
+  }
+
+  @override
+  String mergeReferencesNote(int count, String channel) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count saved selections and usage records will point at the kept models.',
+      one: '1 saved selection or usage record will point at the kept model.',
+      zero: 'No saved selection or usage record points at a merged-away model.',
+    );
+    return '$_temp0 Merged models keep the name, fee group and context settings of the one in $channel.';
+  }
+
+  @override
+  String get mergeIrreversible =>
+      'Merging can\'t be undone. The two keys were compared in memory on this device; the key itself is never shown or logged.';
+
+  @override
+  String get mergeSkip => 'Skip this group';
+
+  @override
+  String get mergeConfirm => 'Merge';
+
+  @override
+  String get mergeDone => 'Channels merged';
+
+  @override
+  String get routeHost => 'Host';
+
+  @override
+  String get routeHostHint =>
+      'Scheme, host and port only. Each route\'s path is set below.';
+
+  @override
+  String get routeTableCaption =>
+      'At most one per protocol · the first is primary';
+
+  @override
+  String routePathDefault(String path) {
+    return 'Default $path';
+  }
+
+  @override
+  String routePathEdited(String path) {
+    return 'Edited · default $path';
+  }
+
+  @override
+  String get routePathOwnHost => 'Own host';
+
+  @override
+  String get routeRestoreDefault => 'Restore default';
+
+  @override
+  String get routeOfficialLocked => 'Official address, locked';
+
+  @override
+  String get routeTest => 'Test this route';
+
+  @override
+  String get routeMakePrimary => 'Make primary';
+
+  @override
+  String get routeIsPrimary => 'Already the primary route';
+
+  @override
+  String get routeRemove => 'Turn off this route';
+
+  @override
+  String routeEnable(String route) {
+    return 'Enable $route';
+  }
+
+  @override
+  String routeInUse(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count models use this route, so it can\'t be turned off',
+      one: '1 model uses this route, so it can\'t be turned off',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get routeOnlyOne => 'A channel needs at least one route';
+
+  @override
+  String routePinnedSnack(int count, String route) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count models stay on $route',
+      one: '1 model stays on $route',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get routesToCreate => 'Routes to create';
+
+  @override
+  String get routesToCreateHint =>
+      'You can turn off unused ones later in the channel editor';
+
+  @override
+  String get routeKeyShared => 'One key, shared by every route';
+
+  @override
+  String routeWizardNote(String route) {
+    return 'New models use the primary route ($route). To send a model over another route, switch it in the route strip at the top of the model editor; each route keeps its own parameters.';
+  }
+
+  @override
+  String routeSwitchTitle(String route) {
+    return 'Switch to $route · these parameters change';
+  }
+
+  @override
+  String get routeSwitchUnset => 'Not set · not sent';
+
+  @override
+  String routeSwitchNote(String route) {
+    return 'Parameters on $route stay with it and come back when you switch back. Web search is the model\'s permission and doesn\'t change with the route.';
+  }
+
+  @override
+  String get routeSwitchConfirm => 'Switch';
+
+  @override
+  String get routeWebSearchPerRoute => 'Per route';
+
+  @override
+  String get routeWebSearchNotSent =>
+      'The current route doesn\'t send web search. The switch stays on and takes effect on a route that can.';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

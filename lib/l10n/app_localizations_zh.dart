@@ -2686,6 +2686,186 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modelGroupByChannelHint => '关掉后所有渠道的模型排成一列';
 
   @override
+  String get routeDashScopeShort => '百炼';
+
+  @override
+  String get routeDashScopeFull => '百炼原生';
+
+  @override
+  String get routeSectionTitle => '线路';
+
+  @override
+  String get routeScopeModel => '模型';
+
+  @override
+  String routeScopeThisRoute(String route) {
+    return '本线路 · $route';
+  }
+
+  @override
+  String get routePrimarySuffix => '主线路';
+
+  @override
+  String channelMergeBannerTitle(int count) {
+    return '$count 组渠道可以合并';
+  }
+
+  @override
+  String get channelMergeBannerReason => '同一平台、同一主机、同一把密钥，只是协议不同';
+
+  @override
+  String get channelMergeBannerAction => '查看';
+
+  @override
+  String get mergeDialogTitle => '合并渠道';
+
+  @override
+  String mergeDialogProgress(
+    int index,
+    int total,
+    String platform,
+    String host,
+  ) {
+    return '$index / $total 组 · $platform · $host';
+  }
+
+  @override
+  String get mergeKeep => '保留';
+
+  @override
+  String get mergeAbsorb => '并入后删除';
+
+  @override
+  String get mergeRoutesAfter => '合并后的线路';
+
+  @override
+  String get mergeRouteAdded => '并入';
+
+  @override
+  String mergeModelJoin(String route) {
+    return '同名合一 · $route 线路的参数并入';
+  }
+
+  @override
+  String get mergeModelJoinMedia => '同名合一';
+
+  @override
+  String mergeModelMove(String route) {
+    return '搬过来 · 钉在 $route 线路';
+  }
+
+  @override
+  String mergeReferencesNote(int count, String channel) {
+    return '$count 处选择与用量记录会改指向保留下来的模型。同名合一的模型保留「$channel」里那一个的名字、费率组与上下文设置。';
+  }
+
+  @override
+  String get mergeIrreversible => '合并不能撤销。两个渠道判定为同一把密钥是在本机内存里比较的，密钥本身不显示、不记录。';
+
+  @override
+  String get mergeSkip => '跳过这一组';
+
+  @override
+  String get mergeConfirm => '合并';
+
+  @override
+  String get mergeDone => '渠道已合并';
+
+  @override
+  String get routeHost => '主机';
+
+  @override
+  String get routeHostHint => '只填到主机与端口。每条线路的路径在下面。';
+
+  @override
+  String get routeTableCaption => '每个协议至多一条 · 第一条为主线路';
+
+  @override
+  String routePathDefault(String path) {
+    return '默认 $path';
+  }
+
+  @override
+  String routePathEdited(String path) {
+    return '已改 · 默认 $path';
+  }
+
+  @override
+  String get routePathOwnHost => '独立主机';
+
+  @override
+  String get routeRestoreDefault => '恢复默认';
+
+  @override
+  String get routeOfficialLocked => '官方地址，已锁定';
+
+  @override
+  String get routeTest => '测这一条线路';
+
+  @override
+  String get routeMakePrimary => '设为主线路';
+
+  @override
+  String get routeIsPrimary => '已是主线路';
+
+  @override
+  String get routeRemove => '关掉这条线路';
+
+  @override
+  String routeEnable(String route) {
+    return '启用 $route 线路';
+  }
+
+  @override
+  String routeInUse(int count) {
+    return '$count 个模型在用，不能关';
+  }
+
+  @override
+  String get routeOnlyOne => '渠道至少要有一条线路';
+
+  @override
+  String routePinnedSnack(int count, String route) {
+    return '$count 个模型保持在 $route';
+  }
+
+  @override
+  String get routesToCreate => '将建立的线路';
+
+  @override
+  String get routesToCreateHint => '建好后可在渠道编辑里关掉不用的';
+
+  @override
+  String get routeKeyShared => '一把密钥，所有线路共用';
+
+  @override
+  String routeWizardNote(String route) {
+    return '新模型默认走主线路（$route）。某个模型要走别的线路，在模型编辑顶部的线路条里切，参数各自独立。';
+  }
+
+  @override
+  String routeSwitchTitle(String route) {
+    return '切到 $route · 这些参数会变';
+  }
+
+  @override
+  String get routeSwitchUnset => '未设置 · 不发';
+
+  @override
+  String routeSwitchNote(String route) {
+    return '$route 上的参数会留在 $route 名下，切回来原样恢复。联网搜索是模型的授权，不随线路变。';
+  }
+
+  @override
+  String get routeSwitchConfirm => '切换';
+
+  @override
+  String get routeWebSearchPerRoute => '各线路';
+
+  @override
+  String get routeWebSearchNotSent => '当前线路不发联网搜索。开关保持开启，切到能发的线路时生效。';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -7668,6 +7848,186 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get modelGroupByChannelHint => '關閉後所有通道的模型排成一列';
+
+  @override
+  String get routeDashScopeShort => '百煉';
+
+  @override
+  String get routeDashScopeFull => '百煉原生';
+
+  @override
+  String get routeSectionTitle => '線路';
+
+  @override
+  String get routeScopeModel => '模型';
+
+  @override
+  String routeScopeThisRoute(String route) {
+    return '本線路 · $route';
+  }
+
+  @override
+  String get routePrimarySuffix => '主線路';
+
+  @override
+  String channelMergeBannerTitle(int count) {
+    return '$count 組渠道可以合併';
+  }
+
+  @override
+  String get channelMergeBannerReason => '同一平台、同一主機、同一把金鑰，只是協定不同';
+
+  @override
+  String get channelMergeBannerAction => '查看';
+
+  @override
+  String get mergeDialogTitle => '合併渠道';
+
+  @override
+  String mergeDialogProgress(
+    int index,
+    int total,
+    String platform,
+    String host,
+  ) {
+    return '$index / $total 組 · $platform · $host';
+  }
+
+  @override
+  String get mergeKeep => '保留';
+
+  @override
+  String get mergeAbsorb => '併入後刪除';
+
+  @override
+  String get mergeRoutesAfter => '合併後的線路';
+
+  @override
+  String get mergeRouteAdded => '併入';
+
+  @override
+  String mergeModelJoin(String route) {
+    return '同名合一 · $route 線路的參數併入';
+  }
+
+  @override
+  String get mergeModelJoinMedia => '同名合一';
+
+  @override
+  String mergeModelMove(String route) {
+    return '搬過來 · 釘在 $route 線路';
+  }
+
+  @override
+  String mergeReferencesNote(int count, String channel) {
+    return '$count 處選擇與用量紀錄會改指向保留下來的模型。同名合一的模型保留「$channel」裡那一個的名稱、費率組與上下文設定。';
+  }
+
+  @override
+  String get mergeIrreversible => '合併不能復原。兩個渠道判定為同一把金鑰是在本機記憶體裡比較的，金鑰本身不顯示、不記錄。';
+
+  @override
+  String get mergeSkip => '跳過這一組';
+
+  @override
+  String get mergeConfirm => '合併';
+
+  @override
+  String get mergeDone => '渠道已合併';
+
+  @override
+  String get routeHost => '主機';
+
+  @override
+  String get routeHostHint => '只填到主機與連接埠。每條線路的路徑在下面。';
+
+  @override
+  String get routeTableCaption => '每個協定至多一條 · 第一條為主線路';
+
+  @override
+  String routePathDefault(String path) {
+    return '預設 $path';
+  }
+
+  @override
+  String routePathEdited(String path) {
+    return '已改 · 預設 $path';
+  }
+
+  @override
+  String get routePathOwnHost => '獨立主機';
+
+  @override
+  String get routeRestoreDefault => '恢復預設';
+
+  @override
+  String get routeOfficialLocked => '官方位址，已鎖定';
+
+  @override
+  String get routeTest => '測這一條線路';
+
+  @override
+  String get routeMakePrimary => '設為主線路';
+
+  @override
+  String get routeIsPrimary => '已是主線路';
+
+  @override
+  String get routeRemove => '關掉這條線路';
+
+  @override
+  String routeEnable(String route) {
+    return '啟用 $route 線路';
+  }
+
+  @override
+  String routeInUse(int count) {
+    return '$count 個模型在用，不能關';
+  }
+
+  @override
+  String get routeOnlyOne => '渠道至少要有一條線路';
+
+  @override
+  String routePinnedSnack(int count, String route) {
+    return '$count 個模型保持在 $route';
+  }
+
+  @override
+  String get routesToCreate => '將建立的線路';
+
+  @override
+  String get routesToCreateHint => '建好後可在渠道編輯裡關掉不用的';
+
+  @override
+  String get routeKeyShared => '一把金鑰，所有線路共用';
+
+  @override
+  String routeWizardNote(String route) {
+    return '新模型預設走主線路（$route）。某個模型要走別的線路，在模型編輯頂部的線路條裡切，參數各自獨立。';
+  }
+
+  @override
+  String routeSwitchTitle(String route) {
+    return '切到 $route · 這些參數會變';
+  }
+
+  @override
+  String get routeSwitchUnset => '未設定 · 不發送';
+
+  @override
+  String routeSwitchNote(String route) {
+    return '$route 上的參數會留在 $route 名下，切回來原樣恢復。聯網搜尋是模型的授權，不隨線路變。';
+  }
+
+  @override
+  String get routeSwitchConfirm => '切換';
+
+  @override
+  String get routeWebSearchPerRoute => '各線路';
+
+  @override
+  String get routeWebSearchNotSent => '目前線路不發送聯網搜尋。開關保持開啟，切到能發送的線路時生效。';
 
   @override
   String get prompts => '提示';

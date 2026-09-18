@@ -2718,6 +2718,188 @@ class AppLocalizationsJa extends AppLocalizations {
   String get modelGroupByChannelHint => 'オフにすると、すべてのチャンネルのモデルが 1 つのリストになります';
 
   @override
+  String get routeDashScopeShort => 'DashScope';
+
+  @override
+  String get routeDashScopeFull => 'DashScope ネイティブ';
+
+  @override
+  String get routeSectionTitle => 'ルート';
+
+  @override
+  String get routeScopeModel => 'モデル';
+
+  @override
+  String routeScopeThisRoute(String route) {
+    return 'このルート · $route';
+  }
+
+  @override
+  String get routePrimarySuffix => 'メイン';
+
+  @override
+  String channelMergeBannerTitle(int count) {
+    return '$count 組のチャンネルを統合できます';
+  }
+
+  @override
+  String get channelMergeBannerReason => '同じプラットフォーム・ホスト・キーで、プロトコルだけが異なります';
+
+  @override
+  String get channelMergeBannerAction => '確認';
+
+  @override
+  String get mergeDialogTitle => 'チャンネルを統合';
+
+  @override
+  String mergeDialogProgress(
+    int index,
+    int total,
+    String platform,
+    String host,
+  ) {
+    return '$index / $total · $platform · $host';
+  }
+
+  @override
+  String get mergeKeep => '残す';
+
+  @override
+  String get mergeAbsorb => '統合後に削除';
+
+  @override
+  String get mergeRoutesAfter => '統合後のルート';
+
+  @override
+  String get mergeRouteAdded => '統合';
+
+  @override
+  String mergeModelJoin(String route) {
+    return '同名モデルを統合 · $route のパラメータを引き継ぎ';
+  }
+
+  @override
+  String get mergeModelJoinMedia => '同名モデルを統合';
+
+  @override
+  String mergeModelMove(String route) {
+    return '移動 · $route に固定';
+  }
+
+  @override
+  String mergeReferencesNote(int count, String channel) {
+    return '$count 件の選択と使用記録が残すモデルを指すようになります。統合したモデルは「$channel」側の名前・料金グループ・コンテキスト設定を保ちます。';
+  }
+
+  @override
+  String get mergeIrreversible =>
+      '統合は元に戻せません。キーの一致はこの端末のメモリ内で比較しており、キー自体は表示も記録もしません。';
+
+  @override
+  String get mergeSkip => 'このグループをスキップ';
+
+  @override
+  String get mergeConfirm => '統合';
+
+  @override
+  String get mergeDone => 'チャンネルを統合しました';
+
+  @override
+  String get routeHost => 'ホスト';
+
+  @override
+  String get routeHostHint => 'スキームとホスト、ポートまで。各ルートのパスは下で設定します。';
+
+  @override
+  String get routeTableCaption => 'プロトコルごとに 1 本まで · 先頭がメイン';
+
+  @override
+  String routePathDefault(String path) {
+    return '既定 $path';
+  }
+
+  @override
+  String routePathEdited(String path) {
+    return '変更済み · 既定 $path';
+  }
+
+  @override
+  String get routePathOwnHost => '独自ホスト';
+
+  @override
+  String get routeRestoreDefault => '既定に戻す';
+
+  @override
+  String get routeOfficialLocked => '公式アドレス（固定）';
+
+  @override
+  String get routeTest => 'このルートをテスト';
+
+  @override
+  String get routeMakePrimary => 'メインにする';
+
+  @override
+  String get routeIsPrimary => 'すでにメインです';
+
+  @override
+  String get routeRemove => 'このルートをオフ';
+
+  @override
+  String routeEnable(String route) {
+    return '$route を有効にする';
+  }
+
+  @override
+  String routeInUse(int count) {
+    return '$count 個のモデルが使用中のためオフにできません';
+  }
+
+  @override
+  String get routeOnlyOne => 'チャンネルには少なくとも 1 本のルートが必要です';
+
+  @override
+  String routePinnedSnack(int count, String route) {
+    return '$count 個のモデルは $route のままです';
+  }
+
+  @override
+  String get routesToCreate => '作成するルート';
+
+  @override
+  String get routesToCreateHint => '使わないものは後でチャンネル編集からオフにできます';
+
+  @override
+  String get routeKeyShared => '1 つのキーをすべてのルートで共有します';
+
+  @override
+  String routeWizardNote(String route) {
+    return '新しいモデルはメインルート（$route）を使います。別のルートにするにはモデル編集上部のルートバーで切り替えます。パラメータはルートごとに独立です。';
+  }
+
+  @override
+  String routeSwitchTitle(String route) {
+    return '$route に切り替え · 次のパラメータが変わります';
+  }
+
+  @override
+  String get routeSwitchUnset => '未設定 · 送信しない';
+
+  @override
+  String routeSwitchNote(String route) {
+    return '$route のパラメータはそのルートに残り、戻すと元どおりになります。Web 検索はモデルの許可で、ルートでは変わりません。';
+  }
+
+  @override
+  String get routeSwitchConfirm => '切り替え';
+
+  @override
+  String get routeWebSearchPerRoute => 'ルート別';
+
+  @override
+  String get routeWebSearchNotSent =>
+      '現在のルートは Web 検索を送信しません。スイッチはオンのまま、送信できるルートで有効になります。';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override
