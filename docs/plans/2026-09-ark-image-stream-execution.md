@@ -22,5 +22,5 @@
 - [x] S1 能力 + payload + 事件解析（纯函数，带测试）
 - [x] S2 协议 `generateImageStream` + dispatcher 路由 + 守卫（loopback 服务器测试）
 - [x] S3 执行器边到边存
-- [ ] S4 文档：§5 标已实现、欠账表删行、三层架构笔记
+- [x] S4 文档：§5 标已实现、欠账表删行、三层架构笔记
 - [ ] review → 修 → 升版本 → PR

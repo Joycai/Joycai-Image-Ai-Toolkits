@@ -138,6 +138,10 @@ data: [DONE]
 - 单张失败的事件文档叫 `image_generation.partial_failed`（未能触发，未实测）。
 - 参数校验失败**不走 SSE**：直接 `400 application/json` 的普通错误信封，与非流式相同。
 
+**本应用的用法**（2026-09-18 起）：只在方舟自家渠道、只对声明了流式的版本（5.0 lite ·
+4.5 · 4.0）发 `stream: true`，每收到一张就下载并落盘；中转和 5.0 pro 照旧同步。细节见
+`../architecture/llm-three-layer.md`「火山方舟 · Seedream」。
+
 ## 6. 5.0 pro 专属
 
 **交互编辑**：没有新字段。编辑位置靠两种写法之一：在参考图上手绘标记（框、

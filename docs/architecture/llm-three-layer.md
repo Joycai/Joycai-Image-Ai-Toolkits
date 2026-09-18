@@ -859,6 +859,19 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
   （`maxImages`，拆图层按 17）每多一张 +40 s，封顶 15 分钟。计费按张：`image_count`；方舟的
   `output_tokens`（像素/256）不进 token 键，放在 `ark_usage` 下，免得按 token 的费用组算出假钱；
   不发布 `output_size`，按规格的档位行写的是 `2K`。
+- **流式出图（2026-09-18 补）**：只在方舟自家渠道、且表上 `streamsImages` 为真（5.0 lite ·
+  4.5 · 4.0）时，`generateStream` 走 `ArkImagesProtocol.generateImageStream`——发
+  `stream: true`，每个 `partial_succeeded` 下载后作为一个 `imagePart` 推出，`partial_failed`
+  只记一张失败，`completed` 带 `usage`，收尾的 metadata 与同步路径同形。这条路由
+  `streamIsSingleShot` 为假，但仍然**提交即计费**。空闲守卫按「一张图」计：
+  `imageStreamChunkGap` = 单图期限（5 分钟），首块、后续块都用它，首块超时算期限不重试
+  （聊天的 120 s 空闲守卫会在 4K 图还在画时把它丢掉）。协议对 `stream` 请求回来的
+  JSON（参数错误的 400 都是这样回的）走同步读法。中转、5.0 pro 照旧同步：中转是否透传
+  SSE 未知，拒收 `stream` 的中转会把能用的渠道变成 400。执行器在流式路径上**边到边存**，
+  后面失败或取消时，已落盘的图保留。
+  踩过的坑：`partial_failed` 事件里有 `error` 对象，通用的信封检查会把它当成整个请求失败
+  ——只对不认识的事件做信封检查。测试：`seedream_routing_test`「live image stream」、
+  `image_stream_save_test`（第一张在流还开着时就已落盘）。
 - 按规格计费的条件选单顺带收了 `ModelCapabilities.idRoutedTables`（按 id 才走到的表），
   `1.5K` 这类小数档位能选能排。
 - **测试**：`seedream_capabilities_test`（分类、每表、像素落在各版本文档区间）、
@@ -866,8 +879,8 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
   `seedream_routing_test`（菜单 / auto / 点单 / 超时 / 本地 HTTP 端到端）、
   `ark_channel_preset_test`。截图：`models_desktop_light_wizardArk{,2}`、
   `workbench_desktop_*_seedream{Pro,Lite}`。
-- **没做**：流式（逐张推送）、图层 `bounding_box` / `z_index` 落库与画布还原、Seedance 视频面、
-  方舟 chat 面的 `thinking` 方言——记在台账「还欠的」。
+- **没做**：图层 `bounding_box` / `z_index` 落库与画布还原、Seedance 视频面——记在台账「还欠的」。
+  方舟 chat 面的 `thinking` 方言实测不需要（标准 `reasoning_effort` 即可，`api/volcengine-ark.md` §7.1）。
 
 ## 遗留与已知取舍
 
