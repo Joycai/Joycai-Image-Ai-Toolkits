@@ -123,10 +123,22 @@ void main() {
     expect(find.text('Position 10, 20'), findsOneWidget);
     expect(find.text('Size 40×100'), findsOneWidget);
 
-    // Empty ground clears it.
+    // Empty ground clears it — inside the picture and round it.
     await tester.tapAt(base.topLeft + const Offset(95, 5) * scale);
     await tester.pump();
     expect(find.text('Position 10, 20'), findsNothing);
+    await tester.tapAt(base.topLeft + const Offset(30, 70) * scale);
+    await tester.pump();
+    expect(find.text('Position 10, 20'), findsOneWidget);
+    await tester.tapAt(base.topLeft - const Offset(20, 0));
+    await tester.pump();
+    expect(find.text('Position 10, 20'), findsNothing);
+  });
+
+  testWidgets('a single layer is counted in the singular', (tester) async {
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    expect(l10n.layerCanvasSubtitle(912, 1168, 1), 'Base 912×1168 · 1 layer');
+    expect(l10n.menuLayerCount(3), '3 layers');
   });
 
   testWidgets('narrow widths keep every row and the export', (tester) async {

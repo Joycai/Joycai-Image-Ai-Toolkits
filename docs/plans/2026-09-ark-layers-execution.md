@@ -52,3 +52,7 @@
   40×40 的实心 `FilledButton`——设计系统没有实心图标按钮。画布读底图尺寸用新加的
   `ImageMetadataService.readNow`：网格那条按帧排队的读法对单张全屏页只是多等一帧，测试里还永远不跑。
   截图：`test/screenshots/app_screens_layer_canvas_test.dart`（桌面亮 Blue、平板暗、手机亮 Orange、画廊角标）。
+- **review（`/code-review high`，3 条，全修）**：① 覆盖目标时旧行残留——AI 重命名「覆盖」或搬运覆盖把
+  一张普通图放到图层文件的路径上，旧行会把它当成那一层画进画布；`move` 先退掉目标自己的行，复制覆盖
+  调新的 `forget`。② 英文「1 layers」——三条计数改 ICU 复数。③ 点图片外的棋盘地不取消选中——外层再包
+  一个清空选中的点按。

@@ -91,6 +91,20 @@ void main() {
           everyElement(startsWith(moved)));
     });
 
+    test('overwriting a layer file with an ordinary one retires its row',
+        () async {
+      await saveSet(dir.path);
+      final other = touch(p.join(dir.path, 'other.png')).path;
+      final target = p.join(dir.path, 'l2.png');
+      File(target).deleteSync();
+      File(other).renameSync(target);
+      await repo.move(other, target);
+      expect(ImageLayerRepository.layeredPaths.value.containsKey(target),
+          isFalse);
+      final set = await repo.setFor(p.join(dir.path, 'l0.png'));
+      expect(set!.layers.map((l) => l.zIndex), [0, 1]);
+    });
+
     test('a folder merely sharing a name prefix is left alone', () async {
       final folder = p.join(dir.path, 'a');
       await saveSet(folder);

@@ -3527,7 +3527,7 @@
       }
     }
   },
-  "layerCanvasSubtitle": "Base {width}×{height} · {count} layers",
+  "layerCanvasSubtitle": "Base {width}×{height} · {count, plural, =1{1 layer} other{{count} layers}}",
   "@layerCanvasSubtitle": {
     "placeholders": {
       "width": {
@@ -3541,7 +3541,7 @@
       }
     }
   },
-  "layerCanvasSubtitleShort": "{width}×{height} · {count} layers",
+  "layerCanvasSubtitleShort": "{width}×{height} · {count, plural, =1{1 layer} other{{count} layers}}",
   "@layerCanvasSubtitleShort": {
     "placeholders": {
       "width": {
@@ -3621,7 +3621,7 @@
   },
   "layerSetUnavailable": "The files of this layer set are no longer there",
   "menuOpenLayers": "Open layers",
-  "menuLayerCount": "{count} layers",
+  "menuLayerCount": "{count, plural, =1{1 layer} other{{count} layers}}",
   "@menuLayerCount": {
     "placeholders": {
       "count": {

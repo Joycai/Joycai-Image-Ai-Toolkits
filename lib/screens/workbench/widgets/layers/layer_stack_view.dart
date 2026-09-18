@@ -50,8 +50,12 @@ class LayerStackView extends StatelessWidget {
   Rect _boxOf(ImageLayer layer) {
     final b = layer.box;
     if (b == null) return Offset.zero & baseSize;
-    return Rect.fromLTRB(b.left.toDouble(), b.top.toDouble(),
-        b.right.toDouble(), b.bottom.toDouble());
+    return Rect.fromLTRB(
+      b.left.toDouble(),
+      b.top.toDouble(),
+      b.right.toDouble(),
+      b.bottom.toDouble(),
+    );
   }
 
   String? _hit(Offset basePoint) {
@@ -78,33 +82,45 @@ class LayerStackView extends StatelessWidget {
         ),
         Padding(
           padding: padding,
-          child: LayoutBuilder(builder: (context, constraints) {
-            // A little air round the picture at rest, as the design draws it.
-            final scale = 0.92 *
-                math.min(constraints.maxWidth / baseSize.width,
-                    constraints.maxHeight / baseSize.height);
-            final size = baseSize * scale;
-            return InteractiveViewer(
-              transformationController: transformation,
-              minScale: 0.5,
-              maxScale: 16,
-              boundaryMargin: const EdgeInsets.all(double.infinity),
-              child: SizedBox(
-                width: constraints.maxWidth,
-                height: constraints.maxHeight,
-                child: Center(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTapUp: (d) => onSelect(_hit(d.localPosition / scale)),
-                    child: SizedBox.fromSize(
-                      size: size,
-                      child: _stack(context, scheme, scale),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // A little air round the picture at rest, as the design draws it.
+              final scale =
+                  0.92 *
+                  math.min(
+                    constraints.maxWidth / baseSize.width,
+                    constraints.maxHeight / baseSize.height,
+                  );
+              final size = baseSize * scale;
+              return InteractiveViewer(
+                transformationController: transformation,
+                minScale: 0.5,
+                maxScale: 16,
+                boundaryMargin: const EdgeInsets.all(double.infinity),
+                // The ground round the picture is empty ground too: a tap on
+                // it clears the pick (`A7 · 7a` ③). The picture's own
+                // detector wins inside it.
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onSelect(null),
+                  child: SizedBox(
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                    child: Center(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTapUp: (d) => onSelect(_hit(d.localPosition / scale)),
+                        child: SizedBox.fromSize(
+                          size: size,
+                          child: _stack(context, scheme, scale),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            );
-          }),
+              );
+            },
+          ),
         ),
       ],
     );
@@ -114,7 +130,11 @@ class LayerStackView extends StatelessWidget {
     Rect onScreen(ImageLayer l) {
       final r = _boxOf(l);
       return Rect.fromLTWH(
-          r.left * scale, r.top * scale, r.width * scale, r.height * scale);
+        r.left * scale,
+        r.top * scale,
+        r.width * scale,
+        r.height * scale,
+      );
     }
 
     final base = set.base;
@@ -131,32 +151,38 @@ class LayerStackView extends StatelessWidget {
         if (showBase)
           Positioned.fill(
             child: DecoratedBox(
-              decoration: BoxDecoration(boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 32,
-                  offset: const Offset(0, 8),
-                ),
-              ]),
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 32,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
             ),
           ),
         if (showBase)
           Positioned.fill(
-            child: Image.file(File(base.path),
-                key: ValueKey(base.path),
-                fit: BoxFit.fill,
-                filterQuality: FilterQuality.medium,
-                gaplessPlayback: true),
+            child: Image.file(
+              File(base.path),
+              key: ValueKey(base.path),
+              fit: BoxFit.fill,
+              filterQuality: FilterQuality.medium,
+              gaplessPlayback: true,
+            ),
           ),
         for (final layer in set.overlays)
           if (!hidden.contains(layer.path))
             Positioned.fromRect(
               rect: onScreen(layer),
-              child: Image.file(File(layer.path),
-                  key: ValueKey(layer.path),
-                  fit: BoxFit.fill,
-                  filterQuality: FilterQuality.medium,
-                  gaplessPlayback: true),
+              child: Image.file(
+                File(layer.path),
+                key: ValueKey(layer.path),
+                fit: BoxFit.fill,
+                filterQuality: FilterQuality.medium,
+                gaplessPlayback: true,
+              ),
             ),
         if (showBounds)
           for (final layer in set.overlays)
@@ -174,9 +200,7 @@ class LayerStackView extends StatelessWidget {
         if (chosen != null && !hidden.contains(chosen.path))
           Positioned.fromRect(
             rect: onScreen(chosen),
-            child: IgnorePointer(
-              child: _Selection(label: chosen.name),
-            ),
+            child: IgnorePointer(child: _Selection(label: chosen.name)),
           ),
       ],
     );
@@ -206,8 +230,7 @@ class _Selection extends StatelessWidget {
           bottom: -3,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              border: Border.all(
-                  color: scheme.accentRing, width: 3),
+              border: Border.all(color: scheme.accentRing, width: 3),
             ),
           ),
         ),
@@ -237,7 +260,9 @@ class _Selection extends StatelessWidget {
                   label!,
                   maxLines: 1,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: scheme.onPrimary, height: AppType.tightHeight),
+                    color: scheme.onPrimary,
+                    height: AppType.tightHeight,
+                  ),
                 ),
               ),
             ),

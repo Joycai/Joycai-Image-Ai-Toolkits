@@ -350,6 +350,8 @@ class FileTransferService {
 
         if (plan.mode != FileTransferMode.copy) {
           await ImageLayerRepository().move(entry.sourcePath, target);
+        } else if (resolution == FileConflictResolution.overwrite) {
+          await ImageLayerRepository().forget(target);
         }
         succeeded.add(target);
         bytesDone += entry.size;

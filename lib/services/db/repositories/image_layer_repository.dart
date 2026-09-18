@@ -83,18 +83,42 @@ class ImageLayerRepository {
   /// swallowed. Answered from [layeredPaths] first, so the common case — a
   /// file no decomposition produced — never touches the database (and the
   /// file services' tests never open one).
+  ///
+  /// A move that overwrote [to] also retires [to]'s own row: the file it
+  /// described is gone, and left alone the row would dress whatever now
+  /// sits at that path as a layer (review 1).
   Future<void> move(String from, String to) async {
     if (from == to) return;
     final prefix = from.endsWith(p.separator) ? from : '$from${p.separator}';
-    if (!layeredPaths.value.keys
-        .any((path) => path == from || path.startsWith(prefix))) {
-      return;
-    }
+    final known = layeredPaths.value;
+    final overwrote = known.containsKey(to);
+    final carries =
+        known.keys.any((path) => path == from || path.startsWith(prefix));
+    if (!overwrote && !carries) return;
     try {
-      await _move(from, to, prefix);
+      if (overwrote) await _forget(to);
+      if (carries) await _move(from, to, prefix);
     } catch (e) {
       debugPrint('ImageLayerRepository.move($from → $to) failed: $e');
     }
+  }
+
+  /// Drops [path]'s row — for a copy that overwrote it, which has no
+  /// source row to carry over. Bookkeeping like [move]: no database touch
+  /// for a path the index does not know, errors swallowed.
+  Future<void> forget(String path) async {
+    if (!layeredPaths.value.containsKey(path)) return;
+    try {
+      await _forget(path);
+    } catch (e) {
+      debugPrint('ImageLayerRepository.forget($path) failed: $e');
+    }
+  }
+
+  Future<void> _forget(String path) async {
+    final db = await _db;
+    await db.delete('image_layers', where: 'path = ?', whereArgs: [path]);
+    layeredPaths.value = {...layeredPaths.value}..remove(path);
   }
 
   Future<void> _move(String from, String to, String prefix) async {

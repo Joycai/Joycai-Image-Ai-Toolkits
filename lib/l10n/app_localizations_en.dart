@@ -5497,12 +5497,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String layerCanvasSubtitle(int width, int height, int count) {
-    return 'Base $width×$height · $count layers';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count layers',
+      one: '1 layer',
+    );
+    return 'Base $width×$height · $_temp0';
   }
 
   @override
   String layerCanvasSubtitleShort(int width, int height, int count) {
-    return '$width×$height · $count layers';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count layers',
+      one: '1 layer',
+    );
+    return '$width×$height · $_temp0';
   }
 
   @override
@@ -5574,6 +5586,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String menuLayerCount(int count) {
-    return '$count layers';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count layers',
+      one: '1 layer',
+    );
+    return '$_temp0';
   }
 }

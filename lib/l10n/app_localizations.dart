@@ -9480,13 +9480,13 @@ abstract class AppLocalizations {
   /// No description provided for @layerCanvasSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Base {width}×{height} · {count} layers'**
+  /// **'Base {width}×{height} · {count, plural, =1{1 layer} other{{count} layers}}'**
   String layerCanvasSubtitle(int width, int height, int count);
 
   /// No description provided for @layerCanvasSubtitleShort.
   ///
   /// In en, this message translates to:
-  /// **'{width}×{height} · {count} layers'**
+  /// **'{width}×{height} · {count, plural, =1{1 layer} other{{count} layers}}'**
   String layerCanvasSubtitleShort(int width, int height, int count);
 
   /// No description provided for @layerShowBounds.
@@ -9600,7 +9600,7 @@ abstract class AppLocalizations {
   /// No description provided for @menuLayerCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} layers'**
+  /// **'{count, plural, =1{1 layer} other{{count} layers}}'**
   String menuLayerCount(int count);
 }
 
