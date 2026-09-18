@@ -29,7 +29,7 @@
 | 2 | 落库：v46 `image_layers`（onCreate + onUpgrade）、`ImageLayer` / `ImageLayerSet` 模型、`ImageLayerRepository`；执行器存图后写行（同一响应一个 `set_id`） | `database_migrations.dart`、`database_service.dart`、`models/image_layer.dart`、`repositories/image_layer_repository.dart`、`task_executors.dart` | 迁移测试；回环服务器跑一次拆图层任务，库里 1 底图 + N 层、框对得上 | ✅ |
 | 3 | 设计稿 `A7 图层画布` 推到设计项目 | scratchpad → DesignSync | 桌面 / 平板 / 手机三帧 + 规格汇总 | ✅ |
 | 4 | 画布页 + 入口 + 导出合成 + 四语 | `screens/workbench/widgets/layers/…`、`image_card.dart`、`image_card_context_menu.dart`、`l10n/src/*/workbench.arb` | widget 测试（按框定位、显隐、孤儿行、导出像素）；截图 390 / 1024 / 1440 | ✅ |
-| 5 | 文档收尾：`api/volcengine-ark.md`、`llm-three-layer.md`、台账划掉欠账、删本清单 | docs | — | ☐ |
+| 5 | 文档收尾：`api/volcengine-ark.md`、`llm-three-layer.md`、台账划掉欠账、删本清单 | docs | — | ✅ |
 
 之后：`/code-review high`、bump 4.15.0、开 PR；再用套餐 key 实测流式出图（lite 两张）。
 

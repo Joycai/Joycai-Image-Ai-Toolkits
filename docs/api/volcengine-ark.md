@@ -159,6 +159,10 @@ data: [DONE]
   `bounding_box.absolute`（底图像素坐标 `[l,t,r,b]`）与 `.normalized`（0–1000）。
 - 任一图层失败＝整个请求失败，不支持部分成功。
 
+  **本应用的用法**（2026-09-18 起）：底图与各层按叠放次序落盘，每个文件的 `z_index` / `name` /
+  `description` / `bounding_box.absolute` 存进 `image_layers`；图层画布按框把各层放回底图坐标，
+  可导出合成图。细节见 `../architecture/llm-three-layer.md`「火山方舟 · Seedream」。
+
 **透明背景**（`background: "transparent"`）：只用于图生图，且**只能 1 张带
 透明通道的参考图**；输出默认 png，同时写 `output_format: jpeg` 报错；传入 jpeg
 这类没有透明通道的格式报错。典型用法：把图层拆分出来的某一层再单独编辑。

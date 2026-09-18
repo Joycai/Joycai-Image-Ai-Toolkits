@@ -874,6 +874,20 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
   踩过的坑：`partial_failed` 事件里有 `error` 对象，通用的信封检查会把它当成整个请求失败
   ——只对不认识的事件做信封检查。测试：`seedream_routing_test`「live image stream」、
   `image_stream_save_test`（第一张在流还开着时就已落盘）。
+- **拆图层落库与画布还原（2026-09-18 补，设计 `A7`）**：每张图的叠放信息是**类型化字段**，
+  不进 `metadata`——`GeneratedImageLayer`（`z_index` · `name` · `description` · `box`，框是
+  **底图像素**）在 `LLMResponse.imageLayers` 里与 `generatedImages` 按位置一一对齐，在流上与
+  `imagePart` 同一个 chunk（`LLMResponseChunk.imageLayer`）。`metadata` 跨 chunk 合并，放进去就丢了对齐。
+  方舟协议因此**逐项下载**，不走 `resolveImageRefs`（它跳过下载失败的项，后面每张都会错位）。
+  执行器存图后写 `image_layers`（v46，按文件路径为主键，同一次响应一个 `set_id`），写失败只记日志、
+  不丢图。应用内的改名 / 移动（改名对话框、AI 重命名、文件与文件夹搬运）调
+  `ImageLayerRepository.move` 带着行走；它先查内存索引 `layeredPaths`，与图层无关的文件不碰库。
+  画布（`screens/workbench/widgets/layers/`）按框把每层拉伸放回底图坐标系，逐层显隐、点选描框，
+  「导出合成图」由 `LayerCompositeService` 在 isolate 里按底图分辨率合成可见层，存到底图旁。
+  入口：图片卡右上角铭牌角标、右键菜单一行「打开图层」。不做：拖动 / 缩放 / 重排单层、显隐持久化。
+  测试：`image_layer_store_test`（仓库、改名跟随、任务端到端）、`layer_canvas_test`（按框定位、
+  显隐、点选、合成像素）、`seedream_routing_test`「a decomposition keeps each image paired」；
+  截图 `workbench_*_layerCanvas`、`workbench_desktop_light_layerBadge`。
 - 按规格计费的条件选单顺带收了 `ModelCapabilities.idRoutedTables`（按 id 才走到的表），
   `1.5K` 这类小数档位能选能排。
 - **测试**：`seedream_capabilities_test`（分类、每表、像素落在各版本文档区间）、
@@ -881,7 +895,7 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
   `seedream_routing_test`（菜单 / auto / 点单 / 超时 / 本地 HTTP 端到端）、
   `ark_channel_preset_test`。截图：`models_desktop_light_wizardArk{,2}`、
   `workbench_desktop_*_seedream{Pro,Lite}`。
-- **没做**：图层 `bounding_box` / `z_index` 落库与画布还原、Seedance 视频面——记在台账「还欠的」。
+- **没做**：Seedance 视频面——记在台账「还欠的」。
   方舟 chat 面的 `thinking` 方言实测不需要（标准 `reasoning_effort` 即可，`api/volcengine-ark.md` §7.1）。
 
 ## 遗留与已知取舍
