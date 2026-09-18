@@ -43,6 +43,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | `2026-09-large-file-split.md`（八片，分支 `claude/split-*`，一片一个 PR） | 1500 行以上的八个文件拆开：`prompt_optimizer_agent` 4207→1352 · `prompt_optimizer_view` 2759→595 · `video_config_panel` 1947→573 · `openai_chat_protocol` 1784→796 · `anthropic_chat_protocol` 1670→420 · `directory_tree_item` 1593→701 · `ai_rename_dialog` 1510→477 · `model_edit_dialog` 1497→290。两种手法：并列的顶层单元拆成独立库（两个协议、`widgets/files/folder_drop_feedback.dart`、`folder_tree_row.dart`）；一个大类或大 State 用 `part` 拆，私有 static 变库私有顶层声明、State 的 builder 变 State 上的具名 extension —— **元素树一个节点不变**，所以没有把卡片改成独立 widget。顺带：`browser` 不再横向引 `workbench`；问答卡的虚线用回共享节奏；**AI 重命名的冲突逻辑下沉到 `services/tasks/ai_rename_review.dart` 并第一次有了测试，由此找到并修掉一个会删用户照片的 bug**（两行重名时点「改名」原样还回同名、「覆盖」删掉另一行刚放好的文件；现在 review 与 executor 两层都拒绝，UI 上禁用并说明）。**`llm_dispatcher.dart`（1586 行）刻意没拆：它是唯一路由表，拆开就违反那条不变量 —— 按行数扫到它不要立项。** | ④ 的文件 ↔ 不变量对照在 `architecture/llm-three-layer.md` ④ 一节；助手七个文件在 `architecture/assistant-context.md`「Where it lives」；CLAUDE.md 的 map。拆分手法与各片的坑（插值里补类名会静默编译通过、extension 里库作用域优先于 `this`、截图要比像素不比字节）在上面 `git show` 的方案原文里 |
 | `2026-09-assistant-output-cap.md` + `-execution.md`（八片，分支 `claude/assistant-output-cap`，一片一个 commit） | 提示词助手输出截断：模型级「最大输出」（v44 `llm_models.max_output_tokens`、协议唯一读口 `outputCapFor`、① 字段名按 `VendorProfile.outputCapField` 声明、④ 的 8192 退为兜底、编辑器区块 + 卡片 chip、发现时按键形预填上下文窗口——上限刻意不预填）；截断对策（`length` 的半截调用一个不跑、配有指向的 `output_truncated` 结果、连续两次即停并跳到模型设置，子代理同款）；压缩摘要由 App 附最新提示词而不再让模型重抄（跨次压缩接力）；四个模式提示加「交付前不写散文」；子代理 note 限长；`write_knowledge_file` 按节写入（`replace_section` / `append`，拼好后仍 stage 整文件） | `architecture/llm-three-layer.md`「输出上限」、`architecture/assistant-context.md`「The output side」与不变量 12–13、`api/usage.md` §3；设计稿链接在前者。方案原文 `git show 2e7f443:docs/plans/2026-09-assistant-output-cap.md`。欠的并入下面「还欠的」 |
 | `2026-09-debt-sweep-execution.md`（二十二片 + 四次 review，分支 `claude/debt-sweep-4.9`，v4.9.0） | 清「还欠的」里用户点名的三组。① 代码：state 换新列表（视频参考图 / 文件夹切换 / 下载器日志）；视频面板头部放不下时整栏单滚动；AI 重命名「覆盖」禁用态的测试口子；截断标记与 `modelDbId` 跨重启（`LLMMessage` 上的宿主簿记字段）；按节写入的卡片标出节名、hunk 头带所在标题；九个协议的「200 里什么都没有」改抛 `LLMApiException`、`fromJson` 拒收未知 role；`VendorProfile.webSearchOn` 让编辑器与三个 payload 同答，百炼 ④ 面不再带 `web_search`。② 动效：「还欠的」七条全做（见 `plans/README.md` 第四轮）。④ 决策项：S1 / S3 走「明说 + 文件权限 + 生命周期」不上钥匙串（理由见执行文档「决策记录」）；`runTurn` 拆出四个 helper；助手一次 session 通知 1,122 → 29 次 build（`ListenableSelector`）；D2a 三条；十五个 1000–1500 行文件拆分。**与台账不符的两条**：视频 / MJ 请求早已走 `sendJsonRequest`；timeout 取证的「① 累积器」早已落地 | `architecture/assistant-context.md`（Where it lives 九个文件、截断标记持久化）、`architecture/llm-three-layer.md`（联网搜索同一答案、`llm_errors.dart`、`model_capability_tables.dart`）、`architecture/design-tokens.md`（`accentRule`、`AppMotion.sceneFor`）、`plans/README.md`、CLAUDE.md map。执行文档原文 `git show 99b2784:docs/plans/2026-09-debt-sweep-execution.md`（施工记录里有每片的偏离与量出来的数字）。欠的并入下面「还欠的」 |
+| `2026-09-seedream-execution.md`（七片 + 两次 review，分支 `claude/seedream-image-model-support-f4e87c`，v4.10.0） | 火山方舟 Seedream 生图：`Vendors.volcengineArk`（按量 `/api/v3` · 套餐 `/api/plan/v3` 两个同类型变体）+ `WireProtocol.arkImages` + `ModelFamily.seedreamImage` 按版本出表（5.0 pro · 5.0 lite · 4.5 · 4.0 · 3.0 + 兜底）；尺寸 = 档位 + 比例查表；水印明发默认关；5.0 pro「任务」三段（生成 / 拆图层 / 透明编辑）；中转上认得出的 Seedream 走方舟 body；组图放宽超时。顺带：变体按地址回读、同族变体卡印路径、按规格选单收 id 表。设计稿 Claude Design `D1e`。套餐端点实机出图验证 | `architecture/llm-three-layer.md`「火山方舟 · Seedream」、`api/volcengine-ark.md`（含 §7 实测）。执行清单原文 `git show 294432d:docs/plans/2026-09-seedream-execution.md`（决策记录 13 条、施工记录每片的偏离）。欠的并入下面「还欠的」 |
 
 三份审计报告（`code-review-report-20260613.md` v2.3.0、`api-standards-audit.md`
 基线 `d03047e`、`2026-08-ai-capability-review.md` 基线 `6a4920d`）都是带完整
@@ -51,6 +52,17 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 不要照着旧快照改。
 
 ## 还欠的（2026-09-12 对照 main 逐条复核过；2026-09-16 欠账清扫后更新）
+
+### 火山方舟 · Seedream（2026-09-18）
+
+| 条 | 为什么没做 / 要验什么 |
+|---|---|
+| 流式出图（`stream: true`，每画完一张推一个事件） | 组图十几张时能边画边看；要一条新的单发→流式路由与事件解析，本轮只走同步 |
+| 拆图层的 `bounding_box` / `z_index` / `name` 落库与画布还原 | 现在底图 + 图层按叠放次序逐张落盘，位置信息只写日志 |
+| Seedance 视频面 | 同一 vendor 的另一条 surface，本轮只做生图 |
+| 方舟 chat 面的 `thinking` 方言（豆包 Seed 系列的 `thinking: {type}`） | 未经方舟文档核实，vendor 暂不声明，chat 按 ① 默认发 |
+| 按量 base 的 `GET /api/v3/models` 与 4.5 / 4.0 实机 | 手上只有套餐 key：按量 base 是否有列表、4.x 的档位映射都未实测 |
+| 中转站透传方舟 body 的实机 | 按路径同形推断（New API 的火山渠道），未拿中转 key 验证 |
 
 ### 输出上限（2026-09-16）
 
