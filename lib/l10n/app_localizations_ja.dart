@@ -3757,6 +3757,44 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optionAuto => '自動';
 
   @override
+  String get paramImageTask => 'タスク';
+
+  @override
+  String get paramMaxImages => '組画像の上限';
+
+  @override
+  String get paramOutputFormat => '形式';
+
+  @override
+  String get paramOptimizeMode => 'プロンプト最適化';
+
+  @override
+  String get paramWebSearch => 'Web 検索';
+
+  @override
+  String get paramWatermark => '透かし';
+
+  @override
+  String get taskGenerate => '生成';
+
+  @override
+  String get taskLayers => 'レイヤー分解';
+
+  @override
+  String get taskTransparent => '透過編集';
+
+  @override
+  String maxImagesUpTo(int count) {
+    return '最大 $count 枚';
+  }
+
+  @override
+  String get optimizeStandard => '標準';
+
+  @override
+  String get optimizeFast => '高速';
+
+  @override
   String get qualityLow => '低';
 
   @override

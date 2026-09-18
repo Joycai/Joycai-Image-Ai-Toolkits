@@ -3878,6 +3878,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optionAuto => 'Auto';
 
   @override
+  String get paramImageTask => 'Task';
+
+  @override
+  String get paramMaxImages => 'Max images';
+
+  @override
+  String get paramOutputFormat => 'Format';
+
+  @override
+  String get paramOptimizeMode => 'Prompt optimization';
+
+  @override
+  String get paramWebSearch => 'Web search';
+
+  @override
+  String get paramWatermark => 'Watermark';
+
+  @override
+  String get taskGenerate => 'Generate';
+
+  @override
+  String get taskLayers => 'Split layers';
+
+  @override
+  String get taskTransparent => 'Transparent edit';
+
+  @override
+  String maxImagesUpTo(int count) {
+    return 'Up to $count';
+  }
+
+  @override
+  String get optimizeStandard => 'Standard';
+
+  @override
+  String get optimizeFast => 'Fast';
+
+  @override
   String get qualityLow => 'Low';
 
   @override

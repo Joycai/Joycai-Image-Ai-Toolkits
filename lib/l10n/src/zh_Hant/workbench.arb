@@ -76,6 +76,25 @@
   "promptExtendOn": "開啟",
   "promptExtendOff": "關閉",
   "optionAuto": "自動",
+  "paramImageTask": "任務",
+  "paramMaxImages": "組圖上限",
+  "paramOutputFormat": "格式",
+  "paramOptimizeMode": "提示詞最佳化",
+  "paramWebSearch": "聯網搜尋",
+  "paramWatermark": "浮水印",
+  "taskGenerate": "生成",
+  "taskLayers": "拆圖層",
+  "taskTransparent": "透明編輯",
+  "maxImagesUpTo": "最多 {count} 張",
+  "@maxImagesUpTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optimizeStandard": "標準",
+  "optimizeFast": "極速",
   "qualityLow": "低",
   "qualityMedium": "中",
   "qualityHigh": "高",

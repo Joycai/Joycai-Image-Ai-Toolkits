@@ -138,6 +138,45 @@ void main() {
       });
     }
   }
+  // D1e 3c: the model card on Seedream — each generation grows only the
+  // controls its table declares.
+  for (final (String modelId, String suffix, Brightness brightness)
+      in const <(String, String, Brightness)>[
+    ('doubao-seedream-5-0-pro-260628', 'seedreamPro', Brightness.light),
+    ('doubao-seedream-5-0-pro-260628', 'seedreamPro', Brightness.dark),
+    ('doubao-seedream-5.0-lite', 'seedreamLite', Brightness.light),
+  ]) {
+    testWidgets('workbench · $suffix @ desktop ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.workbench,
+        // Taller than the desktop shot: six controls outgrow a 900 px
+        // window's card, and the card scrolls rather than showing them.
+        size: const ShotSize('desktop', Size(1440, 1300)),
+        brightness: brightness,
+        suffix: suffix,
+        before: (_) async {
+          AppState().setWorkbenchTab(0);
+          AppState().isConsoleExpanded = false;
+          AppState().lastSelectedModelId = modelId;
+        },
+        after: (WidgetTester tester) async {
+          AppState().clearImageSelection();
+          seedImageSelection(AppState());
+          for (int p = 0; p < 5; p++) {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
+          await tester.tap(find.text('模型选择').last);
+          for (int p = 0; p < 5; p++) {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
+        },
+      );
+    });
+  }
 }
 
 class _ModelCardShot {

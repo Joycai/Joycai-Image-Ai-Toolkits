@@ -6773,6 +6773,78 @@ abstract class AppLocalizations {
   /// **'Auto'**
   String get optionAuto;
 
+  /// No description provided for @paramImageTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Task'**
+  String get paramImageTask;
+
+  /// No description provided for @paramMaxImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Max images'**
+  String get paramMaxImages;
+
+  /// No description provided for @paramOutputFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Format'**
+  String get paramOutputFormat;
+
+  /// No description provided for @paramOptimizeMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt optimization'**
+  String get paramOptimizeMode;
+
+  /// No description provided for @paramWebSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Web search'**
+  String get paramWebSearch;
+
+  /// No description provided for @paramWatermark.
+  ///
+  /// In en, this message translates to:
+  /// **'Watermark'**
+  String get paramWatermark;
+
+  /// No description provided for @taskGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate'**
+  String get taskGenerate;
+
+  /// No description provided for @taskLayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Split layers'**
+  String get taskLayers;
+
+  /// No description provided for @taskTransparent.
+  ///
+  /// In en, this message translates to:
+  /// **'Transparent edit'**
+  String get taskTransparent;
+
+  /// No description provided for @maxImagesUpTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count}'**
+  String maxImagesUpTo(int count);
+
+  /// No description provided for @optimizeStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get optimizeStandard;
+
+  /// No description provided for @optimizeFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get optimizeFast;
+
   /// No description provided for @qualityLow.
   ///
   /// In en, this message translates to:

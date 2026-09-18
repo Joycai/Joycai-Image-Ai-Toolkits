@@ -67,7 +67,7 @@
 | S4 | B Layer 2 + 路由 | `Vendors.volcengineArk`、dispatcher（菜单 / auto / 生成 / 单发 / 计费 / 超时）、目录 | `vendors.dart`、`llm_dispatcher.dart` | 路由单测：方舟、中转、点单、未识别 id、本地 HTTP 端到端 | ✅ |
 | — | B review | `/code-review high` S2..S4 | | 发现全修 | ⏳ |
 | S5 | C 渠道 | 向导预设「火山方舟」（按量 / 套餐两个变体）+ 标题 / 副标题 / 变体文案 + l10n 四语；变体按地址回读 | `channel_provider_presets.dart`、`wizard_provider_steps.dart`、`channel_edit_dialog.dart`、`setup_wizard.dart`、`l10n/src/*` | 截图：`models_desktop_light_wizardArk{,2}` | ✅ |
-| S6 | C 参数 | 工作台参数标签与选项、编辑器参数摘要 + l10n 四语 | `model_selection_section.dart`、`model_protocol_section.dart` | 截图：工作台 Seedream 四表 | ⏳ |
+| S6 | C 参数 | 工作台参数标签与选项、编辑器参数摘要 + l10n 四语 | `model_selection_section.dart`、`model_protocol_section.dart` | 截图：`workbench_desktop_{light,dark}_seedreamPro`、`…_light_seedreamLite` | ✅ |
 | — | C review | `/code-review high` S5..S6 | | 发现全修 | ⏳ |
 | S7 | D 收尾 | llm-three-layer 一节、CLAUDE.md、台账行、退役本清单；bump 4.10.0；PR | docs、版本文件 | 两道门绿 | ⏳ |
 
@@ -103,3 +103,7 @@
   「OpenAI · chat/completions」；新增 `channelProviderVariantCaption`：兄弟变体同协议族
   且地址不同时印路径（`/api/v3` · `/api/plan/v3`），OpenAI 官方两张卡地址相同，照旧印协议族。
   截图 harness 新增方舟向导两张（变体步、连接步）。
+- **S6**：开关类选项沿用既有的「开启 / 关闭」（提示词扩写同一套），不是稿里的「开 / 关」；
+  格式直接大写（JPEG / PNG）；组图上限 1 显示「关闭」、其余「最多 N 张」。截图夹具加了方舟
+  渠道（套餐地址）与 5.0 pro / lite 两个模型；Seedream 卡片用 1440×1300 拍——900 高的窗口里
+  六个控件会让模型卡滚动、网格被裁掉。实拍与 D1e 3c 的配对一致。

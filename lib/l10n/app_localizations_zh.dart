@@ -3714,6 +3714,44 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optionAuto => '自动';
 
   @override
+  String get paramImageTask => '任务';
+
+  @override
+  String get paramMaxImages => '组图上限';
+
+  @override
+  String get paramOutputFormat => '格式';
+
+  @override
+  String get paramOptimizeMode => '提示词优化';
+
+  @override
+  String get paramWebSearch => '联网搜索';
+
+  @override
+  String get paramWatermark => '水印';
+
+  @override
+  String get taskGenerate => '生成';
+
+  @override
+  String get taskLayers => '拆图层';
+
+  @override
+  String get taskTransparent => '透明编辑';
+
+  @override
+  String maxImagesUpTo(int count) {
+    return '最多 $count 张';
+  }
+
+  @override
+  String get optimizeStandard => '标准';
+
+  @override
+  String get optimizeFast => '极速';
+
+  @override
   String get qualityLow => '低';
 
   @override
@@ -8659,6 +8697,44 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optionAuto => '自動';
+
+  @override
+  String get paramImageTask => '任務';
+
+  @override
+  String get paramMaxImages => '組圖上限';
+
+  @override
+  String get paramOutputFormat => '格式';
+
+  @override
+  String get paramOptimizeMode => '提示詞最佳化';
+
+  @override
+  String get paramWebSearch => '聯網搜尋';
+
+  @override
+  String get paramWatermark => '浮水印';
+
+  @override
+  String get taskGenerate => '生成';
+
+  @override
+  String get taskLayers => '拆圖層';
+
+  @override
+  String get taskTransparent => '透明編輯';
+
+  @override
+  String maxImagesUpTo(int count) {
+    return '最多 $count 張';
+  }
+
+  @override
+  String get optimizeStandard => '標準';
+
+  @override
+  String get optimizeFast => '極速';
 
   @override
   String get qualityLow => '低';

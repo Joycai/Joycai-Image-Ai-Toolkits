@@ -2045,6 +2045,25 @@
   "promptExtendOn": "开启",
   "promptExtendOff": "关闭",
   "optionAuto": "自动",
+  "paramImageTask": "任务",
+  "paramMaxImages": "组图上限",
+  "paramOutputFormat": "格式",
+  "paramOptimizeMode": "提示词优化",
+  "paramWebSearch": "联网搜索",
+  "paramWatermark": "水印",
+  "taskGenerate": "生成",
+  "taskLayers": "拆图层",
+  "taskTransparent": "透明编辑",
+  "maxImagesUpTo": "最多 {count} 张",
+  "@maxImagesUpTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optimizeStandard": "标准",
+  "optimizeFast": "极速",
   "qualityLow": "低",
   "qualityMedium": "中",
   "qualityHigh": "高",

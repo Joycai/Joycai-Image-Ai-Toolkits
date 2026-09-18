@@ -410,6 +410,18 @@ class ModelSelectionSection extends StatelessWidget {
         return l10n.mjStylize;
       case 'mjChaos':
         return l10n.mjChaos;
+      case 'imageTask':
+        return l10n.paramImageTask;
+      case 'maxImages':
+        return l10n.paramMaxImages;
+      case 'outputFormat':
+        return l10n.paramOutputFormat;
+      case 'optimizeMode':
+        return l10n.paramOptimizeMode;
+      case 'webSearch':
+        return l10n.paramWebSearch;
+      case 'watermark':
+        return l10n.paramWatermark;
       default:
         return labelKey;
     }
@@ -417,7 +429,10 @@ class ModelSelectionSection extends StatelessWidget {
 
   String _optionLabel(AppLocalizations l10n, String paramKey, String value) {
     if (value == 'auto' || value == 'not_set') return l10n.optionAuto;
-    if (paramKey == 'promptExtend') {
+    // Two-state switches share one on/off vocabulary.
+    if (paramKey == 'promptExtend' ||
+        paramKey == 'webSearch' ||
+        paramKey == 'watermark') {
       switch (value) {
         case 'on':
           return l10n.promptExtendOn;
@@ -425,6 +440,30 @@ class ModelSelectionSection extends StatelessWidget {
           return l10n.promptExtendOff;
       }
     }
+    if (paramKey == 'imageTask') {
+      switch (value) {
+        case 'generate':
+          return l10n.taskGenerate;
+        case 'layers':
+          return l10n.taskLayers;
+        case 'transparent':
+          return l10n.taskTransparent;
+      }
+    }
+    if (paramKey == 'maxImages') {
+      final n = int.tryParse(value);
+      if (n == 1) return l10n.promptExtendOff;
+      if (n != null) return l10n.maxImagesUpTo(n);
+    }
+    if (paramKey == 'optimizeMode') {
+      switch (value) {
+        case 'standard':
+          return l10n.optimizeStandard;
+        case 'fast':
+          return l10n.optimizeFast;
+      }
+    }
+    if (paramKey == 'outputFormat') return value.toUpperCase();
     if (paramKey == 'quality') {
       switch (value) {
         case 'low':
