@@ -269,12 +269,13 @@ class OptimizerChatEntry {
     String? editError,
     AskUserState? askState,
     List<AskUserAnswer>? askAnswers,
+    int? modelDbId,
   }) =>
       OptimizerChatEntry(
         kind: kind,
         text: text,
         truncated: truncated,
-        modelDbId: modelDbId,
+        modelDbId: modelDbId ?? this.modelDbId,
         version: version,
         note: note,
         feedbackSatisfied: feedbackSatisfied,

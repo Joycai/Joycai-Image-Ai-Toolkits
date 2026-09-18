@@ -25,7 +25,8 @@
 | 3 | 换预设建平台全部线路 | `channel_edit_dialog.dart` | 小部件测试：换到 MiniMax 后两条线路都建好、没有「启用」行 | ☑ |
 | 4 | 空串路径「主机本身」 | `channel_routes.dart`、`channel_route_table.dart`、l10n | `withPath(k,'')` 存空串、默认为空的平台归一为 null；小部件测试 | ☑ |
 
-阶段一评审：`/code-review high` 片 1–4。
+阶段一评审：`/code-review high` 片 1–4 —— 1 条，已修：打开着的助手对话在内存里握着旧 `modelDbId`，压缩时
+`compactAll` 会把旧 id 写回；合并时也改写 `PromptOptimizerAgent.sessions` 里的历史与对话条目（`remapModelLinks`）。
 
 ## 阶段二 · 界面
 

@@ -235,6 +235,27 @@ class LLMMessage {
     this.modelDbId,
   });
 
+  /// This message naming [id] as the model row it came from — a channel
+  /// merge moving a reply's link onto the model it merged into.
+  LLMMessage withModelDbId(int? id) => LLMMessage(
+        role: role,
+        content: content,
+        attachments: attachments,
+        reasoningContent: reasoningContent,
+        reasoningFieldName: reasoningFieldName,
+        reasoningSignature: reasoningSignature,
+        rawThinkingBlocks: rawThinkingBlocks,
+        rawThinkingModelId: rawThinkingModelId,
+        rawContentBlocks: rawContentBlocks,
+        rawModelParts: rawModelParts,
+        rawResponseItems: rawResponseItems,
+        toolCalls: toolCalls,
+        toolCallId: toolCallId,
+        toolName: toolName,
+        truncated: truncated,
+        modelDbId: id,
+      );
+
   Map<String, dynamic> toJson() => {
         'role': role.name,
         'content': content,

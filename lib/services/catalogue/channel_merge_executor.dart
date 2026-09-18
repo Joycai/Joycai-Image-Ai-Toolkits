@@ -1,3 +1,4 @@
+import '../assistant/prompt_optimizer_agent.dart';
 import '../db/database_service.dart';
 import '../db/repositories/assistant_session_repository.dart';
 import '../db/repositories/model_repository.dart';
@@ -101,8 +102,14 @@ class DatabaseMergeStore implements MergeStore {
       UsageRepository().remapModels(idMap);
 
   @override
-  Future<void> remapConversations(Map<int, int> idMap) =>
-      AssistantSessionRepository().remapModelLinks(idMap);
+  Future<void> remapConversations(Map<int, int> idMap) async {
+    await AssistantSessionRepository().remapModelLinks(idMap);
+    // A conversation open right now holds its own copy: its links are those,
+    // and a compaction would write its history back over the rows above.
+    for (final session in PromptOptimizerAgent.sessions.values) {
+      session.remapModelLinks(idMap);
+    }
+  }
 
   @override
   Future<MergeReferences> countReferences(Iterable<int> ids) async {
