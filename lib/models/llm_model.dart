@@ -172,6 +172,33 @@ class LLMModel {
         tasksSinceUpdate: tasksSinceUpdate,
       );
 
+  /// This model moved to channel [channelId] — a channel merge's one change
+  /// of ownership. Everything else, the id included, is kept.
+  LLMModel movedTo(int channelId) => LLMModel(
+    id: id,
+    modelId: modelId,
+    modelName: modelName,
+    tag: tag,
+    isPaid: isPaid,
+    supportsStream: supportsStream,
+    supportsStandard: supportsStandard,
+    sortOrder: sortOrder,
+    channelId: channelId,
+    feeGroupId: feeGroupId,
+    contextWindow: contextWindow,
+    maxOutputTokens: maxOutputTokens,
+    forceViewAllImages: forceViewAllImages,
+    enableThinking: enableThinking,
+    reasoningEffort: reasoningEffort,
+    enableWebSearch: enableWebSearch,
+    wireProtocol: wireProtocol,
+    activeRoute: activeRoute,
+    routeParams: routeParams,
+    estMeanMs: estMeanMs,
+    estSdMs: estSdMs,
+    tasksSinceUpdate: tasksSinceUpdate,
+  );
+
   Map<String, dynamic> toMap({bool includeId = true}) {
     final map = {
       'model_id': modelId,

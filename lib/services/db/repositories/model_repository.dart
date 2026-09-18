@@ -116,6 +116,51 @@ class ModelRepository {
     await db.delete('llm_channels', where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Writes a channel merge in one transaction, in the only safe order
+  /// (standard 04 §4): the kept [channel] first, so the routes exist before
+  /// a model points at them; then [updates], so a moved model belongs to the
+  /// kept channel before its old one is cleared; then the merged-away
+  /// [deletes]; then whatever is still on [absorbedChannelId]; then that
+  /// channel. A failure anywhere leaves both channels as they were.
+  Future<void> mergeChannels({
+    required LLMChannel channel,
+    required List<LLMModel> updates,
+    required List<int> deletes,
+    required int absorbedChannelId,
+  }) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.update(
+        'llm_channels',
+        normalizedChannel(channel).toMap(includeId: false),
+        where: 'id = ?',
+        whereArgs: [channel.id],
+      );
+      // Only the columns a merge changes: the plan was computed from a
+      // snapshot, and a whole row would revert anything written since (an
+      // edit, the task queue's duration estimate).
+      for (final m in updates) {
+        await txn.update(
+            'llm_models',
+            {
+              'channel_id': m.channelId,
+              'active_route': m.activeRoute,
+              'route_params': m.routeParams,
+              'wire_protocol': m.wireProtocol,
+            },
+            where: 'id = ?',
+            whereArgs: [m.id]);
+      }
+      for (final id in deletes) {
+        await txn.delete('llm_models', where: 'id = ?', whereArgs: [id]);
+      }
+      await txn.delete('llm_models',
+          where: 'channel_id = ?', whereArgs: [absorbedChannelId]);
+      await txn.delete('llm_channels',
+          where: 'id = ?', whereArgs: [absorbedChannelId]);
+    });
+  }
+
   Future<List<LLMChannel>> getChannels() async {
     final db = await _db;
     // `sort_order` is the user's arrangement; `id` breaks ties so channels
