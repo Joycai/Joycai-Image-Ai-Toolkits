@@ -8,6 +8,7 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/db/database_service.dart';
 import '../../services/llm/llm_types.dart';
+import '../../services/llm/model_routes.dart';
 import '../../state/app_state.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
@@ -393,11 +394,13 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   void _showDiscoveryDialog(AppLocalizations l10n, LLMChannel channel, AppState appState) {
+    final routed = RoutedChannel.primary(channel);
     final config = LLMModelConfig(
       modelId: 'discovery',
-      channelType: channel.type,
-      endpoint: channel.endpoint,
+      channelType: routed.channelType,
+      endpoint: routed.endpoint,
       apiKey: channel.apiKey,
+      faceBases: routed.faceBases,
     );
 
     showDialog(

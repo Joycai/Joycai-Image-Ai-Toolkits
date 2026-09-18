@@ -3,6 +3,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
 import '../../../models/pricing_group.dart';
+import '../../llm/channel_routes.dart';
 import '../database_service.dart';
 
 class ModelRepository {
@@ -66,14 +67,43 @@ class ModelRepository {
         .rawQuery('SELECT MAX(sort_order) AS m FROM llm_channels');
     final maxOrder = maxRow.first['m'] as int?;
     return db.insert('llm_channels', {
-      ...channel.toMap(includeId: false),
+      ...normalizedChannel(channel).toMap(includeId: false),
       'sort_order': (maxOrder ?? -1) + 1,
     });
   }
 
+  /// Writes [channel] normalized. A caller that does not carry a route
+  /// document (one that edits only the flat endpoint and type) keeps the
+  /// stored one: the write mark then tells [ChannelRoutes.resolve] that the
+  /// primary route moved, and the channel's other routes survive the save.
   Future<void> updateChannel(int id, LLMChannel channel) async {
     final db = await _db;
-    await db.update('llm_channels', channel.toMap(includeId: false), where: 'id = ?', whereArgs: [id]);
+    var incoming = channel;
+    if (incoming.routes == null) {
+      final stored = await db.query('llm_channels',
+          columns: ['routes'], where: 'id = ?', whereArgs: [id]);
+      final doc = stored.isEmpty ? null : stored.first['routes'] as String?;
+      if (doc != null) {
+        incoming = incoming.withRoutes(
+            type: incoming.type, endpoint: incoming.endpoint, routes: doc);
+      }
+    }
+    await db.update('llm_channels', normalizedChannel(incoming).toMap(includeId: false),
+        where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// [channel] with its route document resolved against its flat columns and
+  /// the flat columns rewritten to the primary route — run on every read and
+  /// every write, and idempotent, so "`type` / `endpoint` are the primary
+  /// route" is a fact rather than a convention (standard 02 §2).
+  static LLMChannel normalizedChannel(LLMChannel channel) {
+    final routes =
+        ChannelRoutes.resolve(channel.type, channel.endpoint, channel.routes);
+    return channel.withRoutes(
+      type: routes.primaryVendorId,
+      endpoint: routes.primaryAddress,
+      routes: routes.encode(),
+    );
   }
 
   Future<void> deleteChannel(int id) async {
@@ -92,7 +122,7 @@ class ModelRepository {
     // restored from a backup written before the column existed (all zeros)
     // still come back in creation order rather than an arbitrary one.
     final maps = await db.query('llm_channels', orderBy: 'sort_order ASC, id ASC');
-    return maps.map((m) => LLMChannel.fromMap(m)).toList();
+    return maps.map((m) => normalizedChannel(LLMChannel.fromMap(m))).toList();
   }
 
   /// Persists the rail's arrangement: [orderedIds] is the full channel list in
@@ -112,7 +142,7 @@ class ModelRepository {
     final db = await _db;
     final maps = await db.query('llm_channels', where: 'id = ?', whereArgs: [id]);
     if (maps.isNotEmpty) {
-      return LLMChannel.fromMap(maps.first);
+      return normalizedChannel(LLMChannel.fromMap(maps.first));
     }
     return null;
   }

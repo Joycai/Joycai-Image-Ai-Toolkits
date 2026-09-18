@@ -69,6 +69,7 @@ class DatabaseMigration {
     if (oldVersion < 42) await _createV42Columns(db);
     if (oldVersion < 43) await _createV43Columns(db);
     if (oldVersion < 44) await _createV44Columns(db);
+    if (oldVersion < 45) await _createV45Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -112,7 +113,29 @@ class DatabaseMigration {
     await _createV42Columns(db);
     await _createV43Columns(db);
     await _createV44Columns(db);
+    await _createV45Columns(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// Channel × route × model (2026-09): three embedded-document columns, all
+  /// nullable and all read by a pure read-time migration
+  /// (`services/llm/channel_routes.dart`), so the step writes no data.
+  ///
+  /// * `llm_channels.routes` — the channel's routes (host, one entry per
+  ///   route kind, a write mark). NULL = derive them from `type`/`endpoint`,
+  ///   which keep holding the primary route either way.
+  /// * `llm_models.active_route` — the route a chat model rides. NULL =
+  ///   read from its chat-face `wire_protocol`, else follow the primary.
+  /// * `llm_models.route_params` — the per-route parameters parked for the
+  ///   model's other routes; the flat columns hold the active route's.
+  static Future<void> _createV45Columns(Database db) async {
+    if (await _tableExists(db, 'llm_channels')) {
+      await _addColumnIfNotExists(db, 'llm_channels', 'routes', 'TEXT');
+    }
+    if (await _tableExists(db, 'llm_models')) {
+      await _addColumnIfNotExists(db, 'llm_models', 'active_route', 'TEXT');
+      await _addColumnIfNotExists(db, 'llm_models', 'route_params', 'TEXT');
+    }
   }
 
   /// Per-model output cap (`llm_models.max_output_tokens`, NULL = not set).

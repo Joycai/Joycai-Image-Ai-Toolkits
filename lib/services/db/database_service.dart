@@ -14,6 +14,7 @@ import '../../models/pricing_group.dart';
 import '../../models/prompt.dart';
 import '../../models/prompt_history_entry.dart';
 import '../../models/tag.dart';
+import '../llm/channel_routes.dart';
 import 'database_migrations.dart';
 import 'repositories/cookie_repository.dart';
 import 'repositories/model_repository.dart';
@@ -54,7 +55,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 44;
+  static const int dbVersion = 45;
 
   /// Settings holding absolute paths from the machine that made the backup.
   /// Excluded when the user opts out of directories.
@@ -798,13 +799,25 @@ class DatabaseService {
   ///
   /// NUL-separated, as an escape rather than a literal byte: the literal made
   /// every text tool treat this file as binary.
-  String _channelIdentity(Map<String, dynamic> row) =>
-      '${row['type']}\u0000${row['endpoint']}\u0000${row['display_name']}';
+  ///
+  /// The type and endpoint are read *normalized* — the primary route's vendor
+  /// and address — so a row written before routes and the same channel
+  /// written after (whose flat endpoint may have been canonicalized on save)
+  /// still recognize each other.
+  String _channelIdentity(Map<String, dynamic> row) {
+    final routes = ChannelRoutes.resolve(
+      row['type'] as String? ?? '',
+      row['endpoint'] as String? ?? '',
+      row['routes'] as String?,
+    );
+    return '${routes.primaryVendorId}\u0000${routes.primaryAddress}'
+        '\u0000${row['display_name']}';
+  }
 
   /// Snapshot the API keys currently in the database, keyed by channel identity.
   Future<Map<String, String>> _collectChannelKeys(DatabaseExecutor txn) async {
     final rows = await txn.query('llm_channels',
-        columns: ['display_name', 'endpoint', 'type', 'api_key']);
+        columns: ['display_name', 'endpoint', 'type', 'api_key', 'routes']);
     final Map<String, String> keys = {};
     for (final row in rows) {
       final apiKey = row['api_key'] as String? ?? '';

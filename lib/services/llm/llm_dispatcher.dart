@@ -450,14 +450,24 @@ class LLMDispatcher {
     return _validPin(menu, target.config.wireProtocol);
   }
 
-  /// [target] with its endpoint rewritten for a generic protocol served on
-  /// one of this vendor's alternate faces (VendorProfile.protocolBases).
-  /// Identity for everything else.
+  /// [target] with its endpoint rewritten for [protocol]: the channel's own
+  /// route for that face when it has one (`LLMModelConfig.faceBases` — a path
+  /// the user set is honored), else the vendor's derivation from the stored
+  /// endpoint for a generic protocol on an alternate face
+  /// (`VendorProfile.protocolBases`). Identity for everything else.
   LLMTarget _faceTarget(LLMTarget target, WireProtocol protocol) {
+    final routed = target.config.faceBases[protocol];
     final derive = target.vendor.protocolBases[protocol];
-    if (derive == null) return target;
+    final String base;
+    if (routed != null) {
+      base = routed;
+    } else if (derive != null) {
+      base = derive(target.config.endpoint);
+    } else {
+      return target;
+    }
     return LLMTarget(
-      config: target.config.withEndpoint(derive(target.config.endpoint)),
+      config: target.config.withEndpoint(base),
       vendor: target.vendor,
       model: target.model,
     );

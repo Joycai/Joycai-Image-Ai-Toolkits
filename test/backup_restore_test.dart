@@ -1,6 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_migrations.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Covers backup restore against a real (in-memory) schema.
@@ -393,6 +397,94 @@ void main() {
 
       expect((await db.query('llm_channels')).length, 1);
       await db.close();
+    });
+  });
+
+  group('channel routes in backups (v45)', () {
+    test('a pre-route backup restores and reads its routes as before',
+        () async {
+      final db = await openTestDb();
+      final legacy = backupFile()..['schema_version'] = 44;
+      (legacy['llm_channels'] as List).first
+        ..['type'] = 'dashscope-native'
+        ..['endpoint'] = 'https://dashscope.aliyuncs.com/api/v1';
+      (legacy['llm_models'] as List).first
+        ..['tag'] = 'chat'
+        ..['model_id'] = 'qwen-plus'
+        ..['wire_protocol'] = 'anthropic-chat';
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, legacy);
+      });
+
+      final channel = (await db.query('llm_channels')).single;
+      expect(channel['routes'], isNull);
+      final routes = ChannelRoutes.resolve(channel['type'] as String,
+          channel['endpoint'] as String, channel['routes'] as String?);
+      expect(routes.kinds,
+          [RouteKind.dashscope, RouteKind.chat, RouteKind.anthropic]);
+      final model = LLMModel.fromMap((await db.query('llm_models')).single);
+      expect(ModelRoutes.requestRoute(model, routes), RouteKind.anthropic);
+      await db.close();
+    });
+
+    test('routes and parked params round-trip through export and restore',
+        () async {
+      final db = await openTestDb();
+      final routes = ChannelRoutes.create(Platforms.byId(Platforms.newapi),
+          'https://relay.example.com', [RouteKind.chat, RouteKind.gemini],
+          paths: {RouteKind.gemini: 'https://g.example.com/v1beta'});
+      final file = backupFile();
+      (file['llm_channels'] as List).first
+        ..['type'] = routes.primaryVendorId
+        ..['endpoint'] = routes.primaryAddress
+        ..['routes'] = routes.encode();
+      (file['llm_models'] as List).first
+        ..['tag'] = 'chat'
+        ..['active_route'] = 'gemini'
+        ..['route_params'] = '{"chat":{"max_output_tokens":4096}}';
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, file);
+      });
+
+      final channel = (await db.query('llm_channels')).single;
+      expect(channel['routes'], routes.encode());
+      final model = (await db.query('llm_models')).single;
+      expect(model['active_route'], 'gemini');
+      expect(model['route_params'], '{"chat":{"max_output_tokens":4096}}');
+      await db.close();
+    });
+
+    test('a redacted key survives a restore across the route migration',
+        () async {
+      // This machine still holds the channel as written before routes, with
+      // a MiniMax endpoint whose primary face is canonicalized on save.
+      final db = await openTestDb();
+      await db.insert('llm_channels', {
+        'display_name': 'MiniMax',
+        'endpoint': 'https://api.minimaxi.com/v1/',
+        'api_key': 'live-key',
+        'type': 'minimax-api',
+      });
+      final routes = ChannelRoutes.legacy('minimax-api', 'https://api.minimaxi.com/v1/');
+      final file = backupFile(channelName: 'MiniMax');
+      (file['llm_channels'] as List).first
+        ..['type'] = routes.primaryVendorId
+        ..['endpoint'] = routes.primaryAddress
+        ..['routes'] = routes.encode();
+      (file['llm_models'] as List).clear();
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, file);
+      });
+
+      expect((await db.query('llm_channels')).single['api_key'], 'live-key');
+      await db.close();
+    });
+
+    test('this build writes schema 45, which a v44 build rejects', () {
+      expect(DatabaseService.dbVersion, 45);
     });
   });
 }
