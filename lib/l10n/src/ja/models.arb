@@ -78,6 +78,7 @@
   "midjourneyEndpointHint": "ホストのルートURL（例: https://your-newapi.com）を入力してください。/mj/* パスは自動的に追加されます。",
   "providerDashScopeDesc": "dashscope.aliyuncs.com/compatible-mode · OpenAI 形式のリクエスト · Qwen チャット + qwen-image / Wan ネイティブ画像 + Wan 動画",
   "providerDashScopeCompat": "Alibaba DashScope（OpenAI 互換）",
+  "providerVolcengineArk": "Volcengine Ark（火山方舟）",
   "providerDashScopeNative": "Alibaba DashScope（ネイティブ）",
   "providerDashScopeNativeDesc": "dashscope.aliyuncs.com/api/v1 · Alibaba 独自のリクエスト形式 · qwen-audio はこの経路のみ",
   "providerCustom": "カスタムプロバイダー",

@@ -78,6 +78,7 @@
   "midjourneyEndpointHint": "填寫主機根位址（如 https://your-newapi.com），/mj/* 路徑將自動補全。",
   "providerDashScopeDesc": "dashscope.aliyuncs.com/compatible-mode · OpenAI 形狀請求 · 千問對話 + qwen-image / 萬相原生出圖 + 萬相影片",
   "providerDashScopeCompat": "阿里雲百煉（OpenAI 相容）",
+  "providerVolcengineArk": "火山方舟",
   "providerDashScopeNative": "阿里雲百煉（DashScope 原生）",
   "providerDashScopeNativeDesc": "dashscope.aliyuncs.com/api/v1 · 阿里雲自有請求格式 · qwen-audio 只能走這條",
   "providerCustom": "自訂供應商",

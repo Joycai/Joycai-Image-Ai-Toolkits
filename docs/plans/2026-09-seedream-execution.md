@@ -64,7 +64,7 @@
 | S1 | A 设计 | Claude Design `D1e`：向导预设行、模型编辑协议区、工作台四张参数表、手机 | 设计项目 | 稿已推送、规格汇总齐 | ✅ |
 | S2 | B Layer 3 | `ModelFamily.seedreamImage` + 分类 + 六张表 + `tierPixelSizes` | `model_family.dart`、`model_capabilities.dart`、`model_capability_tables.dart`、`model_descriptor.dart` | 单测：分类、每表参数、映射 | ✅ |
 | S3 | B Layer 1 | `ArkImagesProtocol` + `ark_payload.dart`（纯函数 body 构造 / 响应解析）+ `WireProtocol.arkImages` 与它的穷尽消费点 | `protocols/ark_*.dart`、`vendor_profile.dart`、`wire_protocol_labels.dart` | 单测：body 逐字段、组图收紧、任务前置条件、单张失败、全失败 | ✅ |
-| S4 | B Layer 2 + 路由 | `WireProtocol.arkImages`、`Vendors.volcengineArk`、dispatcher（auto / 生成 / 单发 / 计费 / 超时）、目录 | `vendor_profile.dart`、`vendors.dart`、`llm_dispatcher.dart` | 路由单测：方舟、中转、点单、未识别 id | ⏳ |
+| S4 | B Layer 2 + 路由 | `Vendors.volcengineArk`、dispatcher（菜单 / auto / 生成 / 单发 / 计费 / 超时）、目录 | `vendors.dart`、`llm_dispatcher.dart` | 路由单测：方舟、中转、点单、未识别 id、本地 HTTP 端到端 | ✅ |
 | — | B review | `/code-review high` S2..S4 | | 发现全修 | ⏳ |
 | S5 | C 渠道 | 向导预设「火山方舟」+ 标题 / 副标题 / 类型名 + 协议名 / 路径 / 说明 + l10n 四语 | `channel_provider_presets.dart`、`wire_protocol_labels.dart`、`l10n/src/*` | 截图：向导 | ⏳ |
 | S6 | C 参数 | 工作台参数标签与选项、编辑器参数摘要 + l10n 四语 | `model_selection_section.dart`、`model_protocol_section.dart` | 截图：工作台 Seedream 四表 | ⏳ |
@@ -89,3 +89,10 @@
   不是设计稿草拟的「火山方舟生图」——C 阶段回写 D1e。路径标签不带版本前缀
   （`/images/generations`）：方舟是 `/api/v3` 或 `/api/plan/v3`，中转是 `/v1`。
   元数据不发布 `output_size`：按规格计费的档位行写的是 `2K`，回显的 `WxH` 会让它们一行都匹配不上。
+- **S4**：中转菜单里方舟 body 排第一，靠 `_familyMediaSurfaces` 多收一个模型 family 参数
+  （认得出的 Seedream 才加）——没有动「auto 不在菜单里就追加到末尾」的通用规则，其它
+  vendor 的菜单次序一个不变。「每个 vendor 都有名字」与「目录持有者白名单」两条既有测试按预期
+  报出，渠道类型名（`providerVolcengineArk`）提前到本片补上，白名单加方舟并写明理由（套餐 404
+  实测）。**实机**：套餐端点、5.0 lite、2K + 16:9、水印关，经 `LLMDispatcher.generate`
+  一次出图 26 s，2848×1600（= 表里的映射），右下角无水印；`ark_usage.output_tokens` 17800
+  = 2848×1600/256。

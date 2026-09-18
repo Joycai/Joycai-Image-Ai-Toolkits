@@ -123,6 +123,18 @@ class Vendors {
   /// model — the vendor only decides the default.
   static const String dashscopeNative = 'dashscope-native';
 
+  /// Volcengine Ark (火山方舟) — ByteDance's model platform
+  /// (docs/api/volcengine-ark.md). Chat is OpenAI-compatible at
+  /// `{base}/chat/completions`, which makes the family ①; image generation is
+  /// Seedream on Ark's own body at `{base}/images/generations`, declared as the
+  /// image menu.
+  ///
+  /// Two bases serve the same paths — pay-as-you-go `…/api/v3` and the
+  /// subscription plan's `…/api/plan/v3` — with keys that do not cross over.
+  /// That is a difference of address, not of behaviour, so it is one vendor
+  /// and two wizard variants that write different endpoints.
+  static const String volcengineArk = 'volcengine-ark';
+
   /// Midjourney via midjourney-proxy / NewAPI's `/mj/*` surface.
   static const String midjourneyProxy = 'midjourney-proxy';
 
@@ -378,6 +390,19 @@ class Vendors {
       serverWebSearchFaces: _dashscopeSearchFaces,
     ),
     VendorProfile(
+      id: volcengineArk,
+      family: ProtocolFamily.openai,
+      auth: AuthScheme.bearer,
+      // Seedream's surface. No generic media surfaces: Ark serves no
+      // `/images/edits` and draws nothing through chat, so offering them
+      // would put two guaranteed failures on the menu.
+      imageMenu: [WireProtocol.arkImages],
+      // Neither base answers `GET /models` for image models (the plan's is a
+      // 404, measured), so "fetch models" would otherwise never list the
+      // models this channel type exists for.
+      unlistedModels: _arkSeedreamModels,
+    ),
+    VendorProfile(
       id: midjourneyProxy,
       family: ProtocolFamily.midjourney,
       auth: AuthScheme.bearer,
@@ -463,6 +488,24 @@ class Vendors {
         description: 'Image generation (MiniMax /v1 surface)'),
     UnlistedModel('image-01-live',
         description: 'Image generation (MiniMax /v1 surface)'),
+  ];
+
+  /// Seedream on Ark: the dated ids pay-as-you-go serves, then the two
+  /// undated aliases the subscription plan documents — the plan serves only
+  /// the 5.0 pair, and names them this way (docs/api/volcengine-ark.md §7).
+  static const List<UnlistedModel> _arkSeedreamModels = [
+    UnlistedModel('doubao-seedream-5-0-pro-260628',
+        description: 'Seedream 5.0 pro · image generation (Ark)'),
+    UnlistedModel('doubao-seedream-5-0-lite-260128',
+        description: 'Seedream 5.0 lite · image generation (Ark)'),
+    UnlistedModel('doubao-seedream-4-5-251128',
+        description: 'Seedream 4.5 · image generation (Ark, pay-as-you-go)'),
+    UnlistedModel('doubao-seedream-4-0-250828',
+        description: 'Seedream 4.0 · image generation (Ark, pay-as-you-go)'),
+    UnlistedModel('doubao-seedream-5.0-pro',
+        description: 'Seedream 5.0 pro · image generation (Ark plan)'),
+    UnlistedModel('doubao-seedream-5.0-lite',
+        description: 'Seedream 5.0 lite · image generation (Ark plan)'),
   ];
 
   static final Map<String, VendorProfile> _byId = {

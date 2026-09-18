@@ -754,6 +754,8 @@ String channelTypeLabel(AppLocalizations l10n, String type) {
       return l10n.providerDashScopeCompat;
     case Vendors.dashscopeNative:
       return l10n.providerDashScopeNative;
+    case Vendors.volcengineArk:
+      return l10n.providerVolcengineArk;
     case Vendors.ollama:
       return 'Ollama';
     case Vendors.lmStudio:

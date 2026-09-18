@@ -2927,6 +2927,12 @@ abstract class AppLocalizations {
   /// **'Alibaba DashScope (OpenAI compatible)'**
   String get providerDashScopeCompat;
 
+  /// No description provided for @providerVolcengineArk.
+  ///
+  /// In en, this message translates to:
+  /// **'Volcengine Ark'**
+  String get providerVolcengineArk;
+
   /// No description provided for @providerDashScopeNative.
   ///
   /// In en, this message translates to:

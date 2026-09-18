@@ -1620,6 +1620,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerDashScopeCompat => '阿里云百炼（OpenAI 兼容）';
 
   @override
+  String get providerVolcengineArk => '火山方舟';
+
+  @override
   String get providerDashScopeNative => '阿里云百炼（DashScope 原生）';
 
   @override
@@ -6548,6 +6551,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get providerDashScopeCompat => '阿里雲百煉（OpenAI 相容）';
+
+  @override
+  String get providerVolcengineArk => '火山方舟';
 
   @override
   String get providerDashScopeNative => '阿里雲百煉（DashScope 原生）';

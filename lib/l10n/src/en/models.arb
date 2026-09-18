@@ -127,6 +127,7 @@
   "midjourneyEndpointHint": "Host root (e.g. https://your-newapi.com). /mj/* paths are added automatically.",
   "providerDashScopeDesc": "dashscope.aliyuncs.com/compatible-mode · OpenAI-shaped requests · Qwen chat + native qwen-image / wan images + wan video",
   "providerDashScopeCompat": "Alibaba DashScope (OpenAI compatible)",
+  "providerVolcengineArk": "Volcengine Ark",
   "providerDashScopeNative": "Alibaba DashScope (native)",
   "providerDashScopeNativeDesc": "dashscope.aliyuncs.com/api/v1 · Alibaba's own request format · the only route for qwen-audio",
   "providerCustom": "Custom Provider",

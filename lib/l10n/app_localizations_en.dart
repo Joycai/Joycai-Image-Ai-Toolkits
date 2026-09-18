@@ -1670,6 +1670,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerDashScopeCompat => 'Alibaba DashScope (OpenAI compatible)';
 
   @override
+  String get providerVolcengineArk => 'Volcengine Ark';
+
+  @override
   String get providerDashScopeNative => 'Alibaba DashScope (native)';
 
   @override

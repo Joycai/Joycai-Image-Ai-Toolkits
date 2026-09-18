@@ -1045,6 +1045,7 @@
   "midjourneyEndpointHint": "填写主机根地址（如 https://your-newapi.com），/mj/* 路径将自动补全。",
   "providerDashScopeDesc": "dashscope.aliyuncs.com/compatible-mode · OpenAI 形状请求 · 千问对话 + qwen-image / 万相原生出图 + 万相视频",
   "providerDashScopeCompat": "阿里云百炼（OpenAI 兼容）",
+  "providerVolcengineArk": "火山方舟",
   "providerDashScopeNative": "阿里云百炼（DashScope 原生）",
   "providerDashScopeNativeDesc": "dashscope.aliyuncs.com/api/v1 · 阿里云自有请求格式 · qwen-audio 只能走这条",
   "providerCustom": "自定义提供商",
