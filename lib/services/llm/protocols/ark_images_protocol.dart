@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:http/http.dart' as http;
+
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'ark_payload.dart';
@@ -21,6 +23,11 @@ import 'protocol.dart';
 /// Seedream table declares `longRunning` and the dispatcher lifts the
 /// per-request timeout — further for a larger group ceiling.
 ///
+/// [generateImageStream] is the SSE twin (docs/api/volcengine-ark.md §5):
+/// each image is pushed the moment it is drawn — 21 s apart in a measured
+/// two-image group — so a long group shows its first result early and a
+/// failure late in the group no longer takes the finished ones with it.
+///
 /// A group can succeed in part: `data[]` then carries an `error` in place of
 /// each image that failed (typically moderation) while the rest arrive. Those
 /// are delivered with a warning; only a request with no image at all fails.
@@ -31,6 +38,148 @@ class ArkImagesProtocol implements ImageGenProtocol {
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
     LLMLogger? logger,
+  }) async {
+    final req = await _prepare(target, history, options, logger, stream: false);
+    final client = target.config.createClient();
+    try {
+      final debugFile = await _startDebugLog(target, req);
+      final response = await sendJsonRequest(
+        client,
+        req.url,
+        headers: target.headers(),
+        body: jsonEncode(req.payload),
+        options: options,
+      );
+      await _logWholeBody(debugFile, response);
+      return await _fromWholeBody(response, client, options, logger);
+    } finally {
+      client.close();
+    }
+  }
+
+  /// The streamed form of [generateImage]: one [LLMResponseChunk.imagePart]
+  /// per `image_generation.partial_succeeded`, downloaded as it arrives, then
+  /// a closing metadata chunk shaped like [generateImage]'s.
+  ///
+  /// Only for a model whose table declares `streamsImages` on Ark's own
+  /// route — the dispatcher decides. A request upstream answers with plain
+  /// JSON instead of SSE (every parameter error does: a 400 envelope, never
+  /// an event) goes through the synchronous reader, so both forms fail and
+  /// succeed alike.
+  Stream<LLMResponseChunk> generateImageStream(
+    LLMTarget target,
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    LLMLogger? logger,
+  }) async* {
+    final req = await _prepare(target, history, options, logger, stream: true);
+    final client = target.config.createClient();
+    LLMDebugLog? debugFile;
+    try {
+      debugFile = await _startDebugLog(target, req);
+      final request = buildJsonRequest('POST', req.url,
+          headers: target.headers(),
+          body: jsonEncode(req.payload),
+          options: options);
+      final response = await client.send(trackBodySent(request, options));
+
+      final contentType = response.headers['content-type'] ?? '';
+      if (response.statusCode != 200 ||
+          !contentType.contains('text/event-stream')) {
+        final whole = await http.Response.fromStream(response);
+        await _logWholeBody(debugFile, whole);
+        final result = await _fromWholeBody(whole, client, options, logger);
+        for (final image in result.generatedImages) {
+          yield LLMResponseChunk(imagePart: image);
+        }
+        yield LLMResponseChunk(metadata: result.metadata, isDone: true);
+        return;
+      }
+      await LLMDebugLogger.appendLine(debugFile, 'Status: 200 (stream)');
+
+      var delivered = 0;
+      var undownloadable = 0;
+      final failures = <ArkImageFailure>[];
+      var usage = const <String, dynamic>{};
+      await for (final line in response.stream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())) {
+        if (line.isNotEmpty) {
+          await LLMDebugLogger.appendStreamLine(debugFile, line);
+        }
+        final data = sseDataPayload(line);
+        if (data == null) continue;
+        Map<String, dynamic>? event;
+        try {
+          final decoded = jsonDecode(data);
+          if (decoded is Map<String, dynamic>) event = decoded;
+        } catch (_) {
+          continue; // `event:` lines and other non-JSON SSE noise.
+        }
+        if (event == null) continue;
+        final parsed = parseArkStreamEvent(event);
+        // An error envelope mid-stream ends the request as a failure; the
+        // images already yielded stay delivered. Asked only of what is not a
+        // known event: `partial_failed` carries an `error` object too, and
+        // it fails one image, not the request.
+        if (parsed == null) throwIfEnvelopeError(event);
+
+        switch (parsed) {
+          case ArkStreamImage(:final item, :final index):
+            final bytes = await resolveImageRef(item.ref, client, logger,
+                abortTrigger: abortTriggerOf(options));
+            if (bytes == null) {
+              undownloadable++;
+              logger?.call(
+                  'Ark: image ${index ?? delivered + undownloadable} arrived '
+                  'but could not be downloaded.',
+                  level: 'WARN');
+              continue;
+            }
+            delivered++;
+            logger?.call('Ark stream: image $delivered received.',
+                level: 'DEBUG');
+            yield LLMResponseChunk(imagePart: bytes);
+          case ArkStreamFailure(:final failure):
+            failures.add(failure);
+            logger?.call('Ark: one image of the group failed — $failure',
+                level: 'WARN');
+          case ArkStreamCompleted(usage: final u):
+            usage = u;
+          case null:
+            break;
+        }
+      }
+
+      if (delivered == 0) {
+        throw LLMApiException(undownloadable > 0
+            ? 'Ark Images API streamed $undownloadable image link(s), none '
+                'of which could be downloaded.'
+            : 'Ark Images API returned no image: '
+                '${failures.isNotEmpty ? failures.first : 'the stream ended without one'}');
+      }
+      logger?.call(
+          'Ark stream complete. Images: $delivered '
+          '(downloaded inline; upstream URLs expire in 24h)',
+          level: 'DEBUG');
+      yield LLMResponseChunk(
+        metadata: _metadata(delivered, failures.length, usage),
+        isDone: true,
+      );
+    } finally {
+      client.close();
+      await LLMDebugLogger.finish(debugFile);
+    }
+  }
+
+  /// Everything before the send: references encoded, body built, URL and a
+  /// mode label for the log.
+  Future<_ArkRequest> _prepare(
+    LLMTarget target,
+    List<LLMMessage> history,
+    Map<String, dynamic>? options,
+    LLMLogger? logger, {
+    required bool stream,
   }) async {
     final config = target.config;
     final userMsg = history.lastWhere(
@@ -65,6 +214,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
       tierPixelSizes: target.model.capabilities.tierPixelSizes,
       options: options,
       warn: (m) => logger?.call(m, level: 'WARN'),
+      stream: stream,
     );
 
     final url = Uri.parse('${trimBaseUrl(config.endpoint)}/images/generations');
@@ -75,102 +225,114 @@ class ArkImagesProtocol implements ImageGenProtocol {
             : refs.isEmpty
                 ? 'text-to-image'
                 : '${refs.length} reference(s)';
-    logger?.call('Preparing Ark image request ($mode) to: ${url.host}',
+    logger?.call(
+        'Preparing Ark image request ($mode${stream ? ', streamed' : ''}) '
+        'to: ${url.host}',
+        level: 'DEBUG');
+    return _ArkRequest(url, payload, refs.length, mode);
+  }
+
+  Future<LLMDebugLog?> _startDebugLog(LLMTarget target, _ArkRequest req) async {
+    if (!LLMDebugLogger.enabled) return null;
+    return LLMDebugLogger.startLog(
+      target.config.modelId,
+      'Ark (Image ${req.mode})',
+      {
+        'url': redactUrl(req.url),
+        'headers': target.headers(),
+        'body': {
+          ...req.payload,
+          if (req.refCount > 0) 'image': '[${req.refCount} base64 image(s)]',
+        },
+      },
+    );
+  }
+
+  static Future<void> _logWholeBody(
+      LLMDebugLog? debugFile, http.Response response) async {
+    if (debugFile == null) return;
+    await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+    await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+  }
+
+  /// A whole (non-SSE) response body → the delivered result.
+  Future<LLMResponse> _fromWholeBody(
+    http.Response response,
+    http.Client client,
+    Map<String, dynamic>? options,
+    LLMLogger? logger,
+  ) async {
+    // Status → JSON → shape → envelope. Ark's errors are OpenAI-shaped
+    // (`{error: {code, message, param, type}}`), both on a 4xx and — when
+    // not a single image was produced — inside a 200.
+    final data = decodeJsonBody(response, apiName: 'Ark Images API');
+    final result = parseArkImageResponse(data);
+
+    for (final failure in result.failures) {
+      logger?.call('Ark: one image of the group failed — $failure',
+          level: 'WARN');
+    }
+    if (result.images.isEmpty) {
+      final why = result.failures.isNotEmpty
+          ? result.failures.first.toString()
+          : _excerpt(response.body);
+      throw LLMApiException('Ark Images API returned no image: $why');
+    }
+
+    final images = await resolveImageRefs(
+        [for (final item in result.images) item.ref], client, logger,
+        source: 'Ark Images API', abortTrigger: abortTriggerOf(options));
+    if (images.isEmpty) {
+      throw LLMApiException(
+          'Ark Images API returned ${result.images.length} image link(s), '
+          'none of which could be downloaded.');
+    }
+
+    final layers = [
+      for (final item in result.images)
+        if (item.zIndex != null && item.zIndex! > 0) item.name ?? '?',
+    ];
+    if (layers.isNotEmpty) {
+      logger?.call(
+          'Ark layer decomposition: base + ${layers.length} layer(s) — '
+          '${layers.join(', ')}',
+          level: 'INFO');
+    }
+    logger?.call(
+        'Ark parse complete. Images: ${images.length} '
+        '(downloaded inline; upstream URLs expire in 24h)',
         level: 'DEBUG');
 
-    final client = config.createClient();
-    try {
-      LLMDebugLog? debugFile;
-      if (LLMDebugLogger.enabled) {
-        debugFile = await LLMDebugLogger.startLog(
-          config.modelId,
-          'Ark (Image $mode)',
-          {
-            'url': redactUrl(url),
-            'headers': target.headers(),
-            'body': {
-              ...payload,
-              if (refs.isNotEmpty) 'image': '[${refs.length} base64 image(s)]',
-            },
-          },
-        );
-      }
-
-      final response = await sendJsonRequest(
-        client,
-        url,
-        headers: target.headers(),
-        body: jsonEncode(payload),
-        options: options,
-      );
-
-      if (debugFile != null) {
-        await LLMDebugLogger.appendLine(
-            debugFile, 'Status: ${response.statusCode}');
-        await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
-      }
-
-      // Status → JSON → shape → envelope. Ark's errors are OpenAI-shaped
-      // (`{error: {code, message, param, type}}`), both on a 4xx and — when
-      // not a single image was produced — inside a 200.
-      final data = decodeJsonBody(response, apiName: 'Ark Images API');
-      final result = parseArkImageResponse(data);
-
-      for (final failure in result.failures) {
-        logger?.call('Ark: one image of the group failed — $failure',
-            level: 'WARN');
-      }
-      if (result.images.isEmpty) {
-        final why = result.failures.isNotEmpty
-            ? result.failures.first.toString()
-            : _excerpt(response.body);
-        throw LLMApiException('Ark Images API returned no image: $why');
-      }
-
-      final images = await resolveImageRefs(
-          [for (final item in result.images) item.ref], client, logger,
-          source: 'Ark Images API', abortTrigger: abortTriggerOf(options));
-      if (images.isEmpty) {
-        throw LLMApiException(
-            'Ark Images API returned ${result.images.length} image link(s), '
-            'none of which could be downloaded.');
-      }
-
-      final layers = [
-        for (final item in result.images)
-          if (item.zIndex != null && item.zIndex! > 0) item.name ?? '?',
-      ];
-      if (layers.isNotEmpty) {
-        logger?.call(
-            'Ark layer decomposition: base + ${layers.length} layer(s) — '
-            '${layers.join(', ')}',
-            level: 'INFO');
-      }
-      logger?.call(
-          'Ark parse complete. Images: ${images.length} '
-          '(downloaded inline; upstream URLs expire in 24h)',
-          level: 'DEBUG');
-
-      // Ark bills Seedream per image. Its `output_tokens` (pixels / 256) is
-      // informational, and publishing it under a token key would let a
-      // token-priced fee group invent a cost, so the raw block is kept under
-      // its own name. `image_count` keeps the metadata non-empty, which is
-      // what makes LLMService record the usage row at all.
-      return LLMResponse(
-        text: '',
-        generatedImages: images,
-        metadata: {
-          'image_count': images.length,
-          if (result.failures.isNotEmpty)
-            'failed_images': result.failures.length,
-          if (result.usage.isNotEmpty) 'ark_usage': result.usage,
-        },
-      );
-    } finally {
-      client.close();
-    }
+    return LLMResponse(
+      text: '',
+      generatedImages: images,
+      metadata: _metadata(images.length, result.failures.length, result.usage),
+    );
   }
+
+  /// Ark bills Seedream per image. Its `output_tokens` (pixels / 256) is
+  /// informational, and publishing it under a token key would let a
+  /// token-priced fee group invent a cost, so the raw block is kept under
+  /// its own name. `image_count` keeps the metadata non-empty, which is
+  /// what makes LLMService record the usage row at all.
+  static Map<String, dynamic> _metadata(
+          int images, int failed, Map<String, dynamic> usage) =>
+      {
+        'image_count': images,
+        if (failed > 0) 'failed_images': failed,
+        if (usage.isNotEmpty) 'ark_usage': usage,
+      };
 
   static String _excerpt(String body) =>
       body.length > 500 ? '${body.substring(0, 500)}…' : body;
+}
+
+/// One prepared request: where it goes, what it carries, and how the log
+/// names it.
+class _ArkRequest {
+  final Uri url;
+  final Map<String, dynamic> payload;
+  final int refCount;
+  final String mode;
+  const _ArkRequest(this.url, this.payload, this.refCount, this.mode);
 }

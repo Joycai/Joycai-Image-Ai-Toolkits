@@ -376,7 +376,8 @@ class LLMService {
     await for (final chunk in _idleGuarded(
       stream,
       first: _firstChunkGapFor(config, options),
-      firstIsDeadline: _dispatcher.streamIsSingleShot(config),
+      subsequent: _dispatcher.imageStreamChunkGap(config),
+      firstIsDeadline: _firstChunkIsDeadline(config),
     )) {
       if (isCancelled?.call() ?? false) {
         // Leaving the loop is the abort. `await for` cancels its
@@ -545,14 +546,29 @@ class LLMService {
   /// exactly that. Never *shorter* than [_firstChunkGap] — the chat formula's
   /// 120 s floor would otherwise tighten the guard on the image routes it
   /// does not describe.
+  ///
+  /// A live image stream ([LLMDispatcher.imageStreamChunkGap]) is the same
+  /// story one image at a time: its first chunk is a whole finished image,
+  /// so it borrows that gap — and, like the single-shot routes, expiring is
+  /// a deadline rather than a dead connection.
   Duration _firstChunkGapFor(
     LLMModelConfig config,
     Map<String, dynamic>? options,
   ) {
+    final imageGap = _dispatcher.imageStreamChunkGap(config);
+    if (imageGap != null) {
+      return imageGap > _firstChunkGap ? imageGap : _firstChunkGap;
+    }
     if (!_dispatcher.streamIsSingleShot(config)) return _firstChunkGap;
     final deadline = _dispatcher.generateTimeout(config, options: options);
     return deadline > _firstChunkGap ? deadline : _firstChunkGap;
   }
+
+  /// Whether the first-chunk gap is a generation deadline ([LLMDeadlineExceeded],
+  /// never retried) rather than a liveness check.
+  bool _firstChunkIsDeadline(LLMModelConfig config) =>
+      _dispatcher.streamIsSingleShot(config) ||
+      _dispatcher.imageStreamChunkGap(config) != null;
 
   @visibleForTesting
   static Stream<T> idleGuardedForTest<T>(
@@ -852,7 +868,8 @@ class LLMService {
         await for (final chunk in _idleGuarded(
           stream,
           first: _firstChunkGapFor(config, options),
-          firstIsDeadline: _dispatcher.streamIsSingleShot(config),
+          subsequent: _dispatcher.imageStreamChunkGap(config),
+          firstIsDeadline: _firstChunkIsDeadline(config),
         )) {
           if (chunk.reasoningPart != null) {
             _emitLog(

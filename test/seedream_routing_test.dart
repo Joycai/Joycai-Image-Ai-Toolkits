@@ -229,6 +229,173 @@ void main() {
       expect(body.containsKey('n'), isFalse, reason: 'Ark body, not OpenAI\'s');
     });
   });
+
+  group('live image stream', () {
+    final dispatcher = LLMDispatcher();
+
+    test('lite on Ark streams live; pro and relays stay single-shot', () {
+      final live = config(Vendors.volcengineArk, lite);
+      expect(dispatcher.streamIsSingleShot(live), isFalse);
+      expect(dispatcher.imageStreamChunkGap(live), const Duration(minutes: 5));
+      expect(dispatcher.isBilledOnSubmit(live), isTrue,
+          reason: 'still a billed generation: no retry after acceptance');
+      expect(dispatcher.streamSupportsTools(live), isFalse);
+
+      for (final c in [
+        config(Vendors.volcengineArk, pro),
+        config(Vendors.newApiOpenAI, lite, endpoint: 'https://relay/v1'),
+      ]) {
+        expect(dispatcher.imageStreamChunkGap(c), isNull, reason: c.channelType);
+        expect(dispatcher.streamIsSingleShot(c), isTrue, reason: c.channelType);
+      }
+    });
+
+    late HttpServer server;
+    late List<Map<String, dynamic>> bodies;
+    // What the POST answers: 'sse', 'sse-gone', 'json', or 'error'.
+    late String answer;
+
+    setUp(() async {
+      server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      bodies = [];
+      answer = 'sse';
+      server.listen((request) async {
+        if (request.method == 'GET') {
+          if (request.uri.path.contains('gone')) {
+            request.response.statusCode = 404;
+          } else {
+            request.response.headers.contentType = ContentType('image', 'png');
+            request.response.add(_png);
+          }
+          await request.response.close();
+          return;
+        }
+        bodies.add((jsonDecode(await utf8.decodeStream(request)) as Map)
+            .cast<String, dynamic>());
+        final base = 'http://127.0.0.1:${server.port}';
+        switch (answer) {
+          case 'error':
+            request.response.statusCode = 400;
+            request.response.headers.contentType = ContentType.json;
+            request.response.write(jsonEncode({
+              'error': {
+                'code': 'InvalidParameter',
+                'message': 'size is invalid',
+                'param': 'size',
+                'type': 'BadRequest',
+              },
+            }));
+          case 'json':
+            request.response.headers.contentType = ContentType.json;
+            request.response.write(jsonEncode({
+              'data': [
+                {'url': '$base/img/1.png'},
+              ],
+              'usage': {'generated_images': 1},
+            }));
+          default:
+            // 'sse-gone': links that 404 when fetched.
+            final dir = answer == 'sse-gone' ? 'gone' : 'img';
+            request.response.headers.contentType =
+                ContentType('text', 'event-stream');
+            void event(Map<String, dynamic> data) {
+              request.response
+                ..write('event: ${data['type']}\n')
+                ..write('data: ${jsonEncode(data)}\n\n');
+            }
+
+            event({
+              'type': 'image_generation.partial_succeeded',
+              'image_index': 0,
+              'url': '$base/$dir/0.png',
+              'size': '2496x1664',
+            });
+            await request.response.flush();
+            event({
+              'type': 'image_generation.partial_failed',
+              'image_index': 1,
+              'error': {
+                'code': 'OutputImageSensitiveContentDetected',
+                'message': 'blocked',
+              },
+            });
+            event({
+              'type': 'image_generation.partial_succeeded',
+              'image_index': 2,
+              'url': '$base/$dir/2.png',
+              'size': '2496x1664',
+            });
+            event({
+              'type': 'image_generation.completed',
+              'usage': {'generated_images': 2, 'output_tokens': 32448},
+            });
+            request.response.write('data: [DONE]\n\n');
+        }
+        await request.response.close();
+      });
+    });
+
+    tearDown(() => server.close(force: true));
+
+    LLMModelConfig ark() => config(Vendors.volcengineArk, lite,
+        endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3');
+
+    Future<List<LLMResponseChunk>> run(LLMModelConfig c) => dispatcher
+        .generateStream(c, [LLMMessage(role: LLMRole.user, content: 'two')],
+            options: {'maxImages': '3', 'watermark': 'off'}).toList();
+
+    test('each image arrives as its own chunk; failures and usage at the end',
+        () async {
+      final chunks = await run(ark());
+      expect(bodies.single['stream'], isTrue);
+      final images = chunks.where((c) => c.imagePart != null).toList();
+      expect(images, hasLength(2));
+      final last = chunks.last;
+      expect(last.isDone, isTrue);
+      expect(last.metadata?['image_count'], 2);
+      expect(last.metadata?['failed_images'], 1);
+      expect(last.metadata?['ark_usage'], {
+        'generated_images': 2,
+        'output_tokens': 32448,
+      });
+      expect(last.metadata?.containsKey('output_tokens'), isFalse);
+    });
+
+    test('a JSON answer to a stream request is read as the synchronous one',
+        () async {
+      answer = 'json';
+      final chunks = await run(ark());
+      expect(chunks.where((c) => c.imagePart != null), hasLength(1));
+      expect(chunks.last.metadata?['image_count'], 1);
+    });
+
+    test('a parameter error is the plain 400 envelope, not an event',
+        () async {
+      answer = 'error';
+      await expectLater(
+        run(ark()),
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.statusCode, 'status', 400)
+            .having((e) => e.message, 'message', contains('size is invalid'))),
+      );
+    });
+
+    test('links that all fail to download fail the request', () async {
+      answer = 'sse-gone';
+      await expectLater(
+        run(ark()),
+        throwsA(isA<LLMApiException>()
+            .having((e) => e.message, 'message', contains('none of which'))),
+      );
+    });
+
+    test('a relay gets the synchronous body — no `stream`', () async {
+      answer = 'json';
+      await run(config(Vendors.newApiOpenAI, lite,
+          endpoint: 'http://127.0.0.1:${server.port}/v1'));
+      expect(bodies.single.containsKey('stream'), isFalse);
+    });
+  });
 }
 
 /// A 1×1 transparent PNG — enough for the byte-sniffing download check.
