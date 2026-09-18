@@ -5080,6 +5080,24 @@ abstract class AppLocalizations {
   /// **'Own host'**
   String get routePathOwnHost;
 
+  /// No description provided for @routePathHostItself.
+  ///
+  /// In en, this message translates to:
+  /// **'Host itself · default {path}'**
+  String routePathHostItself(String path);
+
+  /// No description provided for @routePathHostItselfHint.
+  ///
+  /// In en, this message translates to:
+  /// **'(the host itself)'**
+  String get routePathHostItselfHint;
+
+  /// No description provided for @routeUseHostItself.
+  ///
+  /// In en, this message translates to:
+  /// **'Use host itself'**
+  String get routeUseHostItself;
+
   /// No description provided for @routeRestoreDefault.
   ///
   /// In en, this message translates to:

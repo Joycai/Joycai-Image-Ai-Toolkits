@@ -2820,6 +2820,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routePathOwnHost => '独立主机';
 
   @override
+  String routePathHostItself(String path) {
+    return '主机本身 · 默认 $path';
+  }
+
+  @override
+  String get routePathHostItselfHint => '（主机本身）';
+
+  @override
+  String get routeUseHostItself => '用主机本身';
+
+  @override
   String get routeRestoreDefault => '恢复默认';
 
   @override
@@ -8030,6 +8041,17 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get routePathOwnHost => '獨立主機';
+
+  @override
+  String routePathHostItself(String path) {
+    return '主機本身 · 預設 $path';
+  }
+
+  @override
+  String get routePathHostItselfHint => '（主機本身）';
+
+  @override
+  String get routeUseHostItself => '用主機本身';
 
   @override
   String get routeRestoreDefault => '恢復預設';

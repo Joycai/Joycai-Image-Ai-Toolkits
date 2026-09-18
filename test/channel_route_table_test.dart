@@ -83,6 +83,36 @@ void main() {
     expect(find.text('Default /v1'), findsWidgets);
   });
 
+  testWidgets('a path stored empty reads as the host itself', (tester) async {
+    await pump(tester, relay.withPath(RouteKind.chat, ''));
+    expect(find.text('Host itself · default /v1'), findsOneWidget);
+    expect(find.text('(the host itself)'), findsOneWidget);
+    expect(find.text('POST https://relay.example.com/chat/completions'),
+        findsOneWidget);
+    await tester.tap(find.text('Restore default'));
+    await tester.pump();
+    expect(current.primary.path, isNull);
+  });
+
+  testWidgets("a custom host can put a route at its root; a relay's layout is known",
+      (tester) async {
+    await pump(tester, relay);
+    expect(find.text('Use host itself'), findsNothing);
+
+    final custom = ChannelRoutes.resolve(
+        Vendors.openAIRest, 'https://my.example.com/v1', null);
+    expect(custom.platform.id, Platforms.custom);
+    await pump(tester, custom);
+    final offered = find.text('Use host itself').evaluate().length;
+    expect(offered, custom.entries.length);
+    await tester.tap(find.text('Use host itself').first);
+    await tester.pump();
+    expect(current.primary.path, '');
+    expect(current.primaryAddress, 'https://my.example.com');
+    // Offered only while a route is on its default path.
+    expect(find.text('Use host itself'), findsNWidgets(offered - 1));
+  });
+
   testWidgets('a whole address is a host of its own', (tester) async {
     await pump(
       tester,

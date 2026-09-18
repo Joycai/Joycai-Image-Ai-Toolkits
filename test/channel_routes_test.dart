@@ -317,6 +317,20 @@ void main() {
       expect(changed.withPath(RouteKind.chat, null).primary.path, isNull);
     });
 
+    test('an empty path is the host itself, and survives the document', () {
+      final r = ChannelRoutes.create(newapi, 'https://r.example', [
+        RouteKind.chat,
+      ]).withPath(RouteKind.chat, '');
+      expect(r.primary.path, '');
+      expect(r.primaryAddress, 'https://r.example');
+      final back = ChannelRoutes.resolve(r.primaryVendorId, r.primaryAddress, r.encode());
+      expect(back.primary.path, '');
+      // Where the default already is the host itself, empty is the default.
+      final ds = ChannelRoutes.create(Platforms.byId(Platforms.deepseek),
+          'https://api.deepseek.com', [RouteKind.chat]);
+      expect(ds.withPath(RouteKind.chat, '').primary.path, isNull);
+    });
+
     test('an absolute path replaces host and path', () {
       final r = ChannelRoutes.create(
         newapi,

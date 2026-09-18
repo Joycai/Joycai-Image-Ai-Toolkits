@@ -2971,6 +2971,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routePathOwnHost => 'Own host';
 
   @override
+  String routePathHostItself(String path) {
+    return 'Host itself · default $path';
+  }
+
+  @override
+  String get routePathHostItselfHint => '(the host itself)';
+
+  @override
+  String get routeUseHostItself => 'Use host itself';
+
+  @override
   String get routeRestoreDefault => 'Restore default';
 
   @override

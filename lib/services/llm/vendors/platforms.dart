@@ -88,12 +88,18 @@ class PlatformProfile {
   /// The user supplies the host (relays and custom endpoints).
   final bool hostFromUser;
 
+  /// The default paths are the protocol's convention, not this platform's
+  /// known layout — a host of the user's own may serve a route at its root,
+  /// so the route table offers "the host itself" as a path.
+  final bool guessedPaths;
+
   const PlatformProfile({
     required this.id,
     required this.routes,
     this.officialHost,
     this.hosts = const [],
     this.hostFromUser = false,
+    this.guessedPaths = false,
   });
 
   PlatformRoute? route(RouteKind kind) {
@@ -250,6 +256,7 @@ class Platforms {
     PlatformProfile(
       id: custom,
       hostFromUser: true,
+      guessedPaths: true,
       routes: [
         PlatformRoute(RouteKind.chat, '/v1', Vendors.openAIRest),
         PlatformRoute(RouteKind.responses, '/v1', Vendors.openAIResponsesRest),

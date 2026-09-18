@@ -897,6 +897,16 @@
     }
   },
   "routePathOwnHost": "Own host",
+  "routePathHostItself": "Host itself · default {path}",
+  "@routePathHostItself": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "routePathHostItselfHint": "(the host itself)",
+  "routeUseHostItself": "Use host itself",
   "routeRestoreDefault": "Restore default",
   "routeOfficialLocked": "Official address, locked",
   "routeTest": "Test this route",

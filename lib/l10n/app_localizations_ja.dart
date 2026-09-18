@@ -2853,6 +2853,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get routePathOwnHost => '独自ホスト';
 
   @override
+  String routePathHostItself(String path) {
+    return 'ホストそのもの · 既定 $path';
+  }
+
+  @override
+  String get routePathHostItselfHint => '（ホストそのもの）';
+
+  @override
+  String get routeUseHostItself => 'ホストそのものを使う';
+
+  @override
   String get routeRestoreDefault => '既定に戻す';
 
   @override
