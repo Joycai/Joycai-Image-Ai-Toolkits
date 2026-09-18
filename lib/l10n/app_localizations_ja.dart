@@ -5298,4 +5298,90 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get maskLoadFailedDesc => 'ファイルが移動または削除された可能性があります';
+
+  @override
+  String layerCanvasTitle(String name) {
+    return 'レイヤー · $name';
+  }
+
+  @override
+  String layerCanvasSubtitle(int width, int height, int count) {
+    return 'ベース $width×$height · $count レイヤー';
+  }
+
+  @override
+  String layerCanvasSubtitleShort(int width, int height, int count) {
+    return '$width×$height · $count レイヤー';
+  }
+
+  @override
+  String get layerShowBounds => '境界を表示';
+
+  @override
+  String get layerFit => '全体表示';
+
+  @override
+  String get layerExport => '合成画像を書き出す';
+
+  @override
+  String get layerListLabel => 'レイヤー';
+
+  @override
+  String layerListCount(int count) {
+    return '$count + ベース';
+  }
+
+  @override
+  String get layerBase => 'ベース';
+
+  @override
+  String get layerShowAll => 'すべて表示';
+
+  @override
+  String get layerShow => 'レイヤーを表示';
+
+  @override
+  String get layerHide => 'レイヤーを隠す';
+
+  @override
+  String layerPosition(int x, int y) {
+    return '位置 $x, $y';
+  }
+
+  @override
+  String layerSize(int width, int height) {
+    return 'サイズ $width×$height';
+  }
+
+  @override
+  String layerOrdinal(int index) {
+    return 'レイヤー $index';
+  }
+
+  @override
+  String layerUnnamed(int index) {
+    return 'レイヤー $index';
+  }
+
+  @override
+  String get layerOpenThis => 'このレイヤーを開く';
+
+  @override
+  String get layerExported => '合成画像を書き出しました';
+
+  @override
+  String layerExportFailed(String error) {
+    return '合成画像を書き出せませんでした：$error';
+  }
+
+  @override
+  String get layerSetUnavailable => 'このレイヤーのファイルが見つかりません';
+
+  @override
+  String get menuOpenLayers => 'レイヤーを開く';
+
+  @override
+  String menuLayerCount(int count) {
+    return '$count レイヤー';
+  }
 }

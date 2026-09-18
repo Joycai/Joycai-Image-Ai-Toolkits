@@ -17,6 +17,7 @@ import '../../models/tag.dart';
 import '../llm/channel_routes.dart';
 import 'database_migrations.dart';
 import 'repositories/cookie_repository.dart';
+import 'repositories/image_layer_repository.dart';
 import 'repositories/model_repository.dart';
 import 'repositories/prompt_repository.dart';
 import 'repositories/task_repository.dart';
@@ -55,7 +56,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 45;
+  static const int dbVersion = 46;
 
   /// Settings holding absolute paths from the machine that made the backup.
   /// Excluded when the user opts out of directories.
@@ -93,6 +94,7 @@ class DatabaseService {
       _database = db;
       await syncPresets();
       await TaskRepository().scrubStoredCookies();
+      await ImageLayerRepository(db: this).loadPaths();
       return db;
     }();
     return _databaseFuture!;

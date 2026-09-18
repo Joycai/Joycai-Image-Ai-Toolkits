@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
+import '../db/repositories/image_layer_repository.dart';
 import 'file_transfer_service.dart';
 import 'trash_service.dart';
 
@@ -239,6 +240,7 @@ class FolderOperationsService {
     final target = p.join(p.dirname(path), sanitize(newName));
     if (p.equals(target, path)) return path;
     final renamed = await Directory(path).rename(target);
+    await ImageLayerRepository().move(path, renamed.path);
     return renamed.path;
   }
 
@@ -336,6 +338,7 @@ class FolderOperationsService {
     if (mode == FolderTransferMode.move && !forceCopyDelete) {
       try {
         await Directory(source).rename(target);
+        await ImageLayerRepository().move(source, target);
         return FolderTransferOutcome(
           targetPath: target,
           copied: false,
@@ -438,6 +441,7 @@ class FolderOperationsService {
     if (mode == FolderTransferMode.move) {
       try {
         await Directory(source).delete(recursive: true);
+        await ImageLayerRepository().move(source, target);
       } on FileSystemException catch (e) {
         failure = 'Copied to $target, but the original could not be removed: ${e.message}';
       }

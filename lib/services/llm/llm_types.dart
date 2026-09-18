@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../models/image_layer.dart';
 import 'llm_messages.dart';
 
 export 'llm_errors.dart';
@@ -91,9 +92,35 @@ int? requestedMaxTokens(Map<String, dynamic>? options) {
   return null;
 }
 
+/// Where one generated image belongs in a layer decomposition (Seedream
+/// 5.0 pro's `layer_decomposition`, docs/api/volcengine-ark.md §7): the
+/// stacking order, the model's label for it, and — for a layer above the
+/// base — where it sits on the base.
+class GeneratedImageLayer {
+  /// 0 for the base, 1+ bottom to top.
+  final int zIndex;
+  final String? name;
+  final String? description;
+
+  /// In the base image's pixels; null for the base.
+  final LayerBox? box;
+
+  const GeneratedImageLayer({
+    required this.zIndex,
+    this.name,
+    this.description,
+    this.box,
+  });
+}
+
 class LLMResponse {
   final String text;
   final List<Uint8List> generatedImages;
+
+  /// Aligned one-to-one with [generatedImages] when the response is a layer
+  /// decomposition; empty otherwise. Kept out of [metadata], which is merged
+  /// across chunks and would lose the pairing.
+  final List<GeneratedImageLayer?> imageLayers;
   final String? videoUri;
   final String? operationName;
   final Map<String, dynamic> metadata;
@@ -137,6 +164,7 @@ class LLMResponse {
   LLMResponse({
     required this.text,
     this.generatedImages = const [],
+    this.imageLayers = const [],
     this.videoUri,
     this.operationName,
     this.metadata = const {},
@@ -168,6 +196,10 @@ class LLMResponseChunk {
   final String? reasoningFieldName;
 
   final Uint8List? imagePart;
+
+  /// [imagePart]'s place in a layer decomposition, on the same chunk so the
+  /// pairing cannot drift — see [LLMResponse.imageLayers].
+  final GeneratedImageLayer? imageLayer;
   final Map<String, dynamic>? metadata;
 
   /// One whole tool call. Emitted by the Google chunk parser, which is shared
@@ -228,6 +260,7 @@ class LLMResponseChunk {
     this.reasoningPart,
     this.reasoningFieldName,
     this.imagePart,
+    this.imageLayer,
     this.metadata,
     this.toolCallPart,
     this.rawThinkingBlocks,

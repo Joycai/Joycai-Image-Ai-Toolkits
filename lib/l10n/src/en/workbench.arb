@@ -941,5 +941,115 @@
   "optKbNotConfiguredShort": "Not configured",
   "cropEmptyDesc": "Pick an image in the gallery first",
   "maskEmptyDesc": "A mask is painted over an image",
-  "maskLoadFailedDesc": "The file may have been moved or deleted"
+  "maskLoadFailedDesc": "The file may have been moved or deleted",
+  "layerCanvasTitle": "Layers · {name}",
+  "@layerCanvasTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "layerCanvasSubtitle": "Base {width}×{height} · {count, plural, =1{1 layer} other{{count} layers}}",
+  "@layerCanvasSubtitle": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "layerCanvasSubtitleShort": "{width}×{height} · {count, plural, =1{1 layer} other{{count} layers}}",
+  "@layerCanvasSubtitleShort": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "layerShowBounds": "Show bounds",
+  "layerFit": "Fit",
+  "layerExport": "Export composite",
+  "layerListLabel": "Layers",
+  "layerListCount": "{count} + base",
+  "@layerListCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "layerBase": "Base",
+  "layerShowAll": "Show all",
+  "layerShow": "Show layer",
+  "layerHide": "Hide layer",
+  "layerPosition": "Position {x}, {y}",
+  "@layerPosition": {
+    "placeholders": {
+      "x": {
+        "type": "int"
+      },
+      "y": {
+        "type": "int"
+      }
+    }
+  },
+  "layerSize": "Size {width}×{height}",
+  "@layerSize": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "layerOrdinal": "Layer {index}",
+  "@layerOrdinal": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "layerUnnamed": "Layer {index}",
+  "@layerUnnamed": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "layerOpenThis": "Open this layer",
+  "layerExported": "Composite exported",
+  "layerExportFailed": "Could not export the composite: {error}",
+  "@layerExportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "layerSetUnavailable": "The files of this layer set are no longer there",
+  "menuOpenLayers": "Open layers",
+  "menuLayerCount": "{count, plural, =1{1 layer} other{{count} layers}}",
+  "@menuLayerCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

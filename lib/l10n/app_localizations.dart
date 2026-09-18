@@ -9470,6 +9470,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The file may have been moved or deleted'**
   String get maskLoadFailedDesc;
+
+  /// No description provided for @layerCanvasTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Layers · {name}'**
+  String layerCanvasTitle(String name);
+
+  /// No description provided for @layerCanvasSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Base {width}×{height} · {count, plural, =1{1 layer} other{{count} layers}}'**
+  String layerCanvasSubtitle(int width, int height, int count);
+
+  /// No description provided for @layerCanvasSubtitleShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{width}×{height} · {count, plural, =1{1 layer} other{{count} layers}}'**
+  String layerCanvasSubtitleShort(int width, int height, int count);
+
+  /// No description provided for @layerShowBounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Show bounds'**
+  String get layerShowBounds;
+
+  /// No description provided for @layerFit.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit'**
+  String get layerFit;
+
+  /// No description provided for @layerExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export composite'**
+  String get layerExport;
+
+  /// No description provided for @layerListLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Layers'**
+  String get layerListLabel;
+
+  /// No description provided for @layerListCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} + base'**
+  String layerListCount(int count);
+
+  /// No description provided for @layerBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Base'**
+  String get layerBase;
+
+  /// No description provided for @layerShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get layerShowAll;
+
+  /// No description provided for @layerShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show layer'**
+  String get layerShow;
+
+  /// No description provided for @layerHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide layer'**
+  String get layerHide;
+
+  /// No description provided for @layerPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Position {x}, {y}'**
+  String layerPosition(int x, int y);
+
+  /// No description provided for @layerSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size {width}×{height}'**
+  String layerSize(int width, int height);
+
+  /// No description provided for @layerOrdinal.
+  ///
+  /// In en, this message translates to:
+  /// **'Layer {index}'**
+  String layerOrdinal(int index);
+
+  /// No description provided for @layerUnnamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Layer {index}'**
+  String layerUnnamed(int index);
+
+  /// No description provided for @layerOpenThis.
+  ///
+  /// In en, this message translates to:
+  /// **'Open this layer'**
+  String get layerOpenThis;
+
+  /// No description provided for @layerExported.
+  ///
+  /// In en, this message translates to:
+  /// **'Composite exported'**
+  String get layerExported;
+
+  /// No description provided for @layerExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not export the composite: {error}'**
+  String layerExportFailed(String error);
+
+  /// No description provided for @layerSetUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The files of this layer set are no longer there'**
+  String get layerSetUnavailable;
+
+  /// No description provided for @menuOpenLayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Open layers'**
+  String get menuOpenLayers;
+
+  /// No description provided for @menuLayerCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 layer} other{{count} layers}}'**
+  String menuLayerCount(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -5244,6 +5244,92 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get maskLoadFailedDesc => '文件可能已被移动或删除';
+
+  @override
+  String layerCanvasTitle(String name) {
+    return '图层 · $name';
+  }
+
+  @override
+  String layerCanvasSubtitle(int width, int height, int count) {
+    return '底图 $width×$height · $count 层';
+  }
+
+  @override
+  String layerCanvasSubtitleShort(int width, int height, int count) {
+    return '$width×$height · $count 层';
+  }
+
+  @override
+  String get layerShowBounds => '显示边框';
+
+  @override
+  String get layerFit => '适应';
+
+  @override
+  String get layerExport => '导出合成图';
+
+  @override
+  String get layerListLabel => '图层';
+
+  @override
+  String layerListCount(int count) {
+    return '$count + 底图';
+  }
+
+  @override
+  String get layerBase => '底图';
+
+  @override
+  String get layerShowAll => '全部显示';
+
+  @override
+  String get layerShow => '显示此层';
+
+  @override
+  String get layerHide => '隐藏此层';
+
+  @override
+  String layerPosition(int x, int y) {
+    return '位置 $x, $y';
+  }
+
+  @override
+  String layerSize(int width, int height) {
+    return '尺寸 $width×$height';
+  }
+
+  @override
+  String layerOrdinal(int index) {
+    return '第 $index 层';
+  }
+
+  @override
+  String layerUnnamed(int index) {
+    return '图层 $index';
+  }
+
+  @override
+  String get layerOpenThis => '打开此层';
+
+  @override
+  String get layerExported => '已导出合成图';
+
+  @override
+  String layerExportFailed(String error) {
+    return '导出合成图失败：$error';
+  }
+
+  @override
+  String get layerSetUnavailable => '这组图层的文件已不在';
+
+  @override
+  String get menuOpenLayers => '打开图层';
+
+  @override
+  String menuLayerCount(int count) {
+    return '$count 层';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -10487,4 +10573,90 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get maskLoadFailedDesc => '檔案可能已被移動或刪除';
+
+  @override
+  String layerCanvasTitle(String name) {
+    return '圖層 · $name';
+  }
+
+  @override
+  String layerCanvasSubtitle(int width, int height, int count) {
+    return '底圖 $width×$height · $count 層';
+  }
+
+  @override
+  String layerCanvasSubtitleShort(int width, int height, int count) {
+    return '$width×$height · $count 層';
+  }
+
+  @override
+  String get layerShowBounds => '顯示邊框';
+
+  @override
+  String get layerFit => '適應';
+
+  @override
+  String get layerExport => '匯出合成圖';
+
+  @override
+  String get layerListLabel => '圖層';
+
+  @override
+  String layerListCount(int count) {
+    return '$count + 底圖';
+  }
+
+  @override
+  String get layerBase => '底圖';
+
+  @override
+  String get layerShowAll => '全部顯示';
+
+  @override
+  String get layerShow => '顯示此層';
+
+  @override
+  String get layerHide => '隱藏此層';
+
+  @override
+  String layerPosition(int x, int y) {
+    return '位置 $x, $y';
+  }
+
+  @override
+  String layerSize(int width, int height) {
+    return '尺寸 $width×$height';
+  }
+
+  @override
+  String layerOrdinal(int index) {
+    return '第 $index 層';
+  }
+
+  @override
+  String layerUnnamed(int index) {
+    return '圖層 $index';
+  }
+
+  @override
+  String get layerOpenThis => '開啟此層';
+
+  @override
+  String get layerExported => '已匯出合成圖';
+
+  @override
+  String layerExportFailed(String error) {
+    return '匯出合成圖失敗：$error';
+  }
+
+  @override
+  String get layerSetUnavailable => '這組圖層的檔案已不在';
+
+  @override
+  String get menuOpenLayers => '開啟圖層';
+
+  @override
+  String menuLayerCount(int count) {
+    return '$count 層';
+  }
 }

@@ -356,6 +356,7 @@ class LLMService {
     String fieldReasoning = '';
     String? reasoningFieldName;
     final List<Uint8List> accumulatedImages = [];
+    final List<GeneratedImageLayer?> accumulatedLayers = [];
     final List<LLMToolCall> accumulatedToolCalls = [];
     Map<String, dynamic>? finalMetadata;
     List<Map<String, dynamic>>? rawThinkingBlocks;
@@ -423,6 +424,7 @@ class LLMService {
       }
       if (chunk.imagePart != null) {
         accumulatedImages.add(chunk.imagePart!);
+        accumulatedLayers.add(chunk.imageLayer);
       }
       // Collected rather than ignored: a dropped tool call reads to the
       // caller as "the model chose to answer directly", which is the one
@@ -466,6 +468,9 @@ class LLMService {
     final response = LLMResponse(
       text: accumulatedText,
       generatedImages: accumulatedImages,
+      imageLayers: accumulatedLayers.any((l) => l != null)
+          ? accumulatedLayers
+          : const [],
       metadata: finalMetadata ?? {},
       toolCalls: accumulatedToolCalls,
       // With a native reasoning field present, the response carries that

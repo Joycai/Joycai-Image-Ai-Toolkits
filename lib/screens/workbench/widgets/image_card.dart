@@ -12,6 +12,7 @@ import '../../../core/thumbnail_decode.dart';
 import '../../../core/thumbnail_fit.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
+import '../../../services/db/repositories/image_layer_repository.dart';
 import '../../../services/media/image_metadata_service.dart';
 import '../../../services/media/video_thumbnail_service.dart';
 import '../../../state/app_state.dart';
@@ -21,6 +22,7 @@ import '../../../widgets/drag/app_drag_session.dart';
 import '../../../widgets/glass/app_glass.dart';
 import 'gallery_file_actions.dart';
 import 'image_card_context_menu.dart';
+import 'layers/layer_canvas_page.dart';
 import 'preview/media_preview_dialog.dart' show previewHeroTag;
 
 /// The play glyph laid straight on a video frame (`A1 · 1a`:
@@ -384,15 +386,35 @@ class _ImageCardState extends State<ImageCard> {
             // generated this picture. Derived from the tagged task record via
             // the session-scoped map on the state — present only while that
             // session is the live one.
+            //
+            // Beside it, on its left, the layer badge (`A7 · 7b`): a file a
+            // decomposition produced says which part it is — 「底图」 or its
+            // layer number — and a tap on it opens the layer canvas.
             Positioned(
               top: _badgeInset,
               right: _badgeInset,
-              child: Builder(builder: (context) {
-                final version = context.select<WorkbenchUIState, int?>(
-                    (w) => w.resultVersionByPath[widget.imageFile.path]);
-                if (version == null) return const SizedBox.shrink();
-                return _buildPlateBadge(context, 'v$version', fontWeight: FontWeight.w500);
-              }),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ValueListenableBuilder<Map<String, int>>(
+                    valueListenable: ImageLayerRepository.layeredPaths,
+                    builder: (context, layered, _) {
+                      final z = layered[widget.imageFile.path];
+                      if (z == null) return const SizedBox.shrink();
+                      return _buildLayerBadge(context, z);
+                    },
+                  ),
+                  Builder(builder: (context) {
+                    final version = context.select<WorkbenchUIState, int?>(
+                        (w) => w.resultVersionByPath[widget.imageFile.path]);
+                    if (version == null) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(left: AppSpace.s4),
+                      child: _buildPlateBadge(context, 'v$version', fontWeight: FontWeight.w500),
+                    );
+                  }),
+                ],
+              ),
             ),
             if (!isVideo)
               Positioned(
@@ -455,6 +477,56 @@ class _ImageCardState extends State<ImageCard> {
             color: AppOverlay.onImagePlate,
             fontWeight: fontWeight,
             height: AppType.tightHeight,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 「底图」 or the layer number on the plate, with the layers glyph — the
+  /// way into the layer canvas. The plate stays badge-sized; the tap target
+  /// round it is the 32 an icon button gets.
+  Widget _buildLayerBadge(BuildContext context, int zIndex) {
+    final l10n = AppLocalizations.of(context)!;
+    final base = Theme.of(context).textTheme.labelSmall;
+    final label = zIndex == 0 ? l10n.layerBase : '$zIndex';
+    return Tooltip(
+      message: l10n.menuOpenLayers,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => openLayerCanvas(context, widget.imageFile.path),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+              minWidth: AppSize.iconButton, minHeight: AppSize.iconButton),
+          child: Align(
+            alignment: Alignment.topRight,
+            widthFactor: 1,
+            heightFactor: 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppOverlay.imagePlate,
+                borderRadius: BorderRadius.circular(AppRadius.xs),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.layers_outlined,
+                        size: 12, color: AppOverlay.onImagePlate),
+                    const SizedBox(width: 3),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      style: (zIndex == 0 ? base : base?.mono)?.copyWith(
+                        color: AppOverlay.onImagePlate,
+                        height: AppType.tightHeight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

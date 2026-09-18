@@ -3,7 +3,7 @@
 Cross-platform Flutter desktop/mobile app for AI image and video generation, built
 around a multi-vendor LLM layer, for artists and designers working with AI media.
 
-**Version:** 4.14.0 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
+**Version:** 4.15.0 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
 
 ## Key Commands
 
@@ -35,7 +35,8 @@ core/              Responsive breakpoints, AppConstants/enums, AppPaths, file ut
                      (incl. AppDock, the phone dock's size), app_theme, app_semantic_colors, theme_accent
 l10n/              generated — never edit; sources are l10n/src/<lang>/<module>.arb
 models/            LLMModel, LLMChannel, PricingGroup, Prompt/SystemPrompt, PromptTag, PromptHistoryEntry,
-                     TaskItem (+ TaskType, TaskEvent), AppImage, BrowserFile, LogEntry
+                     TaskItem (+ TaskType, TaskEvent), AppImage, BrowserFile, LogEntry,
+                     ImageLayer (a saved Seedream layer decomposition)
 services/          all business logic, in domain folders only:
   llm/               the API stack — llm_service (facade) · llm_dispatcher (the ONLY routing table) ·
                        protocols/ (layer 1, wire formats) · vendors/ (layer 2, VendorProfile registry,
@@ -45,7 +46,8 @@ services/          all business logic, in domain folders only:
                        routes, v45 document) · model_routes (RouteParams, RoutedChannel = the channel
                        as one model sees it)
   db/                database_service · database_migrations (onCreate + onUpgrade in lockstep) ·
-                       repositories/ (model, prompt, task, usage, assistant session/note, cookie)
+                       repositories/ (model, prompt, task, usage, assistant session/note, cookie,
+                       image_layer)
   tasks/             task_queue_service (concurrency, Stream<TaskEvent>, ETA) · task_executors
                        (`part of` it, one _executeXxxTask per TaskType) · task_list_ordering ·
                        ai_rename_agent · ai_rename_review (neither deletes a file the run placed)

@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
+import '../../services/db/repositories/image_layer_repository.dart';
 import '../../services/files/folder_operations_service.dart';
 import '../ui/app_button.dart';
 import '../ui/app_dialog.dart';
@@ -53,6 +54,7 @@ Future<void> showFileRenameDialog({
   final newPath = p.join(p.dirname(filePath), newName);
   try {
     await file.rename(newPath);
+    await ImageLayerRepository().move(filePath, newPath);
     onSuccess();
     if (context.mounted) AppSnackBar.success(context, l10n.renameSuccess);
   } catch (e) {

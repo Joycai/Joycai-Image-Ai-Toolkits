@@ -1201,8 +1201,12 @@ class LLMDispatcher {
     if (response.text.isNotEmpty) {
       yield LLMResponseChunk(textPart: response.text);
     }
-    for (final img in response.generatedImages) {
-      yield LLMResponseChunk(imagePart: img);
+    for (final (i, img) in response.generatedImages.indexed) {
+      yield LLMResponseChunk(
+          imagePart: img,
+          imageLayer: i < response.imageLayers.length
+              ? response.imageLayers[i]
+              : null);
     }
     yield LLMResponseChunk(metadata: response.metadata, isDone: true);
   }
