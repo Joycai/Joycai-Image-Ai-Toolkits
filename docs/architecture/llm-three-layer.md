@@ -291,7 +291,9 @@ surface 开关"表达不了它。绑定关系升级为：
 （线路名 / 平台名唯一一张表）· `channel_route_table.dart`（渠道编辑的线路表；路径
 null = 平台默认，`''` = 主机本身，绝对 URL = 独立主机；「用主机本身」只在
 `PlatformProfile.guessedPaths` 的自定义平台上给，中转与厂商的布局是已知的）；
-模型编辑的线路条在 `model_edit/model_edit_routes.dart`；合并提示与审阅在
+模型编辑的线路条在 `model_edit/model_edit_routes.dart`（作用域灰字是
+`AppSectionLabel.suffix` 的行内 span，手机上线路条横向滚动）；向导每条线路的私有能力一词
+读 `ChannelRoutes.featuresOf`（vendor 画像的联网与 ④ 提示缓存，未实测的联网不列）；合并提示与审阅在
 `screens/models/widgets/channel_merge_review.dart`。**单线路渠道零负担**：渠道 ≥2 条线路
 （或平台提供第二条）才出线路界面，否则与改前一样。
 

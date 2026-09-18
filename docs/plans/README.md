@@ -45,6 +45,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | `2026-09-debt-sweep-execution.md`（二十二片 + 四次 review，分支 `claude/debt-sweep-4.9`，v4.9.0） | 清「还欠的」里用户点名的三组。① 代码：state 换新列表（视频参考图 / 文件夹切换 / 下载器日志）；视频面板头部放不下时整栏单滚动；AI 重命名「覆盖」禁用态的测试口子；截断标记与 `modelDbId` 跨重启（`LLMMessage` 上的宿主簿记字段）；按节写入的卡片标出节名、hunk 头带所在标题；九个协议的「200 里什么都没有」改抛 `LLMApiException`、`fromJson` 拒收未知 role；`VendorProfile.webSearchOn` 让编辑器与三个 payload 同答，百炼 ④ 面不再带 `web_search`。② 动效：「还欠的」七条全做（见 `plans/README.md` 第四轮）。④ 决策项：S1 / S3 走「明说 + 文件权限 + 生命周期」不上钥匙串（理由见执行文档「决策记录」）；`runTurn` 拆出四个 helper；助手一次 session 通知 1,122 → 29 次 build（`ListenableSelector`）；D2a 三条；十五个 1000–1500 行文件拆分。**与台账不符的两条**：视频 / MJ 请求早已走 `sendJsonRequest`；timeout 取证的「① 累积器」早已落地 | `architecture/assistant-context.md`（Where it lives 九个文件、截断标记持久化）、`architecture/llm-three-layer.md`（联网搜索同一答案、`llm_errors.dart`、`model_capability_tables.dart`）、`architecture/design-tokens.md`（`accentRule`、`AppMotion.sceneFor`）、`plans/README.md`、CLAUDE.md map。执行文档原文 `git show 99b2784:docs/plans/2026-09-debt-sweep-execution.md`（施工记录里有每片的偏离与量出来的数字）。欠的并入下面「还欠的」 |
 | `2026-09-seedream-execution.md`（七片 + 两次 review，分支 `claude/seedream-image-model-support-f4e87c`，v4.10.0） | 火山方舟 Seedream 生图：`Vendors.volcengineArk`（按量 `/api/v3` · 套餐 `/api/plan/v3` 两个同类型变体）+ `WireProtocol.arkImages` + `ModelFamily.seedreamImage` 按版本出表（5.0 pro · 5.0 lite · 4.5 · 4.0 · 3.0 + 兜底）；尺寸 = 档位 + 比例查表；水印明发默认关；5.0 pro「任务」三段（生成 / 拆图层 / 透明编辑）；中转上认得出的 Seedream 走方舟 body；组图放宽超时。顺带：变体按地址回读、同族变体卡印路径、按规格选单收 id 表。设计稿 Claude Design `D1e`。套餐端点实机出图验证 | `architecture/llm-three-layer.md`「火山方舟 · Seedream」、`api/volcengine-ark.md`（含 §7 实测）。执行清单原文 `git show 294432d:docs/plans/2026-09-seedream-execution.md`（决策记录 13 条、施工记录每片的偏离）。欠的并入下面「还欠的」 |
 | `2026-09-channel-route-model.md` + `-execution.md`（十六片 + 三次评审，分支 `claude/channel-route-model-*`，PR #304 · #305 · 本轮） | 渠道 × 线路 × 模型：一份密钥一个渠道，渠道下每个协议族一条线路（v45 `llm_channels.routes` 内嵌文档、`llm_models.active_route / route_params`，读时迁移、请求逐字节不变——真实发请求比对），模型选当前线路、每条线路独立参数、切线路空白起步；改主线路先钉住跟随者；同密钥旧渠道只检测、逐组确认合并（加「请求不变」闸）；界面按 D1f：渠道栏平台 + 线路徽标、渠道编辑线路表与实际地址、向导平台优先建全部线路、模型编辑线路条与差异卡、合并审阅 | `architecture/llm-three-layer.md`「渠道 × 线路 × 模型」与红线表；代码 `services/llm/{channel_routes,model_routes}.dart`、`vendors/platforms.dart`、`services/catalogue/{route_switching,channel_merge,channel_merge_executor}.dart`。原文 `git show 9e90547:docs/plans/2026-09-channel-route-model{,-execution}.md`（执行清单的施工记录有每条偏离的理由）。欠的并入下面「还欠的」 |
+| `2026-09-channel-route-followups-execution.md`（八片 + 两次评审，分支 `claude/channel-route-followups`） | 渠道 × 线路欠账清零：合并连助手对话里的模型链接一起改写（库里的行与打开着的会话）、合并审阅把已选模型 / 用量记录 / 对话链接分开计数；换预设与向导同源建平台全部线路；路径「主机本身」一态（自定义平台给「用主机本身」）；联网矩阵「未实测」第三态（画像声明 `untestedWebSearch`）；向导每条线路的私有能力一词；作用域灰字紧跟标题（`AppSectionLabel.suffix`）、手机线路条横向滚动。渠道栏副行不显示渠道标签维持设计 ① 原意 | `architecture/llm-three-layer.md`「渠道 × 线路 × 模型」。原文 `git show 8285ca7:docs/plans/2026-09-channel-route-followups-execution.md`（裁定表与施工记录） |
 
 三份审计报告（`code-review-report-20260613.md` v2.3.0、`api-standards-audit.md`
 基线 `d03047e`、`2026-08-ai-capability-review.md` 基线 `6a4920d`）都是带完整
@@ -53,17 +54,6 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 不要照着旧快照改。
 
 ## 还欠的（2026-09-12 对照 main 逐条复核过；2026-09-16 欠账清扫后更新）
-
-### 渠道 × 线路（2026-09-18）
-
-| 条 | 为什么没做 / 要验什么 |
-|---|---|
-| 助手对话里「跳到该模型」的链接（`LLMMessage.modelDbId`，存在 JSON 里）合并后读作「已删除的模型」 | 与手动删该模型同一结果（标准 04 §4 允许）；要改就得扫会话 JSON |
-| 联网搜索各线路矩阵的「未实测」第三态（设计 4d 的 help 图标） | 画像表只有能 / 不能两种答案；要先有「实测过」这份数据 |
-| 向导「将建立的线路」每行的私有能力一词（联网 / 提示缓存） | 需要从画像表按（平台, 线路）列能力，本轮只列名称与地址 |
-| 渠道编辑「更换预设」只建该 vendor 旧有的线路，不像向导那样建平台全部线路 | 换预设是改渠道而不是新建；线路表里「启用」一键补上。要不要对齐待定 |
-| 旧数据里显式存成空串的线路路径（主机本身就是基址）在线路表显示「已改」、输入框为空，清空即恢复默认，界面写不回空串 | 只有极早的手填渠道会这样；遇到再给路径框加「用主机本身」 |
-| 设计稿与实现的小出入：作用域灰字在标题行右端（`AppSectionLabel.trailing`）、手机线路条换行而非横向滚动、合并审阅把选择与用量合成一个计数、渠道栏副行不再显示渠道自己的标签（按设计 ①，只剩头像色与搜索） | 均记在执行清单施工记录；回 D1f 改稿或改代码择一 |
 
 ### 火山方舟 · Seedream（2026-09-18）
 
