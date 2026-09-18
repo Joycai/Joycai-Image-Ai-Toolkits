@@ -22,7 +22,7 @@
 |---|---|---|---|---|
 | 1 | 合并改写助手对话里的模型链接（`LLMMessage.modelDbId`） | `assistant_session_repository.dart`、`channel_merge_executor.dart` | 仓库测试：改写与计数只动命中的消息；执行器顺序测试 | ☑ |
 | 2 | 合并引用计数分写：选择 · 用量记录 · 对话链接 | `channel_merge_executor.dart`、`channel_merge_review.dart`、l10n | 执行器测试；截图 4f | ☑ |
-| 3 | 换预设建平台全部线路 | `channel_edit_dialog.dart` | 单测 `plannedChannelRoutes` 与换预设同源 | ☐ |
+| 3 | 换预设建平台全部线路 | `channel_edit_dialog.dart` | 小部件测试：换到 MiniMax 后两条线路都建好、没有「启用」行 | ☑ |
 | 4 | 空串路径「主机本身」 | `channel_routes.dart`、`channel_route_table.dart`、l10n | `withPath(k,'')` 存空串、默认为空的平台归一为 null；小部件测试 | ☐ |
 
 阶段一评审：`/code-review high` 片 1–4。

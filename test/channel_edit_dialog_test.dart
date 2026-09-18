@@ -265,6 +265,28 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  // `D1f` follow-up: a preset change builds the routes the add-channel
+  // wizard would — every route the platform offers — not just the one its
+  // vendor used to reach, which left the rest behind an "Enable" each.
+  testWidgets('changing preset creates every route the platform offers',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await _pumpDialog(tester, type: Vendors.deepseek);
+
+    await tester.tap(find.text('Change preset').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('MiniMax').last);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Anthropic'), findsWidgets);
+    expect(find.text('Enable'), findsNothing,
+        reason: 'MiniMax offers Chat and Anthropic; both are created');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a local runtime marks its key optional', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;

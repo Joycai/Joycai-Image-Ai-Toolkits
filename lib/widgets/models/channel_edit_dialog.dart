@@ -219,9 +219,12 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       // Key, name and tag are the user's, not the preset's, and survive.
       if (endpoint != null) epCtrl.text = endpoint;
       _probe = null;
-      // A new preset is a new channel as far as routes go: the routes its
-      // own vendor and address give, nothing carried from the old platform.
-      _routes = ChannelRoutes.resolve(type, epCtrl.text, null);
+      // A new preset is a new channel as far as routes go: the routes the
+      // add-channel wizard would create for it — every route its platform
+      // offers, only the one picked for a custom host — nothing carried from
+      // the old platform. Models on a route that is gone move to the new
+      // primary when saved (RouteSwitching.afterChannelEdit).
+      _routes = plannedChannelRoutes(picked.preset, type, epCtrl.text);
       hostCtrl.text = _routes.host;
       _routeProbes.clear();
       _routesGeneration++;
