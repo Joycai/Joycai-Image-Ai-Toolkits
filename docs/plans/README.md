@@ -47,6 +47,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | `2026-09-channel-route-model.md` + `-execution.md`（十六片 + 三次评审，分支 `claude/channel-route-model-*`，PR #304 · #305 · 本轮） | 渠道 × 线路 × 模型：一份密钥一个渠道，渠道下每个协议族一条线路（v45 `llm_channels.routes` 内嵌文档、`llm_models.active_route / route_params`，读时迁移、请求逐字节不变——真实发请求比对），模型选当前线路、每条线路独立参数、切线路空白起步；改主线路先钉住跟随者；同密钥旧渠道只检测、逐组确认合并（加「请求不变」闸）；界面按 D1f：渠道栏平台 + 线路徽标、渠道编辑线路表与实际地址、向导平台优先建全部线路、模型编辑线路条与差异卡、合并审阅 | `architecture/llm-three-layer.md`「渠道 × 线路 × 模型」与红线表；代码 `services/llm/{channel_routes,model_routes}.dart`、`vendors/platforms.dart`、`services/catalogue/{route_switching,channel_merge,channel_merge_executor}.dart`。原文 `git show 9e90547:docs/plans/2026-09-channel-route-model{,-execution}.md`（执行清单的施工记录有每条偏离的理由）。欠的并入下面「还欠的」 |
 | `2026-09-ark-image-stream-execution.md`（四片 + 一次 review，分支 `claude/ark-live-tests`，与套餐实测文档同一 PR） | Seedream 流式出图：方舟自家渠道上 5.0 lite / 4.5 / 4.0 发 `stream: true`，逐张下载推出；空闲守卫按单图期限计；执行器边到边存。中转与 5.0 pro 照旧同步。顺带：套餐实测补了 chat 面思考开关（不需要方言）、流式事件形状、拆图层响应形状 | `architecture/llm-three-layer.md`「火山方舟 · Seedream」流式一条、`api/volcengine-ark.md` §5 · §7 · §7.1。执行清单原文 `git show a305018:docs/plans/2026-09-ark-image-stream-execution.md` |
 | `2026-09-channel-route-followups-execution.md`（八片 + 两次评审，分支 `claude/channel-route-followups`） | 渠道 × 线路欠账清零：合并连助手对话里的模型链接一起改写（库里的行与打开着的会话）、合并审阅把已选模型 / 用量记录 / 对话链接分开计数；换预设与向导同源建平台全部线路；路径「主机本身」一态（自定义平台给「用主机本身」）；联网矩阵「未实测」第三态（画像声明 `untestedWebSearch`）；向导每条线路的私有能力一词；作用域灰字紧跟标题（`AppSectionLabel.suffix`）、手机线路条横向滚动。渠道栏副行不显示渠道标签维持设计 ① 原意 | `architecture/llm-three-layer.md`「渠道 × 线路 × 模型」。原文 `git show 8285ca7:docs/plans/2026-09-channel-route-followups-execution.md`（裁定表与施工记录） |
+| `2026-09-ark-layers-execution.md`（五片 + 一次 review，分支 `claude/ark-layers`，v4.15.0） | 拆图层落库与画布还原：`GeneratedImageLayer` 与图按位置对齐（`LLMResponse.imageLayers` / `LLMResponseChunk.imageLayer`，方舟逐项下载保对齐）；v46 `image_layers` 按路径存组、层号、名字、描述、框，应用内改名 / 移动带着走、覆盖时退掉旧行；全屏「图层画布」按框叠回底图、逐层显隐、点选描框、导出可见层合成图；入口是图片卡角标与右键一行。设计稿 Claude Design `A7 图层画布` | `architecture/llm-three-layer.md`「火山方舟 · Seedream」拆图层一条、`api/volcengine-ark.md` §6。执行清单原文 `git show 0ad48c6:docs/plans/2026-09-ark-layers-execution.md`（施工记录有与稿的四处出入） |
 
 三份审计报告（`code-review-report-20260613.md` v2.3.0、`api-standards-audit.md`
 基线 `d03047e`、`2026-08-ai-capability-review.md` 基线 `6a4920d`）都是带完整
@@ -60,7 +61,6 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 
 | 条 | 为什么没做 / 要验什么 |
 |---|---|
-| 拆图层的 `bounding_box` / `z_index` / `name` 落库与画布还原 | 现在底图 + 图层按叠放次序逐张落盘，位置信息只写日志。响应形状已实测（`api/volcengine-ark.md` §7），解析无需改 |
 | Seedance 视频面 | 同一 vendor 的另一条 surface，本轮只做生图。套餐 key 打不到（全部 `404 UnsupportedModel`，§7.1），要按量 key 才能做 |
 | 按量 base 的 `GET /api/v3/models` 与 4.5 / 4.0 实机 | 手上只有套餐 key：按量 base 是否有列表、4.x 的档位映射都未实测 |
 | 中转站透传方舟 body 的实机 | 按路径同形推断（New API 的火山渠道），未拿中转 key 验证 |
