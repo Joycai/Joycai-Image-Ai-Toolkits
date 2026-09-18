@@ -239,8 +239,15 @@ void main() {
     await tester.pump();
     await tester.runAsync(() async {
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-      await Future<void>.delayed(const Duration(milliseconds: 300));
     });
+    // The save is a real database write. Wait for its effect rather than a
+    // fixed slice of wall time: 300 ms was enough locally and not on a busy
+    // CI runner, where the editor was still open when the assertion ran.
+    for (var i = 0; i < 50 && find.text('Edit group').evaluate().isNotEmpty; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
