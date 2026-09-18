@@ -63,6 +63,15 @@ class Recorder {
     return seen.single;
   }
 
+  Future<Seen> send(LLMModelConfig config, List<LLMMessage> history) async {
+    seen.clear();
+    try {
+      await LLMDispatcher().generate(config, history);
+    } catch (_) {}
+    expect(seen, hasLength(1));
+    return seen.single;
+  }
+
   Future<Seen> discover(LLMModelConfig config) async {
     seen.clear();
     try {
@@ -268,6 +277,86 @@ void main() {
       final c = await rec.chat(routedConfig(moved, chat('gpt-5.2')));
       expect(Uri.parse(c.url).path, '/api/v1/chat/completions');
     });
+  });
+
+  group('crossing routes mid-conversation', () {
+    // Standard 03 §5: replay carriers are protocol-shaped, so a model that
+    // moved route reads the old route's carriers as a different model would.
+    late LLMChannel channel;
+    setUp(() {
+      final routes = ChannelRoutes.create(
+        Platforms.byId(Platforms.newapi),
+        rec.host,
+        [RouteKind.chat, RouteKind.anthropic, RouteKind.responses],
+      );
+      channel = LLMChannel(
+        displayName: 'relay',
+        endpoint: routes.primaryAddress,
+        apiKey: 'k',
+        type: routes.primaryVendorId,
+        routes: routes.encode(),
+      );
+    });
+
+    const modelId = 'claude-sonnet-5';
+
+    test(
+      'an Anthropic thinking block is not sent over Chat Completions',
+      () async {
+        final history = [
+          LLMMessage(role: LLMRole.user, content: 'hi'),
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: 'hello',
+            reasoningContent: 'SECRET-THOUGHT',
+            reasoningSignature: 'SIG-123',
+            rawThinkingBlocks: [
+              {
+                'type': 'thinking',
+                'thinking': 'SECRET-THOUGHT',
+                'signature': 'SIG-123',
+              },
+            ],
+            rawThinkingModelId: modelId,
+          ),
+          LLMMessage(role: LLMRole.user, content: 'again'),
+        ];
+        final onChat = await rec.send(
+          routedConfig(channel, chat(modelId, route: 'chat')),
+          history,
+        );
+        expect(onChat.body, isNot(contains('SIG-123')));
+        expect(onChat.body, isNot(contains('SECRET-THOUGHT')));
+        final onResponses = await rec.send(
+          routedConfig(channel, chat(modelId, route: 'responses')),
+          history,
+        );
+        expect(onResponses.body, isNot(contains('SIG-123')));
+      },
+    );
+
+    test(
+      'a Chat Completions reasoning field is not sent over Anthropic',
+      () async {
+        final history = [
+          LLMMessage(role: LLMRole.user, content: 'hi'),
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: 'hello',
+            reasoningContent: 'SECRET-THOUGHT',
+            reasoningFieldName: 'reasoning_content',
+            rawThinkingModelId: modelId,
+          ),
+          LLMMessage(role: LLMRole.user, content: 'again'),
+        ];
+        final onAnthropic = await rec.send(
+          routedConfig(channel, chat(modelId, route: 'anthropic')),
+          history,
+        );
+        expect(onAnthropic.body, isNot(contains('reasoning_content')));
+        expect(onAnthropic.body, isNot(contains('SECRET-THOUGHT')));
+      },
+    );
   });
 
   group('LLMConfigResolver', () {

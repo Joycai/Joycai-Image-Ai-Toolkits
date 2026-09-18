@@ -14,7 +14,7 @@
 | A2 | `ChannelRoutes`（内嵌文档：主机、线路表、写入标记）：解析逐字段收窄、序列化、读时由旧 (type, endpoint) 推出、规范化（扁平字段 = 主线路）、地址拼接（缺省 / 相对 / 绝对） | `services/llm/channel_routes.dart` | **每个预设 × 每个面迁移后地址逐字节等于今天的推导**；非 URL 地址整条保留；规范化幂等 | ☑ |
 | A3 | v45：`llm_channels.routes`、`llm_models.active_route`、`llm_models.route_params`；`LLMChannel` / `LLMModel` 字段；`RouteParams`（三字段一类）+ 模型读时迁移（旧对话面点单 → `active_route`）；仓库读写都过规范化 | `database_migrations.dart`、`llm_channel.dart`、`llm_model.dart`、`model_repository.dart` | onCreate 与 onUpgrade 同步；旧行读出 = 今天；写入标记识别扁平字段被他方改写 | ☑ |
 | A4 | 按模型的线路看渠道：`ChannelRouteView`；`LLMConfigResolver` 走它，线路不存在 → `LLMConfigErrorKind.routeNotFound`；`LLMModelConfig.faceBases` + `_faceTarget` 先查它；`AppState` 的 `descriptorForModel` / `_supportsVideoForType`、模型编辑、卡片、发现改走视图；源码扫描测试挡住 `channel.type` 直读 | `services/llm/channel_route_view.dart`、`llm_config_resolver.dart`、`llm_model_config.dart`、`llm_dispatcher.dart`、`state/app_state.dart`、调用方 | 旧数据下所有 `wire_protocol_routing_test` 不变；线路缺失请求侧报错、展示侧回退 | ☑ |
-| A5 | 切线路：`RouteParams.forRoute` 一条规则同时用于保存与切换；`LLMModel.switchRoute`（停放 / 载入 / 覆盖全部 / id 不变）；改主线路前钉住跟随者（纯函数） | `models/llm_model.dart`、`services/catalogue/route_switching.dart` | 标准 03 §6 的六条性质各一条测试 | ☐ |
+| A5 | 切线路：`RouteParams.forRoute` 一条规则同时用于保存与切换；`LLMModel.switchRoute`（停放 / 载入 / 覆盖全部 / id 不变）；改主线路前钉住跟随者（纯函数） | `models/llm_model.dart`（`withRouteState`）、`services/catalogue/route_switching.dart` | 标准 03 §6 的六条性质各一条测试 | ☑ |
 | A6 | 备份：`schema_version` 45；旧备份新列为空 → 同一读时迁移；导入/导出往返保留线路与停放参数 | `database_service.dart` | 旧版本备份导入后请求地址不变；新备份在 44 版被拒（已有检查，补测试） | ☐ |
 
 A 期末：`/code-review high`，修复。
@@ -70,3 +70,7 @@ C 期末：`/code-review high`，修复。
   `channel.type`——它们在 C2 / C5 整体改成按线路，届时再加挡住直读的源码扫描测试（现在加会把要重写的界面一起钉住）。
   逐字节的证明不再只比地址：`test/route_resolution_test.dart` 起一个本地服务器，**真实发出**旧配置与新配置的请求，比较方法、URL、
   鉴权头和请求体——每个预设 × 每个对话面 × 有无点单，外加合并后的中转四条线路对照原先四个独立渠道。
+- **A5**：共用规则 `RouteSwitching.forRoute` 以线路的推理挡位表为准：挡位表里没有的强度丢弃，旧的「深度思考」开关只剩强度的影子
+  （仅开关 = Medium，与 `effectiveReasoningEffort` 一致）。保存时写显式 `active_route`，并按「主线路 vendor 能否点单到该面」写兼容用的
+  `wire_protocol`。钉住跟随者只钉真正在跟随的（含渠道已不提供的旧点单），**已失效的显式线路不钉**——那种模型要继续报错直到用户选择。
+  会话中跨线路：回传载体本来就按协议成形、按模型 id 作用域，切线路后新协议读不到旧协议的载体，测试钉在 `route_resolution_test`。
