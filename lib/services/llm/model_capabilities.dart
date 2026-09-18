@@ -79,6 +79,18 @@ class ModelCapabilities {
   ///  * `> 0` — supported up to this many (e.g. OpenAI `gpt-image-1`).
   final int? maxReferenceImages;
 
+  /// The exact pixels each (resolution tier, aspect ratio) pair maps to, for
+  /// a model whose `size` takes *either* a tier (`2K`) *or* pixels
+  /// (`2848x1600`) but not both — Seedream's. Keyed tier → ratio → `WxH`.
+  ///
+  /// The workbench offers a tier and an aspect ratio as two controls; the
+  /// protocol sends the tier alone when no ratio is chosen (the model then
+  /// reads the ratio off the prompt) and looks the pair up here otherwise.
+  /// The values are each model's own documented mapping, so the pixels sent
+  /// are the ones the model would have picked for that ratio anyway. Empty
+  /// for every family that sizes some other way.
+  final Map<String, Map<String, String>> tierPixelSizes;
+
   const ModelCapabilities({
     this.isImageGenerator = false,
     this.isVideoGenerator = false,
@@ -88,7 +100,35 @@ class ModelCapabilities {
     this.longRunning = false,
     this.imageRequestShape = ImageRequestShape.none,
     this.supportsAsyncImageTask = false,
+    this.tierPixelSizes = const {},
   });
+
+  /// The tables [forModel] reaches by id alone — a version or variant whose
+  /// family default ([forFamily]) differs from it. Together with [forFamily]
+  /// over every family and [forProtocol] over every protocol this is every
+  /// table there is, which is what the spec-billing picker needs: its
+  /// condition values are the union of every table's vocabulary, and a tier
+  /// only one version offers (Seedream 5.0 pro's `1.5K`, lite's `3K`) would
+  /// otherwise be missing from it.
+  static const List<ModelCapabilities> idRoutedTables = [
+    _openaiImage2,
+    _openaiImage25,
+    _geminiImageV2,
+    _geminiImagePro,
+    _geminiImageLegacy,
+    _grokImagineVideo,
+    _dashscopeWanVideo,
+    _minimaxVideo,
+    _minimaxH3Base,
+    _dashscopeWanImage,
+    _dashscopeQwenImageEdit,
+    _dashscopeQwenImage,
+    _seedream50Pro,
+    _seedream50Lite,
+    _seedream45,
+    _seedream40,
+    _seedream30,
+  ];
 
   /// Whether the model accepts any reference images at all.
   bool get supportsReferenceImages => maxReferenceImages != 0;
@@ -165,7 +205,34 @@ class ModelCapabilities {
       return _dashscopeQwenImage;
     }
 
+    // Seedream's generations differ in almost every parameter — tiers,
+    // group generation, output format, prompt-optimization modes, web search,
+    // 5.0 pro's task modes — so the version picks the table. The version is
+    // read by the classifier (`5-0` and `5.0` spell the same generation);
+    // anything it cannot place keeps the family's generic table.
+    if (family == ModelFamily.seedreamImage) {
+      return _seedreamTableFor(modelId);
+    }
+
     return forFamily(family);
+  }
+
+  static ModelCapabilities _seedreamTableFor(String modelId) {
+    final version = ModelFamilyClassifier.seedreamVersion(modelId);
+    switch (version) {
+      case (5, 0):
+        return ModelFamilyClassifier.isSeedreamPro(modelId)
+            ? _seedream50Pro
+            : _seedream50Lite;
+      case (4, 5):
+        return _seedream45;
+      case (4, 0):
+        return _seedream40;
+      case (3, _):
+        return _seedream30;
+      default:
+        return _seedreamGeneric;
+    }
   }
 
   /// The table a protocol implies for a model this layer cannot identify by
@@ -238,6 +305,8 @@ class ModelCapabilities {
         return _xaiImage;
       case ModelFamily.minimaxImage:
         return _minimaxImage;
+      case ModelFamily.seedreamImage:
+        return _seedreamGeneric;
       case ModelFamily.dashscopeImage:
         // Reached only for an id that classified into the family but missed
         // both tables in [forModel]; qwen's is the safer default (the smaller

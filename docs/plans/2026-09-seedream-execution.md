@@ -62,7 +62,7 @@
 | --- | --- | --- | --- | --- | --- |
 | S0 | A 调研 | 协议事实文档 + 本清单 | `docs/api/volcengine-ark.md`、本文件 | 文档齐 | ✅ |
 | S1 | A 设计 | Claude Design `D1e`：向导预设行、模型编辑协议区、工作台四张参数表、手机 | 设计项目 | 稿已推送、规格汇总齐 | ✅ |
-| S2 | B Layer 3 | `ModelFamily.seedreamImage` + 分类 + 六张表 + `tierPixelSizes` + descriptor `servedBy` | `model_family.dart`、`model_capabilities.dart`、`model_capability_tables.dart`、`model_descriptor.dart` | 单测：分类、每表参数、映射 | ⏳ |
+| S2 | B Layer 3 | `ModelFamily.seedreamImage` + 分类 + 六张表 + `tierPixelSizes` | `model_family.dart`、`model_capabilities.dart`、`model_capability_tables.dart`、`model_descriptor.dart` | 单测：分类、每表参数、映射 | ✅ |
 | S3 | B Layer 1 | `ArkImagesProtocol` + `ark_payload.dart`（纯函数 body 构造 / 响应解析） | `protocols/ark_*.dart` | 单测：body 逐字段、组图收紧、任务前置条件、单张失败、全失败 | ⏳ |
 | S4 | B Layer 2 + 路由 | `WireProtocol.arkImages`、`Vendors.volcengineArk`、dispatcher（auto / 生成 / 单发 / 计费 / 超时）、目录 | `vendor_profile.dart`、`vendors.dart`、`llm_dispatcher.dart` | 路由单测：方舟、中转、点单、未识别 id | ⏳ |
 | — | B review | `/code-review high` S2..S4 | | 发现全修 | ⏳ |
@@ -79,3 +79,9 @@
   且 key 不通用（→ 向导加「接入方式」两段，决策 12），套餐只认 5.0 两款、`lite` 拼写有讲究
   （→ 目录与分类，决策 10、13）。设计稿 D1e 3a 已按此改。工作台控件名沿用既有的「尺寸」
   （Gemini 的 1K/2K/4K 档位同一个 labelKey），不另造「分辨率」。
+- **S2**：`WireProtocol.arkImages` 与 descriptor 的 `servedBy` 挪到 S3——枚举一加，
+  标签表等穷尽 switch 全要跟，放在协议那片里一次补齐，每片都能单独编译。
+  顺带补了一个既有的缺口：按规格计费的条件选单只收 family / 协议两类表，
+  `forModel` 按 id 才走到的表（gpt-image-2 的像素、Seedream 的 1.5K / 3K……）
+  一直不在里面；Layer 3 新出 `ModelCapabilities.idRoutedTables`，选单并进来，
+  排序与 `OutputSpec.normalizeSize` 认小数档位（`1.5k` → `1.5K`）。

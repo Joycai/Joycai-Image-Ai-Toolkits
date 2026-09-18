@@ -145,6 +145,7 @@ class ModelDescriptor {
       case ModelFamily.xaiImage:
       case ModelFamily.dashscopeImage:
       case ModelFamily.minimaxImage:
+      case ModelFamily.seedreamImage:
       case ModelFamily.openaiVideo:
         return ModelFamily.other;
       case ModelFamily.geminiImage:
