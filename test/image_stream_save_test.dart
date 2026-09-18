@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -114,6 +115,68 @@ void main() {
     expect(task.status, TaskStatus.completed);
     expect(task.resultPaths, hasLength(2));
     expect(saved, hasLength(2));
+  });
+
+  test('a stream that fails after an image keeps it and records its usage',
+      () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    server.listen((request) async {
+      if (request.method == 'GET') {
+        request.response.headers.contentType = ContentType('image', 'png');
+        request.response.add(_png);
+        await request.response.close();
+        return;
+      }
+      await utf8.decodeStream(request);
+      request.response.headers.contentType =
+          ContentType('text', 'event-stream');
+      request.response
+        ..write('data: ${jsonEncode({
+              'type': 'image_generation.partial_succeeded',
+              'image_index': 0,
+              'url': 'http://127.0.0.1:${server.port}/img/0.png',
+            })}\n\n')
+        ..write('data: ${jsonEncode({
+              'error': {'code': 'InternalServiceError', 'message': 'boom'},
+            })}\n\n');
+      await request.response.close();
+    });
+
+    final rows = <Map<String, dynamic>>[];
+    LLMService.usageSinkOverride = (row) async => rows.add(row);
+    addTearDown(() => LLMService.usageSinkOverride = null);
+
+    final db = DatabaseService();
+    final outDir = Directory('${dataDir.path}/out2')..createSync();
+    await db.saveSetting('output_directory', outDir.path);
+    final channelId = await db.addChannel({
+      'display_name': 'Ark 2',
+      'endpoint': 'http://127.0.0.1:${server.port}/api/plan/v3',
+      'api_key': 'k',
+      'type': Vendors.volcengineArk,
+    });
+    final modelId = await db.addModel({
+      'model_id': 'doubao-seedream-5.0-lite',
+      'model_name': 'Seedream lite 2',
+      'tag': 'image',
+      'channel_id': channelId,
+    });
+
+    final queue = TaskQueueService();
+    addTearDown(queue.dispose);
+    await queue.addTask(const [], modelId,
+        {'prompt': 'three posters', 'maxImages': '3', 'watermark': 'off'},
+        id: 'stream-fail');
+    final task = queue.queue.firstWhere((t) => t.id == 'stream-fail');
+    for (var i = 0; i < 400 && task.status != TaskStatus.failed; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+
+    expect(task.status, TaskStatus.failed, reason: task.logs.join('\n'));
+    expect(task.resultPaths, hasLength(1));
+    expect(File(task.resultPaths.single).existsSync(), isTrue);
+    expect(rows, hasLength(1));
   });
 }
 

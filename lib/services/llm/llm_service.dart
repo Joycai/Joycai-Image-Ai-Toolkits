@@ -848,9 +848,11 @@ class LLMService {
         ...?options,
         llmAbortTriggerKey: abort.future,
       };
+      // Per attempt, outside the try: the finally below reads them.
+      int imageCount = 0;
+      Map<String, dynamic>? finalMetadata;
+      var usageSettled = false;
       try {
-        int imageCount = 0;
-        Map<String, dynamic>? finalMetadata;
 
         // Opened and listened to inside the correlation's zone: this method
         // is itself a generator and cannot wrap its own `await for`.
@@ -924,6 +926,8 @@ class LLMService {
           );
         }
 
+        usageSettled = true;
+
         await LLMDebugLogger.appendSummaries(correlation, finalMetadata);
 
         if (usageMissing(config, finalMetadata ?? const {})) {
@@ -980,6 +984,26 @@ class LLMService {
         // out on cancel): a single-shot generation still in flight behind
         // the stream is aborted instead of finishing, and billing, unseen.
         if (!abort.isCompleted) abort.complete();
+        // A billed stream that delivered pictures and then failed, timed
+        // out or was abandoned: those pictures were drawn and billed (Ark
+        // streams them one by one, and the executor has already saved
+        // them), so they are recorded — the success path above never ran.
+        if (!usageSettled && billedOnSubmit && imageCount > 0) {
+          _emitLog(
+            'Stream ended early after $imageCount image(s); recording their '
+            'usage.',
+            level: 'WARN',
+            contextId: contextId,
+          );
+          await _recordUsage(
+            config.modelId,
+            config,
+            {...?finalMetadata, 'image_count': imageCount},
+            modelDbId: modelIdentifier is int ? modelIdentifier : null,
+            options: options,
+            imageCount: imageCount,
+          );
+        }
       }
     }
   }
