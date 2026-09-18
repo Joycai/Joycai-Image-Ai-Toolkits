@@ -26,6 +26,16 @@ class LLMChannel {
   /// the top of the rail on save.
   final int sortOrder;
 
+  /// The channel's routes as an embedded JSON document (`llm_channels.routes`,
+  /// v45), or null for a channel written before routes existed.
+  ///
+  /// Raw here for the same reason as `LLMModel.wireProtocol`: the LLM layer
+  /// (`services/llm/channel_routes.dart`) parses and normalizes it against
+  /// [type] and [endpoint], which always hold the primary route — so this
+  /// model stays dumb and a document from a newer build survives a
+  /// round-trip.
+  final String? routes;
+
   LLMChannel({
     this.id,
     required this.displayName,
@@ -37,6 +47,7 @@ class LLMChannel {
     this.tagColor,
     this.defaultFeeGroupId,
     this.sortOrder = 0,
+    this.routes,
   });
 
   factory LLMChannel.fromMap(Map<String, dynamic> map) {
@@ -51,8 +62,30 @@ class LLMChannel {
       tagColor: map['tag_color'] as int?,
       defaultFeeGroupId: map['default_fee_group_id'] as int?,
       sortOrder: map['sort_order'] as int? ?? 0,
+      routes: map['routes'] as String?,
     );
   }
+
+  /// This channel with its flat primary-route columns and route document
+  /// replaced — what the repository writes after normalizing.
+  LLMChannel withRoutes({
+    required String type,
+    required String endpoint,
+    required String routes,
+  }) =>
+      LLMChannel(
+        id: id,
+        displayName: displayName,
+        endpoint: endpoint,
+        apiKey: apiKey,
+        type: type,
+        enableDiscovery: enableDiscovery,
+        tag: tag,
+        tagColor: tagColor,
+        defaultFeeGroupId: defaultFeeGroupId,
+        sortOrder: sortOrder,
+        routes: routes,
+      );
 
   Map<String, dynamic> toMap({bool includeId = true}) {
     final map = {
@@ -64,6 +97,7 @@ class LLMChannel {
       'tag': tag,
       'tag_color': tagColor,
       'default_fee_group_id': defaultFeeGroupId,
+      'routes': routes,
     };
     if (includeId) {
       map['id'] = id;

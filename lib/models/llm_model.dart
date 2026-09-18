@@ -62,6 +62,22 @@ class LLMModel {
   /// stranded by a channel-type change degrades to auto instead of failing.
   final String? wireProtocol;
 
+  /// The route a chat model rides (`RouteKind.id`, v45), or null to follow
+  /// the channel's primary route. Raw for the same reason as [wireProtocol].
+  ///
+  /// A row written before routes existed has null here and its chat face in
+  /// [wireProtocol]; the LLM layer reads that pin as the route, so nothing
+  /// needs rewriting. Image and video models have no route — their
+  /// [wireProtocol] keeps selecting the media endpoint.
+  final String? activeRoute;
+
+  /// The per-route parameters parked for this model's *other* routes, as a
+  /// JSON object keyed by route id (v45). The flat [maxOutputTokens],
+  /// [enableThinking] and [reasoningEffort] are always the active route's;
+  /// switching routes parks them here and loads the target's. A key with an
+  /// empty object is a route the model has enabled but never configured.
+  final String? routeParams;
+
   // Performance metrics
   final double? estMeanMs;
   final double? estSdMs;
@@ -85,6 +101,8 @@ class LLMModel {
     this.reasoningEffort,
     this.enableWebSearch = false,
     this.wireProtocol,
+    this.activeRoute,
+    this.routeParams,
     this.estMeanMs,
     this.estSdMs,
     this.tasksSinceUpdate = 0,
@@ -109,11 +127,50 @@ class LLMModel {
       reasoningEffort: map['reasoning_effort'] as String?,
       enableWebSearch: (map['enable_web_search'] ?? 0) == 1,
       wireProtocol: map['wire_protocol'] as String?,
+      activeRoute: map['active_route'] as String?,
+      routeParams: map['route_params'] as String?,
       estMeanMs: map['est_mean_ms'] as double?,
       estSdMs: map['est_sd_ms'] as double?,
       tasksSinceUpdate: map['tasks_since_update'] as int? ?? 0,
     );
   }
+
+  /// This model with every route-dependent field replaced at once — the flat
+  /// per-route parameters, the route selection and the parked parameters.
+  /// All required so that a null is a value, not "unchanged": switching to a
+  /// route that was never configured must clear, not keep (standard 03 §1).
+  LLMModel withRouteState({
+    required String? activeRoute,
+    required String? routeParams,
+    required String? wireProtocol,
+    required int? maxOutputTokens,
+    required bool enableThinking,
+    required String? reasoningEffort,
+  }) =>
+      LLMModel(
+        id: id,
+        modelId: modelId,
+        modelName: modelName,
+        tag: tag,
+        isPaid: isPaid,
+        supportsStream: supportsStream,
+        supportsStandard: supportsStandard,
+        sortOrder: sortOrder,
+        channelId: channelId,
+        feeGroupId: feeGroupId,
+        contextWindow: contextWindow,
+        maxOutputTokens: maxOutputTokens,
+        forceViewAllImages: forceViewAllImages,
+        enableThinking: enableThinking,
+        reasoningEffort: reasoningEffort,
+        enableWebSearch: enableWebSearch,
+        wireProtocol: wireProtocol,
+        activeRoute: activeRoute,
+        routeParams: routeParams,
+        estMeanMs: estMeanMs,
+        estSdMs: estSdMs,
+        tasksSinceUpdate: tasksSinceUpdate,
+      );
 
   Map<String, dynamic> toMap({bool includeId = true}) {
     final map = {
@@ -133,6 +190,8 @@ class LLMModel {
       'reasoning_effort': reasoningEffort,
       'enable_web_search': enableWebSearch ? 1 : 0,
       'wire_protocol': wireProtocol,
+      'active_route': activeRoute,
+      'route_params': routeParams,
       'est_mean_ms': estMeanMs,
       'est_sd_ms': estSdMs,
       'tasks_since_update': tasksSinceUpdate,
