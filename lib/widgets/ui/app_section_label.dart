@@ -32,6 +32,7 @@ class AppSectionLabel extends StatelessWidget {
     this.label, {
     super.key,
     this.trailing,
+    this.suffix,
     this.tone = AppSectionTone.accent,
     this.padding = const EdgeInsets.only(top: 18, bottom: 6),
   });
@@ -42,32 +43,49 @@ class AppSectionLabel extends StatelessWidget {
   /// "Prompt", say. Sits on the label's baseline row, not below it.
   final Widget? trailing;
 
+  /// A quiet note right after the label, on its line — the model editor's
+  /// scope caption (「本线路 · Responses」). One span with the label, so the
+  /// label always shows whole and the note is what an ellipsis cuts;
+  /// [trailing] still sits at the far end.
+  final InlineSpan? suffix;
+
   final AppSectionTone tone;
   final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final style = Theme.of(context).textTheme.labelMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          letterSpacing: AppType.trackedLabelSpacing,
+          color: tone == AppSectionTone.accent
+              ? colorScheme.onAccentTint
+              : colorScheme.onSurfaceVariant,
+        );
+    // A no-op on the CJK these labels are usually written in, and
+    // deliberately kept anyway: the app ships English and Japanese too, and
+    // the spec's caption is upper case there.
+    final upper = label.toUpperCase();
+    final text = suffix == null
+        ? Text(upper, style: style)
+        : Text.rich(
+            TextSpan(
+              style: style,
+              children: [
+                TextSpan(text: upper),
+                const TextSpan(text: '  '),
+                suffix!,
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          );
 
     return Padding(
       padding: padding,
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              // A no-op on the CJK these labels are usually written in, and
-              // deliberately kept anyway: the app ships English and Japanese
-              // too, and the spec's caption is upper case there.
-              label.toUpperCase(),
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: AppType.trackedLabelSpacing,
-                    color: tone == AppSectionTone.accent
-                        ? colorScheme.onAccentTint
-                        : colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ),
+          Expanded(child: text),
           ?trailing,
         ],
       ),

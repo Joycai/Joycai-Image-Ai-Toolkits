@@ -54,8 +54,9 @@ void main() {
     }))!;
   }
 
-  Future<void> pump(WidgetTester tester, AppState state, LLMModel model) async {
-    tester.view.physicalSize = const Size(1400, 1100);
+  Future<void> pump(WidgetTester tester, AppState state, LLMModel model,
+      {Size size = const Size(1400, 1100)}) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(MaterialApp(
@@ -193,5 +194,24 @@ void main() {
     expect(cell('Anth').state, RouteBadgeState.off);
     expect(cell('Chat').trailingIcon, Icons.block);
     expect(find.textContaining("hasn't been tested"), findsOneWidget);
+  });
+
+  // `4g`: a phone's strip scrolls sideways instead of wrapping.
+  testWidgets('on a phone the route strip scrolls sideways', (tester) async {
+    final (state, model) = await seed(tester);
+    await pump(tester, state, model, size: const Size(390, 844));
+    final scroller = find.ancestor(
+      of: strip('Chat Completions'),
+      matching: find.byWidgetPredicate(
+        (w) => w is SingleChildScrollView && w.scrollDirection == Axis.horizontal,
+      ),
+    );
+    expect(scroller, findsOneWidget);
+    expect(find.ancestor(of: strip('Chat Completions'), matching: find.byType(Wrap)),
+        findsNothing);
+
+    await pump(tester, state, model);
+    expect(find.ancestor(of: strip('Chat Completions'), matching: find.byType(Wrap)),
+        findsOneWidget);
   });
 }

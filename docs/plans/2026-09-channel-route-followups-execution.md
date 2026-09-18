@@ -34,7 +34,7 @@
 |---|---|---|---|---|
 | 5 | 联网矩阵第三态「未实测」 | `platforms.dart`、`channel_routes.dart`、`model_edit_routes.dart`、l10n | 小部件测试：New API 的 Anth 格 help、Chat 格 block、提示条出现 | ☑ |
 | 6 | 向导「将建立的线路」每行私有能力一词 | `channel_routes.dart`（`featuresOf`）、`wizard_form_steps.dart`、l10n | 单测 `featuresOf`（中转 Anth 只缓存、官方 Anth 两样、百炼 Chat 联网）；截图 4b | ☑ |
-| 7 | 作用域灰字紧跟标题；手机线路条横向滚动 | `app_section_label`、`model_edit_layouts.dart`、`model_edit_routes.dart` | 截图 4d / 4g；组件画廊不变 | ☐ |
+| 7 | 作用域灰字紧跟标题；手机线路条横向滚动 | `app_section_label`、`model_edit_layouts.dart`、`model_edit_routes.dart` | 截图 4d、4b（新增 `routesWizard`）；小部件测试：手机横向滚动、宽屏换行 | ☑ |
 | 8 | 文档收尾：欠账表划掉六条、架构笔记补裁定、退役本清单 | `docs/plans/README.md`、`docs/architecture/llm-three-layer.md` | — | ☐ |
 
 阶段二评审：`/code-review high` 片 5–8。之后 bump minor（4.13.0）并开 PR。
@@ -45,3 +45,7 @@
   所以文案是「N 处已选的模型」。第三类「助手对话里的模型链接」是片 1 新增的改写对象，一并分写；为零的类不出现。
 - 片 4：「用主机本身」钮只在自定义平台（新增 `PlatformProfile.guessedPaths`）默认态的行上出现——New API 等中转的
   布局是已知的，每行都挂一个钮是噪音；已存成空串的任何平台都如实显示「主机本身 · 默认 /v1」并可恢复默认。
+- 片 5：未实测的格用虚线 `off` 徽标 + help（设计的虚线 ink3 描边），三种格都加了 tooltip；当前线路未实测且开关开着时给一条 info 提示。
+- 片 7：`AppSectionLabel.suffix` 是 `InlineSpan` 而不是 Widget——与标题同一段文字，窄时省略号只截灰字、标题永远完整
+  （Widget 版在 390 宽的编辑页溢出 64px，测试抓到的）。截图 harness 的手机模型编辑（`routesEditor1 @ mobile`）
+  本来就停在模型列表、到不了编辑页，所以手机线路条改用小部件测试钉住。

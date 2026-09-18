@@ -407,9 +407,9 @@ extension _Layouts on _ModelEditDialogState {
   Widget _caption(
     String text, {
     AppSectionTone tone = AppSectionTone.accent,
-    Widget? scope,
+    InlineSpan? scope,
   }) =>
-      AppSectionLabel(text, padding: EdgeInsets.zero, tone: tone, trailing: scope);
+      AppSectionLabel(text, padding: EdgeInsets.zero, tone: tone, suffix: scope);
 
   // --- Identity -----------------------------------------------------------
 }

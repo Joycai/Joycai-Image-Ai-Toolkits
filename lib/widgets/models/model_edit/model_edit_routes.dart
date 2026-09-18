@@ -46,7 +46,7 @@ extension _RouteSections on _ModelEditDialogState {
   /// across routes, 「本线路 · X」 for what each route keeps its own of. Only
   /// where there is a route to choose — a single-route channel has no scope
   /// to tell apart.
-  Widget? _scope({bool route = false}) {
+  InlineSpan? _scope({bool route = false}) {
     if (!_routeMode) return null;
     final l10n = widget.l10n;
     final theme = Theme.of(context);
@@ -54,17 +54,15 @@ extension _RouteSections on _ModelEditDialogState {
     final text = route && current != null
         ? l10n.routeScopeThisRoute(routeLabel(l10n, current))
         : l10n.routeScopeModel;
-    // Flexible: it sits straight in the caption's row, beside a label and
-    // often a status figure, and gives way before either.
-    return Flexible(
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.end,
-        style: theme.textTheme.labelSmall?.mono.copyWith(
-          color: route ? theme.colorScheme.onAccentTint : theme.colorScheme.outline,
-        ),
+    // Right after the caption (`4d`: 标题后灰字), and what an ellipsis cuts.
+    return TextSpan(
+      text: text,
+      style: theme.textTheme.labelSmall?.mono.copyWith(
+        color: route ? theme.colorScheme.onAccentTint : theme.colorScheme.outline,
+        // The design's `.scope`: regular weight, untracked, whatever the
+        // caption it follows.
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0,
       ),
     );
   }
@@ -121,6 +119,17 @@ extension _RouteSections on _ModelEditDialogState {
         if (!enabled.contains(k)) k,
     ];
     final address = routes.addressOf(current);
+    Widget stripBadge(RouteKind k) => AppRouteBadge(
+      label: routeLabel(l10n, k),
+      size: size,
+      state: k == current
+          ? RouteBadgeState.current
+          : k == _switchTarget || enabled.contains(k)
+              ? RouteBadgeState.configured
+              : RouteBadgeState.off,
+      trailingIcon: enabled.contains(k) || k == _switchTarget ? null : Icons.add,
+      onTap: () => _onRouteTapped(k),
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -128,24 +137,26 @@ extension _RouteSections on _ModelEditDialogState {
       children: [
         _caption(l10n.routeSectionTitle),
         const SizedBox(height: AppSpace.s6),
-        Wrap(
-          spacing: AppSpace.s6,
-          runSpacing: AppSpace.s6,
-          children: [
-            for (final k in order)
-              AppRouteBadge(
-                label: routeLabel(l10n, k),
-                size: size,
-                state: k == current
-                    ? RouteBadgeState.current
-                    : k == _switchTarget || enabled.contains(k)
-                        ? RouteBadgeState.configured
-                        : RouteBadgeState.off,
-                trailingIcon: enabled.contains(k) || k == _switchTarget ? null : Icons.add,
-                onTap: () => _onRouteTapped(k),
-              ),
-          ],
-        ),
+        // `4g`: on a phone the strip scrolls sideways, current first, rather
+        // than wrapping; wider layouts have room and wrap.
+        if (phone)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final (i, k) in order.indexed) ...[
+                  if (i > 0) const SizedBox(width: AppSpace.s6),
+                  stripBadge(k),
+                ],
+              ],
+            ),
+          )
+        else
+          Wrap(
+            spacing: AppSpace.s6,
+            runSpacing: AppSpace.s6,
+            children: [for (final k in order) stripBadge(k)],
+          ),
         if (address != null) ...[
           const SizedBox(height: AppSpace.s6),
           Text(

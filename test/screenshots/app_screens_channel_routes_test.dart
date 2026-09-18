@@ -140,4 +140,37 @@ void main() {
       );
     });
   }
+
+  // 4b: the routes the wizard will create, each with what it carries beyond
+  // the standard — Bailian's Chat and native routes send its web search.
+  testWidgets('routes wizard plan @ desktop light', (WidgetTester tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.models,
+      size: sized('desktop'),
+      brightness: Brightness.light,
+      suffix: 'routesWizard',
+      after: (WidgetTester tester) async {
+        final Finder add = find.text('添加渠道');
+        if (add.evaluate().isEmpty) return;
+        await tester.tap(add.first, warnIfMissed: false);
+        await settle(tester);
+        await tester.enterText(
+            find.descendant(of: find.byType(Dialog), matching: find.byType(TextField)),
+            '百炼');
+        await settle(tester);
+        // Inside the dialog: the rail behind it names the same platform.
+        Future<void> tapInDialog(String text) async {
+          final Finder f = find.descendant(of: find.byType(Dialog), matching: find.text(text));
+          if (f.evaluate().isEmpty) return;
+          await tester.tap(f.first, warnIfMissed: false);
+          await settle(tester);
+        }
+
+        await tapInDialog('阿里云百炼');
+        await tapInDialog('下一步');
+      },
+    );
+  });
 }
