@@ -1026,6 +1026,7 @@ const _seedream50Pro = ModelCapabilities(
 /// The only generation with web search.
 const _seedream50Lite = ModelCapabilities(
   isImageGenerator: true,
+  streamsImages: true,
   maxReferenceImages: 14,
   longRunning: true,
   imageParams: [
@@ -1068,6 +1069,7 @@ const _seedream50Lite = ModelCapabilities(
 /// optimization only — neither gets a control.
 const _seedream45 = ModelCapabilities(
   isImageGenerator: true,
+  streamsImages: true,
   maxReferenceImages: 14,
   longRunning: true,
   imageParams: [
@@ -1089,6 +1091,7 @@ const _seedream45 = ModelCapabilities(
 /// optimization is offered.
 const _seedream40 = ModelCapabilities(
   isImageGenerator: true,
+  streamsImages: true,
   maxReferenceImages: 14,
   longRunning: true,
   imageParams: [

@@ -91,6 +91,13 @@ class ModelCapabilities {
   /// for every family that sizes some other way.
   final Map<String, Map<String, String>> tierPixelSizes;
 
+  /// True when the model's image surface can stream — push each image the
+  /// moment it is drawn rather than answer once the whole group exists.
+  /// Seedream 5.0 lite / 4.5 / 4.0 (`stream: true`, docs/api/volcengine-ark.md
+  /// §5); 5.0 pro rejects the field with a 400. Whether a request actually
+  /// streams is the dispatcher's call — the route has to serve it too.
+  final bool streamsImages;
+
   const ModelCapabilities({
     this.isImageGenerator = false,
     this.isVideoGenerator = false,
@@ -101,6 +108,7 @@ class ModelCapabilities {
     this.imageRequestShape = ImageRequestShape.none,
     this.supportsAsyncImageTask = false,
     this.tierPixelSizes = const {},
+    this.streamsImages = false,
   });
 
   /// The tables [forModel] reaches by id alone — a version or variant whose
