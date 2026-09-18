@@ -131,6 +131,25 @@ extension AppStateData on AppState {
     await refreshDataCache();
   }
 
+  /// Merges channels as [plan] says, once the user has confirmed its
+  /// preview. The stored selections are rewritten by the executor; the ones
+  /// held in memory here follow the same map, so the workbench does not
+  /// fall back to "no model" for a model that merely changed id.
+  Future<void> mergeChannels(MergePlan plan, {ChannelMergeExecutor? executor}) async {
+    await (executor ?? ChannelMergeExecutor()).run(plan);
+    String? remap(String? stored) {
+      final to = plan.idMap[int.tryParse(stored ?? '')];
+      return to == null ? stored : '$to';
+    }
+    lastSelectedModelId = remap(lastSelectedModelId);
+    lastVideoModelId = remap(lastVideoModelId);
+    final optimizer = plan.idMap[workbenchUIState.optSelectedModelDbId];
+    if (optimizer != null) workbenchUIState.setOptimizerModel(optimizer);
+    final downloader = plan.idMap[downloaderState.selectedModelDbId];
+    if (downloader != null) downloaderState.setState(selectedModelDbId: downloader);
+    await refreshDataCache();
+  }
+
   /// Moves one channel within the rail. [newIndex] is the destination *after*
   /// the row is lifted out — the convention of `onReorderItem`, which does
   /// that adjustment for the caller (the older `onReorder` did not, and every

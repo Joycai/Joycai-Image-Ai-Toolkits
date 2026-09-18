@@ -12,6 +12,37 @@ class UsageRepository {
     await db.insert('token_usage', usage);
   }
 
+  /// Points every usage row and task row recorded against a key of [idMap]
+  /// at its value — a channel merge folding one model into another, so the
+  /// history follows the model rather than reading "deleted model".
+  Future<void> remapModels(Map<int, int> idMap) async {
+    if (idMap.isEmpty) return;
+    final db = await _db;
+    await db.transaction((txn) async {
+      for (final e in idMap.entries) {
+        for (final table in const ['token_usage', 'tasks']) {
+          await txn.update(table, {'model_pk': e.value},
+              where: 'model_pk = ?', whereArgs: [e.key]);
+        }
+      }
+    });
+  }
+
+  /// How many usage and task rows name one of [ids].
+  Future<int> countModelRows(Iterable<int> ids) async {
+    final list = ids.toList();
+    if (list.isEmpty) return 0;
+    final db = await _db;
+    final marks = List.filled(list.length, '?').join(',');
+    var n = 0;
+    for (final table in const ['token_usage', 'tasks']) {
+      final rows = await db.rawQuery(
+          'SELECT COUNT(*) AS n FROM $table WHERE model_pk IN ($marks)', list);
+      n += rows.first['n'] as int? ?? 0;
+    }
+    return n;
+  }
+
   Future<void> clearTokenUsage({String? modelId}) async {
     final db = await _db;
     if (modelId != null) {

@@ -23,6 +23,8 @@ import '../models/pricing_group.dart';
 import '../models/prompt.dart';
 import '../models/prompt_history_entry.dart';
 import '../models/tag.dart';
+import '../services/catalogue/channel_merge.dart';
+import '../services/catalogue/channel_merge_executor.dart';
 import '../services/db/database_service.dart';
 import '../services/system/font_service.dart';
 import '../services/llm/llm_service.dart';
