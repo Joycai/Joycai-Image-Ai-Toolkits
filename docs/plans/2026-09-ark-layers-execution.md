@@ -28,7 +28,7 @@
 | 1 | 协议带出图层：`ArkImageItem` 加 `description` / `box`；`GeneratedImageLayer`；`LLMResponse.imageLayers`、`LLMResponseChunk.imageLayer`；方舟逐项下载保对齐；`_asChunks` 与 `requestStream` 的累加保对齐 | `ark_payload.dart`、`ark_images_protocol.dart`、`llm_types.dart`、`llm_dispatcher.dart`、`llm_service.dart` | 解析测试（框、缺框、z 排序）；一项下载失败时其余对齐；stream / 非 stream 都拿到图层 | ✅ |
 | 2 | 落库：v46 `image_layers`（onCreate + onUpgrade）、`ImageLayer` / `ImageLayerSet` 模型、`ImageLayerRepository`；执行器存图后写行（同一响应一个 `set_id`） | `database_migrations.dart`、`database_service.dart`、`models/image_layer.dart`、`repositories/image_layer_repository.dart`、`task_executors.dart` | 迁移测试；回环服务器跑一次拆图层任务，库里 1 底图 + N 层、框对得上 | ✅ |
 | 3 | 设计稿 `A7 图层画布` 推到设计项目 | scratchpad → DesignSync | 桌面 / 平板 / 手机三帧 + 规格汇总 | ✅ |
-| 4 | 画布页 + 入口 + 导出合成 + 四语 | `screens/workbench/widgets/layers/…`、`image_card.dart`、`image_card_context_menu.dart`、`l10n/src/*/workbench.arb` | widget 测试（按框定位、显隐、孤儿行、导出像素）；截图 390 / 1024 / 1440 | ☐ |
+| 4 | 画布页 + 入口 + 导出合成 + 四语 | `screens/workbench/widgets/layers/…`、`image_card.dart`、`image_card_context_menu.dart`、`l10n/src/*/workbench.arb` | widget 测试（按框定位、显隐、孤儿行、导出像素）；截图 390 / 1024 / 1440 | ✅ |
 | 5 | 文档收尾：`api/volcengine-ark.md`、`llm-three-layer.md`、台账划掉欠账、删本清单 | docs | — | ☐ |
 
 之后：`/code-review high`、bump 4.15.0、开 PR；再用套餐 key 实测流式出图（lite 两张）。
@@ -45,3 +45,10 @@
 - **片 3**：设计稿 `A7 图层画布.dc.html` 已推到设计项目（7a 桌面、7b 入口、7c 平板 / 手机、规格汇总）。
   与清单的出入：右键入口不进快捷格——四格与悬停条一一对应、菜单 230 宽塞不下第五格——改为快捷格下方一行；
   角标在右上（左下已有文件名与尺寸两块铭牌）。
+- **片 4**：与稿的出入——① 「显示边框」的虚线用 `accentRule`（35%）而非稿上的 45%：阶梯上已有「引导线」
+  这一档，`design_tokens_test` 也禁止手搓强调色透明度；② 选中的 3px 光环画成第二道描边而不是
+  BoxShadow（阴影是实心的，会把被选中的层整块染色）；③ 角标只看内存索引，不查盘：稿上「整组无上层时
+  不出角标」对右键菜单成立（菜单打开前查一次），角标点开若已无可叠之层给一条提示；④ 手机的导出是
+  40×40 的实心 `FilledButton`——设计系统没有实心图标按钮。画布读底图尺寸用新加的
+  `ImageMetadataService.readNow`：网格那条按帧排队的读法对单张全屏页只是多等一帧，测试里还永远不跑。
+  截图：`test/screenshots/app_screens_layer_canvas_test.dart`（桌面亮 Blue、平板暗、手机亮 Orange、画廊角标）。

@@ -88,6 +88,15 @@ class ImageMetadataService {
     return future;
   }
 
+  /// [getMetadata] without the queue: for one screen that needs one size
+  /// before it can lay out (the layer canvas's coordinate system), where
+  /// spreading reads across frames buys nothing and costs a frame of blank.
+  Future<ImageMetadata?> readNow(String path) {
+    final cached = _cache[path];
+    if (cached != null) return Future.value(cached);
+    return _inFlight[path] ?? _read(path);
+  }
+
   Future<ImageMetadata?> _read(String path) async {
     try {
       final file = File(path);

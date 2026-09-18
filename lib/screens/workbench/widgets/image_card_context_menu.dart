@@ -8,6 +8,7 @@ import '../../../core/constants.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
+import '../../../services/db/repositories/image_layer_repository.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 import '../../../state/workbench_ui_state.dart';
@@ -15,6 +16,7 @@ import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import 'gallery_file_actions.dart';
+import 'layers/layer_canvas_page.dart';
 import 'preview/media_preview_dialog.dart';
 
 /// The width of the gallery card's menu (`A1 · 2a`: 「240 宽」).
@@ -68,6 +70,15 @@ Future<void> showImageCardContextMenu(
     );
   }
 
+  // Asked only of a file the layer index knows, so an ordinary picture's
+  // menu opens without touching the database; null when nothing is left to
+  // stack, and then the row is not offered (`A7 · 7b`).
+  final layerSet = !multi &&
+          ImageLayerRepository.layeredPaths.value.containsKey(imageFile.path)
+      ? await ImageLayerRepository().setFor(imageFile.path)
+      : null;
+  if (!context.mounted) return;
+
   final entries = <AppGlassMenuEntry>[
     if (isVideo)
       AppGlassMenuItem(icon: Icons.visibility_outlined, label: l10n.openInPreview, onSelected: openPreview)
@@ -101,6 +112,13 @@ Future<void> showImageCardContextMenu(
           },
         ),
       ]),
+    if (layerSet != null)
+      AppGlassMenuItem(
+        icon: Icons.layers_outlined,
+        label: l10n.menuOpenLayers,
+        trailing: l10n.menuLayerCount(layerSet.overlays.length),
+        onSelected: () => showLayerCanvas(context, layerSet, imageFile.path),
+      ),
     const AppGlassMenuDivider(),
     if (!isVideo && !multi) ...[
       AppGlassMenuHeading(l10n.menuSetAs),

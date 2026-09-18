@@ -57,7 +57,8 @@ void main() {
       expect(set!.layers.map((l) => l.zIndex), [0, 1, 2]);
       expect(set.base!.box, isNull);
       expect(set.overlays.first.box, const LayerBox(27, 0, 888, 1137));
-      expect(ImageLayerRepository.layeredPaths.value, hasLength(3));
+      expect(ImageLayerRepository.layeredPaths.value,
+          {for (var z = 0; z < 3; z++) p.join(dir.path, 'l$z.png'): z});
       expect(await repo.setFor(p.join(dir.path, 'other.png')), isNull);
     });
 
@@ -86,7 +87,7 @@ void main() {
       await repo.move(folder, moved);
       final set = await repo.setFor(p.join(moved, 'title.png'));
       expect(set!.layers.map((l) => p.dirname(l.path)).toSet(), {moved});
-      expect(ImageLayerRepository.layeredPaths.value,
+      expect(ImageLayerRepository.layeredPaths.value.keys,
           everyElement(startsWith(moved)));
     });
 
@@ -96,7 +97,7 @@ void main() {
       await saveSet(p.join(dir.path, 'ab')); // same set id, different rows
       await repo.move(folder, p.join(dir.path, 'z'));
       expect(
-          ImageLayerRepository.layeredPaths.value
+          ImageLayerRepository.layeredPaths.value.keys
               .where((path) => path.startsWith(p.join(dir.path, 'ab'))),
           hasLength(3));
     });

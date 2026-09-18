@@ -20,18 +20,20 @@ class ImageLayerRepository {
 
   Future<Database> get _db async => _dbService.database;
 
-  /// Every path that has a row, for the gallery's layer badge. A new set on
-  /// every change — never mutated — so a listener can compare by identity.
-  /// Loaded on the first [loadPaths]; the table holds a few rows per
-  /// decomposition, so all of it fits in memory.
-  static final ValueNotifier<Set<String>> layeredPaths =
-      ValueNotifier(const <String>{});
+  /// Every path that has a row → its stacking order, for the gallery's
+  /// layer badge. A new map on every change — never mutated — so a listener
+  /// can compare by identity. Filled by [loadPaths] when the database opens;
+  /// the table holds a few rows per decomposition, so all of it fits.
+  static final ValueNotifier<Map<String, int>> layeredPaths =
+      ValueNotifier(const <String, int>{});
 
   /// Fills [layeredPaths] from the table.
   Future<void> loadPaths() async {
     final db = await _db;
-    final rows = await db.query('image_layers', columns: ['path']);
-    layeredPaths.value = {for (final r in rows) r['path'] as String};
+    final rows = await db.query('image_layers', columns: ['path', 'z_index']);
+    layeredPaths.value = {
+      for (final r in rows) r['path'] as String: r['z_index'] as int,
+    };
   }
 
   Future<void> save(ImageLayer layer, {DateTime? now}) async {
@@ -52,7 +54,7 @@ class ImageLayerRepository {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    layeredPaths.value = {...layeredPaths.value, layer.path};
+    layeredPaths.value = {...layeredPaths.value, layer.path: layer.zIndex};
   }
 
   /// The decomposition [path] belongs to, with every file that is still on
@@ -84,7 +86,7 @@ class ImageLayerRepository {
   Future<void> move(String from, String to) async {
     if (from == to) return;
     final prefix = from.endsWith(p.separator) ? from : '$from${p.separator}';
-    if (!layeredPaths.value
+    if (!layeredPaths.value.keys
         .any((path) => path == from || path.startsWith(prefix))) {
       return;
     }

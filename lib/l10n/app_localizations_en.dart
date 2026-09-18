@@ -5489,4 +5489,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get maskLoadFailedDesc => 'The file may have been moved or deleted';
+
+  @override
+  String layerCanvasTitle(String name) {
+    return 'Layers · $name';
+  }
+
+  @override
+  String layerCanvasSubtitle(int width, int height, int count) {
+    return 'Base $width×$height · $count layers';
+  }
+
+  @override
+  String layerCanvasSubtitleShort(int width, int height, int count) {
+    return '$width×$height · $count layers';
+  }
+
+  @override
+  String get layerShowBounds => 'Show bounds';
+
+  @override
+  String get layerFit => 'Fit';
+
+  @override
+  String get layerExport => 'Export composite';
+
+  @override
+  String get layerListLabel => 'Layers';
+
+  @override
+  String layerListCount(int count) {
+    return '$count + base';
+  }
+
+  @override
+  String get layerBase => 'Base';
+
+  @override
+  String get layerShowAll => 'Show all';
+
+  @override
+  String get layerShow => 'Show layer';
+
+  @override
+  String get layerHide => 'Hide layer';
+
+  @override
+  String layerPosition(int x, int y) {
+    return 'Position $x, $y';
+  }
+
+  @override
+  String layerSize(int width, int height) {
+    return 'Size $width×$height';
+  }
+
+  @override
+  String layerOrdinal(int index) {
+    return 'Layer $index';
+  }
+
+  @override
+  String layerUnnamed(int index) {
+    return 'Layer $index';
+  }
+
+  @override
+  String get layerOpenThis => 'Open this layer';
+
+  @override
+  String get layerExported => 'Composite exported';
+
+  @override
+  String layerExportFailed(String error) {
+    return 'Could not export the composite: $error';
+  }
+
+  @override
+  String get layerSetUnavailable =>
+      'The files of this layer set are no longer there';
+
+  @override
+  String get menuOpenLayers => 'Open layers';
+
+  @override
+  String menuLayerCount(int count) {
+    return '$count layers';
+  }
 }
