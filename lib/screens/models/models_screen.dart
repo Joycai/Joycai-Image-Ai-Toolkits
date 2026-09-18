@@ -21,6 +21,7 @@ import '../../widgets/models/model_edit_dialog.dart';
 import '../../widgets/ui/panel_resizer.dart';
 import '../../widgets/models/pricing_group_manager.dart';
 import 'widgets/channel_column.dart';
+import 'widgets/channel_merge_review.dart';
 import 'widgets/model_detail_column.dart';
 import 'widgets/models_actions.dart';
 import '../../widgets/models/models_controls.dart';
@@ -117,6 +118,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
         deleteModel: (model) => _confirmDeleteModel(l10n, model, appState),
         moveChannel: (oldIndex, newIndex) => _reorderChannels(l10n, appState, oldIndex, newIndex),
         openFeeManager: _showFeeGroupManager,
+        reviewMerges: () => reviewChannelMerges(context, appState),
       );
 
   // --- Two columns (tablet + desktop) ---------------------------------------
