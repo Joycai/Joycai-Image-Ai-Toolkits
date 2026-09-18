@@ -350,6 +350,8 @@
   "protocolXaiImages": "xAI 画像",
   "protocolXaiVideos": "xAI 動画",
   "protocolMinimaxImages": "MiniMax 画像",
+  "protocolArkImages": "Ark 画像",
+  "protocolArkImagesDesc": "Seedream のネイティブ画像エンドポイント。参照画像は JSON で同送",
   "protocolMinimaxVideo": "MiniMax 動画",
   "protocolAutoMenuDesc": "チャネルとモデル種別に従い、現在は「{name}」に解決",
   "protocolUnrecognizedAuto": "このモデル ID は認識できないため、チャネルの既定方式で送信します。中継サービスが「{name}」を使う場合は手動で選択してください。",

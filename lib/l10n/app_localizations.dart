@@ -4019,6 +4019,18 @@ abstract class AppLocalizations {
   /// **'MiniMax Images'**
   String get protocolMinimaxImages;
 
+  /// No description provided for @protocolArkImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Ark Images'**
+  String get protocolArkImages;
+
+  /// No description provided for @protocolArkImagesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Seedream’s native endpoint; reference images ride the same JSON request'**
+  String get protocolArkImagesDesc;
+
   /// No description provided for @protocolMinimaxVideo.
   ///
   /// In en, this message translates to:

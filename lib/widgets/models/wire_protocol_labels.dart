@@ -36,6 +36,8 @@ String wireProtocolLabel(AppLocalizations l10n, WireProtocol protocol) {
       return l10n.protocolXaiImages;
     case WireProtocol.minimaxImages:
       return l10n.protocolMinimaxImages;
+    case WireProtocol.arkImages:
+      return l10n.protocolArkImages;
     case WireProtocol.geminiImagen:
       return 'Imagen';
     case WireProtocol.openaiVideos:
@@ -68,6 +70,8 @@ String? wireProtocolDescription(AppLocalizations l10n, WireProtocol protocol) {
       return l10n.protocolChatImageDesc;
     case WireProtocol.openaiImages:
       return l10n.protocolImagesApiDesc;
+    case WireProtocol.arkImages:
+      return l10n.protocolArkImagesDesc;
     case WireProtocol.geminiImagen:
       return l10n.protocolImagenDesc;
     case WireProtocol.openaiVideos:
@@ -101,6 +105,10 @@ String? wireProtocolPath(WireProtocol protocol, ProtocolFamily channelFamily) {
       return ':generateContent';
     case WireProtocol.openaiImages:
       return '/v1/images/generations';
+    // No version prefix: Ark serves it under `/api/v3` or `/api/plan/v3`,
+    // a relay under its own `/v1`.
+    case WireProtocol.arkImages:
+      return '/images/generations';
     case WireProtocol.geminiImagen:
       return ':predict';
     case WireProtocol.openaiVideos:

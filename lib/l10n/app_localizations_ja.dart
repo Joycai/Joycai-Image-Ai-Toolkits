@@ -2236,6 +2236,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get protocolMinimaxImages => 'MiniMax 画像';
 
   @override
+  String get protocolArkImages => 'Ark 画像';
+
+  @override
+  String get protocolArkImagesDesc => 'Seedream のネイティブ画像エンドポイント。参照画像は JSON で同送';
+
+  @override
   String get protocolMinimaxVideo => 'MiniMax 動画';
 
   @override

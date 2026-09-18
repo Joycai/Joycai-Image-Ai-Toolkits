@@ -350,6 +350,8 @@
   "protocolXaiImages": "xAI 圖像",
   "protocolXaiVideos": "xAI 影片",
   "protocolMinimaxImages": "MiniMax 圖像",
+  "protocolArkImages": "火山方舟圖像",
+  "protocolArkImagesDesc": "Seedream 的原生出圖介面，參考圖隨 JSON 一起發送",
   "protocolMinimaxVideo": "MiniMax 影片",
   "protocolAutoMenuDesc": "跟隨渠道與模型類型，目前解析為「{name}」",
   "protocolUnrecognizedAuto": "未識別此模型 ID，按渠道預設方式傳送。如果中轉站用的是「{name}」，請手動選擇。",

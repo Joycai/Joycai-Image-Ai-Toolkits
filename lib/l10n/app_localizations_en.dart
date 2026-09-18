@@ -2299,6 +2299,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get protocolMinimaxImages => 'MiniMax Images';
 
   @override
+  String get protocolArkImages => 'Ark Images';
+
+  @override
+  String get protocolArkImagesDesc =>
+      'Seedream’s native endpoint; reference images ride the same JSON request';
+
+  @override
   String get protocolMinimaxVideo => 'MiniMax Video';
 
   @override

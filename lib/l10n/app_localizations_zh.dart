@@ -2214,6 +2214,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolMinimaxImages => 'MiniMax 图像';
 
   @override
+  String get protocolArkImages => '火山方舟图像';
+
+  @override
+  String get protocolArkImagesDesc => 'Seedream 的原生出图接口，参考图随 JSON 一起发送';
+
+  @override
   String get protocolMinimaxVideo => 'MiniMax 视频';
 
   @override
@@ -7136,6 +7142,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get protocolMinimaxImages => 'MiniMax 圖像';
+
+  @override
+  String get protocolArkImages => '火山方舟圖像';
+
+  @override
+  String get protocolArkImagesDesc => 'Seedream 的原生出圖介面，參考圖隨 JSON 一起發送';
 
   @override
   String get protocolMinimaxVideo => 'MiniMax 影片';

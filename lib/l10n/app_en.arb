@@ -1517,6 +1517,8 @@
   "protocolXaiImages": "xAI Images",
   "protocolXaiVideos": "xAI Video",
   "protocolMinimaxImages": "MiniMax Images",
+  "protocolArkImages": "Ark Images",
+  "protocolArkImagesDesc": "Seedream’s native endpoint; reference images ride the same JSON request",
   "protocolMinimaxVideo": "MiniMax Video",
   "protocolAutoMenuDesc": "Follows the channel and model type; resolves to “{name}”",
   "@protocolAutoMenuDesc": {

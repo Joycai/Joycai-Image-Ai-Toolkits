@@ -264,6 +264,8 @@ class ModelCapabilities {
         return _dashscopeQwenImage;
       case WireProtocol.minimaxImages:
         return _minimaxImage;
+      case WireProtocol.arkImages:
+        return _seedreamGeneric;
       case WireProtocol.chatImage:
         // No parameters to offer, but an image generator all the same: both
         // chat wires key image *output* off this flag — Gemini declares

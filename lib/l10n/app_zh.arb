@@ -1317,6 +1317,8 @@
   "protocolXaiImages": "xAI 图像",
   "protocolXaiVideos": "xAI 视频",
   "protocolMinimaxImages": "MiniMax 图像",
+  "protocolArkImages": "火山方舟图像",
+  "protocolArkImagesDesc": "Seedream 的原生出图接口，参考图随 JSON 一起发送",
   "protocolMinimaxVideo": "MiniMax 视频",
   "protocolAutoMenuDesc": "跟随渠道与模型类型，当前解析为「{name}」",
   "protocolUnrecognizedAuto": "未识别此模型 ID，按渠道默认方式发送。如果中转站用的是「{name}」，请手动选择。",

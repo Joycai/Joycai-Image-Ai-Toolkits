@@ -63,7 +63,7 @@
 | S0 | A 调研 | 协议事实文档 + 本清单 | `docs/api/volcengine-ark.md`、本文件 | 文档齐 | ✅ |
 | S1 | A 设计 | Claude Design `D1e`：向导预设行、模型编辑协议区、工作台四张参数表、手机 | 设计项目 | 稿已推送、规格汇总齐 | ✅ |
 | S2 | B Layer 3 | `ModelFamily.seedreamImage` + 分类 + 六张表 + `tierPixelSizes` | `model_family.dart`、`model_capabilities.dart`、`model_capability_tables.dart`、`model_descriptor.dart` | 单测：分类、每表参数、映射 | ✅ |
-| S3 | B Layer 1 | `ArkImagesProtocol` + `ark_payload.dart`（纯函数 body 构造 / 响应解析） | `protocols/ark_*.dart` | 单测：body 逐字段、组图收紧、任务前置条件、单张失败、全失败 | ⏳ |
+| S3 | B Layer 1 | `ArkImagesProtocol` + `ark_payload.dart`（纯函数 body 构造 / 响应解析）+ `WireProtocol.arkImages` 与它的穷尽消费点 | `protocols/ark_*.dart`、`vendor_profile.dart`、`wire_protocol_labels.dart` | 单测：body 逐字段、组图收紧、任务前置条件、单张失败、全失败 | ✅ |
 | S4 | B Layer 2 + 路由 | `WireProtocol.arkImages`、`Vendors.volcengineArk`、dispatcher（auto / 生成 / 单发 / 计费 / 超时）、目录 | `vendor_profile.dart`、`vendors.dart`、`llm_dispatcher.dart` | 路由单测：方舟、中转、点单、未识别 id | ⏳ |
 | — | B review | `/code-review high` S2..S4 | | 发现全修 | ⏳ |
 | S5 | C 渠道 | 向导预设「火山方舟」+ 标题 / 副标题 / 类型名 + 协议名 / 路径 / 说明 + l10n 四语 | `channel_provider_presets.dart`、`wire_protocol_labels.dart`、`l10n/src/*` | 截图：向导 | ⏳ |
@@ -85,3 +85,7 @@
   `forModel` 按 id 才走到的表（gpt-image-2 的像素、Seedream 的 1.5K / 3K……）
   一直不在里面；Layer 3 新出 `ModelCapabilities.idRoutedTables`，选单并进来，
   排序与 `OutputSpec.normalizeSize` 认小数档位（`1.5k` → `1.5K`）。
+- **S3**：协议名按既有惯例叫「火山方舟图像」（与「MiniMax 图像」「xAI 图像」同构），
+  不是设计稿草拟的「火山方舟生图」——C 阶段回写 D1e。路径标签不带版本前缀
+  （`/images/generations`）：方舟是 `/api/v3` 或 `/api/plan/v3`，中转是 `/v1`。
+  元数据不发布 `output_size`：按规格计费的档位行写的是 `2K`，回显的 `WxH` 会让它们一行都匹配不上。
