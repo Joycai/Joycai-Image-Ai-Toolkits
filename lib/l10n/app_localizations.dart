@@ -5104,6 +5104,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 model stays on {route}} other{{count} models stay on {route}}}'**
   String routePinnedSnack(int count, String route);
 
+  /// No description provided for @routeMovedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 model moved to {route}: its route was removed} other{{count} models moved to {route}: their route was removed}}'**
+  String routeMovedSnack(int count, String route);
+
   /// No description provided for @routesToCreate.
   ///
   /// In en, this message translates to:

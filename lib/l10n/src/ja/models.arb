@@ -597,6 +597,7 @@
   "routeInUse": "{count} 個のモデルが使用中のためオフにできません",
   "routeOnlyOne": "チャンネルには少なくとも 1 本のルートが必要です",
   "routePinnedSnack": "{count} 個のモデルは {route} のままです",
+  "routeMovedSnack": "{count} 個のモデルを {route} に移しました：元のルートが削除されたため",
   "routesToCreate": "作成するルート",
   "routesToCreateHint": "使わないものは後でチャンネル編集からオフにできます",
   "routeKeyShared": "1 つのキーをすべてのルートで共有します",

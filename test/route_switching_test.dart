@@ -295,4 +295,49 @@ void main() {
     expect(RouteSwitching.modelsOnRoute(ms, routes, RouteKind.responses), 2);
     expect(RouteSwitching.modelsOnRoute(ms, routes, RouteKind.anthropic), 0);
   });
+
+  group('after a channel edit', () {
+    final chatOnly = ChannelRoutes.create(
+      Platforms.byId(Platforms.newapi),
+      'https://relay.example.com',
+      [RouteKind.chat],
+    );
+    final responsesFirst = routes.withPrimary(RouteKind.responses);
+
+    test('a primary that changed but stayed pins its followers', () {
+      final r = RouteSwitching.afterChannelEdit(
+        [model()],
+        routes,
+        responsesFirst,
+      );
+      expect(r.pinned.single.activeRoute, RouteKind.chat.id);
+      expect(r.moved, isEmpty);
+    });
+
+    test('a primary dropped with the old routes pins nothing', () {
+      final onlyResponses = ChannelRoutes.create(
+        Platforms.byId(Platforms.newapi),
+        'https://relay.example.com',
+        [RouteKind.responses],
+      );
+      final r = RouteSwitching.afterChannelEdit([model()], routes, onlyResponses);
+      expect(r.pinned, isEmpty);
+      expect(r.moved, isEmpty);
+    });
+
+    test('a rider of a removed route moves onto the primary, values parked', () {
+      final rider = model(activeRoute: RouteKind.anthropic.id);
+      final r = RouteSwitching.afterChannelEdit([rider], routes, chatOnly);
+      final moved = r.moved.single;
+      expect(moved.activeRoute, RouteKind.chat.id);
+      expect(ModelRoutes.parked(moved).keys, contains(RouteKind.anthropic));
+      expect(moved.id, rider.id);
+    });
+
+    test('a route already gone before the edit is left to the user', () {
+      final lost = model(activeRoute: RouteKind.gemini.id);
+      final r = RouteSwitching.afterChannelEdit([lost], routes, chatOnly);
+      expect(r.moved, isEmpty);
+    });
+  });
 }

@@ -2863,6 +2863,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String routeMovedSnack(int count, String route) {
+    return '$count 個のモデルを $route に移しました：元のルートが削除されたため';
+  }
+
+  @override
   String get routesToCreate => '作成するルート';
 
   @override

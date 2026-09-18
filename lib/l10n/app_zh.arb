@@ -1564,6 +1564,7 @@
   "routeInUse": "{count} 个模型在用，不能关",
   "routeOnlyOne": "渠道至少要有一条线路",
   "routePinnedSnack": "{count} 个模型保持在 {route}",
+  "routeMovedSnack": "{count} 个模型改走 {route}：原线路已移除",
   "routesToCreate": "将建立的线路",
   "routesToCreateHint": "建好后可在渠道编辑里关掉不用的",
   "routeKeyShared": "一把密钥，所有线路共用",

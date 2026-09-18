@@ -2983,6 +2983,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String routeMovedSnack(int count, String route) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count models moved to $route: their route was removed',
+      one: '1 model moved to $route: its route was removed',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get routesToCreate => 'Routes to create';
 
   @override

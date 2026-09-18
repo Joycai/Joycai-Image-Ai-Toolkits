@@ -247,15 +247,16 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     if (widget.channel == null) {
       await widget.appState.addChannel(data);
     } else {
-      final pinned = routeMode ? await _pinFollowers() : 0;
-      await widget.appState.updateChannel(widget.channel!.id!, data);
-      if (pinned > 0 && mounted) {
+      final id = widget.channel!.id!;
+      await widget.appState.updateChannel(id, data);
+      final (:pinned, :moved) = await _settleModels(id);
+      if (mounted && (pinned > 0 || moved > 0)) {
+        final l10n = widget.l10n;
         AppSnackBar.info(
           context,
-          widget.l10n.routePinnedSnack(
-            pinned,
-            routeLabel(widget.l10n, _openedRoutes.primary.kind),
-          ),
+          moved > 0
+              ? l10n.routeMovedSnack(moved, routeLabel(l10n, _savedPrimary(id)))
+              : l10n.routePinnedSnack(pinned, routeLabel(l10n, _openedRoutes.primary.kind)),
         );
       }
     }
@@ -263,24 +264,35 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     if (mounted) Navigator.pop(context);
   }
 
-  /// Before the primary changes, the models that follow it are written onto
-  /// the primary they have, so none of them quietly moves to another wire
-  /// carrying parameters set for the old one (standard 06 §1). Returns how
-  /// many were pinned.
-  Future<int> _pinFollowers() async {
-    if (_routes.primary.kind == _openedRoutes.primary.kind) return 0;
-    // A new preset can leave the old primary behind altogether: pinned to
-    // it, every follower would fail as a missing route, so they follow the
-    // new primary instead, as they did before routes.
-    if (!_routes.has(_openedRoutes.primary.kind)) return 0;
-    final pinned = RouteSwitching.pinFollowers(
-      widget.appState.getModelsForChannel(widget.channel?.id),
+  /// The routes channel [id] was saved with, as stored — which is what its
+  /// models will be resolved against, route table or single-address form.
+  ChannelRoutes? _savedRoutes(int id) {
+    final saved = widget.appState.allChannels
+        .cast<LLMChannel?>()
+        .firstWhere((c) => c?.id == id, orElse: () => null);
+    return saved == null ? null : RoutedChannel.routesOf(saved);
+  }
+
+  RouteKind _savedPrimary(int id) =>
+      (_savedRoutes(id) ?? _routes).primary.kind;
+
+  /// Once the routes are stored, the models they affect are written: the
+  /// followers of a primary that changed pinned to it, so none quietly moves
+  /// to another wire carrying parameters set for the old one (standard 06
+  /// §1); the riders of a route the edit removed moved onto the primary
+  /// (`RouteSwitching.afterChannelEdit`).
+  Future<({int pinned, int moved})> _settleModels(int id) async {
+    final after = _savedRoutes(id);
+    if (after == null) return (pinned: 0, moved: 0);
+    final (:pinned, :moved) = RouteSwitching.afterChannelEdit(
+      widget.appState.getModelsForChannel(id),
       _openedRoutes,
+      after,
     );
-    for (final m in pinned) {
+    for (final m in [...pinned, ...moved]) {
       await widget.appState.updateModel(m.id!, m.toMap(includeId: false));
     }
-    return pinned.length;
+    return (pinned: pinned.length, moved: moved.length);
   }
 
   /// Delete, confirmed first. Cancel holds focus so Enter never deletes.

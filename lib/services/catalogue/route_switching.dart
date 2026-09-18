@@ -252,6 +252,37 @@ class RouteSwitching {
     ];
   }
 
+  /// What a channel edit that took its routes from [before] to [after]
+  /// does to [modelsOnChannel]:
+  ///
+  /// * [pinned] — when the primary changed but the old one is still there,
+  ///   the models that followed it, pinned to it ([pinFollowers]);
+  /// * [moved] — the models that rode a route the edit removed (a new
+  ///   preset can drop any route, past the table's in-use guard), moved onto
+  ///   the new primary with their values parked under the route they chose
+  ///   ([recoverMissingRoute]) rather than left failing.
+  ///
+  /// A model whose route was already gone before the edit is not touched:
+  /// that one is the user's to choose.
+  static ({List<LLMModel> pinned, List<LLMModel> moved}) afterChannelEdit(
+    Iterable<LLMModel> modelsOnChannel,
+    ChannelRoutes before,
+    ChannelRoutes after,
+  ) {
+    final oldPrimary = before.primary.kind;
+    final pinned = after.primary.kind != oldPrimary && after.has(oldPrimary)
+        ? pinFollowers(modelsOnChannel, before)
+        : const <LLMModel>[];
+    final moved = [
+      for (final m in modelsOnChannel)
+        if (ModelRoutes.usesRoutes(m))
+          if (RouteKind.tryParse(m.activeRoute) case final chosen?)
+            if (before.has(chosen) && !after.has(chosen))
+              recoverMissingRoute(m, after),
+    ];
+    return (pinned: pinned, moved: moved);
+  }
+
   /// How many of [modelsOnChannel] ride [kind] right now — a route in use
   /// cannot be removed from the channel.
   static int modelsOnRoute(

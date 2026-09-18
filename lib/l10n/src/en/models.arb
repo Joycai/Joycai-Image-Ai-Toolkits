@@ -897,6 +897,17 @@
       }
     }
   },
+  "routeMovedSnack": "{count, plural, =1{1 model moved to {route}: its route was removed} other{{count} models moved to {route}: their route was removed}}",
+  "@routeMovedSnack": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "route": {
+        "type": "String"
+      }
+    }
+  },
   "routesToCreate": "Routes to create",
   "routesToCreateHint": "You can turn off unused ones later in the channel editor",
   "routeKeyShared": "One key, shared by every route",

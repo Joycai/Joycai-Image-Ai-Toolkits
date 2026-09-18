@@ -2830,6 +2830,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String routeMovedSnack(int count, String route) {
+    return '$count 个模型改走 $route：原线路已移除';
+  }
+
+  @override
   String get routesToCreate => '将建立的线路';
 
   @override
@@ -8008,6 +8013,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String routePinnedSnack(int count, String route) {
     return '$count 個模型保持在 $route';
+  }
+
+  @override
+  String routeMovedSnack(int count, String route) {
+    return '$count 個模型改走 $route：原線路已移除';
   }
 
   @override
