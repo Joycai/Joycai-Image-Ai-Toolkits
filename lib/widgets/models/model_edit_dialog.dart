@@ -11,10 +11,14 @@ import '../../models/llm_model.dart';
 import '../../models/pricing_group.dart';
 import '../../services/catalogue/context_window_scale.dart';
 import '../../services/catalogue/output_cap_scale.dart';
+import '../../services/catalogue/route_switching.dart';
+import '../../services/llm/channel_routes.dart';
 import '../../services/llm/context_budget.dart';
 import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/llm_types.dart';
+import '../../services/llm/model_routes.dart';
 import '../../services/llm/protocols/anthropic_wire.dart' show anthropicDefaultMaxTokens, anthropicMinThinkingBudget;
+import '../../services/llm/vendors/platforms.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../services/catalogue/model_id_uniqueness.dart';
 import '../../state/app_state.dart';
@@ -26,6 +30,7 @@ import '../ui/app_labelled_field.dart';
 import '../ui/app_section_label.dart';
 import '../glass/app_glass.dart';
 import '../ui/searchable_picker.dart';
+import 'app_route_badge.dart';
 import 'context_window_slider.dart';
 import 'model_edit_card_preview.dart';
 import 'fee_group_summary.dart';
@@ -33,6 +38,7 @@ import 'model_edit_controls.dart';
 import 'model_picker_options.dart';
 import 'model_protocol_section.dart';
 import 'protocol_section_form.dart';
+import 'route_labels.dart';
 import 'wire_protocol_labels.dart';
 
 part 'model_edit/model_edit_capabilities.dart';
@@ -41,6 +47,7 @@ part 'model_edit/model_edit_identity.dart';
 part 'model_edit/model_edit_layouts.dart';
 part 'model_edit/model_edit_output_cap.dart';
 part 'model_edit/model_edit_protocol.dart';
+part 'model_edit/model_edit_routes.dart';
 
 /// Edits a model, or adds one (design D1c).
 ///
@@ -107,6 +114,16 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   /// (never mutate what the user hasn't opened).
   String? wireProtocol;
 
+  /// The route a chat model rides (`llm_models.active_route`), null to
+  /// follow the channel's primary, and the parameters parked under its other
+  /// routes (`D1f · 4d`). Switched in the form; written on save.
+  String? activeRoute;
+  Map<RouteKind, RouteParams> _parked = const {};
+
+  /// A route tapped in the strip that was never set up: its switch preview
+  /// is open until confirmed or cancelled.
+  RouteKind? _switchTarget;
+
   /// The selection each protocol surface had when the kind moved off it, for
   /// this opening of the dialog only. See [_selectKind].
   final Map<Surface, String?> _pinBySurface = {};
@@ -161,6 +178,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     reasoningEffort = model?.reasoningEffort ?? ((model?.enableThinking ?? false) ? 'medium' : null);
     enableWebSearch = model?.enableWebSearch ?? false;
     wireProtocol = model?.wireProtocol;
+    activeRoute = model?.activeRoute;
+    _parked = model == null ? const {} : ModelRoutes.parked(model);
 
     // Context window: null = not set, 0 = unlimited, >0 = token limit. A new
     // model starts unset — this number budgets the Prompt Assistant, and a
@@ -254,11 +273,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       .cast<LLMChannel?>()
       .firstWhere((c) => c?.id == channelId, orElse: () => null);
 
-  /// The selected channel's protocol family, or null when no channel is
-  /// picked. Read-only Layer 2 consumption.
+  /// The protocol family of the vendor serving the model — through its route
+  /// for a chat model — or null when no channel is picked. Read-only Layer 2
+  /// consumption.
   ProtocolFamily? get _channelFamily {
-    final channel = _selectedChannel;
-    return channel == null ? null : Vendors.byId(channel.type).family;
+    final routed = _routed;
+    return routed == null ? null : Vendors.byId(routed.channelType).family;
   }
 
   /// Host web search and extended thinking only exist on the ④ wire.
@@ -301,6 +321,13 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     final id = idCtrl.text.trim();
     final name = nameCtrl.text.trim();
 
+    // A chat model saves on its route: the one rule for per-route
+    // parameters applied, the route written explicitly (`RouteSwitching`).
+    final routes = _routes;
+    final saved = routes != null && _usesRoutes
+        ? RouteSwitching.normalizedForSave(_draftModel, routes)
+        : null;
+
     final data = {
       'model_id': id,
       // A blank name is the ID.
@@ -312,16 +339,20 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       'force_view_all_images': forceViewAllImages ? 1 : 0,
       // The legacy flag is kept in sync so a backup restored into an older
       // build (which only reads the boolean) preserves thinking behavior.
-      'enable_thinking': (reasoningEffort != null && reasoningEffort != 'off') ? 1 : 0,
-      'reasoning_effort': reasoningEffort,
+      'enable_thinking': saved != null
+          ? (saved.enableThinking ? 1 : 0)
+          : (reasoningEffort != null && reasoningEffort != 'off') ? 1 : 0,
+      'reasoning_effort': saved != null ? saved.reasoningEffort : reasoningEffort,
       'enable_web_search': enableWebSearch ? 1 : 0,
       // Auto stores null; a stale value is silently cleared *here* — on the
       // user's own save, never behind their back.
-      'wire_protocol': _activePin?.id,
+      'wire_protocol': saved != null ? saved.wireProtocol : _activePin?.id,
+      'active_route': saved?.activeRoute,
+      'route_params': saved?.routeParams,
       'fee_group_id': feeGroupId,
       'channel_id': channelId,
       'context_window': ContextBudget.store(contextMode, _contextTokens ?? 0),
-      'max_output_tokens': _storedOutputCap,
+      'max_output_tokens': saved != null ? saved.maxOutputTokens : _storedOutputCap,
     };
 
     if (widget.model == null) {

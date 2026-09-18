@@ -34,7 +34,7 @@ extension _ContextSection on _ModelEditDialogState {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Expanded(child: _caption(l10n.contextWindow)),
+            Expanded(child: _caption(l10n.contextWindow, scope: _scope())),
             if (specified && hasValue) ...[
               const SizedBox(width: AppSpace.s10),
               Text(

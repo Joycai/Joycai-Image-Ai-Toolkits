@@ -11,7 +11,7 @@ extension _CapabilitySections on _ModelEditDialogState {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _caption(l10n.capabilities),
+        _caption(l10n.capabilities, scope: _scope()),
         const SizedBox(height: AppSpace.s6),
         ModelEditCard(
           padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10, vertical: AppSpace.s4),
@@ -111,6 +111,8 @@ extension _CapabilitySections on _ModelEditDialogState {
       reasoningEffort: reasoningEffort,
       enableWebSearch: enableWebSearch,
       wireProtocol: wireProtocol,
+      activeRoute: activeRoute,
+      routeParams: ModelRoutes.encodeParked(_parked),
     );
   }
 
@@ -122,7 +124,7 @@ extension _CapabilitySections on _ModelEditDialogState {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _caption(l10n.agentBehavior),
+        _caption(l10n.agentBehavior, scope: _scope()),
         const SizedBox(height: AppSpace.s6),
         ModelEditCard(
           child: ModelEditToggleRow(
@@ -188,6 +190,7 @@ extension _CapabilitySections on _ModelEditDialogState {
               child: _caption(
                 l10n.reasoningEffort,
                 tone: supported ? AppSectionTone.accent : AppSectionTone.neutral,
+                scope: _scope(route: true),
               ),
             ),
             const SizedBox(width: AppSpace.s10),
@@ -237,13 +240,13 @@ extension _CapabilitySections on _ModelEditDialogState {
   /// Whether the model's requests take the Responses face — the dispatcher's
   /// resolution, not a copy of it.
   bool get _onResponsesFace {
-    final channel = _selectedChannel;
-    if (channel == null) return false;
+    final routed = _routed;
+    if (routed == null) return false;
     return LLMDispatcher.resolvedChatFace(
-          channelType: channel.type,
+          channelType: routed.channelType,
           modelId: idCtrl.text.trim(),
           tag: tag,
-          wireProtocol: wireProtocol,
+          wireProtocol: _dispatchPin,
         ) ==
         WireProtocol.openaiResponses;
   }
@@ -251,15 +254,15 @@ extension _CapabilitySections on _ModelEditDialogState {
   /// The rungs that each send a different request on this channel for this
   /// id and kind: the dispatcher's answer, empty where none reaches the wire.
   List<ReasoningEffort?> get _reasoningLadder {
-    final channel = _selectedChannel;
-    if (channel == null) return const [];
+    final routed = _routed;
+    if (routed == null) return const [];
     return LLMDispatcher.reasoningLadder(
-      channelType: channel.type,
+      channelType: routed.channelType,
       modelId: idCtrl.text.trim(),
       tag: tag,
       // The face the model rides decides the spelling, and so the rungs: a
-      // Bailian model pinned to ④ has two, on ① three, never six.
-      wireProtocol: wireProtocol,
+      // Bailian model on its ④ route has two, on ① three, never six.
+      wireProtocol: _dispatchPin,
     );
   }
 }

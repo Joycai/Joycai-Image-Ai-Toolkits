@@ -339,32 +339,52 @@ extension _Layouts on _ModelEditDialogState {
         ),
         const SizedBox(width: _ModelEditDialogState._columnGap),
         Expanded(
-          child: _stack([
-            // The protocol is the cause of what follows it, so it leads the
-            // column. Absent entirely (no placeholder height) when there is
-            // nothing to choose and nothing to explain.
-            if (_showProtocolSection) _protocolSection(context),
-            _contextSection(context),
-            if (_hasOutputCap) _outputCapSection(context),
-            _agentSection(context),
-            _reasoningSection(context),
-            if (_isAnthropicChannel || _webSearch != ServerWebSearch.unsupported) _providerSection(context),
-          ]),
+          child: _stack(_requestSections(context)),
         ),
       ],
     );
   }
 
-  Widget _singleColumn(BuildContext context, {required bool pairFields}) {
-    return _stack([
-      _identitySection(context, pairFields: pairFields),
+  /// How the model is requested, top to bottom (`D1c · 1a`; `D1f · 4e` with
+  /// routes). The protocol — or the route — is the cause of what follows it,
+  /// so it leads. With routes, what changes with the route sits right under
+  /// the strip inside one accent rule, and what belongs to the model
+  /// follows.
+  List<Widget> _requestSections(BuildContext context) {
+    if (_routeMode) {
+      return [
+        _routeSection(context),
+        _routeScoped(context, [
+          if (_hasOutputCap) _outputCapSection(context),
+          _reasoningSection(context),
+        ]),
+        _contextSection(context),
+        _agentSection(context),
+        if (_showProviderSection) _providerSection(context),
+      ];
+    }
+    return [
+      // Absent entirely (no placeholder height) when there is nothing to
+      // choose and nothing to explain.
       if (_showProtocolSection) _protocolSection(context),
-      _capabilitiesSection(context),
       _contextSection(context),
       if (_hasOutputCap) _outputCapSection(context),
       _agentSection(context),
       _reasoningSection(context),
-      if (_isAnthropicChannel || _webSearch != ServerWebSearch.unsupported) _providerSection(context),
+      if (_showProviderSection) _providerSection(context),
+    ];
+  }
+
+  Widget _singleColumn(BuildContext context, {required bool pairFields}) {
+    final request = _requestSections(context);
+    // The protocol (or route) section leads what is requested; the
+    // capabilities belong right after it on one column.
+    final leads = _routeMode || _showProtocolSection;
+    return _stack([
+      _identitySection(context, pairFields: pairFields),
+      if (leads) request.first,
+      _capabilitiesSection(context),
+      ...leads ? request.skip(1) : request,
       _previewSection(context),
     ]);
   }
@@ -383,8 +403,13 @@ extension _Layouts on _ModelEditDialogState {
   AppFieldSize _fieldSize(BuildContext context) =>
       ModelEditMetrics.of(context).phone ? AppFieldSize.large : AppFieldSize.regular;
 
-  Widget _caption(String text, {AppSectionTone tone = AppSectionTone.accent}) =>
-      AppSectionLabel(text, padding: EdgeInsets.zero, tone: tone);
+  /// A section's caption; [scope] is its `D1f` scope, when there is one.
+  Widget _caption(
+    String text, {
+    AppSectionTone tone = AppSectionTone.accent,
+    Widget? scope,
+  }) =>
+      AppSectionLabel(text, padding: EdgeInsets.zero, tone: tone, trailing: scope);
 
   // --- Identity -----------------------------------------------------------
 }

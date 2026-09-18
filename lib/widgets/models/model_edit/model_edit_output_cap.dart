@@ -68,7 +68,7 @@ extension _OutputCapSection on _ModelEditDialogState {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Expanded(child: _caption(l10n.outputCap)),
+            Expanded(child: _caption(l10n.outputCap, scope: _scope(route: true))),
             if (status.isNotEmpty) ...[
               const SizedBox(width: AppSpace.s10),
               Text(

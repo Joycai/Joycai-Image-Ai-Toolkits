@@ -137,6 +137,13 @@ extension _IdentitySection on _ModelEditDialogState {
           selected: channel == null ? null : channelPickerOption(channel),
           optionsBuilder: () => appState.allChannels.map(channelPickerOption).toList(),
           onChanged: (v) => _rebuild(() {
+            if (v != channelId) {
+              // Another channel's routes: the route chosen and the
+              // parameters parked here mean nothing there.
+              activeRoute = null;
+              _parked = const {};
+              _switchTarget = null;
+            }
             channelId = v;
             if (widget.model == null && !_feeGroupTouched) {
               feeGroupId = widget.appState.defaultFeeGroupFor(v);
