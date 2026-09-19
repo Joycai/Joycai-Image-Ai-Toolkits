@@ -451,6 +451,7 @@
   "imageSizePickerTitle": "图像尺寸",
   "imageSizeAuto": "自动",
   "imageSizeAutoDesc": "由模型自行决定尺寸",
+  "imageSizeDefaultDesc": "默认尺寸（1K 档）",
   "imageSizePresets": "预设",
   "imageSizeCustom": "自定义",
   "imageSizeRatio": "比例",
@@ -460,26 +461,38 @@
   "imageSizeHeight": "高度",
   "imageSizeSnapHint": "两边在提交时会自动对齐到 16 像素的整数倍。",
   "sizeRuleMultiple16": "两边均为 16 的整数倍",
-  "sizeRuleMaxEdge": "长边 {long}px ≤ 3840",
+  "sizeRuleMaxEdge": "长边 {long}px ≤ {max}",
   "@sizeRuleMaxEdge": {
     "placeholders": {
       "long": {
         "type": "int"
+      },
+      "max": {
+        "type": "int"
       }
     }
   },
-  "sizeRuleAspect": "长宽比 {ratio} ≤ 3:1",
+  "sizeRuleAspect": "长宽比 {ratio} ≤ {max}:1",
   "@sizeRuleAspect": {
     "placeholders": {
       "ratio": {
         "type": "String"
+      },
+      "max": {
+        "type": "String"
       }
     }
   },
-  "sizeRulePixels": "总像素 {mp} 在 0.66–8.29 MP 之间",
+  "sizeRulePixels": "总像素 {mp} 在 {min}–{max} MP 之间",
   "@sizeRulePixels": {
     "placeholders": {
       "mp": {
+        "type": "String"
+      },
+      "min": {
+        "type": "String"
+      },
+      "max": {
         "type": "String"
       }
     }

@@ -432,7 +432,10 @@ const _dashscopePromptExtend = ParamSpec(
 /// price — so the dialect always sends a size, and `not_set` means "the
 /// dialect's default": a 1K square for text-to-image, the input's own
 /// proportions fitted into the 1K area for an edit (`dashscopeQwenDefaultSize`).
-/// The three presets are the 1K-area sizes an author picks explicitly.
+/// The size is a free `WxH` inside [kDashscopeQwenSizeRules] (area
+/// 512²–2048², 1:8–8:1), picked in the size dialog — presets, a ratio
+/// calculator, or typed edges. The presets are quick picks only; the first
+/// seven sit at or near the 1K area, `2048x2048` is the 2K tier.
 ///
 /// `n` is deliberately not exposed — every request sends 1. The ceiling
 /// differs *within* the family (6, but `qwen-image-edit` takes only 1) and
@@ -447,13 +450,50 @@ const _dashscopeQwenImage = ModelCapabilities(
     ParamSpec(
       key: 'imageSize',
       labelKey: 'resolution',
-      control: ParamControl.dropdown,
+      control: ParamControl.customSize,
       defaultValue: 'not_set',
       options: [
         ParamOption('not_set'),
         ParamOption('1024x1024'),
-        ParamOption('1024x1536'),
+        ParamOption('1344x768'),
+        ParamOption('768x1344'),
+        ParamOption('1152x864'),
+        ParamOption('864x1152'),
         ParamOption('1536x1024'),
+        ParamOption('1024x1536'),
+        ParamOption('2048x2048'),
+      ],
+      sizeRules: kDashscopeQwenSizeRules,
+    ),
+    _dashscopePromptExtend,
+  ],
+);
+
+/// The first-generation `qwen-image` / `qwen-image-plus` / `qwen-image-max`
+/// (text-to-image, not the `-edit-` models): the endpoint takes **five fixed
+/// sizes and nothing else**, so this is a closed list and there is no
+/// `not_set` — the dialect's computed default (`dashscopeQwenDefaultSize`)
+/// is not one of the five. Upstream's own default is the 16:9; the square
+/// leads here because every other family in the app defaults to one.
+/// ⚠ From the platform docs' size table (2026-09), not verified with a key;
+/// a wrong guess is a 400, not a silent resize.
+const _dashscopeQwenImageFixed = ModelCapabilities(
+  isImageGenerator: true,
+  maxReferenceImages: 3,
+  longRunning: true,
+  imageRequestShape: ImageRequestShape.dashscopeQwen,
+  imageParams: [
+    ParamSpec(
+      key: 'imageSize',
+      labelKey: 'resolution',
+      control: ParamControl.dropdown,
+      defaultValue: '1328x1328',
+      options: [
+        ParamOption('1328x1328'),
+        ParamOption('1664x928'),
+        ParamOption('928x1664'),
+        ParamOption('1472x1104'),
+        ParamOption('1104x1472'),
       ],
     ),
     _dashscopePromptExtend,
@@ -475,9 +515,11 @@ const _dashscopeQwenImageEdit = ModelCapabilities(
   imageParams: [_dashscopePromptExtend],
 );
 
-/// `wan2.7-image*` on DashScope's native surface — the text-first
-/// content order. Up to 9 reference images (20 MB each) and a `1K`/`2K`
-/// size vocabulary on top of `W*H`.
+/// `wan2.7-image` on DashScope's native surface — the text-first content
+/// order. Up to 9 reference images (20 MB each). The size is a tier keyword
+/// (`1K` / `2K`) or a free `WxH` inside [kDashscopeWanSizeRules]; the `WxH`
+/// presets are upstream's own recommendation table (16:9 / 9:16 / 4:3 / 3:4
+/// at each tier — the keywords themselves render squares).
 ///
 /// `not_set` sends `1K`, not nothing: wan's own omitted default is the 2K
 /// tier at twice the price, the same trap as qwen's. `n` is always sent as
@@ -492,13 +534,67 @@ const _dashscopeWanImage = ModelCapabilities(
     ParamSpec(
       key: 'imageSize',
       labelKey: 'resolution',
-      control: ParamControl.segmented,
+      control: ParamControl.customSize,
       defaultValue: 'not_set',
-      options: [ParamOption('not_set'), ParamOption('1K'), ParamOption('2K')],
+      options: [
+        ParamOption('not_set'),
+        ParamOption('1K'),
+        ParamOption('2K'),
+        ..._dashscopeWan1KSizes,
+        ..._dashscopeWan2KSizes,
+      ],
+      sizeRules: kDashscopeWanSizeRules,
     ),
     _dashscopePromptExtend,
   ],
 );
+
+/// `wan2.7-image-pro`: [_dashscopeWanImage] with the ceiling raised to 4096²
+/// and a `4K` keyword. Upstream documents 4K for text-to-image; whether an
+/// edit accepts it is not stated ⚠ — a refusal there is a 400.
+const _dashscopeWanImagePro = ModelCapabilities(
+  isImageGenerator: true,
+  maxReferenceImages: 9,
+  longRunning: true,
+  supportsAsyncImageTask: true,
+  imageRequestShape: ImageRequestShape.dashscopeWan,
+  imageParams: [
+    ParamSpec(
+      key: 'imageSize',
+      labelKey: 'resolution',
+      control: ParamControl.customSize,
+      defaultValue: 'not_set',
+      options: [
+        ParamOption('not_set'),
+        ParamOption('1K'),
+        ParamOption('2K'),
+        ParamOption('4K'),
+        ..._dashscopeWan1KSizes,
+        ..._dashscopeWan2KSizes,
+        ParamOption('4096x2304'),
+        ParamOption('2304x4096'),
+        ParamOption('4096x3072'),
+        ParamOption('3072x4096'),
+      ],
+      sizeRules: kDashscopeWanProSizeRules,
+    ),
+    _dashscopePromptExtend,
+  ],
+);
+
+const _dashscopeWan1KSizes = [
+  ParamOption('1696x960'),
+  ParamOption('960x1696'),
+  ParamOption('1472x1104'),
+  ParamOption('1104x1472'),
+];
+
+const _dashscopeWan2KSizes = [
+  ParamOption('2688x1536'),
+  ParamOption('1536x2688'),
+  ParamOption('2368x1728'),
+  ParamOption('1728x2368'),
+];
 
 /// Midjourney via midjourney-proxy / NewAPI. MJ-specific parameters are
 /// expressed as `--flag value` tokens appended to the prompt before submit
@@ -602,7 +698,7 @@ const _midjourney = ModelCapabilities(
 
 /// Native OpenAI image v2 (`gpt-image-2`). The size param renders as a
 /// custom picker (preset chips + free WxH input). OpenAI accepts any
-/// dimensions meeting four rules — see [isValidOpenAIImage2Size] — so the
+/// dimensions meeting four rules — see [kOpenAIImage2SizeRules] — so the
 /// preset list below is only quick-pick scaffolding; the dialog enforces
 /// the actual constraints.
 const _openaiImage2 = ModelCapabilities(
@@ -624,7 +720,7 @@ const _openaiImage2 = ModelCapabilities(
         ParamOption('3840x2160'),
         ParamOption('2160x3840'),
       ],
-      customValidator: isValidOpenAIImage2Size,
+      sizeRules: kOpenAIImage2SizeRules,
     ),
     _openaiQualityParam,
   ],
@@ -653,7 +749,7 @@ const _openaiImage25 = ModelCapabilities(
         ParamOption('3840x2160'),
         ParamOption('2160x3840'),
       ],
-      customValidator: isValidOpenAIImage2Size,
+      sizeRules: kOpenAIImage2SizeRules,
     ),
     _openaiQuality25Param,
   ],

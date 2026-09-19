@@ -2357,6 +2357,7 @@
   "imageSizePickerTitle": "画像サイズ",
   "imageSizeAuto": "自動",
   "imageSizeAutoDesc": "モデルにサイズを任せる",
+  "imageSizeDefaultDesc": "既定のサイズ（1K）",
   "imageSizePresets": "プリセット",
   "imageSizeCustom": "カスタム",
   "imageSizeRatio": "比率",
@@ -2366,26 +2367,38 @@
   "imageSizeHeight": "高さ",
   "imageSizeSnapHint": "適用時、両辺は 16 ピクセルの倍数に自動でスナップされます。",
   "sizeRuleMultiple16": "両辺が 16 の倍数",
-  "sizeRuleMaxEdge": "長辺 {long}px ≤ 3840",
+  "sizeRuleMaxEdge": "長辺 {long}px ≤ {max}",
   "@sizeRuleMaxEdge": {
     "placeholders": {
       "long": {
         "type": "int"
+      },
+      "max": {
+        "type": "int"
       }
     }
   },
-  "sizeRuleAspect": "アスペクト比 {ratio} ≤ 3:1",
+  "sizeRuleAspect": "アスペクト比 {ratio} ≤ {max}:1",
   "@sizeRuleAspect": {
     "placeholders": {
       "ratio": {
         "type": "String"
+      },
+      "max": {
+        "type": "String"
       }
     }
   },
-  "sizeRulePixels": "総画素 {mp} は 0.66–8.29 MP の範囲内",
+  "sizeRulePixels": "総画素 {mp} は {min}–{max} MP の範囲内",
   "@sizeRulePixels": {
     "placeholders": {
       "mp": {
+        "type": "String"
+      },
+      "min": {
+        "type": "String"
+      },
+      "max": {
         "type": "String"
       }
     }

@@ -96,6 +96,83 @@ void main() {
     });
   });
 
+  group('per-endpoint rules', () {
+    ParamSpec sizeSpec(String modelId) => ModelCapabilities.forModel(modelId)
+        .imageParams
+        .firstWhere((p) => p.key == 'imageSize');
+
+    test('an endpoint with no edge ceiling has no edge rule to show', () {
+      final keys = kDashscopeQwenSizeRules.check(1024, 1024).map((r) => r.labelKey);
+      expect(keys, isNot(contains('sizeRuleMaxEdge')));
+      expect(kOpenAIImage2SizeRules.check(1024, 1024).map((r) => r.labelKey),
+          contains('sizeRuleMaxEdge'));
+    });
+
+    test('qwen takes the 8:1 strip gpt-image-2 refuses, inside its own area', () {
+      final (w, h) = kDashscopeQwenSizeRules.sizeFor(parseAspectRatio('8:1')!, 2800);
+      expect(kDashscopeQwenSizeRules.passes(w, h), isTrue, reason: '${w}x$h');
+      expect(w / h, closeTo(8, 0.1));
+      expect(isValidOpenAIImage2Size('${w}x$h'), isFalse);
+    });
+
+    test('the calculator lands inside every dialect, whatever was typed', () {
+      for (final rules in [
+        kDashscopeQwenSizeRules,
+        kDashscopeWanSizeRules,
+        kDashscopeWanProSizeRules,
+      ]) {
+        for (final ratio in ['1:1', '4:3', '16:9', '21:9', '8:1', '9:16', '1:8']) {
+          for (final long in [100, 1024, 2048, 4096, 20000]) {
+            final (w, h) = rules.sizeFor(parseAspectRatio(ratio)!, long);
+            expect(rules.passes(w, h), isTrue, reason: '$ratio @ $long → ${w}x$h');
+          }
+        }
+      }
+    });
+
+    test('every pixel preset a table offers is one its own rules accept', () {
+      // A preset the dialog would show with a red rule list — or that the
+      // spec would normalize away the moment it was picked.
+      for (final id in [
+        'gpt-image-2',
+        'qwen-image-3.0',
+        'qwen-image-edit-plus',
+        'wan2.7-image',
+        'wan2.7-image-pro',
+      ]) {
+        final spec = sizeSpec(id);
+        expect(spec.control, ParamControl.customSize, reason: id);
+        for (final o in spec.options) {
+          if (!o.value.contains('x')) continue;
+          expect(spec.sizeRules!.isValidSize(o.value), isTrue, reason: '$id ${o.value}');
+        }
+      }
+    });
+
+    test('4K — keyword and area — is pro only', () {
+      final base = sizeSpec('wan2.7-image');
+      final pro = sizeSpec('wan2.7-image-pro');
+      expect(base.isValid('4K'), isFalse);
+      expect(pro.isValid('4K'), isTrue);
+      expect(base.isValid('4096x2304'), isFalse);
+      expect(pro.isValid('4096x2304'), isTrue);
+      // A size left over from another model falls back rather than travelling.
+      expect(base.normalize('4096x2304'), 'not_set');
+    });
+
+    test('first-generation qwen text-to-image stays a closed list', () {
+      for (final id in ['qwen-image', 'qwen-image-plus', 'qwen-image-max-2026-01-01']) {
+        final spec = sizeSpec(id);
+        expect(spec.control, ParamControl.dropdown, reason: id);
+        expect(spec.sizeRules, isNull);
+        expect(spec.isValid('1024x1024'), isFalse);
+        expect(spec.isValid('not_set'), isFalse);
+      }
+      // The edit models that share the suffix are free-size.
+      expect(sizeSpec('qwen-image-edit-max').control, ParamControl.customSize);
+    });
+  });
+
   group('the picker dialog', () {
     final ParamSpec spec = ModelCapabilities.forModel('gpt-image-2')
         .imageParams
@@ -173,6 +250,41 @@ void main() {
         find.ancestor(of: find.text('Calculate'), matching: find.byType(AppButton)),
       );
       expect(button.onPressed, isNull);
+    });
+    testWidgets('a tier keyword is chosen outright, under the rules of its own model',
+        (tester) async {
+      final wan = ModelCapabilities.forModel('wan2.7-image')
+          .imageParams
+          .firstWhere((p) => p.key == 'imageSize');
+      String? picked;
+      tester.view.physicalSize = const Size(900, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
+        home: Builder(
+          builder: (context) => Center(
+            child: ElevatedButton(
+              onPressed: () async => picked = await showImageSizePickerDialog(
+                  context: context, spec: wan, currentValue: 'not_set'),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      // wan's box, not gpt-image-2's: 8:1, and no edge-ceiling row.
+      expect(find.textContaining('≤ 8:1'), findsOneWidget);
+      expect(find.textContaining('≤ 3840'), findsNothing);
+
+      await tester.tap(find.text('2K'));
+      await tester.pumpAndSettle();
+      expect(picked, '2K');
     });
   });
 }

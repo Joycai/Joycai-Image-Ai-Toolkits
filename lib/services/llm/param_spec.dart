@@ -1,10 +1,12 @@
+import 'image_size_rules.dart';
+
 /// How a parameter should be rendered in the workbench config UI.
 ///
 /// `customSize` is a specialised control for image-size parameters whose set
 /// of legal values isn't enumerable — the spec lists popular presets, but the
 /// dialog also lets the user type any WxH that satisfies the param's
-/// [ParamSpec.customValidator]. Used by gpt-image-2, where OpenAI accepts any
-/// pixel dimensions meeting four numeric constraints.
+/// [ParamSpec.sizeRules]. Used where an endpoint accepts any pixel dimensions
+/// inside a numeric box: gpt-image-2, DashScope's qwen-image and wan2.7-image.
 ///
 /// `slider` is a continuous-range integer control bounded by [ParamSpec.min]
 /// / [ParamSpec.max] rather than a discrete [ParamSpec.options] list. Used by
@@ -33,14 +35,11 @@ class ParamSpec {
   final List<ParamOption> options;
   final String defaultValue;
 
-  /// Optional predicate that accepts user-typed values outside the discrete
-  /// [options] list (e.g. arbitrary WxH for gpt-image-2). When set,
-  /// [isValid] returns true if the value is either a known option *or* the
-  /// validator accepts it.
-  ///
-  /// Must be a pure / `const`-compatible top-level function so this class
-  /// stays `const`-constructible.
-  final bool Function(String value)? customValidator;
+  /// The box a free `WxH` must fit in, for [ParamControl.customSize]. A value
+  /// outside [options] is valid when these accept it; the picker dialog reads
+  /// the same object for its rule list and its ratio calculator, so what the
+  /// dialog allows and what [isValid] keeps cannot drift apart.
+  final ImageSizeRules? sizeRules;
 
   /// Inclusive bounds for [ParamControl.slider]. Unused by every other
   /// control.
@@ -53,7 +52,7 @@ class ParamSpec {
     required this.control,
     required this.options,
     required this.defaultValue,
-    this.customValidator,
+    this.sizeRules,
     this.min,
     this.max,
   });
@@ -77,8 +76,7 @@ class ParamSpec {
       if (n == null) return false;
       return n >= (min ?? 1) && n <= (max ?? 15);
     }
-    final validator = customValidator;
-    return validator != null && validator(value);
+    return sizeRules?.isValidSize(value) ?? false;
   }
 
   /// Returns [value] when it is a valid option for this spec, otherwise the

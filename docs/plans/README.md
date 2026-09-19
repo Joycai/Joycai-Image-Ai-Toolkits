@@ -24,6 +24,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | 文件 | 为什么留着 |
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
+| [`2026-09-image-size-picker-design-prompt.md`](2026-09-image-size-picker-design-prompt.md) | **待出稿**：尺寸选择器（gpt-image-2 / qwen-image / wan2.7 共用）的 Claude Design brief，目标文件 `A1c 尺寸选择器.dc.html`。规则层（`ImageSizeRules`）已落地，对话框只做了最小泛化；稿子回来、UI 重做之后删掉这一行和那份文件 |
 
 ## 已执行（不要重复立项）
 

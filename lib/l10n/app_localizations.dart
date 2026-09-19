@@ -8241,6 +8241,12 @@ abstract class AppLocalizations {
   /// **'Let the model choose the size'**
   String get imageSizeAutoDesc;
 
+  /// No description provided for @imageSizeDefaultDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Default size (1K tier)'**
+  String get imageSizeDefaultDesc;
+
   /// No description provided for @imageSizePresets.
   ///
   /// In en, this message translates to:
@@ -8298,20 +8304,20 @@ abstract class AppLocalizations {
   /// No description provided for @sizeRuleMaxEdge.
   ///
   /// In en, this message translates to:
-  /// **'Longest edge {long} px ≤ 3840'**
-  String sizeRuleMaxEdge(int long);
+  /// **'Longest edge {long} px ≤ {max}'**
+  String sizeRuleMaxEdge(int long, int max);
 
   /// No description provided for @sizeRuleAspect.
   ///
   /// In en, this message translates to:
-  /// **'Aspect ratio {ratio} ≤ 3:1'**
-  String sizeRuleAspect(String ratio);
+  /// **'Aspect ratio {ratio} ≤ {max}:1'**
+  String sizeRuleAspect(String ratio, String max);
 
   /// No description provided for @sizeRulePixels.
   ///
   /// In en, this message translates to:
-  /// **'Total {mp} within 0.66–8.29 MP'**
-  String sizeRulePixels(String mp);
+  /// **'Total {mp} within {min}–{max} MP'**
+  String sizeRulePixels(String mp, String min, String max);
 
   /// No description provided for @safetySettings.
   ///

@@ -4596,6 +4596,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get imageSizeAutoDesc => 'モデルにサイズを任せる';
 
   @override
+  String get imageSizeDefaultDesc => '既定のサイズ（1K）';
+
+  @override
   String get imageSizePresets => 'プリセット';
 
   @override
@@ -4623,18 +4626,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sizeRuleMultiple16 => '両辺が 16 の倍数';
 
   @override
-  String sizeRuleMaxEdge(int long) {
-    return '長辺 ${long}px ≤ 3840';
+  String sizeRuleMaxEdge(int long, int max) {
+    return '長辺 ${long}px ≤ $max';
   }
 
   @override
-  String sizeRuleAspect(String ratio) {
-    return 'アスペクト比 $ratio ≤ 3:1';
+  String sizeRuleAspect(String ratio, String max) {
+    return 'アスペクト比 $ratio ≤ $max:1';
   }
 
   @override
-  String sizeRulePixels(String mp) {
-    return '総画素 $mp は 0.66–8.29 MP の範囲内';
+  String sizeRulePixels(String mp, String min, String max) {
+    return '総画素 $mp は $min–$max MP の範囲内';
   }
 
   @override

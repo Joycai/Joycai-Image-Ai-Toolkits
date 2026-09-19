@@ -4772,6 +4772,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageSizeAutoDesc => 'Let the model choose the size';
 
   @override
+  String get imageSizeDefaultDesc => 'Default size (1K tier)';
+
+  @override
   String get imageSizePresets => 'Presets';
 
   @override
@@ -4800,18 +4803,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sizeRuleMultiple16 => 'Both edges are multiples of 16';
 
   @override
-  String sizeRuleMaxEdge(int long) {
-    return 'Longest edge $long px ≤ 3840';
+  String sizeRuleMaxEdge(int long, int max) {
+    return 'Longest edge $long px ≤ $max';
   }
 
   @override
-  String sizeRuleAspect(String ratio) {
-    return 'Aspect ratio $ratio ≤ 3:1';
+  String sizeRuleAspect(String ratio, String max) {
+    return 'Aspect ratio $ratio ≤ $max:1';
   }
 
   @override
-  String sizeRulePixels(String mp) {
-    return 'Total $mp within 0.66–8.29 MP';
+  String sizeRulePixels(String mp, String min, String max) {
+    return 'Total $mp within $min–$max MP';
   }
 
   @override

@@ -4547,6 +4547,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageSizeAutoDesc => '由模型自行决定尺寸';
 
   @override
+  String get imageSizeDefaultDesc => '默认尺寸（1K 档）';
+
+  @override
   String get imageSizePresets => '预设';
 
   @override
@@ -4574,18 +4577,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sizeRuleMultiple16 => '两边均为 16 的整数倍';
 
   @override
-  String sizeRuleMaxEdge(int long) {
-    return '长边 ${long}px ≤ 3840';
+  String sizeRuleMaxEdge(int long, int max) {
+    return '长边 ${long}px ≤ $max';
   }
 
   @override
-  String sizeRuleAspect(String ratio) {
-    return '长宽比 $ratio ≤ 3:1';
+  String sizeRuleAspect(String ratio, String max) {
+    return '长宽比 $ratio ≤ $max:1';
   }
 
   @override
-  String sizeRulePixels(String mp) {
-    return '总像素 $mp 在 0.66–8.29 MP 之间';
+  String sizeRulePixels(String mp, String min, String max) {
+    return '总像素 $mp 在 $min–$max MP 之间';
   }
 
   @override
@@ -9885,6 +9888,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get imageSizeAutoDesc => '由模型自行決定尺寸';
 
   @override
+  String get imageSizeDefaultDesc => '預設尺寸（1K 檔）';
+
+  @override
   String get imageSizePresets => '預設';
 
   @override
@@ -9912,18 +9918,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get sizeRuleMultiple16 => '兩邊均為 16 的整數倍';
 
   @override
-  String sizeRuleMaxEdge(int long) {
-    return '長邊 ${long}px ≤ 3840';
+  String sizeRuleMaxEdge(int long, int max) {
+    return '長邊 ${long}px ≤ $max';
   }
 
   @override
-  String sizeRuleAspect(String ratio) {
-    return '長寬比 $ratio ≤ 3:1';
+  String sizeRuleAspect(String ratio, String max) {
+    return '長寬比 $ratio ≤ $max:1';
   }
 
   @override
-  String sizeRulePixels(String mp) {
-    return '總像素 $mp 落在 0.66–8.29 MP 區間';
+  String sizeRulePixels(String mp, String min, String max) {
+    return '總像素 $mp 落在 $min–$max MP 區間';
   }
 
   @override

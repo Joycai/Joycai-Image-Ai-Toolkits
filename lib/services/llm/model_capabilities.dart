@@ -132,6 +132,8 @@ class ModelCapabilities {
     _minimaxVideo,
     _minimaxH3Base,
     _dashscopeWanImage,
+    _dashscopeWanImagePro,
+    _dashscopeQwenImageFixed,
     _dashscopeQwenImageEdit,
     _dashscopeQwenImage,
     _seedream50Pro,
@@ -201,13 +203,24 @@ class ModelCapabilities {
     }
 
     // DashScope's two shapes (see [ImageRequestShape]) also differ in their
-    // reference-image ceiling and size vocabulary, so they are two tables —
-    // three, counting the basic `qwen-image-edit`, which alone in its family
-    // takes no `size` at all (docs/api/qianwen-bailian.md §4.1: "不支持
-    // size", 400 on receiving one). `-max` / `-plus` and the dated builds of
-    // those are ordinary qwen-image models and keep the shared table.
+    // reference-image ceiling and size vocabulary, so they are separate
+    // tables: wan and wan-pro (pro's area ceiling is 4096², not 2048²); the
+    // first-generation qwen text-to-image models, which take five fixed
+    // sizes; the basic `qwen-image-edit`, which alone in its family takes no
+    // `size` at all (docs/api/qianwen-bailian.md §4.1: "不支持 size", 400 on
+    // receiving one); and everything else — `qwen-image-2.0*` / `-3.0*`,
+    // `qwen-image-edit-max` / `-plus` and their dated builds — on the shared
+    // free-size table.
     if (family == ModelFamily.dashscopeImage) {
-      if (id.startsWith('wan')) return _dashscopeWanImage;
+      if (id.startsWith('wan')) {
+        return id.contains('-pro') ? _dashscopeWanImagePro : _dashscopeWanImage;
+      }
+      // First-generation text-to-image: five fixed sizes, no free `WxH`.
+      if (id == 'qwen-image' ||
+          id.startsWith('qwen-image-plus') ||
+          id.startsWith('qwen-image-max')) {
+        return _dashscopeQwenImageFixed;
+      }
       if (id.startsWith('qwen-image-edit') &&
           !id.contains('-max') &&
           !id.contains('-plus')) {
