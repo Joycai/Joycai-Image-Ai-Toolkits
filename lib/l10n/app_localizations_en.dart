@@ -4796,11 +4796,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageSizeHeight => 'Height';
 
   @override
-  String get imageSizeSnapHint =>
-      'Both edges snap to multiples of 16 px on commit.';
+  String imageSizeSnapHint(int step) {
+    return 'Both edges snap to multiples of $step px on commit.';
+  }
 
   @override
-  String get sizeRuleMultiple16 => 'Both edges are multiples of 16';
+  String sizeRuleEdgeGrid(int step) {
+    return 'Both edges are multiples of $step';
+  }
+
+  @override
+  String sizeRuleMinEdge(int short, int min) {
+    return 'Shortest edge $short px ≥ $min';
+  }
 
   @override
   String sizeRuleMaxEdge(int long, int max) {

@@ -83,7 +83,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
       imageRefs: imageRefs,
       options: options,
       inputSize: inputSize,
-      sendsSize: dashscopeModelTakesSize(target),
+      sizeSpec: dashscopeSizeSpec(target),
     );
 
     logger?.call(

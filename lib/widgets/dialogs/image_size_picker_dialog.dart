@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/llm/image_size_rules.dart';
+import '../../services/llm/output_spec.dart' show parseWxH;
 import '../../services/llm/param_spec.dart';
 import '../ui/app_button.dart';
 import '../ui/app_dialog.dart';
@@ -49,6 +50,13 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
   int? _width;
   int? _height;
 
+  /// Whether the editor holds a size the user put there — typed, picked from
+  /// a preset or computed. When the dialog opens on a keyword (`2K`, or the
+  /// `auto` / `not_set` sentinel) the editor shows a placeholder 1024×1024,
+  /// and applying that unedited would silently swap the keyword for a size
+  /// nobody chose; so Apply waits for an edit.
+  bool _edited = false;
+
   @override
   void initState() {
     super.initState();
@@ -86,9 +94,10 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
     _longEdgeCtrl.text = (w > h ? w : h).toString();
   }
 
-  /// The box a typed size must fit in. Every `customSize` spec declares one;
-  /// the fallback only keeps a spec that forgot to from crashing the dialog.
-  ImageSizeRules get _rules => widget.spec.sizeRules ?? kOpenAIImage2SizeRules;
+  /// The box a typed size must fit in. Every `customSize` spec declares one
+  /// (pinned by a test): a fallback here would let the dialog accept sizes
+  /// that `ParamSpec.isValid` then throws away.
+  ImageSizeRules get _rules => widget.spec.sizeRules!;
 
   AspectRatioSpec? get _ratioSpec => parseAspectRatio(_ratioCtrl.text);
 
@@ -109,24 +118,16 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
     _longEdgeCtrl.text = (w > h ? w : h).toString();
   }
 
-  /// Snap to the nearest multiple of 16, clamped to a sensible range so the
-  /// user can't punch in numbers like 6 that round to zero.
-  int _snap(int raw) {
-    final step = _rules.edgeStep;
-    final clamped = raw.clamp(step, _rules.longEdgeCeiling);
-    return ((clamped + step ~/ 2) ~/ step) * step;
-  }
-
   (int, int)? _parseSize(String value) {
-    final m = RegExp(r'^(\d+)x(\d+)$').firstMatch(value);
-    if (m == null) return null;
-    return (int.parse(m.group(1)!), int.parse(m.group(2)!));
+    final wxh = parseWxH(value);
+    return wxh == null ? null : (wxh.width, wxh.height);
   }
 
   void _setSize(int w, int h) {
     setState(() {
       _width = w;
       _height = h;
+      _edited = true;
     });
     _widthCtrl.text = w.toString();
     _heightCtrl.text = h.toString();
@@ -137,20 +138,26 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
 
   void _onWidthChanged(String text) {
     final n = int.tryParse(text);
-    setState(() => _width = n);
+    setState(() {
+      _width = n;
+      _edited = true;
+    });
   }
 
   void _onHeightChanged(String text) {
     final n = int.tryParse(text);
-    setState(() => _height = n);
+    setState(() {
+      _height = n;
+      _edited = true;
+    });
   }
 
   void _commitSnap() {
     final w = _width;
     final h = _height;
     if (w == null || h == null) return;
-    final sw = _snap(w);
-    final sh = _snap(h);
+    final sw = _rules.snapEdge(w);
+    final sh = _rules.snapEdge(h);
     if (sw != w || sh != h) _setSize(sw, sh);
   }
 
@@ -160,6 +167,9 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
     if (w == null || h == null) return false;
     return _rules.passes(w, h);
   }
+
+  bool get _canApply =>
+      _customValid && (_edited || _parseSize(widget.currentValue) != null);
 
   @override
   Widget build(BuildContext context) {
@@ -189,8 +199,7 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
               _SectionHeader(label: l10n.imageSizeAuto),
               const SizedBox(height: 6),
               _AutoCard(
-                selected: widget.currentValue == sentinel &&
-                    _width.toString() == '1024' && _height.toString() == '1024',
+                selected: widget.currentValue == sentinel && !_edited,
                 onTap: () => Navigator.of(context).pop(sentinel),
                 label: sentinel == 'auto' ? l10n.imageSizeAutoDesc : l10n.imageSizeDefaultDesc,
               ),
@@ -306,7 +315,7 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
             ),
             const SizedBox(height: 6),
             Text(
-              l10n.imageSizeSnapHint,
+              l10n.imageSizeSnapHint(_rules.edgeStep),
               style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
             ),
             if (rules.isNotEmpty) ...[
@@ -333,7 +342,7 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
         ),
         AppButton(
           label: l10n.apply,
-          onPressed: _customValid ? () => Navigator.of(context).pop('${_width}x$_height') : null,
+          onPressed: _canApply ? () => Navigator.of(context).pop('${_width}x$_height') : null,
         ),
       ],
     );
@@ -343,19 +352,18 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
     final long = w > h ? w : h;
     final short = w > h ? h : w;
     switch (key) {
-      case 'sizeRuleMultiple16':
-        return l10n.sizeRuleMultiple16;
+      case 'sizeRuleEdgeGrid':
+        return l10n.sizeRuleEdgeGrid(_rules.edgeStep);
+      case 'sizeRuleMinEdge':
+        return l10n.sizeRuleMinEdge(short, _rules.minEdge!);
       case 'sizeRuleMaxEdge':
-        return l10n.sizeRuleMaxEdge(long, _rules.maxEdge ?? _rules.longEdgeCeiling);
+        return l10n.sizeRuleMaxEdge(long, _rules.maxEdge!);
       case 'sizeRuleAspect':
         final ratio = short > 0 ? (long / short).toStringAsFixed(2) : '∞';
         return l10n.sizeRuleAspect(ratio, _formatLimit(_rules.maxRatio));
       case 'sizeRulePixels':
-        return l10n.sizeRulePixels(
-          _formatMegapixels(w * h),
-          (_rules.minPixels / 1000000).toStringAsFixed(2),
-          (_rules.maxPixels / 1000000).toStringAsFixed(2),
-        );
+        final shown = formatPixelRange(w * h, _rules.minPixels, _rules.maxPixels);
+        return l10n.sizeRulePixels('${shown.value} MP', shown.min, shown.max);
       default:
         return key;
     }
@@ -365,10 +373,6 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
   String _formatLimit(double v) =>
       v == v.roundToDouble() ? v.round().toString() : v.toString();
 
-  String _formatMegapixels(int pixels) {
-    final mp = pixels / 1000000;
-    return '${mp.toStringAsFixed(2)} MP';
-  }
 }
 
 class _SectionHeader extends StatelessWidget {

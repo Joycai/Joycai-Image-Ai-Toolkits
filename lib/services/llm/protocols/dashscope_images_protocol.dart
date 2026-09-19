@@ -79,7 +79,7 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
       imageRefs: imageRefs,
       options: options,
       inputSize: inputSize,
-      sendsSize: dashscopeModelTakesSize(target),
+      sizeSpec: dashscopeSizeSpec(target),
     );
 
     final client = config.createClient();

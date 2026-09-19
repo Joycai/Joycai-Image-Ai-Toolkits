@@ -4571,10 +4571,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageSizeHeight => '高度';
 
   @override
-  String get imageSizeSnapHint => '两边在提交时会自动对齐到 16 像素的整数倍。';
+  String imageSizeSnapHint(int step) {
+    return '两边在提交时会自动对齐到 $step 像素的整数倍。';
+  }
 
   @override
-  String get sizeRuleMultiple16 => '两边均为 16 的整数倍';
+  String sizeRuleEdgeGrid(int step) {
+    return '两边均为 $step 的整数倍';
+  }
+
+  @override
+  String sizeRuleMinEdge(int short, int min) {
+    return '短边 ${short}px ≥ $min';
+  }
 
   @override
   String sizeRuleMaxEdge(int long, int max) {
@@ -9912,10 +9921,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get imageSizeHeight => '高度';
 
   @override
-  String get imageSizeSnapHint => '兩邊在套用時會自動對齊到 16 像素的整數倍。';
+  String imageSizeSnapHint(int step) {
+    return '兩邊在套用時會自動對齊到 $step 像素的整數倍。';
+  }
 
   @override
-  String get sizeRuleMultiple16 => '兩邊均為 16 的整數倍';
+  String sizeRuleEdgeGrid(int step) {
+    return '兩邊均為 $step 的整數倍';
+  }
+
+  @override
+  String sizeRuleMinEdge(int short, int min) {
+    return '短邊 ${short}px ≥ $min';
+  }
 
   @override
   String sizeRuleMaxEdge(int long, int max) {

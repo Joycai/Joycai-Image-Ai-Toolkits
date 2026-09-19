@@ -2498,8 +2498,33 @@
   "imageSizeCompute": "计算",
   "imageSizeWidth": "宽度",
   "imageSizeHeight": "高度",
-  "imageSizeSnapHint": "两边在提交时会自动对齐到 16 像素的整数倍。",
-  "sizeRuleMultiple16": "两边均为 16 的整数倍",
+  "imageSizeSnapHint": "两边在提交时会自动对齐到 {step} 像素的整数倍。",
+  "@imageSizeSnapHint": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
+  },
+  "sizeRuleEdgeGrid": "两边均为 {step} 的整数倍",
+  "@sizeRuleEdgeGrid": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
+  },
+  "sizeRuleMinEdge": "短边 {short}px ≥ {min}",
+  "@sizeRuleMinEdge": {
+    "placeholders": {
+      "short": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
   "sizeRuleMaxEdge": "长边 {long}px ≤ {max}",
   "@sizeRuleMaxEdge": {
     "placeholders": {

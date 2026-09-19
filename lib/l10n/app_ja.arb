@@ -2365,8 +2365,33 @@
   "imageSizeCompute": "計算",
   "imageSizeWidth": "幅",
   "imageSizeHeight": "高さ",
-  "imageSizeSnapHint": "適用時、両辺は 16 ピクセルの倍数に自動でスナップされます。",
-  "sizeRuleMultiple16": "両辺が 16 の倍数",
+  "imageSizeSnapHint": "適用時、両辺は {step} ピクセルの倍数に自動でスナップされます。",
+  "@imageSizeSnapHint": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
+  },
+  "sizeRuleEdgeGrid": "両辺が {step} の倍数",
+  "@sizeRuleEdgeGrid": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
+  },
+  "sizeRuleMinEdge": "短辺 {short}px ≥ {min}",
+  "@sizeRuleMinEdge": {
+    "placeholders": {
+      "short": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
   "sizeRuleMaxEdge": "長辺 {long}px ≤ {max}",
   "@sizeRuleMaxEdge": {
     "placeholders": {

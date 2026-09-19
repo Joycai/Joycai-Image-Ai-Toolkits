@@ -8292,14 +8292,20 @@ abstract class AppLocalizations {
   /// No description provided for @imageSizeSnapHint.
   ///
   /// In en, this message translates to:
-  /// **'Both edges snap to multiples of 16 px on commit.'**
-  String get imageSizeSnapHint;
+  /// **'Both edges snap to multiples of {step} px on commit.'**
+  String imageSizeSnapHint(int step);
 
-  /// No description provided for @sizeRuleMultiple16.
+  /// No description provided for @sizeRuleEdgeGrid.
   ///
   /// In en, this message translates to:
-  /// **'Both edges are multiples of 16'**
-  String get sizeRuleMultiple16;
+  /// **'Both edges are multiples of {step}'**
+  String sizeRuleEdgeGrid(int step);
+
+  /// No description provided for @sizeRuleMinEdge.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortest edge {short} px ≥ {min}'**
+  String sizeRuleMinEdge(int short, int min);
 
   /// No description provided for @sizeRuleMaxEdge.
   ///

@@ -4620,10 +4620,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get imageSizeHeight => '高さ';
 
   @override
-  String get imageSizeSnapHint => '適用時、両辺は 16 ピクセルの倍数に自動でスナップされます。';
+  String imageSizeSnapHint(int step) {
+    return '適用時、両辺は $step ピクセルの倍数に自動でスナップされます。';
+  }
 
   @override
-  String get sizeRuleMultiple16 => '両辺が 16 の倍数';
+  String sizeRuleEdgeGrid(int step) {
+    return '両辺が $step の倍数';
+  }
+
+  @override
+  String sizeRuleMinEdge(int short, int min) {
+    return '短辺 ${short}px ≥ $min';
+  }
 
   @override
   String sizeRuleMaxEdge(int long, int max) {

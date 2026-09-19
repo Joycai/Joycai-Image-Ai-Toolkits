@@ -459,8 +459,33 @@
   "imageSizeCompute": "Calculate",
   "imageSizeWidth": "Width",
   "imageSizeHeight": "Height",
-  "imageSizeSnapHint": "Both edges snap to multiples of 16 px on commit.",
-  "sizeRuleMultiple16": "Both edges are multiples of 16",
+  "imageSizeSnapHint": "Both edges snap to multiples of {step} px on commit.",
+  "@imageSizeSnapHint": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
+  },
+  "sizeRuleEdgeGrid": "Both edges are multiples of {step}",
+  "@sizeRuleEdgeGrid": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
+  },
+  "sizeRuleMinEdge": "Shortest edge {short} px ≥ {min}",
+  "@sizeRuleMinEdge": {
+    "placeholders": {
+      "short": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
   "sizeRuleMaxEdge": "Longest edge {long} px ≤ {max}",
   "@sizeRuleMaxEdge": {
     "placeholders": {

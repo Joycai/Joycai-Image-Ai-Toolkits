@@ -55,6 +55,57 @@ void main() {
     test('an empty table matches nothing', () {
       expect(matchSpecRate(const [], OutputSpec.none).matched, isFalse);
     });
+
+    group('a tier row prices the pixel sizes in its tier', () {
+      // qwen-image, wan2.7-image and Seedream take free sizes, bill by tier
+      // and echo the pixels they rendered: a table written in tiers has to
+      // land on those pixels, or every free size is recorded as free.
+      const wan = [
+        SpecRate(size: '1K', price: 0.20),
+        SpecRate(size: '2K', price: 0.40),
+        SpecRate(size: '4K', price: 0.80),
+      ];
+      double priceOf(List<SpecRate> rates, String size) =>
+          matchSpecRate(rates, OutputSpec(size: size)).price;
+
+      test("upstream's recommended sizes land on the tier they are listed under", () {
+        for (final size in ['1024x1024', '1280x1280', '1696x960', '960x1696', '1472x1104']) {
+          expect(priceOf(wan, size), 0.20, reason: size);
+        }
+        for (final size in ['2048x2048', '2688x1536', '1536x2688', '2368x1728']) {
+          expect(priceOf(wan, size), 0.40, reason: size);
+        }
+        for (final size in ['4096x4096', '4096x2304', '3072x4096']) {
+          expect(priceOf(wan, size), 0.80, reason: size);
+        }
+      });
+
+      test('only the tiers the table prices compete', () {
+        const halves = [
+          SpecRate(size: '1K', price: 0.20),
+          SpecRate(size: '1.5K', price: 0.30),
+          SpecRate(size: '2K', price: 0.40),
+        ];
+        // 1536² is the 1.5K tier's own area.
+        expect(priceOf(halves, '1536x1536'), 0.30);
+        expect(priceOf(wan, '1536x1536'), 0.40, reason: 'nearer 2K than 1K');
+      });
+
+      test('an exact pixel row beats the tier at the same specificity', () {
+        const both = [
+          SpecRate(size: '1K', price: 0.20),
+          SpecRate(size: '1696x960', price: 0.25),
+        ];
+        expect(priceOf(both, '1696x960'), 0.25);
+        expect(priceOf(both, '1024x1024'), 0.20);
+      });
+
+      test('a tier never prices a non-pixel spec, and a table without tiers is exact', () {
+        expect(priceOf(wan, '720p'), 0.0);
+        expect(matchSpecRate(veo, const OutputSpec(size: '1920x1080')).price, 0.10,
+            reason: 'no tier rows: the catch-all');
+      });
+    });
   });
 
   group('SpecUsage.price', () {

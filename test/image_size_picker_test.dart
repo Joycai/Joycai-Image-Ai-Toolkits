@@ -4,6 +4,9 @@ import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/image_size_rules.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendor_profile.dart' show WireProtocol;
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dialogs/image_size_picker_dialog.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
@@ -50,9 +53,9 @@ void main() {
     });
   });
 
-  group('sizeForAspectRatio', () {
+  group('sizeFor (gpt-image-2)', () {
     (int, int) compute(String ratio, int longEdge) =>
-        sizeForAspectRatio(parseAspectRatio(ratio)!, longEdge);
+        kOpenAIImage2SizeRules.sizeFor(parseAspectRatio(ratio)!, longEdge);
 
     test('hits the exact size when the ratio divides cleanly', () {
       expect(compute('16:9', 3840), (3840, 2160));
@@ -81,7 +84,7 @@ void main() {
       for (final ratio in ['1:1', '4:3', '3:2', '16:9', '21:9', '3:1', '9:16', '2:3']) {
         for (final long in [200, 1024, 1500, 2048, 3000, 3830, 3840]) {
           final (w, h) = compute(ratio, long);
-          expect(isValidOpenAIImage2Size('${w}x$h'), isTrue,
+          expect(kOpenAIImage2SizeRules.isValidSize('${w}x$h'), isTrue,
               reason: '$ratio @ $long → ${w}x$h');
         }
       }
@@ -92,7 +95,7 @@ void main() {
       // rule rather than the button appearing to do nothing.
       final (w, h) = compute('4:1', 2048);
       expect(w / h, closeTo(4, 0.05));
-      expect(isValidOpenAIImage2Size('${w}x$h'), isFalse);
+      expect(kOpenAIImage2SizeRules.isValidSize('${w}x$h'), isFalse);
     });
   });
 
@@ -112,7 +115,7 @@ void main() {
       final (w, h) = kDashscopeQwenSizeRules.sizeFor(parseAspectRatio('8:1')!, 2800);
       expect(kDashscopeQwenSizeRules.passes(w, h), isTrue, reason: '${w}x$h');
       expect(w / h, closeTo(8, 0.1));
-      expect(isValidOpenAIImage2Size('${w}x$h'), isFalse);
+      expect(kOpenAIImage2SizeRules.isValidSize('${w}x$h'), isFalse);
     });
 
     test('the calculator lands inside every dialect, whatever was typed', () {
@@ -170,6 +173,86 @@ void main() {
       }
       // The edit models that share the suffix are free-size.
       expect(sizeSpec('qwen-image-edit-max').control, ParamControl.customSize);
+    });
+
+    test('first-generation qwen text-to-image takes no reference images', () {
+      for (final id in ['qwen-image', 'qwen-image-plus', 'qwen-image-max']) {
+        expect(ModelCapabilities.forModel(id).supportsReferenceImages, isFalse, reason: id);
+      }
+      expect(ModelCapabilities.forModel('qwen-image-edit-max').maxReferenceImages, 3);
+    });
+
+    test('edit-max / plus bound each edge, not only the area', () {
+      // The docs: "宽度和高度的取值范围为 512 至 2048 像素". Area rules alone let
+      // 4096x512 (an edge twice the ceiling) and 1024x256 through.
+      final spec = sizeSpec('qwen-image-edit-plus');
+      expect(spec.sizeRules, kDashscopeQwenEditSizeRules);
+      for (final bad in ['4096x512', '1024x256', '2064x1024']) {
+        expect(spec.isValid(bad), isFalse, reason: bad);
+      }
+      expect(kDashscopeQwenSizeRules.isValidSize('4096x512'), isTrue,
+          reason: 'what the shared area rules used to let through');
+      expect(spec.isValid('2048x512'), isTrue);
+      // The calculator stays inside the edges too.
+      final (w, h) = kDashscopeQwenEditSizeRules.sizeFor(parseAspectRatio('4:1')!, 4096);
+      expect(kDashscopeQwenEditSizeRules.passes(w, h), isTrue, reason: '${w}x$h');
+    });
+
+    test('an unidentified DashScope model gets the box every family accepts', () {
+      final spec = ModelCapabilities.forProtocol(WireProtocol.dashscopeImagesSync)
+          .imageParams
+          .firstWhere((p) => p.key == 'imageSize');
+      expect(spec.sizeRules, kDashscopeCommonSizeRules);
+      for (final o in spec.options) {
+        final wxh = parseWxH(o.value);
+        if (wxh == null) continue;
+        for (final rules in [
+          kDashscopeQwenSizeRules,
+          kDashscopeQwenEditSizeRules,
+          kDashscopeWanSizeRules,
+          kDashscopeWanProSizeRules,
+        ]) {
+          expect(rules.passes(wxh.width, wxh.height), isTrue, reason: o.value);
+        }
+      }
+    });
+
+    test('every customSize spec declares its rules', () {
+      // The dialog reads them unconditionally; a spec without them would
+      // accept sizes in the dialog that ParamSpec.isValid then discards.
+      final tables = [
+        ...ModelCapabilities.idRoutedTables,
+        for (final f in ModelFamily.values) ModelCapabilities.forFamily(f),
+        for (final p in WireProtocol.values) ModelCapabilities.forProtocol(p),
+      ];
+      for (final t in tables) {
+        for (final p in [...t.imageParams, ...t.videoParams]) {
+          if (p.control == ParamControl.customSize) {
+            expect(p.sizeRules, isNotNull, reason: p.key);
+          }
+        }
+      }
+    });
+
+    test('any spelling of a size is a size; an absurd edge is not', () {
+      expect(kDashscopeQwenSizeRules.isValidSize('1536*1024'), isTrue);
+      expect(kDashscopeQwenSizeRules.isValidSize('1536 X 1024'), isTrue);
+      // Big enough that the int area product would wrap.
+      expect(kDashscopeQwenSizeRules.isValidSize('4294967296x4294967296'), isFalse);
+    });
+
+    test('the pixel row never contradicts its verdict', () {
+      const floor = 768 * 768, ceiling = 2048 * 2048;
+      // Just under the floor, just over the ceiling, and both bounds exactly.
+      expect(formatPixelRange(589568, floor, ceiling),
+          (value: '0.58', min: '0.59', max: '4.19'));
+      expect(formatPixelRange(4227072, floor, ceiling).value, '4.23');
+      expect(formatPixelRange(4194305, floor, ceiling).value, '4.20');
+      expect(formatPixelRange(floor, floor, ceiling).value, '0.59');
+      expect(formatPixelRange(ceiling, floor, ceiling).value, '4.19');
+      // gpt-image-2's floor rounds up past a passing value: it is held inside.
+      expect(formatPixelRange(655360, 655360, 8294400),
+          (value: '0.66', min: '0.66', max: '8.29'));
     });
   });
 
@@ -251,11 +334,16 @@ void main() {
       );
       expect(button.onPressed, isNull);
     });
-    testWidgets('a tier keyword is chosen outright, under the rules of its own model',
-        (tester) async {
-      final wan = ModelCapabilities.forModel('wan2.7-image')
-          .imageParams
-          .firstWhere((p) => p.key == 'imageSize');
+  });
+
+  group('the picker dialog, per model', () {
+    ParamSpec sizeSpec(String modelId) => ModelCapabilities.forModel(modelId)
+        .imageParams
+        .firstWhere((p) => p.key == 'imageSize');
+
+    /// Opens the dialog on [current]; the returned getter reads what it
+    /// popped (null until it closes, or on cancel).
+    Future<String? Function()> open(WidgetTester tester, ParamSpec spec, String current) async {
       String? picked;
       tester.view.physicalSize = const Size(900, 1600);
       tester.view.devicePixelRatio = 1.0;
@@ -269,7 +357,7 @@ void main() {
           builder: (context) => Center(
             child: ElevatedButton(
               onPressed: () async => picked = await showImageSizePickerDialog(
-                  context: context, spec: wan, currentValue: 'not_set'),
+                  context: context, spec: spec, currentValue: current),
               child: const Text('Open'),
             ),
           ),
@@ -277,6 +365,16 @@ void main() {
       ));
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
+      return () => picked;
+    }
+
+    AppButton apply(WidgetTester tester) => tester.widget<AppButton>(
+          find.ancestor(of: find.text('Apply'), matching: find.byType(AppButton)),
+        );
+
+    testWidgets('a tier keyword is chosen outright, under the rules of its own model',
+        (tester) async {
+      final picked = await open(tester, sizeSpec('wan2.7-image'), 'not_set');
 
       // wan's box, not gpt-image-2's: 8:1, and no edge-ceiling row.
       expect(find.textContaining('≤ 8:1'), findsOneWidget);
@@ -284,7 +382,42 @@ void main() {
 
       await tester.tap(find.text('2K'));
       await tester.pumpAndSettle();
-      expect(picked, '2K');
+      expect(picked(), '2K');
+    });
+
+    testWidgets('opened on a keyword, Apply waits for an edit', (tester) async {
+      // The editor shows a placeholder 1024x1024; applying it unedited would
+      // swap the 4K tier for a 1K square nobody chose.
+      final picked = await open(tester, sizeSpec('wan2.7-image-pro'), '4K');
+      expect(apply(tester).onPressed, isNull);
+
+      await tester.enterText(find.byType(TextField).at(2), '2048');
+      await tester.pumpAndSettle();
+      expect(apply(tester).onPressed, isNotNull);
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(picked(), '2048x1024');
+    });
+
+    testWidgets('opened on a size, Apply keeps it', (tester) async {
+      final picked = await open(tester, sizeSpec('wan2.7-image'), '1696x960');
+      expect(apply(tester).onPressed, isNotNull);
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(picked(), '1696x960');
+    });
+
+    testWidgets('a size just under the floor does not read as inside it', (tester) async {
+      // 784x752 = 589 568 px, 256 under wan's 768² floor. Plain rounding drew
+      // "0.59 within 0.59–4.19" on a red row.
+      await open(tester, sizeSpec('wan2.7-image'), '784x752');
+      expect(find.textContaining('0.58 MP within 0.59–4.19'), findsOneWidget);
+    });
+
+    testWidgets('edit-max / plus show their per-edge bounds', (tester) async {
+      await open(tester, sizeSpec('qwen-image-edit-plus'), '1024x1024');
+      expect(find.textContaining('≥ 512'), findsOneWidget);
+      expect(find.textContaining('≤ 2048'), findsOneWidget);
     });
   });
 }

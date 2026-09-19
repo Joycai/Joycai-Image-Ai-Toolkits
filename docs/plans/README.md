@@ -98,6 +98,9 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | 条 | 要验什么 | 怎么看 | 为什么静默 |
 |---|---|---|---|
 | #9 | wan2.7 收不收 `prompt_extend` | 发 `prompt_extend:false` | 可能被忽略 |
+| 尺寸 1 | 初代 `qwen-image` / `-plus` / `-max` 只收五个固定尺寸（`1328*1328` 等） | 发一个自由 `宽*高`，看是否 400 | 会响；但若其实收自由尺寸，这几个模型的下拉就是白白收窄了 |
+| 尺寸 2 | `wan2.7-image-pro` 改图收不收 `4K` | 带参考图发 `size:"4K"` | 会响（400），或静默降档出图而按 4K 计费 |
+| 尺寸 3 | 计费档位按面积就近归档（`spec_billing.dart` `_tierOf`）与百炼实际计价是否一致 | 对照账单：1696×960 是否按 1K 计、1536×1536 按哪档 | **不响**：归错档只会记错钱 |
 | 片 4 | 官方 ④ `adaptive` 是否真的开出思考 | 响应 `content` 有无非空 `thinking` block | **配置不合法时静默关闭** |
 | 片 5 | `pause_turn` 续跑；MiniMax `end_turn` 停在结果块 | 第二次请求是否 200、模型是否接着写 | MiniMax 变体无任何字段说明 |
 | 片 9 | DeepSeek 官方 `thinking:{type:disabled}` 是否关掉 | 响应 `reasoning_content` 是否为空 | 不报错 |

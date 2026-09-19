@@ -422,20 +422,17 @@ const _dashscopePromptExtend = ParamSpec(
   options: [ParamOption('not_set'), ParamOption('on'), ParamOption('off')],
 );
 
-/// `qwen-image*` on DashScope's native surface — the `input.messages`
-/// shape. Up to 3 reference images (10 MB each); sizes are `WxH` with the
-/// total area in 512²–2048², normalized to DashScope's `W*H` spelling on
-/// the wire.
+/// `qwen-image-2.0*` / `-3.0*` on DashScope's native surface — the
+/// `input.messages` shape. Up to 3 reference images (10 MB each). The size
+/// is a free `WxH` inside [kDashscopeQwenSizeRules] (area 512²–2048²,
+/// 1:8–8:1), picked in the size dialog — presets, a ratio calculator, or
+/// typed edges — and normalized to DashScope's `W*H` spelling on the wire.
 ///
 /// `not_set` here does **not** mean "send nothing": this endpoint renders an
 /// unsized request at 2048² and bills it at the 2K tier — twice the 1K
 /// price — so the dialect always sends a size, and `not_set` means "the
 /// dialect's default": a 1K square for text-to-image, the input's own
 /// proportions fitted into the 1K area for an edit (`dashscopeQwenDefaultSize`).
-/// The size is a free `WxH` inside [kDashscopeQwenSizeRules] (area
-/// 512²–2048², 1:8–8:1), picked in the size dialog — presets, a ratio
-/// calculator, or typed edges. The presets are quick picks only; the first
-/// seven sit at or near the 1K area, `2048x2048` is the 2K tier.
 ///
 /// `n` is deliberately not exposed — every request sends 1. The ceiling
 /// differs *within* the family (6, but `qwen-image-edit` takes only 1) and
@@ -452,34 +449,87 @@ const _dashscopeQwenImage = ModelCapabilities(
       labelKey: 'resolution',
       control: ParamControl.customSize,
       defaultValue: 'not_set',
-      options: [
-        ParamOption('not_set'),
-        ParamOption('1024x1024'),
-        ParamOption('1344x768'),
-        ParamOption('768x1344'),
-        ParamOption('1152x864'),
-        ParamOption('864x1152'),
-        ParamOption('1536x1024'),
-        ParamOption('1024x1536'),
-        ParamOption('2048x2048'),
-      ],
+      options: _dashscopeQwenSizeOptions,
       sizeRules: kDashscopeQwenSizeRules,
     ),
     _dashscopePromptExtend,
   ],
 );
 
-/// The first-generation `qwen-image` / `qwen-image-plus` / `qwen-image-max`
-/// (text-to-image, not the `-edit-` models): the endpoint takes **five fixed
-/// sizes and nothing else**, so this is a closed list and there is no
-/// `not_set` — the dialect's computed default (`dashscopeQwenDefaultSize`)
-/// is not one of the five. Upstream's own default is the 16:9; the square
-/// leads here because every other family in the app defaults to one.
+/// `qwen-image-edit-max` / `-plus` (and their dated builds): the same shape,
+/// references and `not_set` default as [_dashscopeQwenImage], but a
+/// **per-edge** size range — each edge 512–2048 — rather than 2.0 / 3.0's
+/// area range ([kDashscopeQwenEditSizeRules]). Sharing the area rules let
+/// the picker offer `4096x512`, an edge twice the documented ceiling.
+const _dashscopeQwenImageEditMaxPlus = ModelCapabilities(
+  isImageGenerator: true,
+  maxReferenceImages: 3,
+  longRunning: true,
+  imageRequestShape: ImageRequestShape.dashscopeQwen,
+  imageParams: [
+    ParamSpec(
+      key: 'imageSize',
+      labelKey: 'resolution',
+      control: ParamControl.customSize,
+      defaultValue: 'not_set',
+      options: _dashscopeQwenSizeOptions,
+      sizeRules: kDashscopeQwenEditSizeRules,
+    ),
+    _dashscopePromptExtend,
+  ],
+);
+
+/// A DashScope image model identified only by its protocol (a free-text
+/// relay id pinned to the DashScope image wire): qwen's shape and reference
+/// ceiling — the smaller — and [kDashscopeCommonSizeRules], the box every
+/// free-size DashScope family accepts, so a guess errs toward a request
+/// upstream takes.
+const _dashscopeImageFallback = ModelCapabilities(
+  isImageGenerator: true,
+  maxReferenceImages: 3,
+  longRunning: true,
+  imageRequestShape: ImageRequestShape.dashscopeQwen,
+  imageParams: [
+    ParamSpec(
+      key: 'imageSize',
+      labelKey: 'resolution',
+      control: ParamControl.customSize,
+      defaultValue: 'not_set',
+      options: _dashscopeQwenSizeOptions,
+      sizeRules: kDashscopeCommonSizeRules,
+    ),
+    _dashscopePromptExtend,
+  ],
+);
+
+/// Quick picks for the qwen free-size tables. The first seven sit at or near
+/// the 1K area, `2048x2048` is the 2K tier; every one of them passes all
+/// three qwen rule sets (pinned by a test).
+const _dashscopeQwenSizeOptions = [
+  ParamOption('not_set'),
+  ParamOption('1024x1024'),
+  ParamOption('1344x768'),
+  ParamOption('768x1344'),
+  ParamOption('1152x864'),
+  ParamOption('864x1152'),
+  ParamOption('1536x1024'),
+  ParamOption('1024x1536'),
+  ParamOption('2048x2048'),
+];
+
+/// The first-generation `qwen-image` / `qwen-image-plus` / `qwen-image-max`:
+/// text-to-image only (no reference images — the `-edit-` models are the
+/// ones that take them), and **five fixed sizes and nothing else**, so this
+/// is a closed list and there is no `not_set` — the dialect's computed
+/// default (`dashscopeQwenDefaultSize`) is not one of the five; the protocol
+/// normalizes a stale or missing size to this spec's default instead.
+/// Upstream's own default is the 16:9; the square leads here because every
+/// other family in the app defaults to one.
 /// ⚠ From the platform docs' size table (2026-09), not verified with a key;
 /// a wrong guess is a 400, not a silent resize.
 const _dashscopeQwenImageFixed = ModelCapabilities(
   isImageGenerator: true,
-  maxReferenceImages: 3,
+  maxReferenceImages: 0,
   longRunning: true,
   imageRequestShape: ImageRequestShape.dashscopeQwen,
   imageParams: [
@@ -505,7 +555,7 @@ const _dashscopeQwenImageFixed = ModelCapabilities(
 /// the endpoint has no `size` for this one model and 400s on receiving it,
 /// and `n` is a hard 1 (docs/api/qianwen-bailian.md §4.1). The absence of
 /// the `imageSize` spec is what the protocol reads to leave `size` off
-/// (`dashscopeModelTakesSize`), so this table is the *only* place that fact
+/// (`dashscopeSizeSpec`), so this table is the *only* place that fact
 /// lives.
 const _dashscopeQwenImageEdit = ModelCapabilities(
   isImageGenerator: true,
