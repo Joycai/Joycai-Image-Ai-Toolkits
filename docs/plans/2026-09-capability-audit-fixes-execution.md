@@ -37,7 +37,7 @@
 |---|---|---|---|
 | 11 | 各出图路由发送前不按模型规则校验尺寸 | R1 / R3 / R4 / R7 同百炼一样 normalize | ✅ |
 | 12 | ④ base 需自带 `/v1` | 自动剥掉尾部 `/messages`，缺 `/v1` 时补 | ✅ |
-| 13 | Anthropic 思考拒收判定过宽 | 收窄到明确的 thinking 字段错误；测试 | ⬜ |
+| 13 | Anthropic 思考拒收判定过宽 | 收窄到明确的 thinking 字段错误；测试 | ✅ |
 
 ## 第五批 · 结构
 
@@ -65,3 +65,4 @@
 - **片 10（裁定）**：核对后「按次」的含义就是每次调用计一次——计费组的设计里按张计价由「按规格 · 单位张」承担（`OutputUnit.image` 已按实际落盘张数计），Midjourney 一次任务回四张图，乘张数会把它计成四次。所以 `request_count` 不改。真正误导的是规格表：只剩「其他规格」一档时无论单位都提示「效果与按次相同」并给「改用按次」按钮，但只有单位为「条」时才成立（张 × 张数、秒 × 时长）。改为仅在 `OutputUnit.clip` 时出现。
 - **片 11**：共享 `optionsWithCheckedSize`（protocol.dart），按模型声明的 `imageSize` 控件（`ParamSpec.isValid`：选项表或 `ImageSizeRules`）检查，不合法就换成控件默认值并记 WARN——与百炼 `normalize` 同一策略，只是多了日志。接在 OpenAI Images、Gemini chat（同步 + 流式）、Imagen、方舟四处；没声明尺寸控件的模型（聊天模型）原样放行。
 - **片 12**：`anthropicApiBase` 在 `/messages` 与发现用的 `/models` 前统一规整：去尾部 `/messages`；末段不是版本段（`v\d+…`）就补 `/v1`。已经以版本段结尾的 base（官方 `/v1`、MiniMax `/anthropic/v1`、百炼 `/apps/anthropic/v1`）逐字节不变。地址预览走同一函数，所以编辑器里看到的就是实际请求地址。
+- **片 13**：判定改为「点名 `thinking.type` / `output_config`，或字段级的 thinking 类型 / tag 报错」，并排除回放与上限类报错（`messages.`、`signature`、`thinking block`、`redacted_thinking`、`budget_tokens`、`max_tokens`）——学到的方言整个会话都生效，误翻一次就一直发错。未改「提到 effort 就不算」这条旧规则：4.7+ 拒收 `enabled` 的原文是否会顺带提 `output_config.effort` 没有实测样本，手上也没有 Anthropic key，记入欠账。

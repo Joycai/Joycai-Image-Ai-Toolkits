@@ -173,6 +173,13 @@ void resetAnthropicThinkingDialectsForTest() =>
 /// `budget_tokens` being too small is the cap, not the dialect. What flips
 /// the dialect is the API not knowing the field at all: `thinking.type` with
 /// an unexpected value, or an `output_config` it has never heard of.
+///
+/// Anything else that merely *mentions* thinking is not it, and matters
+/// because the answer is learned for the rest of the session: a replayed
+/// turn missing its thinking block or signature (`messages.3.content.0…`,
+/// "must start with a thinking block"), a `max_tokens` that does not clear
+/// `thinking.budget_tokens`. Flipping the dialect on those used to swap a
+/// working spelling for a broken one and keep it.
 bool isAnthropicThinkingRejection(Object error) {
   if (error is! LLMApiException || error.statusCode != 400) return false;
   final text = error.message.toLowerCase();
@@ -181,5 +188,26 @@ bool isAnthropicThinkingRejection(Object error) {
   }
   // A complaint about the *value* of effort is not a dialect problem.
   if (text.contains('effort')) return false;
-  return true;
+  if (_notADialectProblem.any(text.contains)) return false;
+  if (text.contains('thinking.type') || text.contains('output_config')) {
+    return true;
+  }
+  // The field-level spellings: `thinking: Input tag 'adaptive' found using
+  // 'type' does not match…`, "adaptive thinking is not supported".
+  return _thinkingShapeComplaint.hasMatch(text);
 }
+
+/// Phrases that put a thinking-related 400 on something other than the
+/// request's thinking spelling — see [isAnthropicThinkingRejection].
+const List<String> _notADialectProblem = [
+  'budget_tokens',
+  'max_tokens',
+  'signature',
+  'messages.',
+  'thinking block',
+  'redacted_thinking',
+];
+
+final RegExp _thinkingShapeComplaint = RegExp(
+    r'thinking\W[^.]*\b(type|tag|adaptive|enabled|disabled)\b|'
+    r'\b(adaptive|enabled) thinking\b');
