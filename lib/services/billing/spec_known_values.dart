@@ -1,4 +1,3 @@
-import '../../core/constants.dart';
 import '../llm/model_capabilities.dart';
 import '../llm/model_family.dart';
 import '../llm/output_spec.dart';
@@ -32,11 +31,9 @@ class SpecKnownValues {
 
   static SpecKnownValues _collect() {
     final imageSizes = <String>{};
-    // The video panel's shared resolution dropdown is not a family parameter
-    // (Veo is served by it alone), so its vocabulary is read from the enum.
-    final videoResolutions = <String>{
-      for (final r in VeoResolution.values) ?OutputSpec.normalizeSize(r.value),
-    };
+    // Veo's resolutions are a family parameter like everyone else's now, so
+    // the tables below cover them.
+    final videoResolutions = <String>{};
     final qualities = <String>{};
     final seconds = <int>{};
 

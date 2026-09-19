@@ -222,10 +222,47 @@ const _openaiImage = ModelCapabilities(
 /// aspectRatio + resolution dropdowns in the video panel still drive the
 /// upstream `size` field; the parameters below are the openaiVideo-only
 /// extensions that wouldn't make sense for Veo.
+/// Veo's resolution and aspect ratio, declared like every other family's
+/// video controls. They used to be two dropdowns built into the video panel
+/// for every model that did not override them — Veo's vocabulary shown to
+/// MiniMax's H3, which reads no resolution at all.
+const _veoResolutionParam = ParamSpec(
+  key: 'resolution',
+  labelKey: 'resolution',
+  control: ParamControl.dropdown,
+  defaultValue: '720p',
+  options: [
+    ParamOption('720p'),
+    ParamOption('1080p'),
+    ParamOption('4k'),
+  ],
+);
+
+const _veoAspectRatioParam = ParamSpec(
+  key: 'aspectRatio',
+  labelKey: 'aspectRatio',
+  control: ParamControl.dropdown,
+  defaultValue: '16:9',
+  options: [
+    ParamOption('16:9'),
+    ParamOption('9:16'),
+  ],
+);
+
+/// Veo (Gemini `predictLongRunning`): the two controls above.
+const _veoVideo = ModelCapabilities(
+  isVideoGenerator: true,
+  videoParams: [_veoResolutionParam, _veoAspectRatioParam],
+);
+
 const _openaiVideo = ModelCapabilities(
   isVideoGenerator: true,
   maxReferenceImages: 7,
   videoParams: [
+    // Sora's `size` is built from these two (`resolveVideoSize`); the panel
+    // used to supply them through the shared Veo pair.
+    _veoResolutionParam,
+    _veoAspectRatioParam,
     ParamSpec(
       key: 'seconds',
       labelKey: 'videoSeconds',

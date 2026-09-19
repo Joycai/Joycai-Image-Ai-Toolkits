@@ -19,46 +19,10 @@ extension _ModelSection on _VideoConfigPanelState {
     final selectedChannelId = selectedChannel?.id;
     final collapsedModelName = _isModelSettingsExpanded ? null : selectedModel?.modelName;
 
-    // Some families (e.g. grok-imagine-video-1.5) declare their own
-    // aspectRatio/resolution videoParams with a different option set than
-    // the shared Veo dropdowns below — hide the shared control for whichever
-    // key that family overrides so the panel doesn't show two conflicting
-    // resolution/aspect-ratio pickers.
-    final overridesResolution = caps.videoParams.any((p) => p.key == 'resolution');
-    final overridesAspectRatio = caps.videoParams.any((p) => p.key == 'aspectRatio');
-
-    // `A2 · 1a`: one two-column grid for every parameter — the shared Veo
-    // pair first, then whatever the model declares (duration, quality…).
+    // `A2 · 1a`: one two-column grid of whatever the model declares —
+    // resolution and ratio included (Veo's too, since they became data).
+    // `customSize` is not used by any video family and draws nothing.
     final cells = <_ParamCell>[
-      if (!overridesResolution)
-        _ParamCell(
-          label: l10n.videoResolution,
-          control: AppDropdown<VeoResolution>(
-            size: AppFieldSize.regular,
-            height: _kParamControlHeight,
-            value: appState.lastVideoResolution,
-            items: [
-              for (final v in VeoResolution.values) AppDropdownItem(value: v, label: v.value),
-            ],
-            onChanged: (v) => appState.updateVideoConfig(resolution: v),
-          ),
-        ),
-      if (!overridesAspectRatio)
-        _ParamCell(
-          label: l10n.videoAspectRatio,
-          control: AppDropdown<VeoAspectRatio>(
-            size: AppFieldSize.regular,
-            height: _kParamControlHeight,
-            value: appState.lastVideoAspectRatio,
-            items: [
-              for (final v in VeoAspectRatio.values) AppDropdownItem(value: v, label: v.value),
-            ],
-            onChanged: (v) => appState.updateVideoConfig(aspectRatio: v),
-          ),
-        ),
-      // Per-model extras (seconds / quality for openaiVideo; aspectRatio /
-      // resolution / seconds slider for grok-imagine-video-1.5; nothing for
-      // Veo). `customSize` is not used by any video family and draws nothing.
       if (modelInChannel != null)
         for (final spec in caps.videoParams)
           if (spec.control != ParamControl.customSize)

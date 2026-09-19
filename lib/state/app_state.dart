@@ -222,8 +222,6 @@ class AppState extends ChangeNotifier {
   Map<String, String> _videoParamStore = {};
   int videoParamsRevision = 0;
   String? lastVideoModelId;
-  VeoResolution lastVideoResolution = VeoResolution.r720p;
-  VeoAspectRatio lastVideoAspectRatio = VeoAspectRatio.r16_9;
   String lastPrompt = '';
   String lastVideoPrompt = '';
 
@@ -531,8 +529,6 @@ class AppState extends ChangeNotifier {
     await loadImageParams();
     await loadVideoParams();
     lastVideoModelId = await _db.getSetting('last_video_model_id');
-    lastVideoResolution = VeoResolution.fromString(await _db.getSetting('last_video_resolution'));
-    lastVideoAspectRatio = VeoAspectRatio.fromString(await _db.getSetting('last_video_aspect_ratio'));
     lastPrompt = await _db.getSetting('last_prompt') ?? '';
     lastVideoPrompt = await _db.getSetting('last_video_prompt') ?? '';
     useStream = (await _db.getSetting('workbench_use_stream') ?? 'true') == 'true';

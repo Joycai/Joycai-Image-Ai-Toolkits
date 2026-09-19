@@ -178,6 +178,10 @@ extension AppStateWorkbench on AppState {
         _videoParamStore = decoded.map((k, v) => MapEntry(k, v.toString()));
       } catch (_) {/* ignore malformed */}
     }
+    _videoParamStore = {
+      ..._videoParamStore,
+      ...await legacyVeoVideoParams(_videoParamStore, _db.getSetting),
+    };
   }
 
   String getVideoParam(LLMModel model, ParamSpec spec) {
@@ -209,21 +213,11 @@ extension AppStateWorkbench on AppState {
 
   Future<void> updateVideoConfig({
     String? modelId,
-    VeoResolution? resolution,
-    VeoAspectRatio? aspectRatio,
     String? prompt,
   }) async {
     if (modelId != null) {
       lastVideoModelId = modelId;
       await _db.saveSetting('last_video_model_id', modelId);
-    }
-    if (resolution != null) {
-      lastVideoResolution = resolution;
-      await _db.saveSetting('last_video_resolution', resolution.value);
-    }
-    if (aspectRatio != null) {
-      lastVideoAspectRatio = aspectRatio;
-      await _db.saveSetting('last_video_aspect_ratio', aspectRatio.value);
     }
     if (prompt != null) {
       lastVideoPrompt = prompt;
@@ -312,4 +306,29 @@ extension AppStateWorkbench on AppState {
     params['taskType'] = TaskType.videoGenerate.name;
     await submitTask(modelIdentifier, params, modelIdDisplay: modelIdDisplay);
   }
+}
+
+/// The resolution and ratio a user picked in the panel's old fixed Veo
+/// controls (settings `last_video_resolution` / `last_video_aspect_ratio`),
+/// as entries of the per-family video parameter store — for the two families
+/// that read them, Veo and Sora, and only where the store has no value of
+/// its own yet. So the switch to declared parameters keeps the choice.
+@visibleForTesting
+Future<Map<String, String>> legacyVeoVideoParams(
+  Map<String, String> store,
+  Future<String?> Function(String key) setting,
+) async {
+  final seeded = <String, String>{};
+  for (final (param, key) in const [
+    ('resolution', 'last_video_resolution'),
+    ('aspectRatio', 'last_video_aspect_ratio'),
+  ]) {
+    final value = await setting(key);
+    if (value == null || value.isEmpty) continue;
+    for (final family in const [ModelFamily.geminiVideo, ModelFamily.openaiVideo]) {
+      final storeKey = '${family.name}.$param';
+      if (!store.containsKey(storeKey)) seeded[storeKey] = value;
+    }
+  }
+  return seeded;
 }
