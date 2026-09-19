@@ -94,11 +94,7 @@ extension _AssistantTurns on _WorkbenchScreenState {
   /// say anyway.
   bool _optRunningForSession(PromptOptimizerSession session) {
     if (session.isRunning) return true;
-    final queue = Provider.of<TaskQueueService>(context, listen: false).queue;
-    return queue.any((t) =>
-        t.type == TaskType.promptRefine &&
-        t.parameters['sessionId'] == session.id &&
-        (t.status == TaskStatus.pending || t.status == TaskStatus.processing));
+    return Provider.of<TaskQueueService>(context, listen: false).hasLiveAssistantTurn(session.id);
   }
 
   /// Opens a model's editor — the max-output setting lives there — from a
