@@ -502,16 +502,38 @@ class LLMDispatcher {
       target.vendor.menuFor(Surface.chat).first;
 
   /// The implementation behind a chat wire. Every value that can reach here
-  /// is one a multi-face vendor declared; anything else degrades to ①, which
-  /// is what an unrecognized face on an OpenAI-shaped host would have been
-  /// before menus existed.
+  /// is one a multi-face vendor declared on its chat menu.
+  ///
+  /// Exhaustive on purpose. It used to end in `_ => _openaiChat`: a chat
+  /// face with no arm of its own — ③ on a vendor's menu, or a new wire
+  /// added to the enum — went out as a ① body to a host that speaks
+  /// something else, and the 400 (or the silently misread reply) said
+  /// nothing about routing. A new [WireProtocol] now has to be placed here.
   ChatProtocol _chatProtocolFor(WireProtocol face) => switch (face) {
-        WireProtocol.anthropicChat => _anthropicChat,
-        WireProtocol.dashscopeChat => _dashscopeChat,
+        WireProtocol.openaiChat => _openaiChat,
         // Same base and auth as ①, so no `protocolBases` entry: the stored
         // endpoint is already the Responses base.
         WireProtocol.openaiResponses => _openaiResponses,
-        _ => _openaiChat,
+        WireProtocol.anthropicChat => _anthropicChat,
+        WireProtocol.geminiChat => _geminiChat,
+        WireProtocol.dashscopeChat => _dashscopeChat,
+        WireProtocol.midjourney ||
+        WireProtocol.openaiImages ||
+        WireProtocol.chatImage ||
+        WireProtocol.xaiImages ||
+        WireProtocol.geminiImagen ||
+        WireProtocol.dashscopeImagesSync ||
+        WireProtocol.dashscopeImagesAsync ||
+        WireProtocol.minimaxImages ||
+        WireProtocol.arkImages ||
+        WireProtocol.openaiVideos ||
+        WireProtocol.xaiVideos ||
+        WireProtocol.geminiVeo ||
+        WireProtocol.dashscopeVideo ||
+        WireProtocol.minimaxVideo ||
+        WireProtocol.minimaxH3BaseVideo =>
+          throw StateError(
+              '${face.id} is not a chat wire; a vendor chat menu declared it.'),
       };
 
   /// The chat face a request for this (channel, model, kind, pin) takes —
