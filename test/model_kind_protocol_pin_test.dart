@@ -205,6 +205,15 @@ void main() {
           isFalse);
     });
 
+    test("Bailian's native channel lists wan video and not its chat models", () {
+      // canRunVideoJob and startLongRunning read one route
+      // (_videoSubmitRoute): the picker and the submit cannot disagree.
+      expect(dispatcher.canRunVideoJob(config('wan3.0-video', Vendors.dashscopeNative)),
+          isTrue);
+      expect(dispatcher.canRunVideoJob(config('qwen3-max', Vendors.dashscopeNative)),
+          isFalse);
+    });
+
     test('a kind of chat on a recognized video id takes it off the video route',
         () {
       expect(dispatcher.canRunVideoJob(config('sora-2', Vendors.openAIRest)),

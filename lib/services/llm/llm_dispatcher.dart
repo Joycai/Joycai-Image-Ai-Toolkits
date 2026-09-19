@@ -1226,6 +1226,15 @@ class LLMDispatcher {
     LLMLogger? logger,
   }) async {
     final target = resolveTarget(config);
+    final route = _videoSubmitRoute(target);
+    if (route != null) {
+      return LLMOperationTicket(
+        await route.protocol
+            .submit(target, history, options: options, logger: logger),
+        route.surface,
+      );
+    }
+    // No surface: say why, per family.
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
         throw UnsupportedError(
@@ -1239,17 +1248,7 @@ class LLMDispatcher {
         // `/v2/video_generation` is on the same host and key as its
         // `/anthropic/v1` chat. Resolved through the shared declaration
         // lookup rather than naming one protocol, so a second ④ vendor with
-        // a video surface needs no change here — and so this branch cannot
-        // disagree with [canRunVideoJob].
-        final nativeVideo = _nativeVideoProtocol(target.vendor.videoProtocol);
-        if (target.model.family == ModelFamily.openaiVideo &&
-            nativeVideo != null) {
-          return LLMOperationTicket(
-            await nativeVideo.submit(target, history,
-                options: options, logger: logger),
-            target.vendor.videoProtocol,
-          );
-        }
+        // a video surface needs no change here.
         throw UnsupportedError(
           'The Anthropic Messages API has no image or video generation '
           'surface, and this channel declares no vendor-native one; '
@@ -1257,46 +1256,15 @@ class LLMDispatcher {
         );
 
       case ProtocolFamily.gemini:
-        // Veo via :predictLongRunning.
-        return LLMOperationTicket(
-          await _veo.submit(target, history, options: options, logger: logger),
-          WireProtocol.geminiVeo,
-        );
+        throw StateError('Veo always has a surface; unreachable.');
 
       case ProtocolFamily.dashscope:
-        // `video-synthesis` + the shared task poller. The vendor declares the
-        // protocol exactly as its compatible sibling does, so the check is
-        // the declaration rather than the family — a DashScope channel with
-        // no video surface declared should say so, not submit blindly.
-        if (target.model.family == ModelFamily.openaiVideo &&
-            target.vendor.videoProtocol == WireProtocol.dashscopeVideo) {
-          return LLMOperationTicket(
-            await _dashscopeVideo.submit(target, history,
-                options: options, logger: logger),
-            WireProtocol.dashscopeVideo,
-          );
-        }
         throw UnsupportedError(
           'The model "${config.modelId}" is not a DashScope video model; '
           'use wan3.0-video / wan3.0-video-prime for video generation.',
         );
 
       case ProtocolFamily.openai:
-        if (target.model.family == ModelFamily.openaiVideo) {
-          // Vendors with a native async-video surface replace the Sora-style
-          // multipart `/videos` default: xAI's `/videos/generations` JSON,
-          // DashScope's `video-synthesis` task flow.
-          final declared = _nativeVideoProtocol(target.vendor.videoProtocol);
-          final protocol = declared ?? _openaiVideos;
-          return LLMOperationTicket(
-            await protocol.submit(target, history,
-                options: options, logger: logger),
-            declared != null
-                ? target.vendor.videoProtocol
-                : WireProtocol.openaiVideos,
-          );
-        }
-
         final isSimulation = options?['simulation'] == true || target.model.isMockModel;
         if (isSimulation) {
           logger?.call('Simulating long-running operation for OpenAI-style model: ${config.modelId}', level: 'INFO');
@@ -1559,22 +1527,48 @@ class LLMDispatcher {
   /// rule, and when a ④ vendor gained a native video surface the copy still
   /// said "the Anthropic family has no video", hiding the model from the UI
   /// while the route behind it worked.
-  bool canRunVideoJob(LLMModelConfig config) {
-    final target = resolveTarget(config);
+  bool canRunVideoJob(LLMModelConfig config) =>
+      _videoSubmitRoute(resolveTarget(config)) != null;
+
+  /// Where a video job for [target] is submitted, or null when this channel
+  /// has no video surface for the model — the one answer both
+  /// [startLongRunning] and [canRunVideoJob] read, so the picker cannot list
+  /// a model the submit then refuses. (It could: the picker offered every
+  /// video model on a DashScope channel while the submit also required the
+  /// vendor to declare `video-synthesis`.)
+  ({VideoJobProtocol protocol, WireProtocol surface})? _videoSubmitRoute(
+      LLMTarget target) {
+    final isVideoModel = target.model.family == ModelFamily.openaiVideo;
     switch (target.vendor.family) {
       case ProtocolFamily.gemini:
         // Veo via `:predictLongRunning`.
-        return true;
+        return (protocol: _veo, surface: WireProtocol.geminiVeo);
       case ProtocolFamily.midjourney:
         // Generation runs inside generate(); there is no job to start.
-        return false;
+        return null;
       case ProtocolFamily.anthropic:
         // No family default — only a vendor-declared native surface.
-        return target.model.family == ModelFamily.openaiVideo &&
-            _nativeVideoProtocol(target.vendor.videoProtocol) != null;
-      case ProtocolFamily.openai:
+        final native = _nativeVideoProtocol(target.vendor.videoProtocol);
+        if (!isVideoModel || native == null) return null;
+        return (protocol: native, surface: target.vendor.videoProtocol!);
       case ProtocolFamily.dashscope:
-        return target.model.family == ModelFamily.openaiVideo;
+        // `video-synthesis` + the shared task poller, only where the vendor
+        // declares it: a DashScope channel with no video surface declared
+        // should say so, not submit blindly.
+        if (!isVideoModel ||
+            target.vendor.videoProtocol != WireProtocol.dashscopeVideo) {
+          return null;
+        }
+        return (protocol: _dashscopeVideo, surface: WireProtocol.dashscopeVideo);
+      case ProtocolFamily.openai:
+        if (!isVideoModel) return null;
+        // Vendors with a native async-video surface replace the Sora-style
+        // multipart `/videos` default: xAI's `/videos/generations` JSON,
+        // DashScope's `video-synthesis` task flow.
+        final declared = _nativeVideoProtocol(target.vendor.videoProtocol);
+        return declared != null
+            ? (protocol: declared, surface: target.vendor.videoProtocol!)
+            : (protocol: _openaiVideos, surface: WireProtocol.openaiVideos);
     }
   }
 
