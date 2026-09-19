@@ -45,7 +45,7 @@
 |---|---|---|---|
 | 14 | Veo 参数写死在面板 | 改为模型声明的数据 | ✅ |
 | 15 | `canRunVideoJob` 与 `startLongRunning` 百炼分支不一致 | 同一判断 | ✅ |
-| 16 | 连接测试手抄配置漏字段 | 走统一配置 | ⬜ |
+| 16 | 连接测试手抄配置漏字段 | 走统一配置 | ✅ |
 | 17 | dispatcher 兜底 `_ => _openaiChat` 静默落 ① | 显式列举 | ⬜ |
 
 ## 施工记录
@@ -69,3 +69,4 @@
 - **第三批 review**（`6a7aa71..13a375a`）：无发现。**第四批 review**（`13a375a..194fb21`）：1 条——Anthropic 文档里「tool_choice 强制调用时不能开 thinking」「开 thinking 时 temperature 只能为 1」两类 400 仍会命中字段级正则而翻方言；排除表补 `tool_choice` / `temperature` / `top_p` / `top_k` / `when thinking is enabled`，已补测试。
 - **片 14**：Veo 的 `resolution` / `aspectRatio` 成为 `_veoVideo.videoParams`（按家族与按 wire 两条路都给），面板删掉固定的一对下拉框，提交只发模型声明的参数。Sora 的 `size` 由这两项推出（`resolveVideoSize`），所以 `_openaiVideo` 也声明了同一对，行为不变。MiniMax H3 原来会看到一个它不读的分辨率框，现在没有了。旧设置 `last_video_resolution` / `last_video_aspect_ratio` 在加载时迁入 Veo、Sora 两个家族的参数存储（`legacyVeoVideoParams`，不覆盖已有值）；`VeoResolution` / `VeoAspectRatio` 两个枚举与 AppState 的两个字段删除，计费的已知取值改由家族参数表覆盖。l10n 的 `videoResolution` / `videoAspectRatio` 两个键已无引用，未删。截图：模型卡默认折叠，参数格走的是 grok / 万相 / MiniMax 已在用的同一渲染路径。
 - **片 15**：抽出 `_videoSubmitRoute(target)`（返回协议 + surface 或 null），`startLongRunning` 先按它提交、为 null 时才按家族报原因，`canRunVideoJob` 直接等于「它非 null」。复核发现目前唯一的百炼私有家族厂商本身就声明了 `video-synthesis`，所以原来的不一致是潜伏的，行为不变。
+- **片 16**：`_completionProbe` 改用 `config.withModelId(probeModelId)`（与 `withEndpoint` / `withoutServerTools` 共用 `_copy`）。实际后果比审查时估的具体：渠道编辑里的「按线路测试」带着 `wireProtocol` + `faceBases`，`/models` 404 退到补全探测时这两项被丢，于是 ④ 线路的补全探测走的是厂商默认面。

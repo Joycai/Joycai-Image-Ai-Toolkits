@@ -144,17 +144,11 @@ class ChannelProbeService {
   /// error means the endpoint speaks this API (connected); 401/403 means
   /// auth; HTML means the URL points at something else entirely.
   Future<ChannelProbeResult> _completionProbe(LLMModelConfig config) async {
-    final probeConfig = LLMModelConfig(
-      id: config.id,
-      modelId: probeModelId,
-      channelType: config.channelType,
-      endpoint: config.endpoint,
-      apiKey: config.apiKey,
-      proxyEnabled: config.proxyEnabled,
-      proxyUrl: config.proxyUrl,
-      proxyUsername: config.proxyUsername,
-      proxyPassword: config.proxyPassword,
-    );
+    // A copy, not a hand-built config: a route probe carries the face under
+    // test (`wireProtocol`) and the channel's derived bases (`faceBases`),
+    // and the hand-built one dropped both — so the completion probe of a ④
+    // route asked the vendor's default face instead.
+    final probeConfig = config.withModelId(probeModelId);
     try {
       await _dispatcher.generate(
         probeConfig,

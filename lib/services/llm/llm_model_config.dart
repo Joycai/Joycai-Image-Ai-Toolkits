@@ -193,10 +193,18 @@ class LLMModelConfig {
   LLMModelConfig withoutServerTools() =>
       enableWebSearch ? _copy(enableWebSearch: false) : this;
 
-  LLMModelConfig _copy({String? endpoint, bool? enableWebSearch}) =>
+  /// This config asking for model [newModelId] — everything else, the route
+  /// ([wireProtocol], [faceBases]) included, carried over.
+  LLMModelConfig withModelId(String newModelId) => _copy(modelId: newModelId);
+
+  LLMModelConfig _copy({
+    String? modelId,
+    String? endpoint,
+    bool? enableWebSearch,
+  }) =>
       LLMModelConfig(
         id: id,
-        modelId: modelId,
+        modelId: modelId ?? this.modelId,
         channelType: channelType,
         endpoint: endpoint ?? this.endpoint,
         apiKey: apiKey,
