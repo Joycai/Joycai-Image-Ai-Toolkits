@@ -185,7 +185,8 @@ Map<String, dynamic> xaiVideoPollEnvelope(
       final videoUrl = video?['url']?.toString();
       if (videoUrl == null || videoUrl.isEmpty) {
         throw LLMApiException(
-            'xAI video request $operationName is done but returned no URL: $data');
+            'xAI video request $operationName is done but returned no URL: $data',
+            isJobEnded: true);
       }
       return videoDoneEnvelope(operationName, videoUrl,
           requiresAuth: videoUriNeedsAuth(videoUrl, endpoint));
@@ -194,14 +195,17 @@ Map<String, dynamic> xaiVideoPollEnvelope(
       final msg = err is Map
           ? '${err['code'] ?? 'unknown'}: ${err['message'] ?? err.toString()}'
           : (err?.toString() ?? 'unknown');
-      throw LLMApiException('xAI video request $operationName failed: $msg');
+      throw LLMApiException('xAI video request $operationName failed: $msg',
+          isJobEnded: true);
     case 'expired':
       throw LLMApiException(
-          'xAI video request $operationName expired before completing.');
+          'xAI video request $operationName expired before completing.',
+          isJobEnded: true);
     case 'cancelled':
     case 'canceled':
       throw LLMApiException(
-          'xAI video request $operationName was cancelled upstream.');
+          'xAI video request $operationName was cancelled upstream.',
+          isJobEnded: true);
     default:
       return {
         'name': operationName,

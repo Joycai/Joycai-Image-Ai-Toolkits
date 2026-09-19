@@ -132,7 +132,8 @@ Map<String, dynamic> veoPollResult(
     final code = error is Map ? error['code'] : null;
     final message = error is Map ? (error['message'] ?? error) : error;
     throw LLMApiException('Veo operation $operationName failed'
-        '${code != null ? ' (code $code)' : ''}: $message');
+        '${code != null ? ' (code $code)' : ''}: $message',
+        isJobEnded: true);
   }
 
   final response = data['response'];
@@ -149,7 +150,8 @@ Map<String, dynamic> veoPollResult(
   } else if (generated is Map && generated['raiMediaFilteredReasons'] != null) {
     throw LLMApiException(
         'Veo operation $operationName finished without a video — filtered by '
-        'safety: ${generated['raiMediaFilteredReasons']}');
+        'safety: ${generated['raiMediaFilteredReasons']}',
+        isJobEnded: true);
   }
   return data;
 }

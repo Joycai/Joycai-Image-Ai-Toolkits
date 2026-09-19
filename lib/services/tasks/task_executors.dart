@@ -619,7 +619,12 @@ extension TaskExecutors on TaskQueueService {
             ? 'Cancelled locally; the upstream job was left running.'
             : 'Cancelled locally; upstream reports "$action".',
       );
+      // Cancelled upstream too: there is no job left to resume.
+      if (action != null) await _forgetVideoJob(task);
       return;
+    } on LLMApiException catch (e) {
+      if (e.isJobEnded) await _forgetVideoJob(task);
+      rethrow;
     }
 
     final rendered = done[videoRenderedSecondsKey];
@@ -641,6 +646,7 @@ extension TaskExecutors on TaskQueueService {
         : null;
     final videoUri = video?['uri'] as String?;
     if (videoUri == null || videoUri.isEmpty) {
+      await _forgetVideoJob(task);
       throw Exception(
         'Operation $operationName finished but no video URI found. '
         'Response: ${jsonEncode(response)}',
@@ -680,6 +686,20 @@ extension TaskExecutors on TaskQueueService {
     task.addLog('Saved video to: $downloadPath');
 
     onTaskCompleted?.call(File(downloadPath));
+  }
+
+  /// Drops [task]'s upstream job id once the job is known to be over with
+  /// nothing to fetch — failed, cancelled, expired, filtered, or finished
+  /// without a video — so the task stops offering to resume it
+  /// ([TaskQueueService.canResumeVideoJob]); a retry submits a new one. The
+  /// id stays in the task log.
+  Future<void> _forgetVideoJob(TaskItem task) async {
+    if (task.operationName == null) return;
+    task.addLog('Upstream job ${task.operationName} is over and cannot be '
+        'resumed.');
+    task.operationName = null;
+    task.operationSurface = null;
+    await DatabaseService().saveTask(task.toMap());
   }
 
   /// Builds the request, submits the job, and persists its id and surface

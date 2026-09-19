@@ -190,7 +190,8 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
           if (videoUrl == null || videoUrl.isEmpty) {
             throw LLMApiException(
                 'DashScope video task $operationName succeeded but returned '
-                'no video_url: ${response.body}');
+                'no video_url: ${response.body}',
+                isJobEnded: true);
           }
           // A signed OSS link: the API key must not travel to it.
           final usage = data['usage'];
@@ -206,7 +207,8 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
               'DashScope video task $operationName $status'
               '${code != null ? ' ($code)' : ''}'
               '${message != null ? ': $message' : ''}'
-              '${status == 'UNKNOWN' ? ' (task ids expire after 24h — an expired task also reports UNKNOWN)' : ''}');
+              '${status == 'UNKNOWN' ? ' (task ids expire after 24h — an expired task also reports UNKNOWN)' : ''}',
+              isJobEnded: true);
         default:
           // PENDING / RUNNING / anything newer.
           return {
