@@ -25,6 +25,13 @@ typedef LLMLogListener = void Function(String message,
 /// call site).
 const String llmCancellationProbeKey = 'isCancelled';
 
+/// Request option: `true` sends this one call without server-side tools
+/// (web search), whatever the model's own switch says. For internal calls
+/// whose answer must come from the transcript alone — a context compaction
+/// that goes out searching is billed per search and can summarise pages the
+/// conversation never saw.
+const String llmNoServerToolsKey = 'noServerTools';
+
 /// Option key for the request's abort trigger: a `Future<void>` whose
 /// completion aborts the HTTP request in flight (`package:http`'s
 /// `Abortable.abortTrigger`).

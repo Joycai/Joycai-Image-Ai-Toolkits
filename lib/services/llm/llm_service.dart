@@ -101,6 +101,7 @@ class LLMService {
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
           _emitLog(msg, level: level, contextId: contextId),
+      options: options,
     );
     // Tool calling reaches the streaming surface only where the protocol
     // assembles calls out of deltas — every chat family does now, but
@@ -810,6 +811,7 @@ class LLMService {
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
           _emitLog(msg, level: level, contextId: contextId),
+      options: options,
     );
     _emitLog(
       'Connecting to ${config.channelType}...',
@@ -1046,11 +1048,24 @@ class LLMService {
   Future<LLMModelConfig> _resolveConfig(
     dynamic modelIdentifier, {
     required Function(String, {String level}) logger,
+    Map<String, dynamic>? options,
   }) async {
     final override = configResolverOverride;
-    if (override != null) return override(modelIdentifier);
-    return _configResolver.resolveConfig(modelIdentifier, logger: logger);
+    final config = override != null
+        ? override(modelIdentifier)
+        : await _configResolver.resolveConfig(modelIdentifier, logger: logger);
+    return configForCall(config, options);
   }
+
+  /// [config] as one call sees it: per-call options that narrow the model's
+  /// stored settings ([llmNoServerToolsKey]) are applied here, once, so no
+  /// protocol has to know about them.
+  @visibleForTesting
+  static LLMModelConfig configForCall(
+          LLMModelConfig config, Map<String, dynamic>? options) =>
+      options?[llmNoServerToolsKey] == true
+          ? config.withoutServerTools()
+          : config;
 
   /// Test door onto [_recordUsage].
   @visibleForTesting

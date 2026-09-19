@@ -185,15 +185,24 @@ class LLMModelConfig {
   /// DashScope's Anthropic-compatible chat under `/apps/anthropic/v1`), so
   /// the protocol itself stays vendor-blind. Everything else is carried over
   /// verbatim.
-  LLMModelConfig withEndpoint(String newEndpoint) => LLMModelConfig(
+  LLMModelConfig withEndpoint(String newEndpoint) =>
+      _copy(endpoint: newEndpoint);
+
+  /// This config with the model's web-search switch off, for one call that
+  /// must not reach for server-side tools ([llmNoServerToolsKey]).
+  LLMModelConfig withoutServerTools() =>
+      enableWebSearch ? _copy(enableWebSearch: false) : this;
+
+  LLMModelConfig _copy({String? endpoint, bool? enableWebSearch}) =>
+      LLMModelConfig(
         id: id,
         modelId: modelId,
         channelType: channelType,
-        endpoint: newEndpoint,
+        endpoint: endpoint ?? this.endpoint,
         apiKey: apiKey,
         enableThinking: enableThinking,
         reasoningEffort: reasoningEffort,
-        enableWebSearch: enableWebSearch,
+        enableWebSearch: enableWebSearch ?? this.enableWebSearch,
         wireProtocol: wireProtocol,
         faceBases: faceBases,
         tag: tag,

@@ -487,7 +487,13 @@ Future<void> _maybeCompact(
         LLMMessage(role: LLMRole.user, content: _serializeForSummary(head)),
       ],
       contextId: contextId,
-      options: const {'retryCount': 2, 'usageTag': 'compaction'},
+      // No web search: the summary must come from the transcript alone, and
+      // a model with search on would otherwise search (and bill) here too.
+      options: const {
+        'retryCount': 2,
+        'usageTag': 'compaction',
+        llmNoServerToolsKey: true,
+      },
       useStream: false,
       isCancelled: isCancelled,
     );
