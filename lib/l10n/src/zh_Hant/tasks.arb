@@ -82,6 +82,7 @@
   },
   "filterAll": "全部",
   "retryTask": "重試",
+  "resumeVideoJob": "繼續原任務",
   "queuedPosition": "排隊第 {position} 位",
   "@queuedPosition": {
     "placeholders": {

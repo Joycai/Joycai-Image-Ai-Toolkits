@@ -82,6 +82,7 @@
   },
   "filterAll": "すべて",
   "retryTask": "再試行",
+  "resumeVideoJob": "元のジョブを再開",
   "queuedPosition": "待機 {position} 番目",
   "@queuedPosition": {
     "placeholders": {

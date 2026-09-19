@@ -27,7 +27,7 @@
 
 | 片 | 问题 | 验收 | 状态 |
 |---|---|---|---|
-| 8 | 视频放弃 / 下载失败后无「继续轮询 / 重新下载」入口 | 保留 operation 可续跑，不重新付费 | ⬜ |
+| 8 | 视频放弃 / 下载失败后无「继续轮询 / 重新下载」入口 | 保留 operation 可续跑，不重新付费 | ✅ |
 | 9 | 视频计费不读上游回报的时长 | 有上游时长优先用之 | ⬜ |
 | 10 | 按次计费不乘张数 | `request_count` = 张数 | ⬜ |
 
@@ -60,3 +60,4 @@
 - **片 6**：用户中途提供了 `MINIMAX_KEY`，实测（2026-09-19，M3）：`reasoning_effort:"none"` 静默无视仍计 34 个 reasoning token；`thinking:{type:"disabled"}` 关；`adaptive` 开；`enabled` 400。新增 `ThinkingDialect.openaiAdaptiveObject`（开关型，不发强度），编辑器给三档。事实写回 `docs/api/minimax.md` §1。
 - **片 7**：③ 的「异常结束且无输出」改为整段响应末尾判一次（`geminiEmptyEndFailure`，同步与流式共用），原来按块判，流式最后一块 parts 常为空，会把已有正文的回复误判失败；集合补 `MALFORMED_RESPONSE`，出图模型的 `IMAGE_PROHIBITED_CONTENT` / `IMAGE_RECITATION` 归 `content_filter`，`OTHER`/`LANGUAGE`/`NO_IMAGE`/`IMAGE_OTHER` 无输出时失败。百炼私有面补上 ① 的空回复规则（`dashscopeEmptyReplyFailure`，同样放行 `length`/`content_filter`/`emptyReplyEndsTurnKey`）。① 的 `finish_reason` 经 `openaiFinishReason` 归一：GLM 的 `sensitive` → `content_filter`，原拼写留在 `finish_reason_raw`。GLM 的 `network_error` 没动（没有实测样本）。
 - **第一批 review**（`1f437c1..bee72c8`）：无发现。**第二批 review**（`bee72c8..2b72e88`）：1 条——提示词级拦截的 `blockReason: OTHER` 被 `geminiEmptyEndFailure` 当成协议失败抛出（丢了拦截语义与用量记录），改为凡 `finish_reason == content_filter` 一律放行给服务层；已补测试。
+- **片 8**：没有分「放弃」与「下载失败」两个入口，合成一个「继续原任务」（`TaskQueueService.resumeVideoJob`）：执行器本来就会对持久化的 job id 续轮询，轮询到已完成就直接下载，所以一条路径覆盖两种情况，失败或取消的视频任务只要有 job id 都能用；「重试」语义不变（提交新任务、再付费）。入口放在任务卡菜单与详情操作行，排在「重试」之前，用现有控件、未走设计稿。四语文案 `resumeVideoJob`。

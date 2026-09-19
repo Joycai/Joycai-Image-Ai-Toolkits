@@ -91,6 +91,16 @@ class _FactsAndActions extends StatelessWidget {
     ].where((row) => row.$2.isNotEmpty);
 
     final actions = <Widget>[
+      // Before retry: on a video whose job was accepted, picking it back up
+      // costs nothing, while a retry submits — and pays for — a new one.
+      if (TaskQueueService.canResumeVideoJob(task))
+        AppButton(
+          label: l10n.resumeVideoJob,
+          icon: Icons.play_arrow_rounded,
+          size: AppButtonSize.compact,
+          variant: AppButtonVariant.secondary,
+          onPressed: () => queue.resumeVideoJob(task.id),
+        ),
       if (failed || task.status == TaskStatus.cancelled)
         AppButton(
           label: l10n.retryTask,

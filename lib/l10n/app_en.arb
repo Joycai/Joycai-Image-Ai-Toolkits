@@ -2467,6 +2467,7 @@
     }
   },
   "retryTask": "Retry",
+  "resumeVideoJob": "Resume job",
   "queuedPosition": "#{position} in queue",
   "@queuedPosition": {
     "placeholders": {
