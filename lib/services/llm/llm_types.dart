@@ -69,6 +69,14 @@ const String llmBodySentKey = 'onRequestBodySent';
 /// layer so the executor can read it without importing a protocol.
 const String videoRequiresAuthKey = 'requiresAuth';
 
+/// Top-level key on a video poll's "done" envelope: the seconds the provider
+/// says it rendered, when it says so (DashScope `usage.duration`, MiniMax
+/// `usage.output_seconds`). Absent otherwise. A submit is billed by the
+/// seconds it *asked* for — the only figure there is at that moment — and
+/// this is what corrects it afterwards: a `duration: -1` ("let the model
+/// decide") request asked for none and was billed zero seconds.
+const String videoRenderedSecondsKey = 'renderedSeconds';
+
 /// Options key: a reply with nothing in it ends the turn instead of failing
 /// the request.
 ///

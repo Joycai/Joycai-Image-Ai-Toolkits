@@ -193,8 +193,10 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
                 'no video_url: ${response.body}');
           }
           // A signed OSS link: the API key must not travel to it.
+          final usage = data['usage'];
           return videoDoneEnvelope(operationName, videoUrl,
-              requiresAuth: videoUriNeedsAuth(videoUrl, config.endpoint));
+              requiresAuth: videoUriNeedsAuth(videoUrl, config.endpoint),
+              renderedSeconds: usage is Map ? usage['duration'] : null);
         case 'FAILED':
         case 'CANCELED':
         case 'UNKNOWN':

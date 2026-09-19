@@ -1269,8 +1269,64 @@ class LLMService {
       const {'operation': 'submit'},
       modelDbId: modelIdentifier is int ? modelIdentifier : null,
       options: options,
+      // Durable, so [settleVideoUsage] can find the row again — also from a
+      // run that resumed the job after a restart.
+      rowId: videoUsageRowId(ticket.name),
     );
     return ticket;
+  }
+
+  /// The usage row a video submit is recorded under.
+  static String videoUsageRowId(String operationName) =>
+      'video:$operationName';
+
+  /// Test door in front of the usage-row update [settleVideoUsage] makes.
+  @visibleForTesting
+  static Future<int> Function(String taskId, Map<String, dynamic> values)?
+      usageUpdateOverride;
+
+  /// Re-prices a finished video job's submit row by the seconds the provider
+  /// reports it rendered ([videoRenderedSecondsKey]).
+  ///
+  /// Only a spec-billed group prices seconds; every other mode is left as
+  /// recorded. The request's other conditions (resolution, quality) come
+  /// from the same [options] the submit was priced with, so the rate row is
+  /// matched again with only the length corrected — a tier keyed on
+  /// duration may change. Best effort: a failure is logged, the video is
+  /// not affected.
+  Future<void> settleVideoUsage({
+    required dynamic modelIdentifier,
+    required String operationName,
+    required num renderedSeconds,
+    Map<String, dynamic>? options,
+    String? contextId,
+  }) async {
+    void log(String msg, {String level = 'INFO'}) =>
+        _emitLog(msg, level: level, contextId: contextId);
+    try {
+      final config = await _resolveConfig(modelIdentifier, logger: log);
+      if (config.billingMode != specBillingMode) return;
+      final spec = specUsageFor(
+        config,
+        options,
+        {'output_seconds': renderedSeconds},
+        imageCount: 0,
+      )!;
+      final update = usageUpdateOverride ?? DatabaseService().updateTokenUsage;
+      final rows = await update(videoUsageRowId(operationName), {
+        'output_units': spec.units,
+        'output_unit_price': spec.unitPrice,
+        'output_unit': spec.unit.name,
+        'output_spec': jsonEncode(spec.toJson()),
+      });
+      if (rows > 0) {
+        log('Video $operationName: billed by the ${spec.spec.seconds}s the '
+            'provider reports it rendered.');
+      }
+    } catch (e) {
+      log('Could not settle the usage of video $operationName by its '
+          'rendered length (the video is unaffected): $e', level: 'WARN');
+    }
   }
 
   Future<Map<String, dynamic>> checkOperation({

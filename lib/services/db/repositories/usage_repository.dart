@@ -12,6 +12,14 @@ class UsageRepository {
     await db.insert('token_usage', usage);
   }
 
+  /// Overwrites [values] on the usage row recorded under [taskId]; returns
+  /// how many rows matched (0 for a row written before ids were durable).
+  Future<int> updateTokenUsage(String taskId, Map<String, dynamic> values) async {
+    final db = await _db;
+    return db.update('token_usage', values,
+        where: 'task_id = ?', whereArgs: [taskId]);
+  }
+
   /// Points every usage row and task row recorded against a key of [idMap]
   /// at its value — a channel merge folding one model into another, so the
   /// history follows the model rather than reading "deleted model".

@@ -148,9 +148,13 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
                 'content.url: $task');
           }
           // A signed CDN link: the API key must not travel to it.
+          final usage = task['usage'];
           return videoDoneEnvelope(operationName, videoUrl,
               requiresAuth:
-                  videoUriNeedsAuth(videoUrl, target.config.endpoint));
+                  videoUriNeedsAuth(videoUrl, target.config.endpoint),
+              renderedSeconds:
+                  (usage is Map ? usage['output_seconds'] : null) ??
+                      task['duration']);
         case 'failed':
         case 'cancelled':
           final error = task['error'];

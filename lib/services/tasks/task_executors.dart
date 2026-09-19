@@ -622,6 +622,17 @@ extension TaskExecutors on TaskQueueService {
       return;
     }
 
+    final rendered = done[videoRenderedSecondsKey];
+    if (rendered is num) {
+      await LLMService().settleVideoUsage(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        operationName: operationName,
+        renderedSeconds: rendered,
+        options: task.parameters,
+        contextId: task.id,
+      );
+    }
+
     final response = done['response'] as Map?;
     final generated = response?['generateVideoResponse'] as Map?;
     final samples = generated?['generatedSamples'] as List?;

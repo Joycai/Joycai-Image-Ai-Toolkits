@@ -821,16 +821,26 @@ bool videoUriNeedsAuth(String uri, String endpoint) {
       effectivePort(u) == effectivePort(e);
 }
 
+num? _positiveSeconds(Object? raw) {
+  final n = raw is num ? raw : num.tryParse(raw?.toString() ?? '');
+  return n != null && n > 0 ? n : null;
+}
+
 /// The Veo-shaped "done" envelope every video poll returns
 /// ([VideoJobProtocol.poll]), with the download-auth decision attached.
+///
+/// [renderedSeconds] is the length the provider reports it rendered, when it
+/// reports one ([videoRenderedSecondsKey]).
 Map<String, dynamic> videoDoneEnvelope(
   String operationName,
   String uri, {
   required bool requiresAuth,
+  Object? renderedSeconds,
 }) =>
     {
       'name': operationName,
       'done': true,
+      videoRenderedSecondsKey: ?_positiveSeconds(renderedSeconds),
       'response': {
         'generateVideoResponse': {
           'generatedSamples': [
