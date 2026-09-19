@@ -43,4 +43,23 @@ void main() {
         dashscopeImageMetadata(data: const {}, imageCount: 1, sentSize: null);
     expect(meta, {'image_count': 1});
   });
+
+  test('wan token counts stay out of the keys usage recording reads', () {
+    final meta = dashscopeImageMetadata(
+      data: {
+        'usage': {
+          'image_count': 1,
+          'input_tokens': 120,
+          'output_tokens': 4096,
+          'size': '2048*2048',
+        },
+      },
+      imageCount: 1,
+      sentSize: '2K',
+    );
+    expect(meta.containsKey('input_tokens'), isFalse);
+    expect(meta.containsKey('output_tokens'), isFalse);
+    expect(meta['dashscope_usage'], containsPair('output_tokens', 4096));
+    expect(meta['output_size'], '2048*2048');
+  });
 }

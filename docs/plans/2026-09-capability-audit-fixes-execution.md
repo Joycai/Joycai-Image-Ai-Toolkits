@@ -12,7 +12,7 @@
 |---|---|---|---|---|
 | 1 | 出图收到 0 张也算成功 | `services/tasks/task_executors.dart` | `received == 0` 抛错，带模型回复文字；测试钉住 | ✅ |
 | 2 | ① 流式 base64 启发式：前缀重复 / 小块被吞 | `protocols/openai_chat_protocol.dart` | 普通长文本逐块下发且不重复；真 base64 不刷屏；测试 | ✅ |
-| 3 | 万相 usage 的 `input_tokens`/`output_tokens` 被当 token 计费 | `protocols/dashscope_images_protocol.dart` | 原始 usage 放私有键；token 计数不再出现；测试 | ⬜ |
+| 3 | 万相 usage 的 `input_tokens`/`output_tokens` 被当 token 计费 | `protocols/dashscope_images_protocol.dart` | 原始 usage 放私有键；token 计数不再出现；测试 | ✅ |
 | 4 | 上下文压缩继承联网搜索 | `assistant/assistant_context_window.dart`、配置解析 | 压缩请求不带服务端工具；测试 | ⬜ |
 
 ## 第二批 · 协议行为
@@ -54,3 +54,4 @@
 
 - **片 1**：判定抽成顶层 `imageTaskFailure`（`@visibleForTesting`），执行器里的流式与非流式两路都把文字攒进同一个 buffer；取消的任务在判定前就已返回，不受影响。
 - **片 2**：启发式收进 `StreamedImageTextGate`：可疑块不再丢弃而是从此「扣住」，流末只补发抽图后剩下、且此前没显示过的部分（按公共前缀算，data URI 跨块断开时也不重复）。去掉了「剩余 < 原长 10% 就不补」的规则——它会吞掉内联图之后的文字。`thinkFilter.flush()` 的尾巴以前若像 base64 就既不显示也不参与抽图，现在一样进闸门。
+- **片 3**：私有键叫 `dashscope_usage`（同 `ark_usage`）。顺带：原来 `...usage` 在 `image_count` 之后展开，上游的 `image_count` 会盖掉实际落盘张数，现在以落盘张数为准。token 计费组配万相会得到「usage 缺失」警告，与方舟一致。
