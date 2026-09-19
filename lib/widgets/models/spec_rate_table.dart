@@ -185,7 +185,11 @@ class SpecRateTableEditor extends StatelessWidget {
           const SizedBox(height: _gap),
           _Hint(icon: Icons.info_outline, text: l10n.specPriceMissing(n)),
         ],
-        if (onlyOther) ...[
+        // Only per clip is the same as per request: per image multiplies by
+        // the pictures a request returned (a group of four is four units)
+        // and per second by the length, while per request counts the call
+        // once however many images it carried.
+        if (onlyOther && unit == OutputUnit.clip) ...[
           const SizedBox(height: _gap),
           _Hint(icon: Icons.info_outline, text: l10n.specOnlyOtherHint),
           Align(
