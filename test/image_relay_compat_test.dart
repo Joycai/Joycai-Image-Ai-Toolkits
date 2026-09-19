@@ -498,6 +498,15 @@ void main() {
       }
     });
 
+    test('a prompt block reported as OTHER is left to the content-block check', () {
+      final chunks = parseGoogleChunks({
+        'promptFeedback': {'blockReason': 'OTHER'},
+      }).toList();
+      expect(chunks.single.metadata!['finish_reason'], contentFilterFinishReason);
+      expect(geminiEmptyEndFailure(chunks.single.metadata, sawOutput: false), isNull);
+      expect(contentBlockedFailure(chunks.single.metadata), isNotNull);
+    });
+
     test("the image models' block spellings are content_filter", () {
       expect(geminiFinishReason('IMAGE_PROHIBITED_CONTENT'), contentFilterFinishReason);
       expect(geminiFinishReason('IMAGE_RECITATION'), contentFilterFinishReason);

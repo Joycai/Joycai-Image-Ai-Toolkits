@@ -269,7 +269,13 @@ LLMApiException? geminiEmptyEndFailure(
   if (sawOutput || metadata == null) return null;
   final raw = metadata['finish_reason_raw'];
   if (raw is! String || raw == 'STOP' || raw == 'MAX_TOKENS') return null;
-  if (blockingFinishReasons.contains(raw)) return null;
+  // Any content block — a candidate's own reason, or a prompt-level block
+  // whose `blockReason` (OTHER, BLOCK_REASON_UNSPECIFIED…) rides as the raw
+  // value — is LLMService's to fail, after it records the usage.
+  if (blockingFinishReasons.contains(raw) ||
+      metadata['finish_reason'] == contentFilterFinishReason) {
+    return null;
+  }
   return LLMApiException(
     'Google GenAI ended the generation with finishReason $raw and no content'
     '${raw == 'MISSING_THOUGHT_SIGNATURE' ? ' — a replayed tool-calling turn lacked its thoughtSignature' : ''}.',
