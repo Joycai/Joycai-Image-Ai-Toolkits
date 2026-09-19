@@ -1,4 +1,5 @@
 import 'image_size_rules.dart';
+import 'image_size_vocabulary.dart';
 
 /// How a parameter should be rendered in the workbench config UI.
 ///
@@ -41,6 +42,11 @@ class ParamSpec {
   /// dialog allows and what [isValid] keeps cannot drift apart.
   final ImageSizeRules? sizeRules;
 
+  /// What the size picker offers for [ParamControl.customSize]: ratio chips,
+  /// tier segments, the sentinel's meaning, and upstream's table where there
+  /// is one. The offer only — [sizeRules] is what a size may be.
+  final ImageSizeVocabulary? sizeVocabulary;
+
   /// Inclusive bounds for [ParamControl.slider]. Unused by every other
   /// control.
   final int? min;
@@ -53,6 +59,7 @@ class ParamSpec {
     required this.options,
     required this.defaultValue,
     this.sizeRules,
+    this.sizeVocabulary,
     this.min,
     this.max,
   });

@@ -1,4 +1,5 @@
 import 'image_size_rules.dart';
+import 'image_size_vocabulary.dart';
 import 'model_family.dart';
 import 'param_spec.dart';
 import 'vendors/vendor_profile.dart' show WireProtocol;

@@ -8223,35 +8223,11 @@ abstract class AppLocalizations {
   /// **'Binary mode active — background hidden for clean mask export'**
   String get binaryModeActive;
 
-  /// No description provided for @imageSizePickerTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Image Size'**
-  String get imageSizePickerTitle;
-
   /// No description provided for @imageSizeAuto.
   ///
   /// In en, this message translates to:
   /// **'Auto'**
   String get imageSizeAuto;
-
-  /// No description provided for @imageSizeAutoDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Let the model choose the size'**
-  String get imageSizeAutoDesc;
-
-  /// No description provided for @imageSizeDefaultDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Default size (1K tier)'**
-  String get imageSizeDefaultDesc;
-
-  /// No description provided for @imageSizePresets.
-  ///
-  /// In en, this message translates to:
-  /// **'Presets'**
-  String get imageSizePresets;
 
   /// No description provided for @imageSizeCustom.
   ///
@@ -8271,12 +8247,6 @@ abstract class AppLocalizations {
   /// **'Long edge'**
   String get imageSizeLongEdge;
 
-  /// No description provided for @imageSizeCompute.
-  ///
-  /// In en, this message translates to:
-  /// **'Calculate'**
-  String get imageSizeCompute;
-
   /// No description provided for @imageSizeWidth.
   ///
   /// In en, this message translates to:
@@ -8288,42 +8258,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Height'**
   String get imageSizeHeight;
-
-  /// No description provided for @imageSizeSnapHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Both edges snap to multiples of {step} px on commit.'**
-  String imageSizeSnapHint(int step);
-
-  /// No description provided for @sizeRuleEdgeGrid.
-  ///
-  /// In en, this message translates to:
-  /// **'Both edges are multiples of {step}'**
-  String sizeRuleEdgeGrid(int step);
-
-  /// No description provided for @sizeRuleMinEdge.
-  ///
-  /// In en, this message translates to:
-  /// **'Shortest edge {short} px ≥ {min}'**
-  String sizeRuleMinEdge(int short, int min);
-
-  /// No description provided for @sizeRuleMaxEdge.
-  ///
-  /// In en, this message translates to:
-  /// **'Longest edge {long} px ≤ {max}'**
-  String sizeRuleMaxEdge(int long, int max);
-
-  /// No description provided for @sizeRuleAspect.
-  ///
-  /// In en, this message translates to:
-  /// **'Aspect ratio {ratio} ≤ {max}:1'**
-  String sizeRuleAspect(String ratio, String max);
-
-  /// No description provided for @sizeRulePixels.
-  ///
-  /// In en, this message translates to:
-  /// **'Total {mp} within {min}–{max} MP'**
-  String sizeRulePixels(String mp, String min, String max);
 
   /// No description provided for @safetySettings.
   ///
@@ -9632,6 +9566,248 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 layer} other{{count} layers}}'**
   String menuLayerCount(int count);
+
+  /// No description provided for @imageSizeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Image size'**
+  String get imageSizeTitle;
+
+  /// No description provided for @imageSizeNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get imageSizeNotSet;
+
+  /// No description provided for @imageSizeHintGpt.
+  ///
+  /// In en, this message translates to:
+  /// **'Model decides'**
+  String get imageSizeHintGpt;
+
+  /// No description provided for @imageSizeHintQwenShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Follows the input · {tier}'**
+  String imageSizeHintQwenShort(String tier);
+
+  /// No description provided for @imageSizeHintQwen.
+  ///
+  /// In en, this message translates to:
+  /// **'Text-to-image renders {size}; an edit follows the input image\'s ratio, scaled to the {tier} area'**
+  String imageSizeHintQwen(String size, String tier);
+
+  /// No description provided for @imageSizeHintWan.
+  ///
+  /// In en, this message translates to:
+  /// **'Sends {tier}'**
+  String imageSizeHintWan(String tier);
+
+  /// No description provided for @imageSizeKeywordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{ratio} · sent as keyword'**
+  String imageSizeKeywordHint(String ratio);
+
+  /// No description provided for @imageSizeTierSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get imageSizeTierSection;
+
+  /// No description provided for @imageSizeTierAreaTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'area target · not a keyword'**
+  String get imageSizeTierAreaTarget;
+
+  /// No description provided for @imageSizeSnapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Snapped to multiples of {step}: {old} → {value}'**
+  String imageSizeSnapped(int step, String old, String value);
+
+  /// No description provided for @imageSizeClampedDown.
+  ///
+  /// In en, this message translates to:
+  /// **'{old} at {ratio} is {mp} MP, over the {max} MP limit; stepped down the {step} grid to {value}'**
+  String imageSizeClampedDown(
+    String old,
+    String ratio,
+    String mp,
+    String max,
+    int step,
+    String value,
+  );
+
+  /// No description provided for @imageSizeClampedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'{old} at {ratio} is {mp} MP, under the {min} MP floor; stepped up the {step} grid to {value}'**
+  String imageSizeClampedUp(
+    String old,
+    String ratio,
+    String mp,
+    String min,
+    int step,
+    String value,
+  );
+
+  /// No description provided for @imageSizeNoSolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Aspect ratio over {limit}: no size works on this model'**
+  String imageSizeNoSolution(String limit);
+
+  /// No description provided for @imageSizeRatioOverLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Aspect ratio {ratio} is over {limit}'**
+  String imageSizeRatioOverLimit(String ratio, String limit);
+
+  /// No description provided for @imageSizeOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'This size is outside what the model accepts'**
+  String get imageSizeOutOfRange;
+
+  /// No description provided for @imageSizeFixTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {value}'**
+  String imageSizeFixTo(String value);
+
+  /// No description provided for @imageSizeNotWrittenBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Not applied; closing keeps the last valid size, {value}'**
+  String imageSizeNotWrittenBack(String value);
+
+  /// No description provided for @imageSizeTypingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Typing · checked on blur or Enter'**
+  String get imageSizeTypingHint;
+
+  /// No description provided for @imageSizeSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap width and height'**
+  String get imageSizeSwap;
+
+  /// No description provided for @imageSizeFellBack.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} is not valid on {model}; back to “{sentinel}”'**
+  String imageSizeFellBack(String value, String model, String sentinel);
+
+  /// No description provided for @imageSizeBillingTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Billed {tier}'**
+  String imageSizeBillingTier(String tier);
+
+  /// No description provided for @imageSizeBillingCrossed.
+  ///
+  /// In en, this message translates to:
+  /// **'Over the {tier} area ({area}); this one is billed at {next} · per-spec billing'**
+  String imageSizeBillingCrossed(String tier, String area, String next);
+
+  /// No description provided for @imageSizeRulesAllPass.
+  ///
+  /// In en, this message translates to:
+  /// **'All pass'**
+  String get imageSizeRulesAllPass;
+
+  /// No description provided for @imageSizeRulesPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get imageSizeRulesPending;
+
+  /// No description provided for @imageSizeRuleFails.
+  ///
+  /// In en, this message translates to:
+  /// **'fails'**
+  String get imageSizeRuleFails;
+
+  /// No description provided for @imageSizeRuleMaxEdgeShort.
+  ///
+  /// In en, this message translates to:
+  /// **'long edge ≤ {max}'**
+  String imageSizeRuleMaxEdgeShort(int max);
+
+  /// No description provided for @imageSizeRuleMinEdgeShort.
+  ///
+  /// In en, this message translates to:
+  /// **'short edge ≥ {min}'**
+  String imageSizeRuleMinEdgeShort(int min);
+
+  /// No description provided for @imageSizeAreaRef.
+  ///
+  /// In en, this message translates to:
+  /// **'Area ref {edge}²'**
+  String imageSizeAreaRef(int edge);
+
+  /// No description provided for @imageSizeRecommendTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended sizes'**
+  String get imageSizeRecommendTable;
+
+  /// No description provided for @imageSizeRecommendCorner.
+  ///
+  /// In en, this message translates to:
+  /// **'Ratio \\ tier'**
+  String get imageSizeRecommendCorner;
+
+  /// No description provided for @imageSizeRecommendHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A cell sets both axes at once. The 1:1 row sends the tier keyword; the others send pixels.'**
+  String get imageSizeRecommendHint;
+
+  /// No description provided for @imageSizeLockRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock ratio'**
+  String get imageSizeLockRatio;
+
+  /// No description provided for @imageSizeFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies live · Esc reverts · Enter closes'**
+  String get imageSizeFooter;
+
+  /// No description provided for @imageSizeFooterBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Esc reverts'**
+  String get imageSizeFooterBlocked;
+
+  /// No description provided for @imageSizeFooterTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter settles'**
+  String get imageSizeFooterTyping;
+
+  /// No description provided for @imageSizeDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get imageSizeDone;
+
+  /// No description provided for @imageSizeRatioDerived.
+  ///
+  /// In en, this message translates to:
+  /// **'derived · follows width and height'**
+  String get imageSizeRatioDerived;
+
+  /// No description provided for @imageSizeRatioAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'custom · accepted'**
+  String get imageSizeRatioAccepted;
 }
 
 class _AppLocalizationsDelegate

@@ -314,6 +314,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 Provider.of<AppState>(context, listen: false).setImageParam(model, key, value),
             capabilitiesOf: (model) =>
                 Provider.of<AppState>(context, listen: false).descriptorForModel(model).capabilities,
+            storedImageParamOf: (model, key) =>
+                Provider.of<AppState>(context, listen: false).storedImageParam(model, key),
+            specRatesOf: (model) => Provider.of<AppState>(context, listen: false).specRatesFor(model),
           ),
         ),
         const SizedBox(height: _kCardGap),

@@ -5,13 +5,14 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
+import '../../models/spec_rate.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../../widgets/ui/app_dropdown.dart';
 import '../../widgets/ui/app_field_size.dart';
 import '../../widgets/ui/app_segmented_control.dart';
-import '../../widgets/dialogs/image_size_picker_dialog.dart';
 import '../../widgets/models/model_picker_options.dart';
 import '../../widgets/ui/searchable_picker.dart';
+import 'widgets/size_picker/size_field.dart';
 
 /// Vertical rhythm inside the card: header → pickers → parameter grid
 /// (`A1 · 1a`, `gap:8`).
@@ -52,6 +53,15 @@ class ModelSelectionSection extends StatelessWidget {
   /// parameters, which its id cannot know.
   final ModelCapabilities Function(LLMModel model) capabilitiesOf;
 
+  /// What the store holds for a parameter before validation — the size field
+  /// says when a sibling model's size was dropped for this one. Null in a
+  /// host that has no store to ask.
+  final String? Function(LLMModel model, String paramKey)? storedImageParamOf;
+
+  /// The model's spec-billing rate table, or null — the size picker names the
+  /// billing tier from it, and shows nothing without it.
+  final List<SpecRate>? Function(LLMModel model)? specRatesOf;
+
   const ModelSelectionSection({
     super.key,
     required this.availableModels,
@@ -65,6 +75,8 @@ class ModelSelectionSection extends StatelessWidget {
     required this.imageParamResolver,
     required this.onImageParamChanged,
     required this.capabilitiesOf,
+    this.storedImageParamOf,
+    this.specRatesOf,
   });
 
   @override
@@ -226,7 +238,10 @@ class ModelSelectionSection extends StatelessWidget {
   /// A segmented track of three or four options at half the card's width
   /// leaves each option ~30px — room for 「低」, not for "Medium". Two options
   /// and every select-like control fit a half.
+  /// The size field too: value, derived ratio and the swap button are one
+  /// row (`A1c · 30a`).
   static bool _spansRow(ParamSpec spec) =>
+      spec.control == ParamControl.customSize ||
       spec.control == ParamControl.segmented && spec.options.length > 2;
 
   Widget _buildModelSpecificOptions(BuildContext context, LLMModel model, AppLocalizations l10n) {
@@ -327,43 +342,14 @@ class ModelSelectionSection extends StatelessWidget {
           style: AppSegmentStyle.raised,
         );
       case ParamControl.customSize:
-        // A field-shaped button showing the current value; it opens the
-        // size-picker dialog (preset chips + free-form WxH + per-rule live
-        // validation). `1d` draws it as a select box with an open-in-new glyph
-        // rather than a chevron, because it opens a dialog, not a menu.
-        control = OutlinedButton(
-          style: OutlinedButton.styleFrom(
-            backgroundColor: colorScheme.surfaceContainerLow,
-            foregroundColor: colorScheme.onSurface,
-            side: BorderSide(color: colorScheme.outlineVariant),
-            minimumSize: const Size(0, AppSize.control),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s10),
-            alignment: AlignmentDirectional.centerStart,
-          ),
-          onPressed: () async {
-            final picked = await showImageSizePickerDialog(
-              context: context,
-              spec: spec,
-              currentValue: current,
-            );
-            if (picked != null) onImageParamChanged(model, spec.key, picked);
-          },
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _optionLabel(l10n, spec.key, current).replaceAll('x', '×'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  // A pixel pair is a figure, set in the mono face so the
-                  // digits line up between one model and the next.
-                  style: textTheme.bodySmall?.mono,
-                ),
-              ),
-              const SizedBox(width: AppSpace.s6),
-              Icon(Icons.open_in_new, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
-            ],
-          ),
+        // `A1c`: the size field, which opens the size picker.
+        control = SizeField(
+          spec: spec,
+          value: current,
+          modelName: model.modelName,
+          storedValue: storedImageParamOf?.call(model, spec.key),
+          rates: specRatesOf?.call(model),
+          onChanged: (v) => onImageParamChanged(model, spec.key, v),
         );
       case ParamControl.slider:
         // Filtered out above; kept so the switch stays exhaustive.

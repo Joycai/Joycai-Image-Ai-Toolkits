@@ -4538,19 +4538,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get binaryModeActive => '二值化模式已启用 — 背景已隐藏以导出纯净蒙版';
 
   @override
-  String get imageSizePickerTitle => '图像尺寸';
-
-  @override
   String get imageSizeAuto => '自动';
-
-  @override
-  String get imageSizeAutoDesc => '由模型自行决定尺寸';
-
-  @override
-  String get imageSizeDefaultDesc => '默认尺寸（1K 档）';
-
-  @override
-  String get imageSizePresets => '预设';
 
   @override
   String get imageSizeCustom => '自定义';
@@ -4562,43 +4550,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageSizeLongEdge => '长边';
 
   @override
-  String get imageSizeCompute => '计算';
-
-  @override
   String get imageSizeWidth => '宽度';
 
   @override
   String get imageSizeHeight => '高度';
-
-  @override
-  String imageSizeSnapHint(int step) {
-    return '两边在提交时会自动对齐到 $step 像素的整数倍。';
-  }
-
-  @override
-  String sizeRuleEdgeGrid(int step) {
-    return '两边均为 $step 的整数倍';
-  }
-
-  @override
-  String sizeRuleMinEdge(int short, int min) {
-    return '短边 ${short}px ≥ $min';
-  }
-
-  @override
-  String sizeRuleMaxEdge(int long, int max) {
-    return '长边 ${long}px ≤ $max';
-  }
-
-  @override
-  String sizeRuleAspect(String ratio, String max) {
-    return '长宽比 $ratio ≤ $max:1';
-  }
-
-  @override
-  String sizeRulePixels(String mp, String min, String max) {
-    return '总像素 $mp 在 $min–$max MP 之间';
-  }
 
   @override
   String get safetySettings => '安全设置';
@@ -5351,6 +5306,168 @@ class AppLocalizationsZh extends AppLocalizations {
   String menuLayerCount(int count) {
     return '$count 层';
   }
+
+  @override
+  String get imageSizeTitle => '图像尺寸';
+
+  @override
+  String get imageSizeNotSet => '不设尺寸';
+
+  @override
+  String get imageSizeHintGpt => '交给模型决定';
+
+  @override
+  String imageSizeHintQwenShort(String tier) {
+    return '跟随输入图 · $tier';
+  }
+
+  @override
+  String imageSizeHintQwen(String size, String tier) {
+    return '文生图出 $size；改图跟随输入图的比例，缩到 $tier 面积';
+  }
+
+  @override
+  String imageSizeHintWan(String tier) {
+    return '发 $tier';
+  }
+
+  @override
+  String imageSizeKeywordHint(String ratio) {
+    return '$ratio · 提交关键字';
+  }
+
+  @override
+  String get imageSizeTierSection => '大小';
+
+  @override
+  String get imageSizeTierAreaTarget => '面积目标 · 不是关键字';
+
+  @override
+  String imageSizeSnapped(int step, String old, String value) {
+    return '吸附到 $step 的倍数：$old → $value';
+  }
+
+  @override
+  String imageSizeClampedDown(
+    String old,
+    String ratio,
+    String mp,
+    String max,
+    int step,
+    String value,
+  ) {
+    return '$old 在 $ratio 下是 $mp MP，超过上限 $max MP；沿 $step 网格降到 $value';
+  }
+
+  @override
+  String imageSizeClampedUp(
+    String old,
+    String ratio,
+    String mp,
+    String min,
+    int step,
+    String value,
+  ) {
+    return '$old 在 $ratio 下是 $mp MP，低于下限 $min MP；沿 $step 网格升到 $value';
+  }
+
+  @override
+  String imageSizeNoSolution(String limit) {
+    return '长宽比超过 $limit，这个模型下无解';
+  }
+
+  @override
+  String imageSizeRatioOverLimit(String ratio, String limit) {
+    return '长宽比 $ratio 超过 $limit';
+  }
+
+  @override
+  String get imageSizeOutOfRange => '这个尺寸超出模型可接受的范围';
+
+  @override
+  String imageSizeFixTo(String value) {
+    return '改成 $value';
+  }
+
+  @override
+  String imageSizeNotWrittenBack(String value) {
+    return '值未写回；关闭浮层将保留上一个合法尺寸 $value';
+  }
+
+  @override
+  String get imageSizeTypingHint => '输入中 · 离焦或 Enter 后校验';
+
+  @override
+  String get imageSizeSwap => '横竖互换';
+
+  @override
+  String imageSizeFellBack(String value, String model, String sentinel) {
+    return '$value 在 $model 上不合法，已回到「$sentinel」';
+  }
+
+  @override
+  String imageSizeBillingTier(String tier) {
+    return '计费 $tier 档';
+  }
+
+  @override
+  String imageSizeBillingCrossed(String tier, String area, String next) {
+    return '超过 $tier 面积（$area），本次按 $next 档计价 · 按规格计费';
+  }
+
+  @override
+  String get imageSizeRulesAllPass => '全部符合';
+
+  @override
+  String get imageSizeRulesPending => '待校验';
+
+  @override
+  String get imageSizeRuleFails => '不符';
+
+  @override
+  String imageSizeRuleMaxEdgeShort(int max) {
+    return '长边 ≤ $max';
+  }
+
+  @override
+  String imageSizeRuleMinEdgeShort(int min) {
+    return '短边 ≥ $min';
+  }
+
+  @override
+  String imageSizeAreaRef(int edge) {
+    return '面积参考 $edge²';
+  }
+
+  @override
+  String get imageSizeRecommendTable => '官方推荐表';
+
+  @override
+  String get imageSizeRecommendCorner => '比例 \\ 档';
+
+  @override
+  String get imageSizeRecommendHint => '点任一格＝同时设好两根轴。1:1 行提交的是档位关键字，其余格提交像素。';
+
+  @override
+  String get imageSizeLockRatio => '锁定比例';
+
+  @override
+  String get imageSizeFooter => '即时生效 · Esc 撤回 · Enter 关闭';
+
+  @override
+  String get imageSizeFooterBlocked => 'Esc 撤回';
+
+  @override
+  String get imageSizeFooterTyping => 'Enter 结算';
+
+  @override
+  String get imageSizeDone => '完成';
+
+  @override
+  String get imageSizeRatioDerived => '派生 · 跟着宽高走';
+
+  @override
+  String get imageSizeRatioAccepted => '自定义 · 已接受';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -9888,19 +10005,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get binaryModeActive => '二值化模式已啟用 — 背景已隱藏以匯出純淨遮罩';
 
   @override
-  String get imageSizePickerTitle => '影像尺寸';
-
-  @override
   String get imageSizeAuto => '自動';
-
-  @override
-  String get imageSizeAutoDesc => '由模型自行決定尺寸';
-
-  @override
-  String get imageSizeDefaultDesc => '預設尺寸（1K 檔）';
-
-  @override
-  String get imageSizePresets => '預設';
 
   @override
   String get imageSizeCustom => '自訂';
@@ -9912,43 +10017,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get imageSizeLongEdge => '長邊';
 
   @override
-  String get imageSizeCompute => '計算';
-
-  @override
   String get imageSizeWidth => '寬度';
 
   @override
   String get imageSizeHeight => '高度';
-
-  @override
-  String imageSizeSnapHint(int step) {
-    return '兩邊在套用時會自動對齊到 $step 像素的整數倍。';
-  }
-
-  @override
-  String sizeRuleEdgeGrid(int step) {
-    return '兩邊均為 $step 的整數倍';
-  }
-
-  @override
-  String sizeRuleMinEdge(int short, int min) {
-    return '短邊 ${short}px ≥ $min';
-  }
-
-  @override
-  String sizeRuleMaxEdge(int long, int max) {
-    return '長邊 ${long}px ≤ $max';
-  }
-
-  @override
-  String sizeRuleAspect(String ratio, String max) {
-    return '長寬比 $ratio ≤ $max:1';
-  }
-
-  @override
-  String sizeRulePixels(String mp, String min, String max) {
-    return '總像素 $mp 落在 $min–$max MP 區間';
-  }
 
   @override
   String get safetySettings => '安全設定';
@@ -10701,4 +10773,166 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String menuLayerCount(int count) {
     return '$count 層';
   }
+
+  @override
+  String get imageSizeTitle => '圖像尺寸';
+
+  @override
+  String get imageSizeNotSet => '不設尺寸';
+
+  @override
+  String get imageSizeHintGpt => '交給模型決定';
+
+  @override
+  String imageSizeHintQwenShort(String tier) {
+    return '跟隨輸入圖 · $tier';
+  }
+
+  @override
+  String imageSizeHintQwen(String size, String tier) {
+    return '文生圖出 $size；改圖跟隨輸入圖的比例，縮到 $tier 面積';
+  }
+
+  @override
+  String imageSizeHintWan(String tier) {
+    return '發 $tier';
+  }
+
+  @override
+  String imageSizeKeywordHint(String ratio) {
+    return '$ratio · 提交關鍵字';
+  }
+
+  @override
+  String get imageSizeTierSection => '大小';
+
+  @override
+  String get imageSizeTierAreaTarget => '面積目標 · 不是關鍵字';
+
+  @override
+  String imageSizeSnapped(int step, String old, String value) {
+    return '吸附到 $step 的倍數：$old → $value';
+  }
+
+  @override
+  String imageSizeClampedDown(
+    String old,
+    String ratio,
+    String mp,
+    String max,
+    int step,
+    String value,
+  ) {
+    return '$old 在 $ratio 下是 $mp MP，超過上限 $max MP；沿 $step 網格降到 $value';
+  }
+
+  @override
+  String imageSizeClampedUp(
+    String old,
+    String ratio,
+    String mp,
+    String min,
+    int step,
+    String value,
+  ) {
+    return '$old 在 $ratio 下是 $mp MP，低於下限 $min MP；沿 $step 網格升到 $value';
+  }
+
+  @override
+  String imageSizeNoSolution(String limit) {
+    return '長寬比超過 $limit，這個模型下無解';
+  }
+
+  @override
+  String imageSizeRatioOverLimit(String ratio, String limit) {
+    return '長寬比 $ratio 超過 $limit';
+  }
+
+  @override
+  String get imageSizeOutOfRange => '這個尺寸超出模型可接受的範圍';
+
+  @override
+  String imageSizeFixTo(String value) {
+    return '改成 $value';
+  }
+
+  @override
+  String imageSizeNotWrittenBack(String value) {
+    return '值未寫回；關閉浮層將保留上一個合法尺寸 $value';
+  }
+
+  @override
+  String get imageSizeTypingHint => '輸入中 · 離焦或 Enter 後校驗';
+
+  @override
+  String get imageSizeSwap => '橫豎互換';
+
+  @override
+  String imageSizeFellBack(String value, String model, String sentinel) {
+    return '$value 在 $model 上不合法，已回到「$sentinel」';
+  }
+
+  @override
+  String imageSizeBillingTier(String tier) {
+    return '計費 $tier 檔';
+  }
+
+  @override
+  String imageSizeBillingCrossed(String tier, String area, String next) {
+    return '超過 $tier 面積（$area），本次按 $next 檔計價 · 按規格計費';
+  }
+
+  @override
+  String get imageSizeRulesAllPass => '全部符合';
+
+  @override
+  String get imageSizeRulesPending => '待校驗';
+
+  @override
+  String get imageSizeRuleFails => '不符';
+
+  @override
+  String imageSizeRuleMaxEdgeShort(int max) {
+    return '長邊 ≤ $max';
+  }
+
+  @override
+  String imageSizeRuleMinEdgeShort(int min) {
+    return '短邊 ≥ $min';
+  }
+
+  @override
+  String imageSizeAreaRef(int edge) {
+    return '面積參考 $edge²';
+  }
+
+  @override
+  String get imageSizeRecommendTable => '官方推薦表';
+
+  @override
+  String get imageSizeRecommendCorner => '比例 \\ 檔';
+
+  @override
+  String get imageSizeRecommendHint => '點任一格＝同時設好兩根軸。1:1 列提交的是檔位關鍵字，其餘格提交像素。';
+
+  @override
+  String get imageSizeLockRatio => '鎖定比例';
+
+  @override
+  String get imageSizeFooter => '即時生效 · Esc 撤回 · Enter 關閉';
+
+  @override
+  String get imageSizeFooterBlocked => 'Esc 撤回';
+
+  @override
+  String get imageSizeFooterTyping => 'Enter 結算';
+
+  @override
+  String get imageSizeDone => '完成';
+
+  @override
+  String get imageSizeRatioDerived => '派生 · 跟著寬高走';
+
+  @override
+  String get imageSizeRatioAccepted => '自訂 · 已接受';
 }

@@ -4763,19 +4763,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Binary mode active — background hidden for clean mask export';
 
   @override
-  String get imageSizePickerTitle => 'Image Size';
-
-  @override
   String get imageSizeAuto => 'Auto';
-
-  @override
-  String get imageSizeAutoDesc => 'Let the model choose the size';
-
-  @override
-  String get imageSizeDefaultDesc => 'Default size (1K tier)';
-
-  @override
-  String get imageSizePresets => 'Presets';
 
   @override
   String get imageSizeCustom => 'Custom';
@@ -4787,43 +4775,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageSizeLongEdge => 'Long edge';
 
   @override
-  String get imageSizeCompute => 'Calculate';
-
-  @override
   String get imageSizeWidth => 'Width';
 
   @override
   String get imageSizeHeight => 'Height';
-
-  @override
-  String imageSizeSnapHint(int step) {
-    return 'Both edges snap to multiples of $step px on commit.';
-  }
-
-  @override
-  String sizeRuleEdgeGrid(int step) {
-    return 'Both edges are multiples of $step';
-  }
-
-  @override
-  String sizeRuleMinEdge(int short, int min) {
-    return 'Shortest edge $short px ≥ $min';
-  }
-
-  @override
-  String sizeRuleMaxEdge(int long, int max) {
-    return 'Longest edge $long px ≤ $max';
-  }
-
-  @override
-  String sizeRuleAspect(String ratio, String max) {
-    return 'Aspect ratio $ratio ≤ $max:1';
-  }
-
-  @override
-  String sizeRulePixels(String mp, String min, String max) {
-    return 'Total $mp within $min–$max MP';
-  }
 
   @override
   String get safetySettings => 'Safety Settings';
@@ -5617,4 +5572,168 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get imageSizeTitle => 'Image size';
+
+  @override
+  String get imageSizeNotSet => 'Not set';
+
+  @override
+  String get imageSizeHintGpt => 'Model decides';
+
+  @override
+  String imageSizeHintQwenShort(String tier) {
+    return 'Follows the input · $tier';
+  }
+
+  @override
+  String imageSizeHintQwen(String size, String tier) {
+    return 'Text-to-image renders $size; an edit follows the input image\'s ratio, scaled to the $tier area';
+  }
+
+  @override
+  String imageSizeHintWan(String tier) {
+    return 'Sends $tier';
+  }
+
+  @override
+  String imageSizeKeywordHint(String ratio) {
+    return '$ratio · sent as keyword';
+  }
+
+  @override
+  String get imageSizeTierSection => 'Size';
+
+  @override
+  String get imageSizeTierAreaTarget => 'area target · not a keyword';
+
+  @override
+  String imageSizeSnapped(int step, String old, String value) {
+    return 'Snapped to multiples of $step: $old → $value';
+  }
+
+  @override
+  String imageSizeClampedDown(
+    String old,
+    String ratio,
+    String mp,
+    String max,
+    int step,
+    String value,
+  ) {
+    return '$old at $ratio is $mp MP, over the $max MP limit; stepped down the $step grid to $value';
+  }
+
+  @override
+  String imageSizeClampedUp(
+    String old,
+    String ratio,
+    String mp,
+    String min,
+    int step,
+    String value,
+  ) {
+    return '$old at $ratio is $mp MP, under the $min MP floor; stepped up the $step grid to $value';
+  }
+
+  @override
+  String imageSizeNoSolution(String limit) {
+    return 'Aspect ratio over $limit: no size works on this model';
+  }
+
+  @override
+  String imageSizeRatioOverLimit(String ratio, String limit) {
+    return 'Aspect ratio $ratio is over $limit';
+  }
+
+  @override
+  String get imageSizeOutOfRange =>
+      'This size is outside what the model accepts';
+
+  @override
+  String imageSizeFixTo(String value) {
+    return 'Use $value';
+  }
+
+  @override
+  String imageSizeNotWrittenBack(String value) {
+    return 'Not applied; closing keeps the last valid size, $value';
+  }
+
+  @override
+  String get imageSizeTypingHint => 'Typing · checked on blur or Enter';
+
+  @override
+  String get imageSizeSwap => 'Swap width and height';
+
+  @override
+  String imageSizeFellBack(String value, String model, String sentinel) {
+    return '$value is not valid on $model; back to “$sentinel”';
+  }
+
+  @override
+  String imageSizeBillingTier(String tier) {
+    return 'Billed $tier';
+  }
+
+  @override
+  String imageSizeBillingCrossed(String tier, String area, String next) {
+    return 'Over the $tier area ($area); this one is billed at $next · per-spec billing';
+  }
+
+  @override
+  String get imageSizeRulesAllPass => 'All pass';
+
+  @override
+  String get imageSizeRulesPending => 'Pending';
+
+  @override
+  String get imageSizeRuleFails => 'fails';
+
+  @override
+  String imageSizeRuleMaxEdgeShort(int max) {
+    return 'long edge ≤ $max';
+  }
+
+  @override
+  String imageSizeRuleMinEdgeShort(int min) {
+    return 'short edge ≥ $min';
+  }
+
+  @override
+  String imageSizeAreaRef(int edge) {
+    return 'Area ref $edge²';
+  }
+
+  @override
+  String get imageSizeRecommendTable => 'Recommended sizes';
+
+  @override
+  String get imageSizeRecommendCorner => 'Ratio \\ tier';
+
+  @override
+  String get imageSizeRecommendHint =>
+      'A cell sets both axes at once. The 1:1 row sends the tier keyword; the others send pixels.';
+
+  @override
+  String get imageSizeLockRatio => 'Lock ratio';
+
+  @override
+  String get imageSizeFooter => 'Applies live · Esc reverts · Enter closes';
+
+  @override
+  String get imageSizeFooterBlocked => 'Esc reverts';
+
+  @override
+  String get imageSizeFooterTyping => 'Enter settles';
+
+  @override
+  String get imageSizeDone => 'Done';
+
+  @override
+  String get imageSizeRatioDerived => 'derived · follows width and height';
+
+  @override
+  String get imageSizeRatioAccepted => 'custom · accepted';
 }

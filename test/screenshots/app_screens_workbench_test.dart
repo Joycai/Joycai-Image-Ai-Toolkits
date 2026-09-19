@@ -12,6 +12,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/image_card.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/size_field.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
 
@@ -170,6 +171,45 @@ void main() {
             await tester.pump(const Duration(milliseconds: 120));
           }
           await tester.tap(find.text('模型选择').last);
+          for (int p = 0; p < 5; p++) {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
+        },
+      );
+    });
+  }
+
+  // A1c 30b: the size popover in the real right panel — anchored on the
+  // field's right edge and spilling left over the gallery, on wan2.7-image.
+  for (final (ShotSize size, Brightness brightness) in <(ShotSize, Brightness)>[
+    (const ShotSize('desktop', Size(1440, 1100)), Brightness.light),
+    (const ShotSize('desktop', Size(1440, 1100)), Brightness.dark),
+    (const ShotSize('ipad', Size(1024, 900)), Brightness.light),
+  ]) {
+    testWidgets('workbench · sizePicker @ ${size.label} ${brightness.name}', (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.workbench,
+        size: size,
+        brightness: brightness,
+        suffix: 'sizePicker',
+        before: (_) async {
+          AppState().setWorkbenchTab(0);
+          AppState().isConsoleExpanded = false;
+          AppState().lastSelectedModelId = 'wan2.7-image';
+        },
+        after: (WidgetTester tester) async {
+          AppState().clearImageSelection();
+          seedImageSelection(AppState());
+          for (int p = 0; p < 5; p++) {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
+          await tester.tap(find.text('模型选择').last);
+          for (int p = 0; p < 5; p++) {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
+          await tester.tap(find.byType(SizeField));
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
           }

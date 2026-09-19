@@ -26,12 +26,12 @@ class SpecRateMatch {
 ///
 /// One size condition is looser than equality: a resolution tier (`1K`,
 /// `2K`, `4K`, `1.5K`…) also prices a pixel size that falls in that tier —
-/// see [_tierOf]. Endpoints that take free sizes (qwen-image, wan2.7-image,
+/// see [specRateTierOf]. Endpoints that take free sizes (qwen-image, wan2.7-image,
 /// Seedream) bill by tier and echo the pixels they rendered, so a table
 /// written in tiers must still land. An exact pixel row, where one exists,
 /// beats the tier row at the same specificity.
 SpecRateMatch matchSpecRate(List<SpecRate> rates, OutputSpec spec) {
-  final tier = _tierOf(spec.size, rates);
+  final tier = specRateTierOf(spec.size, rates);
   SpecRate? best;
   var bestExact = false;
   for (final rate in rates) {
@@ -63,7 +63,7 @@ SpecRateMatch matchSpecRate(List<SpecRate> rates, OutputSpec spec) {
 /// 2K-tier 2688×1536 (4.13 MP) lands on 2K — without a boundary table per
 /// vendor. Only the tiers the table actually prices compete, so a table
 /// with a `1.5K` row splits 1K and 2K where that vendor does.
-String? _tierOf(String? size, List<SpecRate> rates) {
+String? specRateTierOf(String? size, List<SpecRate> rates) {
   final wxh = parseWxH(size);
   if (wxh == null) return null;
   final area = (wxh.width * wxh.height).toDouble();

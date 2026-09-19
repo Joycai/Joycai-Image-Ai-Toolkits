@@ -448,80 +448,12 @@
   "tapToPick": "タップして選択",
   "goToGallery": "ギャラリーへ",
   "binaryModeActive": "バイナリモード有効 — クリーンなマスクエクスポートのため背景非表示",
-  "imageSizePickerTitle": "画像サイズ",
   "imageSizeAuto": "自動",
-  "imageSizeAutoDesc": "モデルにサイズを任せる",
-  "imageSizeDefaultDesc": "既定のサイズ（1K）",
-  "imageSizePresets": "プリセット",
   "imageSizeCustom": "カスタム",
   "imageSizeRatio": "比率",
   "imageSizeLongEdge": "長辺",
-  "imageSizeCompute": "計算",
   "imageSizeWidth": "幅",
   "imageSizeHeight": "高さ",
-  "imageSizeSnapHint": "適用時、両辺は {step} ピクセルの倍数に自動でスナップされます。",
-  "@imageSizeSnapHint": {
-    "placeholders": {
-      "step": {
-        "type": "int"
-      }
-    }
-  },
-  "sizeRuleEdgeGrid": "両辺が {step} の倍数",
-  "@sizeRuleEdgeGrid": {
-    "placeholders": {
-      "step": {
-        "type": "int"
-      }
-    }
-  },
-  "sizeRuleMinEdge": "短辺 {short}px ≥ {min}",
-  "@sizeRuleMinEdge": {
-    "placeholders": {
-      "short": {
-        "type": "int"
-      },
-      "min": {
-        "type": "int"
-      }
-    }
-  },
-  "sizeRuleMaxEdge": "長辺 {long}px ≤ {max}",
-  "@sizeRuleMaxEdge": {
-    "placeholders": {
-      "long": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
-  "sizeRuleAspect": "アスペクト比 {ratio} ≤ {max}:1",
-  "@sizeRuleAspect": {
-    "placeholders": {
-      "ratio": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
-  "sizeRulePixels": "総画素 {mp} は {min}–{max} MP の範囲内",
-  "@sizeRulePixels": {
-    "placeholders": {
-      "mp": {
-        "type": "String"
-      },
-      "min": {
-        "type": "String"
-      },
-      "max": {
-        "type": "String"
-      }
-    }
-  },
   "safetySettings": "セーフティ設定",
   "safetySettingsDesc": "Gemini コンテンツフィルタのしきい値。各リクエストに適用されます（厳格 → 寛容）。Veo/Imagen は非対応。",
   "safetyCategoryHarassment": "ハラスメント",
@@ -982,5 +914,216 @@
   "layerExportFailed": "合成画像を書き出せませんでした：{error}",
   "layerSetUnavailable": "このレイヤーのファイルが見つかりません",
   "menuOpenLayers": "レイヤーを開く",
-  "menuLayerCount": "{count} レイヤー"
+  "menuLayerCount": "{count} レイヤー",
+  "imageSizeTitle": "画像サイズ",
+  "imageSizeNotSet": "サイズ未指定",
+  "imageSizeHintGpt": "モデルに任せる",
+  "imageSizeHintQwenShort": "入力画像に合わせる · {tier}",
+  "@imageSizeHintQwenShort": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeHintQwen": "テキスト生成は {size}、編集は入力画像の比率のまま {tier} の面積に縮小",
+  "@imageSizeHintQwen": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeHintWan": "{tier} を送信",
+  "@imageSizeHintWan": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeKeywordHint": "{ratio} · キーワードで送信",
+  "@imageSizeKeywordHint": {
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeTierSection": "大きさ",
+  "imageSizeTierAreaTarget": "面積の目安 · キーワードではない",
+  "imageSizeSnapped": "{step} の倍数にスナップ：{old} → {value}",
+  "@imageSizeSnapped": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "old": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeClampedDown": "{old} は {ratio} で {mp} MP、上限 {max} MP を超過。{step} グリッドで {value} まで下げました",
+  "@imageSizeClampedDown": {
+    "placeholders": {
+      "old": {
+        "type": "String"
+      },
+      "ratio": {
+        "type": "String"
+      },
+      "mp": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "step": {
+        "type": "int"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeClampedUp": "{old} は {ratio} で {mp} MP、下限 {min} MP を下回る。{step} グリッドで {value} まで上げました",
+  "@imageSizeClampedUp": {
+    "placeholders": {
+      "old": {
+        "type": "String"
+      },
+      "ratio": {
+        "type": "String"
+      },
+      "mp": {
+        "type": "String"
+      },
+      "min": {
+        "type": "String"
+      },
+      "step": {
+        "type": "int"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeNoSolution": "アスペクト比が {limit} を超過：このモデルでは解がありません",
+  "@imageSizeNoSolution": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeRatioOverLimit": "アスペクト比 {ratio} が {limit} を超過",
+  "@imageSizeRatioOverLimit": {
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeOutOfRange": "このサイズはモデルの受け付ける範囲外です",
+  "imageSizeFixTo": "{value} にする",
+  "@imageSizeFixTo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeNotWrittenBack": "未反映：閉じると直前の有効なサイズ {value} のままです",
+  "@imageSizeNotWrittenBack": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeTypingHint": "入力中 · フォーカスを外すか Enter で確認",
+  "imageSizeSwap": "縦横を入れ替え",
+  "imageSizeFellBack": "{value} は {model} では無効なため「{sentinel}」に戻しました",
+  "@imageSizeFellBack": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "model": {
+        "type": "String"
+      },
+      "sentinel": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeBillingTier": "{tier} で課金",
+  "@imageSizeBillingTier": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeBillingCrossed": "{tier} の面積（{area}）を超えるため {next} で課金 · 規格別課金",
+  "@imageSizeBillingCrossed": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeRulesAllPass": "すべて適合",
+  "imageSizeRulesPending": "確認待ち",
+  "imageSizeRuleFails": "不適合",
+  "imageSizeRuleMaxEdgeShort": "長辺 ≤ {max}",
+  "@imageSizeRuleMaxEdgeShort": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "imageSizeRuleMinEdgeShort": "短辺 ≥ {min}",
+  "@imageSizeRuleMinEdgeShort": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "imageSizeAreaRef": "面積の基準 {edge}²",
+  "@imageSizeAreaRef": {
+    "placeholders": {
+      "edge": {
+        "type": "int"
+      }
+    }
+  },
+  "imageSizeRecommendTable": "公式の推奨表",
+  "imageSizeRecommendCorner": "比率 \\ 段階",
+  "imageSizeRecommendHint": "セルを選ぶと比率と大きさが同時に決まります。1:1 の行は段階キーワード、ほかはピクセルを送信。",
+  "imageSizeLockRatio": "比率を固定",
+  "imageSizeFooter": "即時反映 · Esc で元に戻す · Enter で閉じる",
+  "imageSizeFooterBlocked": "Esc で元に戻す",
+  "imageSizeFooterTyping": "Enter で確定",
+  "imageSizeDone": "完了",
+  "imageSizeRatioDerived": "派生 · 幅と高さに追従",
+  "imageSizeRatioAccepted": "カスタム · 受理"
 }

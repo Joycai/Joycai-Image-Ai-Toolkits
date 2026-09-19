@@ -449,8 +449,9 @@ const _dashscopeQwenImage = ModelCapabilities(
       labelKey: 'resolution',
       control: ParamControl.customSize,
       defaultValue: 'not_set',
-      options: _dashscopeQwenSizeOptions,
+      options: [ParamOption('not_set')],
       sizeRules: kDashscopeQwenSizeRules,
+      sizeVocabulary: _dashscopeQwenSizeVocabulary,
     ),
     _dashscopePromptExtend,
   ],
@@ -472,8 +473,9 @@ const _dashscopeQwenImageEditMaxPlus = ModelCapabilities(
       labelKey: 'resolution',
       control: ParamControl.customSize,
       defaultValue: 'not_set',
-      options: _dashscopeQwenSizeOptions,
+      options: [ParamOption('not_set')],
       sizeRules: kDashscopeQwenEditSizeRules,
+      sizeVocabulary: _dashscopeQwenSizeVocabulary,
     ),
     _dashscopePromptExtend,
   ],
@@ -495,27 +497,57 @@ const _dashscopeImageFallback = ModelCapabilities(
       labelKey: 'resolution',
       control: ParamControl.customSize,
       defaultValue: 'not_set',
-      options: _dashscopeQwenSizeOptions,
+      options: [ParamOption('not_set')],
       sizeRules: kDashscopeCommonSizeRules,
+      sizeVocabulary: _dashscopeQwenSizeVocabulary,
     ),
     _dashscopePromptExtend,
   ],
 );
 
-/// Quick picks for the qwen free-size tables. The first seven sit at or near
-/// the 1K area, `2048x2048` is the 2K tier; every one of them passes all
-/// three qwen rule sets (pinned by a test).
-const _dashscopeQwenSizeOptions = [
-  ParamOption('not_set'),
-  ParamOption('1024x1024'),
-  ParamOption('1344x768'),
-  ParamOption('768x1344'),
-  ParamOption('1152x864'),
-  ParamOption('864x1152'),
-  ParamOption('1536x1024'),
-  ParamOption('1024x1536'),
-  ParamOption('2048x2048'),
-];
+/// The size picker's offer on qwen (`A1c · 30c`): upstream's five ratios,
+/// and 1K / 2K as the two area tiers it bills by. No table — the tier's
+/// pixels are computed at the ratio (`tierSize`).
+const _dashscopeQwenSizeVocabulary = ImageSizeVocabulary(
+  ratios: ['1:1', '16:9', '9:16', '4:3', '3:4'],
+  tiers: ['1K', '2K'],
+  tierKind: SizeTierKind.areaTier,
+  sentinel: SizeSentinelMeaning.followsInput,
+);
+
+/// The size picker's offer on gpt-image-2 / 2.5 (`A1c · 30d`): its own five
+/// ratios, and 1K / 2K / 4K as area *targets* — 4K pushes the long edge to
+/// the largest legal size at the ratio (16:9 → 3840×2160, 1:1 → 2880²).
+const _gptImageSizeVocabulary = ImageSizeVocabulary(
+  ratios: ['1:1', '16:9', '9:16', '3:2', '2:3'],
+  tiers: ['1K', '2K', '4K'],
+  tierKind: SizeTierKind.areaTarget,
+  sentinel: SizeSentinelMeaning.modelDecides,
+);
+
+/// wan2.7-image's recommendation table (text-to-image guide, 2026-09-19):
+/// tier → landscape ratio → pixels. The 1:1 row is the keyword itself.
+const _dashscopeWanOfficialTable = {
+  '1K': {'16:9': '1696x960', '4:3': '1472x1104'},
+  '2K': {'16:9': '2688x1536', '4:3': '2368x1728'},
+  '4K': {'16:9': '4096x2304', '4:3': '4096x3072'},
+};
+
+const _dashscopeWanSizeVocabulary = ImageSizeVocabulary(
+  ratios: ['1:1', '16:9', '9:16', '4:3', '3:4'],
+  tiers: ['1K', '2K'],
+  tierKind: SizeTierKind.keyword,
+  sentinel: SizeSentinelMeaning.sendsLowestTier,
+  officialTable: _dashscopeWanOfficialTable,
+);
+
+const _dashscopeWanProSizeVocabulary = ImageSizeVocabulary(
+  ratios: ['1:1', '16:9', '9:16', '4:3', '3:4'],
+  tiers: ['1K', '2K', '4K'],
+  tierKind: SizeTierKind.keyword,
+  sentinel: SizeSentinelMeaning.sendsLowestTier,
+  officialTable: _dashscopeWanOfficialTable,
+);
 
 /// The first-generation `qwen-image` / `qwen-image-plus` / `qwen-image-max`:
 /// text-to-image only (no reference images — the `-edit-` models are the
@@ -567,9 +599,10 @@ const _dashscopeQwenImageEdit = ModelCapabilities(
 
 /// `wan2.7-image` on DashScope's native surface — the text-first content
 /// order. Up to 9 reference images (20 MB each). The size is a tier keyword
-/// (`1K` / `2K`) or a free `WxH` inside [kDashscopeWanSizeRules]; the `WxH`
-/// presets are upstream's own recommendation table (16:9 / 9:16 / 4:3 / 3:4
-/// at each tier — the keywords themselves render squares).
+/// (`1K` / `2K`) or a free `WxH` inside [kDashscopeWanSizeRules]; the size
+/// picker offers upstream's own recommendation table as its ratio × tier
+/// cells (16:9 / 9:16 / 4:3 / 3:4 at each tier — the keywords themselves
+/// render squares).
 ///
 /// `not_set` sends `1K`, not nothing: wan's own omitted default is the 2K
 /// tier at twice the price, the same trap as qwen's. `n` is always sent as
@@ -590,10 +623,9 @@ const _dashscopeWanImage = ModelCapabilities(
         ParamOption('not_set'),
         ParamOption('1K'),
         ParamOption('2K'),
-        ..._dashscopeWan1KSizes,
-        ..._dashscopeWan2KSizes,
       ],
       sizeRules: kDashscopeWanSizeRules,
+      sizeVocabulary: _dashscopeWanSizeVocabulary,
     ),
     _dashscopePromptExtend,
   ],
@@ -619,32 +651,13 @@ const _dashscopeWanImagePro = ModelCapabilities(
         ParamOption('1K'),
         ParamOption('2K'),
         ParamOption('4K'),
-        ..._dashscopeWan1KSizes,
-        ..._dashscopeWan2KSizes,
-        ParamOption('4096x2304'),
-        ParamOption('2304x4096'),
-        ParamOption('4096x3072'),
-        ParamOption('3072x4096'),
       ],
       sizeRules: kDashscopeWanProSizeRules,
+      sizeVocabulary: _dashscopeWanProSizeVocabulary,
     ),
     _dashscopePromptExtend,
   ],
 );
-
-const _dashscopeWan1KSizes = [
-  ParamOption('1696x960'),
-  ParamOption('960x1696'),
-  ParamOption('1472x1104'),
-  ParamOption('1104x1472'),
-];
-
-const _dashscopeWan2KSizes = [
-  ParamOption('2688x1536'),
-  ParamOption('1536x2688'),
-  ParamOption('2368x1728'),
-  ParamOption('1728x2368'),
-];
 
 /// Midjourney via midjourney-proxy / NewAPI. MJ-specific parameters are
 /// expressed as `--flag value` tokens appended to the prompt before submit
@@ -771,6 +784,7 @@ const _openaiImage2 = ModelCapabilities(
         ParamOption('2160x3840'),
       ],
       sizeRules: kOpenAIImage2SizeRules,
+      sizeVocabulary: _gptImageSizeVocabulary,
     ),
     _openaiQualityParam,
   ],
@@ -800,6 +814,7 @@ const _openaiImage25 = ModelCapabilities(
         ParamOption('2160x3840'),
       ],
       sizeRules: kOpenAIImage2SizeRules,
+      sizeVocabulary: _gptImageSizeVocabulary,
     ),
     _openaiQuality25Param,
   ],
