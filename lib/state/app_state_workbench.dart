@@ -128,6 +128,26 @@ extension AppStateWorkbench on AppState {
     return spec.normalize(stored);
   }
 
+  /// What is stored for [paramKey] under [model], unvalidated — null when
+  /// nothing is. The size field compares it with [getImageParam] to say when a
+  /// value chosen for a sibling model (the family shares one store) has just
+  /// been dropped for this one (`A1c · 30a` 「刚被回落」).
+  String? storedImageParam(LLMModel model, String paramKey) =>
+      _imageParamStore['${_familyKey(model)}.$paramKey'];
+
+  /// The rate table [model]'s fee group prices output by, or null when the
+  /// model has no group or its group is not billed by output spec. The size
+  /// picker names the tier a size will be billed at from this — and shows
+  /// nothing at all without it.
+  List<SpecRate>? specRatesFor(LLMModel model) {
+    final groupId = model.feeGroupId;
+    if (groupId == null) return null;
+    for (final g in allPricingGroups) {
+      if (g.id == groupId) return g.isSpecBilled ? g.outputRates : null;
+    }
+    return null;
+  }
+
   Future<void> setImageParam(LLMModel model, String paramKey, String value) async {
     _imageParamStore = {
       ..._imageParamStore,

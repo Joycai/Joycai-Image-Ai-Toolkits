@@ -20,6 +20,7 @@ import '../models/app_image.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
 import '../models/pricing_group.dart';
+import '../models/spec_rate.dart';
 import '../models/prompt.dart';
 import '../models/prompt_history_entry.dart';
 import '../models/tag.dart';

@@ -2354,42 +2354,12 @@
   "tapToPick": "點擊選取",
   "goToGallery": "前往圖庫",
   "binaryModeActive": "二值化模式已啟用 — 背景已隱藏以匯出純淨遮罩",
-  "imageSizePickerTitle": "影像尺寸",
   "imageSizeAuto": "自動",
-  "imageSizeAutoDesc": "由模型自行決定尺寸",
-  "imageSizePresets": "預設",
   "imageSizeCustom": "自訂",
   "imageSizeRatio": "比例",
   "imageSizeLongEdge": "長邊",
-  "imageSizeCompute": "計算",
   "imageSizeWidth": "寬度",
   "imageSizeHeight": "高度",
-  "imageSizeSnapHint": "兩邊在套用時會自動對齊到 16 像素的整數倍。",
-  "sizeRuleMultiple16": "兩邊均為 16 的整數倍",
-  "sizeRuleMaxEdge": "長邊 {long}px ≤ 3840",
-  "@sizeRuleMaxEdge": {
-    "placeholders": {
-      "long": {
-        "type": "int"
-      }
-    }
-  },
-  "sizeRuleAspect": "長寬比 {ratio} ≤ 3:1",
-  "@sizeRuleAspect": {
-    "placeholders": {
-      "ratio": {
-        "type": "String"
-      }
-    }
-  },
-  "sizeRulePixels": "總像素 {mp} 落在 0.66–8.29 MP 區間",
-  "@sizeRulePixels": {
-    "placeholders": {
-      "mp": {
-        "type": "String"
-      }
-    }
-  },
   "safetySettings": "安全設定",
   "safetySettingsDesc": "Gemini 內容過濾閾值，隨每個請求送出（由嚴格到寬鬆）。Veo/Imagen 不支援。",
   "safetyCategoryHarassment": "騷擾內容",
@@ -2850,5 +2820,216 @@
   "layerExportFailed": "匯出合成圖失敗：{error}",
   "layerSetUnavailable": "這組圖層的檔案已不在",
   "menuOpenLayers": "開啟圖層",
-  "menuLayerCount": "{count} 層"
+  "menuLayerCount": "{count} 層",
+  "imageSizeTitle": "圖像尺寸",
+  "imageSizeNotSet": "不設尺寸",
+  "imageSizeHintGpt": "交給模型決定",
+  "imageSizeHintQwenShort": "跟隨輸入圖 · {tier}",
+  "@imageSizeHintQwenShort": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeHintQwen": "文生圖出 {size}；改圖跟隨輸入圖的比例，縮到 {tier} 面積",
+  "@imageSizeHintQwen": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeHintWan": "發 {tier}",
+  "@imageSizeHintWan": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeKeywordHint": "{ratio} · 提交關鍵字",
+  "@imageSizeKeywordHint": {
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeTierSection": "大小",
+  "imageSizeTierAreaTarget": "面積目標 · 不是關鍵字",
+  "imageSizeSnapped": "吸附到 {step} 的倍數：{old} → {value}",
+  "@imageSizeSnapped": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "old": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeClampedDown": "{old} 在 {ratio} 下是 {mp} MP，超過上限 {max} MP；沿 {step} 網格降到 {value}",
+  "@imageSizeClampedDown": {
+    "placeholders": {
+      "old": {
+        "type": "String"
+      },
+      "ratio": {
+        "type": "String"
+      },
+      "mp": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "step": {
+        "type": "int"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeClampedUp": "{old} 在 {ratio} 下是 {mp} MP，低於下限 {min} MP；沿 {step} 網格升到 {value}",
+  "@imageSizeClampedUp": {
+    "placeholders": {
+      "old": {
+        "type": "String"
+      },
+      "ratio": {
+        "type": "String"
+      },
+      "mp": {
+        "type": "String"
+      },
+      "min": {
+        "type": "String"
+      },
+      "step": {
+        "type": "int"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeNoSolution": "長寬比超過 {limit}，這個模型下無解",
+  "@imageSizeNoSolution": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeRatioOverLimit": "長寬比 {ratio} 超過 {limit}",
+  "@imageSizeRatioOverLimit": {
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeOutOfRange": "這個尺寸超出模型可接受的範圍",
+  "imageSizeFixTo": "改成 {value}",
+  "@imageSizeFixTo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeNotWrittenBack": "值未寫回；關閉浮層將保留上一個合法尺寸 {value}",
+  "@imageSizeNotWrittenBack": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeTypingHint": "輸入中 · 離焦或 Enter 後校驗",
+  "imageSizeSwap": "橫豎互換",
+  "imageSizeFellBack": "{value} 在 {model} 上不合法，已回到「{sentinel}」",
+  "@imageSizeFellBack": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "model": {
+        "type": "String"
+      },
+      "sentinel": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeBillingTier": "計費 {tier} 檔",
+  "@imageSizeBillingTier": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeBillingCrossed": "超過 {tier} 面積（{area}），本次按 {next} 檔計價 · 按規格計費",
+  "@imageSizeBillingCrossed": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeRulesAllPass": "全部符合",
+  "imageSizeRulesPending": "待校驗",
+  "imageSizeRuleFails": "不符",
+  "imageSizeRuleMaxEdgeShort": "長邊 ≤ {max}",
+  "@imageSizeRuleMaxEdgeShort": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "imageSizeRuleMinEdgeShort": "短邊 ≥ {min}",
+  "@imageSizeRuleMinEdgeShort": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "imageSizeAreaRef": "面積參考 {edge}²",
+  "@imageSizeAreaRef": {
+    "placeholders": {
+      "edge": {
+        "type": "int"
+      }
+    }
+  },
+  "imageSizeRecommendTable": "官方推薦表",
+  "imageSizeRecommendCorner": "比例 \\ 檔",
+  "imageSizeRecommendHint": "點任一格＝同時設好兩根軸。1:1 列提交的是檔位關鍵字，其餘格提交像素。",
+  "imageSizeLockRatio": "鎖定比例",
+  "imageSizeFooter": "即時生效 · Esc 撤回 · Enter 關閉",
+  "imageSizeFooterBlocked": "Esc 撤回",
+  "imageSizeFooterTyping": "Enter 結算",
+  "imageSizeDone": "完成",
+  "imageSizeRatioDerived": "派生 · 跟著寬高走",
+  "imageSizeRatioAccepted": "自訂 · 已接受"
 }

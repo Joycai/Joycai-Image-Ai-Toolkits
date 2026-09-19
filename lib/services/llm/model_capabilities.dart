@@ -1,4 +1,5 @@
 import 'image_size_rules.dart';
+import 'image_size_vocabulary.dart';
 import 'model_family.dart';
 import 'param_spec.dart';
 import 'vendors/vendor_profile.dart' show WireProtocol;
@@ -132,6 +133,9 @@ class ModelCapabilities {
     _minimaxVideo,
     _minimaxH3Base,
     _dashscopeWanImage,
+    _dashscopeWanImagePro,
+    _dashscopeQwenImageFixed,
+    _dashscopeQwenImageEditMaxPlus,
     _dashscopeQwenImageEdit,
     _dashscopeQwenImage,
     _seedream50Pro,
@@ -201,17 +205,28 @@ class ModelCapabilities {
     }
 
     // DashScope's two shapes (see [ImageRequestShape]) also differ in their
-    // reference-image ceiling and size vocabulary, so they are two tables —
-    // three, counting the basic `qwen-image-edit`, which alone in its family
-    // takes no `size` at all (docs/api/qianwen-bailian.md §4.1: "不支持
-    // size", 400 on receiving one). `-max` / `-plus` and the dated builds of
-    // those are ordinary qwen-image models and keep the shared table.
+    // reference-image ceiling and size vocabulary, so they are separate
+    // tables: wan and wan-pro (pro's area ceiling is 4096², not 2048²); the
+    // first-generation qwen text-to-image models, which take five fixed
+    // sizes; the basic `qwen-image-edit`, which alone in its family takes no
+    // `size` at all (docs/api/qianwen-bailian.md §4.1: "不支持 size", 400 on
+    // receiving one); `qwen-image-edit-max` / `-plus` and their dated builds,
+    // whose range is per edge (512–2048); and everything else —
+    // `qwen-image-2.0*` / `-3.0*` — on the area-bounded free-size table.
     if (family == ModelFamily.dashscopeImage) {
-      if (id.startsWith('wan')) return _dashscopeWanImage;
-      if (id.startsWith('qwen-image-edit') &&
-          !id.contains('-max') &&
-          !id.contains('-plus')) {
-        return _dashscopeQwenImageEdit;
+      if (id.startsWith('wan')) {
+        return id.contains('-pro') ? _dashscopeWanImagePro : _dashscopeWanImage;
+      }
+      // First-generation text-to-image: five fixed sizes, no free `WxH`.
+      if (id == 'qwen-image' ||
+          id.startsWith('qwen-image-plus') ||
+          id.startsWith('qwen-image-max')) {
+        return _dashscopeQwenImageFixed;
+      }
+      if (id.startsWith('qwen-image-edit')) {
+        return id.contains('-max') || id.contains('-plus')
+            ? _dashscopeQwenImageEditMaxPlus
+            : _dashscopeQwenImageEdit;
       }
       return _dashscopeQwenImage;
     }
@@ -259,9 +274,10 @@ class ModelCapabilities {
   /// [forModel].
   ///
   /// Where a protocol serves several tables, the stricter one stands in:
-  /// DashScope's defaults to qwen's (the smaller reference-image ceiling, the
-  /// narrower size vocabulary), so a guess errs toward a request upstream
-  /// accepts.
+  /// DashScope's is a table of its own whose size box is the intersection of
+  /// the free-size families (`kDashscopeCommonSizeRules`) and whose reference
+  /// ceiling is qwen's, the smaller — so a guess errs toward a request
+  /// upstream accepts.
   static ModelCapabilities forProtocol(WireProtocol protocol) {
     switch (protocol) {
       case WireProtocol.openaiImages:
@@ -272,7 +288,7 @@ class ModelCapabilities {
         return _imagen;
       case WireProtocol.dashscopeImagesSync:
       case WireProtocol.dashscopeImagesAsync:
-        return _dashscopeQwenImage;
+        return _dashscopeImageFallback;
       case WireProtocol.minimaxImages:
         return _minimaxImage;
       case WireProtocol.arkImages:
@@ -322,9 +338,10 @@ class ModelCapabilities {
         return _seedreamGeneric;
       case ModelFamily.dashscopeImage:
         // Reached only for an id that classified into the family but missed
-        // both tables in [forModel]; qwen's is the safer default (the smaller
-        // reference-image ceiling, the stricter size vocabulary).
-        return _dashscopeQwenImage;
+        // every table in [forModel]: the fallback's size box is the
+        // intersection of the free-size families, and its reference ceiling
+        // is qwen's, the smaller.
+        return _dashscopeImageFallback;
       case ModelFamily.midjourney:
         return _midjourney;
       case ModelFamily.openaiVideo:

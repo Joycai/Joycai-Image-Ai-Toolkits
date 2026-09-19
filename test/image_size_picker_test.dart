@@ -1,12 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
-import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/image_size_rules.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
-import 'package:joycai_image_ai_toolkits/widgets/dialogs/image_size_picker_dialog.dart';
-import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendor_profile.dart' show WireProtocol;
 
 /// Covers the gpt-image-2 size picker's ratio calculator: "16:9 at 3840"
 /// has to come back as a size that passes all four of OpenAI's rules, with
@@ -50,9 +47,9 @@ void main() {
     });
   });
 
-  group('sizeForAspectRatio', () {
+  group('sizeFor (gpt-image-2)', () {
     (int, int) compute(String ratio, int longEdge) =>
-        sizeForAspectRatio(parseAspectRatio(ratio)!, longEdge);
+        kOpenAIImage2SizeRules.sizeFor(parseAspectRatio(ratio)!, longEdge);
 
     test('hits the exact size when the ratio divides cleanly', () {
       expect(compute('16:9', 3840), (3840, 2160));
@@ -81,7 +78,7 @@ void main() {
       for (final ratio in ['1:1', '4:3', '3:2', '16:9', '21:9', '3:1', '9:16', '2:3']) {
         for (final long in [200, 1024, 1500, 2048, 3000, 3830, 3840]) {
           final (w, h) = compute(ratio, long);
-          expect(isValidOpenAIImage2Size('${w}x$h'), isTrue,
+          expect(kOpenAIImage2SizeRules.isValidSize('${w}x$h'), isTrue,
               reason: '$ratio @ $long → ${w}x$h');
         }
       }
@@ -92,87 +89,164 @@ void main() {
       // rule rather than the button appearing to do nothing.
       final (w, h) = compute('4:1', 2048);
       expect(w / h, closeTo(4, 0.05));
-      expect(isValidOpenAIImage2Size('${w}x$h'), isFalse);
+      expect(kOpenAIImage2SizeRules.isValidSize('${w}x$h'), isFalse);
     });
   });
 
-  group('the picker dialog', () {
-    final ParamSpec spec = ModelCapabilities.forModel('gpt-image-2')
+  group('per-endpoint rules', () {
+    ParamSpec sizeSpec(String modelId) => ModelCapabilities.forModel(modelId)
         .imageParams
         .firstWhere((p) => p.key == 'imageSize');
 
-    Future<void> open(WidgetTester tester, String current) async {
-      tester.view.physicalSize = const Size(900, 1400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-
-      await tester.pumpWidget(MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        theme: buildAppTheme(accent: ThemeAccent.fromSeed(Colors.indigo), brightness: Brightness.light),
-        home: Builder(
-          builder: (context) => Center(
-            child: ElevatedButton(
-              onPressed: () => showImageSizePickerDialog(
-                  context: context, spec: spec, currentValue: current),
-              child: const Text('Open'),
-            ),
-          ),
-        ),
-      ));
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
-    }
-
-    /// Ratio, long edge, width, height — the four fields, in layout order.
-    String fieldText(WidgetTester tester, int index) =>
-        tester.widgetList<TextField>(find.byType(TextField)).elementAt(index).controller!.text;
-
-    testWidgets('seeds the calculator from the size it opened on', (tester) async {
-      await open(tester, '2160x3840');
-
-      expect(fieldText(tester, 0), '9:16');
-      expect(fieldText(tester, 1), '3840');
+    test('an endpoint with no edge ceiling has no edge rule to show', () {
+      final keys = kDashscopeQwenSizeRules.check(1024, 1024).map((r) => r.labelKey);
+      expect(keys, isNot(contains('sizeRuleMaxEdge')));
+      expect(kOpenAIImage2SizeRules.check(1024, 1024).map((r) => r.labelKey),
+          contains('sizeRuleMaxEdge'));
     });
 
-    testWidgets('fills width and height from the ratio', (tester) async {
-      await open(tester, '1024x1024');
-
-      await tester.enterText(find.byType(TextField).at(0), '16:9');
-      await tester.enterText(find.byType(TextField).at(1), '3000');
-      await tester.tap(find.text('Calculate'));
-      await tester.pumpAndSettle();
-
-      expect(fieldText(tester, 2), '3008');
-      expect(fieldText(tester, 3), '1696');
+    test('qwen takes the 8:1 strip gpt-image-2 refuses, inside its own area', () {
+      final (w, h) = kDashscopeQwenSizeRules.sizeFor(parseAspectRatio('8:1')!, 2800);
+      expect(kDashscopeQwenSizeRules.passes(w, h), isTrue, reason: '${w}x$h');
+      expect(w / h, closeTo(8, 0.1));
+      expect(kOpenAIImage2SizeRules.isValidSize('${w}x$h'), isFalse);
     });
 
-    testWidgets('writes the corrected long edge back into its own field',
-        (tester) async {
-      await open(tester, '1024x1024');
-
-      await tester.enterText(find.byType(TextField).at(0), '1:1');
-      await tester.enterText(find.byType(TextField).at(1), '3840');
-      await tester.tap(find.text('Calculate'));
-      await tester.pumpAndSettle();
-
-      // 3840² blows the pixel cap, so the long edge really used was smaller —
-      // the field has to say so rather than keep claiming 3840.
-      expect(fieldText(tester, 1), isNot('3840'));
-      expect(fieldText(tester, 1), fieldText(tester, 2));
+    test('the calculator lands inside every dialect, whatever was typed', () {
+      for (final rules in [
+        kDashscopeQwenSizeRules,
+        kDashscopeWanSizeRules,
+        kDashscopeWanProSizeRules,
+      ]) {
+        for (final ratio in ['1:1', '4:3', '16:9', '21:9', '8:1', '9:16', '1:8']) {
+          for (final long in [100, 1024, 2048, 4096, 20000]) {
+            final (w, h) = rules.sizeFor(parseAspectRatio(ratio)!, long);
+            expect(rules.passes(w, h), isTrue, reason: '$ratio @ $long → ${w}x$h');
+          }
+        }
+      }
     });
 
-    testWidgets('an unreadable ratio disables the button', (tester) async {
-      await open(tester, '1024x1024');
+    test('every pixel preset a table offers is one its own rules accept', () {
+      // A preset the dialog would show with a red rule list — or that the
+      // spec would normalize away the moment it was picked.
+      for (final id in [
+        'gpt-image-2',
+        'qwen-image-3.0',
+        'qwen-image-edit-plus',
+        'wan2.7-image',
+        'wan2.7-image-pro',
+      ]) {
+        final spec = sizeSpec(id);
+        expect(spec.control, ParamControl.customSize, reason: id);
+        for (final o in spec.options) {
+          if (!o.value.contains('x')) continue;
+          expect(spec.sizeRules!.isValidSize(o.value), isTrue, reason: '$id ${o.value}');
+        }
+      }
+    });
 
-      await tester.enterText(find.byType(TextField).at(0), '16:');
-      await tester.pumpAndSettle();
+    test('4K — keyword and area — is pro only', () {
+      final base = sizeSpec('wan2.7-image');
+      final pro = sizeSpec('wan2.7-image-pro');
+      expect(base.isValid('4K'), isFalse);
+      expect(pro.isValid('4K'), isTrue);
+      expect(base.isValid('4096x2304'), isFalse);
+      expect(pro.isValid('4096x2304'), isTrue);
+      // A size left over from another model falls back rather than travelling.
+      expect(base.normalize('4096x2304'), 'not_set');
+    });
 
-      final button = tester.widget<AppButton>(
-        find.ancestor(of: find.text('Calculate'), matching: find.byType(AppButton)),
-      );
-      expect(button.onPressed, isNull);
+    test('first-generation qwen text-to-image stays a closed list', () {
+      for (final id in ['qwen-image', 'qwen-image-plus', 'qwen-image-max-2026-01-01']) {
+        final spec = sizeSpec(id);
+        expect(spec.control, ParamControl.dropdown, reason: id);
+        expect(spec.sizeRules, isNull);
+        expect(spec.isValid('1024x1024'), isFalse);
+        expect(spec.isValid('not_set'), isFalse);
+      }
+      // The edit models that share the suffix are free-size.
+      expect(sizeSpec('qwen-image-edit-max').control, ParamControl.customSize);
+    });
+
+    test('first-generation qwen text-to-image takes no reference images', () {
+      for (final id in ['qwen-image', 'qwen-image-plus', 'qwen-image-max']) {
+        expect(ModelCapabilities.forModel(id).supportsReferenceImages, isFalse, reason: id);
+      }
+      expect(ModelCapabilities.forModel('qwen-image-edit-max').maxReferenceImages, 3);
+    });
+
+    test('edit-max / plus bound each edge, not only the area', () {
+      // The docs: "宽度和高度的取值范围为 512 至 2048 像素". Area rules alone let
+      // 4096x512 (an edge twice the ceiling) and 1024x256 through.
+      final spec = sizeSpec('qwen-image-edit-plus');
+      expect(spec.sizeRules, kDashscopeQwenEditSizeRules);
+      for (final bad in ['4096x512', '1024x256', '2064x1024']) {
+        expect(spec.isValid(bad), isFalse, reason: bad);
+      }
+      expect(kDashscopeQwenSizeRules.isValidSize('4096x512'), isTrue,
+          reason: 'what the shared area rules used to let through');
+      expect(spec.isValid('2048x512'), isTrue);
+      // The calculator stays inside the edges too.
+      final (w, h) = kDashscopeQwenEditSizeRules.sizeFor(parseAspectRatio('4:1')!, 4096);
+      expect(kDashscopeQwenEditSizeRules.passes(w, h), isTrue, reason: '${w}x$h');
+    });
+
+    test('an unidentified DashScope model gets the box every family accepts', () {
+      final spec = ModelCapabilities.forProtocol(WireProtocol.dashscopeImagesSync)
+          .imageParams
+          .firstWhere((p) => p.key == 'imageSize');
+      expect(spec.sizeRules, kDashscopeCommonSizeRules);
+      for (final o in spec.options) {
+        final wxh = parseWxH(o.value);
+        if (wxh == null) continue;
+        for (final rules in [
+          kDashscopeQwenSizeRules,
+          kDashscopeQwenEditSizeRules,
+          kDashscopeWanSizeRules,
+          kDashscopeWanProSizeRules,
+        ]) {
+          expect(rules.passes(wxh.width, wxh.height), isTrue, reason: o.value);
+        }
+      }
+    });
+
+    test('every customSize spec declares its rules', () {
+      // The dialog reads them unconditionally; a spec without them would
+      // accept sizes in the dialog that ParamSpec.isValid then discards.
+      final tables = [
+        ...ModelCapabilities.idRoutedTables,
+        for (final f in ModelFamily.values) ModelCapabilities.forFamily(f),
+        for (final p in WireProtocol.values) ModelCapabilities.forProtocol(p),
+      ];
+      for (final t in tables) {
+        for (final p in [...t.imageParams, ...t.videoParams]) {
+          if (p.control == ParamControl.customSize) {
+            expect(p.sizeRules, isNotNull, reason: p.key);
+          }
+        }
+      }
+    });
+
+    test('any spelling of a size is a size; an absurd edge is not', () {
+      expect(kDashscopeQwenSizeRules.isValidSize('1536*1024'), isTrue);
+      expect(kDashscopeQwenSizeRules.isValidSize('1536 X 1024'), isTrue);
+      // Big enough that the int area product would wrap.
+      expect(kDashscopeQwenSizeRules.isValidSize('4294967296x4294967296'), isFalse);
+    });
+
+    test('the pixel row never contradicts its verdict', () {
+      const floor = 768 * 768, ceiling = 2048 * 2048;
+      // Just under the floor, just over the ceiling, and both bounds exactly.
+      expect(formatPixelRange(589568, floor, ceiling),
+          (value: '0.58', min: '0.59', max: '4.19'));
+      expect(formatPixelRange(4227072, floor, ceiling).value, '4.23');
+      expect(formatPixelRange(4194305, floor, ceiling).value, '4.20');
+      expect(formatPixelRange(floor, floor, ceiling).value, '0.59');
+      expect(formatPixelRange(ceiling, floor, ceiling).value, '4.19');
+      // gpt-image-2's floor rounds up past a passing value: it is held inside.
+      expect(formatPixelRange(655360, 655360, 8294400),
+          (value: '0.66', min: '0.66', max: '8.29'));
     });
   });
 }

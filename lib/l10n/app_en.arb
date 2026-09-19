@@ -3017,42 +3017,12 @@
   "tapToPick": "Tap to Pick",
   "goToGallery": "Go to Gallery",
   "binaryModeActive": "Binary mode active — background hidden for clean mask export",
-  "imageSizePickerTitle": "Image Size",
   "imageSizeAuto": "Auto",
-  "imageSizeAutoDesc": "Let the model choose the size",
-  "imageSizePresets": "Presets",
   "imageSizeCustom": "Custom",
   "imageSizeRatio": "Ratio",
   "imageSizeLongEdge": "Long edge",
-  "imageSizeCompute": "Calculate",
   "imageSizeWidth": "Width",
   "imageSizeHeight": "Height",
-  "imageSizeSnapHint": "Both edges snap to multiples of 16 px on commit.",
-  "sizeRuleMultiple16": "Both edges are multiples of 16",
-  "sizeRuleMaxEdge": "Longest edge {long} px ≤ 3840",
-  "@sizeRuleMaxEdge": {
-    "placeholders": {
-      "long": {
-        "type": "int"
-      }
-    }
-  },
-  "sizeRuleAspect": "Aspect ratio {ratio} ≤ 3:1",
-  "@sizeRuleAspect": {
-    "placeholders": {
-      "ratio": {
-        "type": "String"
-      }
-    }
-  },
-  "sizeRulePixels": "Total {mp} within 0.66–8.29 MP",
-  "@sizeRulePixels": {
-    "placeholders": {
-      "mp": {
-        "type": "String"
-      }
-    }
-  },
   "safetySettings": "Safety Settings",
   "safetySettingsDesc": "Gemini content-filter thresholds, applied to every request (strict → permissive). Not supported by Veo/Imagen.",
   "safetyCategoryHarassment": "Harassment",
@@ -3631,5 +3601,216 @@
         "type": "int"
       }
     }
-  }
+  },
+  "imageSizeTitle": "Image size",
+  "imageSizeNotSet": "Not set",
+  "imageSizeHintGpt": "Model decides",
+  "imageSizeHintQwenShort": "Follows the input · {tier}",
+  "@imageSizeHintQwenShort": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeHintQwen": "Text-to-image renders {size}; an edit follows the input image's ratio, scaled to the {tier} area",
+  "@imageSizeHintQwen": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeHintWan": "Sends {tier}",
+  "@imageSizeHintWan": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeKeywordHint": "{ratio} · sent as keyword",
+  "@imageSizeKeywordHint": {
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeTierSection": "Size",
+  "imageSizeTierAreaTarget": "area target · not a keyword",
+  "imageSizeSnapped": "Snapped to multiples of {step}: {old} → {value}",
+  "@imageSizeSnapped": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "old": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeClampedDown": "{old} at {ratio} is {mp} MP, over the {max} MP limit; stepped down the {step} grid to {value}",
+  "@imageSizeClampedDown": {
+    "placeholders": {
+      "old": {
+        "type": "String"
+      },
+      "ratio": {
+        "type": "String"
+      },
+      "mp": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "step": {
+        "type": "int"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeClampedUp": "{old} at {ratio} is {mp} MP, under the {min} MP floor; stepped up the {step} grid to {value}",
+  "@imageSizeClampedUp": {
+    "placeholders": {
+      "old": {
+        "type": "String"
+      },
+      "ratio": {
+        "type": "String"
+      },
+      "mp": {
+        "type": "String"
+      },
+      "min": {
+        "type": "String"
+      },
+      "step": {
+        "type": "int"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeNoSolution": "Aspect ratio over {limit}: no size works on this model",
+  "@imageSizeNoSolution": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeRatioOverLimit": "Aspect ratio {ratio} is over {limit}",
+  "@imageSizeRatioOverLimit": {
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeOutOfRange": "This size is outside what the model accepts",
+  "imageSizeFixTo": "Use {value}",
+  "@imageSizeFixTo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeNotWrittenBack": "Not applied; closing keeps the last valid size, {value}",
+  "@imageSizeNotWrittenBack": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeTypingHint": "Typing · checked on blur or Enter",
+  "imageSizeSwap": "Swap width and height",
+  "imageSizeFellBack": "{value} is not valid on {model}; back to “{sentinel}”",
+  "@imageSizeFellBack": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "model": {
+        "type": "String"
+      },
+      "sentinel": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeBillingTier": "Billed {tier}",
+  "@imageSizeBillingTier": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeBillingCrossed": "Over the {tier} area ({area}); this one is billed at {next} · per-spec billing",
+  "@imageSizeBillingCrossed": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "imageSizeRulesAllPass": "All pass",
+  "imageSizeRulesPending": "Pending",
+  "imageSizeRuleFails": "fails",
+  "imageSizeRuleMaxEdgeShort": "long edge ≤ {max}",
+  "@imageSizeRuleMaxEdgeShort": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "imageSizeRuleMinEdgeShort": "short edge ≥ {min}",
+  "@imageSizeRuleMinEdgeShort": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "imageSizeAreaRef": "Area ref {edge}²",
+  "@imageSizeAreaRef": {
+    "placeholders": {
+      "edge": {
+        "type": "int"
+      }
+    }
+  },
+  "imageSizeRecommendTable": "Recommended sizes",
+  "imageSizeRecommendCorner": "Ratio \\ tier",
+  "imageSizeRecommendHint": "A cell sets both axes at once. The 1:1 row sends the tier keyword; the others send pixels.",
+  "imageSizeLockRatio": "Lock ratio",
+  "imageSizeFooter": "Applies live · Esc reverts · Enter closes",
+  "imageSizeFooterBlocked": "Esc reverts",
+  "imageSizeFooterTyping": "Enter settles",
+  "imageSizeDone": "Done",
+  "imageSizeRatioDerived": "derived · follows width and height",
+  "imageSizeRatioAccepted": "custom · accepted"
 }

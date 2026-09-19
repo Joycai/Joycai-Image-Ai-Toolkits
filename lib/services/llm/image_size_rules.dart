@@ -1,36 +1,197 @@
+import 'dart:math' as math;
+
+import 'output_spec.dart';
+
 // ---------------------------------------------------------------------------
-// gpt-image-2 size constraints
+// Free-size rules, per endpoint
 // ---------------------------------------------------------------------------
 
-/// Validates a `WxH` size string against OpenAI's gpt-image-2 rules. Used by
-/// both the capability spec's [ParamSpec.customValidator] and the picker
-/// dialog's per-edge breakdown.
+/// The numeric constraints an endpoint puts on a free `WxH` size.
 ///
-/// Rules (per OpenAI's published gpt-image-2 spec):
-///   * Both edges must be multiples of 16.
-///   * Max edge ≤ 3840 px.
-///   * Long-edge / short-edge ratio ≤ 3:1.
-///   * Total pixels in [655_360, 8_294_400] — equivalent to ~0.66 MP–~8.29 MP.
-bool isValidOpenAIImage2Size(String value) {
-  // Accept the `auto` sentinel separately (used by `_openaiImage2.defaultValue`).
-  if (value == 'auto') return true;
-  final match = RegExp(r'^(\d+)x(\d+)$').firstMatch(value);
-  if (match == null) return false;
-  final w = int.tryParse(match.group(1)!);
-  final h = int.tryParse(match.group(2)!);
-  if (w == null || h == null || w <= 0 || h <= 0) return false;
-  return checkOpenAIImage2SizeRules(w, h).every((r) => r.passes);
+/// Several image endpoints accept any size inside a box rather than a list
+/// (gpt-image-2, DashScope's qwen-image and wan2.7-image). The box has the
+/// same walls everywhere — an edge grid, optional edge bounds, a proportion
+/// limit and a pixel-area range — and only the numbers differ, so the rules
+/// are data: a [ParamSpec] declares its set, and the picker dialog, the
+/// validator, the ratio calculator and the DashScope default size all read
+/// the same one.
+class ImageSizeRules {
+  /// Both edges must be a multiple of this.
+  final int edgeStep;
+
+  /// The shortest edge allowed, or null when only the area floor bounds it.
+  final int? minEdge;
+
+  /// The longest edge allowed, or null when the endpoint documents none and
+  /// the area and proportion limits are what bound it.
+  final int? maxEdge;
+
+  /// Long edge over short edge may not exceed this.
+  final double maxRatio;
+
+  /// Inclusive pixel-area range.
+  final int minPixels;
+  final int maxPixels;
+
+  const ImageSizeRules({
+    this.edgeStep = 16,
+    this.minEdge,
+    this.maxEdge,
+    required this.maxRatio,
+    required this.minPixels,
+    required this.maxPixels,
+  });
+
+  /// The longest edge any legal size can have: the declared ceiling, or the
+  /// one the area and proportion limits imply together.
+  int get longEdgeCeiling {
+    final implied = math.sqrt(maxPixels * maxRatio).floor();
+    final ceiling = maxEdge == null ? implied : math.min(maxEdge!, implied);
+    return (ceiling ~/ edgeStep) * edgeStep;
+  }
+
+  /// Per-rule breakdown for live feedback in the picker dialog. An edge-bound
+  /// row is present only when the endpoint declares that bound.
+  List<SizeRuleResult> check(int w, int h) {
+    final long = w > h ? w : h;
+    final short = w > h ? h : w;
+    final pixels = w * h;
+    return [
+      SizeRuleResult('sizeRuleEdgeGrid', w % edgeStep == 0 && h % edgeStep == 0),
+      if (minEdge != null) SizeRuleResult('sizeRuleMinEdge', short >= minEdge!),
+      if (maxEdge != null) SizeRuleResult('sizeRuleMaxEdge', long <= maxEdge!),
+      SizeRuleResult('sizeRuleAspect', short > 0 && (long / short) <= maxRatio),
+      SizeRuleResult('sizeRulePixels', pixels >= minPixels && pixels <= maxPixels),
+    ];
+  }
+
+  bool passes(int w, int h) => check(w, h).every((r) => r.passes);
+
+  /// Whether [value] is a size these rules accept, in any spelling
+  /// [parseWxH] reads (`1024x1024`, `1024*1024`, `1024 X 1024`). Keywords
+  /// (`auto`, `1K`…) are not sizes and are never valid here — a spec lists
+  /// those as options.
+  bool isValidSize(String value) {
+    final wxh = parseWxH(value);
+    if (wxh == null) return false;
+    // Area and proportion already bound the long edge, but the area is an
+    // int product: an absurd hand-edited edge must not get to overflow it.
+    final ceiling = longEdgeCeiling;
+    if (wxh.width > ceiling || wxh.height > ceiling) return false;
+    return passes(wxh.width, wxh.height);
+  }
+
+  /// Nearest grid line to [raw], clamped to the legal edge range. Shared by
+  /// the ratio calculator and the dialog's width/height fields so a typed
+  /// edge and a computed one snap the same way.
+  int snapEdge(int raw) {
+    final floor = math.max(edgeStep, minEdge ?? edgeStep);
+    final ceiling = longEdgeCeiling;
+    final clamped = raw.clamp(floor, ceiling);
+    final snapped = ((clamped + edgeStep ~/ 2) ~/ edgeStep) * edgeStep;
+    return snapped.clamp(floor, ceiling);
+  }
+
+  /// Turns "this ratio, this long edge" into a legal WxH.
+  ///
+  /// The long edge is what the user typed, so it leads: it snaps to the
+  /// nearest grid line and the short edge is then the grid line that lands
+  /// closest to [spec]. Where that pair breaks one of the other rules — 1:1
+  /// at 3840 is 14.7 MP, well over gpt-image-2's cap — the long edge steps
+  /// outward along the grid (nearest first) until a legal pair appears.
+  ///
+  /// Always returns a size. When the ratio itself is out of bounds (where no
+  /// pair of edges can ever be legal) it returns the straight computation, so
+  /// the dialog's rule list can say which rule the request fell foul of
+  /// rather than the button appearing to do nothing.
+  (int, int) sizeFor(AspectRatioSpec spec, int longEdge) {
+    (int, int) orient(int long, int short) => spec.portrait ? (short, long) : (long, short);
+
+    final ceiling = longEdgeCeiling;
+    final requested = snapEdge(longEdge);
+
+    // Nearest legal long edge wins, so the whole grid is fair game: a 1:1 at
+    // 3840 has to come down before it fits under a pixel cap, while a 16:9 at
+    // 200 has to come *up* to clear the floor. Both corrections are shown
+    // back to the user in the long-edge field.
+    for (int delta = 0; delta <= ceiling; delta += edgeStep) {
+      for (final long in delta == 0 ? [requested] : [requested - delta, requested + delta]) {
+        if (long < edgeStep || long > ceiling) continue;
+        for (final short in _shortEdgeCandidates(long, spec.longOverShort, edgeStep)) {
+          final (w, h) = orient(long, short);
+          if (passes(w, h)) return (w, h);
+        }
+      }
+    }
+
+    final fallbackShort =
+        _shortEdgeCandidates(requested, spec.longOverShort, edgeStep).firstOrNull ?? edgeStep;
+    return orient(requested, fallbackShort);
+  }
 }
+
+/// gpt-image-2 (per OpenAI's published spec): edges on the 16 grid, longest
+/// edge ≤ 3840, proportion ≤ 3:1, area in [655 360, 8 294 400] (~0.66–8.29 MP).
+const kOpenAIImage2SizeRules = ImageSizeRules(
+  maxEdge: 3840,
+  maxRatio: 3,
+  minPixels: 655360,
+  maxPixels: 8294400,
+);
+
+/// `qwen-image-2.0*` / `-3.0*`: area 512²–2048², proportion 1:8–8:1, edges
+/// rounded to 16 upstream — sent already on the grid so the request asks for
+/// exactly what is rendered.
+const kDashscopeQwenSizeRules = ImageSizeRules(
+  maxRatio: 8,
+  minPixels: 512 * 512,
+  maxPixels: 2048 * 2048,
+);
+
+/// `qwen-image-edit-max` / `-plus`: a **per-edge** range — "宽度和高度的取值
+/// 范围为 512 至 2048 像素" (image-editing guide, 2026-09-19) — not the 2.0 /
+/// 3.0 area range. Both edges in 512–2048 caps the proportion at 4:1 and the
+/// area at 512²–2048² by construction; they are stated so every wall shows.
+const kDashscopeQwenEditSizeRules = ImageSizeRules(
+  minEdge: 512,
+  maxEdge: 2048,
+  maxRatio: 4,
+  minPixels: 512 * 512,
+  maxPixels: 2048 * 2048,
+);
+
+/// `wan2.7-image`: area 768²–2048², proportion 1:8–8:1. The 16 grid is ours,
+/// not documented — every size in upstream's own recommendation table sits
+/// on it, so it costs nothing and cannot be the reason for a 400.
+const kDashscopeWanSizeRules = ImageSizeRules(
+  maxRatio: 8,
+  minPixels: 768 * 768,
+  maxPixels: 2048 * 2048,
+);
+
+/// `wan2.7-image-pro`: the same, with the ceiling raised to 4096².
+const kDashscopeWanProSizeRules = ImageSizeRules(
+  maxRatio: 8,
+  minPixels: 768 * 768,
+  maxPixels: 4096 * 4096,
+);
+
+/// A DashScope image model this app cannot identify (a free-text relay id
+/// pinned to the DashScope image protocol): the intersection of the free-size
+/// families above — edges 512–2048 (qwen edit), area from 768² (wan) — so
+/// any size it lets through is one every one of them accepts. The five-size
+/// first-generation `qwen-image` cannot be covered by a box and is not.
+const kDashscopeCommonSizeRules = ImageSizeRules(
+  minEdge: 512,
+  maxEdge: 2048,
+  maxRatio: 4,
+  minPixels: 768 * 768,
+  maxPixels: 2048 * 2048,
+);
 
 // ---------------------------------------------------------------------------
 // Aspect-ratio → size calculator
 // ---------------------------------------------------------------------------
-
-/// The edge grid every gpt-image-2 size sits on.
-const int kImage2EdgeStep = 16;
-
-/// The largest edge gpt-image-2 accepts.
-const int kImage2MaxEdge = 3840;
 
 /// A parsed aspect ratio, kept as *ratio plus orientation* rather than a bare
 /// number: `16:9` and `9:16` are the same shape turned on its side, and which
@@ -85,60 +246,15 @@ String formatAspectRatio(int w, int h) {
   return (w / h).toStringAsFixed(2);
 }
 
-/// Turns "this ratio, this long edge" into a legal WxH.
-///
-/// The long edge is what the user typed, so it leads: it snaps to the nearest
-/// multiple of 16 and the short edge is then the multiple of 16 that lands
-/// closest to [spec]. Where that pair breaks one of the other three rules —
-/// 1:1 at 3840 is 14.7 MP, well over the cap — the long edge steps outward
-/// along the grid (nearest first) until a legal pair appears.
-///
-/// Always returns a size. When the ratio itself is out of bounds (past 3:1,
-/// where no pair of edges can ever be legal) it returns the straight
-/// computation, so the dialog's rule list can say which rule the request fell
-/// foul of rather than the button appearing to do nothing.
-(int, int) sizeForAspectRatio(AspectRatioSpec spec, int longEdge) {
-  (int, int) orient(int long, int short) => spec.portrait ? (short, long) : (long, short);
-
-  final requested = _snapEdge(longEdge);
-
-  // Nearest legal long edge wins, so the whole grid is fair game: a 1:1 at
-  // 3840 is 14.7 MP and has to come down to 2880 before it fits under the
-  // cap, while a 16:9 at 200 has to come *up* to clear the 0.66 MP floor.
-  // Both corrections are shown back to the user in the long-edge field.
-  for (int delta = 0; delta <= kImage2MaxEdge; delta += kImage2EdgeStep) {
-    for (final long in delta == 0 ? [requested] : [requested - delta, requested + delta]) {
-      if (long < kImage2EdgeStep || long > kImage2MaxEdge) continue;
-      for (final short in _shortEdgeCandidates(long, spec.longOverShort)) {
-        final (w, h) = orient(long, short);
-        if (checkOpenAIImage2SizeRules(w, h).every((r) => r.passes)) return (w, h);
-      }
-    }
-  }
-
-  final fallbackShort = _shortEdgeCandidates(requested, spec.longOverShort).firstOrNull ??
-      kImage2EdgeStep;
-  return orient(requested, fallbackShort);
-}
-
-/// The multiples of 16 bracketing `long / ratio`, nearest ratio first.
-List<int> _shortEdgeCandidates(int long, double longOverShort) {
+/// The grid lines bracketing `long / ratio`, nearest ratio first.
+List<int> _shortEdgeCandidates(int long, double longOverShort, int step) {
   final exact = long / longOverShort;
-  final lower = (exact / kImage2EdgeStep).floor() * kImage2EdgeStep;
-  final candidates = <int>[lower, lower + kImage2EdgeStep]
-      .where((s) => s >= kImage2EdgeStep && s <= long)
-      .toList();
+  final lower = (exact / step).floor() * step;
+  final candidates =
+      <int>[lower, lower + step].where((s) => s >= step && s <= long).toList();
   double error(int s) => ((long / s) - longOverShort).abs();
   candidates.sort((a, b) => error(a).compareTo(error(b)));
   return candidates;
-}
-
-/// Nearest multiple of 16, clamped to the legal edge range.
-int _snapEdge(int raw) {
-  final clamped = raw.clamp(kImage2EdgeStep, kImage2MaxEdge);
-  final snapped =
-      ((clamped + kImage2EdgeStep ~/ 2) ~/ kImage2EdgeStep) * kImage2EdgeStep;
-  return snapped.clamp(kImage2EdgeStep, kImage2MaxEdge);
 }
 
 /// Per-rule breakdown for live feedback in the picker dialog. Each entry maps
@@ -149,15 +265,28 @@ class SizeRuleResult {
   const SizeRuleResult(this.labelKey, this.passes);
 }
 
-List<SizeRuleResult> checkOpenAIImage2SizeRules(int w, int h) {
-  final long = w > h ? w : h;
-  final short = w > h ? h : w;
-  final pixels = w * h;
-  return [
-    SizeRuleResult('sizeRuleMultiple16', w % 16 == 0 && h % 16 == 0),
-    SizeRuleResult('sizeRuleMaxEdge', long <= 3840),
-    SizeRuleResult('sizeRuleAspect', short > 0 && (long / short) <= 3.0),
-    SizeRuleResult(
-        'sizeRulePixels', pixels >= 655360 && pixels <= 8294400),
-  ];
+/// The pixel counts [value] and the [min]–[max] range as megapixel strings
+/// that never contradict the pass/fail verdict.
+///
+/// Plain rounding to two decimals draws both sides of a boundary alike: a
+/// 589 568-px size under a 589 824-px floor reads "0.59 within 0.59–…" on a
+/// red row. So the bounds round inward (the floor up, the ceiling down), a
+/// failing value rounds away from the range, and a passing value is held
+/// inside the bounds as drawn.
+({String value, String min, String max}) formatPixelRange(int value, int min, int max) {
+  double mp(int px) => px / 1000000;
+  double up(double v) => (v * 100).ceil() / 100;
+  double down(double v) => (v * 100).floor() / 100;
+  final shownMin = up(mp(min));
+  final shownMax = down(mp(max));
+  final double shown;
+  if (value < min) {
+    shown = math.min(down(mp(value)), shownMin - 0.01);
+  } else if (value > max) {
+    shown = math.max(up(mp(value)), shownMax + 0.01);
+  } else {
+    shown = ((mp(value) * 100).round() / 100).clamp(shownMin, shownMax);
+  }
+  String f(double v) => v.toStringAsFixed(2);
+  return (value: f(shown), min: f(shownMin), max: f(shownMax));
 }

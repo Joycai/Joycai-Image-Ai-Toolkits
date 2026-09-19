@@ -4,7 +4,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
 /// Pins the slider half of [ParamSpec].
 ///
 /// The bug this exists for: `isValid` only ever checked the discrete
-/// `options` list and an optional `customValidator`. A slider has neither —
+/// `options` list and an optional validator predicate. A slider has neither —
 /// its range lives in `min`/`max` — so every slider value failed both checks,
 /// `normalize` returned `defaultValue` forever, and the control snapped back
 /// on the next rebuild. The duration was stuck at its default for MiniMax-H3
@@ -93,14 +93,13 @@ void main() {
     });
 
     test('grok-imagine-video keeps working without its own validator', () {
-      // It carried `customValidator: isValidGrokImagineVideoDuration`, which
-      // only restated min/max. Removed with this fix; the behaviour must not
-      // have moved.
+      // It carried a hand-written duration validator, which only restated
+      // min/max. Removed with this fix (and the predicate field itself since,
+      // once size rules became data); the behaviour must not have moved.
       final spec = secondsOf('grok-imagine-video-1.5');
       expect(spec.normalize('1'), '1');
       expect(spec.normalize('15'), '15');
       expect(spec.normalize('16'), '6', reason: 'its default is 6, not 5');
-      expect(spec.customValidator, isNull);
     });
 
     test('the families share one param store, so cross-family values degrade',
@@ -131,13 +130,13 @@ void main() {
       expect(spec.normalize('9'), 'adaptive');
     });
 
-    test('a customValidator still widens a non-slider spec', () {
+    test('size rules still widen a non-slider spec', () {
       // gpt-image-2's arbitrary WxH sizes ride this path; the slider branch
       // must not have displaced it.
       final spec = ModelCapabilities.forModel('gpt-image-2')
           .imageParams
           .firstWhere((p) => p.key == 'imageSize');
-      expect(spec.customValidator, isNotNull);
+      expect(spec.sizeRules, isNotNull);
       expect(spec.isValid('1024x1024'), isTrue);
     });
   });

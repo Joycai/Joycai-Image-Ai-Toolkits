@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/image_size_rules.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
@@ -71,6 +72,10 @@ void main() {
   group('buildDashScopeImagePayload', () {
     const prompt = 'a cat';
 
+    ParamSpec sizeSpecOf(String modelId) => ModelCapabilities.forModel(modelId)
+        .imageParams
+        .firstWhere((p) => p.key == 'imageSize');
+
     Map<String, dynamic> qwen({
       List<String> refs = const [],
       Map<String, dynamic>? options,
@@ -83,6 +88,7 @@ void main() {
           imageRefs: refs,
           options: options,
           inputSize: inputSize,
+          sizeSpec: sizeSpecOf('qwen-image-3.0'),
         );
 
     test('qwen nests the conversation under input and leads with the images', () {
@@ -191,7 +197,8 @@ void main() {
 
     test('a model with no size control never receives one', () {
       // The basic qwen-image-edit has no `size` and 400s on it; that fact is
-      // read off layer 3, which is why the builder takes it as a flag.
+      // read off layer 3 — the model declares no size control, so the
+      // protocol hands the builder no spec.
       final body = buildDashScopeImagePayload(
         modelId: 'qwen-image-edit',
         shape: ImageRequestShape.dashscopeQwen,
@@ -199,7 +206,6 @@ void main() {
         imageRefs: const ['data:image/png;base64,AAA'],
         options: {'imageSize': '1024x1024'},
         inputSize: (width: 768, height: 1376),
-        sendsSize: false,
       );
       expect((body['parameters'] as Map).containsKey('size'), isFalse);
       expect((body['parameters'] as Map)['n'], 1);
@@ -212,8 +218,54 @@ void main() {
         shape: ImageRequestShape.dashscopeWan,
         prompt: prompt,
         imageRefs: const [],
+        sizeSpec: sizeSpecOf('wan2.7-image'),
       );
       expect((body['parameters'] as Map)['size'], '1K');
+    });
+
+    test('a size the model rejects is replaced, never forwarded', () {
+      // Task options outlive the model they were chosen for — a retried
+      // task, a size left over from gpt-image-2. The builder sends the
+      // model's own default rather than a 400.
+      Object? sizeFor(String modelId, ImageRequestShape shape, String stored) =>
+          (buildDashScopeImagePayload(
+            modelId: modelId,
+            shape: shape,
+            prompt: prompt,
+            imageRefs: const [],
+            options: {'imageSize': stored},
+            sizeSpec: sizeSpecOf(modelId),
+          )['parameters'] as Map)['size'];
+
+      expect(sizeFor('wan2.7-image', ImageRequestShape.dashscopeWan, '3840x2160'), '1K');
+      expect(sizeFor('wan2.7-image', ImageRequestShape.dashscopeWan, '4K'), '1K');
+      expect(sizeFor('wan2.7-image-pro', ImageRequestShape.dashscopeWan, '4K'), '4K');
+      // First-generation qwen takes five fixed sizes and no computed default.
+      for (final stale in ['not_set', 'auto', '1024x1024', '']) {
+        expect(sizeFor('qwen-image-plus', ImageRequestShape.dashscopeQwen, stale),
+            '1328*1328', reason: stale);
+      }
+      expect(sizeFor('qwen-image-plus', ImageRequestShape.dashscopeQwen, '1664x928'),
+          '1664*928');
+      // DashScope's own spelling is a size too.
+      expect(sizeFor('qwen-image-3.0', ImageRequestShape.dashscopeQwen, '1536*1024'),
+          '1536*1024');
+    });
+
+    test('edit-max / plus default stays inside their per-edge range', () {
+      // A banner-shaped source: the 8:1 clamp of qwen 2.0 / 3.0 would give
+      // 2896x352, a short edge under edit-max / plus's 512 floor.
+      final body = buildDashScopeImagePayload(
+        modelId: 'qwen-image-edit-plus',
+        shape: ImageRequestShape.dashscopeQwen,
+        prompt: prompt,
+        imageRefs: const ['data:image/png;base64,AAA'],
+        inputSize: (width: 4000, height: 100),
+        sizeSpec: sizeSpecOf('qwen-image-edit-plus'),
+      );
+      final size = (body['parameters'] as Map)['size'] as String;
+      final parts = size.split('*').map(int.parse).toList();
+      expect(kDashscopeQwenEditSizeRules.passes(parts[0], parts[1]), isTrue, reason: size);
     });
   });
 

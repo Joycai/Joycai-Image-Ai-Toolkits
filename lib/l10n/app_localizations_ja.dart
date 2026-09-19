@@ -4587,16 +4587,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get binaryModeActive => 'バイナリモード有効 — クリーンなマスクエクスポートのため背景非表示';
 
   @override
-  String get imageSizePickerTitle => '画像サイズ';
-
-  @override
   String get imageSizeAuto => '自動';
-
-  @override
-  String get imageSizeAutoDesc => 'モデルにサイズを任せる';
-
-  @override
-  String get imageSizePresets => 'プリセット';
 
   @override
   String get imageSizeCustom => 'カスタム';
@@ -4608,34 +4599,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get imageSizeLongEdge => '長辺';
 
   @override
-  String get imageSizeCompute => '計算';
-
-  @override
   String get imageSizeWidth => '幅';
 
   @override
   String get imageSizeHeight => '高さ';
-
-  @override
-  String get imageSizeSnapHint => '適用時、両辺は 16 ピクセルの倍数に自動でスナップされます。';
-
-  @override
-  String get sizeRuleMultiple16 => '両辺が 16 の倍数';
-
-  @override
-  String sizeRuleMaxEdge(int long) {
-    return '長辺 ${long}px ≤ 3840';
-  }
-
-  @override
-  String sizeRuleAspect(String ratio) {
-    return 'アスペクト比 $ratio ≤ 3:1';
-  }
-
-  @override
-  String sizeRulePixels(String mp) {
-    return '総画素 $mp は 0.66–8.29 MP の範囲内';
-  }
 
   @override
   String get safetySettings => 'セーフティ設定';
@@ -5395,4 +5362,167 @@ class AppLocalizationsJa extends AppLocalizations {
   String menuLayerCount(int count) {
     return '$count レイヤー';
   }
+
+  @override
+  String get imageSizeTitle => '画像サイズ';
+
+  @override
+  String get imageSizeNotSet => 'サイズ未指定';
+
+  @override
+  String get imageSizeHintGpt => 'モデルに任せる';
+
+  @override
+  String imageSizeHintQwenShort(String tier) {
+    return '入力画像に合わせる · $tier';
+  }
+
+  @override
+  String imageSizeHintQwen(String size, String tier) {
+    return 'テキスト生成は $size、編集は入力画像の比率のまま $tier の面積に縮小';
+  }
+
+  @override
+  String imageSizeHintWan(String tier) {
+    return '$tier を送信';
+  }
+
+  @override
+  String imageSizeKeywordHint(String ratio) {
+    return '$ratio · キーワードで送信';
+  }
+
+  @override
+  String get imageSizeTierSection => '大きさ';
+
+  @override
+  String get imageSizeTierAreaTarget => '面積の目安 · キーワードではない';
+
+  @override
+  String imageSizeSnapped(int step, String old, String value) {
+    return '$step の倍数にスナップ：$old → $value';
+  }
+
+  @override
+  String imageSizeClampedDown(
+    String old,
+    String ratio,
+    String mp,
+    String max,
+    int step,
+    String value,
+  ) {
+    return '$old は $ratio で $mp MP、上限 $max MP を超過。$step グリッドで $value まで下げました';
+  }
+
+  @override
+  String imageSizeClampedUp(
+    String old,
+    String ratio,
+    String mp,
+    String min,
+    int step,
+    String value,
+  ) {
+    return '$old は $ratio で $mp MP、下限 $min MP を下回る。$step グリッドで $value まで上げました';
+  }
+
+  @override
+  String imageSizeNoSolution(String limit) {
+    return 'アスペクト比が $limit を超過：このモデルでは解がありません';
+  }
+
+  @override
+  String imageSizeRatioOverLimit(String ratio, String limit) {
+    return 'アスペクト比 $ratio が $limit を超過';
+  }
+
+  @override
+  String get imageSizeOutOfRange => 'このサイズはモデルの受け付ける範囲外です';
+
+  @override
+  String imageSizeFixTo(String value) {
+    return '$value にする';
+  }
+
+  @override
+  String imageSizeNotWrittenBack(String value) {
+    return '未反映：閉じると直前の有効なサイズ $value のままです';
+  }
+
+  @override
+  String get imageSizeTypingHint => '入力中 · フォーカスを外すか Enter で確認';
+
+  @override
+  String get imageSizeSwap => '縦横を入れ替え';
+
+  @override
+  String imageSizeFellBack(String value, String model, String sentinel) {
+    return '$value は $model では無効なため「$sentinel」に戻しました';
+  }
+
+  @override
+  String imageSizeBillingTier(String tier) {
+    return '$tier で課金';
+  }
+
+  @override
+  String imageSizeBillingCrossed(String tier, String area, String next) {
+    return '$tier の面積（$area）を超えるため $next で課金 · 規格別課金';
+  }
+
+  @override
+  String get imageSizeRulesAllPass => 'すべて適合';
+
+  @override
+  String get imageSizeRulesPending => '確認待ち';
+
+  @override
+  String get imageSizeRuleFails => '不適合';
+
+  @override
+  String imageSizeRuleMaxEdgeShort(int max) {
+    return '長辺 ≤ $max';
+  }
+
+  @override
+  String imageSizeRuleMinEdgeShort(int min) {
+    return '短辺 ≥ $min';
+  }
+
+  @override
+  String imageSizeAreaRef(int edge) {
+    return '面積の基準 $edge²';
+  }
+
+  @override
+  String get imageSizeRecommendTable => '公式の推奨表';
+
+  @override
+  String get imageSizeRecommendCorner => '比率 \\ 段階';
+
+  @override
+  String get imageSizeRecommendHint =>
+      'セルを選ぶと比率と大きさが同時に決まります。1:1 の行は段階キーワード、ほかはピクセルを送信。';
+
+  @override
+  String get imageSizeLockRatio => '比率を固定';
+
+  @override
+  String get imageSizeFooter => '即時反映 · Esc で元に戻す · Enter で閉じる';
+
+  @override
+  String get imageSizeFooterBlocked => 'Esc で元に戻す';
+
+  @override
+  String get imageSizeFooterTyping => 'Enter で確定';
+
+  @override
+  String get imageSizeDone => '完了';
+
+  @override
+  String get imageSizeRatioDerived => '派生 · 幅と高さに追従';
+
+  @override
+  String get imageSizeRatioAccepted => 'カスタム · 受理';
 }
