@@ -197,8 +197,9 @@ class OpenAIChatProtocol implements ChatProtocol {
       final metadata = <String, dynamic>{
         ...?normalizeOpenAIUsage(data['usage']),
       };
-      final finishReason = choice?['finish_reason'];
-      if (finishReason != null) metadata['finish_reason'] = finishReason;
+      final finishMetadata = openaiFinishMetadata(choice?['finish_reason']);
+      metadata.addAll(finishMetadata);
+      final finishReason = finishMetadata['finish_reason'];
 
       // A message with nothing in it — no text, reasoning, tool calls or
       // images — is not "the model chose to say nothing" (pitfalls 11 §A6).
@@ -360,6 +361,8 @@ class OpenAIChatProtocol implements ChatProtocol {
     // a later one carrying only half the picture.
     Map<String, dynamic>? usageMetadata;
     String? finishReason;
+    // The host's own spelling, when [openaiFinishReason] renamed it.
+    String? finishReasonRaw;
     // Fragments only become calls at stream end — ① has no per-call
     // terminator — so this holds them until the loop is over.
     final streamedToolCalls = StreamingToolCallAccumulator();
@@ -409,8 +412,10 @@ class OpenAIChatProtocol implements ChatProtocol {
         final choice = firstChoice(chunkData);
         if (choice == null) continue;
         final rawFinish = choice['finish_reason'];
-        if (rawFinish is String && rawFinish.isNotEmpty) {
-          finishReason = rawFinish;
+        final normalisedFinish = openaiFinishReason(rawFinish);
+        if (normalisedFinish != null) {
+          finishReason = normalisedFinish;
+          finishReasonRaw = normalisedFinish == rawFinish ? null : rawFinish as String;
         }
 
         // Structured image fields, read outside the tolerant try for the same
@@ -598,6 +603,7 @@ class OpenAIChatProtocol implements ChatProtocol {
       metadata: {
         ...?usageMetadata,
         'finish_reason': finishReason,
+        'finish_reason_raw': ?finishReasonRaw,
         if (streamIncomplete) 'stream_incomplete': true,
       },
     );

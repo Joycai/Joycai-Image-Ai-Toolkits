@@ -199,6 +199,9 @@ const Set<String> blockingFinishReasons = {
   'BLOCKLIST',
   'PROHIBITED_CONTENT',
   'SPII',
+  // The image models' own spellings of the same two blocks.
+  'IMAGE_PROHIBITED_CONTENT',
+  'IMAGE_RECITATION',
 };
 
 /// Finish reasons that mean the model's *thinking* protocol was broken by the
@@ -214,6 +217,7 @@ const Set<String> protocolFinishReasons = {
   'UNEXPECTED_TOOL_CALL',
   'TOO_MANY_TOOL_CALLS',
   'MALFORMED_FUNCTION_CALL',
+  'MALFORMED_RESPONSE',
 };
 
 /// ③'s `finishReason` in ①'s `finish_reason` vocabulary, the one every
@@ -236,6 +240,8 @@ String? geminiFinishReason(String? finishReason) {
     case 'BLOCKLIST':
     case 'PROHIBITED_CONTENT':
     case 'SPII':
+    case 'IMAGE_PROHIBITED_CONTENT':
+    case 'IMAGE_RECITATION':
       return 'content_filter';
     default:
       // FINISH_REASON_UNSPECIFIED, OTHER, LANGUAGE, and the protocol ones
@@ -243,6 +249,31 @@ String? geminiFinishReason(String? finishReason) {
       // raw value rides along as `finish_reason_raw`.
       return 'stop';
   }
+}
+
+/// The failure a finished Gemini response stands for when it carried no
+/// output at all (no text, thinking, image or call) and ended for a reason
+/// other than `STOP` / `MAX_TOKENS` — or null.
+///
+/// `OTHER`, `LANGUAGE`, `NO_IMAGE`, `IMAGE_OTHER`, `MALFORMED_RESPONSE`, a
+/// missing thought signature: [geminiFinishReason] has no ① word for these
+/// and publishes `stop`, so an empty candidate that ended this way used to
+/// reach the caller as a successful empty reply — an image task with no
+/// image, a refine that returned nothing. Typed and non-retryable (no status
+/// code): the same request meets the same end, and every attempt is billed.
+/// A content-filter end is left to LLMService's single check.
+LLMApiException? geminiEmptyEndFailure(
+  Map<String, dynamic>? metadata, {
+  required bool sawOutput,
+}) {
+  if (sawOutput || metadata == null) return null;
+  final raw = metadata['finish_reason_raw'];
+  if (raw is! String || raw == 'STOP' || raw == 'MAX_TOKENS') return null;
+  if (blockingFinishReasons.contains(raw)) return null;
+  return LLMApiException(
+    'Google GenAI ended the generation with finishReason $raw and no content'
+    '${raw == 'MISSING_THOUGHT_SIGNATURE' ? ' — a replayed tool-calling turn lacked its thoughtSignature' : ''}.',
+  );
 }
 
 /// Call ids for the `functionCall`s of one response.
@@ -408,19 +439,10 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
       // published as `finish_reason: content_filter` (above) and failed by
       // LLMService's single check, which records the billed usage first.
       //
-      // The protocol reasons still fail here when nothing was said: a turn
-      // that stopped for a missing signature is a failed request, not an
-      // empty reply. With content, the content is kept.
-      if (protocol && (parts == null || parts.isEmpty)) {
-        // Typed and non-retryable (no status code): the same history meets
-        // the same broken replay or the same undeclared tool, and every
-        // attempt is billed.
-        throw LLMApiException(
-          'Google GenAI ended the generation with finishReason '
-          '$finishReason and no content'
-          '${finishReason == 'MISSING_THOUGHT_SIGNATURE' ? ' — a replayed tool-calling turn lacked its thoughtSignature' : ''}.',
-        );
-      }
+      // Every other abnormal end fails only when the *whole* response said
+      // nothing — judged once at its end by [geminiEmptyEndFailure], not per
+      // chunk: on a stream the finish reason rides the last chunk, whose
+      // parts are often empty after the text already arrived.
     }
 
     if (parts == null || parts.isEmpty) {

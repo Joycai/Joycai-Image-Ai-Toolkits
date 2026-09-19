@@ -464,19 +464,46 @@ void main() {
       expect(chunks.single.metadata!['thoughtsTokenCount'], 40);
     });
 
-    test('a protocol stop with nothing said is a failure, not a short reply', () {
+    test('an abnormal stop with nothing said is a failure, not a short reply', () {
       // MISSING_THOUGHT_SIGNATURE is ③'s replay failure: not a 400, not a
-      // silent downgrade — a successful response that stopped for this reason.
-      for (final reason in ['MISSING_THOUGHT_SIGNATURE', 'UNEXPECTED_TOOL_CALL', 'TOO_MANY_TOOL_CALLS']) {
-        expect(
-          () => parseGoogleChunks(candidate(reason)).toList(),
-          // Typed and never retried: the same history fails the same way.
-          throwsA(isA<LLMApiException>()
-              .having((e) => e.message, 'message', contains(reason))
-              .having((e) => e.isTransient, 'isTransient', isFalse)),
-          reason: reason,
-        );
+      // silent downgrade — a successful response that stopped for this
+      // reason. OTHER / NO_IMAGE / MALFORMED_RESPONSE used to be published
+      // as `stop` and pass as an empty success. Judged over the whole
+      // response (geminiEmptyEndFailure), since on a stream the reason
+      // rides a last chunk whose parts are often empty.
+      for (final reason in [
+        'MISSING_THOUGHT_SIGNATURE',
+        'UNEXPECTED_TOOL_CALL',
+        'TOO_MANY_TOOL_CALLS',
+        'MALFORMED_RESPONSE',
+        'OTHER',
+        'LANGUAGE',
+        'NO_IMAGE',
+        'IMAGE_OTHER',
+      ]) {
+        final chunks = parseGoogleChunks(candidate(reason)).toList();
+        final failure = geminiEmptyEndFailure(chunks.last.metadata, sawOutput: false);
+        // Typed and never retried: the same history fails the same way.
+        expect(failure, isA<LLMApiException>(), reason: reason);
+        expect(failure!.message, contains(reason));
+        expect(failure.isTransient, isFalse);
+        // Any output in the response keeps it.
+        expect(geminiEmptyEndFailure(chunks.last.metadata, sawOutput: true), isNull);
       }
+      // Normal ends and content blocks are not this check's business.
+      for (final reason in ['STOP', 'MAX_TOKENS', 'SAFETY', 'IMAGE_PROHIBITED_CONTENT']) {
+        final chunks = parseGoogleChunks(candidate(reason)).toList();
+        expect(geminiEmptyEndFailure(chunks.last.metadata, sawOutput: false), isNull,
+            reason: reason);
+      }
+    });
+
+    test("the image models' block spellings are content_filter", () {
+      expect(geminiFinishReason('IMAGE_PROHIBITED_CONTENT'), contentFilterFinishReason);
+      expect(geminiFinishReason('IMAGE_RECITATION'), contentFilterFinishReason);
+    });
+
+    test('a protocol stop after text keeps the text', () {
       // With content the content is kept and the raw reason still rides along.
       final partial = parseGoogleChunks(
         candidate('MISSING_THOUGHT_SIGNATURE', parts: [{'text': 'hm'}]),
