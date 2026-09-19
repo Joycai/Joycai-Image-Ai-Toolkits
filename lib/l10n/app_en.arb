@@ -3347,6 +3347,9 @@
     }
   },
   "optRefNumberingHint": "Numbers match the filenames cited in the prompt; the agent can view these images.",
+  "optRefReorderHint": "Drag a card to reorder. The numbers are the order the assistant receives, and the ones the prompt cites.",
+  "optRefReorderHintTouch": "Long-press a card, then drag to reorder. The numbers are the order the assistant receives.",
+  "optRefReorderLocked": "The assistant is replying — reorder once it finishes.",
   "optModeKnowledgeEditShort": "Edit KB",
   "optRunning": "Running",
   "optRunningStep": "Running · step {count}",

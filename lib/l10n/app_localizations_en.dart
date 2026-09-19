@@ -5224,6 +5224,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Numbers match the filenames cited in the prompt; the agent can view these images.';
 
   @override
+  String get optRefReorderHint =>
+      'Drag a card to reorder. The numbers are the order the assistant receives, and the ones the prompt cites.';
+
+  @override
+  String get optRefReorderHintTouch =>
+      'Long-press a card, then drag to reorder. The numbers are the order the assistant receives.';
+
+  @override
+  String get optRefReorderLocked =>
+      'The assistant is replying — reorder once it finishes.';
+
+  @override
   String get optModeKnowledgeEditShort => 'Edit KB';
 
   @override

@@ -252,6 +252,35 @@ class WorkbenchUIState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Moves one reference image within the group the panel lets the user
+  /// reorder (`A3c`).
+  ///
+  /// [slots] are the list positions of that group, in list order — the result
+  /// images feedback turns added sit between them and keep their own
+  /// positions, so their ids do not move. [from] and [to] index into [slots],
+  /// with [to] already adjusted for the removal (`onReorderItem`).
+  ///
+  /// The list order is what the next turn sends and what the model's image
+  /// ids count, the same way a removal renumbers them; nothing is sent to the
+  /// model about the move. Refused while a turn runs — the panel stops the
+  /// drag then, and this covers a drag already under way when the turn began.
+  /// (A turn still waiting in the queue is the caller's to check: this state
+  /// does not see the queue.) Returns whether the list changed.
+  bool reorderAssistantReferences(List<int> slots, int from, int to) {
+    if (from == to || optimizerSession.isRunning) return false;
+    if (from < 0 || from >= slots.length || to < 0 || to >= slots.length) return false;
+    if (slots.any((i) => i < 0 || i >= optimizerReferenceImages.length)) return false;
+    final group = [for (final i in slots) optimizerReferenceImages[i]];
+    group.insert(to, group.removeAt(from));
+    final next = List<AppImage>.of(optimizerReferenceImages);
+    for (var k = 0; k < slots.length; k++) {
+      next[slots[k]] = group[k];
+    }
+    optimizerReferenceImages = next;
+    notifyListeners();
+    return true;
+  }
+
   /// Feeds a generated result back to the assistant: the image joins the
   /// reference list (surfaced to the model as kind "result") and the user's
   /// verdict (`3b`: thumbs up/down, reason tags, an optional note) is

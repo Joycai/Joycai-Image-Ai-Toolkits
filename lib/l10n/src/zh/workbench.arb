@@ -776,6 +776,9 @@
     }
   },
   "optRefNumberingHint": "序号与提示词中引用的文件名对应，agent 可查看这些图片。",
+  "optRefReorderHint": "拖动卡片调整顺序。序号就是发给助手的顺序，也是提示词里引用的编号。",
+  "optRefReorderHintTouch": "长按卡片后拖动调整顺序。序号就是发给助手的顺序。",
+  "optRefReorderLocked": "助手回复中，结束后可调整顺序。",
   "optModeKnowledgeEditShort": "库编辑",
   "optRunning": "执行中",
   "optRunningStep": "执行中 · 步骤 {count}",
