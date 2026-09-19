@@ -117,8 +117,8 @@ Chat Completions 和 Responses 同属 OpenAI 却分成两族，是因为它们�
 - [`../architecture/assistant-context.md`](../architecture/assistant-context.md) —
   上下文窗口在本项目里怎么解释（`usage.md` 那条"只能靠探测"的落地）
 - [`../plans/README.md`](../plans/README.md) — 历轮接入方案的台账，含**还没用真实
-  key 验证过的六条**（`adaptive` 是否真开思考、`pause_turn` 续跑、wan2.7 的 body
-  形状……）。跑完一条就把日期与端点写回这里对应的文件
+  key 验证过的五条**（`adaptive` 是否真开思考、`pause_turn` 续跑、wan2.7 收不收
+  `prompt_extend`……）。跑完一条就把日期与端点写回这里对应的文件
 
 ## 写作约定
 

@@ -11,19 +11,22 @@ part 'model_capability_tables.dart';
 /// default (one shape per protocol) is not enough.
 ///
 /// DashScope is the reason this exists: its two generations of image models
-/// are served by the same host under the same auth, but disagree about where
-/// the conversation goes — `qwen-image*` nests it under `input`, `wan2.7-*`
-/// puts it at the top level. Declaring the shape here keeps the protocol free
+/// are served by the same host under the same auth and the same
+/// `input.messages` envelope, but disagree about the order of the content
+/// parts (and, in layer 3, about sizes and defaults) — `qwen-image*` leads
+/// with the images, `wan2.7-*` with the text. A top-level `messages` for wan
+/// was a docs-mirror error; the endpoint 400s on it (verified 2026-09-19).
+/// Declaring the shape here keeps the protocol free
 /// of the model-id branch that would otherwise decide it (layer-1 code may
 /// not sniff ids; this file may).
 enum ImageRequestShape {
   /// Not a DashScope-native model — the protocol's own default shape.
   none,
 
-  /// `{model, input: {messages: [...]}, parameters: {...}}`.
+  /// `{model, input: {messages: [...]}, parameters: {...}}`, images first.
   dashscopeQwen,
 
-  /// `{model, messages: [...], parameters: {...}}`.
+  /// The same envelope, text first.
   dashscopeWan,
 }
 

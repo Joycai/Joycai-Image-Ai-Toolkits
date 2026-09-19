@@ -6,8 +6,10 @@
 > [`../architecture/llm-three-layer.md`](../architecture/llm-three-layer.md)。
 >
 > **来源与可信度**：整理自 `platform.qianwenai.com` 的 API reference
-> （2026-08 抓取）。该站曾被证实是二手镜像（顶层 `messages` 那条 B 形状至今
-> 没人用真实 key 验证过，见 [`../plans/README.md`](../plans/README.md)），实现前对
+> （2026-08 抓取）。该站曾被证实是二手镜像（它给 wan2.7 画的顶层 `messages`
+> 「B 形状」是错的：2026-09-19 用真实 key 打 I1，`wan2.7-image-pro` 回
+> `400 InvalidParameter: Field required: input.messages` —— wan 与 qwen 同用
+> `input.messages` 信封），实现前对
 > 有 ⚠ 标记的条目按 help.aliyun.com 官方文档或实测复核。猜错会响
 > （400 / 404），不会静默。
 

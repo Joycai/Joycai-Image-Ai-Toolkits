@@ -198,10 +198,13 @@ int _floorToGrid(double edge) {
 /// Every model in scope accepts `n: 1` (the ceilings differ — 6, 4, and the
 /// basic `qwen-image-edit`'s hard 1 — but the floor is shared).
 ///
-/// The two shapes differ in more than nesting, which is why this is a switch
-/// and not a flag: `qwen-image*` carries the conversation under `input` and
-/// leads with the images (the instruction reads as "…do this to them"), while
-/// `wan2.7-*` puts `messages` at the top level and leads with the text.
+/// Both shapes carry the conversation under `input` — the envelope is always
+/// `model` / `input` / `parameters`. A second-hand mirror of the docs showed
+/// `wan2.7-*` with `messages` at the top level; the real endpoint answers
+/// that with `400 InvalidParameter: Field required: input.messages`
+/// (2026-09-19, wan2.7-image-pro). What does differ is the part order:
+/// `qwen-image*` leads with the images (the instruction reads as "…do this
+/// to them"), `wan2.7-*` leads with the text.
 /// [ImageRequestShape] is declared per model in layer 3 so neither this
 /// function nor the protocol has to recognize a model id.
 Map<String, dynamic> buildDashScopeImagePayload({
@@ -236,39 +239,23 @@ Map<String, dynamic> buildDashScopeImagePayload({
     'prompt_extend': ?promptExtend,
   };
 
-  switch (shape) {
-    case ImageRequestShape.dashscopeWan:
-      return {
-        'model': modelId,
-        'messages': [
-          {
-            'role': 'user',
-            'content': [
-              {'text': prompt},
-              for (final ref in imageRefs) {'image': ref},
-            ],
-          }
-        ],
-        'parameters': parameters,
-      };
-    case ImageRequestShape.dashscopeQwen:
-    case ImageRequestShape.none:
-      return {
-        'model': modelId,
-        'input': {
-          'messages': [
-            {
-              'role': 'user',
-              'content': [
-                for (final ref in imageRefs) {'image': ref},
-                {'text': prompt},
-              ],
-            }
-          ],
-        },
-        'parameters': parameters,
-      };
-  }
+  final images = [for (final ref in imageRefs) {'image': ref}];
+  final text = {'text': prompt};
+  final content = switch (shape) {
+    ImageRequestShape.dashscopeWan => [text, ...images],
+    ImageRequestShape.dashscopeQwen ||
+    ImageRequestShape.none =>
+      [...images, text],
+  };
+  return {
+    'model': modelId,
+    'input': {
+      'messages': [
+        {'role': 'user', 'content': content},
+      ],
+    },
+    'parameters': parameters,
+  };
 }
 
 /// Throws when a DashScope body carries an error.
@@ -346,7 +333,8 @@ List<String> dashscopeImageRefs(Map<String, dynamic> data) {
 ///
 /// A base64 image is megabytes of noise in a log that exists to be read, and
 /// the conversation is the only place one can appear — under `input` on the
-/// three-section shapes, at the top level on wan's. Shared by every native
+/// three-section shapes (a bare `messages` is redacted too, should a surface
+/// ever carry one). Shared by every native
 /// surface (chat, image sync, image async) so one of them cannot start
 /// spilling image bytes into the debug log while the others do not.
 Map<String, dynamic> dashscopePayloadForLog(

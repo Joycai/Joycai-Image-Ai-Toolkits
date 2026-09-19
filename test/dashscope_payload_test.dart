@@ -95,16 +95,18 @@ void main() {
       expect(content.last, {'text': prompt});
     });
 
-    test('wan puts messages at the top level and leads with the text', () {
+    test('wan nests under input too, and leads with the text', () {
+      // A top-level `messages` is a live 400 — "Field required:
+      // input.messages" (wan2.7-image-pro, 2026-09-19).
       final body = buildDashScopeImagePayload(
         modelId: 'wan2.7-image',
         shape: ImageRequestShape.dashscopeWan,
         prompt: prompt,
         imageRefs: const ['https://example.com/a.png'],
       );
-      expect(body.containsKey('input'), isFalse);
+      expect(body.keys.toSet(), {'model', 'input', 'parameters'});
 
-      final content = (body['messages'] as List).first['content'] as List;
+      final content = ((body['input'] as Map)['messages'] as List).first['content'] as List;
       expect(content.first, {'text': prompt});
       expect(content.last, {'image': 'https://example.com/a.png'});
     });
