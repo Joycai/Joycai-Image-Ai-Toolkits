@@ -254,7 +254,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
       prompt: userMsg.content,
       imageRefs: refs,
       tierPixelSizes: target.model.capabilities.tierPixelSizes,
-      options: options,
+      options: optionsWithCheckedSize(target, options, logger: logger),
       warn: (m) => logger?.call(m, level: 'WARN'),
       stream: stream,
     );

@@ -56,7 +56,8 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     final url = Uri.parse('$baseUrl/images/${isEdit ? 'edits' : 'generations'}');
     logger?.call('Preparing OpenAI Images request (${isEdit ? 'edit' : 'generate'}) to: ${url.host}', level: 'DEBUG');
 
-    final size = resolveImageSize(options);
+    final size = resolveImageSize(
+        optionsWithCheckedSize(target, options, logger: logger));
     final quality = _resolveQuality(options);
     final client = config.createClient();
     try {

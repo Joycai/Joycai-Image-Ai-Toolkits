@@ -33,7 +33,7 @@ class GeminiChatProtocol implements ChatProtocol {
     final headers = target.headers();
     final payload = prepareGooglePayload(
       history,
-      options,
+      optionsWithCheckedSize(target, options, logger: logger),
       config.endpoint,
       tools: tools,
       emitsImages: target.model.capabilities.isImageGenerator,
@@ -186,7 +186,7 @@ class GeminiChatProtocol implements ChatProtocol {
     final headers = target.headers();
     final payload = prepareGooglePayload(
       history,
-      options,
+      optionsWithCheckedSize(target, options, logger: logger),
       config.endpoint,
       tools: tools,
       emitsImages: target.model.capabilities.isImageGenerator,
