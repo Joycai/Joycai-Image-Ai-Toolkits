@@ -19,7 +19,7 @@
 
 | 片 | 问题 | 验收 | 状态 |
 |---|---|---|---|
-| 5 | `requestStream` 不续跑 `pause_turn` | 流式遇 pause_turn 续跑，与非流式同答；测试 | ⬜ |
+| 5 | `requestStream` 不续跑 `pause_turn` | 流式遇 pause_turn 续跑，与非流式同答；测试 | ✅ |
 | 6 | MiniMax ① 思考控制方言 | 先实测，再声明方言 | ⬜ |
 | 7 | 结束原因 / 空回复：Gemini 未知 finishReason、百炼私有面空内容、① `sensitive` | 三处都抛错；测试 | ⬜ |
 
@@ -56,3 +56,4 @@
 - **片 2**：启发式收进 `StreamedImageTextGate`：可疑块不再丢弃而是从此「扣住」，流末只补发抽图后剩下、且此前没显示过的部分（按公共前缀算，data URI 跨块断开时也不重复）。去掉了「剩余 < 原长 10% 就不补」的规则——它会吞掉内联图之后的文字。`thinkFilter.flush()` 的尾巴以前若像 base64 就既不显示也不参与抽图，现在一样进闸门。
 - **片 3**：私有键叫 `dashscope_usage`（同 `ark_usage`）。顺带：原来 `...usage` 在 `image_count` 之后展开，上游的 `image_count` 会盖掉实际落盘张数，现在以落盘张数为准。token 计费组配万相会得到「usage 缺失」警告，与方舟一致。
 - **片 4**：新增请求选项 `llmNoServerToolsKey`，只在 `LLMService._resolveConfig` 一处翻成 `config.withoutServerTools()`，协议层不知道这个键。`withEndpoint` 与它共用一个 `_copy`，免得再手抄 20 个字段。方舟出图的 `webSearch` 是出图参数，不受影响。
+- **片 5**：续跑放在 `requestStream` 原有的重试循环里（同 `request()` 的 `continue` 写法），每段自己攒 text / reasoning / 回传载体给 `continuationFor`。续跑段是新请求：`attempt` 与「已下发」标记归零，所以续跑段在首块之前失败仍可重试；前段已下发的块不会重放。段与段之间下发一个 `\n\n`，与 `mergeTurnParts` 的拼法一致。测试用本地 SSE 服务器跑两段 ④ 流。

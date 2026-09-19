@@ -841,6 +841,16 @@ class LLMService {
     final streamProbe = cancellationProbeOf(options);
     final requestSerial = ++_requestSerial;
 
+    // Same turn continuation as request(): a host that paused the turn after
+    // a server-side tool run is asked to go on, and the legs stream out one
+    // after another. Without it a streamed call on a search-enabled ④ model
+    // ended at the search and delivered a half answer as the whole one.
+    var turnHistory = messages;
+    var leg = 0;
+    // Whether an earlier leg showed text: the next leg's text is then set
+    // off by a blank line, as [mergeTurnParts] joins the legs.
+    var legTextShown = false;
+
     while (true) {
       if (streamProbe?.call() ?? false) throw const LLMCancelled();
       final abort = Completer<void>();
@@ -848,7 +858,7 @@ class LLMService {
       final correlation = LLMLogCorrelation(
         contextId: contextId,
         request: requestSerial,
-        leg: 0,
+        leg: leg,
         attempt: attempt,
       );
       final attemptOptions = <String, dynamic>{
@@ -859,6 +869,13 @@ class LLMService {
       int imageCount = 0;
       Map<String, dynamic>? finalMetadata;
       var usageSettled = false;
+      // What a continuation replays: this leg's reply and carriers.
+      final legText = StringBuffer();
+      final legReasoning = StringBuffer();
+      List<Map<String, dynamic>>? legRawThinking;
+      List<Map<String, dynamic>>? legRawContent;
+      String? legSignature;
+      var separatorOwed = legTextShown;
       try {
 
         // Opened and listened to inside the correlation's zone: this method
@@ -867,7 +884,7 @@ class LLMService {
           correlation,
           () => _dispatcher.generateStream(
             config,
-            messages,
+            turnHistory,
             options: attemptOptions,
             logger: (msg, {level = 'INFO'}) =>
                 _emitLog(msg, level: level, contextId: contextId),
@@ -903,7 +920,18 @@ class LLMService {
             );
           }
           finalMetadata = mergeChunkMetadata(finalMetadata, chunk.metadata);
+          if (chunk.textPart != null) legText.write(chunk.textPart);
+          if (chunk.reasoningPart != null) {
+            legReasoning.write(chunk.reasoningPart);
+          }
+          legRawThinking = chunk.rawThinkingBlocks ?? legRawThinking;
+          legRawContent = chunk.rawContentBlocks ?? legRawContent;
+          legSignature = chunk.reasoningSignature ?? legSignature;
           deliveredAnyChunk = true;
+          if (separatorOwed && (chunk.textPart?.trim().isNotEmpty ?? false)) {
+            separatorOwed = false;
+            yield LLMResponseChunk(textPart: '\n\n');
+          }
           yield chunk;
         }
 
@@ -951,6 +979,43 @@ class LLMService {
         // blocked output, and the consumer must see a failure, not a success.
         final blocked = contentBlockedFailure(finalMetadata);
         if (blocked != null) throw blocked;
+
+        final continuation = continuationFor(
+          LLMResponse(
+            text: legText.toString(),
+            metadata: finalMetadata ?? const {},
+            reasoningContent:
+                legReasoning.isEmpty ? null : legReasoning.toString(),
+            reasoningSignature: legSignature,
+            rawThinkingBlocks: legRawThinking,
+            rawThinkingModelId: legRawThinking == null ? null : config.modelId,
+            rawContentBlocks: legRawContent,
+          ),
+          config.modelId,
+        );
+        if (continuation != null) {
+          if (leg < maxTurnContinuations) {
+            leg++;
+            _emitLog(
+              'The host paused the turn after a server-side tool run; '
+              'continuing ($leg/$maxTurnContinuations).',
+              contextId: contextId,
+            );
+            turnHistory = [...turnHistory, ...continuation];
+            legTextShown = legTextShown || legText.toString().trim().isNotEmpty;
+            // A new request: nothing of it has reached the consumer yet, so
+            // it gets its own retries, as in request().
+            attempt = 0;
+            deliveredAnyChunk = false;
+            continue;
+          }
+          _emitLog(
+            'The host paused the turn $leg times; delivering the partial '
+            'answer as-is.',
+            level: 'WARN',
+            contextId: contextId,
+          );
+        }
 
         return; // Success, exit retry loop
       } catch (e) {
