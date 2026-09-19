@@ -229,4 +229,24 @@ void main() {
       expect(promptText.allMatches(session.history.first.content).length, 1);
     });
   });
+
+  test('the summary request goes out without web search', () async {
+    Map<String, dynamic>? summaryOptions;
+    PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
+      if (isSummaryRequest(messages)) {
+        summaryOptions = options;
+        return LLMResponse(text: 'summary');
+      }
+      return LLMResponse(text: 'answer');
+    };
+
+    await PromptOptimizerAgent.runTurn(
+      session: overBudgetSession(),
+      modelIdentifier: 'm',
+      referenceImages: const [],
+      contextWindow: 2000,
+    );
+
+    expect(summaryOptions?[llmNoServerToolsKey], isTrue);
+  });
 }

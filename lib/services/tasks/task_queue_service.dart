@@ -269,6 +269,31 @@ class TaskQueueService extends ChangeNotifier {
     }
   }
 
+  /// Whether [task] can pick its upstream job back up instead of submitting
+  /// a new one: a video task that ended — failed, or cancelled — after its
+  /// job was accepted (and billed). The poll gave up at its deadline, a poll
+  /// failed three times running, the download broke, or the user stopped
+  /// watching: in every case the video may exist upstream already, and a
+  /// [retryTask] would pay for it again.
+  static bool canResumeVideoJob(TaskItem task) =>
+      task.type == TaskType.videoGenerate &&
+      (task.operationName?.isNotEmpty ?? false) &&
+      (task.status == TaskStatus.failed ||
+          task.status == TaskStatus.cancelled);
+
+  /// Re-queues a video task on its existing upstream job: the executor
+  /// resumes polling it (with a fresh deadline) and downloads the result,
+  /// submitting nothing. See [canResumeVideoJob].
+  Future<void> resumeVideoJob(String taskId) async {
+    final index = _queue.indexWhere((t) => t.id == taskId);
+    if (index == -1) return;
+    final task = _queue[index];
+    if (!canResumeVideoJob(task)) return;
+    task.addLog('Resuming upstream job ${task.operationName}; no new job is '
+        'submitted.');
+    await _requeue(task);
+  }
+
   /// Re-queues a failed or cancelled task for another attempt.
   Future<void> retryTask(String taskId) async {
     final index = _queue.indexWhere((t) => t.id == taskId);
@@ -278,14 +303,10 @@ class TaskQueueService extends ChangeNotifier {
         task.status != TaskStatus.cancelled) {
       return;
     }
-
-    task.status = TaskStatus.pending;
-    task.progress = null;
-    task.startTime = null;
-    task.endTime = null;
     // A retry is a request for a fresh attempt, so a video task forgets its
     // upstream job and submits a new one. Only an interrupted run resumes
-    // its job (see TaskRepository.cleanupStuckTasks).
+    // its job (see TaskRepository.cleanupStuckTasks), or the user asking for
+    // exactly that ([resumeVideoJob]).
     if (task.operationName != null) {
       task.addLog(
         'Previous upstream job ${task.operationName} is not reused; a new job '
@@ -294,6 +315,14 @@ class TaskQueueService extends ChangeNotifier {
       task.operationName = null;
       task.operationSurface = null;
     }
+    await _requeue(task);
+  }
+
+  Future<void> _requeue(TaskItem task) async {
+    task.status = TaskStatus.pending;
+    task.progress = null;
+    task.startTime = null;
+    task.endTime = null;
     task.addLog('Task re-queued by user.');
     await DatabaseService().saveTask(task.toMap());
     _notify();

@@ -144,9 +144,18 @@ class DashScopeChatProtocol implements ChatProtocol {
         level: 'DEBUG',
       );
 
+      final metadata = dashscopeChatMetadata(data);
+      final empty = dashscopeEmptyReplyFailure(
+        sawOutput: text.isNotEmpty || reasoning != null || toolCalls.isNotEmpty,
+        finishReason: metadata['finish_reason']?.toString(),
+        options: options,
+        logger: logger,
+      );
+      if (empty != null) throw empty;
+
       return LLMResponse(
         text: text,
-        metadata: dashscopeChatMetadata(data),
+        metadata: metadata,
         reasoningContent: reasoning,
         // Echoed back under the name it arrived with, exactly as on the ①
         // face — the native surface uses the same `reasoning_content`
@@ -272,6 +281,9 @@ class DashScopeChatProtocol implements ChatProtocol {
     // Same rule as ①: a stream that decodes to no frame at all (an HTML page
     // behind a 200, keep-alives only) is a failed request, not an empty one.
     var sawFrame = false;
+    // Whether any frame carried text, reasoning or a call — see
+    // [dashscopeEmptyReplyFailure].
+    var sawOutput = false;
 
     try {
       await for (final line
@@ -331,6 +343,7 @@ class DashScopeChatProtocol implements ChatProtocol {
           // the ① compatible face.
           final delta = reasoning.feed(rawReasoning);
           if (delta.isNotEmpty) {
+            sawOutput = true;
             yield LLMResponseChunk(
               reasoningPart: delta,
               reasoningFieldName: 'reasoning_content',
@@ -341,7 +354,10 @@ class DashScopeChatProtocol implements ChatProtocol {
         final rawText = contentToText(message['content']);
         if (rawText.isNotEmpty) {
           final delta = text.feed(rawText);
-          if (delta.isNotEmpty) yield LLMResponseChunk(textPart: delta);
+          if (delta.isNotEmpty) {
+            sawOutput = true;
+            yield LLMResponseChunk(textPart: delta);
+          }
         }
       }
     } finally {
@@ -396,6 +412,14 @@ class DashScopeChatProtocol implements ChatProtocol {
       yield LLMResponseChunk(toolCallPart: call);
     }
 
+    final empty = dashscopeEmptyReplyFailure(
+      sawOutput: sawOutput || assembled.isNotEmpty,
+      finishReason: finishReason,
+      options: options,
+      logger: logger,
+    );
+    if (empty != null) throw empty;
+
     // Unconditional: a finish reason is always known by now (a stream that
     // sent none was resolved above).
     yield LLMResponseChunk(
@@ -407,6 +431,39 @@ class DashScopeChatProtocol implements ChatProtocol {
     );
     yield LLMResponseChunk(isDone: true);
   }
+}
+
+/// The failure a native-face chat reply with nothing in it stands for — no
+/// text, reasoning or tool call — or null.
+///
+/// The ① face's rule (pitfalls 11 §A6), which this face lacked: frames with
+/// no content, or a message whose content is empty, reached the caller as a
+/// successful empty reply. `length` and `content_filter` are real endings
+/// with their own handling downstream, and a caller continuing after a tool
+/// result may declare an empty ending legitimate ([emptyReplyEndsTurnKey]).
+LLMApiException? dashscopeEmptyReplyFailure({
+  required bool sawOutput,
+  required String? finishReason,
+  required Map<String, dynamic>? options,
+  LLMLogger? logger,
+}) {
+  if (sawOutput ||
+      finishReason == 'length' ||
+      finishReason == contentFilterFinishReason) {
+    return null;
+  }
+  if (options?[emptyReplyEndsTurnKey] == true) {
+    logger?.call(
+      'The reply carried no content; the caller declared that a legitimate '
+      'end of turn, so it is delivered empty rather than failed.',
+      level: 'DEBUG',
+    );
+    return null;
+  }
+  return LLMApiException(
+    'DashScope Chat API returned no content — no text, reasoning or tool '
+    'calls (finish_reason: ${finishReason ?? 'none'}).',
+  );
 }
 
 /// One output channel of a stream (text or reasoning), turning whatever the

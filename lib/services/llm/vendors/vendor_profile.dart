@@ -263,6 +263,18 @@ enum ThinkingDialect {
   /// newest Qwen (3.7+) also reads `reasoning_effort`; the declaration is the
   /// vendor's default for the face, not a guess about the model.
   openaiEnableThinking,
+
+  /// MiniMax's spelling on the **①** wire: a top-level
+  /// `thinking: {"type": "adaptive" | "disabled"}`, sent **instead of**
+  /// `reasoning_effort` (docs/api/minimax.md §1, which lists no
+  /// `reasoning_effort`). A switch like [openaiEnableThinking]: every level
+  /// above off means "on". Differs from [openaiThinkingObject] in the on
+  /// value (`adaptive`, not `enabled`) and in sending no intensity.
+  ///
+  /// It matters for "off": thinking is **on by default** on this face, so the
+  /// generic `reasoning_effort: "none"` left the model thinking, and billing
+  /// for it, with nothing in the response saying so.
+  openaiAdaptiveObject,
 }
 
 /// Which name the ① wire's output cap goes out under — a Layer 2 fact.

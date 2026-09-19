@@ -617,6 +617,27 @@ void main() {
         expect(rejects(LLMApiException(
             'Anthropic API request failed: 400 - messages: roles must alternate',
             statusCode: 400)), isFalse);
+        // About thinking, but not its spelling: a broken replay or a cap.
+        // Learned for the session, a flip here swapped a working dialect
+        // for a broken one.
+        for (final message in [
+          'messages.3.content.0.thinking.signature: Field required',
+          'messages.1.content.0.type: Expected `thinking` or `redacted_thinking`, but found `text`. When `thinking` is enabled, a final `assistant` message must start with a thinking block',
+          '`max_tokens` must be greater than `thinking.budget_tokens`',
+          'thinking.budget_tokens: Input should be greater than or equal to 1024',
+          'Thinking may not be enabled when tool_choice forces tool use.',
+          '`temperature` may only be set to 1 when thinking is enabled.',
+        ]) {
+          expect(rejects(LLMApiException('Anthropic API request failed: 400 - $message',
+              statusCode: 400)), isFalse, reason: message);
+        }
+        // The field-level spellings of an unknown dialect still qualify.
+        expect(rejects(LLMApiException(
+            "Anthropic API request failed: 400 - thinking: Input tag 'adaptive' found using 'type' does not match any of the expected tags",
+            statusCode: 400)), isTrue);
+        expect(rejects(LLMApiException(
+            'Anthropic API request failed: 400 - adaptive thinking is not supported on this model',
+            statusCode: 400)), isTrue);
         // Not a 400.
         expect(rejects(LLMApiException(
             'Anthropic API request failed: 529 - overloaded (thinking)',

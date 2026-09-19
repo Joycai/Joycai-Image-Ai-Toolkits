@@ -6592,6 +6592,12 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retryTask;
 
+  /// No description provided for @resumeVideoJob.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume job'**
+  String get resumeVideoJob;
+
   /// No description provided for @queuedPosition.
   ///
   /// In en, this message translates to:

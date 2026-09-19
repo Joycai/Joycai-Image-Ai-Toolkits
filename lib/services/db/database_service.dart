@@ -246,6 +246,8 @@ class DatabaseService {
 
   // Token Usage Methods
   Future<void> recordTokenUsage(Map<String, dynamic> usage) => UsageRepository().recordTokenUsage(usage);
+  Future<int> updateTokenUsage(String taskId, Map<String, dynamic> values) =>
+      UsageRepository().updateTokenUsage(taskId, values);
   Future<void> clearTokenUsage({String? modelId}) => UsageRepository().clearTokenUsage(modelId: modelId);
   Future<List<Map<String, dynamic>>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end, int? limit, int? offset})
       => UsageRepository().getTokenUsage(modelIds: modelIds, start: start, end: end, limit: limit, offset: offset);

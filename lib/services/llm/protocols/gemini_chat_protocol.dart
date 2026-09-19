@@ -33,7 +33,7 @@ class GeminiChatProtocol implements ChatProtocol {
     final headers = target.headers();
     final payload = prepareGooglePayload(
       history,
-      options,
+      optionsWithCheckedSize(target, options, logger: logger),
       config.endpoint,
       tools: tools,
       emitsImages: target.model.capabilities.isImageGenerator,
@@ -121,6 +121,15 @@ class GeminiChatProtocol implements ChatProtocol {
         level: 'DEBUG',
       );
 
+      final emptyEnd = geminiEmptyEndFailure(
+        metadata,
+        sawOutput: text.isNotEmpty ||
+            reasoning.isNotEmpty ||
+            images.isNotEmpty ||
+            toolCalls.isNotEmpty,
+      );
+      if (emptyEnd != null) throw emptyEnd;
+
       // ③'s replay carrier: the model turn's parts verbatim, only when it
       // called tools ([LLMMessage.rawModelParts]).
       final rawParts = (GeminiModelPartsCollector()..feed(data)).toolTurnParts;
@@ -177,7 +186,7 @@ class GeminiChatProtocol implements ChatProtocol {
     final headers = target.headers();
     final payload = prepareGooglePayload(
       history,
-      options,
+      optionsWithCheckedSize(target, options, logger: logger),
       config.endpoint,
       tools: tools,
       emitsImages: target.model.capabilities.isImageGenerator,
@@ -251,6 +260,10 @@ class GeminiChatProtocol implements ChatProtocol {
     // Whether a single protocol-shaped chunk arrived — see the guard after
     // the loop.
     var sawChunk = false;
+    // Whether any of them carried output, and the finish they ended on —
+    // see [geminiEmptyEndFailure].
+    var sawOutput = false;
+    Map<String, dynamic>? lastMetadata;
     // One id generator for the whole stream: ③ sends each functionCall whole
     // in its own chunk, and ids restarted per chunk used to collide.
     final callIds = GeminiToolCallIds();
@@ -281,6 +294,16 @@ class GeminiChatProtocol implements ChatProtocol {
           modelParts: modelParts,
         )) {
           sawChunk = true;
+          if (chunk.textPart != null ||
+              chunk.reasoningPart != null ||
+              chunk.imagePart != null ||
+              chunk.toolCallPart != null) {
+            sawOutput = true;
+          }
+          // Merged: a trailing usage-only chunk must not drop the finish.
+          if (chunk.metadata != null) {
+            lastMetadata = {...?lastMetadata, ...chunk.metadata!};
+          }
           yield chunk;
         }
       }
@@ -303,6 +326,9 @@ class GeminiChatProtocol implements ChatProtocol {
         isNonJsonBody: true,
       );
     }
+
+    final emptyEnd = geminiEmptyEndFailure(lastMetadata, sawOutput: sawOutput);
+    if (emptyEnd != null) throw emptyEnd;
 
     // Once, whole, at the end — the same arrangement as ④'s raw blocks.
     final rawParts = modelParts.toolTurnParts;

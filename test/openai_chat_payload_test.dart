@@ -559,8 +559,9 @@ void main() {
 
     test('every other ① vendor never sees the thinking object', () {
       // It is an unknown field there, and an unknown field is a 400 on the
-      // official host.
-      for (final id in [Vendors.openAIRest, Vendors.newApiOpenAI, Vendors.minimax]) {
+      // official host. (MiniMax declares its own `thinking` spelling —
+      // test/minimax_thinking_test.dart.)
+      for (final id in [Vendors.openAIRest, Vendors.newApiOpenAI]) {
         final config = LLMModelConfig(
           modelId: 'm',
           channelType: id,

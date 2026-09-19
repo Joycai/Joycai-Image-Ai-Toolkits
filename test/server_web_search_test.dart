@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_payload.dart';
@@ -173,6 +174,36 @@ void main() {
             vendor.webSearchOn(WireProtocol.anthropicChat) != ServerWebSearch.unsupported,
             reason: id);
       }
+    });
+  });
+
+  group('a call that opts out of server tools', () {
+    Map<String, dynamic> payload(LLMTarget t) => OpenAIChatProtocol()
+        .buildChatPayloadForTest(t, hi, isStreaming: false);
+
+    LLMTarget forCall(LLMTarget t, Map<String, dynamic>? options) => LLMTarget(
+          config: LLMService.configForCall(t.config, options),
+          vendor: t.vendor,
+          model: t.model,
+        );
+
+    test('sends no search even when the model has it on', () {
+      final t = target(Vendors.dashscope, 'qwen3-max');
+      expect(payload(forCall(t, const {llmNoServerToolsKey: true}))
+          .containsKey('enable_search'), isFalse);
+      final anthropic = target(Vendors.anthropicRest, 'claude-opus-5',
+          endpoint: 'https://api.anthropic.com');
+      final body = prepareAnthropicPayload(
+          forCall(anthropic, const {llmNoServerToolsKey: true}), hi,
+          isStreaming: false);
+      expect(body.containsKey('tools'), isFalse);
+    });
+
+    test('any other call keeps the model switch', () {
+      final t = target(Vendors.dashscope, 'qwen3-max');
+      expect(payload(forCall(t, const {'retryCount': 2}))['enable_search'],
+          isTrue);
+      expect(payload(forCall(t, null))['enable_search'], isTrue);
     });
   });
 }

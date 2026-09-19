@@ -3852,6 +3852,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retryTask => 'Retry';
 
   @override
+  String get resumeVideoJob => 'Resume job';
+
+  @override
   String queuedPosition(int position) {
     return '#$position in queue';
   }

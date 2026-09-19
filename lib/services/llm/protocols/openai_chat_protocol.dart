@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -196,8 +197,9 @@ class OpenAIChatProtocol implements ChatProtocol {
       final metadata = <String, dynamic>{
         ...?normalizeOpenAIUsage(data['usage']),
       };
-      final finishReason = choice?['finish_reason'];
-      if (finishReason != null) metadata['finish_reason'] = finishReason;
+      final finishMetadata = openaiFinishMetadata(choice?['finish_reason']);
+      metadata.addAll(finishMetadata);
+      final finishReason = finishMetadata['finish_reason'];
 
       // A message with nothing in it — no text, reasoning, tool calls or
       // images — is not "the model chose to say nothing" (pitfalls 11 §A6).
@@ -348,8 +350,7 @@ class OpenAIChatProtocol implements ChatProtocol {
       );
     }
 
-    String accumulatedText = '';
-    bool isLikelyBase64Stream = false;
+    final textGate = StreamedImageTextGate();
     // <think> tags arrive split across chunks; the filter reassembles them
     // and keeps the thinking out of the text channel.
     final thinkFilter = InlineThinkStreamFilter();
@@ -360,6 +361,8 @@ class OpenAIChatProtocol implements ChatProtocol {
     // a later one carrying only half the picture.
     Map<String, dynamic>? usageMetadata;
     String? finishReason;
+    // The host's own spelling, when [openaiFinishReason] renamed it.
+    String? finishReasonRaw;
     // Fragments only become calls at stream end — ① has no per-call
     // terminator — so this holds them until the loop is over.
     final streamedToolCalls = StreamingToolCallAccumulator();
@@ -409,8 +412,10 @@ class OpenAIChatProtocol implements ChatProtocol {
         final choice = firstChoice(chunkData);
         if (choice == null) continue;
         final rawFinish = choice['finish_reason'];
-        if (rawFinish is String && rawFinish.isNotEmpty) {
-          finishReason = rawFinish;
+        final normalisedFinish = openaiFinishReason(rawFinish);
+        if (normalisedFinish != null) {
+          finishReason = normalisedFinish;
+          finishReasonRaw = normalisedFinish == rawFinish ? null : rawFinish as String;
         }
 
         // Structured image fields, read outside the tolerant try for the same
@@ -481,22 +486,8 @@ class OpenAIChatProtocol implements ChatProtocol {
             if (split.reasoning.isNotEmpty) {
               yield LLMResponseChunk(reasoningPart: split.reasoning);
             }
-            final cleanText = split.text;
-            if (cleanText.isNotEmpty) {
-              accumulatedText += cleanText;
-
-              // Check if we are currently receiving a massive base64 string
-              if (!isLikelyBase64Stream &&
-                  accumulatedText.length > 500 &&
-                  _isBase64Heuristic(accumulatedText)) {
-                isLikelyBase64Stream = true;
-              }
-
-              // Only yield text to console if it doesn't look like raw image data
-              if (!isLikelyBase64Stream && !_isBase64Heuristic(cleanText)) {
-                yield LLMResponseChunk(textPart: cleanText);
-              }
-            }
+            final shown = textGate.feed(split.text);
+            if (shown.isNotEmpty) yield LLMResponseChunk(textPart: shown);
           }
         } catch (e) {
           // Ignore parse errors
@@ -507,27 +498,19 @@ class OpenAIChatProtocol implements ChatProtocol {
       if (tail.reasoning.isNotEmpty) {
         yield LLMResponseChunk(reasoningPart: tail.reasoning);
       }
-      if (tail.text.isNotEmpty && !_isBase64Heuristic(tail.text)) {
-        accumulatedText += tail.text;
-        yield LLMResponseChunk(textPart: tail.text);
-      }
+      final shownTail = textGate.feed(tail.text);
+      if (shownTail.isNotEmpty) yield LLMResponseChunk(textPart: shownTail);
 
-      if (accumulatedText.isNotEmpty) {
+      if (textGate.text.isNotEmpty) {
         final result = await _processTextAndExtractImages(
-          accumulatedText,
+          textGate.text,
           config,
           imageReply: target.model.capabilities.isImageGenerator,
           logger: logger,
           abortTrigger: abortTriggerOf(options),
         );
-        // If the text was mostly images, don't yield the messy leftover text
-        if (result.text.length < accumulatedText.length * 0.1 ||
-            _isBase64Heuristic(result.text)) {
-          // Skip yielding textPart
-        } else if (isLikelyBase64Stream) {
-          // If we suppressed it during streaming but it turned out to have valid text, yield it now
-          yield LLMResponseChunk(textPart: result.text);
-        }
+        final rest = textGate.finish(result.text);
+        if (rest.isNotEmpty) yield LLMResponseChunk(textPart: rest);
 
         for (var img in dedupe.filter(result.images)) {
           yield LLMResponseChunk(imagePart: img);
@@ -620,6 +603,7 @@ class OpenAIChatProtocol implements ChatProtocol {
       metadata: {
         ...?usageMetadata,
         'finish_reason': finishReason,
+        'finish_reason_raw': ?finishReasonRaw,
         if (streamIncomplete) 'stream_incomplete': true,
       },
     );
@@ -648,16 +632,6 @@ class OpenAIChatProtocol implements ChatProtocol {
     } finally {
       client.close();
     }
-  }
-
-  bool _isBase64Heuristic(String text) {
-    if (text.length < 64) return false;
-    // Check if it contains data URI prefix
-    if (text.contains('data:image/')) return true;
-    // Check if it's a long string of base64 characters with no spaces
-    return text.length > 200 &&
-        !text.contains(' ') &&
-        RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(text.substring(0, 100));
   }
 
   Future<_TextProcessResult> _processTextAndExtractImages(
@@ -754,6 +728,66 @@ class OpenAIChatProtocol implements ChatProtocol {
     isStreaming: isStreaming,
     tools: tools,
   );
+}
+
+/// Decides which streamed reply text reaches the consumer while an inline
+/// image may be arriving as text (`data:image/…;base64,…`, or bare base64).
+///
+/// Text is shown as it arrives until something looks like image data; from
+/// then on it is held back, and [finish] hands over only what the image
+/// extraction left that was not already shown. The gate it replaces dropped
+/// a suspicious chunk for good, and at stream end re-yielded the *whole*
+/// cleaned text once it had flipped — so every character shown before the
+/// flip appeared twice, and text after an inline image was lost whenever the
+/// leftover was under a tenth of the raw length.
+@visibleForTesting
+class StreamedImageTextGate {
+  final StringBuffer _all = StringBuffer();
+  final StringBuffer _shown = StringBuffer();
+  bool _holding = false;
+
+  /// Everything fed so far — what image extraction runs over.
+  String get text => _all.toString();
+
+  /// Feeds one piece of reply text; returns the part to show now.
+  String feed(String piece) {
+    if (piece.isEmpty) return '';
+    _all.write(piece);
+    if (!_holding &&
+        (looksLikeImageData(piece) ||
+            (_all.length > 500 && looksLikeImageData(text)))) {
+      _holding = true;
+    }
+    if (_holding) return '';
+    _shown.write(piece);
+    return piece;
+  }
+
+  /// Given the text left after image extraction, returns what still has to
+  /// be shown: the part past what [feed] already showed. Nothing when the
+  /// gate never held back, or when the remainder is itself image data.
+  String finish(String cleaned) {
+    if (!_holding) return '';
+    final shown = _shown.toString().trimLeft();
+    var common = 0;
+    final limit = math.min(shown.length, cleaned.length);
+    while (common < limit &&
+        shown.codeUnitAt(common) == cleaned.codeUnitAt(common)) {
+      common++;
+    }
+    final rest = cleaned.substring(common);
+    if (rest.trim().isEmpty || looksLikeImageData(rest)) return '';
+    return rest;
+  }
+
+  /// A `data:image/` payload, or a long run of base64 with no spaces.
+  static bool looksLikeImageData(String text) {
+    if (text.length < 64) return false;
+    if (text.contains('data:image/')) return true;
+    return text.length > 200 &&
+        !text.contains(' ') &&
+        RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(text.substring(0, 100));
+  }
 }
 
 class _TextProcessResult {

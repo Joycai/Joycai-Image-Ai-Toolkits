@@ -158,13 +158,11 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
 
     final params = <String, dynamic>{
       'prompt': _promptController.text,
-      'resolution': appState.lastVideoResolution.value,
-      'aspectRatio': appState.lastVideoAspectRatio.value,
       'referenceImagePaths': uiState.videoReferenceImages.map((i) => i.path).toList(),
       'firstFramePath': uiState.videoFirstFrame?.path,
       'lastFramePath': uiState.videoLastFrame?.path,
-      // Per-family video extras (e.g. Sora's seconds / quality). Empty for
-      // families with no capability-driven controls.
+      // Every video control is declared per family (resolution, ratio,
+      // seconds, quality…); only what the model declares is sent.
       ...appState.effectiveVideoParams(selectedModel),
     };
 

@@ -180,6 +180,12 @@ String? dashscopeSentSize(Map<String, dynamic> payload) {
 ///    path records usage only for a non-empty map, and the async surface
 ///    returned `const {}` whenever the task result had no `usage` block.
 ///
+/// The raw `usage` block rides under **`dashscope_usage`**, never spread at
+/// the top level: wan2.7-image reports `input_tokens` / `output_tokens`
+/// although DashScope bills it per image, and a top-level token key let a
+/// token-priced fee group turn those into a cost (the same trap Ark's
+/// `ark_usage` avoids).
+///
 /// Facts only, no prices.
 Map<String, dynamic> dashscopeImageMetadata({
   required Map<String, dynamic> data,
@@ -204,7 +210,7 @@ Map<String, dynamic> dashscopeImageMetadata({
   final outputSize = rendered ?? sentSize;
   return {
     'image_count': imageCount,
-    ...usage,
+    if (usage.isNotEmpty) 'dashscope_usage': usage,
     'output_size': ?outputSize,
   };
 }

@@ -3691,6 +3691,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get retryTask => '再試行';
 
   @override
+  String get resumeVideoJob => '元のジョブを再開';
+
+  @override
   String queuedPosition(int position) {
     return '待機 $position 番目';
   }

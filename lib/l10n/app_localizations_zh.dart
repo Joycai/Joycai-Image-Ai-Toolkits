@@ -3647,6 +3647,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get retryTask => '重试';
 
   @override
+  String get resumeVideoJob => '继续原任务';
+
+  @override
   String queuedPosition(int position) {
     return '排队第 $position 位';
   }
@@ -9112,6 +9115,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get retryTask => '重試';
+
+  @override
+  String get resumeVideoJob => '繼續原任務';
 
   @override
   String queuedPosition(int position) {

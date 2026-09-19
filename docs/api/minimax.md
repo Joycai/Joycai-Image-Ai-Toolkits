@@ -50,6 +50,12 @@
 - 思考控制是 `thinking: {type: "adaptive"|"disabled"}`（不是 OpenAI 的
   `reasoning_effort`），**默认 adaptive = 开**；`reasoning_split: true` 把
   思考拆到 `reasoning_content` / `reasoning_details`，否则混在 content 里。
+  **实测（2026-09-19，`api.minimaxi.com`，MiniMax-M3）**：`reasoning_effort:
+  "none"` 被接受但**静默无视**（仍有 34 个 reasoning token、照样计费）；
+  `thinking:{type:"disabled"}` 真正关掉（reasoning_tokens 0）；`adaptive` 开；
+  `thinking:{type:"enabled"}`（DeepSeek 的写法）直接 400
+  `invalid thinking.type: "enabled" (allowed: adaptive, disabled)`。所以本面
+  声明自己的方言 `ThinkingDialect.openaiAdaptiveObject`，不复用 DeepSeek 的。
 - 多模态（仅 M3）：`image_url`（URL / base64 data URI / `mm_file://{file_id}`，
   `detail: low|default|high` 直接影响 token 量 ~600 到 15k+）、`video_url`
   （`fps` [0.2, 5]，URL/base64 ≤50 MB、Files API ≤512 MB）。

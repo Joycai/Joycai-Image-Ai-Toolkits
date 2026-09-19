@@ -231,6 +231,13 @@ Map<String, dynamic> openaiThinkingFields(
     // beside it (Qwen documents the two controls as exclusive).
     return {'enable_thinking': effort != ReasoningEffort.off};
   }
+  if (dialect == ThinkingDialect.openaiAdaptiveObject) {
+    return {
+      'thinking': {
+        'type': effort == ReasoningEffort.off ? 'disabled' : 'adaptive',
+      },
+    };
+  }
   if (dialect != ThinkingDialect.openaiThinkingObject) {
     return {'reasoning_effort': ?openaiReasoningEffortWire(effort)};
   }

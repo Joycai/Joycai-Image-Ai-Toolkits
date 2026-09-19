@@ -49,6 +49,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | `2026-09-ark-image-stream-execution.md`（四片 + 一次 review，分支 `claude/ark-live-tests`，与套餐实测文档同一 PR） | Seedream 流式出图：方舟自家渠道上 5.0 lite / 4.5 / 4.0 发 `stream: true`，逐张下载推出；空闲守卫按单图期限计；执行器边到边存。中转与 5.0 pro 照旧同步。顺带：套餐实测补了 chat 面思考开关（不需要方言）、流式事件形状、拆图层响应形状 | `architecture/llm-three-layer.md`「火山方舟 · Seedream」流式一条、`api/volcengine-ark.md` §5 · §7 · §7.1。执行清单原文 `git show a305018:docs/plans/2026-09-ark-image-stream-execution.md` |
 | `2026-09-channel-route-followups-execution.md`（八片 + 两次评审，分支 `claude/channel-route-followups`） | 渠道 × 线路欠账清零：合并连助手对话里的模型链接一起改写（库里的行与打开着的会话）、合并审阅把已选模型 / 用量记录 / 对话链接分开计数；换预设与向导同源建平台全部线路；路径「主机本身」一态（自定义平台给「用主机本身」）；联网矩阵「未实测」第三态（画像声明 `untestedWebSearch`）；向导每条线路的私有能力一词；作用域灰字紧跟标题（`AppSectionLabel.suffix`）、手机线路条横向滚动。渠道栏副行不显示渠道标签维持设计 ① 原意 | `architecture/llm-three-layer.md`「渠道 × 线路 × 模型」。原文 `git show 8285ca7:docs/plans/2026-09-channel-route-followups-execution.md`（裁定表与施工记录） |
 | `2026-09-ark-layers-execution.md`（五片 + 一次 review，分支 `claude/ark-layers`，v4.15.0） | 拆图层落库与画布还原：`GeneratedImageLayer` 与图按位置对齐（`LLMResponse.imageLayers` / `LLMResponseChunk.imageLayer`，方舟逐项下载保对齐）；v46 `image_layers` 按路径存组、层号、名字、描述、框，应用内改名 / 移动带着走、覆盖时退掉旧行；全屏「图层画布」按框叠回底图、逐层显隐、点选描框、导出可见层合成图；入口是图片卡角标与右键一行。设计稿 Claude Design `A7 图层画布` | `architecture/llm-three-layer.md`「火山方舟 · Seedream」拆图层一条、`api/volcengine-ark.md` §6。执行清单原文 `git show 0ad48c6:docs/plans/2026-09-ark-layers-execution.md`（施工记录有与稿的四处出入） |
+| `2026-09-capability-audit-fixes-execution.md`（十七片 + 五次 review，分支 `claude/model-capability-fixes`） | 2026-09-19 用 `ai-agent-architecture` skill 审模型能力支持（不含 Sora）后的修复。静默失败：出图 0 张判失败并带模型原话；① 流式内联图的文本闸门（不重复、不丢尾）；万相 usage 不再按 token 计费（`dashscope_usage`）；上下文压缩不带联网搜索（`llmNoServerToolsKey`）。协议：`requestStream` 续跑 `pause_turn`；MiniMax ① 思考方言 `openaiAdaptiveObject`（实测 2026-09-19）；③ 异常结束无输出按整段判失败、百炼私有面补空回复规则、GLM `sensitive` 归 `content_filter`。视频与计费：「继续原任务」续轮询 / 重下载不重新付费；按规格计费的视频行按上游回报时长改写（`video:<job id>` 行）；「与按次相同」提示只在单位为「条」时出现（按次本身不乘张数，裁定）。发送前：四条出图路由按模型尺寸控件校验（`optionsWithCheckedSize`）；④ base 自动补 `/v1`、去 `/messages`；Anthropic 思考方言只在拼写被拒时翻转。结构：Veo 分辨率 / 比例成为模型声明、面板无固定控件；视频选单与提交共用 `_videoSubmitRoute`；连接测试的补全探测保留线路；聊天线表穷举 | 代码与测试；MiniMax 实测写进 `api/minimax.md` §1。执行清单原文 `git show 5d0a825:docs/plans/2026-09-capability-audit-fixes-execution.md`（施工记录与每批 review 的发现）。欠的并入下面「还欠的」 |
 
 三份审计报告（`code-review-report-20260613.md` v2.3.0、`api-standards-audit.md`
 基线 `d03047e`、`2026-08-ai-capability-review.md` 基线 `6a4920d`）都是带完整
@@ -57,6 +58,16 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 不要照着旧快照改。
 
 ## 还欠的（2026-09-12 对照 main 逐条复核过；2026-09-16 欠账清扫后更新）
+
+### 模型能力审查修复（2026-09-19）
+
+| 条 | 为什么没做 / 要验什么 |
+|---|---|
+| Anthropic 4.7+ 拒收 `thinking.type: enabled` 的原文 | 方言翻转规则仍是「报文提到 effort 就不翻」。若官方拒收原文顺带建议 `output_config.effort`，翻转永远不会发生。手上没有 Anthropic key，未取到原文 |
+| 视频上游时长字段 | 百炼 `usage.duration`、MiniMax `usage.output_seconds` 均为【文档】口径；Veo、xAI 的轮询不报时长；Sora 本轮排除 |
+| GLM `network_error` 结束原因 | 没有实测样本，未归类（仍按正常结束） |
+| 「继续原任务」入口 | 用现有菜单项与按钮样式直接落地，未出设计稿；对上游已终态失败的任务也会显示（重跑轮询会再报一次失败，不计费） |
+| l10n `videoResolution` / `videoAspectRatio` | Veo 固定控件删除后已无引用，四语未删 |
 
 ### 火山方舟 · Seedream（2026-09-18）
 

@@ -25,6 +25,13 @@ typedef LLMLogListener = void Function(String message,
 /// call site).
 const String llmCancellationProbeKey = 'isCancelled';
 
+/// Request option: `true` sends this one call without server-side tools
+/// (web search), whatever the model's own switch says. For internal calls
+/// whose answer must come from the transcript alone — a context compaction
+/// that goes out searching is billed per search and can summarise pages the
+/// conversation never saw.
+const String llmNoServerToolsKey = 'noServerTools';
+
 /// Option key for the request's abort trigger: a `Future<void>` whose
 /// completion aborts the HTTP request in flight (`package:http`'s
 /// `Abortable.abortTrigger`).
@@ -61,6 +68,14 @@ const String llmBodySentKey = 'onRequestBodySent';
 /// download. Absent means false. Lives here rather than in the protocol
 /// layer so the executor can read it without importing a protocol.
 const String videoRequiresAuthKey = 'requiresAuth';
+
+/// Top-level key on a video poll's "done" envelope: the seconds the provider
+/// says it rendered, when it says so (DashScope `usage.duration`, MiniMax
+/// `usage.output_seconds`). Absent otherwise. A submit is billed by the
+/// seconds it *asked* for — the only figure there is at that moment — and
+/// this is what corrects it afterwards: a `duration: -1` ("let the model
+/// decide") request asked for none and was billed zero seconds.
+const String videoRenderedSecondsKey = 'renderedSeconds';
 
 /// Options key: a reply with nothing in it ends the turn instead of failing
 /// the request.

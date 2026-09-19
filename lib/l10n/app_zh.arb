@@ -1944,6 +1944,7 @@
     }
   },
   "retryTask": "重试",
+  "resumeVideoJob": "继续原任务",
   "queuedPosition": "排队第 {position} 位",
   "@queuedPosition": {
     "placeholders": {

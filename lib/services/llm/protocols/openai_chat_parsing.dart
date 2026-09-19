@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../llm_types.dart';
 import 'protocol.dart';
 
 /// Recovers a `function.arguments` string that is several JSON objects
@@ -70,6 +71,33 @@ Map<String, dynamic>? _recoverConcatenatedJsonObjects(String raw) {
 /// caller as a request failure with nothing in it that points at the cause —
 /// so both shapes are accepted and anything else (an image part carries no
 /// text) contributes nothing.
+/// ①'s `finish_reason` in the one vocabulary every consumer reads, or null
+/// when none was sent.
+///
+/// Hosts that speak ① do not all spell a content block `content_filter`:
+/// Zhipu's GLM ends an intercepted reply with `sensitive`. Passed through
+/// raw, that read as an ordinary end, and the text generated before the
+/// block reached the caller as a short, complete answer. The raw spelling
+/// travels on as `finish_reason_raw` ([openaiFinishMetadata]).
+String? openaiFinishReason(Object? raw) {
+  if (raw is! String || raw.isEmpty) return null;
+  return switch (raw) {
+    'sensitive' => contentFilterFinishReason,
+    _ => raw,
+  };
+}
+
+/// The metadata entries for a raw ① `finish_reason`: the normalised one,
+/// plus the raw spelling when normalising changed it.
+Map<String, dynamic> openaiFinishMetadata(Object? raw) {
+  final normalised = openaiFinishReason(raw);
+  if (normalised == null) return const {};
+  return {
+    'finish_reason': normalised,
+    if (normalised != raw) 'finish_reason_raw': raw,
+  };
+}
+
 String contentToText(Object? raw) {
   if (raw is String) return raw;
   if (raw is! List) return '';

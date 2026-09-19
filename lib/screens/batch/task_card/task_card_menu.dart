@@ -87,6 +87,12 @@ class _TaskMenuButtonState extends State<TaskMenuButton> {
             if (mounted) TaskLogDialog.show(context, task);
           },
         ),
+        if (TaskQueueService.canResumeVideoJob(task))
+          AppGlassMenuItem(
+            icon: Icons.play_arrow_rounded,
+            label: l10n.resumeVideoJob,
+            onSelected: () => queue.resumeVideoJob(task.id),
+          ),
         if (canRetry)
           AppGlassMenuItem(
             icon: Icons.refresh,

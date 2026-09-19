@@ -47,10 +47,10 @@ class ModelCapabilities {
   /// showing up for, say, a GPT-4o chat model or a `gemini-2.5-pro` text model.
   final List<ParamSpec> imageParams;
 
-  /// The video-generation parameters this family understands beyond the shared
-  /// resolution/aspect-ratio controls (e.g. Sora's `seconds`, `quality`).
-  /// Rendered by the video panel via the same per-model dropdown pattern as
-  /// `imageParams`. Empty for Veo (the existing fixed controls cover it).
+  /// The video-generation parameters this family understands — resolution,
+  /// aspect ratio, seconds, quality… The video panel renders exactly these,
+  /// via the same per-model pattern as `imageParams`; it has no controls of
+  /// its own.
   final List<ParamSpec> videoParams;
 
   /// True when a single request runs the whole generation upstream, so the
@@ -304,7 +304,7 @@ class ModelCapabilities {
       case WireProtocol.xaiVideos:
         return _grokImagineVideo;
       case WireProtocol.geminiVeo:
-        return const ModelCapabilities(isVideoGenerator: true);
+        return _veoVideo;
       case WireProtocol.dashscopeVideo:
         return _dashscopeWanVideo;
       case WireProtocol.minimaxVideo:
@@ -347,9 +347,7 @@ class ModelCapabilities {
       case ModelFamily.openaiVideo:
         return _openaiVideo;
       case ModelFamily.geminiVideo:
-        // Veo's panel uses fixed VeoResolution/VeoAspectRatio enums; no extra
-        // capability-driven controls are needed (yet).
-        return const ModelCapabilities(isVideoGenerator: true);
+        return _veoVideo;
       case ModelFamily.geminiChat:
       case ModelFamily.openaiChat:
       case ModelFamily.other:

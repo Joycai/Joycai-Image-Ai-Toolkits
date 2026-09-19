@@ -206,7 +206,8 @@ Map<String, dynamic> minimaxH3PollEnvelope(
         ? (err['message'] ?? err.toString())
         : (err?.toString() ?? 'unknown');
     throw LLMApiException(
-        'MiniMax H3 local video job $operationName failed: $msg');
+        'MiniMax H3 local video job $operationName failed: $msg',
+        isJobEnded: true);
   }
 
   return {

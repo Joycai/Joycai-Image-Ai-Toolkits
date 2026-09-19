@@ -52,7 +52,8 @@ class GeminiImagenProtocol implements ImageGenProtocol {
     }
 
     final headers = target.headers();
-    final payload = prepareImagenPayload(history, options);
+    final payload = prepareImagenPayload(
+        history, optionsWithCheckedSize(target, options, logger: logger));
 
     final client = config.createClient();
     try {

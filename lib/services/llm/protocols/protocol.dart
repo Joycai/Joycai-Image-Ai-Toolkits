@@ -821,16 +821,57 @@ bool videoUriNeedsAuth(String uri, String endpoint) {
       effectivePort(u) == effectivePort(e);
 }
 
+num? _positiveSeconds(Object? raw) {
+  final n = raw is num ? raw : num.tryParse(raw?.toString() ?? '');
+  return n != null && n > 0 ? n : null;
+}
+
+/// [options] with its `imageSize` checked against the size control the
+/// target's model declares (layer 3) — the same guard DashScope's payload
+/// has always applied (`ParamSpec.normalize`), for every other image route.
+///
+/// A size the model does not take — kept from a model of another family, a
+/// hand-typed `WxH` past gpt-image-2's area cap, `4K` on a Gemini that stops
+/// at 2K — used to go out as stored, and the answer was a 400 at best and a
+/// silently re-sized (and re-priced) picture at worst. It is replaced by the
+/// control's default and the swap is logged. Returned unchanged when the
+/// model declares no size control, when no size was chosen, or when the
+/// chosen one is valid.
+Map<String, dynamic>? optionsWithCheckedSize(
+  LLMTarget target,
+  Map<String, dynamic>? options, {
+  LLMLogger? logger,
+}) {
+  final raw = options?['imageSize'];
+  if (raw is! String || raw.isEmpty) return options;
+  final spec = target.model.capabilities.imageParams
+      .where((p) => p.key == 'imageSize')
+      .firstOrNull;
+  if (spec == null || spec.isValid(raw)) return options;
+  final fallback = spec.defaultValue;
+  logger?.call(
+    'Size "$raw" is not one ${target.config.modelId} accepts; sending '
+    '"$fallback" instead.',
+    level: 'WARN',
+  );
+  return {...options!, 'imageSize': fallback};
+}
+
 /// The Veo-shaped "done" envelope every video poll returns
 /// ([VideoJobProtocol.poll]), with the download-auth decision attached.
+///
+/// [renderedSeconds] is the length the provider reports it rendered, when it
+/// reports one ([videoRenderedSecondsKey]).
 Map<String, dynamic> videoDoneEnvelope(
   String operationName,
   String uri, {
   required bool requiresAuth,
+  Object? renderedSeconds,
 }) =>
     {
       'name': operationName,
       'done': true,
+      videoRenderedSecondsKey: ?_positiveSeconds(renderedSeconds),
       'response': {
         'generateVideoResponse': {
           'generatedSamples': [

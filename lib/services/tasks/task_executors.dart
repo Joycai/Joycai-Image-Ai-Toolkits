@@ -20,6 +20,30 @@ Map<String, dynamic> _compressReferenceInIsolate(Map<String, dynamic> input) {
   return {'bytes': result.bytes, 'mimeType': result.mimeType};
 }
 
+/// Why an image task that ran to the end still failed, or null when at least
+/// one image was saved.
+///
+/// Zero results is a failure, not an empty success: a chat-surface image
+/// model that answers in prose (a refusal, "I can't draw that", a question
+/// back) returns HTTP 200 with no image, and the queue used to mark that task
+/// completed with nothing in the gallery. The model's own words are the only
+/// explanation the user gets, so they travel in the message.
+@visibleForTesting
+String? imageTaskFailure({
+  required int received,
+  required int unrecognised,
+  required String reply,
+}) {
+  if (received > 0 && unrecognised < received) return null;
+  final trimmed = reply.trim();
+  final said = trimmed.isEmpty
+      ? ''
+      : ' Model said: ${trimmed.length > 500 ? '${trimmed.substring(0, 500)}…' : trimmed}';
+  if (received == 0) return 'The model returned no image.$said';
+  return 'None of the $received returned result(s) is a '
+      'recognisable image; nothing was saved.$said';
+}
+
 /// Per-task-type execution logic for [TaskQueueService].
 ///
 /// Implemented as a `part of` extension so it can use the service's private
@@ -117,6 +141,7 @@ extension TaskExecutors on TaskQueueService {
 
     var received = 0;
     var unrecognised = 0;
+    final reply = StringBuffer();
     final prefix = FileUtils.safeFilenamePrefix(
       '${task.parameters['imagePrefix'] ?? 'result'}',
       fallback: 'result',
@@ -167,6 +192,7 @@ extension TaskExecutors on TaskQueueService {
         if (task.status == TaskStatus.cancelled) break;
 
         if (chunk.textPart != null) {
+          reply.write(chunk.textPart);
           _emit(task.id, TaskEventType.textChunk, chunk.textPart);
           task.addLog('AI: ${chunk.textPart}');
           refreshQueue();
@@ -191,6 +217,7 @@ extension TaskExecutors on TaskQueueService {
       );
 
       if (response.text.isNotEmpty) {
+        reply.write(response.text);
         _emit(task.id, TaskEventType.textChunk, response.text);
         task.addLog('AI: ${response.text}');
       }
@@ -207,12 +234,12 @@ extension TaskExecutors on TaskQueueService {
 
     if (task.status == TaskStatus.cancelled) return;
 
-    if (received > 0 && unrecognised == received) {
-      throw Exception(
-        'None of the $received returned result(s) is a '
-        'recognisable image; nothing was saved.',
-      );
-    }
+    final failure = imageTaskFailure(
+      received: received,
+      unrecognised: unrecognised,
+      reply: reply.toString(),
+    );
+    if (failure != null) throw Exception(failure);
   }
 
   /// Records where a saved decomposition file belongs, so the layer canvas
@@ -592,7 +619,23 @@ extension TaskExecutors on TaskQueueService {
             ? 'Cancelled locally; the upstream job was left running.'
             : 'Cancelled locally; upstream reports "$action".',
       );
+      // Cancelled upstream too: there is no job left to resume.
+      if (action != null) await _forgetVideoJob(task);
       return;
+    } on LLMApiException catch (e) {
+      if (e.isJobEnded) await _forgetVideoJob(task);
+      rethrow;
+    }
+
+    final rendered = done[videoRenderedSecondsKey];
+    if (rendered is num) {
+      await LLMService().settleVideoUsage(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        operationName: operationName,
+        renderedSeconds: rendered,
+        options: task.parameters,
+        contextId: task.id,
+      );
     }
 
     final response = done['response'] as Map?;
@@ -603,6 +646,7 @@ extension TaskExecutors on TaskQueueService {
         : null;
     final videoUri = video?['uri'] as String?;
     if (videoUri == null || videoUri.isEmpty) {
+      await _forgetVideoJob(task);
       throw Exception(
         'Operation $operationName finished but no video URI found. '
         'Response: ${jsonEncode(response)}',
@@ -642,6 +686,20 @@ extension TaskExecutors on TaskQueueService {
     task.addLog('Saved video to: $downloadPath');
 
     onTaskCompleted?.call(File(downloadPath));
+  }
+
+  /// Drops [task]'s upstream job id once the job is known to be over with
+  /// nothing to fetch — failed, cancelled, expired, filtered, or finished
+  /// without a video — so the task stops offering to resume it
+  /// ([TaskQueueService.canResumeVideoJob]); a retry submits a new one. The
+  /// id stays in the task log.
+  Future<void> _forgetVideoJob(TaskItem task) async {
+    if (task.operationName == null) return;
+    task.addLog('Upstream job ${task.operationName} is over and cannot be '
+        'resumed.');
+    task.operationName = null;
+    task.operationSurface = null;
+    await DatabaseService().saveTask(task.toMap());
   }
 
   /// Builds the request, submits the job, and persists its id and surface

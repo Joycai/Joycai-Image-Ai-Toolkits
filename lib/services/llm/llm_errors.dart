@@ -40,12 +40,20 @@ class LLMApiException implements Exception {
   /// when the wait exceeds its cap.
   final Duration? retryAfter;
 
+  /// True when a video poll found the upstream job itself over without a
+  /// usable result — failed, cancelled, expired, filtered, or finished with
+  /// no video. Polling it again can only repeat this, so the task forgets
+  /// the job id and stops offering to resume it
+  /// (`TaskQueueService.canResumeVideoJob`).
+  final bool isJobEnded;
+
   LLMApiException(this.message,
       {this.statusCode,
       this.isEnvelope = false,
       this.isNonJsonBody = false,
       this.isContentBlocked = false,
-      this.retryAfter});
+      this.retryAfter,
+      this.isJobEnded = false});
 
   bool get isTransient =>
       statusCode != null &&

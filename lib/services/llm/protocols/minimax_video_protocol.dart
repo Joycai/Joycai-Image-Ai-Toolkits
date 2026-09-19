@@ -145,12 +145,17 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
           if (videoUrl == null || videoUrl.isEmpty) {
             throw LLMApiException(
                 'MiniMax video task $operationName succeeded but returned no '
-                'content.url: $task');
+                'content.url: $task',
+                isJobEnded: true);
           }
           // A signed CDN link: the API key must not travel to it.
+          final usage = task['usage'];
           return videoDoneEnvelope(operationName, videoUrl,
               requiresAuth:
-                  videoUriNeedsAuth(videoUrl, target.config.endpoint));
+                  videoUriNeedsAuth(videoUrl, target.config.endpoint),
+              renderedSeconds:
+                  (usage is Map ? usage['output_seconds'] : null) ??
+                      task['duration']);
         case 'failed':
         case 'cancelled':
           final error = task['error'];
@@ -158,7 +163,8 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
           final message = error is Map ? error['message'] : null;
           throw LLMApiException('MiniMax video task $operationName $status'
               '${code != null ? ' ($code)' : ''}'
-              '${message != null ? ': $message' : ''}');
+              '${message != null ? ': $message' : ''}',
+              isJobEnded: true);
         default:
           // queued / running / anything newer.
           return {

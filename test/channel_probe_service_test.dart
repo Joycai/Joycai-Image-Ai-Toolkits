@@ -17,6 +17,7 @@ class _FakeDispatcher extends LLMDispatcher {
   int discoverCalls = 0;
   int generateCalls = 0;
   String? generateModelId;
+  LLMModelConfig? generateConfig;
   Map<String, dynamic>? generateOptions;
 
   @override
@@ -35,6 +36,7 @@ class _FakeDispatcher extends LLMDispatcher {
   }) {
     generateCalls++;
     generateModelId = config.modelId;
+    generateConfig = config;
     generateOptions = options;
     return onGenerate!();
   }
@@ -195,5 +197,26 @@ void main() {
     expect(r.status, ChannelProbeStatus.notSupported);
     expect(fake.discoverCalls, 0);
     expect(fake.generateCalls, 0);
+  });
+
+  test('the completion probe of a route keeps that route', () async {
+    // The per-route probe names the face under test and the channel's
+    // derived bases; the completion fallback used to rebuild the config
+    // without them and so probed the vendor's default face instead.
+    final dispatcher = _FakeDispatcher(
+      onDiscover: () async => throw LLMApiException('no', statusCode: 404),
+      onGenerate: () async => throw LLMApiException('{"type":"error"}', statusCode: 400),
+    );
+    await ChannelProbeService(dispatcher: dispatcher).probe(LLMModelConfig(
+      modelId: ChannelProbeService.probeModelId,
+      channelType: Vendors.dashscope,
+      endpoint: 'https://dashscope.aliyuncs.com/apps/anthropic/v1',
+      apiKey: 'k',
+      wireProtocol: 'anthropic-chat',
+      faceBases: const {WireProtocol.anthropicChat: 'https://dashscope.aliyuncs.com/apps/anthropic/v1'},
+    ));
+    expect(dispatcher.generateConfig?.modelId, ChannelProbeService.probeModelId);
+    expect(dispatcher.generateConfig?.wireProtocol, 'anthropic-chat');
+    expect(dispatcher.generateConfig?.faceBases, isNotEmpty);
   });
 }

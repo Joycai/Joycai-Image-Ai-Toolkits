@@ -212,18 +212,20 @@ Map<String, dynamic> openaiVideoPollEnvelope(
         ? (err['message'] ?? err.toString())
         : (err?.toString() ?? 'unknown');
     throw LLMApiException('OpenAI video task $operationName failed'
-        '${code != null ? ' ($code)' : ''}: $msg');
+        '${code != null ? ' ($code)' : ''}: $msg', isJobEnded: true);
   }
 
   if (status == 'cancelled' || status == 'canceled') {
     throw LLMApiException(
-        'OpenAI video task $operationName was cancelled upstream.');
+        'OpenAI video task $operationName was cancelled upstream.',
+        isJobEnded: true);
   }
 
   if (status == 'expired') {
     throw LLMApiException(
         'OpenAI video task $operationName expired upstream before it could be '
-        'fetched; the job record is gone.');
+        'fetched; the job record is gone.',
+        isJobEnded: true);
   }
 
   // queued / in_progress / processing — relay progress without marking done.

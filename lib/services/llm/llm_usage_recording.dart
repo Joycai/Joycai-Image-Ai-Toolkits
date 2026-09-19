@@ -22,13 +22,15 @@ extension _UsageRecording on LLMService {
     String? taskTag,
     Map<String, dynamic>? options,
     int imageCount = 0,
+    String? rowId,
   }) async {
     try {
       await _writeUsageRow(modelId, config, metadata,
           modelDbId: modelDbId,
           taskTag: taskTag,
           options: options,
-          imageCount: imageCount);
+          imageCount: imageCount,
+          rowId: rowId);
     } catch (e) {
       _emitLog(
         'Usage for $modelId could not be recorded (the response itself is '
@@ -46,6 +48,7 @@ extension _UsageRecording on LLMService {
     String? taskTag,
     Map<String, dynamic>? options,
     int imageCount = 0,
+    String? rowId,
   }) async {
     final spec = LLMService.specUsageFor(config, options, metadata, imageCount: imageCount);
 
@@ -67,7 +70,8 @@ extension _UsageRecording on LLMService {
       // The tag makes delegated work distinguishable in the usage table
       // (e.g. `task_id LIKE 'subagent:%'`) — a sub-agent's spend should be
       // attributable to delegation, not blended into ordinary requests.
-      'task_id': '${taskTag ?? 'req'}_${DateTime.now().millisecondsSinceEpoch}',
+      'task_id': rowId ??
+          '${taskTag ?? 'req'}_${DateTime.now().millisecondsSinceEpoch}',
       'model_id': modelId,
       'model_pk': modelDbId,
       'timestamp': DateTime.now().toIso8601String(),

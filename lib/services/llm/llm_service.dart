@@ -101,6 +101,7 @@ class LLMService {
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
           _emitLog(msg, level: level, contextId: contextId),
+      options: options,
     );
     // Tool calling reaches the streaming surface only where the protocol
     // assembles calls out of deltas — every chat family does now, but
@@ -810,6 +811,7 @@ class LLMService {
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) =>
           _emitLog(msg, level: level, contextId: contextId),
+      options: options,
     );
     _emitLog(
       'Connecting to ${config.channelType}...',
@@ -839,6 +841,16 @@ class LLMService {
     final streamProbe = cancellationProbeOf(options);
     final requestSerial = ++_requestSerial;
 
+    // Same turn continuation as request(): a host that paused the turn after
+    // a server-side tool run is asked to go on, and the legs stream out one
+    // after another. Without it a streamed call on a search-enabled ④ model
+    // ended at the search and delivered a half answer as the whole one.
+    var turnHistory = messages;
+    var leg = 0;
+    // Whether an earlier leg showed text: the next leg's text is then set
+    // off by a blank line, as [mergeTurnParts] joins the legs.
+    var legTextShown = false;
+
     while (true) {
       if (streamProbe?.call() ?? false) throw const LLMCancelled();
       final abort = Completer<void>();
@@ -846,7 +858,7 @@ class LLMService {
       final correlation = LLMLogCorrelation(
         contextId: contextId,
         request: requestSerial,
-        leg: 0,
+        leg: leg,
         attempt: attempt,
       );
       final attemptOptions = <String, dynamic>{
@@ -857,6 +869,13 @@ class LLMService {
       int imageCount = 0;
       Map<String, dynamic>? finalMetadata;
       var usageSettled = false;
+      // What a continuation replays: this leg's reply and carriers.
+      final legText = StringBuffer();
+      final legReasoning = StringBuffer();
+      List<Map<String, dynamic>>? legRawThinking;
+      List<Map<String, dynamic>>? legRawContent;
+      String? legSignature;
+      var separatorOwed = legTextShown;
       try {
 
         // Opened and listened to inside the correlation's zone: this method
@@ -865,7 +884,7 @@ class LLMService {
           correlation,
           () => _dispatcher.generateStream(
             config,
-            messages,
+            turnHistory,
             options: attemptOptions,
             logger: (msg, {level = 'INFO'}) =>
                 _emitLog(msg, level: level, contextId: contextId),
@@ -901,7 +920,18 @@ class LLMService {
             );
           }
           finalMetadata = mergeChunkMetadata(finalMetadata, chunk.metadata);
+          if (chunk.textPart != null) legText.write(chunk.textPart);
+          if (chunk.reasoningPart != null) {
+            legReasoning.write(chunk.reasoningPart);
+          }
+          legRawThinking = chunk.rawThinkingBlocks ?? legRawThinking;
+          legRawContent = chunk.rawContentBlocks ?? legRawContent;
+          legSignature = chunk.reasoningSignature ?? legSignature;
           deliveredAnyChunk = true;
+          if (separatorOwed && (chunk.textPart?.trim().isNotEmpty ?? false)) {
+            separatorOwed = false;
+            yield LLMResponseChunk(textPart: '\n\n');
+          }
           yield chunk;
         }
 
@@ -949,6 +979,43 @@ class LLMService {
         // blocked output, and the consumer must see a failure, not a success.
         final blocked = contentBlockedFailure(finalMetadata);
         if (blocked != null) throw blocked;
+
+        final continuation = continuationFor(
+          LLMResponse(
+            text: legText.toString(),
+            metadata: finalMetadata ?? const {},
+            reasoningContent:
+                legReasoning.isEmpty ? null : legReasoning.toString(),
+            reasoningSignature: legSignature,
+            rawThinkingBlocks: legRawThinking,
+            rawThinkingModelId: legRawThinking == null ? null : config.modelId,
+            rawContentBlocks: legRawContent,
+          ),
+          config.modelId,
+        );
+        if (continuation != null) {
+          if (leg < maxTurnContinuations) {
+            leg++;
+            _emitLog(
+              'The host paused the turn after a server-side tool run; '
+              'continuing ($leg/$maxTurnContinuations).',
+              contextId: contextId,
+            );
+            turnHistory = [...turnHistory, ...continuation];
+            legTextShown = legTextShown || legText.toString().trim().isNotEmpty;
+            // A new request: nothing of it has reached the consumer yet, so
+            // it gets its own retries, as in request().
+            attempt = 0;
+            deliveredAnyChunk = false;
+            continue;
+          }
+          _emitLog(
+            'The host paused the turn $leg times; delivering the partial '
+            'answer as-is.',
+            level: 'WARN',
+            contextId: contextId,
+          );
+        }
 
         return; // Success, exit retry loop
       } catch (e) {
@@ -1046,11 +1113,24 @@ class LLMService {
   Future<LLMModelConfig> _resolveConfig(
     dynamic modelIdentifier, {
     required Function(String, {String level}) logger,
+    Map<String, dynamic>? options,
   }) async {
     final override = configResolverOverride;
-    if (override != null) return override(modelIdentifier);
-    return _configResolver.resolveConfig(modelIdentifier, logger: logger);
+    final config = override != null
+        ? override(modelIdentifier)
+        : await _configResolver.resolveConfig(modelIdentifier, logger: logger);
+    return configForCall(config, options);
   }
+
+  /// [config] as one call sees it: per-call options that narrow the model's
+  /// stored settings ([llmNoServerToolsKey]) are applied here, once, so no
+  /// protocol has to know about them.
+  @visibleForTesting
+  static LLMModelConfig configForCall(
+          LLMModelConfig config, Map<String, dynamic>? options) =>
+      options?[llmNoServerToolsKey] == true
+          ? config.withoutServerTools()
+          : config;
 
   /// Test door onto [_recordUsage].
   @visibleForTesting
@@ -1189,8 +1269,64 @@ class LLMService {
       const {'operation': 'submit'},
       modelDbId: modelIdentifier is int ? modelIdentifier : null,
       options: options,
+      // Durable, so [settleVideoUsage] can find the row again — also from a
+      // run that resumed the job after a restart.
+      rowId: videoUsageRowId(ticket.name),
     );
     return ticket;
+  }
+
+  /// The usage row a video submit is recorded under.
+  static String videoUsageRowId(String operationName) =>
+      'video:$operationName';
+
+  /// Test door in front of the usage-row update [settleVideoUsage] makes.
+  @visibleForTesting
+  static Future<int> Function(String taskId, Map<String, dynamic> values)?
+      usageUpdateOverride;
+
+  /// Re-prices a finished video job's submit row by the seconds the provider
+  /// reports it rendered ([videoRenderedSecondsKey]).
+  ///
+  /// Only a spec-billed group prices seconds; every other mode is left as
+  /// recorded. The request's other conditions (resolution, quality) come
+  /// from the same [options] the submit was priced with, so the rate row is
+  /// matched again with only the length corrected — a tier keyed on
+  /// duration may change. Best effort: a failure is logged, the video is
+  /// not affected.
+  Future<void> settleVideoUsage({
+    required dynamic modelIdentifier,
+    required String operationName,
+    required num renderedSeconds,
+    Map<String, dynamic>? options,
+    String? contextId,
+  }) async {
+    void log(String msg, {String level = 'INFO'}) =>
+        _emitLog(msg, level: level, contextId: contextId);
+    try {
+      final config = await _resolveConfig(modelIdentifier, logger: log);
+      if (config.billingMode != specBillingMode) return;
+      final spec = specUsageFor(
+        config,
+        options,
+        {'output_seconds': renderedSeconds},
+        imageCount: 0,
+      )!;
+      final update = usageUpdateOverride ?? DatabaseService().updateTokenUsage;
+      final rows = await update(videoUsageRowId(operationName), {
+        'output_units': spec.units,
+        'output_unit_price': spec.unitPrice,
+        'output_unit': spec.unit.name,
+        'output_spec': jsonEncode(spec.toJson()),
+      });
+      if (rows > 0) {
+        log('Video $operationName: billed by the ${spec.spec.seconds}s the '
+            'provider reports it rendered.');
+      }
+    } catch (e) {
+      log('Could not settle the usage of video $operationName by its '
+          'rendered length (the video is unaffected): $e', level: 'WARN');
+    }
   }
 
   Future<Map<String, dynamic>> checkOperation({

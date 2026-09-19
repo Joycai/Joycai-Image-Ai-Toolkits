@@ -253,6 +253,10 @@ class Vendors {
       id: minimax,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // Thinking is on by default here and switched by a `thinking` object;
+      // the generic `reasoning_effort: none` does not turn it off — see
+      // [ThinkingDialect.openaiAdaptiveObject].
+      thinking: ThinkingDialect.openaiAdaptiveObject,
       // Chat rides the ① family default; the other two surfaces are MiniMax's
       // own and have no OpenAI-compatible equivalent to fall back to —
       // `/v1/image_generation` is not the Images API, and `/v2` video is a
