@@ -84,9 +84,3 @@ msix_config:
   sign_msix: true
   languages: en-US,zh-CN
   msix_version: 4.17.0.0
-
-# path_provider_foundation pulls objective_c transitively. Version 9.6.1
-# references Architecture.arm64e, which is not available in the code_assets
-# version bundled with Flutter 3.47 yet and prevents native asset compilation.
-dependency_overrides:
-  objective_c: 9.6.0
