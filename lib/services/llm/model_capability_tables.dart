@@ -475,8 +475,8 @@ const _dashscopeQwenImageEdit = ModelCapabilities(
   imageParams: [_dashscopePromptExtend],
 );
 
-/// `wan2.7-image*` on DashScope's native surface — the top-level
-/// `messages` shape. Up to 9 reference images (20 MB each) and a `1K`/`2K`
+/// `wan2.7-image*` on DashScope's native surface — the text-first
+/// content order. Up to 9 reference images (20 MB each) and a `1K`/`2K`
 /// size vocabulary on top of `W*H`.
 ///
 /// `not_set` sends `1K`, not nothing: wan's own omitted default is the 2K
