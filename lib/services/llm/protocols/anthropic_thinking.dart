@@ -206,6 +206,14 @@ const List<String> _notADialectProblem = [
   'messages.',
   'thinking block',
   'redacted_thinking',
+  // Other parameters that conflict with thinking being on: the documented
+  // "Thinking may not be enabled when tool_choice forces tool use" and
+  // "temperature may only be set to 1 when thinking is enabled".
+  'tool_choice',
+  'temperature',
+  'top_p',
+  'top_k',
+  'when thinking is enabled',
 ];
 
 final RegExp _thinkingShapeComplaint = RegExp(

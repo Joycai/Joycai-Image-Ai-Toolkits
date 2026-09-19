@@ -625,6 +625,8 @@ void main() {
           'messages.1.content.0.type: Expected `thinking` or `redacted_thinking`, but found `text`. When `thinking` is enabled, a final `assistant` message must start with a thinking block',
           '`max_tokens` must be greater than `thinking.budget_tokens`',
           'thinking.budget_tokens: Input should be greater than or equal to 1024',
+          'Thinking may not be enabled when tool_choice forces tool use.',
+          '`temperature` may only be set to 1 when thinking is enabled.',
         ]) {
           expect(rejects(LLMApiException('Anthropic API request failed: 400 - $message',
               statusCode: 400)), isFalse, reason: message);
