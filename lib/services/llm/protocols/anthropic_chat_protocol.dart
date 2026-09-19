@@ -393,7 +393,7 @@ class AnthropicDiscoveryProtocol implements DiscoveryProtocol {
   @override
   Future<List<DiscoveredModel>> fetchModels(LLMTarget target) async {
     final config = target.config;
-    final url = Uri.parse('${trimBaseUrl(config.endpoint)}/models');
+    final url = Uri.parse('${anthropicApiBase(config.endpoint)}/models');
     final headers = target.headers();
 
     final client = config.createClient();
@@ -421,4 +421,30 @@ class AnthropicDiscoveryProtocol implements DiscoveryProtocol {
 
 /// The Messages request address for base [base] — shared with the channel
 /// editor's address preview.
-String anthropicMessagesUrl(String base) => '${trimBaseUrl(base)}/messages';
+String anthropicMessagesUrl(String base) => '${anthropicApiBase(base)}/messages';
+
+/// The versioned API root a ④ base stands for, in the spellings people
+/// actually paste.
+///
+/// The request appends `/messages` (and discovery `/models`) to the base, so
+/// the base has to end in the version segment — `…/v1`. Two other spellings
+/// are common and both used to 404 with nothing pointing at the cause:
+///  * **no version** — `https://api.anthropic.com`, or MiniMax's
+///    `…/anthropic`: the form Anthropic's own SDKs take as `base_url`, which
+///    append `/v1/messages` themselves. `/v1` is added.
+///  * **the whole request URL** — `…/v1/messages`, copied from a curl line.
+///    The trailing `/messages` is dropped.
+/// A base already ending in a version segment (`/v1`, `/v2`, `/v1beta`) is
+/// left alone, so every stored channel that worked keeps its exact URL.
+String anthropicApiBase(String base) {
+  var root = trimBaseUrl(base);
+  if (root.endsWith('/messages')) {
+    root = root.substring(0, root.length - '/messages'.length);
+  }
+  final uri = Uri.tryParse(root);
+  final last = uri == null || uri.pathSegments.isEmpty
+      ? ''
+      : uri.pathSegments.last;
+  if (!RegExp(r'^v\d+[a-z0-9]*$').hasMatch(last)) root = '$root/v1';
+  return root;
+}
