@@ -931,16 +931,19 @@ class LLMDispatcher {
       case WireProtocol.openaiChat:
         // A declared switch sends a boolean in place of reasoning_effort, so
         // its intensities are one request.
-        return vendor.thinkingFor(face) == ThinkingDialect.openaiEnableThinking
-            ? const [null, ReasoningEffort.off, ReasoningEffort.medium]
-            : const [
-                null,
-                ReasoningEffort.off,
-                ReasoningEffort.low,
-                ReasoningEffort.medium,
-                ReasoningEffort.high,
-                ReasoningEffort.max,
-              ];
+        return switch (vendor.thinkingFor(face)) {
+          ThinkingDialect.openaiEnableThinking ||
+          ThinkingDialect.openaiAdaptiveObject =>
+            const [null, ReasoningEffort.off, ReasoningEffort.medium],
+          _ => const [
+              null,
+              ReasoningEffort.off,
+              ReasoningEffort.low,
+              ReasoningEffort.medium,
+              ReasoningEffort.high,
+              ReasoningEffort.max,
+            ],
+        };
       case WireProtocol.openaiResponses:
         // `reasoning.effort` per rung, off as `none` (reasoning 03 §7.1).
         // Not trimmed per model: Grok 4.5/4.6 reject `none` and GPT-5.4
@@ -973,7 +976,8 @@ class LLMDispatcher {
             const [null, ReasoningEffort.medium],
           ThinkingDialect.none ||
           ThinkingDialect.openaiThinkingObject ||
-          ThinkingDialect.openaiEnableThinking =>
+          ThinkingDialect.openaiEnableThinking ||
+          ThinkingDialect.openaiAdaptiveObject =>
             const [],
         };
       case WireProtocol.geminiChat:
