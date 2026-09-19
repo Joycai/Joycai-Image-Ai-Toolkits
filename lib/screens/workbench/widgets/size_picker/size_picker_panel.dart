@@ -247,11 +247,21 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
     });
   }
 
+  /// A click on a chip, tier or the sentinel replaces a half-typed edge. A
+  /// click does not take focus from the box, so without this the edge would
+  /// stay "typing" and hold back every write until the box was left.
+  void _dropTyping() {
+    if (_typing == null) return;
+    _typing = null;
+    _syncControllers();
+  }
+
   // S1
   void _chooseSentinel() {
     final s = _sentinel;
     if (s == null) return;
     setState(() {
+      _dropTyping();
       _value = s;
       _notice = null;
     });
@@ -262,6 +272,7 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
   void _chooseRatio(AspectRatioSpec r, {String? chip, String? customLabel}) {
     final tier = _currentTier;
     setState(() {
+      _dropTyping();
       _ratio = r;
       _ratioChip = chip;
       _customRatioLabel = customLabel;
@@ -293,6 +304,7 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
     final (w, h) = tierSize(_ratio, tier, _rules, _vocab);
     final value = tierValue(_ratio, tier, _rules, _vocab);
     setState(() {
+      _typing = null;
       _w = w;
       _h = h;
       _value = value;
@@ -419,8 +431,9 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
       _setDims(w, h, flash: {_Field.width, _Field.height});
       return;
     }
-    final r = parseAspectRatio(fix.ratio!)!;
-    _chooseRatio(AspectRatioSpec(r.longOverShort, _ratio.portrait), customLabel: fix.ratio);
+    final fixed = parseAspectRatio(fix.ratio!)!;
+    final chip = _chipFor(fixed);
+    _chooseRatio(fixed, chip: chip, customLabel: chip == null ? fix.ratio : null);
   }
 
   // S10
@@ -499,7 +512,11 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
 
     return CallbackShortcuts(
       bindings: {const SingleActivator(LogicalKeyboardKey.escape): _revertAndClose},
+      // Autofocus in the popover: its route's scope otherwise holds focus
+      // until a box is typed in, and Esc reaches the route's own dismiss —
+      // it closes, keeping what was chosen, instead of reverting.
       child: FocusScope(
+        autofocus: widget.showHeader,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -810,7 +827,9 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
     final SizeFix fix;
     if (_ratioImpossible) {
       message = l10n.imageSizeNoSolution(maxRatioLabel(_rules));
-      fix = SizeFix.ratio(maxRatioLabel(_rules));
+      // Worded on the chosen side: a portrait ratio is fixed to `1:3`.
+      final limit = maxRatioLabel(_rules);
+      fix = SizeFix.ratio(_ratio.portrait ? limit.split(':').reversed.join(':') : limit);
     } else if (math.max(_w, _h) / math.max(1, math.min(_w, _h)) > _rules.maxRatio) {
       message = l10n.imageSizeRatioOverLimit(ratioLabel(_w, _h), maxRatioLabel(_rules));
       fix = fixFor(_w, _h, _rules);

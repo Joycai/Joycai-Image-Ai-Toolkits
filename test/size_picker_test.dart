@@ -135,6 +135,37 @@ void main() {
       expect(button(tester, 'Done').onPressed, isNotNull);
     });
 
+    testWidgets('a portrait ratio past the limit is fixed on its own side', (tester) async {
+      final (written, _) = await open(tester, 'gpt-image-2', '2160x3840');
+      await tester.tap(find.byIcon(Icons.tune));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, '1:4');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Use 1:3'));
+      await tester.pumpAndSettle();
+      final (w, h) = (int.parse(written.last.split('x')[0]), int.parse(written.last.split('x')[1]));
+      expect(h, greaterThan(w));
+      expect(find.text('3:1'), findsNothing);
+    });
+
+    testWidgets('a click after typing replaces the typed edge and writes', (tester) async {
+      // A chip does not take focus from the box: the edge is still "typing".
+      final (written, _) = await open(tester, 'wan2.7-image-pro', '2K');
+      await tester.enterText(find.byType(TextField).first, '3000');
+      await tester.pump();
+      await tester.tap(find.text('16:9'));
+      await tester.pumpAndSettle();
+      expect(written.last, '2688x1536');
+
+      await tester.enterText(find.byType(TextField).first, '3000');
+      await tester.pump();
+      await tester.tap(find.text('Not set'));
+      await tester.pumpAndSettle();
+      expect(written.last, 'not_set');
+    });
+
     testWidgets('the billing tier is named only when a table prices tiers', (tester) async {
       const rates = [SpecRate(size: '1K', price: 0.2), SpecRate(size: '2K', price: 0.4)];
       await open(tester, 'qwen-image-3.0', 'not_set', rates: rates);
@@ -215,6 +246,20 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(SizePickerPanel), findsOneWidget);
       expect(find.text('Image size'), findsOneWidget);
+    });
+
+    testWidgets('Esc in the popover reverts though no box has focus', (tester) async {
+      final written = await field(tester, 'wan2.7-image-pro', '2K');
+      await tester.tap(find.text('2K'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('16:9'));
+      await tester.pumpAndSettle();
+      expect(written.last, '2688x1536');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(written.last, '2K');
+      expect(find.byType(SizePickerPanel), findsNothing);
     });
 
     testWidgets('on a phone it unfolds in the sheet instead of stacking one', (tester) async {
