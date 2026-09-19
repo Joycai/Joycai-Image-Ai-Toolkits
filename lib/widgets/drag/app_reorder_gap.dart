@@ -104,6 +104,19 @@ class AppReorderGapController {
         then(oldIndex, newIndex);
         _state._dropped(oldIndex, newIndex);
       };
+
+  /// [onReorderItem] for a list that can refuse a drop: [then] answers
+  /// whether it moved anything. A refused drop ends the drag without the
+  /// confirmation ring or the announcement — both would report a move the
+  /// list is about to undo.
+  void Function(int oldIndex, int newIndex) onReorderItemIf(bool Function(int oldIndex, int newIndex) then) =>
+      (oldIndex, newIndex) {
+        if (then(oldIndex, newIndex)) {
+          _state._dropped(oldIndex, newIndex);
+        } else {
+          _state._dropped(oldIndex, oldIndex);
+        }
+      };
 }
 
 class _Geometry {

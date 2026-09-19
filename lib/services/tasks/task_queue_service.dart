@@ -87,6 +87,15 @@ class TaskQueueService extends ChangeNotifier {
   Function(String, {String level, String? taskId})? onLogAdded;
 
   List<TaskItem> get queue => _queue;
+
+  /// Whether a Prompt Assistant turn of session [sessionId] is queued or
+  /// running. Wider than the session's own `isRunning`, which only flips once
+  /// the turn starts: a queued turn has already fixed the reference images it
+  /// sends, in the order they had when it was added.
+  bool hasLiveAssistantTurn(String sessionId) => _queue.any((t) =>
+      t.type == TaskType.promptRefine &&
+      t.parameters['sessionId'] == sessionId &&
+      (t.status == TaskStatus.pending || t.status == TaskStatus.processing));
   int get concurrencyLimit => _concurrencyLimit;
   int get runningCount => _runningCount;
 

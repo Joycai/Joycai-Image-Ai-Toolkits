@@ -5038,6 +5038,17 @@ class AppLocalizationsJa extends AppLocalizations {
       '番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。';
 
   @override
+  String get optRefReorderHint =>
+      'カードをドラッグして並べ替えます。番号はアシスタントに渡す順序で、プロンプトが引用する番号でもあります。';
+
+  @override
+  String get optRefReorderHintTouch =>
+      'カードを長押ししてからドラッグで並べ替えます。番号はアシスタントに渡す順序です。';
+
+  @override
+  String get optRefReorderLocked => 'アシスタントが応答中です。終了後に並べ替えられます。';
+
+  @override
   String get optModeKnowledgeEditShort => 'ナレッジ編集';
 
   @override

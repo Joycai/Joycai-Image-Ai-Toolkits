@@ -19,7 +19,7 @@ void main() {
   late List<String> items;
   int drops = 0;
 
-  Future<void> pumpList(WidgetTester tester) async {
+  Future<void> pumpList(WidgetTester tester, {bool refuse = false}) async {
     items = ['A', 'B', 'C', 'D', 'E', 'F'];
     drops = 0;
     tester.view.physicalSize = const Size(400, 600);
@@ -47,10 +47,15 @@ void main() {
                   buildDefaultDragHandles: false,
                   itemCount: items.length,
                   onReorderStart: controller.onReorderStart(),
-                  onReorderItem: controller.onReorderItem((oldIndex, newIndex) {
-                    drops++;
-                    setState(() => items.insert(newIndex, items.removeAt(oldIndex)));
-                  }),
+                  onReorderItem: refuse
+                      ? controller.onReorderItemIf((oldIndex, newIndex) {
+                          drops++;
+                          return false;
+                        })
+                      : controller.onReorderItem((oldIndex, newIndex) {
+                          drops++;
+                          setState(() => items.insert(newIndex, items.removeAt(oldIndex)));
+                        }),
                   itemBuilder: (context, index) => controller.item(
                     key: ValueKey(items[index]),
                     index: index,
@@ -143,6 +148,28 @@ void main() {
 
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 16));
+    expect(gap.debugConfirming, isFalse);
+  });
+
+  testWidgets('a drop the list refuses ends the drag without the ring', (tester) async {
+    await pumpList(tester, refuse: true);
+
+    final drag = await tester.startGesture(tester.getCenter(find.text('A')));
+    await tester.pump(const Duration(milliseconds: 50));
+    await drag.moveBy(const Offset(0, 20));
+    await tester.pump(const Duration(milliseconds: 16));
+    await drag.moveBy(const Offset(0, rowHeight * 2.5));
+    for (int i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await drag.up();
+    for (int i = 0; i < 25; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    // The list was asked and said no: nothing moved, and nothing claims it did.
+    expect(drops, 1);
+    expect(items.take(3), ['A', 'B', 'C']);
+    expect(gap.debugGaps, isEmpty);
     expect(gap.debugConfirming, isFalse);
   });
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/app_semantic_colors.dart';
@@ -10,7 +12,10 @@ import '../../../models/app_image.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/drag/app_drag_lift.dart';
+import '../../../widgets/drag/app_reorder_gap.dart';
 import '../../../widgets/files/thumbnail_fit_toggle.dart';
+import '../../../widgets/ui/listenable_selector.dart';
 import 'optimizer_context_card.dart';
 
 /// The Prompt Assistant's left column outside library-edit mode (`A3a 1a` /
@@ -93,99 +98,203 @@ class OptimizerReferencePanel extends StatelessWidget {
     // The whole panel listens to the session, not just the list: which group a
     // card belongs to is derived from the history (a feedback turn moves an
     // image into the results group), and the "viewed" markers move mid-turn.
-    return ListenableBuilder(
-      listenable: session,
-      builder: (context, _) {
-        // References vs results is a projection of the feedback messages in
-        // history — nothing is tagged on the images themselves, so a restored
-        // session groups identically to the live one. Model-facing ids stay
-        // the *list* positions: grouping is display-only, and the number a
-        // reference badge shows must be the id the prompt cites.
-        final resultInfo = PromptOptimizerAgent.resultImageInfoByName(session.history);
-        final refs = <int>[];
-        final results = <int>[];
-        for (var i = 0; i < images.length; i++) {
-          (resultInfo.containsKey(images[i].name) ? results : refs).add(i);
-        }
-        // Newest version first — the card the user is about to act on.
-        results.sort((a, b) => (resultInfo[images[b].name]?.promptVersion ?? -1)
-            .compareTo(resultInfo[images[a].name]?.promptVersion ?? -1));
+    // A queued turn counts as running here: it has already fixed the images it
+    // sends, in their current order. Selected, not listened to wholesale — the
+    // queue notifies for every task's every state change.
+    final taskQueue = context.read<AppState>().taskQueue;
+    return ListenableSelector<bool>(
+      listenable: taskQueue,
+      selector: () => taskQueue.hasLiveAssistantTurn(session.id),
+      builder: (context) => ListenableBuilder(
+        listenable: session,
+        builder: (context, _) {
+          final turnLive = session.isRunning || taskQueue.hasLiveAssistantTurn(session.id);
+          // References vs results is a projection of the feedback messages in
+          // history — nothing is tagged on the images themselves, so a restored
+          // session groups identically to the live one. Model-facing ids stay
+          // the *list* positions: grouping is display-only, and the number a
+          // reference badge shows must be the id the prompt cites.
+          final resultInfo = PromptOptimizerAgent.resultImageInfoByName(session.history);
+          final refs = <int>[];
+          final results = <int>[];
+          for (var i = 0; i < images.length; i++) {
+            (resultInfo.containsKey(images[i].name) ? results : refs).add(i);
+          }
+          // Newest version first — the card the user is about to act on.
+          results.sort((a, b) => (resultInfo[images[b].name]?.promptVersion ?? -1)
+              .compareTo(resultInfo[images[a].name]?.promptVersion ?? -1));
 
-        final rowCount = refs.length + (results.isEmpty ? 0 : results.length + 1);
+          // `A3c`: the whole card is the drag source — at once under a mouse,
+          // after a long press under a finger so a swipe still scrolls the
+          // column (the A1 selection strip's split). Off while a turn runs: that
+          // turn is already calling view_image with these numbers, and a move
+          // would put a different picture under the badge it cites.
+          final touchDrag = switch (Theme.of(context).platform) {
+            TargetPlatform.android || TargetPlatform.iOS || TargetPlatform.fuchsia => true,
+            _ => false,
+          };
+          final reorderable = refs.length > 1;
+          final canReorder = reorderable && !turnLive;
+          final (IconData? hintIcon, String hintText) = !reorderable
+              ? (null, l10n.optRefNumberingHint)
+              : turnLive
+              ? (Icons.hourglass_top, l10n.optRefReorderLocked)
+              : touchDrag
+              ? (Icons.touch_app_outlined, l10n.optRefReorderHintTouch)
+              : (Icons.drag_indicator, l10n.optRefReorderHint);
+          final hintColor = turnLive && reorderable ? colorScheme.onSurfaceVariant : colorScheme.outline;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              // Tighter than the empty state's caption: the fit control is a
-              // 28px target, and the row takes its height.
-              padding: const EdgeInsets.fromLTRB(12, AppSpace.s4, AppSpace.s6, 2),
-              child: OptimizerPanelCaption(
-                l10n.referenceImages,
-                // The fit control belongs here rather than in the workbench
-                // toolbar: that bar names the assistant, this one names the
-                // strip whose cards the setting redraws.
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                // Tighter than the empty state's caption: the fit control is a
+                // 28px target, and the row takes its height.
+                padding: const EdgeInsets.fromLTRB(12, AppSpace.s4, AppSpace.s6, 2),
+                child: OptimizerPanelCaption(
+                  l10n.referenceImages,
+                  // The fit control belongs here rather than in the workbench
+                  // toolbar: that bar names the assistant, this one names the
+                  // strip whose cards the setting redraws.
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (refs.isNotEmpty) Text('${refs.length}', style: countStyle),
+                      const ThumbnailFitToggle(iconSize: AppSize.iconMd, size: AppSize.compact),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                // `00d · 1a / 1b`: the gap the list opens is the drop target,
+                // with 「放到第 N 位」 in it, and the moved card confirms with the
+                // ring. Only the references reorder; the results below keep
+                // their newest-first order and their list positions.
+                child: AppReorderGap(
+                  itemCount: refs.length,
+                  touch: touchDrag,
+                  slotPadding: _cardMargin,
+                  builder: (context, gap) => CustomScrollView(
+                    slivers: [
+                      const SliverToBoxAdapter(child: SizedBox(height: 2)),
+                      SliverReorderableList(
+                        itemCount: refs.length,
+                        onReorderStart: gap.onReorderStart((_) {
+                          if (touchDrag) HapticFeedback.mediumImpact();
+                        }),
+                        // Asked again at the drop: a turn queued mid-drag has
+                        // already taken the old order, and the listener being
+                        // switched off does not end a drag under way.
+                        onReorderItem: gap.onReorderItemIf(
+                          (from, to) =>
+                              !taskQueue.hasLiveAssistantTurn(session.id) &&
+                              workbenchUIState.reorderAssistantReferences(refs, from, to),
+                        ),
+                        proxyDecorator: (child, index, animation) =>
+                            appReorderLiftDecorator(child, index, animation, slotPadding: _cardMargin),
+                        itemBuilder: (context, row) {
+                          final index = refs[row];
+                          final image = images[index];
+                          final card = _referenceCard(
+                            context,
+                            l10n,
+                            colorScheme,
+                            textTheme,
+                            workbenchUIState,
+                            session,
+                            image,
+                            index,
+                            thumbFit,
+                          );
+                          return gap.item(
+                            key: ValueKey(image.path),
+                            index: row,
+                            child: _ReorderableReference(
+                              index: row,
+                              count: refs.length,
+                              enabled: canReorder,
+                              touch: touchDrag,
+                              onMove: (to) => workbenchUIState.reorderAssistantReferences(refs, row, to),
+                              child: card,
+                            ),
+                          );
+                        },
+                      ),
+                      if (results.isNotEmpty) ...[
+                        SliverToBoxAdapter(
+                          // The results group header, under the hairline that
+                          // separates the two groups.
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (refs.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: AppSpace.s4),
+                                  child: Divider(height: 1, color: colorScheme.outlineVariant),
+                                ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(12, AppSpace.s10, 12, AppSpace.s6),
+                                child: OptimizerPanelCaption(
+                                  l10n.optResultImages,
+                                  trailing: Text('${results.length}', style: countStyle),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SliverList.builder(
+                          itemCount: results.length,
+                          itemBuilder: (context, row) {
+                            final image = images[results[row]];
+                            return _resultCard(
+                              context,
+                              l10n,
+                              colorScheme,
+                              textTheme,
+                              workbenchUIState,
+                              session,
+                              image,
+                              thumbFit,
+                              resultInfo[image.name]!,
+                            );
+                          },
+                        ),
+                      ],
+                      const SliverPadding(padding: EdgeInsets.only(bottom: AppSpace.s6)),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, AppSpace.s4, 12, AppSpace.s10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (refs.isNotEmpty) Text('${refs.length}', style: countStyle),
-                    const ThumbnailFitToggle(iconSize: AppSize.iconMd, size: AppSize.compact),
+                    if (hintIcon != null) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1),
+                        child: Icon(hintIcon, size: AppSize.iconSm, color: hintColor),
+                      ),
+                      const SizedBox(width: AppSpace.s4),
+                    ],
+                    Expanded(
+                      child: Text(
+                        hintText,
+                        style: textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w400,
+                          color: hintColor,
+                          height: AppType.looseHeight,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.only(top: 2, bottom: AppSpace.s6),
-                itemCount: rowCount,
-                itemBuilder: (context, row) {
-                  if (row < refs.length) {
-                    final index = refs[row];
-                    return _referenceCard(context, l10n, colorScheme, textTheme, workbenchUIState,
-                        session, images[index], index, thumbFit);
-                  }
-                  if (row == refs.length) {
-                    // The results group header, under the hairline that
-                    // separates the two groups.
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (refs.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: AppSpace.s4),
-                            child: Divider(height: 1, color: colorScheme.outlineVariant),
-                          ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(12, AppSpace.s10, 12, AppSpace.s6),
-                          child: OptimizerPanelCaption(
-                            l10n.optResultImages,
-                            trailing: Text('${results.length}', style: countStyle),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  final image = images[results[row - refs.length - 1]];
-                  return _resultCard(context, l10n, colorScheme, textTheme, workbenchUIState,
-                      session, image, thumbFit, resultInfo[image.name]!);
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, AppSpace.s4, 12, AppSpace.s10),
-              child: Text(
-                l10n.optRefNumberingHint,
-                style: textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w400,
-                  color: colorScheme.outline,
-                  height: AppType.looseHeight,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -400,6 +509,49 @@ class OptimizerReferencePanel extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A reference card as a drag source, with the list's move actions for
+/// keyboard and screen-reader users (`A3c`: no buttons of its own).
+class _ReorderableReference extends StatelessWidget {
+  const _ReorderableReference({
+    required this.index,
+    required this.count,
+    required this.enabled,
+    required this.touch,
+    required this.onMove,
+    required this.child,
+  });
+
+  final int index;
+  final int count;
+  final bool enabled;
+  final bool touch;
+
+  /// Moves this card to a final position.
+  final ValueChanged<int> onMove;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!enabled) return child;
+    final m = WidgetsLocalizations.of(context);
+    final last = count - 1;
+    return Semantics(
+      customSemanticsActions: {
+        if (index > 0) CustomSemanticsAction(label: m.reorderItemToStart): () => onMove(0),
+        if (index > 0) CustomSemanticsAction(label: m.reorderItemUp): () => onMove(index - 1),
+        if (index < last) CustomSemanticsAction(label: m.reorderItemDown): () => onMove(index + 1),
+        if (index < last) CustomSemanticsAction(label: m.reorderItemToEnd): () => onMove(last),
+      },
+      child: touch
+          ? AppLongPressDragStartListener(index: index, child: child)
+          : ReorderableDragStartListener(
+              index: index,
+              child: MouseRegion(cursor: SystemMouseCursors.grab, child: child),
+            ),
     );
   }
 }

@@ -4986,6 +4986,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optRefNumberingHint => '序号与提示词中引用的文件名对应，agent 可查看这些图片。';
 
   @override
+  String get optRefReorderHint => '拖动卡片调整顺序。序号就是发给助手的顺序，也是提示词里引用的编号。';
+
+  @override
+  String get optRefReorderHintTouch => '长按卡片后拖动调整顺序。序号就是发给助手的顺序。';
+
+  @override
+  String get optRefReorderLocked => '助手回复中，结束后可调整顺序。';
+
+  @override
   String get optModeKnowledgeEditShort => '库编辑';
 
   @override
@@ -10313,6 +10322,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optRefNumberingHint => '序號與提示詞中引用的檔名對應，agent 可檢視這些圖片。';
+
+  @override
+  String get optRefReorderHint => '拖動卡片調整順序。序號就是傳給助手的順序，也是提示詞裡引用的編號。';
+
+  @override
+  String get optRefReorderHintTouch => '長按卡片後拖動調整順序。序號就是傳給助手的順序。';
+
+  @override
+  String get optRefReorderLocked => '助手回覆中，結束後可調整順序。';
 
   @override
   String get optModeKnowledgeEditShort => '庫編輯';

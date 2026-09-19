@@ -9003,6 +9003,24 @@ abstract class AppLocalizations {
   /// **'Numbers match the filenames cited in the prompt; the agent can view these images.'**
   String get optRefNumberingHint;
 
+  /// No description provided for @optRefReorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a card to reorder. The numbers are the order the assistant receives, and the ones the prompt cites.'**
+  String get optRefReorderHint;
+
+  /// No description provided for @optRefReorderHintTouch.
+  ///
+  /// In en, this message translates to:
+  /// **'Long-press a card, then drag to reorder. The numbers are the order the assistant receives.'**
+  String get optRefReorderHintTouch;
+
+  /// No description provided for @optRefReorderLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant is replying — reorder once it finishes.'**
+  String get optRefReorderLocked;
+
   /// No description provided for @optModeKnowledgeEditShort.
   ///
   /// In en, this message translates to:
