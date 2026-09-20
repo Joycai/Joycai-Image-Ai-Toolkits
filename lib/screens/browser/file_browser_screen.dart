@@ -28,6 +28,7 @@ import '../../widgets/shell/app_window_frame.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/files/folder_group_header.dart';
 import '../../widgets/files/folder_outline_bar.dart';
+import '../../widgets/ui/focus_pane.dart';
 import '../../widgets/ui/panel_resizer.dart';
 import '../../widgets/shell/app_destinations.dart';
 import '../batch/task_queue_screen.dart';
@@ -76,6 +77,14 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+
+  /// The three focus regions (`00f` 帧 3). Whichever holds the keyboard is the
+  /// one `Delete` / `F2` / `Enter` / `⌘A` act on — one question, one answer,
+  /// which is what the old split (the tree claiming those keys per row, the
+  /// grid claiming them at screen level) could not give.
+  final FocusNode _treePane = FocusPane.newNode('browser-pane-tree');
+  final FocusNode _gridPane = FocusPane.newNode('browser-pane-grid');
+  final FocusNode _stagingPane = FocusPane.newNode('browser-pane-staging');
 
   /// `1a`: 240 at rest; a width the user dragged to wins once loaded.
   double _sidebarWidth = 240;
@@ -151,6 +160,9 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     _searchFocusNode.removeListener(_onSearchFocusChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _treePane.dispose();
+    _gridPane.dispose();
+    _stagingPane.dispose();
     _outline.dispose();
     _scroll.dispose();
     super.dispose();
@@ -183,12 +195,39 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     }
   }
 
-  /// Screen-level shortcuts. Implemented with [Focus.onKeyEvent] rather than
-  /// [CallbackShortcuts] so keys can conditionally fall through: while the
-  /// search field has focus, Ctrl+A/Enter must keep their text-editing
-  /// behavior, which requires returning [KeyEventResult.ignored].
+  /// Screen-level shortcuts (L1). Implemented with [Focus.onKeyEvent] rather
+  /// than [CallbackShortcuts] so keys can conditionally fall through: a key
+  /// this screen does not claim must reach the widget under it unchanged,
+  /// which requires returning [KeyEventResult.ignored].
+  ///
+  /// Nothing here acts on a selection. Selection keys belong to whichever
+  /// focus region owns them ([_handleGridKeys] and the tree's rows), because
+  /// a screen-level `Delete` has no way to know which of the three regions
+  /// the user means.
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    // The gate comes first, with no exceptions above it. A key a text field
+    // does not consume still travels up to every ancestor handler, and this
+    // handler sits *under* `DefaultTextEditingShortcuts`, so claiming one
+    // here means the field never gets it. `⌘F` and `F5` used to sit above
+    // this line, which is why `⌘F` during an inline folder rename moved focus
+    // to the search box and the editor committed the half-typed name on blur
+    // (`folder_name_editor._onFocusChange` → `_submit(fromBlur: true)`).
+    if (isTextEditingFocused()) {
+      // The search field is the one text field this screen still answers for,
+      // and only for Escape — leaving it is not a text-editing act.
+      if (_searchFocusNode.hasFocus &&
+          AppShortcuts.byId(AppShortcutIds.exitSearch).matches(event)) {
+        final state =
+            Provider.of<AppState>(context, listen: false).fileBrowserState;
+        _searchController.clear();
+        state.setSearchQuery('');
+        _searchFocusNode.unfocus();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    }
 
     final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
     bool bound(String id) => AppShortcuts.byId(id).matches(event);
@@ -201,26 +240,18 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       _refresh(state);
       return KeyEventResult.handled;
     }
+    return KeyEventResult.ignored;
+  }
 
-    if (_searchFocusNode.hasFocus) {
-      if (bound(AppShortcutIds.exitSearch)) {
-        _searchController.clear();
-        state.setSearchQuery('');
-        _searchFocusNode.unfocus();
-        return KeyEventResult.handled;
-      }
-      return KeyEventResult.ignored;
-    }
-
-    // Nothing below this line may be taken from a live text field. A key a
-    // field does not consume still travels up to every ancestor handler, and
-    // this handler sits *under* `DefaultTextEditingShortcuts`, so claiming one
-    // here means the field never gets it: the tree's inline folder-name editor
-    // (which hands its keys upward on purpose — `directory_tree_item._onKey`
-    // ignores everything while editing) would lose Cmd+A to the grid, and
-    // Enter, F2 and Delete would each act on the files that happen to be
-    // selected while the user is typing a folder's name.
+  /// The file grid's keys (L2). They arrive here only while the grid is the
+  /// active pane — click the folder tree and the tree answers instead, which
+  /// is the point.
+  KeyEventResult _handleGridKeys(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
     if (isTextEditingFocused()) return KeyEventResult.ignored;
+
+    final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
+    bool bound(String id) => AppShortcuts.byId(id).matches(event);
 
     if (bound(AppShortcutIds.selectAll)) {
       state.selectAll();
@@ -365,20 +396,30 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         // where there is no custom window frame to show through to.
         backgroundColor: usesCustomWindowChrome ? Colors.transparent : scheme.surfaceContainer,
         drawer: isNarrow
-            ? const Drawer(
+            ? Drawer(
                 width: _drawerWidth,
-                child: UnifiedSidebar(useFileBrowserState: true),
+                // No active-pane rule in a drawer: it is the only thing on
+                // screen while it is open, so there is nothing to tell apart.
+                child: FocusPane(
+                  node: _treePane,
+                  showActiveEdge: false,
+                  child: const UnifiedSidebar(useFileBrowserState: true),
+                ),
               )
             : null,
         endDrawer: isNarrow
             ? Drawer(
                 width: kStagingPanelWidth,
-                child: BrowserStagingPanel(
-                  destination: staging.destination,
-                  onPaste: (mode) {
-                    _scaffoldKey.currentState?.closeEndDrawer();
-                    runStagingPaste(context, mode: mode);
-                  },
+                child: FocusPane(
+                  node: _stagingPane,
+                  showActiveEdge: false,
+                  child: BrowserStagingPanel(
+                    destination: staging.destination,
+                    onPaste: (mode) {
+                      _scaffoldKey.currentState?.closeEndDrawer();
+                      runStagingPaste(context, mode: mode);
+                    },
+                  ),
                 ),
               )
             : null,
@@ -395,7 +436,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               PanelCard(
                 width: _sidebarWidth,
                 shape: PanelShape.column,
-                child: const UnifiedSidebar(useFileBrowserState: true),
+                child: FocusPane(
+                  node: _treePane,
+                  child: const UnifiedSidebar(useFileBrowserState: true),
+                ),
               ),
               PanelResizer(
                 shape: PanelShape.column,
@@ -451,7 +495,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                       child: Stack(
                         children: [
                           Positioned.fill(
-                            child: _FileArea(
+                            child: FocusPane(
+                              node: _gridPane,
+                              onKeyEvent: _handleGridKeys,
+                              child: _FileArea(
                               pendingRefreshes: _pendingRefreshes,
                               scrollController: _scroll,
                               outline: _outline,
@@ -460,6 +507,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                                   _openWithPreview(context, file, browser),
                               onSecondaryTap: (file, pos) =>
                                   _showContextMenu(context, file, pos),
+                              ),
                             ),
                           ),
                           Positioned(
@@ -485,9 +533,12 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               ),
             ),
             if (showStagingColumn)
-              BrowserStagingPanel(
-                destination: staging.destination,
-                onPaste: (mode) => runStagingPaste(context, mode: mode),
+              FocusPane(
+                node: _stagingPane,
+                child: BrowserStagingPanel(
+                  destination: staging.destination,
+                  onPaste: (mode) => runStagingPaste(context, mode: mode),
+                ),
               ),
           ],
         ),
