@@ -424,8 +424,8 @@
   "trashFolderTitle": "ゴミ箱に移動しますか？",
   "deleteFolderEmptyDesc": "このフォルダーは空です。削除すると元に戻せません。",
   "trashFolderEmptyDesc": "このフォルダーは空です。削除後はシステムのゴミ箱から復元できます。",
-  "deleteFolderIrreversible": "この操作は元に戻せません",
-  "trashFolderRestorable": "システムのゴミ箱から復元できます",
+  "deleteIrreversibleNote": "この操作は元に戻せません",
+  "trashRestorableNote": "システムのゴミ箱から復元できます",
   "inventorySubfolders": "サブフォルダー",
   "inventoryFiles": "ファイル",
   "inventorySize": "サイズ",
@@ -447,6 +447,118 @@
     }
   },
   "moveToTrash": "ゴミ箱に移動",
+  "trashFileTitle": "ゴミ箱に移動しますか？",
+  "trashFilesTitle": "{count} 件のファイルをゴミ箱に移動しますか？",
+  "@trashFilesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFileTitle": "完全に削除しますか？",
+  "deleteFilesTitle": "{count} 件のファイルを完全に削除しますか？",
+  "@deleteFilesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFromFolders": "{count} 個のフォルダから",
+  "@deleteFromFolders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteMoreFiles": "他 {count} 件",
+  "@deleteMoreFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteTotalSize": "合計 {size}",
+  "@deleteTotalSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "trashFileCount": "{count} 件をゴミ箱へ",
+  "@trashFileCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFileCount": "{count} 件を完全に削除",
+  "@deleteFileCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFiles": "{count} 件のファイルを削除",
+  "@deleteFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fileTrashed": "{name} をゴミ箱に移動しました",
+  "@fileTrashed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filesTrashed": "{count} 件のファイルをゴミ箱に移動しました",
+  "@filesTrashed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fileDeleted": "{name} を削除しました",
+  "@fileDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filesDeleted": "{count} 件のファイルを削除しました",
+  "@filesDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filesDeletePartial": "{done} 件を削除、{failed} 件失敗：{error}",
+  "@filesDeletePartial": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "folderNameEmpty": "名前を入力してください",
   "folderNameIllegalChars": "名前に {chars} は使えません",
   "@folderNameIllegalChars": {

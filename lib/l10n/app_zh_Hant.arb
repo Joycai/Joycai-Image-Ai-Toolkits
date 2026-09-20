@@ -424,8 +424,8 @@
   "trashFolderTitle": "移到垃圾桶？",
   "deleteFolderEmptyDesc": "這個資料夾是空的，刪除後無法復原。",
   "trashFolderEmptyDesc": "這個資料夾是空的，刪除後可從系統垃圾桶找回。",
-  "deleteFolderIrreversible": "此操作無法復原",
-  "trashFolderRestorable": "可從系統垃圾桶找回",
+  "deleteIrreversibleNote": "此操作無法復原",
+  "trashRestorableNote": "可從系統垃圾桶找回",
   "inventorySubfolders": "子資料夾",
   "inventoryFiles": "檔案",
   "inventorySize": "大小",
@@ -447,6 +447,118 @@
     }
   },
   "moveToTrash": "移至資源回收筒",
+  "trashFileTitle": "移到垃圾桶？",
+  "trashFilesTitle": "將 {count} 個檔案移到垃圾桶？",
+  "@trashFilesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFileTitle": "永久刪除？",
+  "deleteFilesTitle": "永久刪除 {count} 個檔案？",
+  "@deleteFilesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFromFolders": "來自 {count} 個資料夾",
+  "@deleteFromFolders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteMoreFiles": "還有 {count} 個",
+  "@deleteMoreFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteTotalSize": "共 {size}",
+  "@deleteTotalSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "trashFileCount": "移到垃圾桶 · {count} 個",
+  "@trashFileCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFileCount": "永久刪除 {count} 個",
+  "@deleteFileCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFiles": "刪除 {count} 個檔案",
+  "@deleteFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fileTrashed": "已將 {name} 移到垃圾桶",
+  "@fileTrashed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filesTrashed": "已將 {count} 個檔案移到垃圾桶",
+  "@filesTrashed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fileDeleted": "已刪除 {name}",
+  "@fileDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filesDeleted": "已刪除 {count} 個檔案",
+  "@filesDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filesDeletePartial": "已刪除 {done} 個，{failed} 個失敗：{error}",
+  "@filesDeletePartial": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "folderNameEmpty": "名稱不能為空",
   "folderNameIllegalChars": "名稱不能包含 {chars}",
   "@folderNameIllegalChars": {

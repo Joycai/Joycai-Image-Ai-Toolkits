@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "Joycai Image AI Toolkits"
-#define MyAppVersion "4.17.1"
+#define MyAppVersion "4.18.0"
 #define MyAppPublisher "Joycai"
 #define MyAppURL "https://github.com/Joycai/Joycai-Image-Ai-Toolkits"
 #define MyAppExeName "joycai_image_ai_toolkits.exe"

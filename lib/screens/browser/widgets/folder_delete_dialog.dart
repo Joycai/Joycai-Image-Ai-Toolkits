@@ -144,7 +144,7 @@ class _FolderDeleteDialogState extends State<_FolderDeleteDialog> {
             if (widget.toTrash && !(empty && !counting)) ...[
               const SizedBox(height: AppSpace.s10),
               TransferNote(
-                text: l10n.trashFolderRestorable,
+                text: l10n.trashRestorableNote,
                 tone: TransferTone.ok,
                 icon: Icons.restore_from_trash_outlined,
               ),
@@ -152,7 +152,7 @@ class _FolderDeleteDialogState extends State<_FolderDeleteDialog> {
             if (!widget.toTrash && !(empty && !counting)) ...[
               const SizedBox(height: AppSpace.s10),
               TransferNote(
-                text: l10n.deleteFolderIrreversible,
+                text: l10n.deleteIrreversibleNote,
                 tone: TransferTone.err,
                 icon: Icons.warning_amber_rounded,
               ),

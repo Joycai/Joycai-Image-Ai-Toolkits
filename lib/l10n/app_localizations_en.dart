@@ -539,10 +539,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'This folder is empty. It can be restored from the system trash.';
 
   @override
-  String get deleteFolderIrreversible => 'This cannot be undone';
+  String get deleteIrreversibleNote => 'This cannot be undone';
 
   @override
-  String get trashFolderRestorable => 'Can be restored from the system trash';
+  String get trashRestorableNote => 'Can be restored from the system trash';
 
   @override
   String get inventorySubfolders => 'Subfolders';
@@ -568,6 +568,77 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get moveToTrash => 'Move to Trash';
+
+  @override
+  String get trashFileTitle => 'Move to trash?';
+
+  @override
+  String trashFilesTitle(int count) {
+    return 'Move $count files to trash?';
+  }
+
+  @override
+  String get deleteFileTitle => 'Delete permanently?';
+
+  @override
+  String deleteFilesTitle(int count) {
+    return 'Permanently delete $count files?';
+  }
+
+  @override
+  String deleteFromFolders(int count) {
+    return 'From $count folders';
+  }
+
+  @override
+  String deleteMoreFiles(int count) {
+    return '$count more';
+  }
+
+  @override
+  String deleteTotalSize(String size) {
+    return '$size total';
+  }
+
+  @override
+  String trashFileCount(int count) {
+    return 'Move $count to trash';
+  }
+
+  @override
+  String deleteFileCount(int count) {
+    return 'Delete $count';
+  }
+
+  @override
+  String deleteFiles(int count) {
+    return 'Delete $count files';
+  }
+
+  @override
+  String fileTrashed(String name) {
+    return 'Moved $name to trash';
+  }
+
+  @override
+  String filesTrashed(int count) {
+    return 'Moved $count files to trash';
+  }
+
+  @override
+  String fileDeleted(String name) {
+    return 'Deleted $name';
+  }
+
+  @override
+  String filesDeleted(int count) {
+    return 'Deleted $count files';
+  }
+
+  @override
+  String filesDeletePartial(int done, int failed, String error) {
+    return 'Deleted $done, $failed failed: $error';
+  }
 
   @override
   String get folderNameEmpty => 'Name cannot be empty';

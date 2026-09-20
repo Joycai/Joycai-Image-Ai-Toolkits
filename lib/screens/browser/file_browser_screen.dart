@@ -12,6 +12,7 @@ import '../../core/folder_outline_geometry.dart';
 import '../../core/folder_outline_labels.dart';
 import '../../core/folder_outline_spy.dart';
 import '../../core/responsive.dart';
+import '../../core/text_editing_focus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/browser_file.dart';
@@ -41,6 +42,7 @@ import 'widgets/browser_selection_bar.dart';
 import 'widgets/browser_staging_panel.dart';
 import 'widgets/file_card.dart';
 import 'widgets/file_context_menu.dart';
+import 'widgets/file_delete_dialog.dart';
 
 /// The file browser — `B1a` (layout and selection) with `B1b`'s staging
 /// column on the right.
@@ -211,6 +213,16 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       return KeyEventResult.ignored;
     }
 
+    // Nothing below this line may be taken from a live text field. A key a
+    // field does not consume still travels up to every ancestor handler, and
+    // this handler sits *under* `DefaultTextEditingShortcuts`, so claiming one
+    // here means the field never gets it: the tree's inline folder-name editor
+    // (which hands its keys upward on purpose — `directory_tree_item._onKey`
+    // ignores everything while editing) would lose Cmd+A to the grid, and
+    // Enter, F2 and Delete would each act on the files that happen to be
+    // selected while the user is typing a folder's name.
+    if (isTextEditingFocused()) return KeyEventResult.ignored;
+
     if (isCtrl && key == LogicalKeyboardKey.keyA) {
       state.selectAll();
       return KeyEventResult.handled;
@@ -222,6 +234,11 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     if ((key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) &&
         state.selectedFiles.isNotEmpty) {
       _openWithPreview(context, state.selectedFiles.first, state);
+      return KeyEventResult.handled;
+    }
+    if ((key == LogicalKeyboardKey.delete || key == LogicalKeyboardKey.backspace) &&
+        state.selectedFiles.isNotEmpty) {
+      _deleteSelection(context, state);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.f2 && state.selectedFiles.length == 1) {
@@ -459,6 +476,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                                   browser,
                                   Provider.of<FileStagingState>(context, listen: false),
                                 ),
+                                onDelete: () => _deleteSelection(context, browser),
                               ),
                             ),
                           ),
@@ -482,6 +500,13 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
   void _addSelectionToStaging(FileBrowserState state, FileStagingState staging) {
     staging.addAll(state.selectedFiles);
+  }
+
+  /// The floating bar's delete and the Delete key are the same act on the
+  /// same set — `B1c · 1c`. The selection is copied here because the run
+  /// refreshes the browser at the end, which rewrites it.
+  void _deleteSelection(BuildContext context, FileBrowserState state) {
+    runFileDelete(context, state.selectedFiles.toList());
   }
 
   /// Single click toggles one file; Shift+click extends the selection from the
