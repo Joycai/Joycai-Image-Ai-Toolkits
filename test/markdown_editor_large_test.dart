@@ -54,8 +54,7 @@ void main() {
   testWidgets('desktop: one header, three views, a count that follows the text', (tester) async {
     final controller = await open(tester, const Size(1440, 900));
 
-    // One header: the small editor's checkbox row is not repeated inside.
-    expect(inDialog(find.byType(Checkbox)), findsNothing);
+    // One header: the small editor's Markdown row is not repeated inside.
     expect(inDialog(find.byType(AppSwitch)), findsOneWidget);
     expect(inDialog(find.byIcon(Icons.close_fullscreen)), findsOneWidget);
     // Header and footer end at the same right edge — neither strands its
@@ -206,5 +205,57 @@ void main() {
     await tester.tap(inDialog(find.text('Edit')));
     await tester.pumpAndSettle();
     expect(tester.widget<EditableText>(editable).focusNode.hasFocus, isTrue);
+  });
+
+  testWidgets('the view toggle has fixed 56px segments', (tester) async {
+    await open(tester, const Size(1440, 900));
+    final edit = tester.getRect(inDialog(find.text('Edit')));
+    final split = tester.getRect(inDialog(find.text('Split')));
+    final preview = tester.getRect(inDialog(find.text('Preview')));
+    expect(split.center.dx - edit.center.dx, closeTo(56, 0.5));
+    expect(preview.center.dx - split.center.dx, closeTo(56, 0.5));
+  });
+
+  testWidgets('Markdown off stops the syntax colouring, in both editors', (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final controller = MarkdownTextEditingController(text: '## Subject');
+    bool markdown = true;
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: StatefulBuilder(
+          builder: (context, setState) => SizedBox(
+            width: 340,
+            child: MarkdownEditor(
+              controller: controller,
+              label: 'Prompt',
+              isMarkdown: markdown,
+              onMarkdownChanged: (v) => setState(() => markdown = v),
+            ),
+          ),
+        ),
+      ),
+    ));
+    bool coloured(Finder editable) {
+      final state = tester.state<EditableTextState>(editable);
+      return (state.buildTextSpan().children ?? const []).any((c) => c.style?.fontWeight == FontWeight.bold);
+    }
+
+    expect(coloured(find.byType(EditableText)), isTrue);
+
+    await tester.tap(find.byIcon(Icons.open_in_full));
+    await tester.pumpAndSettle();
+    await tester.tap(inDialog(find.byType(AppSwitch)));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(controller.highlight, isFalse);
+    expect(coloured(inDialog(find.byType(EditableText))), isFalse);
+
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(coloured(find.byType(EditableText)), isFalse);
   });
 }

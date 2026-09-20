@@ -69,11 +69,11 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 
 | 条 | 为什么没做 |
 |---|---|
-| Markdown 关掉后语法高亮还在 | 高亮来自调用方传进来的 `MarkdownTextEditingController`，编辑器只拿到一个 `TextEditingController`；要关得给那个 controller 加开关并由四个调用方各自接线。列表续行已随开关停用（`SmartMarkdownFormatter.continueLists`），换行归一不受影响 |
-| 视图分段没有定宽 56 | `AppSegmentedControl` 没有定宽段，按文字自然宽；为一处改原语不值得 |
-| ⌘/Ctrl+Enter、⌘/Ctrl+Shift+P 没有登记进 `00f 键盘快捷键` | 两个键已实现，稿那边的总表还没补这一行 |
-| 手机的 ⋮ 菜单是 Material `PopupMenuButton` | 设计系统层没有菜单原语（玻璃菜单在 `widgets/glass`，其 checked 行画成复选框，见 D2b 一节） |
-| 小编辑器的头部没有跟着改 | 不在本轮范围：维持 PR #320 的排布（分段贴右、Markdown 仍是勾选框），与 A1·1a 的出入照旧 |
+| 两个新快捷键在代码里没有进注册表 | `00f` 规定键位全从 `core/app_shortcuts.dart` 读，但那个注册表在 main 上还不存在；⌘↩ / ⇧⌘P 目前是放大框自己的 `CallbackShortcuts`，稿里已补登（`00f` 设置页帧 + 规格）。注册表落地时把这两个键搬进去 |
+
+第一轮欠的另外四条已清（2026-09-20）：Markdown 关掉即停语法高亮（`MarkdownTextEditingController.highlight`，由编辑器随开关同步，
+不通知——它在重建途中被设）；视图分段定宽 56（手机 64）；手机 ⋮ 菜单换成 `AppGlassMenu`；小编辑器头部的勾选框换成 `AppSwitch`，
+「开关在左、分段与放大贴右」作为裁定写进了 `A1d` 规格末尾，取代 `A1·1a` 的排布。
 
 ### 任务预设 · 产出类型（A3e，2026-09-20）
 

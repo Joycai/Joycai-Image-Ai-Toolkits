@@ -132,6 +132,7 @@ class _LargeEditorState extends State<_LargeEditor> {
       _markdown = value;
       if (!value) _view = _LargeView.edit;
     });
+    _syncMarkdownHighlight(widget.controller, value);
     widget.onMarkdownChanged(value);
     if (!value) widget.onPreviewChanged(false);
   }
@@ -182,19 +183,31 @@ class _LargeEditorState extends State<_LargeEditor> {
     );
   }
 
+  /// `A1d`: every segment 56 wide (touch-sized on a phone), so the control
+  /// does not change width with the language or when 「分栏」 comes and goes
+  /// by more than that one segment.
+  static const double _segmentWidth = 56;
+  static const double _segmentWidthCompact = 64;
+
   Widget _buildViewToggle(AppLocalizations l10n, _LargeView view, bool canSplit) {
-    return AppSegmentedControl<_LargeView>(
-      segments: [
-        AppSegment(value: _LargeView.edit, label: widget.readOnly ? l10n.editorOriginal : l10n.edit),
-        if (canSplit) AppSegment(value: _LargeView.split, label: l10n.editorSplitView),
-        AppSegment(value: _LargeView.preview, label: l10n.preview),
-      ],
-      value: view,
-      onChanged: _setView,
-      compact: !widget.compact,
-      // Raised for the small editor's reason: this picks a view of the same
-      // text, and the accent stays free for the syntax inside it.
-      style: AppSegmentStyle.raised,
+    final segments = [
+      AppSegment(value: _LargeView.edit, label: widget.readOnly ? l10n.editorOriginal : l10n.edit),
+      if (canSplit) AppSegment(value: _LargeView.split, label: l10n.editorSplitView),
+      AppSegment(value: _LargeView.preview, label: l10n.preview),
+    ];
+    return SizedBox(
+      // Plus the track's 3px inset either side.
+      width: segments.length * (widget.compact ? _segmentWidthCompact : _segmentWidth) + 6,
+      child: AppSegmentedControl<_LargeView>(
+        segments: segments,
+        value: view,
+        onChanged: _setView,
+        expand: true,
+        compact: !widget.compact,
+        // Raised for the small editor's reason: this picks a view of the same
+        // text, and the accent stays free for the syntax inside it.
+        style: AppSegmentStyle.raised,
+      ),
     );
   }
 
@@ -244,24 +257,26 @@ class _LargeEditorState extends State<_LargeEditor> {
         const SizedBox(width: 4),
         title,
         if (_rendersMarkdown) _buildViewToggle(l10n, view, false),
-        PopupMenuButton<VoidCallback>(
-          // The menu that held 「复制全文」 is closed by the time the copy
-          // lands, so its button carries the confirmation.
-          icon: Icon(
-            _copied ? Icons.check : Icons.more_vert,
-            size: 20,
-            color: _copied ? scheme.primary : null,
+        // The menu that held 「复制全文」 is closed by the time the copy lands,
+        // so its button carries the confirmation.
+        Builder(
+          builder: (anchor) => AppIconButton(
+            icon: _copied ? Icons.check : Icons.more_vert,
+            tooltip: _copied ? l10n.editorCopied : l10n.more,
+            selected: _copied,
+            onPressed: () => showAppGlassMenuBelow(
+              anchor,
+              entries: [
+                if (!widget.readOnly)
+                  AppGlassMenuItem(
+                    label: 'Markdown',
+                    checked: _markdown,
+                    onSelected: () => _setMarkdown(!_markdown),
+                  ),
+                AppGlassMenuItem(icon: Icons.content_copy, label: l10n.editorCopyAll, onSelected: _copyAll),
+              ],
+            ),
           ),
-          onSelected: (action) => action(),
-          itemBuilder: (context) => [
-            if (!widget.readOnly)
-              CheckedPopupMenuItem(
-                value: () => _setMarkdown(!_markdown),
-                checked: _markdown,
-                child: const Text('Markdown'),
-              ),
-            PopupMenuItem(value: _copyAll, child: Text(l10n.editorCopyAll)),
-          ],
         ),
       ];
     } else {

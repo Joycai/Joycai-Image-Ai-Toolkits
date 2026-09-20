@@ -12,12 +12,27 @@ import 'app_icon_button.dart';
 import 'app_segmented_control.dart';
 import 'app_switch.dart';
 import '../../core/design_tokens.dart';
+import '../glass/app_glass_menu.dart';
 
 part 'markdown_editor_large.dart';
 
 /// A specialized controller that provides basic syntax highlighting for Markdown.
 class MarkdownTextEditingController extends TextEditingController {
   MarkdownTextEditingController({super.text});
+
+  /// Whether Markdown syntax is coloured. The editor showing this controller
+  /// turns it off while its Markdown switch is off — plain text that happens
+  /// to hold a `#` or a `_` is not a heading or an emphasis.
+  ///
+  /// Setting it does not notify: the editor sets it while it is itself being
+  /// rebuilt for the same switch, and the field under it rebuilds with it.
+  bool get highlight => _highlight;
+  bool _highlight = true;
+  set highlight(bool value) {
+    if (_highlight == value) return;
+    _highlight = value;
+    _cachedSpan = null;
+  }
 
   /// Compiled once for the class, not once per call.
   ///
@@ -43,6 +58,8 @@ class MarkdownTextEditingController extends TextEditingController {
     TextStyle? style,
     required bool withComposing,
   }) {
+    if (!_highlight) return TextSpan(style: style, text: text);
+
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_cachedSpan != null &&
@@ -181,6 +198,12 @@ class SmartMarkdownFormatter extends TextInputFormatter {
 ///
 /// A write to the controller is not an edit as far as the field is concerned,
 /// so [onChanged] is called by hand — callers save from it.
+/// Colours Markdown syntax in [controller] only while Markdown is on. A plain
+/// [TextEditingController] never coloured anything and is left alone.
+void _syncMarkdownHighlight(TextEditingController controller, bool isMarkdown) {
+  if (controller is MarkdownTextEditingController) controller.highlight = isMarkdown;
+}
+
 void _insertMarkdownTab(TextEditingController controller, ValueChanged<String>? onChanged) {
   final TextSelection selection = controller.selection;
   if (!selection.isValid) return;
@@ -263,6 +286,13 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   void initState() {
     super.initState();
     _isPreview = (widget.initiallyPreview && widget.isMarkdown) || widget.isRefined;
+    _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined);
+  }
+
+  @override
+  void didUpdateWidget(MarkdownEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined);
   }
 
   @override
@@ -306,8 +336,9 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
 
     // A [Row], and one that needs the full width from its parent: the view
     // toggle and the expand button sit against the right edge, the expand
-    // button where `A1 1a` draws it. (The toggle is on the right by the user's
-    // ruling — `1a` has it on the left, with the Markdown switch on the right.)
+    // button where `A1 1a` draws it. The row's order — Markdown switch on the
+    // left, toggle and expand on the right — is the ruling recorded at the end
+    // of `A1d`'s spec, which replaces the order `1a` drew.
     //
     // This was a [Wrap] with `spaceBetween`, which failed twice. Under a
     // start-aligned [Column] it shrank to its children and had no slack to
@@ -321,15 +352,19 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (!widget.isRefined) ...[
-              Checkbox(
+              // A switch, as `A1 1a` and the pop-out (`A1d`) both draw it: this
+              // turns a mode on, it does not tick an item off.
+              // The checkbox this replaced carried its own margin; the
+              // switch's track starts at its box.
+              const SizedBox(width: 4),
+              AppSwitch(
                 value: widget.isMarkdown,
                 onChanged: (v) {
-                  widget.onMarkdownChanged(v ?? false);
-                  if (!(v ?? false)) {
-                    setState(() => _isPreview = false);
-                  }
+                  widget.onMarkdownChanged(v);
+                  if (!v) setState(() => _isPreview = false);
                 },
               ),
+              const SizedBox(width: 6),
               Text(
                 'Markdown',
                 style: Theme.of(context).textTheme.bodySmall,
