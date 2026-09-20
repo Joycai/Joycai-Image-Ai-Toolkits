@@ -390,6 +390,7 @@ extension TaskExecutors on TaskQueueService {
         session: session,
         modelIdentifier: task.modelDbId ?? task.modelId,
         systemPrompt: task.parameters['systemPrompt'],
+        outputKind: PresetOutputKind.parse(task.parameters['outputKind']),
         forceViewAllImages: forceViewAll,
         acceptsImageInput: acceptsImageInput,
         knowledgeRoot: knowledgeRoot,

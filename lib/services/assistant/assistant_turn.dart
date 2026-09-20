@@ -7,6 +7,7 @@ String _systemPromptFor({
   required bool knowledgeMode,
   required String? knowledgeEntryContent,
   required String? systemPrompt,
+  required PresetOutputKind outputKind,
   required int refCount,
   required bool forceView,
 }) {
@@ -23,7 +24,7 @@ String _systemPromptFor({
           : knowledgeMode
               ? _buildKnowledgeSystemPrompt(
                   knowledgeEntryContent!, refCount, forceView)
-              : _buildSystemPrompt(systemPrompt, refCount, forceView);
+              : _buildSystemPrompt(systemPrompt, refCount, forceView, outputKind);
 }
 
 /// Warns, once per turn, when the knowledge base's file map alone fills a

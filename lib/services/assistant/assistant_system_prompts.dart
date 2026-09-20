@@ -65,14 +65,24 @@ const String _terseDeliveryNote =
     'content) as plain text and then again inside the tool call — the tool '
     'call is the only copy. Think, read, then deliver in one call.';
 
+/// [_terseDeliveryNote] for an analysis preset, whose answer *is* chat text:
+/// only the half about not writing a thing twice still holds.
+const String _singleCopyNote =
+    '\nNever write the same content twice — once as chat text and again '
+    'inside a tool call. Think, look, then answer once.';
+
 String _buildSystemPrompt(
   String? template,
   int referenceImageCount,
   bool forceViewAllImages,
+  PresetOutputKind outputKind,
 ) {
   final base = (template == null || template.trim().isEmpty)
       ? PromptOptimizerAgent.builtinPresetInstructions
       : template.trim();
+  if (outputKind == PresetOutputKind.analysis) {
+    return _buildAnalysisSystemPrompt(base, referenceImageCount, forceViewAllImages);
+  }
   // Per-model setting: smaller local models look at one image and submit
   // straight away, so viewing every image can be made a hard requirement.
   final viewStep = forceViewAllImages && referenceImageCount > 0
@@ -107,6 +117,60 @@ String _buildSystemPrompt(
       'revision through submit_prompt again, always with the full prompt.'
       '$_feedbackRoundNote'
       '$_terseDeliveryNote';
+}
+
+/// The frame around a preset whose result is an answer, not a prompt (`A3e`).
+///
+/// [_buildSystemPrompt]'s own frame says three things such a preset cannot
+/// live with: that the job is to produce a prompt, that submit_prompt is the
+/// only way to deliver, and that chat text must be brief. Here the user's
+/// message is the request itself, the full answer goes in the reply, and
+/// submit_prompt stays — for the natural next sentence, "now give me a prompt
+/// for this" — as something to be asked for.
+String _buildAnalysisSystemPrompt(
+  String base,
+  int referenceImageCount,
+  bool forceViewAllImages,
+) {
+  final viewStep = forceViewAllImages && referenceImageCount > 0
+      ? '1. MANDATORY: first call list_reference_images, then call '
+          'view_image for EVERY image id from 1 to $referenceImageCount, '
+          'one call per image. You must have viewed ALL '
+          '$referenceImageCount reference image(s) before answering — never '
+          'skip an image and never answer early.\n'
+      : '1. Look before you answer: inspect the reference images the request '
+          'concerns with list_reference_images and view_image. Never '
+          'describe an image you have not viewed in this conversation.\n';
+  return '$base\n\n'
+      '---\n'
+      'You are working inside an interactive chat, on the task the '
+      'instructions above lay down. Each user message is a request to carry '
+      'out under those instructions — it is not a draft prompt to be '
+      'rewritten. There are currently $referenceImageCount reference '
+      'image(s) available; when the user refers to a reference image by '
+      'number ("reference image 2", "图2"), they mean that id in '
+      'list_reference_images.\n'
+      'Tools:\n'
+      '- list_reference_images: list the attached reference images.\n'
+      '- view_image: look at one reference image before relying on it.\n'
+      '- ask_user: ask up to 4 structured questions with concrete options.\n'
+      '- submit_prompt: deliver a generation prompt as a card the user can '
+      'apply. Optional here — call it only when the user explicitly asks for '
+      'a prompt to generate with, and then with the complete prompt.\n'
+      'Workflow:\n'
+      '$viewStep'
+      '2. Answer in plain text, in full: the complete result, in the '
+      'structure the instructions above prescribe, formatted as Markdown. '
+      'The reply IS the deliverable — do not shorten it to a summary, and do '
+      'not put it in submit_prompt.\n'
+      '3. When what to look at or what to extract is genuinely unclear '
+      '(which image, which aspect, how deep), ask via ask_user (structured '
+      'options, at most once per turn) instead of guessing — but never ask '
+      'what the images or the conversation already answer.\n'
+      'The user may follow up with corrections or more information — answer '
+      'again in full when the result changes, briefly when it does not.'
+      '$_feedbackRoundNote'
+      '$_singleCopyNote';
 }
 
 /// System prompt for [AssistantMode.knowledgeBase]. Built-in — user presets

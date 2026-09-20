@@ -212,6 +212,12 @@ class LLMMessage {
   /// a restored conversation still marks the cut reply.
   final bool truncated;
 
+  /// Host bookkeeping, never put on the wire: this assistant text is what
+  /// the turn was run to produce — the answer itself, not a remark beside a
+  /// tool call. Stored so a restored conversation still knows which replies
+  /// to offer for copying.
+  final bool deliverable;
+
   /// Host bookkeeping, never put on the wire: the stored model row
   /// (`llm_models.id`) that produced this assistant turn, when it ran on one.
   final int? modelDbId;
@@ -232,6 +238,7 @@ class LLMMessage {
     this.toolCallId,
     this.toolName,
     this.truncated = false,
+    this.deliverable = false,
     this.modelDbId,
   });
 
@@ -253,6 +260,7 @@ class LLMMessage {
         toolCallId: toolCallId,
         toolName: toolName,
         truncated: truncated,
+        deliverable: deliverable,
         modelDbId: id,
       );
 
@@ -281,6 +289,7 @@ class LLMMessage {
         if (toolCallId != null) 'toolCallId': toolCallId,
         if (toolName != null) 'toolName': toolName,
         if (truncated) 'truncated': true,
+        if (deliverable) 'deliverable': true,
         if (modelDbId != null) 'modelDbId': modelDbId,
       };
 
@@ -330,6 +339,7 @@ class LLMMessage {
         toolCallId: json['toolCallId'] as String?,
         toolName: json['toolName'] as String?,
         truncated: json['truncated'] == true,
+        deliverable: json['deliverable'] == true,
         modelDbId: json['modelDbId'] is int ? json['modelDbId'] as int : null,
       );
 }

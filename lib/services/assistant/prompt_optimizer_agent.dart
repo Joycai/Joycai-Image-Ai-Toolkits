@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
+import '../../models/prompt.dart';
 import '../../models/result_feedback.dart';
 import 'assistant_context_usage.dart';
 import '../db/database_service.dart';
@@ -424,6 +425,7 @@ class PromptOptimizerAgent {
     required PromptOptimizerSession session,
     required dynamic modelIdentifier,
     String? systemPrompt,
+    PresetOutputKind outputKind = PresetOutputKind.prompt,
     required List<Map<String, String>> referenceImages,
     bool forceViewAllImages = false,
     bool acceptsImageInput = true,
@@ -500,6 +502,7 @@ class PromptOptimizerAgent {
       knowledgeMode: knowledgeMode,
       knowledgeEntryContent: knowledgeEntryContent,
       systemPrompt: systemPrompt,
+      outputKind: outputKind,
       refCount: effectiveRefs.length,
       forceView: effectiveForceView,
     );
@@ -683,6 +686,12 @@ class PromptOptimizerAgent {
             }
             continue;
           }
+          // Under an analysis preset the reply that closes the turn is what
+          // the turn was for (`A3e`). Not the last round's: that one is the
+          // status report [_finalRoundNudge] asks for, not an answer.
+          final deliverable = !knowledgeMode &&
+              outputKind == PresetOutputKind.analysis &&
+              !finalRound;
           if (text.isNotEmpty) {
             // No echo obligation without tool calls (the payload builder only
             // replays reasoning on tool-call-bearing messages), but keep the
@@ -699,6 +708,7 @@ class PromptOptimizerAgent {
               rawModelParts: response.rawModelParts,
               rawResponseItems: response.rawResponseItems,
               truncated: truncated,
+              deliverable: deliverable,
               modelDbId: modelIdentifier is int ? modelIdentifier : null,
             ));
             // A cut chat reply stays a chat reply — it is what the model
@@ -707,6 +717,7 @@ class PromptOptimizerAgent {
               kind: OptimizerEntryKind.assistant,
               text: text,
               truncated: truncated,
+              deliverable: deliverable,
               modelDbId: modelIdentifier is int ? modelIdentifier : null,
             ));
           }

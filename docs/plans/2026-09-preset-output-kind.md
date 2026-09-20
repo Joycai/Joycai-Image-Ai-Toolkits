@@ -48,7 +48,9 @@
    - 参考图查看步骤、`forceViewAllImages` 的强制条款：两种类型共用，措辞里的
      「before calling submit_prompt」在 `analysis` 下改成「before answering」。
 5. **结果怎么认**：`analysis` 轮里，结束本轮的那条助手正文就是交付物。agent 给这条
-   `OptimizerChatEntry` 打 `deliverable: true`（进 `toJson`，旧记录缺省 false）。
+   `LLMMessage` 打 `deliverable: true`（对话记录是从 history 重建的，所以标记和
+   `truncated` 一样落在消息上、只在为真时写进 JSON；`OptimizerChatEntry.deliverable` 由它带出）。
+   最后一轮（步数用尽的状态汇报）与知识库会话不打。
    界面只对它显示「复制」动作行。不做版本号、不做「应用到工作台」。
 6. **看不到图要在对话里说**（两种类型都生效，但这一轮是因为识别场景才变致命）：
    模型不接受图片输入且本轮带了参考图时，除了现有的任务日志，再往对话里放一张
@@ -80,11 +82,11 @@
 
 ## 4. 执行清单（一片一提交，两道门全绿再提交）
 
-- [ ] **片 0 · 稿与清单**：本文件 + `A3e` 推到设计项目。`docs:` 提交。
-- [ ] **片 1 · 数据**：`PresetOutputKind`；`SystemPrompt.outputKind`（`fromMap`/`toMap`）；
+- [x] **片 0 · 稿与清单**：本文件 + `A3e` 推到设计项目。`docs:` 提交。
+- [x] **片 1 · 数据**：`PresetOutputKind`；`SystemPrompt.outputKind`（`fromMap`/`toMap`）；
       v47 `onUpgrade` 加列 + `onCreate` 同步；`dbVersion = 47`；`prompts_io` 往返。
       测：迁移后旧行为 `prompt`；未知值回落；导出再导入保类型；缺键文件导入为 `prompt`。
-- [ ] **片 2 · agent**：`_buildSystemPrompt(outputKind:)` 分叉；`runTurn`/`_systemPromptFor`
+- [x] **片 2 · agent**：`_buildSystemPrompt(outputKind:)` 分叉；`runTurn`/`_systemPromptFor`
       传参；`task_executors` 读 `parameters['outputKind']`；`deliverable` 标记与序列化。
       测：`prompt` 类型的 system prompt 与改动前逐字相同（golden 字符串）；`analysis` 不含
       `ONLY way`、`Keep chat text brief`，含预设正文在最前；`analysis` 轮的收尾正文
