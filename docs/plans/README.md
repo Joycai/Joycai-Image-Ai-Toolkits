@@ -52,6 +52,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | `2026-09-ark-layers-execution.md`（五片 + 一次 review，分支 `claude/ark-layers`，v4.15.0） | 拆图层落库与画布还原：`GeneratedImageLayer` 与图按位置对齐（`LLMResponse.imageLayers` / `LLMResponseChunk.imageLayer`，方舟逐项下载保对齐）；v46 `image_layers` 按路径存组、层号、名字、描述、框，应用内改名 / 移动带着走、覆盖时退掉旧行；全屏「图层画布」按框叠回底图、逐层显隐、点选描框、导出可见层合成图；入口是图片卡角标与右键一行。设计稿 Claude Design `A7 图层画布` | `architecture/llm-three-layer.md`「火山方舟 · Seedream」拆图层一条、`api/volcengine-ark.md` §6。执行清单原文 `git show 0ad48c6:docs/plans/2026-09-ark-layers-execution.md`（施工记录有与稿的四处出入） |
 | `2026-09-capability-audit-fixes-execution.md`（十七片 + 五次 review，分支 `claude/model-capability-fixes`） | 2026-09-19 用 `ai-agent-architecture` skill 审模型能力支持（不含 Sora）后的修复。静默失败：出图 0 张判失败并带模型原话；① 流式内联图的文本闸门（不重复、不丢尾）；万相 usage 不再按 token 计费（`dashscope_usage`）；上下文压缩不带联网搜索（`llmNoServerToolsKey`）。协议：`requestStream` 续跑 `pause_turn`；MiniMax ① 思考方言 `openaiAdaptiveObject`（实测 2026-09-19）；③ 异常结束无输出按整段判失败、百炼私有面补空回复规则、GLM `sensitive` 归 `content_filter`。视频与计费：「继续原任务」续轮询 / 重下载不重新付费；按规格计费的视频行按上游回报时长改写（`video:<job id>` 行）；「与按次相同」提示只在单位为「条」时出现（按次本身不乘张数，裁定）。发送前：四条出图路由按模型尺寸控件校验（`optionsWithCheckedSize`）；④ base 自动补 `/v1`、去 `/messages`；Anthropic 思考方言只在拼写被拒时翻转。结构：Veo 分辨率 / 比例成为模型声明、面板无固定控件；视频选单与提交共用 `_videoSubmitRoute`；连接测试的补全探测保留线路；聊天线表穷举 | 代码与测试；MiniMax 实测写进 `api/minimax.md` §1。执行清单原文 `git show 5d0a825:docs/plans/2026-09-capability-audit-fixes-execution.md`（施工记录与每批 review 的发现）。欠的并入下面「还欠的」 |
 | `2026-09-assistant-mode-regroup-execution.md`（五片 + 五次逐片 review + 一次整体 review，分支 `claude/prompt-assistant-design-review-39a2bd`；设计稿 Claude Design `A3d 提示词助手-模式重组`） | 提示词助手三段开关「系统提示词｜知识库｜库编辑」重组为两级「任务预设｜知识库 › 用它来：出词｜维护」——**枚举、持久化、历史图标不变**，只是三个旧值的另一种呈现。开关移到右栏顶部，未配置知识库时「知识库」段仍可点（落到状态卡），运行中两级锁定并说明；工具头徽标「任务预设 · 预设名」/「知识库 · 出词｜维护」。任务预设卡先任务后文本：编辑器默认折叠，内置「通用优化」成为选单首项（只读、可另存为预设），说明行由正文首段派生（不加库列），未保存时换预设先确认。三个模式各有空状态（预设砖 = 选中不发送；示例 = 填入不发送、接在草稿前）。维护左栏「文档｜参考图」分段。**出词⇄维护同会话切换**：`session.mode` 只在知识库对内可变，运行中 / 跨依据在 session 一层拒绝，被拒的切换不落到新会话，mode 随会话落库，暂存的改动切换后仍可应答、右栏仍列出 | `architecture/assistant-context.md`「What about a session may change」；代码 `prompt_optimizer_session.dart`（`switchKnowledgeUse`）、`optimizer_config_panel.dart` + `optimizer_config/{sys_prompt_card,preset_summary}.dart`、`optimizer/optimizer_empty_state.dart`、`optimizer_left_panel.dart`；测试 `assistant_kb_use_switch_test` · `optimizer_empty_state_test` · `optimizer_left_panel_test` · `preset_summary_test`。执行清单原文 `git show e999887:docs/plans/2026-09-assistant-mode-regroup-execution.md`（决策记录四条、每片与稿的出入与 review 处置）。欠的并入下面「还欠的」 |
+| `2026-09-preset-output-kind.md`（七片，逐片 review + 一次两路独立的整体 review，分支 `claude/preset-output-kind`；设计稿 Claude Design `A3e 提示词助手-预设产出类型`） | 任务预设带一个**产出类型**（`PresetOutputKind`：提示词｜分析文本，`system_prompts.output_kind`，v47；只有 refiner 预设有，未知值回落提示词）。它是预设的属性，不是第三个模式：在提示词库的模板编辑框里选（「产出」分段 + 随选中项换字的说明，切到重命名时收起），面板不提供临时切换。类型与正文同路到 agent（`loadOptimizerPreset` → `optimizerTurnParameters` → `runTurn(outputKind:)`）；正文清空即内置预设，恒按提示词。分析类换一套框架（`_buildAnalysisSystemPrompt`）：用户消息是请求本身、完整结果写在正文、`submit_prompt` 降为可选、`ask_user` 放宽到范围不清时；**提示词类的框架由逐字副本的测试钉住**（`optimizer_output_kind_test.dart`）。分析轮里收尾的正文标 `LLMMessage.deliverable`（与 `truncated` 同样只在为真时进 JSON，恢复的会话仍认得；最后一轮的状态汇报、紧跟 `submit_prompt` 的那句、知识库会话都不标），界面只给它一行「复制」——不做卡片、版本、应用。分析轮里看完图的空回复不再算合法收尾。界面上只有少数派说话：分析类预设在库列表、选择器行、空对话磁贴上带中性标记 `AppNeutralMarker`（不跟种子色），预设卡里两种类型都有一行只读「产出」；载入分析类预设时空对话换标题 / 副标题 / 占位并给三条点名参考图编号的问法。顺带：模型不接受图片而会话带了参考图时，对话里落一张 warning 卡（原先只写任务日志），同模型同张数只说一次；助手面板的「保存」改为整行回写（原先手列字段，会把新列冲回默认）；模板编辑框的「模板用途」分段铺满整行（英文 390 宽原本溢出 95px）。 | `models/prompt.dart`、`assistant_system_prompts.dart`、`prompt_optimizer_agent.dart`（`_lastBatchSubmittedPrompt`、`_noteImagesNotOffered`）、`workbench_ui_state.dart`；`architecture/assistant-context.md` 记了 `deliverable`；方案全文 `git show 2cf3e8b:docs/plans/2026-09-preset-output-kind.md` |
 三份审计报告（`code-review-report-20260613.md` v2.3.0、`api-standards-audit.md`
 基线 `d03047e`、`2026-08-ai-capability-review.md` 基线 `6a4920d`）都是带完整
 `file:line` 的快照，三层重构与液态玻璃翻新之后每一个行号都已失效。前两份自己就
@@ -59,6 +60,17 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 不要照着旧快照改。
 
 ## 还欠的（2026-09-12 对照 main 逐条复核过；2026-09-16 欠账清扫后更新）
+
+### 任务预设 · 产出类型（A3e，2026-09-20）
+
+| 条 | 为什么没做 |
+|---|---|
+| 分析框架的措辞没有在真实模型上验证 | 只能靠真跑：一条识别预设 + 两张参考图，强模型与本地小模型各跑「识别参考图 1」「结合图 1、2 描述…」「补充以下信息…」三句。测试只钉住了框架里有什么、没有什么 |
+| 「看不到图片」卡不写模型名，出口是「打开模型设置」 | 稿 5f 写的是模型名 + 「换一个模型」。对话视图手里没有模型表；模型字段是 `ChatModelSelector`，没有从外面打开它的口，而图片输入能力本身就在模型设置里 |
+| 「看不到图片」卡不进 history | 与切换分隔线同一取舍：恢复的会话里不重现，下一轮再说一次 |
+| `AppNeutralMarker` 与 `OptimizerTagBadge` 没有合并 | 整体 review 指出两者形状相近、内边距不同；后者在 screens 层，合并要先把它下沉成设计系统原语 |
+| 本版导出的提示词 JSON 旧版导不进 | 行里多了 `output_kind`，而 prompts-only 导出没有 schema 闸（整库备份有）。要修得给导出加版本闸，或导入时按表的实际列过滤 |
+| 截图 harness 只加了一帧 | `assistant_analysis`（结果 + 复制行 + 同会话的提示词卡）与画廊里的标记标本；编辑框的产出分段、分析类空对话、看不到图的卡只有 widget 测试 |
 
 ### 提示词助手 · 模式重组（A3d，2026-09-20）
 
