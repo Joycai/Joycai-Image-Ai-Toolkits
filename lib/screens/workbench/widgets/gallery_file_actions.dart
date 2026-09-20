@@ -119,18 +119,29 @@ Future<void> confirmAndDeleteImageFiles(
     final file = File(image.path);
     if (file.existsSync()) files.add(BrowserFile.fromFile(file));
   }
-  if (files.isEmpty || !context.mounted) return;
+  if (!context.mounted) return;
+  if (files.isEmpty) {
+    // `existsSync` answers "no" for a file the process cannot reach at all —
+    // gone since the scan, a broken link, a folder it has no permission to
+    // read — so silence here would look like a dead button. Say it instead.
+    AppSnackBar.error(
+      context,
+      AppLocalizations.of(context)!.deleteFailed(images.first.name),
+    );
+    return;
+  }
 
   await runFileDelete(
     context,
     files,
     protectedRoots: galleryState.sourceDirectories,
-    onDeleted: () async {
-      // The gallery holds its own selection and its own list; both are
-      // rebuilt from disk.
-      galleryState.clearImageSelection();
-      await galleryState.refreshImages();
-    },
+    // The selection is deliberately not cleared: `refreshImages` ends in
+    // `_cleanupSelection`, which drops exactly the pictures that are gone and
+    // keeps the rest. Clearing it wholesale threw away a selection the user
+    // had built for something else whenever they deleted one unrelated file
+    // from the context menu, and would have thrown away the survivors of a
+    // half-failed run.
+    onDeleted: () async => galleryState.refreshImages(),
   );
 }
 

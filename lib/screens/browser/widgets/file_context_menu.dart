@@ -116,7 +116,12 @@ void showFileContextMenu({
       AppGlassMenuItem(
         icon: Icons.content_copy_outlined,
         label: l10n.copyFilename,
-        onSelected: () => Clipboard.setData(ClipboardData(text: file.name)),
+        // The whole selection, like `⇧⌘C` — `targets` is the selection when
+        // the right-clicked file is part of it and just that file otherwise,
+        // so the row and the key cannot disagree about what "this" means.
+        onSelected: () => Clipboard.setData(
+          ClipboardData(text: targets.map((f) => f.name).join('\n')),
+        ),
       ),
       const AppGlassMenuDivider(),
       AppGlassMenuItem(

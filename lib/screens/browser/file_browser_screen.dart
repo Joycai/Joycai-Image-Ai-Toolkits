@@ -261,7 +261,12 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     if (Responsive.isNarrow(context)) {
       final scaffold = _scaffoldKey.currentState;
       if (scaffold == null) return;
-      scaffold.isDrawerOpen ? Navigator.of(context).pop() : scaffold.openDrawer();
+      // `closeDrawer`, not `Navigator.pop`: a drawer closes through the
+      // local-history entry it registered on its route, and popping the
+      // navigator only unwinds that entry while the drawer's route is on
+      // top. Open the task-queue sheet over an open drawer and the pop takes
+      // the sheet instead, leaving the drawer where it was.
+      scaffold.isDrawerOpen ? scaffold.closeDrawer() : scaffold.openDrawer();
       return;
     }
     final appState = Provider.of<AppState>(context, listen: false);
@@ -273,7 +278,9 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     if (Responsive.isNarrow(context)) {
       final scaffold = _scaffoldKey.currentState;
       if (scaffold == null) return;
-      scaffold.isEndDrawerOpen ? Navigator.of(context).pop() : scaffold.openEndDrawer();
+      scaffold.isEndDrawerOpen
+          ? scaffold.closeEndDrawer()
+          : scaffold.openEndDrawer();
       return;
     }
     setState(() => _stagingOpen = !_stagingOpen);

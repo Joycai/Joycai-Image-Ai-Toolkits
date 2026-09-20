@@ -326,6 +326,11 @@ void main() {
     );
 
     final bool openAtStart = find.byType(BrowserStagingPanel).evaluate().isNotEmpty;
+    // Asserted, not merely observed: the state classes are singletons shared
+    // by every test in this file, so a later test that stages a file would
+    // otherwise turn this into a silent check of the opposite transition.
+    expect(openAtStart, isFalse,
+        reason: 'the fixture stages nothing and the column starts closed');
 
     await pressChord(tester, LogicalKeyboardKey.backslash, shift: true);
     expect(find.byType(BrowserStagingPanel),
