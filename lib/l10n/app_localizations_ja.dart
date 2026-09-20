@@ -532,10 +532,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trashFolderEmptyDesc => 'このフォルダーは空です。削除後はシステムのゴミ箱から復元できます。';
 
   @override
-  String get deleteFolderIrreversible => 'この操作は元に戻せません';
+  String get deleteIrreversibleNote => 'この操作は元に戻せません';
 
   @override
-  String get trashFolderRestorable => 'システムのゴミ箱から復元できます';
+  String get trashRestorableNote => 'システムのゴミ箱から復元できます';
 
   @override
   String get inventorySubfolders => 'サブフォルダー';
@@ -561,6 +561,77 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get moveToTrash => 'ゴミ箱に移動';
+
+  @override
+  String get trashFileTitle => 'ゴミ箱に移動しますか？';
+
+  @override
+  String trashFilesTitle(int count) {
+    return '$count 件のファイルをゴミ箱に移動しますか？';
+  }
+
+  @override
+  String get deleteFileTitle => '完全に削除しますか？';
+
+  @override
+  String deleteFilesTitle(int count) {
+    return '$count 件のファイルを完全に削除しますか？';
+  }
+
+  @override
+  String deleteFromFolders(int count) {
+    return '$count 個のフォルダから';
+  }
+
+  @override
+  String deleteMoreFiles(int count) {
+    return '他 $count 件';
+  }
+
+  @override
+  String deleteTotalSize(String size) {
+    return '合計 $size';
+  }
+
+  @override
+  String trashFileCount(int count) {
+    return '$count 件をゴミ箱へ';
+  }
+
+  @override
+  String deleteFileCount(int count) {
+    return '$count 件を完全に削除';
+  }
+
+  @override
+  String deleteFiles(int count) {
+    return '$count 件のファイルを削除';
+  }
+
+  @override
+  String fileTrashed(String name) {
+    return '$name をゴミ箱に移動しました';
+  }
+
+  @override
+  String filesTrashed(int count) {
+    return '$count 件のファイルをゴミ箱に移動しました';
+  }
+
+  @override
+  String fileDeleted(String name) {
+    return '$name を削除しました';
+  }
+
+  @override
+  String filesDeleted(int count) {
+    return '$count 件のファイルを削除しました';
+  }
+
+  @override
+  String filesDeletePartial(int done, int failed, String error) {
+    return '$done 件を削除、$failed 件失敗：$error';
+  }
 
   @override
   String get folderNameEmpty => '名前を入力してください';

@@ -438,8 +438,8 @@
   "trashFolderTitle": "Move to trash?",
   "deleteFolderEmptyDesc": "This folder is empty. Deleting it cannot be undone.",
   "trashFolderEmptyDesc": "This folder is empty. It can be restored from the system trash.",
-  "deleteFolderIrreversible": "This cannot be undone",
-  "trashFolderRestorable": "Can be restored from the system trash",
+  "deleteIrreversibleNote": "This cannot be undone",
+  "trashRestorableNote": "Can be restored from the system trash",
   "inventorySubfolders": "Subfolders",
   "inventoryFiles": "Files",
   "inventorySize": "Size",
@@ -461,6 +461,118 @@
     }
   },
   "moveToTrash": "Move to trash",
+  "trashFileTitle": "Move to trash?",
+  "trashFilesTitle": "Move {count} files to trash?",
+  "@trashFilesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFileTitle": "Delete permanently?",
+  "deleteFilesTitle": "Permanently delete {count} files?",
+  "@deleteFilesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFromFolders": "From {count} folders",
+  "@deleteFromFolders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteMoreFiles": "{count} more",
+  "@deleteMoreFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteTotalSize": "{size} total",
+  "@deleteTotalSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "trashFileCount": "Move {count} to trash",
+  "@trashFileCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFileCount": "Delete {count}",
+  "@deleteFileCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFiles": "Delete {count} files",
+  "@deleteFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fileTrashed": "Moved {name} to trash",
+  "@fileTrashed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filesTrashed": "Moved {count} files to trash",
+  "@filesTrashed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fileDeleted": "Deleted {name}",
+  "@fileDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filesDeleted": "Deleted {count} files",
+  "@filesDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filesDeletePartial": "Deleted {done}, {failed} failed: {error}",
+  "@filesDeletePartial": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "folderNameEmpty": "Name cannot be empty",
   "folderNameIllegalChars": "Name cannot contain {chars}",
   "@folderNameIllegalChars": {

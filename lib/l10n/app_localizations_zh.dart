@@ -532,10 +532,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trashFolderEmptyDesc => '这个文件夹是空的，删除后可从系统回收站找回。';
 
   @override
-  String get deleteFolderIrreversible => '此操作无法撤销';
+  String get deleteIrreversibleNote => '此操作无法撤销';
 
   @override
-  String get trashFolderRestorable => '可从系统回收站找回';
+  String get trashRestorableNote => '可从系统回收站找回';
 
   @override
   String get inventorySubfolders => '子文件夹';
@@ -561,6 +561,77 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get moveToTrash => '移至回收站';
+
+  @override
+  String get trashFileTitle => '移到回收站？';
+
+  @override
+  String trashFilesTitle(int count) {
+    return '将 $count 个文件移到回收站？';
+  }
+
+  @override
+  String get deleteFileTitle => '永久删除？';
+
+  @override
+  String deleteFilesTitle(int count) {
+    return '永久删除 $count 个文件？';
+  }
+
+  @override
+  String deleteFromFolders(int count) {
+    return '来自 $count 个文件夹';
+  }
+
+  @override
+  String deleteMoreFiles(int count) {
+    return '还有 $count 个';
+  }
+
+  @override
+  String deleteTotalSize(String size) {
+    return '共 $size';
+  }
+
+  @override
+  String trashFileCount(int count) {
+    return '移到回收站 · $count 个';
+  }
+
+  @override
+  String deleteFileCount(int count) {
+    return '永久删除 $count 个';
+  }
+
+  @override
+  String deleteFiles(int count) {
+    return '删除 $count 个文件';
+  }
+
+  @override
+  String fileTrashed(String name) {
+    return '已将 $name 移到回收站';
+  }
+
+  @override
+  String filesTrashed(int count) {
+    return '已将 $count 个文件移到回收站';
+  }
+
+  @override
+  String fileDeleted(String name) {
+    return '已删除 $name';
+  }
+
+  @override
+  String filesDeleted(int count) {
+    return '已删除 $count 个文件';
+  }
+
+  @override
+  String filesDeletePartial(int done, int failed, String error) {
+    return '已删除 $done 个，$failed 个失败：$error';
+  }
 
   @override
   String get folderNameEmpty => '名称不能为空';
@@ -6001,10 +6072,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get trashFolderEmptyDesc => '這個資料夾是空的，刪除後可從系統垃圾桶找回。';
 
   @override
-  String get deleteFolderIrreversible => '此操作無法復原';
+  String get deleteIrreversibleNote => '此操作無法復原';
 
   @override
-  String get trashFolderRestorable => '可從系統垃圾桶找回';
+  String get trashRestorableNote => '可從系統垃圾桶找回';
 
   @override
   String get inventorySubfolders => '子資料夾';
@@ -6030,6 +6101,77 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get moveToTrash => '移至資源回收筒';
+
+  @override
+  String get trashFileTitle => '移到垃圾桶？';
+
+  @override
+  String trashFilesTitle(int count) {
+    return '將 $count 個檔案移到垃圾桶？';
+  }
+
+  @override
+  String get deleteFileTitle => '永久刪除？';
+
+  @override
+  String deleteFilesTitle(int count) {
+    return '永久刪除 $count 個檔案？';
+  }
+
+  @override
+  String deleteFromFolders(int count) {
+    return '來自 $count 個資料夾';
+  }
+
+  @override
+  String deleteMoreFiles(int count) {
+    return '還有 $count 個';
+  }
+
+  @override
+  String deleteTotalSize(String size) {
+    return '共 $size';
+  }
+
+  @override
+  String trashFileCount(int count) {
+    return '移到垃圾桶 · $count 個';
+  }
+
+  @override
+  String deleteFileCount(int count) {
+    return '永久刪除 $count 個';
+  }
+
+  @override
+  String deleteFiles(int count) {
+    return '刪除 $count 個檔案';
+  }
+
+  @override
+  String fileTrashed(String name) {
+    return '已將 $name 移到垃圾桶';
+  }
+
+  @override
+  String filesTrashed(int count) {
+    return '已將 $count 個檔案移到垃圾桶';
+  }
+
+  @override
+  String fileDeleted(String name) {
+    return '已刪除 $name';
+  }
+
+  @override
+  String filesDeleted(int count) {
+    return '已刪除 $count 個檔案';
+  }
+
+  @override
+  String filesDeletePartial(int done, int failed, String error) {
+    return '已刪除 $done 個，$failed 個失敗：$error';
+  }
 
   @override
   String get folderNameEmpty => '名稱不能為空';

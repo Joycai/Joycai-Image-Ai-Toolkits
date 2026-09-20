@@ -995,17 +995,17 @@ abstract class AppLocalizations {
   /// **'This folder is empty. It can be restored from the system trash.'**
   String get trashFolderEmptyDesc;
 
-  /// No description provided for @deleteFolderIrreversible.
+  /// No description provided for @deleteIrreversibleNote.
   ///
   /// In en, this message translates to:
   /// **'This cannot be undone'**
-  String get deleteFolderIrreversible;
+  String get deleteIrreversibleNote;
 
-  /// No description provided for @trashFolderRestorable.
+  /// No description provided for @trashRestorableNote.
   ///
   /// In en, this message translates to:
   /// **'Can be restored from the system trash'**
-  String get trashFolderRestorable;
+  String get trashRestorableNote;
 
   /// No description provided for @inventorySubfolders.
   ///
@@ -1048,6 +1048,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Move to Trash'**
   String get moveToTrash;
+
+  /// No description provided for @trashFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to trash?'**
+  String get trashFileTitle;
+
+  /// No description provided for @trashFilesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move {count} files to trash?'**
+  String trashFilesTitle(int count);
+
+  /// No description provided for @deleteFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete permanently?'**
+  String get deleteFileTitle;
+
+  /// No description provided for @deleteFilesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete {count} files?'**
+  String deleteFilesTitle(int count);
+
+  /// No description provided for @deleteFromFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'From {count} folders'**
+  String deleteFromFolders(int count);
+
+  /// No description provided for @deleteMoreFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} more'**
+  String deleteMoreFiles(int count);
+
+  /// No description provided for @deleteTotalSize.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} total'**
+  String deleteTotalSize(String size);
+
+  /// No description provided for @trashFileCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Move {count} to trash'**
+  String trashFileCount(int count);
+
+  /// No description provided for @deleteFileCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count}'**
+  String deleteFileCount(int count);
+
+  /// No description provided for @deleteFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} files'**
+  String deleteFiles(int count);
+
+  /// No description provided for @fileTrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved {name} to trash'**
+  String fileTrashed(String name);
+
+  /// No description provided for @filesTrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved {count} files to trash'**
+  String filesTrashed(int count);
+
+  /// No description provided for @fileDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {name}'**
+  String fileDeleted(String name);
+
+  /// No description provided for @filesDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {count} files'**
+  String filesDeleted(int count);
+
+  /// No description provided for @filesDeletePartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {done}, {failed} failed: {error}'**
+  String filesDeletePartial(int done, int failed, String error);
 
   /// No description provided for @folderNameEmpty.
   ///
