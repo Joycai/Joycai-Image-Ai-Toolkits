@@ -5692,4 +5692,12 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get optEmptyKbEditExample3 =>
       'エントリファイルのファイルマップを実際のディレクトリに合わせて更新してください。';
+
+  @override
+  String get optLeftDocs => '文書';
+
+  @override
+  String optLeftRefs(int count) {
+    return '参考画像 · $count';
+  }
 }

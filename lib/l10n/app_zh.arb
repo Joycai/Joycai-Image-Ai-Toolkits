@@ -3329,5 +3329,14 @@
   "optEmptyKbEditSub": "告诉助手要补什么、改什么。每处改动都会先给你看 diff，确认后才写入。",
   "optEmptyKbEditExample1": "新增一篇文档，记录这类画面的写法：",
   "optEmptyKbEditExample2": "检查知识库里有没有互相矛盾的规则。",
-  "optEmptyKbEditExample3": "把入口文件里的文件地图更新到和实际目录一致。"
+  "optEmptyKbEditExample3": "把入口文件里的文件地图更新到和实际目录一致。",
+  "optLeftDocs": "文档",
+  "optLeftRefs": "参考图 · {count}",
+  "@optLeftRefs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

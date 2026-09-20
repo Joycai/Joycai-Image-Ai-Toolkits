@@ -10072,6 +10072,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bring the file map in the entry file in line with the actual folders.'**
   String get optEmptyKbEditExample3;
+
+  /// No description provided for @optLeftDocs.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get optLeftDocs;
+
+  /// No description provided for @optLeftRefs.
+  ///
+  /// In en, this message translates to:
+  /// **'References · {count}'**
+  String optLeftRefs(int count);
 }
 
 class _AppLocalizationsDelegate

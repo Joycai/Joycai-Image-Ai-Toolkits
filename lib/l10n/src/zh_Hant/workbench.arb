@@ -1177,5 +1177,14 @@
   "optEmptyKbEditSub": "告訴助手要補什麼、改什麼。每處變更都會先給你看 diff，確認後才寫入。",
   "optEmptyKbEditExample1": "新增一篇文件，記錄這類畫面的寫法：",
   "optEmptyKbEditExample2": "檢查知識庫裡有沒有互相矛盾的規則。",
-  "optEmptyKbEditExample3": "把入口檔案裡的檔案地圖更新到和實際目錄一致。"
+  "optEmptyKbEditExample3": "把入口檔案裡的檔案地圖更新到和實際目錄一致。",
+  "optLeftDocs": "文件",
+  "optLeftRefs": "參考圖 · {count}",
+  "@optLeftRefs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

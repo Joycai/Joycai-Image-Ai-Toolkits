@@ -5909,4 +5909,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get optEmptyKbEditExample3 =>
       'Bring the file map in the entry file in line with the actual folders.';
+
+  @override
+  String get optLeftDocs => 'Documents';
+
+  @override
+  String optLeftRefs(int count) {
+    return 'References · $count';
+  }
 }

@@ -1177,5 +1177,14 @@
   "optEmptyKbEditSub": "追加・修正したい内容を伝えてください。変更はすべて diff で確認してから書き込まれます。",
   "optEmptyKbEditExample1": "この種の画の書き方を記録する文書を追加してください：",
   "optEmptyKbEditExample2": "ナレッジベース内に矛盾するルールがないか確認してください。",
-  "optEmptyKbEditExample3": "エントリファイルのファイルマップを実際のディレクトリに合わせて更新してください。"
+  "optEmptyKbEditExample3": "エントリファイルのファイルマップを実際のディレクトリに合わせて更新してください。",
+  "optLeftDocs": "文書",
+  "optLeftRefs": "参考画像 · {count}",
+  "@optLeftRefs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

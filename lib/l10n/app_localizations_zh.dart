@@ -5633,6 +5633,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optEmptyKbEditExample3 => '把入口文件里的文件地图更新到和实际目录一致。';
+
+  @override
+  String get optLeftDocs => '文档';
+
+  @override
+  String optLeftRefs(int count) {
+    return '参考图 · $count';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -11265,4 +11273,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optEmptyKbEditExample3 => '把入口檔案裡的檔案地圖更新到和實際目錄一致。';
+
+  @override
+  String get optLeftDocs => '文件';
+
+  @override
+  String optLeftRefs(int count) {
+    return '參考圖 · $count';
+  }
 }

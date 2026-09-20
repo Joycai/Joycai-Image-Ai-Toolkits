@@ -1295,5 +1295,14 @@
   "optEmptyKbEditSub": "Tell the assistant what to add or change. Every edit is shown to you as a diff first and written only after you confirm.",
   "optEmptyKbEditExample1": "Add a document that records how to write this kind of shot: ",
   "optEmptyKbEditExample2": "Check the knowledge base for rules that contradict each other.",
-  "optEmptyKbEditExample3": "Bring the file map in the entry file in line with the actual folders."
+  "optEmptyKbEditExample3": "Bring the file map in the entry file in line with the actual folders.",
+  "optLeftDocs": "Documents",
+  "optLeftRefs": "References · {count}",
+  "@optLeftRefs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
