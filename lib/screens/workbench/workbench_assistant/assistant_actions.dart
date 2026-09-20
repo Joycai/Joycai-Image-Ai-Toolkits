@@ -66,6 +66,14 @@ extension _AssistantActions on _WorkbenchScreenState {
     );
   }
 
+  /// 「管理预设」 lands on the presets themselves: the library's system
+  /// templates, filtered to the kind this assistant loads (`A3d 4c`).
+  void _handleManagePresets() {
+    context.read<AppState>()
+      ..requestSystemTemplates('refiner')
+      ..navigateToScreen(AppDestination.prompts.index);
+  }
+
   /// Task preset ⇄ knowledge base is a different conversation, not a setting
   /// of this one: the histories cannot continue each other. So the switch
   /// starts a new session, and says where the old one went (`A3d 4d`).
