@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_switch.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/markdown_editor.dart';
 
 /// The editor's header keeps the view toggle and the expand button against the
@@ -45,7 +46,7 @@ void main() {
 
         final editor = tester.getRect(find.byType(MarkdownEditor));
         final expand = tester.getRect(find.byIcon(Icons.open_in_full));
-        final checkbox = tester.getRect(find.byType(Checkbox));
+        final checkbox = tester.getRect(find.byType(AppSwitch));
         final toggle = tester.getRect(find.text('Preview'));
 
         expect(editor.width, width);
@@ -53,7 +54,7 @@ void main() {
         final rightEdge = editor.right - (bordered ? 0 : unframedInset);
         expect(rightEdge - expand.right, inInclusiveRange(0, 16));
         expect(checkbox.left - editor.left, lessThan(16 + unframedInset));
-        // One line: the toggle is beside the checkbox, not under it.
+        // One line: the toggle is beside the Markdown switch, not under it.
         expect(toggle.center.dy, closeTo(checkbox.center.dy, 1));
         expect(toggle.right, lessThan(expand.left));
       });

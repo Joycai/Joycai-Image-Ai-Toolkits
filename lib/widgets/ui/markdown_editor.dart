@@ -12,12 +12,36 @@ import 'app_icon_button.dart';
 import 'app_segmented_control.dart';
 import 'app_switch.dart';
 import '../../core/design_tokens.dart';
+import '../glass/app_glass_menu.dart';
 
 part 'markdown_editor_large.dart';
 
 /// A specialized controller that provides basic syntax highlighting for Markdown.
 class MarkdownTextEditingController extends TextEditingController {
   MarkdownTextEditingController({super.text});
+
+  /// Whether Markdown syntax is coloured. The editor showing this controller
+  /// turns it off while its Markdown switch is off — plain text that happens
+  /// to hold a `#` or a `_` is not a heading or an emphasis.
+  ///
+  /// Setting it notifies, so a field showing this controller repaints
+  /// whoever set it.
+  bool get highlight => _highlight;
+  bool _highlight = true;
+  set highlight(bool value) {
+    if (_setHighlight(value)) notifyListeners();
+  }
+
+  /// The editor's own way in, from `initState` and `didUpdateWidget`: both run
+  /// mid-build, where a notification would have listeners calling `setState`
+  /// during a build — and where none is needed, since the field showing this
+  /// controller is being rebuilt by the same pass.
+  bool _setHighlight(bool value) {
+    if (_highlight == value) return false;
+    _highlight = value;
+    _cachedSpan = null;
+    return true;
+  }
 
   /// Compiled once for the class, not once per call.
   ///
@@ -43,13 +67,18 @@ class MarkdownTextEditingController extends TextEditingController {
     TextStyle? style,
     required bool withComposing,
   }) {
+    // The base class, not a bare span: it underlines the IME's composing run.
+    if (!_highlight) {
+      return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
+    }
+
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_cachedSpan != null &&
         _cachedText == text &&
         _cachedStyle == style &&
         _cachedScheme == colorScheme) {
-      return _cachedSpan!;
+      return _withComposing(_cachedSpan!, withComposing);
     }
 
     final List<TextSpan> children = [];
@@ -95,7 +124,45 @@ class MarkdownTextEditingController extends TextEditingController {
     _cachedStyle = style;
     _cachedScheme = colorScheme;
     _cachedSpan = span;
-    return span;
+    return _withComposing(span, withComposing);
+  }
+
+  /// [span] with the IME's composing run underlined, as the base class does
+  /// for plain text. Laid over the cached span rather than built into it: the
+  /// run moves with every keystroke of a composition and the syntax does not.
+  TextSpan _withComposing(TextSpan span, bool withComposing) {
+    final TextRange composing = value.composing;
+    if (!withComposing || !value.isComposingRangeValid || composing.isCollapsed) return span;
+
+    // Walks a flat run of text-only spans, which is what [buildTextSpan]
+    // makes. Anything else has offsets this cannot count; better no underline
+    // than one under the wrong characters.
+    final List<InlineSpan> pieces = span.children ?? const <InlineSpan>[];
+    if (pieces.any((p) => p is! TextSpan || p.children != null)) return span;
+
+    const underline = TextStyle(decoration: TextDecoration.underline);
+    final List<InlineSpan> children = [];
+    int offset = 0;
+    for (final TextSpan piece in pieces.cast<TextSpan>()) {
+      final String pieceText = piece.text ?? '';
+      final int start = offset;
+      final int end = offset + pieceText.length;
+      offset = end;
+
+      final int from = composing.start.clamp(start, end);
+      final int to = composing.end.clamp(start, end);
+      if (from == to) {
+        children.add(piece);
+        continue;
+      }
+      if (from > start) children.add(TextSpan(text: pieceText.substring(0, from - start), style: piece.style));
+      children.add(TextSpan(
+        text: pieceText.substring(from - start, to - start),
+        style: piece.style?.merge(underline) ?? underline,
+      ));
+      if (to < end) children.add(TextSpan(text: pieceText.substring(to - start), style: piece.style));
+    }
+    return TextSpan(style: span.style, children: children);
   }
 }
 
@@ -174,6 +241,55 @@ class SmartMarkdownFormatter extends TextInputFormatter {
     }
 
     return newValue;
+  }
+}
+
+/// Colours Markdown syntax in [controller] only while Markdown is on. A plain
+/// [TextEditingController] never coloured anything and is left alone.
+///
+/// [duringBuild] is for `initState` / `didUpdateWidget`; see
+/// [MarkdownTextEditingController._setHighlight].
+void _syncMarkdownHighlight(TextEditingController controller, bool isMarkdown, {bool duringBuild = false}) {
+  if (controller is! MarkdownTextEditingController) return;
+  if (duringBuild) {
+    controller._setHighlight(isMarkdown);
+  } else {
+    controller.highlight = isMarkdown;
+  }
+}
+
+/// The Markdown switch of both editors: the word is part of the control. The
+/// switch alone is 36×22, and the checkbox it replaced brought a 48px target
+/// with it. One node for a screen reader — 「Markdown, switch, on」 — not a
+/// button and a switch that do the same thing.
+class _MarkdownSwitch extends StatelessWidget {
+  const _MarkdownSwitch({required this.value, required this.onChanged, this.labelFirst = false, this.labelColor});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  /// The pop-out's header reads right to left from its edge, label before
+  /// switch; the small editor's starts with the switch.
+  final bool labelFirst;
+  final Color? labelColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = Text('Markdown', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: labelColor));
+    final control = AppSwitch(value: value, onChanged: onChanged);
+    return MergeSemantics(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        onTap: () => onChanged(!value),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: labelFirst ? [label, const SizedBox(width: 6), control] : [control, const SizedBox(width: 6), label],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -263,12 +379,32 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   void initState() {
     super.initState();
     _isPreview = (widget.initiallyPreview && widget.isMarkdown) || widget.isRefined;
+    _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined, duringBuild: true);
+  }
+
+  /// While the pop-out is open it is the editor on screen, and the one that
+  /// says how the shared controller is coloured. This one, behind it, may be a
+  /// rebuild late in hearing about the switch and must not write the old
+  /// answer back over it.
+  bool _popOutOpen = false;
+
+  @override
+  void didUpdateWidget(MarkdownEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A controller swapped in behind the pop-out is nobody else's to colour.
+    if (_popOutOpen && oldWidget.controller == widget.controller) return;
+    _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined, duringBuild: true);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+
+    void setMarkdown(bool v) {
+      widget.onMarkdownChanged(v);
+      if (!v) setState(() => _isPreview = false);
+    }
 
     final viewControls = Row(
       mainAxisSize: MainAxisSize.min,
@@ -306,8 +442,9 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
 
     // A [Row], and one that needs the full width from its parent: the view
     // toggle and the expand button sit against the right edge, the expand
-    // button where `A1 1a` draws it. (The toggle is on the right by the user's
-    // ruling — `1a` has it on the left, with the Markdown switch on the right.)
+    // button where `A1 1a` draws it. The row's order — Markdown switch on the
+    // left, toggle and expand on the right — is the ruling recorded at the end
+    // of `A1d`'s spec, which replaces the order `1a` drew.
     //
     // This was a [Wrap] with `spaceBetween`, which failed twice. Under a
     // start-aligned [Column] it shrank to its children and had no slack to
@@ -321,19 +458,9 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (!widget.isRefined) ...[
-              Checkbox(
-                value: widget.isMarkdown,
-                onChanged: (v) {
-                  widget.onMarkdownChanged(v ?? false);
-                  if (!(v ?? false)) {
-                    setState(() => _isPreview = false);
-                  }
-                },
-              ),
-              Text(
-                'Markdown',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              // A switch, as `A1 1a` and the pop-out (`A1d`) both draw it: this
+              // turns a mode on, it does not tick an item off.
+              _MarkdownSwitch(value: widget.isMarkdown, onChanged: setMarkdown),
             ] else
               Text(
                 widget.label,
@@ -405,7 +532,12 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     // window across the breakpoint keeps the editor's state.
     final editorKey = GlobalKey();
 
-    showDialog(
+    // What the pop-out last asked for. A caller that saves before it rebuilds
+    // may not have handed the new `isMarkdown` down by the time this closes.
+    bool? asked;
+
+    _popOutOpen = true;
+    showDialog<void>(
       context: context,
       builder: (dialogContext) {
         // Read here, not once at open: the window can be resized under it.
@@ -416,7 +548,10 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           label: widget.label,
           hint: widget.hint,
           isMarkdown: widget.isMarkdown,
-          onMarkdownChanged: widget.onMarkdownChanged,
+          onMarkdownChanged: (v) {
+            asked = v;
+            widget.onMarkdownChanged(v);
+          },
           onChanged: widget.onChanged,
           readOnly: widget.isRefined,
           selectable: widget.selectable,
@@ -446,7 +581,12 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           content: SizedBox(height: screen.height * 0.85, child: body),
         );
       },
-    );
+    ).whenComplete(() {
+      _popOutOpen = false;
+      // The caller has the last word either way: its next rebuild goes through
+      // [didUpdateWidget], which colours by whatever it then says.
+      if (mounted) _syncMarkdownHighlight(widget.controller, (asked ?? widget.isMarkdown) || widget.isRefined);
+    });
   }
 
   /// Header over body, with the body taking the rest of the height when

@@ -72,15 +72,21 @@ class _LargeEditorState extends State<_LargeEditor> {
   /// views, which put it at different places in the tree.
   final GlobalKey _fieldKey = GlobalKey();
 
-  /// The text the previews were last built from. The controller also notifies
-  /// for every caret and selection move, and re-parsing the Markdown for those
-  /// is wasted work.
-  late String _renderedText;
+  /// The text as of the last notification. The controller also notifies for
+  /// every caret and selection move, and re-parsing the Markdown for those is
+  /// wasted work — as is rebuilding at all while no preview is on screen: in
+  /// the edit view only the footer follows the text, and it listens for itself.
+  late String _lastText;
 
   void _onControllerChanged() {
-    if (widget.controller.text == _renderedText) return;
-    setState(() => _renderedText = widget.controller.text);
+    if (widget.controller.text == _lastText) return;
+    _lastText = widget.controller.text;
+    if (_previewShown) setState(() {});
   }
+
+  /// Whether the last build put a preview on screen. Not `_view`: a split the
+  /// window has grown too narrow for is shown as the edit view.
+  bool _previewShown = false;
 
   @override
   void didUpdateWidget(_LargeEditor oldWidget) {
@@ -88,14 +94,14 @@ class _LargeEditorState extends State<_LargeEditor> {
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onControllerChanged);
       widget.controller.addListener(_onControllerChanged);
-      _renderedText = widget.controller.text;
+      _lastText = widget.controller.text;
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _renderedText = widget.controller.text;
+    _lastText = widget.controller.text;
     widget.controller.addListener(_onControllerChanged);
     _markdown = widget.isMarkdown;
     _view = (widget.readOnly || (widget.initiallyPreview && _markdown)) ? _LargeView.preview : _LargeView.edit;
@@ -132,6 +138,7 @@ class _LargeEditorState extends State<_LargeEditor> {
       _markdown = value;
       if (!value) _view = _LargeView.edit;
     });
+    _syncMarkdownHighlight(widget.controller, value);
     widget.onMarkdownChanged(value);
     if (!value) widget.onPreviewChanged(false);
   }
@@ -169,6 +176,7 @@ class _LargeEditorState extends State<_LargeEditor> {
           final bool canSplit = !widget.compact && !widget.readOnly && constraints.maxWidth >= _splitMinWidth;
           // A window dragged narrower with the split open falls back to edit.
           final view = (_view == _LargeView.split && !canSplit) ? _LargeView.edit : _view;
+          _previewShown = view != _LargeView.edit;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -182,19 +190,37 @@ class _LargeEditorState extends State<_LargeEditor> {
     );
   }
 
+  /// `A1d`: every segment at least 56 wide (touch-sized on a phone), all of
+  /// them equal. A floor, not a fixed width: 「プレビュー」 does not fit in 56,
+  /// and a label cut to 「プレ…」 is worse than a control a little wider.
+  static const double _segmentWidth = 56;
+  static const double _segmentWidthCompact = 64;
+
   Widget _buildViewToggle(AppLocalizations l10n, _LargeView view, bool canSplit) {
-    return AppSegmentedControl<_LargeView>(
-      segments: [
-        AppSegment(value: _LargeView.edit, label: widget.readOnly ? l10n.editorOriginal : l10n.edit),
-        if (canSplit) AppSegment(value: _LargeView.split, label: l10n.editorSplitView),
-        AppSegment(value: _LargeView.preview, label: l10n.preview),
-      ],
-      value: view,
-      onChanged: _setView,
-      compact: !widget.compact,
-      // Raised for the small editor's reason: this picks a view of the same
-      // text, and the accent stays free for the syntax inside it.
-      style: AppSegmentStyle.raised,
+    final segments = [
+      AppSegment(value: _LargeView.edit, label: widget.readOnly ? l10n.editorOriginal : l10n.edit),
+      if (canSplit) AppSegment(value: _LargeView.split, label: l10n.editorSplitView),
+      AppSegment(value: _LargeView.preview, label: l10n.preview),
+    ];
+    return ConstrainedBox(
+      // Plus the track's 3px inset either side.
+      constraints: BoxConstraints(
+        minWidth: segments.length * (widget.compact ? _segmentWidthCompact : _segmentWidth) + 6,
+      ),
+      // With `expand`, the row's intrinsic width is its widest segment times
+      // their number — equal segments, none narrower than its label.
+      child: IntrinsicWidth(
+        child: AppSegmentedControl<_LargeView>(
+          segments: segments,
+          value: view,
+          onChanged: _setView,
+          expand: true,
+          compact: !widget.compact,
+          // Raised for the small editor's reason: this picks a view of the same
+          // text, and the accent stays free for the syntax inside it.
+          style: AppSegmentStyle.raised,
+        ),
+      ),
     );
   }
 
@@ -244,24 +270,26 @@ class _LargeEditorState extends State<_LargeEditor> {
         const SizedBox(width: 4),
         title,
         if (_rendersMarkdown) _buildViewToggle(l10n, view, false),
-        PopupMenuButton<VoidCallback>(
-          // The menu that held 「复制全文」 is closed by the time the copy
-          // lands, so its button carries the confirmation.
-          icon: Icon(
-            _copied ? Icons.check : Icons.more_vert,
-            size: 20,
-            color: _copied ? scheme.primary : null,
+        // The menu that held 「复制全文」 is closed by the time the copy lands,
+        // so its button carries the confirmation.
+        Builder(
+          builder: (anchor) => AppIconButton(
+            icon: _copied ? Icons.check : Icons.more_vert,
+            tooltip: _copied ? l10n.editorCopied : l10n.more,
+            selected: _copied,
+            onPressed: () => showAppGlassMenuBelow(
+              anchor,
+              entries: [
+                if (!widget.readOnly)
+                  AppGlassMenuItem(
+                    label: 'Markdown',
+                    checked: _markdown,
+                    onSelected: () => _setMarkdown(!_markdown),
+                  ),
+                AppGlassMenuItem(icon: Icons.content_copy, label: l10n.editorCopyAll, onSelected: _copyAll),
+              ],
+            ),
           ),
-          onSelected: (action) => action(),
-          itemBuilder: (context) => [
-            if (!widget.readOnly)
-              CheckedPopupMenuItem(
-                value: () => _setMarkdown(!_markdown),
-                checked: _markdown,
-                child: const Text('Markdown'),
-              ),
-            PopupMenuItem(value: _copyAll, child: Text(l10n.editorCopyAll)),
-          ],
         ),
       ];
     } else {
@@ -275,11 +303,15 @@ class _LargeEditorState extends State<_LargeEditor> {
           const SizedBox(width: 10),
         ],
         if (!widget.readOnly) ...[
-          if (_rendersMarkdown) ...[rule, const SizedBox(width: 10)],
-          Text('Markdown', style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+          if (_rendersMarkdown) ...[rule, const SizedBox(width: 6)],
+          // Its own 4 of padding each side stands in for part of the gaps.
+          _MarkdownSwitch(
+            value: _markdown,
+            onChanged: _setMarkdown,
+            labelFirst: true,
+            labelColor: scheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 6),
-          AppSwitch(value: _markdown, onChanged: _setMarkdown),
-          const SizedBox(width: 10),
         ],
         rule,
         const SizedBox(width: 6),
@@ -412,11 +444,11 @@ class _LargeEditorState extends State<_LargeEditor> {
     final style = _textStyle(context);
     Widget text = _rendersMarkdown
         ? MarkdownBody(
-            data: _renderedText,
+            data: widget.controller.text,
             selectable: false, // Handled by SelectionArea
             styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(p: style),
           )
-        : Text(_renderedText, style: style);
+        : Text(widget.controller.text, style: style);
     if (widget.selectable) text = SelectionArea(child: text);
 
     return ColoredBox(
