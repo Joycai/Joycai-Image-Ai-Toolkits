@@ -18,10 +18,16 @@ void main() {
     });
 
     test('every id in AppShortcutIds is in the table, and vice versa', () {
-      // Cheap guard against an id constant that no longer resolves: `byId`
-      // throws on a miss.
-      for (final s in AppShortcuts.all) {
-        expect(AppShortcuts.byId(s.id), same(s));
+      // Both directions, because both fail silently. An id constant with no
+      // row behind it makes `byId` throw a StateError from inside a key
+      // handler — on every keystroke, and invisibly to the analyzer, since
+      // the ids are plain strings. A row no constant names is dead data.
+      expect(
+        AppShortcutIds.all.toSet(),
+        AppShortcuts.all.map((s) => s.id).toSet(),
+      );
+      for (final id in AppShortcutIds.all) {
+        expect(() => AppShortcuts.byId(id), returnsNormally, reason: id);
       }
     });
 
@@ -57,44 +63,63 @@ void main() {
     });
 
     for (final macOS in [true, false]) {
-      test('no two rows share an activator inside one scope '
+      test('no two rows share a chord inside one scope '
           '(${macOS ? 'macOS' : 'Windows/Linux'})', () {
-        // scope -> activator -> the row that claimed it.
-        final claimed = <String, Map<SingleActivator, String>>{};
+        // Keyed on `ShortcutKey`, which has value equality. NOT on the
+        // `SingleActivator` it builds: `SingleActivator` inherits identity
+        // equality from Object, so a map keyed on freshly built ones never
+        // finds anything and this test would pass no matter what the table
+        // said. Both platforms run because `macOSOnly` chords exist on one
+        // and not the other.
+        final claimed = <String, Map<ShortcutKey, String>>{};
         final collisions = <String>[];
 
         for (final shortcut in AppShortcuts.all) {
           for (final scope in shortcut.scopeKeys) {
             final inScope = claimed.putIfAbsent(scope, () => {});
             for (final key in shortcut.keys) {
-              final activator = key.activator(macOS: macOS);
-              final owner = inScope[activator];
+              if (!key.existsOn(macOS: macOS)) continue;
+              final owner = inScope[key];
               if (owner != null) {
                 collisions.add('$scope: $key claimed by both $owner and '
                     '${shortcut.id}');
               } else {
-                inScope[activator] = shortcut.id;
+                inScope[key] = shortcut.id;
               }
             }
           }
         }
 
         expect(collisions, isEmpty,
-            reason: 'two rows answer the same key in the same scope, so which '
-                'one runs depends on registration order:\n'
+            reason: 'two rows answer the same chord in the same scope, so '
+                'which one runs depends on registration order:\n'
                 '  ${collisions.join('\n  ')}');
       });
     }
 
     test('Delete and Backspace are always registered together', () {
       for (final s in AppShortcuts.all) {
-        final keys = s.keys.map((k) => k.key).toSet();
+        final bare = s.keys
+            .where((k) => !k.primary && !k.shift && !k.alt)
+            .map((k) => k.key)
+            .toSet();
         expect(
-          keys.contains(LogicalKeyboardKey.delete),
-          keys.contains(LogicalKeyboardKey.backspace),
+          bare.contains(LogicalKeyboardKey.delete),
+          bare.contains(LogicalKeyboardKey.backspace),
           reason: '${s.id}: on a Mac keyboard the main-block key is Backspace, '
               'so a row bound to one must be bound to the other',
         );
+      }
+    });
+
+    test('macOS keeps Finder\'s Cmd+Backspace, Windows gets no alias', () {
+      for (final id in [AppShortcutIds.delete, AppShortcutIds.deleteFolder]) {
+        final chord = AppShortcuts.byId(id).keys.singleWhere((k) => k.primary);
+        expect(chord.key, LogicalKeyboardKey.backspace);
+        expect(chord.macOSOnly, isTrue,
+            reason: 'Ctrl+Backspace means "delete the previous word" off '
+                'macOS and belongs to text fields, not to a file grid');
+        expect(chord.existsOn(macOS: false), isFalse);
       }
     });
 
@@ -121,6 +146,16 @@ void main() {
         AppShortcutIds.copyFileName,
         AppShortcutIds.revealInFileManager,
       ];
+      // …and the folder rows are not shared: the workbench uses the same tree
+      // widget but manages no folders there.
+      for (final id in [
+        AppShortcutIds.renameFolder,
+        AppShortcutIds.deleteFolder,
+        AppShortcutIds.newSubfolder,
+      ]) {
+        expect(AppShortcuts.byId(id).screens, {ShortcutScreen.fileBrowser},
+            reason: id);
+      }
       for (final id in shared) {
         expect(
           AppShortcuts.byId(id).screens,
@@ -129,6 +164,14 @@ void main() {
               'on both screens',
         );
       }
+    });
+
+    test('the workbench tree claims nothing', () {
+      expect(
+          AppShortcuts.forPane(ShortcutScreen.workbench, ShortcutPane.tree),
+          isEmpty,
+          reason: 'it is the same widget as the browser tree but with folder '
+              'management switched off');
     });
 
     test('the grid claims the selection keys on both screens', () {

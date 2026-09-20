@@ -17,9 +17,10 @@
 ///
 /// This file stays pure data plus pure functions: `core` may not import
 /// `l10n`, so entries carry a [AppShortcut.labelKey] and the widgets resolve
-/// it. Platform differences are resolved here and nowhere else — every
-/// `Platform.isMacOS ? isMetaPressed : isControlPressed` in the app should be
-/// [AppShortcuts.isPrimaryPressed].
+/// it. Platform differences are resolved here and nowhere else: a caller asks
+/// [AppShortcut.matches] whether an event is the shortcut, or
+/// [AppShortcuts.primaryModifierLabel] how to spell the modifier, and never
+/// writes `Platform.isMacOS ? isMetaPressed : isControlPressed` itself.
 library;
 
 import 'dart:io';
@@ -68,6 +69,7 @@ class ShortcutKey {
     this.primary = false,
     this.shift = false,
     this.alt = false,
+    this.macOSOnly = false,
   });
 
   final LogicalKeyboardKey key;
@@ -76,6 +78,12 @@ class ShortcutKey {
   final bool primary;
   final bool shift;
   final bool alt;
+
+  /// A chord that exists only on macOS, because it is a macOS convention and
+  /// its literal translation elsewhere would mean something else. `⌘⌫` is the
+  /// case: on a Mac it is Finder's move-to-Trash, while `Ctrl+Backspace` on
+  /// Windows is "delete the previous word" and belongs to text fields.
+  final bool macOSOnly;
 
   /// The activator for a `Shortcuts`/`CallbackShortcuts` map, and the value
   /// the uniqueness test compares.
@@ -102,6 +110,7 @@ class ShortcutKey {
 
     final hw = keyboard ?? HardwareKeyboard.instance;
     final mac = macOS ?? Platform.isMacOS;
+    if (macOSOnly && !mac) return false;
     final primaryHeld = mac ? hw.isMetaPressed : hw.isControlPressed;
     final strayHeld = mac ? hw.isControlPressed : hw.isMetaPressed;
 
@@ -112,20 +121,24 @@ class ShortcutKey {
     return true;
   }
 
+  /// Whether this chord exists at all on the given platform.
+  bool existsOn({required bool macOS}) => macOS || !macOSOnly;
+
   @override
   bool operator ==(Object other) =>
       other is ShortcutKey &&
       other.key == key &&
       other.primary == primary &&
       other.shift == shift &&
-      other.alt == alt;
+      other.alt == alt &&
+      other.macOSOnly == macOSOnly;
 
   @override
-  int get hashCode => Object.hash(key, primary, shift, alt);
+  int get hashCode => Object.hash(key, primary, shift, alt, macOSOnly);
 
   @override
   String toString() => '${primary ? 'Primary+' : ''}${shift ? 'Shift+' : ''}'
-      '${alt ? 'Alt+' : ''}${key.keyLabel}';
+      '${alt ? 'Alt+' : ''}${key.keyLabel}${macOSOnly ? ' (macOS only)' : ''}';
 }
 
 /// One row of the table: an action, the keys that trigger it, and where it is
@@ -196,36 +209,74 @@ abstract final class AppShortcutIds {
   static const focusSearch = 'focusSearch';
   static const refresh = 'refresh';
   static const toggleLeftPanel = 'toggleLeftPanel';
-  static const toggleRightPanel = 'toggleRightPanel';
+  static const toggleStaging = 'toggleStaging';
+  static const toggleConfigPanel = 'toggleConfigPanel';
   static const exitSearch = 'exitSearch';
   static const selectWorkbenchTool = 'selectWorkbenchTool';
 
   static const preview = 'preview';
   static const rename = 'rename';
   static const delete = 'delete';
+  static const renameFolder = 'renameFolder';
+  static const deleteFolder = 'deleteFolder';
   static const selectAll = 'selectAll';
   static const clearSelection = 'clearSelection';
   static const copyFileName = 'copyFileName';
   static const revealInFileManager = 'revealInFileManager';
   static const openWithSystem = 'openWithSystem';
   static const newSubfolder = 'newSubfolder';
+
+  /// Every id above. `AppShortcuts.byId` throws on a miss and the ids are
+  /// plain strings, so a constant with no row behind it would only show up as
+  /// a `StateError` on the next keystroke — this list is what lets a test
+  /// catch it instead. Dart cannot enumerate statics, so it is written out.
+  static const List<String> all = <String>[
+    navigateToDestination,
+    showShortcutPanel,
+    openSettings,
+    focusSearch,
+    refresh,
+    toggleLeftPanel,
+    toggleStaging,
+    toggleConfigPanel,
+    exitSearch,
+    selectWorkbenchTool,
+    preview,
+    rename,
+    delete,
+    renameFolder,
+    deleteFolder,
+    selectAll,
+    clearSelection,
+    copyFileName,
+    revealInFileManager,
+    openWithSystem,
+    newSubfolder,
+  ];
 }
 
 const _bothFileScreens = {ShortcutScreen.fileBrowser, ShortcutScreen.workbench};
+
+/// What deletes, everywhere something can be deleted.
+///
+/// `Delete` and `⌫` are always a pair — on a Mac keyboard the main-block key
+/// is `⌫`. `⌘⌫` is there because it is *the* move-to-Trash chord on macOS and
+/// exact modifier matching would otherwise drop it; Finder users reach for it
+/// without thinking. Windows' `⇧Delete` is deliberately **not** bound: there
+/// it means "skip the recycle bin", and this app asks that question in the
+/// confirmation dialog instead, so binding it to the same trash-first action
+/// would teach the wrong thing.
+const _deleteChords = <ShortcutKey>[
+  ShortcutKey(LogicalKeyboardKey.delete),
+  ShortcutKey(LogicalKeyboardKey.backspace),
+  ShortcutKey(LogicalKeyboardKey.backspace, primary: true, macOSOnly: true),
+];
 
 abstract final class AppShortcuts {
   /// Whether this platform gets shortcuts at all. A phone has no keyboard to
   /// register against; an iPad with an external one is phase two, and needs
   /// its own thinking (no `⌘` on many of them).
   static bool get registersShortcuts => !(Platform.isAndroid || Platform.isIOS);
-
-  /// `⌘` on macOS, `Ctrl` elsewhere — held right now?
-  ///
-  /// The single source for what used to be written out at three call sites.
-  static bool isPrimaryPressed({HardwareKeyboard? keyboard}) {
-    final hw = keyboard ?? HardwareKeyboard.instance;
-    return Platform.isMacOS ? hw.isMetaPressed : hw.isControlPressed;
-  }
 
   /// How the primary modifier is spelled in a label.
   static String get primaryModifierLabel => Platform.isMacOS ? '⌘' : 'Ctrl';
@@ -260,7 +311,8 @@ abstract final class AppShortcuts {
       id: AppShortcutIds.showShortcutPanel,
       layer: ShortcutLayer.app,
       labelKey: 'shortcutShowShortcutPanel',
-      // `/` needs Shift on several layouts, so both forms are registered.
+      // Both forms: `⇧⌘/` is what a US-layout user presses when they think
+      // "Cmd+?", and it costs nothing to answer it.
       keys: [
         ShortcutKey(LogicalKeyboardKey.slash, primary: true),
         ShortcutKey(LogicalKeyboardKey.slash, primary: true, shift: true),
@@ -298,11 +350,25 @@ abstract final class AppShortcuts {
       screens: _bothFileScreens,
       keys: [ShortcutKey(LogicalKeyboardKey.backslash, primary: true)],
     ),
+    // `⇧⌘\` is the right-hand column on both screens, but the column is not
+    // the same thing — staging in the browser, the run parameters in the
+    // workbench — so it is two rows with one chord. Same scope rule as `Esc`:
+    // different scopes may share a chord, and the panel then names each one
+    // correctly instead of calling both "the right panel".
     AppShortcut(
-      id: AppShortcutIds.toggleRightPanel,
+      id: AppShortcutIds.toggleStaging,
       layer: ShortcutLayer.screen,
-      labelKey: 'shortcutToggleRightPanel',
-      screens: _bothFileScreens,
+      labelKey: 'shortcutToggleStaging',
+      screens: {ShortcutScreen.fileBrowser},
+      keys: [
+        ShortcutKey(LogicalKeyboardKey.backslash, primary: true, shift: true),
+      ],
+    ),
+    AppShortcut(
+      id: AppShortcutIds.toggleConfigPanel,
+      layer: ShortcutLayer.screen,
+      labelKey: 'shortcutToggleConfigPanel',
+      screens: {ShortcutScreen.workbench},
       keys: [
         ShortcutKey(LogicalKeyboardKey.backslash, primary: true, shift: true),
       ],
@@ -347,7 +413,7 @@ abstract final class AppShortcuts {
       layer: ShortcutLayer.pane,
       labelKey: 'shortcutRename',
       screens: _bothFileScreens,
-      panes: {ShortcutPane.grid, ShortcutPane.tree},
+      panes: {ShortcutPane.grid},
       keys: [ShortcutKey(LogicalKeyboardKey.f2)],
     ),
     AppShortcut(
@@ -355,11 +421,28 @@ abstract final class AppShortcuts {
       layer: ShortcutLayer.pane,
       labelKey: 'shortcutDelete',
       screens: _bothFileScreens,
-      panes: {ShortcutPane.grid, ShortcutPane.tree},
-      keys: [
-        ShortcutKey(LogicalKeyboardKey.delete),
-        ShortcutKey(LogicalKeyboardKey.backspace),
-      ],
+      panes: {ShortcutPane.grid},
+      keys: _deleteChords,
+    ),
+    // The tree renames and deletes *folders*, which is a different act with a
+    // different confirmation — and only in the file browser: the workbench
+    // shares the tree widget but manages no folders there (`useFileBrowserState`
+    // gates it, plan §4b).
+    AppShortcut(
+      id: AppShortcutIds.renameFolder,
+      layer: ShortcutLayer.pane,
+      labelKey: 'shortcutRenameFolder',
+      screens: {ShortcutScreen.fileBrowser},
+      panes: {ShortcutPane.tree},
+      keys: [ShortcutKey(LogicalKeyboardKey.f2)],
+    ),
+    AppShortcut(
+      id: AppShortcutIds.deleteFolder,
+      layer: ShortcutLayer.pane,
+      labelKey: 'shortcutDeleteFolder',
+      screens: {ShortcutScreen.fileBrowser},
+      panes: {ShortcutPane.tree},
+      keys: _deleteChords,
     ),
     AppShortcut(
       id: AppShortcutIds.selectAll,
