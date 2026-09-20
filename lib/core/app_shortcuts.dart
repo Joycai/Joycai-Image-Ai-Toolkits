@@ -180,20 +180,9 @@ class AppShortcut {
   /// wants; every surface that draws keys collapses these the same way,
   /// which is why the question is answered here rather than by each of them.
   bool get isDigitRange {
-    if (keys.length < 3) return false;
-    const digits = <LogicalKeyboardKey>[
-      LogicalKeyboardKey.digit1,
-      LogicalKeyboardKey.digit2,
-      LogicalKeyboardKey.digit3,
-      LogicalKeyboardKey.digit4,
-      LogicalKeyboardKey.digit5,
-      LogicalKeyboardKey.digit6,
-      LogicalKeyboardKey.digit7,
-      LogicalKeyboardKey.digit8,
-      LogicalKeyboardKey.digit9,
-    ];
+    if (keys.length < 3 || keys.length > _digitKeys.length) return false;
     for (var i = 0; i < keys.length; i++) {
-      if (keys[i].key != digits[i]) return false;
+      if (keys[i].key != _digitKeys[i]) return false;
       if (keys[i].primary != keys.first.primary) return false;
       if (keys[i].shift != keys.first.shift) return false;
       if (keys[i].alt != keys.first.alt) return false;
@@ -281,6 +270,21 @@ abstract final class AppShortcutIds {
     newSubfolder,
   ];
 }
+
+/// The number row, in order — what [AppShortcut.isDigitRange] measures a row
+/// against. A row longer than this is not a range this can describe, and
+/// says so rather than walking off the end.
+const _digitKeys = <LogicalKeyboardKey>[
+  LogicalKeyboardKey.digit1,
+  LogicalKeyboardKey.digit2,
+  LogicalKeyboardKey.digit3,
+  LogicalKeyboardKey.digit4,
+  LogicalKeyboardKey.digit5,
+  LogicalKeyboardKey.digit6,
+  LogicalKeyboardKey.digit7,
+  LogicalKeyboardKey.digit8,
+  LogicalKeyboardKey.digit9,
+];
 
 const _bothFileScreens = {ShortcutScreen.fileBrowser, ShortcutScreen.workbench};
 

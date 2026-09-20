@@ -122,6 +122,49 @@ void main() {
       }
     });
 
+    test('a run of number keys reads as a range, anything else does not', () {
+      expect(AppShortcuts.byId(AppShortcutIds.navigateToDestination).isDigitRange,
+          isTrue);
+      expect(AppShortcuts.byId(AppShortcutIds.selectWorkbenchTool).isDigitRange,
+          isTrue);
+      expect(AppShortcuts.byId(AppShortcutIds.delete).isDigitRange, isFalse,
+          reason: 'three chords, but not digits');
+
+      // A row longer than the number row answers no rather than walking off
+      // the end of the table it measures against.
+      const long = AppShortcut(
+        id: 'tooLong',
+        layer: ShortcutLayer.app,
+        labelKey: 'tooLong',
+        keys: <ShortcutKey>[
+          ShortcutKey(LogicalKeyboardKey.digit1, primary: true),
+          ShortcutKey(LogicalKeyboardKey.digit2, primary: true),
+          ShortcutKey(LogicalKeyboardKey.digit3, primary: true),
+          ShortcutKey(LogicalKeyboardKey.digit4, primary: true),
+          ShortcutKey(LogicalKeyboardKey.digit5, primary: true),
+          ShortcutKey(LogicalKeyboardKey.digit6, primary: true),
+          ShortcutKey(LogicalKeyboardKey.digit7, primary: true),
+          ShortcutKey(LogicalKeyboardKey.digit8, primary: true),
+          ShortcutKey(LogicalKeyboardKey.digit9, primary: true),
+          ShortcutKey(LogicalKeyboardKey.digit0, primary: true),
+        ],
+      );
+      expect(long.isDigitRange, isFalse);
+
+      // …and so does one whose modifiers do not agree across the run.
+      const mixed = AppShortcut(
+        id: 'mixed',
+        layer: ShortcutLayer.app,
+        labelKey: 'mixed',
+        keys: <ShortcutKey>[
+          ShortcutKey(LogicalKeyboardKey.digit1, primary: true),
+          ShortcutKey(LogicalKeyboardKey.digit2, primary: true, shift: true),
+          ShortcutKey(LogicalKeyboardKey.digit3, primary: true),
+        ],
+      );
+      expect(mixed.isDigitRange, isFalse);
+    });
+
     test('Esc lives at two tiers on purpose — the ladder, not a collision', () {
       final esc = AppShortcuts.all
           .where((s) => s.keys
