@@ -845,6 +845,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expandEditor => 'Expand editor';
 
   @override
+  String get collapseEditor => 'Collapse editor';
+
+  @override
+  String get editorSplitView => 'Split';
+
+  @override
+  String get editorSourceText => 'Source';
+
+  @override
+  String get editorOriginal => 'Source';
+
+  @override
+  String get editorCopyAll => 'Copy all';
+
+  @override
+  String get editorCopied => 'Copied';
+
+  @override
+  String get editorReadOnly => 'Read-only';
+
+  @override
+  String get editorDone => 'Done';
+
+  @override
+  String editorCount(int chars, int lines) {
+    return '$chars chars · $lines lines';
+  }
+
+  @override
+  String get editorKeyHint => 'Esc to collapse · Tab to indent';
+
+  @override
   String get back => 'Back';
 
   @override
