@@ -8,7 +8,9 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
+import '../../core/app_shortcuts.dart';
 import '../../core/design_tokens.dart';
+import '../../core/text_editing_focus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/browser_file.dart';
 import '../../services/files/file_permission_service.dart';
@@ -356,16 +358,26 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     }
   }
 
+  /// Whether this row holds the keyboard.
+  bool _focused = false;
+
+  /// The tree pane's keys (L2), read off the one registry so the tree and the
+  /// grid cannot drift apart on what `F2` and `Delete` mean.
+  ///
+  /// Only reached while this row holds focus, so "which folder" never needs
+  /// guessing. While the inline editor is open the row answers nothing: the
+  /// field owns the keyboard.
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (!widget.useFileBrowserState || _edit != null || event is! KeyDownEvent) {
       return KeyEventResult.ignored;
     }
-    final key = event.logicalKey;
-    if (key == LogicalKeyboardKey.f2) {
+    if (isTextEditingFocused()) return KeyEventResult.ignored;
+
+    if (AppShortcuts.byId(AppShortcutIds.renameFolder).matches(event)) {
       _startRename();
       return KeyEventResult.handled;
     }
-    if (key == LogicalKeyboardKey.delete || key == LogicalKeyboardKey.backspace) {
+    if (AppShortcuts.byId(AppShortcutIds.deleteFolder).matches(event)) {
       _delete();
       return KeyEventResult.handled;
     }
@@ -523,6 +535,10 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
           label: folderName,
           labelColor: isUnreachable ? colorScheme.error : null,
           selected: highlight,
+          // Only where the keys behind it exist: the workbench shares this
+          // tree with folder management switched off, and a keyboard ring
+          // there would advertise an F2 that does nothing.
+          focused: _focused && widget.useFileBrowserState,
           dropTone: drop?.tone,
           dropNote: drop?.note,
           // The workbench has no context menu, so this is its only way to
@@ -568,6 +584,12 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
           Widget child = Focus(
             focusNode: _focusNode,
             onKeyEvent: _onKey,
+            // The row is the keyboard's target while it has focus, so it has
+            // to look like it. Nothing else on this screen said so, which is
+            // how `Delete` kept acting on a folder clicked long ago.
+            onFocusChange: (has) {
+              if (mounted && has != _focused) setState(() => _focused = has);
+            },
             child: row(drop),
           );
           if (_pulse > 0) child = _Pulsed(key: ValueKey(_pulse), child: child);

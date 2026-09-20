@@ -3,7 +3,7 @@
 Cross-platform Flutter desktop/mobile app for AI image and video generation, built
 around a multi-vendor LLM layer, for artists and designers working with AI media.
 
-**Version:** 4.21.1 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
+**Version:** 4.22.0 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
 
 ## Key Commands
 
@@ -31,7 +31,8 @@ so it stays in the gate.
 
 ```
 main.dart          MultiProvider root → MyApp → AppWindowFrame → MainNavigationScreen
-core/              Responsive breakpoints, AppConstants/enums, AppPaths, file utils, design_tokens
+core/              Responsive breakpoints, AppConstants/enums, AppPaths, file utils, design_tokens,
+                     app_shortcuts (the one keyboard-shortcut table)
                      (incl. AppDock, the phone dock's size), app_theme, app_semantic_colors, theme_accent
 l10n/              generated — never edit; sources are l10n/src/<lang>/<module>.arb
 models/            LLMModel, LLMChannel, PricingGroup, Prompt/SystemPrompt (+ PresetOutputKind), PromptTag, PromptHistoryEntry,
@@ -87,6 +88,7 @@ tried and rejected.
 | anything under `lib/services/llm/` | [docs/architecture/llm-three-layer.md](docs/architecture/llm-three-layer.md) — layering, routing table, greppable red-flag list |
 | `services/assistant/` (esp. `assistant_context_window.dart`), `context_budget.dart`, `knowledge_base_service.dart` | [docs/architecture/assistant-context.md](docs/architecture/assistant-context.md) — elide/compact layers, `context_window` tri-state, knowledge paging |
 | `design_tokens.dart`, `app_semantic_colors.dart`, `app_theme.dart`, any accent/status colour in `widgets/` | [docs/architecture/design-tokens.md](docs/architecture/design-tokens.md) — one spec blue → 8 seeds, `onAccentTint`, alpha ladder, colours that must *not* follow the seed |
+| `core/app_shortcuts.dart`, `widgets/ui/focus_pane.dart`, any `onKeyEvent` in a screen | [docs/architecture/keyboard-shortcuts.md](docs/architecture/keyboard-shortcuts.md) — the three tiers, why selection keys belong to a focus region, and the handful of things that fail silently |
 | proposing a new round of work | [docs/plans/README.md](docs/plans/README.md) (executed rounds, **what is still owed**) and [plans/README.md](plans/README.md) (animation plans, and effects ruled deliberate — do not "fix" those). Plan files are deleted once executed: an empty directory does not mean the work is open |
 
 [docs/README.md](docs/README.md) indexes the rest: protocol facts (`docs/api/`), the

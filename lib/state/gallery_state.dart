@@ -77,6 +77,12 @@ class GalleryState extends ChangeNotifier {
   List<AppImage> processedImages = [];
   List<AppImage> _selectedImages = [];
   Map<String, int> _selectionOrder = {};
+
+  /// The last picture clicked without Shift — the fixed end of a Shift-click
+  /// range. Held by path, not index, so it survives a rescan or a change of
+  /// view; [selectImageRangeTo] resolves it against the grid's current order
+  /// at click time.
+  String? _selectionAnchorPath;
   List<AppImage> droppedImages = []; // Transient workspace
 
   List<AppImage> get selectedImages => _selectedImages;
@@ -601,6 +607,21 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Drops several pictures out of the temporary workspace at once.
+  ///
+  /// One pass and one notification: removing a selection one call at a time
+  /// re-filtered the list, re-validated the selection against all four
+  /// collections and rebuilt the grid once per picture.
+  void removeDroppedImages(Iterable<String> paths) {
+    final gone = paths.toSet();
+    final remaining =
+        droppedImages.where((img) => !gone.contains(img.path)).toList();
+    if (remaining.length == droppedImages.length) return;
+    droppedImages = remaining;
+    _cleanupSelection();
+    notifyListeners();
+  }
+
   /// Drops one picture out of the temporary workspace.
   ///
   /// The file is left alone: what the workspace holds is a reference, and the
@@ -632,6 +653,48 @@ class GalleryState extends ChangeNotifier {
       newList.add(image);
     }
     selectedImages = newList;
+    // A plain click re-anchors: the next Shift-click ranges from here.
+    _selectionAnchorPath = image.path;
+    notifyListeners();
+  }
+
+  /// Selects everything from the anchor (the last plain click) to [image]
+  /// inclusive, in the order the grid is showing — the Shift-click range the
+  /// file browser has had all along ([FileBrowserState.selectRangeTo]).
+  ///
+  /// Adds the span to what is already selected rather than replacing it, and
+  /// the anchor stays put so successive Shift-clicks re-range from the same
+  /// origin. Videos are skipped, exactly as [toggleImageSelection] skips
+  /// them — a range must not smuggle in what a click cannot pick. Falls back
+  /// to a plain toggle when there is no anchor yet, or the anchor has
+  /// scrolled out of the view this grid is showing.
+  void selectImageRangeTo(AppImage image) {
+    if (AppConstants.isVideoFile(image.path)) return;
+
+    final anchorPath = _selectionAnchorPath;
+    // What the grid is *showing*, not the source list: the gallery has four
+    // views (all / processed / temp / folder) and a range has to mean the
+    // span the user can see. Looking it up in `galleryImages` while the temp
+    // workspace was on screen found neither end and quietly degraded
+    // Shift+click to a plain click.
+    final view = currentViewImages;
+    final anchorIndex =
+        anchorPath == null ? -1 : view.indexWhere((i) => i.path == anchorPath);
+    final targetIndex = view.indexWhere((i) => i.path == image.path);
+    if (anchorIndex == -1 || targetIndex == -1) {
+      toggleImageSelection(image);
+      return;
+    }
+
+    final start = anchorIndex < targetIndex ? anchorIndex : targetIndex;
+    final end = anchorIndex < targetIndex ? targetIndex : anchorIndex;
+    final newList = List<AppImage>.from(selectedImages);
+    for (final candidate in view.getRange(start, end + 1)) {
+      if (AppConstants.isVideoFile(candidate.path)) continue;
+      if (newList.any((i) => i.path == candidate.path)) continue;
+      newList.add(candidate);
+    }
+    selectedImages = newList;
     notifyListeners();
   }
 
@@ -645,12 +708,17 @@ class GalleryState extends ChangeNotifier {
 
   void clearImageSelection() {
     selectedImages = [];
+    _selectionAnchorPath = null;
     notifyListeners();
   }
 
+  /// Everything the grid is currently showing, videos excepted.
+  ///
+  /// Reads [currentViewImages] for the same reason [selectImageRangeTo]
+  /// does: in the temporary workspace or a single folder, "select all" has
+  /// to mean what is on screen, not the aggregate behind it.
   void selectAllImages() {
-    // Select all from current active collections that are not videos
-    selectedImages = galleryImages
+    selectedImages = currentViewImages
         .where((img) => !AppConstants.isVideoFile(img.path))
         .toList();
     notifyListeners();

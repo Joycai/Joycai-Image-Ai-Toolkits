@@ -6,12 +6,14 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/file_utils.dart';
+import '../../../core/app_shortcuts.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../services/db/repositories/image_layer_repository.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/ui/app_key_label.dart';
 import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
@@ -44,6 +46,9 @@ const double kImageCardMenuWidth = 240;
 /// action runs once the menu has been popped, so the dialogs opened from here
 /// need no post-frame deferral. While the menu is up the gallery's selection
 /// bar hides (`A1` 玻璃预算: 「菜单打开即隐操作条」).
+/// See `file_context_menu._keys`: the key a row really has, from the table.
+String? _keys(String id) => AppKeyLabel.menuHint(AppShortcuts.byId(id));
+
 Future<void> showImageCardContextMenu(
   BuildContext context, {
   required AppImage imageFile,
@@ -79,9 +84,16 @@ Future<void> showImageCardContextMenu(
       : null;
   if (!context.mounted) return;
 
+  final bool inTempWorkspace =
+      appState.galleryState.viewMode == GalleryViewMode.temp;
+
   final entries = <AppGlassMenuEntry>[
     if (isVideo)
-      AppGlassMenuItem(icon: Icons.visibility_outlined, label: l10n.openInPreview, onSelected: openPreview)
+      AppGlassMenuItem(
+          icon: Icons.visibility_outlined,
+          label: l10n.openInPreview,
+          trailing: _keys(AppShortcutIds.preview),
+          onSelected: openPreview)
     else
       AppGlassMenuQuickBlock([
         AppGlassMenuQuickCell(icon: Icons.visibility_outlined, label: l10n.preview, onSelected: openPreview),
@@ -189,6 +201,7 @@ Future<void> showImageCardContextMenu(
         AppGlassMenuItem(
           icon: Icons.edit_outlined,
           label: l10n.rename,
+          trailing: _keys(AppShortcutIds.rename),
           onSelected: () {
             if (!context.mounted) return;
             showFileRenameDialog(
@@ -201,16 +214,27 @@ Future<void> showImageCardContextMenu(
         AppGlassMenuItem(
           icon: Icons.content_copy_outlined,
           label: l10n.copyFilename,
+          trailing: _keys(AppShortcutIds.copyFileName),
+          // The whole selection, one name per line — what `⇧⌘C` does. A row
+          // that carries a key's badge and then acts on one file while the
+          // key acts on five is the drift this round exists to remove.
           onSelected: () {
-            final filename = imageFile.name;
-            Clipboard.setData(ClipboardData(text: filename));
+            Clipboard.setData(
+              ClipboardData(text: targets.map((i) => i.name).join('\n')),
+            );
             if (!context.mounted) return;
-            AppSnackBar.success(context, l10n.copiedToClipboard(filename));
+            AppSnackBar.success(
+              context,
+              multi
+                  ? l10n.copiedFilenames(targets.length)
+                  : l10n.copiedToClipboard(imageFile.name),
+            );
           },
         ),
         AppGlassMenuItem(
           icon: Icons.folder_open_outlined,
           label: l10n.openInFolder,
+          trailing: _keys(AppShortcutIds.revealInFileManager),
           onSelected: () => FileUtils.openFolder(imageFile.path),
         ),
       ],
@@ -244,21 +268,36 @@ Future<void> showImageCardContextMenu(
     // change it would be acting on something not on screen. Sits above
     // Delete as the softer of the two: this drops a reference, Delete goes
     // to the file.
-    if (appState.galleryState.viewMode == GalleryViewMode.temp)
+    // `Delete` is the one key in this round that means two things (plan D2),
+    // and this pair of rows is its only explanation: in the temporary
+    // workspace the key takes the picture out of the basket, everywhere else
+    // it deletes the file. Whichever meaning is in force carries the badge,
+    // so the menu can be read instead of the rule being remembered.
+    if (inTempWorkspace)
       AppGlassMenuItem(
         icon: Icons.remove_circle_outline,
         label: l10n.removeFromWorkspace,
-        onSelected: () => appState.galleryState.removeDroppedImage(imageFile.path),
+        trailing: _keys(AppShortcutIds.delete),
+        onSelected: () => appState.galleryState
+            .removeDroppedImages(targets.map((i) => i.path).toList()),
       ),
     AppGlassMenuItem(
       icon: Icons.delete_outline,
-      // The row says what the confirm will do: Windows sends the file to the
-      // recycle bin, the others delete it outright.
-      label: Platform.isWindows ? l10n.moveToTrash : l10n.delete,
+      // The dialog says which it will be — trash where the platform has one,
+      // a permanent delete only where it does not — so the row no longer has
+      // to guess per platform.
+      //
+      // `targets`, like the share row above and like the key: the count is
+      // in the label so a selection of five cannot be mistaken for the one
+      // picture under the pointer.
+      label: multi ? l10n.deleteFiles(targets.length) : l10n.delete,
+      trailing: inTempWorkspace ? null : _keys(AppShortcutIds.delete),
       danger: true,
       onSelected: () {
         if (!context.mounted) return;
-        confirmAndDeleteImageFile(context, imageFile, l10n);
+        // Copied: the run refreshes the gallery at the end, which rewrites
+        // the live selection this list is.
+        confirmAndDeleteImageFiles(context, List<AppImage>.of(targets));
       },
     ),
   ];

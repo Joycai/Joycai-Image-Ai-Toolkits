@@ -180,6 +180,7 @@ class FolderTreeRow extends StatefulWidget {
     this.hoverAction,
     this.editor,
     this.selected = false,
+    this.focused = false,
     this.dropTone,
     this.dropNote,
     this.onTap,
@@ -215,6 +216,12 @@ class FolderTreeRow extends StatefulWidget {
   final Widget? editor;
 
   final bool selected;
+
+  /// Whether the keyboard is on this row: it is the one `F2` renames and
+  /// `Delete` removes. Distinct from [selected], which means "you are viewing
+  /// this folder" — the audit found the row could hold the keyboard for
+  /// minutes with nothing on screen saying so (`00f` 帧 3).
+  final bool focused;
 
   /// Something is dragged over this row (`00d · 1d`): what a release does,
   /// or that it is refused. Null at rest.
@@ -359,7 +366,10 @@ class _FolderTreeRowState extends State<FolderTreeRow> {
       foregroundDecoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
-          color: dropEdge ?? colorScheme.primary.withValues(alpha: 0),
+          color: dropEdge ??
+              (widget.focused
+                  ? colorScheme.primary
+                  : colorScheme.primary.withValues(alpha: 0)),
           width: 2,
         ),
       ),

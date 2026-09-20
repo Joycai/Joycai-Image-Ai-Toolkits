@@ -51,6 +51,14 @@
   "openInFolder": "在資料夾中開啟",
   "openInPreview": "在預覽中開啟",
   "copiedToClipboard": "已複製: {text}",
+  "copiedFilenames": "已複製 {count} 個檔名",
+  "@copiedFilenames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "selectedCount": "已選取 {count} 個",
   "shareFiles": "分享選取的 {count} 個項目",
   "comingSoon": "即將推出",

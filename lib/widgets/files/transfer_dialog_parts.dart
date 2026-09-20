@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
-import '../../../core/app_semantic_colors.dart';
-import '../../../core/app_theme.dart';
-import '../../../core/design_tokens.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../models/browser_file.dart';
+import '../../core/app_semantic_colors.dart';
+import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/browser_file.dart';
 
 /// Pieces shared by the file browser's transfer and folder dialogs — the
 /// staging paste, the folder move, the folder delete and the AI rename

@@ -811,6 +811,14 @@
       }
     }
   },
+  "copiedFilenames": "Copied {count} file names",
+  "@copiedFilenames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "selectedCount": "{count} selected",
   "@selectedCount": {
     "placeholders": {
@@ -2524,6 +2532,48 @@
   "notificationsDesc": "Notify when a task finishes or fails",
   "mcpServerDesc": "Lets external tools call this app over MCP",
   "mcpComingSoon": "Coming soon (not in this version)",
+  "shortcutNavigateToDestination": "Go to page 1–8",
+  "shortcutShowShortcutPanel": "Keyboard shortcuts",
+  "shortcutOpenSettings": "Settings",
+  "shortcutFocusSearch": "Search files",
+  "shortcutRefresh": "Refresh",
+  "shortcutToggleLeftPanel": "Show or hide the folder column",
+  "shortcutToggleStaging": "Show or hide the staging column",
+  "shortcutToggleConfigPanel": "Show or hide the parameters panel",
+  "shortcutExitSearch": "Leave search",
+  "shortcutSelectWorkbenchTool": "Switch tool",
+  "shortcutPreview": "Open preview",
+  "shortcutRename": "Rename",
+  "shortcutDelete": "Delete",
+  "shortcutRenameFolder": "Rename folder",
+  "shortcutDeleteFolder": "Delete folder",
+  "shortcutSelectAll": "Select all",
+  "shortcutClearSelection": "Clear selection",
+  "shortcutCopyFileName": "Copy file name",
+  "shortcutRevealInFileManager": "Show in folder",
+  "shortcutOpenWithSystem": "Open with the default app",
+  "shortcutNewSubfolder": "New subfolder",
+  "shortcutsTitle": "Keyboard shortcuts",
+  "shortcutsGroupGlobal": "Anywhere",
+  "shortcutsGroupScreen": "This page",
+  "shortcutsGroupFiles": "Files",
+  "shortcutsPaneTree": "Folder tree",
+  "shortcutsPaneGrid": "File grid",
+  "shortcutsPaneGallery": "Gallery",
+  "shortcutsPaneStaging": "Staging",
+  "shortcutsActiveRegion": "active region: {region}",
+  "@shortcutsActiveRegion": {
+    "placeholders": {
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsInactiveRegion": "not active",
+  "shortcutsActiveRegionNote": "These act on the active region, the one named above. Click a region to move the keyboard there — whichever region is listening draws its selection in the accent colour.",
+  "shortcutsClose": "Close",
+  "shortcutsCustomise": "Custom key bindings",
+  "shortcutsCustomiseLater": "a later round",
   "tasks": "Tasks",
   "taskQueueManager": "Task Queue Manager",
   "noTasksInQueue": "No tasks in queue",
@@ -2755,17 +2805,6 @@
   "thumbnailDisplay": "Thumbnail Display",
   "thumbnailFitContain": "Fit (whole image)",
   "thumbnailFitCover": "Fill (cropped)",
-  "deleteFileConfirmTitle": "Delete File?",
-  "deleteFileConfirmMessage": "Are you sure you want to delete \"{filename}\"?",
-  "@deleteFileConfirmMessage": {
-    "placeholders": {
-      "filename": {
-        "type": "String"
-      }
-    }
-  },
-  "permanentlyDelete": "Permanently Delete",
-  "deleteSuccess": "Deleted successfully",
   "deleteFailed": "Failed to delete: {error}",
   "@deleteFailed": {
     "placeholders": {

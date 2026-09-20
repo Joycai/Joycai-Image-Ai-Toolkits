@@ -148,6 +148,14 @@ class AppState extends ChangeNotifier {
   bool notificationsEnabled = true;
   bool isConsoleExpanded = false;
   bool isSidebarExpanded = true;
+
+  /// Whether the workbench's right-hand parameter column is showing inline.
+  ///
+  /// Separate from [isSidebarExpanded]: the two columns hold different things
+  /// and `⇧⌘\` is a different key from `⌘\`. Only consulted on the tabs that
+  /// have such a panel — the mask and crop tools have none, and a preference
+  /// cannot conjure one.
+  bool isConfigPanelExpanded = true;
   /// `A1 16a` draws the workbench's folder column at 236, and the number
   /// matters beyond the column: it was 400, which left the centre too narrow
   /// for the gallery toolbar to lay its controls out inline, so the toolbar's
@@ -476,6 +484,8 @@ class AppState extends ChangeNotifier {
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
     isSidebarExpanded = (await _db.getSetting('is_sidebar_expanded') ?? 'true') == 'true';
+    isConfigPanelExpanded =
+        (await _db.getSetting('is_config_panel_expanded') ?? 'true') == 'true';
 
     final savedConsoleHeight = await _db.getSetting('console_height');
     if (savedConsoleHeight != null) {
@@ -651,8 +661,14 @@ class AppState extends ChangeNotifier {
 
   Future<void> setSidebarExpanded(bool value) async {
     isSidebarExpanded = value;
-    await _db.saveSetting('is_sidebar_expanded', value.toString());
     notifyListeners();
+    await _db.saveSetting('is_sidebar_expanded', value.toString());
+  }
+
+  Future<void> setConfigPanelExpanded(bool value) async {
+    isConfigPanelExpanded = value;
+    notifyListeners();
+    await _db.saveSetting('is_config_panel_expanded', value.toString());
   }
 
   Timer? _consoleHeightSaveTimer;

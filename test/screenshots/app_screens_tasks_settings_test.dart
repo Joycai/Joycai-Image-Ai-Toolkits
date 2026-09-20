@@ -50,6 +50,37 @@ void main() {
     });
   }
 
+  // The keyboard category (`00f` 帧 5): a page of its own, and the longest
+  // list in settings — the thing to look at is whether a badge and a long
+  // action name still share a row at the narrow width, and whether the
+  // region note under a pane-level action reads as a note rather than as a
+  // second action.
+  for (final (ShotSize size, Brightness brightness) in <(ShotSize, Brightness)>[
+    (kShotSizes.last, Brightness.light),
+    (kShotSizes.last, Brightness.dark),
+    (kShotSizes[1], Brightness.light),
+    // The narrowest form too: a long action name and a three-chord badge
+    // have to share one row there, and the phone page is the only place
+    // where they genuinely might not.
+    (kShotSizes.first, Brightness.light),
+  ]) {
+    testWidgets('settings · keyboard @ ${size.label} ${brightness.name}',
+        (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.settings,
+        size: size,
+        brightness: brightness,
+        suffix: 'keyboard',
+        after: (WidgetTester tester) async {
+          await tester.tap(find.text('键盘快捷键').first);
+          await settle(tester);
+        },
+      );
+    });
+  }
+
   // The About category is a page of its own (`E1 · 2a`) and the default
   // settings shot never opens it. The phone form stacks the identity block
   // (`2b`), which is the only part of the page that changes shape.

@@ -16,6 +16,8 @@
 //   · the list row's selected label is the *darker* accent on its own wash,
 //     not one tone against itself
 //   · the neutral slider stays grey while the parameter one takes the accent
+//   · the key badges stay neutral at every seed — a shortcut is not a state,
+//     and an accent-tinted one would read as "this key is on"
 //
 // Two families here are drawn as specimens rather than mounted for real, and
 // the reason is the same for both: a [Tooltip]'s bubble and a [PopupMenu]'s
@@ -32,6 +34,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_semantic_colors.dart';
+import 'package:joycai_image_ai_toolkits/core/app_shortcuts.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
@@ -45,6 +48,7 @@ import 'package:joycai_image_ai_toolkits/widgets/ui/app_empty_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_field_size.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_labelled_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_icon_button.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_key_label.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_neutral_marker.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_search_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_section_label.dart';
@@ -312,6 +316,17 @@ class _Gallery extends StatelessWidget {
                   onSelected: null,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
+              ]),
+              const _Label('键位徽标 · 中性，不随种子色走（00f）'),
+              Wrap(spacing: 8, runSpacing: 8, children: <Widget>[
+                for (final id in <String>[
+                  AppShortcutIds.rename,
+                  AppShortcutIds.copyFileName,
+                  AppShortcutIds.refresh,
+                  AppShortcutIds.navigateToDestination,
+                  AppShortcutIds.delete,
+                ])
+                  AppShortcutKeys(AppShortcuts.byId(id)),
               ]),
               const _Label('中性标记 · 七个种子色下应完全一致（A3e）'),
               const Wrap(spacing: 8, runSpacing: 8, children: [

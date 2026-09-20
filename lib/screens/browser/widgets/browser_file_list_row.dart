@@ -4,6 +4,7 @@ import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
+import '../../../widgets/ui/focus_pane.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/media/image_metadata_service.dart';
@@ -88,10 +89,18 @@ class _BrowserFileListRowState extends State<BrowserFileListRow> {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final selected = widget.isSelected;
+    // See `FileCard`: a selection the keyboard no longer owns drops to a
+    // neutral wash rather than disappearing (`00f` 帧 3). Asked only while
+    // selected — see [FocusPane.activeOf].
+    final paneActive = selected && FocusPane.activeOf(context);
     final plate = browserFileTypeColors(context, widget.file.category);
 
     final Color ground = selected
-        ? Color.alphaBlend(scheme.accentTint, scheme.surfaceContainerLow)
+        ? Color.alphaBlend(
+            paneActive
+                ? scheme.accentTint
+                : scheme.onSurface.withValues(alpha: 0.07),
+            scheme.surfaceContainerLow)
         : _hovered
             ? Color.alphaBlend(scheme.onSurface.withValues(alpha: 0.04), scheme.surfaceContainerLow)
             : scheme.surfaceContainerLow;
@@ -137,7 +146,7 @@ class _BrowserFileListRowState extends State<BrowserFileListRow> {
                       softWrap: false,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.bodySmall!.mono.copyWith(
-                        color: selected ? scheme.onAccentTint : scheme.onSurface,
+                        color: paneActive ? scheme.onAccentTint : scheme.onSurface,
                         fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
                       ),
                     ),
@@ -151,7 +160,7 @@ class _BrowserFileListRowState extends State<BrowserFileListRow> {
                 const _StagedBadge(),
               ],
               const SizedBox(width: 12),
-              _SelectionCircle(selected: selected),
+              _SelectionCircle(selected: selected, active: paneActive),
             ],
           ),
         ),
@@ -271,9 +280,12 @@ class _StagedBadge extends StatelessWidget {
 /// A 20px check: the accent solid under its ink when selected, a 1.5px
 /// hairline ring when not.
 class _SelectionCircle extends StatelessWidget {
-  const _SelectionCircle({required this.selected});
+  const _SelectionCircle({required this.selected, this.active = true});
 
   final bool selected;
+
+  /// Whether the pane owning this row has the keyboard.
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -285,13 +297,21 @@ class _SelectionCircle extends StatelessWidget {
       height: 20,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: selected ? scheme.primary : Colors.transparent,
+        color: selected
+            ? (active ? scheme.primary : scheme.outline)
+            : Colors.transparent,
         border: Border.all(
-          color: selected ? scheme.primary : scheme.outlineVariant,
+          color: selected
+              ? (active ? scheme.primary : scheme.outline)
+              : scheme.outlineVariant,
           width: 1.5,
         ),
       ),
-      child: selected ? Icon(Icons.check, size: AppSize.iconSm, color: scheme.onPrimary) : null,
+      child: selected
+          ? Icon(Icons.check,
+              size: AppSize.iconSm,
+              color: active ? scheme.onPrimary : scheme.surface)
+          : null,
     );
   }
 }

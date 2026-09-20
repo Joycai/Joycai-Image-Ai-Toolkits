@@ -58,6 +58,14 @@
       }
     }
   },
+  "copiedFilenames": "Copied {count} file names",
+  "@copiedFilenames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "selectedCount": "{count} selected",
   "@selectedCount": {
     "placeholders": {

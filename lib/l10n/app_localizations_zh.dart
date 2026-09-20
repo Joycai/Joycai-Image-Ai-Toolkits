@@ -934,6 +934,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String copiedFilenames(int count) {
+    return '已复制 $count 个文件名';
+  }
+
+  @override
   String selectedCount(int count) {
     return '已选择 $count 项';
   }
@@ -3678,6 +3683,114 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpComingSoon => '即将推出（当前版本未实现）';
 
   @override
+  String get shortcutNavigateToDestination => '切到第 1…8 个页面';
+
+  @override
+  String get shortcutShowShortcutPanel => '快捷键面板';
+
+  @override
+  String get shortcutOpenSettings => '设置';
+
+  @override
+  String get shortcutFocusSearch => '搜索文件';
+
+  @override
+  String get shortcutRefresh => '刷新';
+
+  @override
+  String get shortcutToggleLeftPanel => '显示 / 隐藏 目录栏';
+
+  @override
+  String get shortcutToggleStaging => '显示 / 隐藏 暂存栏';
+
+  @override
+  String get shortcutToggleConfigPanel => '显示 / 隐藏 参数栏';
+
+  @override
+  String get shortcutExitSearch => '退出搜索';
+
+  @override
+  String get shortcutSelectWorkbenchTool => '切换工具';
+
+  @override
+  String get shortcutPreview => '打开预览';
+
+  @override
+  String get shortcutRename => '重命名';
+
+  @override
+  String get shortcutDelete => '删除';
+
+  @override
+  String get shortcutRenameFolder => '重命名文件夹';
+
+  @override
+  String get shortcutDeleteFolder => '删除文件夹';
+
+  @override
+  String get shortcutSelectAll => '全选';
+
+  @override
+  String get shortcutClearSelection => '清空选区';
+
+  @override
+  String get shortcutCopyFileName => '复制文件名';
+
+  @override
+  String get shortcutRevealInFileManager => '在文件夹中显示';
+
+  @override
+  String get shortcutOpenWithSystem => '用默认应用打开';
+
+  @override
+  String get shortcutNewSubfolder => '新建子文件夹';
+
+  @override
+  String get shortcutsTitle => '键盘快捷键';
+
+  @override
+  String get shortcutsGroupGlobal => '全局';
+
+  @override
+  String get shortcutsGroupScreen => '当前页面';
+
+  @override
+  String get shortcutsGroupFiles => '文件操作';
+
+  @override
+  String get shortcutsPaneTree => '目录树';
+
+  @override
+  String get shortcutsPaneGrid => '文件网格';
+
+  @override
+  String get shortcutsPaneGallery => '画廊';
+
+  @override
+  String get shortcutsPaneStaging => '暂存栏';
+
+  @override
+  String shortcutsActiveRegion(String region) {
+    return '活动区：$region';
+  }
+
+  @override
+  String get shortcutsInactiveRegion => '当前不活动';
+
+  @override
+  String get shortcutsActiveRegionNote =>
+      '这一组只作用于活动区，也就是上面点名的那一块。点某个区即可把键盘交给它——正在听键的那个区，选中项画成强调色。';
+
+  @override
+  String get shortcutsClose => '关闭';
+
+  @override
+  String get shortcutsCustomise => '自定义键位';
+
+  @override
+  String get shortcutsCustomiseLater => '第二期';
+
+  @override
   String get tasks => '任务';
 
   @override
@@ -4046,20 +4159,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get thumbnailFitCover => '填充（裁切铺满）';
-
-  @override
-  String get deleteFileConfirmTitle => '删除文件？';
-
-  @override
-  String deleteFileConfirmMessage(String filename) {
-    return '确定要删除“$filename”吗？';
-  }
-
-  @override
-  String get permanentlyDelete => '永久删除';
-
-  @override
-  String get deleteSuccess => '删除成功';
 
   @override
   String deleteFailed(String error) {
@@ -6667,6 +6766,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String copiedToClipboard(String text) {
     return '已複製: $text';
+  }
+
+  @override
+  String copiedFilenames(int count) {
+    return '已複製 $count 個檔名';
   }
 
   @override
@@ -9415,6 +9519,114 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get mcpComingSoon => '即將推出（目前版本未實作）';
 
   @override
+  String get shortcutNavigateToDestination => '切到第 1…8 個頁面';
+
+  @override
+  String get shortcutShowShortcutPanel => '快捷鍵面板';
+
+  @override
+  String get shortcutOpenSettings => '設定';
+
+  @override
+  String get shortcutFocusSearch => '搜尋檔案';
+
+  @override
+  String get shortcutRefresh => '重新整理';
+
+  @override
+  String get shortcutToggleLeftPanel => '顯示 / 隱藏 目錄欄';
+
+  @override
+  String get shortcutToggleStaging => '顯示 / 隱藏 暫存欄';
+
+  @override
+  String get shortcutToggleConfigPanel => '顯示 / 隱藏 參數欄';
+
+  @override
+  String get shortcutExitSearch => '離開搜尋';
+
+  @override
+  String get shortcutSelectWorkbenchTool => '切換工具';
+
+  @override
+  String get shortcutPreview => '開啟預覽';
+
+  @override
+  String get shortcutRename => '重新命名';
+
+  @override
+  String get shortcutDelete => '刪除';
+
+  @override
+  String get shortcutRenameFolder => '重新命名資料夾';
+
+  @override
+  String get shortcutDeleteFolder => '刪除資料夾';
+
+  @override
+  String get shortcutSelectAll => '全選';
+
+  @override
+  String get shortcutClearSelection => '清空選取';
+
+  @override
+  String get shortcutCopyFileName => '複製檔名';
+
+  @override
+  String get shortcutRevealInFileManager => '在資料夾中顯示';
+
+  @override
+  String get shortcutOpenWithSystem => '用預設應用程式開啟';
+
+  @override
+  String get shortcutNewSubfolder => '新增子資料夾';
+
+  @override
+  String get shortcutsTitle => '鍵盤快捷鍵';
+
+  @override
+  String get shortcutsGroupGlobal => '全域';
+
+  @override
+  String get shortcutsGroupScreen => '目前頁面';
+
+  @override
+  String get shortcutsGroupFiles => '檔案操作';
+
+  @override
+  String get shortcutsPaneTree => '目錄樹';
+
+  @override
+  String get shortcutsPaneGrid => '檔案網格';
+
+  @override
+  String get shortcutsPaneGallery => '畫廊';
+
+  @override
+  String get shortcutsPaneStaging => '暫存欄';
+
+  @override
+  String shortcutsActiveRegion(String region) {
+    return '活動區：$region';
+  }
+
+  @override
+  String get shortcutsInactiveRegion => '目前不活動';
+
+  @override
+  String get shortcutsActiveRegionNote =>
+      '這一組只作用於活動區，也就是上面點名的那一塊。點某個區即可把鍵盤交給它——正在聽鍵的那個區，選取項畫成強調色。';
+
+  @override
+  String get shortcutsClose => '關閉';
+
+  @override
+  String get shortcutsCustomise => '自訂鍵位';
+
+  @override
+  String get shortcutsCustomiseLater => '第二期';
+
+  @override
   String get tasks => '任務';
 
   @override
@@ -9783,20 +9995,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get thumbnailFitCover => '填滿（裁切鋪滿）';
-
-  @override
-  String get deleteFileConfirmTitle => '刪除檔案？';
-
-  @override
-  String deleteFileConfirmMessage(String filename) {
-    return '您確定要刪除「$filename」嗎？';
-  }
-
-  @override
-  String get permanentlyDelete => '永久刪除';
-
-  @override
-  String get deleteSuccess => '刪除成功';
 
   @override
   String deleteFailed(String error) {

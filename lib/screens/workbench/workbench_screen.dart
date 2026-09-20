@@ -12,9 +12,11 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/app_paths.dart';
+import '../../core/app_shortcuts.dart';
 import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
+import '../../core/text_editing_focus.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
@@ -78,6 +80,17 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   AppState? _appState;
   WorkbenchUIState? _workbenchUIState;
   int _lastKnownTabIndex = 0;
+
+  /// The gallery tab 画廊 returns to — image or video, whichever was open
+  /// last. UI-only memory, deliberately not persisted: it answers "where was
+  /// I a moment ago", and a relaunch restores the tab itself.
+  ///
+  /// Owned here rather than in the toolbar because `⌘⌥1` needs the same
+  /// answer the strip's 画廊 item gives, and the two disagreeing is exactly
+  /// the drift this round exists to remove. Handed down as
+  /// [WorkbenchGlassToolbar.galleryTarget].
+  int _lastGalleryTab = WorkbenchTab.image;
+
   StreamSubscription? _taskSubscription;
 
   // Mask Editor State
@@ -426,6 +439,73 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     super.dispose();
   }
 
+  /// The workbench's screen-level keys (L1).
+  ///
+  /// Nothing here touches a selection — those belong to the gallery's focus
+  /// region ([Gallery]) — and nothing is claimed while a text field has the
+  /// keyboard, which on this screen is most of the time: the prompt editor
+  /// and the assistant's composer both live here.
+  KeyEventResult _handleKeys(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    // The same gate `main.dart` puts on the app tier. This screen is the one
+    // that also exists on a phone, so without it an iPad with an external
+    // keyboard would answer keys the `⌘/` panel refuses to open and the
+    // settings page does not list — working shortcuts nothing can discover.
+    if (!AppShortcuts.registersShortcuts) return KeyEventResult.ignored;
+    if (isTextEditingFocused()) return KeyEventResult.ignored;
+
+    // The handler runs inside the layout, so the node's own context is the
+    // one that can see `WorkbenchLayoutState` — the screen's cannot.
+    final BuildContext ctx = node.context ?? context;
+    final appState = Provider.of<AppState>(ctx, listen: false);
+    final layout = Provider.of<WorkbenchLayoutState?>(ctx, listen: false);
+    bool bound(String id) => AppShortcuts.byId(id).matches(event);
+
+    if (bound(AppShortcutIds.refresh)) {
+      appState.galleryState.refreshImages();
+      return KeyEventResult.handled;
+    }
+    // `toggle`, not `open`: the drawer is reachable while it is itself open
+    // — it lives in this Scaffold, under this handler — so an open-only key
+    // is dead on the second press. The browser's narrow branch has always
+    // toggled, and one chord must not mean two things on two screens.
+    if (bound(AppShortcutIds.toggleLeftPanel)) {
+      if (layout != null && layout.leftInDrawer) {
+        layout.toggleLeftPanel();
+      } else {
+        appState.setSidebarExpanded(!appState.isSidebarExpanded);
+      }
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.toggleConfigPanel)) {
+      if (layout != null && layout.rightPanelDetached) {
+        layout.toggleRightPanel();
+      } else if (layout == null || layout.canShowRightPanel) {
+        // Only where there is a column for the preference to govern. The
+        // mask and crop tools have none, and the comparator's appears only
+        // with its metadata switch on: there the key used to fall through to
+        // here and flip a *persisted* preference nothing on screen reflects,
+        // so the next visit to the gallery found its parameter column gone
+        // with no press to blame it on. Same judgement the toolbar's `tune`
+        // button already makes — `canShowRightPanel` is what it asks.
+        appState.setConfigPanelExpanded(!appState.isConfigPanelExpanded);
+      }
+      return KeyEventResult.handled;
+    }
+
+    final tool = AppShortcuts.workbenchToolIndexFor(event);
+    if (tool >= 0) {
+      // Index 0 is 画廊, and 画廊 is two tabs. The strip's item has always
+      // returned to whichever of image and video was open last, so the key
+      // that stands for it must too: jumping to `image` outright dropped a
+      // video session back into image mode — the mode segment flipped and
+      // the video parameters went with it — for pressing "go to the gallery".
+      appState.setWorkbenchTab(tool == 0 ? _lastGalleryTab : tool);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
@@ -564,6 +644,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
     final tab = appState.workbenchTabIndex;
     final isGalleryTab = WorkbenchTab.isGallery(tab);
+    // Derived, not decided: the last gallery tab is whatever the tab index
+    // last was while it was a gallery. Every tab change arrives through
+    // `AppState`, which this build listens to, so this cannot fall behind.
+    if (isGalleryTab) _lastGalleryTab = tab;
     // `A1` spec: on a phone the FAB gives way to the selection bar.
     //
     // Read behind the width check, and `&&` short-circuits, so on a desktop
@@ -590,6 +674,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       toolbarBuilder: (phone) => WorkbenchGlassToolbar(
         tabController: _tabController,
         phone: phone,
+        galleryTarget: _lastGalleryTab,
         toolControls: toolControls,
         toolControlsWidth: toolControlsWidth,
       ),
@@ -646,8 +731,13 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         }
       },
       bottomPanel: const AppRunConsole(onExpand: showTaskQueueSheet),
+      onKeyEvent: _handleKeys,
       showLeftPanel: showLeftPanel,
-      showRightPanel: showRightPanel,
+      showRightPanel: showRightPanel && appState.isConfigPanelExpanded,
+      // Without the preference: whether this tab has a parameter column to
+      // offer back at all. The toolbar's `tune` button reads it so it does
+      // not appear on the mask and crop tools, which have none.
+      rightPanelAvailable: showRightPanel,
       fabIcon: fabIcon,
     );
   }

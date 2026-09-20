@@ -46,18 +46,7 @@
   "thumbnailDisplay": "サムネイル表示",
   "thumbnailFitContain": "フィット（全体表示）",
   "thumbnailFitCover": "フィル（切り抜き）",
-  "deleteFileConfirmTitle": "ファイルを削除しますか？",
-  "deleteFileConfirmMessage": "「{filename}」を削除してもよろしいですか？",
-  "@deleteFileConfirmMessage": {
-    "placeholders": {
-      "filename": {
-        "type": "String"
-      }
-    }
-  },
   "moveToTrash": "ゴミ箱に移動",
-  "permanentlyDelete": "完全に削除",
-  "deleteSuccess": "削除に成功しました",
   "deleteFailed": "削除に失敗しました: {error}",
   "@deleteFailed": {
     "placeholders": {
@@ -1200,14 +1189,18 @@
   "optResultMeta": "{count} 文字 · Markdown",
   "@optResultMeta": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "optImagesNotOfferedTitle": "このモデルは画像を見られません",
   "optImagesNotOfferedBody": "{count} 枚の参考画像はこのモデルに渡されておらず、回答は入力した文章だけに基づきます。右側で画像を扱えるモデルに切り替えるか、モデル設定で画像入力の可否を確認してください。",
   "@optImagesNotOfferedBody": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "optImagesNotOfferedAction": "モデル設定を開く"

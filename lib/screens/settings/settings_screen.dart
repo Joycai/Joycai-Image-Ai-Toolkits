@@ -4,17 +4,31 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
+import '../../core/app_shortcuts.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/glass/app_glass.dart';
 import '../../widgets/glass/glass_controls.dart';
 import 'settings_identity.dart';
 import 'widgets/about_section.dart';
 import 'widgets/appearance_section.dart';
+import 'widgets/keyboard_section.dart';
 import 'widgets/application_section.dart';
 import 'widgets/connectivity_section.dart';
 import 'widgets/data_section.dart';
 
-enum SettingsCategory { appearance, connectivity, application, data, about }
+enum SettingsCategory { appearance, keyboard, connectivity, application, data, about }
+
+/// The categories this platform has.
+///
+/// A phone registers no shortcuts at all (plan D7), so the keyboard category
+/// is not greyed out there — it is not there. A setting that cannot apply is
+/// worse than a missing one: it invites the question of how to turn it on.
+List<SettingsCategory> get _categories => <SettingsCategory>[
+      for (final category in SettingsCategory.values)
+        if (category != SettingsCategory.keyboard ||
+            AppShortcuts.registersShortcuts)
+          category,
+    ];
 
 /// Settings — design `E1`.
 ///
@@ -40,6 +54,7 @@ class SettingsScreen extends StatelessWidget {
 
 String _categoryLabel(SettingsCategory category, AppLocalizations l10n) => switch (category) {
       SettingsCategory.appearance => l10n.appearance,
+      SettingsCategory.keyboard => l10n.shortcutsTitle,
       SettingsCategory.connectivity => l10n.connectivity,
       SettingsCategory.application => l10n.application,
       SettingsCategory.data => l10n.dataManagement,
@@ -50,6 +65,8 @@ String _categoryLabel(SettingsCategory category, AppLocalizations l10n) => switc
 /// the names of the settings themselves so it is translated wherever they are.
 String _categoryNote(SettingsCategory category, AppLocalizations l10n) => switch (category) {
       SettingsCategory.appearance => '${l10n.themeColor} · ${l10n.font} · ${l10n.language}',
+      SettingsCategory.keyboard =>
+        '${l10n.shortcutsGroupGlobal} · ${l10n.shortcutsGroupFiles}',
       SettingsCategory.connectivity => '${l10n.proxySettings} · ${l10n.mcpServerSettings}',
       SettingsCategory.application => '${l10n.outputDirectory} · ${l10n.knowledgeBaseFolder}',
       SettingsCategory.data => '${l10n.exportSettings} · ${l10n.importSettings} · ${l10n.resetAllSettings}',
@@ -58,6 +75,7 @@ String _categoryNote(SettingsCategory category, AppLocalizations l10n) => switch
 
 Widget _categoryContent(SettingsCategory category, {required bool phone}) => switch (category) {
       SettingsCategory.appearance => const AppearanceSection(),
+      SettingsCategory.keyboard => const KeyboardSection(),
       SettingsCategory.connectivity => ConnectivitySection(isMobile: phone),
       SettingsCategory.application => const ApplicationSection(),
       SettingsCategory.data => DataSection(isMobile: phone),
@@ -166,7 +184,7 @@ class _TwoPaneViewState extends State<_TwoPaneView> {
           child: ListView(
             padding: const EdgeInsets.all(8),
             children: [
-              for (final category in SettingsCategory.values)
+              for (final category in _categories)
                 _NavRow(
                   category: category,
                   selected: category == _selected,
@@ -386,7 +404,7 @@ class _PhoneCategoryList extends StatelessWidget {
               // The dock's clearance arrives as the bottom padding.
               padding: EdgeInsets.fromLTRB(12, header + 12, 12, padding.bottom + 12),
               children: [
-                for (final category in SettingsCategory.values)
+                for (final category in _categories)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: _PhoneCategoryRow(

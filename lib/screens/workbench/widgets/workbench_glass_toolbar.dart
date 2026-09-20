@@ -71,6 +71,24 @@ _View _currentView(GalleryState s) {
 /// this one item stands for both and returns to whichever was open last.
 const int _kGalleryTab = -1;
 
+/// The `tune` button's one action, shared by both rows of the bar.
+///
+/// Where the column is detached — a drawer on a tablet, a sheet on a phone —
+/// it is *opened*. The `⇧⌘\` preference governs the inline column and
+/// nothing else, so reaching for it first left the button dead wherever the
+/// column was detached *and* the preference collapsed: the press expanded a
+/// preference no one could see and opened nothing, and the panel arrived
+/// only on the second press. Collapse the column on a desktop window, then
+/// narrow it to a tablet, and that is the state you are in.
+void _openRightPanel(BuildContext context, {required bool configCollapsed}) {
+  final layout = context.read<WorkbenchLayoutState>();
+  if (!layout.rightPanelDetached && configCollapsed) {
+    context.read<AppState>().setConfigPanelExpanded(true);
+    return;
+  }
+  layout.openRightPanel();
+}
+
 /// What a tool tab's controls are guaranteed before the tab strip folds into
 /// a menu to make room for them: enough for their overflow button and a
 /// primary action.
@@ -201,6 +219,7 @@ class WorkbenchGlassToolbar extends StatefulWidget {
     super.key,
     required this.tabController,
     this.phone = false,
+    this.galleryTarget = WorkbenchTab.image,
     this.toolControls,
     this.toolControlsWidth = 0,
   });
@@ -209,6 +228,14 @@ class WorkbenchGlassToolbar extends StatefulWidget {
 
   /// The phone's full-width bar instead of the floating one.
   final bool phone;
+
+  /// The gallery tab the strip's 画廊 item returns to — image or video,
+  /// whichever was open last.
+  ///
+  /// Held by the screen rather than here, because `⌘⌥1` stands for this same
+  /// item and has to land in the same place; two copies of "where was I"
+  /// would be two answers to one question.
+  final int galleryTarget;
 
   /// A tool tab's own controls, laid out in the rest of the bar after the
   /// tab strip (`A4-A6`: the tools share the header's place and height and
@@ -238,17 +265,12 @@ class WorkbenchGlassToolbar extends StatefulWidget {
 }
 
 class _WorkbenchGlassToolbarState extends State<WorkbenchGlassToolbar> {
-  /// The gallery tab the strip's 画廊 item returns to. UI-only memory,
-  /// deliberately not persisted: it answers "where was I a moment ago".
-  int _lastGalleryTab = WorkbenchTab.image;
-
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: widget.tabController,
       builder: (context, _) {
         final active = widget.tabController.index;
-        if (WorkbenchTab.isGallery(active)) _lastGalleryTab = active;
 
         final row = LayoutBuilder(
           builder: (context, constraints) {
@@ -265,7 +287,7 @@ class _WorkbenchGlassToolbarState extends State<WorkbenchGlassToolbar> {
                     active: active,
                     width: width,
                     phone: widget.phone,
-                    galleryTarget: _lastGalleryTab,
+                    galleryTarget: widget.galleryTarget,
                     controls: widget.toolControls,
                     controlsWidth: widget.toolControlsWidth,
                   );
@@ -401,7 +423,16 @@ class _GalleryRow extends StatelessWidget {
     bool toolsInline = !phone;
     bool toolsMenuCompact = false;
     final folded = <_Fold>{if (phone) ..._Fold.values};
-    final showTune = layout.rightInDrawer && !phone;
+    // The way back to the parameter column: when it is a drawer, and also
+    // when `⇧⌘\` has collapsed it inline. A column you can only bring back
+    // with a shortcut you already know about is a trap.
+    //
+    // `canShowRightPanel` is what keeps the offer honest: on a tab with no
+    // parameter column the preference is still collapsed, and without this
+    // the button would appear there and bring nothing back.
+    final configCollapsed = !context.select<AppState, bool>((s) => s.isConfigPanelExpanded);
+    final showTune = !phone &&
+        (layout.rightInDrawer || (configCollapsed && layout.canShowRightPanel));
 
     bool viewLabels = true;
     double viewNatural() => viewLabels
@@ -525,7 +556,8 @@ class _GalleryRow extends StatelessWidget {
         GlassIconButton(
           icon: Icons.tune,
           tooltip: l10n.wbGenerationConfig,
-          onPressed: () => context.read<WorkbenchLayoutState>().openRightPanel(),
+          onPressed: () =>
+              _openRightPanel(context, configCollapsed: configCollapsed),
         ),
     ];
 
@@ -559,7 +591,13 @@ class _ToolRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final layout = context.watch<WorkbenchLayoutState>();
     final tabs = _tabs(l10n);
-    final showTune = layout.rightInDrawer;
+    // Same escape hatch as the gallery row's, and the same guard: the mask
+    // and crop tools have no parameter column, and the comparator's appears
+    // only with its metadata switch on, so `canShowRightPanel` is what stops
+    // this offering a column that is not there.
+    final configCollapsed = !context.select<AppState, bool>((s) => s.isConfigPanelExpanded);
+    final showTune =
+        layout.rightInDrawer || (configCollapsed && layout.canShowRightPanel);
 
     final tabLabels = !phone && _tabLabelsFit(context, width);
     final controlsFloor = controls == null ? 0.0 : math.min(controlsWidth, _kControlsFloor);
@@ -615,7 +653,8 @@ class _ToolRow extends StatelessWidget {
         GlassIconButton(
           icon: Icons.tune,
           tooltip: l10n.wbGenerationConfig,
-          onPressed: () => context.read<WorkbenchLayoutState>().openRightPanel(),
+          onPressed: () =>
+              _openRightPanel(context, configCollapsed: configCollapsed),
         ),
     ]);
   }

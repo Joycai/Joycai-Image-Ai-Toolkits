@@ -762,6 +762,14 @@
   "openInFolder": "在資料夾中開啟",
   "openInPreview": "在預覽中開啟",
   "copiedToClipboard": "已複製: {text}",
+  "copiedFilenames": "已複製 {count} 個檔名",
+  "@copiedFilenames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "selectedCount": "已選取 {count} 個",
   "shareFiles": "分享選取的 {count} 個項目",
   "comingSoon": "即將推出",
@@ -1868,6 +1876,48 @@
   "notificationsDesc": "任務完成或失敗時跳出系統通知",
   "mcpServerDesc": "讓外部工具透過 MCP 呼叫本機能力",
   "mcpComingSoon": "即將推出（目前版本未實作）",
+  "shortcutNavigateToDestination": "切到第 1…8 個頁面",
+  "shortcutShowShortcutPanel": "快捷鍵面板",
+  "shortcutOpenSettings": "設定",
+  "shortcutFocusSearch": "搜尋檔案",
+  "shortcutRefresh": "重新整理",
+  "shortcutToggleLeftPanel": "顯示 / 隱藏 目錄欄",
+  "shortcutToggleStaging": "顯示 / 隱藏 暫存欄",
+  "shortcutToggleConfigPanel": "顯示 / 隱藏 參數欄",
+  "shortcutExitSearch": "離開搜尋",
+  "shortcutSelectWorkbenchTool": "切換工具",
+  "shortcutPreview": "開啟預覽",
+  "shortcutRename": "重新命名",
+  "shortcutDelete": "刪除",
+  "shortcutRenameFolder": "重新命名資料夾",
+  "shortcutDeleteFolder": "刪除資料夾",
+  "shortcutSelectAll": "全選",
+  "shortcutClearSelection": "清空選取",
+  "shortcutCopyFileName": "複製檔名",
+  "shortcutRevealInFileManager": "在資料夾中顯示",
+  "shortcutOpenWithSystem": "用預設應用程式開啟",
+  "shortcutNewSubfolder": "新增子資料夾",
+  "shortcutsTitle": "鍵盤快捷鍵",
+  "shortcutsGroupGlobal": "全域",
+  "shortcutsGroupScreen": "目前頁面",
+  "shortcutsGroupFiles": "檔案操作",
+  "shortcutsPaneTree": "目錄樹",
+  "shortcutsPaneGrid": "檔案網格",
+  "shortcutsPaneGallery": "畫廊",
+  "shortcutsPaneStaging": "暫存欄",
+  "shortcutsActiveRegion": "活動區：{region}",
+  "@shortcutsActiveRegion": {
+    "placeholders": {
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsInactiveRegion": "目前不活動",
+  "shortcutsActiveRegionNote": "這一組只作用於活動區，也就是上面點名的那一塊。點某個區即可把鍵盤交給它——正在聽鍵的那個區，選取項畫成強調色。",
+  "shortcutsClose": "關閉",
+  "shortcutsCustomise": "自訂鍵位",
+  "shortcutsCustomiseLater": "第二期",
   "tasks": "任務",
   "taskQueueManager": "任務佇列管理員",
   "noTasksInQueue": "佇列中沒有任務",
@@ -2092,17 +2142,6 @@
   "thumbnailDisplay": "縮圖顯示",
   "thumbnailFitContain": "適應（完整顯示）",
   "thumbnailFitCover": "填滿（裁切鋪滿）",
-  "deleteFileConfirmTitle": "刪除檔案？",
-  "deleteFileConfirmMessage": "您確定要刪除「{filename}」嗎？",
-  "@deleteFileConfirmMessage": {
-    "placeholders": {
-      "filename": {
-        "type": "String"
-      }
-    }
-  },
-  "permanentlyDelete": "永久刪除",
-  "deleteSuccess": "刪除成功",
   "deleteFailed": "刪除失敗：{error}",
   "@deleteFailed": {
     "placeholders": {

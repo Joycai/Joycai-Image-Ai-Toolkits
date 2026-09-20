@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/app_shortcuts.dart';
 import '../../../core/constants.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
@@ -11,11 +12,12 @@ import '../../../models/browser_file.dart';
 import '../../../state/app_state.dart';
 import '../../../state/file_staging_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/ui/app_key_label.dart';
 import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
-import 'file_delete_dialog.dart';
+import '../../../widgets/files/file_delete_dialog.dart';
 
 /// The file context menu — `B1a · 1b`, `B1c · 1a`: G2 glass, 230 wide, five
 /// groups.
@@ -26,6 +28,12 @@ import 'file_delete_dialog.dart';
 /// means that one file, and the count says which — on the right of those
 /// rows, and in the *label* of the delete row, whose trailing corner is
 /// spoken for by its shortcut.
+/// The key a row really has, spelled for this platform and taken from the
+/// one table — never a literal. The three rows that used to carry `'Enter'`,
+/// `'F2'` and `'Delete'` were the app's only mention of any shortcut, and
+/// they were also the only thing that could drift from what the keys did.
+String? _keys(String id) => AppKeyLabel.menuHint(AppShortcuts.byId(id));
+
 void showFileContextMenu({
   required BuildContext context,
   required BrowserFile file,
@@ -56,7 +64,7 @@ void showFileContextMenu({
         AppGlassMenuItem(
           icon: Icons.visibility_outlined,
           label: l10n.openInPreview,
-          trailing: 'Enter',
+          trailing: _keys(AppShortcutIds.preview),
           onSelected: () {
             if (!context.mounted) return;
             final imageFiles = browser.filteredFiles
@@ -76,6 +84,7 @@ void showFileContextMenu({
         AppGlassMenuItem(
           icon: Icons.open_in_new,
           label: l10n.openWithSystemDefault,
+          trailing: _keys(AppShortcutIds.openWithSystem),
           onSelected: () => FileUtils.openPath(file.path),
         ),
       if (isImage || canOpenWithSystem) const AppGlassMenuDivider(),
@@ -103,7 +112,7 @@ void showFileContextMenu({
       AppGlassMenuItem(
         icon: Icons.edit_outlined,
         label: l10n.rename,
-        trailing: 'F2',
+        trailing: _keys(AppShortcutIds.rename),
         onSelected: () {
           if (!context.mounted) return;
           showFileRenameDialog(
@@ -116,12 +125,19 @@ void showFileContextMenu({
       AppGlassMenuItem(
         icon: Icons.content_copy_outlined,
         label: l10n.copyFilename,
-        onSelected: () => Clipboard.setData(ClipboardData(text: file.name)),
+        trailing: _keys(AppShortcutIds.copyFileName),
+        // The whole selection, like `⇧⌘C` — `targets` is the selection when
+        // the right-clicked file is part of it and just that file otherwise,
+        // so the row and the key cannot disagree about what "this" means.
+        onSelected: () => Clipboard.setData(
+          ClipboardData(text: targets.map((f) => f.name).join('\n')),
+        ),
       ),
       const AppGlassMenuDivider(),
       AppGlassMenuItem(
         icon: Icons.folder_open_outlined,
         label: l10n.openInFolder,
+        trailing: _keys(AppShortcutIds.revealInFileManager),
         onSelected: () => FileUtils.openFolder(file.path),
       ),
       AppGlassMenuItem(
@@ -159,11 +175,19 @@ void showFileContextMenu({
       AppGlassMenuItem(
         icon: Icons.delete_outline,
         label: targets.length > 1 ? l10n.deleteFiles(targets.length) : l10n.delete,
-        trailing: 'Delete',
+        trailing: _keys(AppShortcutIds.delete),
         danger: true,
         onSelected: () {
           if (!context.mounted) return;
-          runFileDelete(context, targets);
+          runFileDelete(
+            context,
+            targets,
+            protectedRoots: browser.sourceDirectories,
+            onDeleted: () async {
+              await staging.revalidate();
+              await browser.refresh();
+            },
+          );
         },
       ),
     ],

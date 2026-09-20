@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_semantic_colors.dart';
+import '../../core/app_shortcuts.dart';
 import '../../core/design_tokens.dart';
 import '../../core/file_utils.dart';
 import '../../core/folder_outline_geometry.dart';
@@ -27,6 +28,7 @@ import '../../widgets/shell/app_window_frame.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/files/folder_group_header.dart';
 import '../../widgets/files/folder_outline_bar.dart';
+import '../../widgets/ui/focus_pane.dart';
 import '../../widgets/ui/panel_resizer.dart';
 import '../../widgets/shell/app_destinations.dart';
 import '../batch/task_queue_screen.dart';
@@ -42,7 +44,7 @@ import 'widgets/browser_selection_bar.dart';
 import 'widgets/browser_staging_panel.dart';
 import 'widgets/file_card.dart';
 import 'widgets/file_context_menu.dart';
-import 'widgets/file_delete_dialog.dart';
+import '../../widgets/files/file_delete_dialog.dart';
 
 /// The file browser — `B1a` (layout and selection) with `B1b`'s staging
 /// column on the right.
@@ -75,6 +77,14 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+
+  /// The three focus regions (`00f` 帧 3). Whichever holds the keyboard is the
+  /// one `Delete` / `F2` / `Enter` / `⌘A` act on — one question, one answer,
+  /// which is what the old split (the tree claiming those keys per row, the
+  /// grid claiming them at screen level) could not give.
+  final FocusNode _treePane = FocusPane.newNode('browser-pane-tree');
+  final FocusNode _gridPane = FocusPane.newNode('browser-pane-grid');
+  final FocusNode _stagingPane = FocusPane.newNode('browser-pane-staging');
 
   /// `1a`: 240 at rest; a width the user dragged to wins once loaded.
   double _sidebarWidth = 240;
@@ -150,6 +160,9 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     _searchFocusNode.removeListener(_onSearchFocusChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _treePane.dispose();
+    _gridPane.dispose();
+    _stagingPane.dispose();
     _outline.dispose();
     _scroll.dispose();
     super.dispose();
@@ -182,29 +195,32 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     }
   }
 
-  /// Screen-level shortcuts. Implemented with [Focus.onKeyEvent] rather than
-  /// [CallbackShortcuts] so keys can conditionally fall through: while the
-  /// search field has focus, Ctrl+A/Enter must keep their text-editing
-  /// behavior, which requires returning [KeyEventResult.ignored].
+  /// Screen-level shortcuts (L1). Implemented with [Focus.onKeyEvent] rather
+  /// than [CallbackShortcuts] so keys can conditionally fall through: a key
+  /// this screen does not claim must reach the widget under it unchanged,
+  /// which requires returning [KeyEventResult.ignored].
+  ///
+  /// Nothing here acts on a selection. Selection keys belong to whichever
+  /// focus region owns them ([_handleGridKeys] and the tree's rows), because
+  /// a screen-level `Delete` has no way to know which of the three regions
+  /// the user means.
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
-    final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
-    final key = event.logicalKey;
-    final hw = HardwareKeyboard.instance;
-    final isCtrl = Platform.isMacOS ? hw.isMetaPressed : hw.isControlPressed;
-
-    if (isCtrl && key == LogicalKeyboardKey.keyF) {
-      _focusSearch();
-      return KeyEventResult.handled;
-    }
-    if (key == LogicalKeyboardKey.f5 || (isCtrl && key == LogicalKeyboardKey.keyR)) {
-      _refresh(state);
-      return KeyEventResult.handled;
-    }
-
-    if (_searchFocusNode.hasFocus) {
-      if (key == LogicalKeyboardKey.escape) {
+    // The gate comes first, with no exceptions above it. A key a text field
+    // does not consume still travels up to every ancestor handler, and this
+    // handler sits *under* `DefaultTextEditingShortcuts`, so claiming one
+    // here means the field never gets it. `⌘F` and `F5` used to sit above
+    // this line, which is why `⌘F` during an inline folder rename moved focus
+    // to the search box and the editor committed the half-typed name on blur
+    // (`folder_name_editor._onFocusChange` → `_submit(fromBlur: true)`).
+    if (isTextEditingFocused()) {
+      // The search field is the one text field this screen still answers for,
+      // and only for Escape — leaving it is not a text-editing act.
+      if (_searchFocusNode.hasFocus &&
+          AppShortcuts.byId(AppShortcutIds.exitSearch).matches(event)) {
+        final state =
+            Provider.of<AppState>(context, listen: false).fileBrowserState;
         _searchController.clear();
         state.setSearchQuery('');
         _searchFocusNode.unfocus();
@@ -213,40 +229,117 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       return KeyEventResult.ignored;
     }
 
-    // Nothing below this line may be taken from a live text field. A key a
-    // field does not consume still travels up to every ancestor handler, and
-    // this handler sits *under* `DefaultTextEditingShortcuts`, so claiming one
-    // here means the field never gets it: the tree's inline folder-name editor
-    // (which hands its keys upward on purpose — `directory_tree_item._onKey`
-    // ignores everything while editing) would lose Cmd+A to the grid, and
-    // Enter, F2 and Delete would each act on the files that happen to be
-    // selected while the user is typing a folder's name.
+    final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
+    bool bound(String id) => AppShortcuts.byId(id).matches(event);
+
+    if (bound(AppShortcutIds.focusSearch)) {
+      _focusSearch();
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.refresh)) {
+      _refresh(state);
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.toggleLeftPanel)) {
+      _toggleFolderPanel();
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.toggleStaging)) {
+      _toggleStagingPanel();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  /// `⌘\` — the folder column. On a narrow window it is the drawer, so the
+  /// key opens and closes that instead.
+  ///
+  /// Both screens toggle the same `AppState.isSidebarExpanded`: it is one
+  /// list of folders shown in two places, so hiding it is one preference and
+  /// the key means one thing app-wide.
+  void _toggleFolderPanel() {
+    if (Responsive.isNarrow(context)) {
+      final scaffold = _scaffoldKey.currentState;
+      if (scaffold == null) return;
+      // `closeDrawer`, not `Navigator.pop`: a drawer closes through the
+      // local-history entry it registered on its route, and popping the
+      // navigator only unwinds that entry while the drawer's route is on
+      // top. Open the task-queue sheet over an open drawer and the pop takes
+      // the sheet instead, leaving the drawer where it was.
+      scaffold.isDrawerOpen ? scaffold.closeDrawer() : scaffold.openDrawer();
+      return;
+    }
+    final appState = Provider.of<AppState>(context, listen: false);
+    appState.setSidebarExpanded(!appState.isSidebarExpanded);
+  }
+
+  /// `⇧⌘\` — the staging column, the same toggle the header button drives.
+  void _toggleStagingPanel() {
+    if (Responsive.isNarrow(context)) {
+      final scaffold = _scaffoldKey.currentState;
+      if (scaffold == null) return;
+      scaffold.isEndDrawerOpen
+          ? scaffold.closeEndDrawer()
+          : scaffold.openEndDrawer();
+      return;
+    }
+    setState(() => _stagingOpen = !_stagingOpen);
+  }
+
+  /// The file grid's keys (L2). They arrive here only while the grid is the
+  /// active pane — click the folder tree and the tree answers instead, which
+  /// is the point.
+  KeyEventResult _handleGridKeys(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
     if (isTextEditingFocused()) return KeyEventResult.ignored;
 
-    if (isCtrl && key == LogicalKeyboardKey.keyA) {
+    final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
+    bool bound(String id) => AppShortcuts.byId(id).matches(event);
+
+    if (bound(AppShortcutIds.selectAll)) {
       state.selectAll();
       return KeyEventResult.handled;
     }
-    if (key == LogicalKeyboardKey.escape && state.selectedFiles.isNotEmpty) {
+    if (bound(AppShortcutIds.clearSelection) && state.selectedFiles.isNotEmpty) {
       state.clearSelection();
       return KeyEventResult.handled;
     }
-    if ((key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) &&
-        state.selectedFiles.isNotEmpty) {
+    if (bound(AppShortcutIds.preview) && state.selectedFiles.isNotEmpty) {
       _openWithPreview(context, state.selectedFiles.first, state);
       return KeyEventResult.handled;
     }
-    if ((key == LogicalKeyboardKey.delete || key == LogicalKeyboardKey.backspace) &&
-        state.selectedFiles.isNotEmpty) {
+    if (bound(AppShortcutIds.delete) && state.selectedFiles.isNotEmpty) {
       _deleteSelection(context, state);
       return KeyEventResult.handled;
     }
-    if (key == LogicalKeyboardKey.f2 && state.selectedFiles.length == 1) {
+    if (bound(AppShortcutIds.rename) && state.selectedFiles.length == 1) {
       showFileRenameDialog(
         context: context,
         filePath: state.selectedFiles.first.path,
         onSuccess: () => state.refresh(),
       );
+      return KeyEventResult.handled;
+    }
+    // The three the context menu already offers. Each acts on the selection
+    // the same way its menu row does, except where "the selection" would make
+    // it hostile: revealing N folders at once is noise, and opening a dozen
+    // files in their default apps is a trap, so those take the first and the
+    // only one respectively.
+    if (bound(AppShortcutIds.copyFileName) && state.selectedFiles.isNotEmpty) {
+      Clipboard.setData(ClipboardData(
+        text: state.selectedFiles.map((f) => f.name).join('\n'),
+      ));
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.revealInFileManager) &&
+        state.selectedFiles.isNotEmpty) {
+      FileUtils.openFolder(state.selectedFiles.first.path);
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.openWithSystem) &&
+        state.selectedFiles.length == 1 &&
+        state.selectedFiles.first.category != FileCategory.other) {
+      FileUtils.openPath(state.selectedFiles.first.path);
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -338,6 +431,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     final staging = context.select<FileStagingState, _StagingInputs>(_stagingInputs);
     final scheme = Theme.of(context).colorScheme;
     final isNarrow = Responsive.isNarrow(context);
+    // `⌘\` and the header's button drive the same app-level preference the
+    // workbench's sidebar button does — one list of folders, one answer to
+    // "is it showing".
+    final showFolderColumn = context.select<AppState, bool>((s) => s.isSidebarExpanded);
 
     // The column earns its width the moment there is something in it, and
     // only the first time — reopening it after the user closed it would be
@@ -358,7 +455,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     final showStagingColumn = _stagingOpen && !isNarrow;
 
     return Focus(
-      autofocus: true,
+      // Not autofocused: the grid pane below takes the keyboard instead, so
+      // the selection keys work on a freshly opened screen. This node stays
+      // the L1 handler either way — events bubble up to it from whichever
+      // pane holds focus.
       onKeyEvent: _handleKeyEvent,
       child: Scaffold(
         key: _scaffoldKey,
@@ -368,20 +468,32 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         // where there is no custom window frame to show through to.
         backgroundColor: usesCustomWindowChrome ? Colors.transparent : scheme.surfaceContainer,
         drawer: isNarrow
-            ? const Drawer(
+            ? Drawer(
                 width: _drawerWidth,
-                child: UnifiedSidebar(useFileBrowserState: true),
+                // No active-pane rule in a drawer: it is the only thing on
+                // screen while it is open, so there is nothing to tell apart.
+                child: FocusPane(
+                  node: _treePane,
+                  pane: ShortcutPane.tree,
+                  showActiveEdge: false,
+                  child: const UnifiedSidebar(useFileBrowserState: true),
+                ),
               )
             : null,
         endDrawer: isNarrow
             ? Drawer(
                 width: kStagingPanelWidth,
-                child: BrowserStagingPanel(
-                  destination: staging.destination,
-                  onPaste: (mode) {
-                    _scaffoldKey.currentState?.closeEndDrawer();
-                    runStagingPaste(context, mode: mode);
-                  },
+                child: FocusPane(
+                  node: _stagingPane,
+                  pane: ShortcutPane.staging,
+                  showActiveEdge: false,
+                  child: BrowserStagingPanel(
+                    destination: staging.destination,
+                    onPaste: (mode) {
+                      _scaffoldKey.currentState?.closeEndDrawer();
+                      runStagingPaste(context, mode: mode);
+                    },
+                  ),
                 ),
               )
             : null,
@@ -394,11 +506,15 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         bottomNavigationBar: const AppRunConsole(onExpand: showTaskQueueSheet),
         body: Row(
           children: [
-            if (!isNarrow) ...[
+            if (!isNarrow && showFolderColumn) ...[
               PanelCard(
                 width: _sidebarWidth,
                 shape: PanelShape.column,
-                child: const UnifiedSidebar(useFileBrowserState: true),
+                child: FocusPane(
+                  node: _treePane,
+                  pane: ShortcutPane.tree,
+                  child: const UnifiedSidebar(useFileBrowserState: true),
+                ),
               ),
               PanelResizer(
                 shape: PanelShape.column,
@@ -440,6 +556,8 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                       onSearchChanged: browser.setSearchQuery,
                       onRefresh: () => _refresh(browser),
                       onOpenDrawer: isNarrow ? () => _scaffoldKey.currentState?.openDrawer() : null,
+                      folderPanelOpen: showFolderColumn,
+                      onToggleFolderPanel: isNarrow ? null : _toggleFolderPanel,
                     ),
                     BrowserFilterBar(state: browser),
                     _BrowserOutline(
@@ -454,7 +572,12 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                       child: Stack(
                         children: [
                           Positioned.fill(
-                            child: _FileArea(
+                            child: FocusPane(
+                              node: _gridPane,
+                              pane: ShortcutPane.grid,
+                              autofocus: true,
+                              onKeyEvent: _handleGridKeys,
+                              child: _FileArea(
                               pendingRefreshes: _pendingRefreshes,
                               scrollController: _scroll,
                               outline: _outline,
@@ -463,6 +586,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                                   _openWithPreview(context, file, browser),
                               onSecondaryTap: (file, pos) =>
                                   _showContextMenu(context, file, pos),
+                              ),
                             ),
                           ),
                           Positioned(
@@ -488,9 +612,13 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               ),
             ),
             if (showStagingColumn)
-              BrowserStagingPanel(
-                destination: staging.destination,
-                onPaste: (mode) => runStagingPaste(context, mode: mode),
+              FocusPane(
+                node: _stagingPane,
+                pane: ShortcutPane.staging,
+                child: BrowserStagingPanel(
+                  destination: staging.destination,
+                  onPaste: (mode) => runStagingPaste(context, mode: mode),
+                ),
               ),
           ],
         ),
@@ -506,7 +634,20 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   /// same set — `B1c · 1c`. The selection is copied here because the run
   /// refreshes the browser at the end, which rewrites it.
   void _deleteSelection(BuildContext context, FileBrowserState state) {
-    runFileDelete(context, state.selectedFiles.toList());
+    final staging = Provider.of<FileStagingState>(context, listen: false);
+    runFileDelete(
+      context,
+      state.selectedFiles.toList(),
+      protectedRoots: state.sourceDirectories,
+      // The staging marks on those paths are now genuinely missing — what
+      // `revalidate` exists to report. The selection is not cleared here:
+      // pruning it against what is still on disk is already `refresh`'s job,
+      // and doing it twice would get a half-failed run wrong.
+      onDeleted: () async {
+        await staging.revalidate();
+        await state.refresh();
+      },
+    );
   }
 
   /// Single click toggles one file; Shift+click extends the selection from the

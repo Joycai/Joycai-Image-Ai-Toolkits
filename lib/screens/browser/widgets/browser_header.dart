@@ -58,6 +58,8 @@ class BrowserHeader extends StatelessWidget {
     required this.onSearchChanged,
     required this.onRefresh,
     this.onOpenDrawer,
+    this.folderPanelOpen = true,
+    this.onToggleFolderPanel,
   });
 
   static const double height = 72;
@@ -78,6 +80,16 @@ class BrowserHeader extends StatelessWidget {
   /// Non-null on a narrow window, where the directory column is a drawer and
   /// the hamburger takes the folder block's place.
   final VoidCallback? onOpenDrawer;
+
+  /// Whether the folder column is showing. Desktop form only — on a narrow
+  /// window the column is the drawer and [onOpenDrawer] is the way in.
+  final bool folderPanelOpen;
+
+  /// Hides or shows the folder column. Null on a narrow window, and null is
+  /// what keeps the button out of the header there. It exists so `⌘\` is not
+  /// the only way back: a column with no visible way to bring it back is a
+  /// trap.
+  final VoidCallback? onToggleFolderPanel;
 
   static const double _searchMaxWidth = 460;
 
@@ -113,7 +125,10 @@ class BrowserHeader extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final narrowForm = onOpenDrawer != null;
-          final double leadWidth = narrowForm ? AppSize.large + AppSpace.s6 : AppSize.touch + 12;
+          final bool showFolderToggle = !narrowForm && onToggleFolderPanel != null;
+          final double leadWidth = narrowForm
+              ? AppSize.large + AppSpace.s6
+              : (showFolderToggle ? AppSize.control + AppSpace.s6 : 0) + AppSize.touch + 12;
           // Measured against the widest the summary can get — every file
           // selected — so selecting does not flip the header between forms.
           final double textWidth = math.max(
@@ -142,14 +157,34 @@ class BrowserHeader extends StatelessWidget {
                     onPressed: onOpenDrawer,
                   ),
                 )
-              : Container(
-                  width: AppSize.touch,
-                  height: AppSize.touch,
-                  decoration: BoxDecoration(
-                    color: scheme.accentTint,
-                    borderRadius: BorderRadius.circular(AppRadius.control),
-                  ),
-                  child: Icon(Icons.folder_open_outlined, size: 24, color: scheme.primary),
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (showFolderToggle) ...[
+                      SizedBox.square(
+                        dimension: AppSize.control,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: Icon(
+                            folderPanelOpen ? Icons.menu_open : Icons.menu,
+                            size: AppSize.iconLg,
+                          ),
+                          tooltip: l10n.directories,
+                          onPressed: onToggleFolderPanel,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpace.s6),
+                    ],
+                    Container(
+                      width: AppSize.touch,
+                      height: AppSize.touch,
+                      decoration: BoxDecoration(
+                        color: scheme.accentTint,
+                        borderRadius: BorderRadius.circular(AppRadius.control),
+                      ),
+                      child: Icon(Icons.folder_open_outlined, size: 24, color: scheme.primary),
+                    ),
+                  ],
                 );
 
           final Widget titleBlock = Column(

@@ -957,6 +957,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String copiedFilenames(int count) {
+    return 'Copied $count file names';
+  }
+
+  @override
   String selectedCount(int count) {
     return '$count selected';
   }
@@ -3895,6 +3900,114 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mcpComingSoon => 'Coming soon (not in this version)';
 
   @override
+  String get shortcutNavigateToDestination => 'Go to page 1–8';
+
+  @override
+  String get shortcutShowShortcutPanel => 'Keyboard shortcuts';
+
+  @override
+  String get shortcutOpenSettings => 'Settings';
+
+  @override
+  String get shortcutFocusSearch => 'Search files';
+
+  @override
+  String get shortcutRefresh => 'Refresh';
+
+  @override
+  String get shortcutToggleLeftPanel => 'Show or hide the folder column';
+
+  @override
+  String get shortcutToggleStaging => 'Show or hide the staging column';
+
+  @override
+  String get shortcutToggleConfigPanel => 'Show or hide the parameters panel';
+
+  @override
+  String get shortcutExitSearch => 'Leave search';
+
+  @override
+  String get shortcutSelectWorkbenchTool => 'Switch tool';
+
+  @override
+  String get shortcutPreview => 'Open preview';
+
+  @override
+  String get shortcutRename => 'Rename';
+
+  @override
+  String get shortcutDelete => 'Delete';
+
+  @override
+  String get shortcutRenameFolder => 'Rename folder';
+
+  @override
+  String get shortcutDeleteFolder => 'Delete folder';
+
+  @override
+  String get shortcutSelectAll => 'Select all';
+
+  @override
+  String get shortcutClearSelection => 'Clear selection';
+
+  @override
+  String get shortcutCopyFileName => 'Copy file name';
+
+  @override
+  String get shortcutRevealInFileManager => 'Show in folder';
+
+  @override
+  String get shortcutOpenWithSystem => 'Open with the default app';
+
+  @override
+  String get shortcutNewSubfolder => 'New subfolder';
+
+  @override
+  String get shortcutsTitle => 'Keyboard shortcuts';
+
+  @override
+  String get shortcutsGroupGlobal => 'Anywhere';
+
+  @override
+  String get shortcutsGroupScreen => 'This page';
+
+  @override
+  String get shortcutsGroupFiles => 'Files';
+
+  @override
+  String get shortcutsPaneTree => 'Folder tree';
+
+  @override
+  String get shortcutsPaneGrid => 'File grid';
+
+  @override
+  String get shortcutsPaneGallery => 'Gallery';
+
+  @override
+  String get shortcutsPaneStaging => 'Staging';
+
+  @override
+  String shortcutsActiveRegion(String region) {
+    return 'active region: $region';
+  }
+
+  @override
+  String get shortcutsInactiveRegion => 'not active';
+
+  @override
+  String get shortcutsActiveRegionNote =>
+      'These act on the active region, the one named above. Click a region to move the keyboard there — whichever region is listening draws its selection in the accent colour.';
+
+  @override
+  String get shortcutsClose => 'Close';
+
+  @override
+  String get shortcutsCustomise => 'Custom key bindings';
+
+  @override
+  String get shortcutsCustomiseLater => 'a later round';
+
+  @override
   String get tasks => 'Tasks';
 
   @override
@@ -4273,20 +4386,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get thumbnailFitCover => 'Fill (cropped)';
-
-  @override
-  String get deleteFileConfirmTitle => 'Delete File?';
-
-  @override
-  String deleteFileConfirmMessage(String filename) {
-    return 'Are you sure you want to delete \"$filename\"?';
-  }
-
-  @override
-  String get permanentlyDelete => 'Permanently Delete';
-
-  @override
-  String get deleteSuccess => 'Deleted successfully';
 
   @override
   String deleteFailed(String error) {

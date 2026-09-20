@@ -25,7 +25,7 @@ import '../../widgets/ui/app_segmented_control.dart';
 import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/models/chat_model_selector.dart';
 import '../../widgets/glass/glass_controls.dart';
-import 'widgets/transfer_dialog_parts.dart';
+import '../../widgets/files/transfer_dialog_parts.dart';
 
 part 'ai_rename/ai_rename_config.dart';
 part 'ai_rename/ai_rename_results.dart';

@@ -1655,6 +1655,12 @@ abstract class AppLocalizations {
   /// **'Copied: {text}'**
   String copiedToClipboard(String text);
 
+  /// No description provided for @copiedFilenames.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied {count} file names'**
+  String copiedFilenames(int count);
+
   /// No description provided for @selectedCount.
   ///
   /// In en, this message translates to:
@@ -6628,6 +6634,216 @@ abstract class AppLocalizations {
   /// **'Coming soon (not in this version)'**
   String get mcpComingSoon;
 
+  /// No description provided for @shortcutNavigateToDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to page 1–8'**
+  String get shortcutNavigateToDestination;
+
+  /// No description provided for @shortcutShowShortcutPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get shortcutShowShortcutPanel;
+
+  /// No description provided for @shortcutOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get shortcutOpenSettings;
+
+  /// No description provided for @shortcutFocusSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search files'**
+  String get shortcutFocusSearch;
+
+  /// No description provided for @shortcutRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get shortcutRefresh;
+
+  /// No description provided for @shortcutToggleLeftPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Show or hide the folder column'**
+  String get shortcutToggleLeftPanel;
+
+  /// No description provided for @shortcutToggleStaging.
+  ///
+  /// In en, this message translates to:
+  /// **'Show or hide the staging column'**
+  String get shortcutToggleStaging;
+
+  /// No description provided for @shortcutToggleConfigPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Show or hide the parameters panel'**
+  String get shortcutToggleConfigPanel;
+
+  /// No description provided for @shortcutExitSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave search'**
+  String get shortcutExitSearch;
+
+  /// No description provided for @shortcutSelectWorkbenchTool.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch tool'**
+  String get shortcutSelectWorkbenchTool;
+
+  /// No description provided for @shortcutPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Open preview'**
+  String get shortcutPreview;
+
+  /// No description provided for @shortcutRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get shortcutRename;
+
+  /// No description provided for @shortcutDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get shortcutDelete;
+
+  /// No description provided for @shortcutRenameFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename folder'**
+  String get shortcutRenameFolder;
+
+  /// No description provided for @shortcutDeleteFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete folder'**
+  String get shortcutDeleteFolder;
+
+  /// No description provided for @shortcutSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get shortcutSelectAll;
+
+  /// No description provided for @shortcutClearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selection'**
+  String get shortcutClearSelection;
+
+  /// No description provided for @shortcutCopyFileName.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy file name'**
+  String get shortcutCopyFileName;
+
+  /// No description provided for @shortcutRevealInFileManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in folder'**
+  String get shortcutRevealInFileManager;
+
+  /// No description provided for @shortcutOpenWithSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Open with the default app'**
+  String get shortcutOpenWithSystem;
+
+  /// No description provided for @shortcutNewSubfolder.
+  ///
+  /// In en, this message translates to:
+  /// **'New subfolder'**
+  String get shortcutNewSubfolder;
+
+  /// No description provided for @shortcutsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get shortcutsTitle;
+
+  /// No description provided for @shortcutsGroupGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Anywhere'**
+  String get shortcutsGroupGlobal;
+
+  /// No description provided for @shortcutsGroupScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'This page'**
+  String get shortcutsGroupScreen;
+
+  /// No description provided for @shortcutsGroupFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get shortcutsGroupFiles;
+
+  /// No description provided for @shortcutsPaneTree.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder tree'**
+  String get shortcutsPaneTree;
+
+  /// No description provided for @shortcutsPaneGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'File grid'**
+  String get shortcutsPaneGrid;
+
+  /// No description provided for @shortcutsPaneGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get shortcutsPaneGallery;
+
+  /// No description provided for @shortcutsPaneStaging.
+  ///
+  /// In en, this message translates to:
+  /// **'Staging'**
+  String get shortcutsPaneStaging;
+
+  /// No description provided for @shortcutsActiveRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'active region: {region}'**
+  String shortcutsActiveRegion(String region);
+
+  /// No description provided for @shortcutsInactiveRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'not active'**
+  String get shortcutsInactiveRegion;
+
+  /// No description provided for @shortcutsActiveRegionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'These act on the active region, the one named above. Click a region to move the keyboard there — whichever region is listening draws its selection in the accent colour.'**
+  String get shortcutsActiveRegionNote;
+
+  /// No description provided for @shortcutsClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get shortcutsClose;
+
+  /// No description provided for @shortcutsCustomise.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom key bindings'**
+  String get shortcutsCustomise;
+
+  /// No description provided for @shortcutsCustomiseLater.
+  ///
+  /// In en, this message translates to:
+  /// **'a later round'**
+  String get shortcutsCustomiseLater;
+
   /// No description provided for @tasks.
   ///
   /// In en, this message translates to:
@@ -7299,30 +7515,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fill (cropped)'**
   String get thumbnailFitCover;
-
-  /// No description provided for @deleteFileConfirmTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete File?'**
-  String get deleteFileConfirmTitle;
-
-  /// No description provided for @deleteFileConfirmMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Are you sure you want to delete \"{filename}\"?'**
-  String deleteFileConfirmMessage(String filename);
-
-  /// No description provided for @permanentlyDelete.
-  ///
-  /// In en, this message translates to:
-  /// **'Permanently Delete'**
-  String get permanentlyDelete;
-
-  /// No description provided for @deleteSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Deleted successfully'**
-  String get deleteSuccess;
 
   /// No description provided for @deleteFailed.
   ///

@@ -11,6 +11,7 @@ import '../../../services/media/image_metadata_service.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/drag/app_drag_session.dart';
 import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
+import '../../../widgets/ui/focus_pane.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart' show previewHeroTag;
 import '../../workbench/widgets/preview/video_thumbnail.dart';
 import 'browser_drag_chip.dart';
@@ -177,6 +178,11 @@ class _FileCardState extends State<FileCard> {
     final textTheme = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context)!;
     final selected = widget.isSelected;
+    // A selection the keyboard no longer owns goes quiet: same check, same
+    // count, neutral ring (`00f` 帧 3). Asked only while selected, so a card
+    // the user has never picked never takes the dependency (see
+    // [FocusPane.activeOf] for why "never" and not "not any more").
+    final paneActive = selected && FocusPane.activeOf(context);
     // Shared with the gallery and the assistant panel — see [ThumbnailFit].
     // `select` keeps a grid of these out of AppState's general traffic.
     final thumbFit = context.select<AppState, ThumbnailFit>((s) => s.thumbnailFit);
@@ -240,13 +246,17 @@ class _FileCardState extends State<FileCard> {
                       width: 20,
                       height: 20,
                       decoration: BoxDecoration(
-                        color: scheme.primary,
+                        color: paneActive ? scheme.primary : scheme.outline,
                         shape: BoxShape.circle,
                         boxShadow: const [
                           BoxShadow(color: _checkShadow, blurRadius: 3, offset: Offset(0, 1)),
                         ],
                       ),
-                      child: Icon(Icons.check, size: AppSize.iconSm, color: scheme.onPrimary),
+                      child: Icon(Icons.check,
+                          size: AppSize.iconSm,
+                          color: paneActive
+                              ? scheme.onPrimary
+                              : scheme.surface),
                     ),
                   ),
                 if (widget.isStaged)
@@ -311,12 +321,18 @@ class _FileCardState extends State<FileCard> {
                 // Outside the card (`0 0 0 2px --p, 0 0 0 4px --ring`), halo
                 // first and the solid ring over it; the card's own opaque
                 // ground hides the part of each shadow under it.
-                boxShadow: selected
-                    ? [
-                        BoxShadow(color: scheme.accentRing, spreadRadius: 4),
-                        BoxShadow(color: scheme.primary, spreadRadius: 2),
-                      ]
-                    : null,
+                boxShadow: switch ((selected, paneActive)) {
+                  (true, true) => [
+                      BoxShadow(color: scheme.accentRing, spreadRadius: 4),
+                      BoxShadow(color: scheme.primary, spreadRadius: 2),
+                    ],
+                  // No halo while the pane is idle: one flat neutral ring,
+                  // so the grid reads as "still picked, not listening".
+                  (true, false) => [
+                      BoxShadow(color: scheme.outline, spreadRadius: 2),
+                    ],
+                  _ => null,
+                },
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -329,7 +345,7 @@ class _FileCardState extends State<FileCard> {
                     softWrap: false,
                     overflow: TextOverflow.ellipsis,
                     style: textTheme.labelSmall!.mono.copyWith(
-                      color: selected ? scheme.onAccentTint : scheme.onSurface,
+                      color: paneActive ? scheme.onAccentTint : scheme.onSurface,
                       fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
                     ),
                   ),

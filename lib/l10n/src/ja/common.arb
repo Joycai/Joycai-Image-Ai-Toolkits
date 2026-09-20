@@ -51,6 +51,14 @@
   "openInFolder": "フォルダで開く",
   "openInPreview": "プレビューで開く",
   "copiedToClipboard": "コピーしました: {text}",
+  "copiedFilenames": "{count}件のファイル名をコピーしました",
+  "@copiedFilenames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "selectedCount": "{count}個選択済み",
   "shareFiles": "選択した{count}個のアイテムを共有",
   "comingSoon": "近日公開",

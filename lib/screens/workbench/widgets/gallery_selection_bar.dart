@@ -177,11 +177,12 @@ class _BarContent extends StatelessWidget {
           icon: Icons.remove_circle_outline,
           compactIcon: Icons.remove_circle_outline,
           label: l10n.removeFromWorkspace,
-          onTap: () {
-            for (final image in List.of(selected)) {
-              gallery.removeDroppedImage(image.path);
-            }
-          },
+          // One pass, one notification — the same call the `Delete` key and
+          // the context menu make. Looping the single-image version re-filtered
+          // the workspace, re-validated the selection against all four
+          // collections and rebuilt the grid once per picture.
+          onTap: () =>
+              gallery.removeDroppedImages([for (final i in selected) i.path]),
           danger: false,
         )
       else
