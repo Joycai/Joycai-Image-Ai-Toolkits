@@ -2836,7 +2836,7 @@
       }
     }
   },
-  "optSysPromptNoTools": "此模式不掛載知識庫工具，agent 不產生工具呼叫。",
+  "optSysPromptNoKb": "此模式不讀取知識庫；助手仍會查看參考圖，並可能向你提問。",
   "kbEditNoChange": "此提議未變更檔案內容。",
   "kbEditPendingTitle": "待確認變更",
   "kbEditWriteAll": "全部寫入",

@@ -5117,7 +5117,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get optSysPromptNoTools => '此模式不挂载知识库工具，agent 不产生工具调用。';
+  String get optSysPromptNoKb => '此模式不读取知识库；助手仍会查看参考图，并可能向你提问。';
 
   @override
   String get kbEditNoChange => '此提议未改动文件内容。';
@@ -10658,7 +10658,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get optSysPromptNoTools => '此模式不掛載知識庫工具，agent 不產生工具呼叫。';
+  String get optSysPromptNoKb => '此模式不讀取知識庫；助手仍會查看參考圖，並可能向你提問。';
 
   @override
   String get kbEditNoChange => '此提議未變更檔案內容。';

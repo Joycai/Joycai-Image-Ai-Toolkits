@@ -2969,7 +2969,7 @@
       }
     }
   },
-  "optSysPromptNoTools": "此模式不挂载知识库工具，agent 不产生工具调用。",
+  "optSysPromptNoKb": "此模式不读取知识库；助手仍会查看参考图，并可能向你提问。",
   "kbEditNoChange": "此提议未改动文件内容。",
   "kbEditPendingTitle": "待确认改动",
   "kbEditWriteAll": "全部写入",

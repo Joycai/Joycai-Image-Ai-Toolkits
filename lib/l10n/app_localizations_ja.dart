@@ -5171,8 +5171,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get optSysPromptNoTools =>
-      'このモードではナレッジツールを読み込まないため、agent はツールを呼び出しません。';
+  String get optSysPromptNoKb =>
+      'このモードではナレッジベースを参照しません。アシスタントは参考画像の確認や質問は行います。';
 
   @override
   String get kbEditNoChange => 'この提案はファイルの内容を変更しません。';

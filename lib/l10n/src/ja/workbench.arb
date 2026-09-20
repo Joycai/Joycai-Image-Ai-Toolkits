@@ -817,7 +817,7 @@
       }
     }
   },
-  "optSysPromptNoTools": "このモードではナレッジツールを読み込まないため、agent はツールを呼び出しません。",
+  "optSysPromptNoKb": "このモードではナレッジベースを参照しません。アシスタントは参考画像の確認や質問は行います。",
   "kbEditNoChange": "この提案はファイルの内容を変更しません。",
   "kbEditPendingTitle": "未確認の変更",
   "kbEditWriteAll": "すべて書き込む",

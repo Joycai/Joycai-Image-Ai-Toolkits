@@ -2,8 +2,8 @@ part of '../optimizer_config_panel.dart';
 
 extension _SysPromptCard on _OptimizerConfigPanelState {
   /// `A3a 1a`'s system-prompt card: which template is loaded, its text, what
-  /// the text costs, the two ways out of an edit, and why this mode makes no
-  /// tool calls.
+  /// the text costs, the two ways out of an edit, and that this mode leaves
+  /// the knowledge base alone — it still views images, asks and submits.
   ///
   /// The text is always on screen, a template is where it starts, and the edit
   /// is a state the card can report and undo.
@@ -31,7 +31,7 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
         _buildSysPromptEditor(l10n, colorScheme, textTheme),
         _buildSysPromptMeter(l10n, colorScheme, textTheme, text),
         if (template != null) _buildSysPromptActions(l10n, template, text, dirty),
-        _hairlined(colorScheme, Text(l10n.optSysPromptNoTools, style: _noteStyle(colorScheme, textTheme))),
+        _hairlined(colorScheme, Text(l10n.optSysPromptNoKb, style: _noteStyle(colorScheme, textTheme))),
       ],
     );
   }

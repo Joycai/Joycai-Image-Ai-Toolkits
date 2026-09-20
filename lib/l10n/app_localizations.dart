@@ -9201,11 +9201,11 @@ abstract class AppLocalizations {
   /// **'~{tokens} tokens'**
   String optSysPromptTokens(String tokens);
 
-  /// No description provided for @optSysPromptNoTools.
+  /// No description provided for @optSysPromptNoKb.
   ///
   /// In en, this message translates to:
-  /// **'This mode mounts no knowledge tools — the agent makes no tool calls.'**
-  String get optSysPromptNoTools;
+  /// **'This mode does not read the knowledge base. The assistant still views reference images and may ask you questions.'**
+  String get optSysPromptNoKb;
 
   /// No description provided for @kbEditNoChange.
   ///

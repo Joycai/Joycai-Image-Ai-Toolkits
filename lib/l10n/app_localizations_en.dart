@@ -5359,8 +5359,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get optSysPromptNoTools =>
-      'This mode mounts no knowledge tools — the agent makes no tool calls.';
+  String get optSysPromptNoKb =>
+      'This mode does not read the knowledge base. The assistant still views reference images and may ask you questions.';
 
   @override
   String get kbEditNoChange => 'This proposal changes nothing in the file.';
