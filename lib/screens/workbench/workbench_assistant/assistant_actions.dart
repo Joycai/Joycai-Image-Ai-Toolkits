@@ -69,9 +69,10 @@ extension _AssistantActions on _WorkbenchScreenState {
   /// 「管理预设」 lands on the presets themselves: the library's system
   /// templates, filtered to the kind this assistant loads (`A3d 4c`).
   void _handleManagePresets() {
-    context.read<AppState>()
-      ..requestSystemTemplates('refiner')
-      ..navigateToScreen(AppDestination.prompts.index);
+    context.read<AppState>().navigateToScreen(
+      AppDestination.prompts.index,
+      systemTemplateType: SystemPrompt.typeRefiner,
+    );
   }
 
   /// Task preset ⇄ knowledge base is a different conversation, not a setting

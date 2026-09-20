@@ -74,7 +74,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     // A caller may have sent the user here for one kind of template — the
     // assistant's 「管理预设」 (`A3d 4c`) — in which case the library opens on
     // it rather than on the user's own prompts.
-    final requestedType = context.read<AppState>().takeSystemTemplateRequest();
+    var requestedType = context.read<AppState>().takeSystemTemplateRequest();
+    // A type the filter does not offer would open on an empty list with
+    // nothing selected; better the ordinary library.
+    if (!SystemPrompt.types.contains(requestedType)) requestedType = null;
     if (requestedType != null) _selectedSystemType = requestedType;
     _tabController = TabController(
       length: 3,

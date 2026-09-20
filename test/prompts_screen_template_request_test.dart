@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/screens/prompts/prompts_screen.dart';
 import 'package:joycai_image_ai_toolkits/screens/prompts/widgets/prompts_header.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
@@ -58,9 +59,28 @@ void main() {
     return tester.widget<PromptTemplateTypeSegmented>(found.first).value;
   }
 
+  /// 0 the user's prompts, 1 system templates, 2 categories — read from the
+  /// control that shows it, which differs by layout.
+  int shownView(WidgetTester tester) {
+    final header = find.byType(PromptsMainHeader);
+    if (header.evaluate().isNotEmpty) {
+      return tester.widget<PromptsMainHeader>(header).view;
+    }
+    return tester.widget<TabBar>(find.byType(TabBar)).controller!.index;
+  }
+
   test('a request is handed over once', () {
-    final app = AppState()..requestSystemTemplates('refiner');
-    expect(app.takeSystemTemplateRequest(), 'refiner');
+    final app = AppState()
+      ..navigateToScreen(4, systemTemplateType: SystemPrompt.typeRefiner);
+    expect(app.takeSystemTemplateRequest(), SystemPrompt.typeRefiner);
+    expect(app.takeSystemTemplateRequest(), isNull);
+  });
+
+  test('a request nobody took does not wait for a later visit', () {
+    final app = AppState()
+      ..navigateToScreen(4, systemTemplateType: SystemPrompt.typeRefiner)
+      ..navigateToScreen(0)
+      ..navigateToScreen(4);
     expect(app.takeSystemTemplateRequest(), isNull);
   });
 
@@ -71,15 +91,27 @@ void main() {
     testWidgets('$name: a request opens the templates on that type, once', (
       tester,
     ) async {
-      final app = AppState()..requestSystemTemplates('refiner');
+      final app = AppState()
+        ..navigateToScreen(4, systemTemplateType: SystemPrompt.typeRefiner);
 
       await pumpLibrary(tester, app, size);
-      expect(shownType(tester), 'refiner');
+      expect(shownView(tester), 1);
+      expect(shownType(tester), SystemPrompt.typeRefiner);
       expect(tester.takeException(), isNull);
 
-      // The next visit is the user's own: back on their prompts, unfiltered.
+      // The next visit is the user's own: back on their prompts, and the
+      // templates — once looked at — unfiltered.
       await pumpLibrary(tester, app, size);
-      expect(shownType(tester), isNot('refiner'));
+      expect(shownView(tester), 0);
     });
   }
+
+  testWidgets('a type the filter does not offer opens the ordinary library', (
+    tester,
+  ) async {
+    final app = AppState()..navigateToScreen(4, systemTemplateType: 'refine');
+
+    await pumpLibrary(tester, app, const Size(1440, 900));
+    expect(shownView(tester), 0);
+  });
 }

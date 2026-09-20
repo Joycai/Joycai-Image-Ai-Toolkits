@@ -46,7 +46,15 @@ class SystemPrompt {
   final int? id;
   final String title;
   final String content;
-  final String type; // e.g. 'refiner'
+  final String type; // one of [types]
+
+  /// What the Prompt Assistant loads as a task preset.
+  static const String typeRefiner = 'refiner';
+
+  /// What AI rename loads as its instructions.
+  static const String typeRename = 'rename';
+
+  static const List<String> types = [typeRefiner, typeRename];
   final bool isMarkdown;
   final int sortOrder;
   final List<PromptTag> tags;
