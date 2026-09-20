@@ -9934,6 +9934,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start new conversation'**
   String get optModeSwitchStart;
+
+  /// No description provided for @optPresetCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom instructions'**
+  String get optPresetCustom;
 }
 
 class _AppLocalizationsDelegate

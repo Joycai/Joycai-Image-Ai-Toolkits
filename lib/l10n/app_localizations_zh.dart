@@ -5560,6 +5560,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optModeSwitchStart => '开始新会话';
+
+  @override
+  String get optPresetCustom => '自定义指令';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -11119,4 +11122,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optModeSwitchStart => '開始新對話';
+
+  @override
+  String get optPresetCustom => '自訂指令';
 }

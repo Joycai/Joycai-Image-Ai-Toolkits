@@ -5827,4 +5827,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optModeSwitchStart => 'Start new conversation';
+
+  @override
+  String get optPresetCustom => 'Custom instructions';
 }

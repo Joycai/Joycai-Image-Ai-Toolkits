@@ -1140,5 +1140,6 @@
     }
   },
   "optModeSwitchBody": "任务预设和知识库的对话不能接在一起，切换会开始一个新会话。当前会话已保存，可以随时从「历史会话」回来。",
-  "optModeSwitchStart": "开始新会话"
+  "optModeSwitchStart": "开始新会话",
+  "optPresetCustom": "自定义指令"
 }

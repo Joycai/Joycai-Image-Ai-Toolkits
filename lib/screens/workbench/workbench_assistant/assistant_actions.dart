@@ -16,9 +16,13 @@ extension _AssistantActions on _WorkbenchScreenState {
               (p) => p?.id == id,
               orElse: () => null,
             );
+        // No preset and no text is the built-in; text with no preset behind
+        // it (its library row was deleted) is the user's own, and the badge
+        // must not name a preset that is not what will be sent.
+        final custom = (wui.optSelectedSysPrompt ?? '').trim().isNotEmpty;
         return l10n.optModeBadge(
           l10n.optModeSystemPrompt,
-          preset?.title ?? l10n.optPresetBuiltinName,
+          preset?.title ?? (custom ? l10n.optPresetCustom : l10n.optPresetBuiltinName),
         );
     }
   }
@@ -52,6 +56,13 @@ extension _AssistantActions on _WorkbenchScreenState {
         ],
       );
       if (confirmed != true) return;
+      // Asked again: the dialog was open long enough for a staged turn to
+      // have started, or for another session to have been restored.
+      if (!mounted ||
+          !identical(workbenchUIState.optimizerSession, session) ||
+          _optRunningForSession(session)) {
+        return;
+      }
     }
     workbenchUIState.setAssistantMode(next);
   }

@@ -3159,5 +3159,6 @@
     }
   },
   "optModeSwitchBody": "任務預設和知識庫的對話不能接在一起，切換會開始一個新對話。目前的對話已儲存，可以隨時從「歷史對話」回來。",
-  "optModeSwitchStart": "開始新對話"
+  "optModeSwitchStart": "開始新對話",
+  "optPresetCustom": "自訂指令"
 }

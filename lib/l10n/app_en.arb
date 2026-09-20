@@ -3940,5 +3940,6 @@
     }
   },
   "optModeSwitchBody": "Task-preset and knowledge-base conversations can’t continue one another, so switching starts a new conversation. The current one is saved — come back to it any time from Conversation History.",
-  "optModeSwitchStart": "Start new conversation"
+  "optModeSwitchStart": "Start new conversation",
+  "optPresetCustom": "Custom instructions"
 }

@@ -1140,5 +1140,6 @@
     }
   },
   "optModeSwitchBody": "タスクプリセットとナレッジベースの会話はつなげられないため、切り替えると新しい会話が始まります。現在の会話は保存済みで、「会話履歴」からいつでも戻れます。",
-  "optModeSwitchStart": "新しい会話を始める"
+  "optModeSwitchStart": "新しい会話を始める",
+  "optPresetCustom": "カスタム指示"
 }

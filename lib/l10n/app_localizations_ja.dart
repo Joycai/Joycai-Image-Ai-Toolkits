@@ -5617,4 +5617,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optModeSwitchStart => '新しい会話を始める';
+
+  @override
+  String get optPresetCustom => 'カスタム指示';
 }

@@ -367,10 +367,22 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
         knowledge ? AssistantMode.knowledgeBase : AssistantMode.systemPrompt,
       ),
       expand: true,
-      compact: true,
+      // Finger-sized in the phone's sheet, like every other control there.
+      compact: !_touch,
       style: AppSegmentStyle.tinted,
     );
-    if (!onKnowledge) return basis;
+    final lockedNote = Padding(
+      padding: const EdgeInsets.only(top: AppSpace.s4),
+      child: Text(l10n.optModeLocked, style: _noteStyle(colorScheme, textTheme)),
+    );
+    if (!onKnowledge) {
+      if (!locked) return basis;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [basis, lockedNote],
+      );
+    }
 
     // Nothing to use until the base is there; the status card below says so.
     final usable = widget.kbStatus == KbStatus.ok && !locked;
@@ -404,10 +416,7 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
             ),
           ],
         ),
-        if (locked) ...[
-          const SizedBox(height: AppSpace.s4),
-          Text(l10n.optModeLocked, style: _noteStyle(colorScheme, textTheme)),
-        ],
+        if (locked) lockedNote,
       ],
     );
   }
