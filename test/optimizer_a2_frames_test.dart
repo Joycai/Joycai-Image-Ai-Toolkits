@@ -229,8 +229,9 @@ void main() {
       required String? text,
       required int? templateId,
       double width = 250,
-      void Function(int?, String?)? onTemplateChanged,
+      void Function(SystemPrompt?)? onTemplateChanged,
       bool expand = true,
+      PresetOutputKind kind = PresetOutputKind.prompt,
     }) async {
       final appState = AppState();
       final templates = <SystemPrompt>[
@@ -255,9 +256,10 @@ void main() {
                 mode: AssistantMode.systemPrompt,
                 kbStatus: KbStatus.notSet,
                 sysPrompts: templates,
+                presetOutputKind: kind,
                 onModelChanged: (_) {},
                 onSysPromptChanged: (_) {},
-                onSysPromptTemplateChanged: onTemplateChanged ?? (_, _) {},
+                onPresetLoaded: onTemplateChanged ?? (_) {},
                 onSaveTemplate: (_, _) async {},
                 onModeChanged: (_) {},
                 onScaffoldKb: () async {},
@@ -278,6 +280,17 @@ void main() {
     }
 
     // `A3d 4b`: task first, text second.
+    testWidgets('says what the preset hands back, for either kind (A3e 5c)', (tester) async {
+      final l10n = await en();
+      await pumpPanel(tester, text: 'BASE', templateId: 1, expand: false, kind: PresetOutputKind.analysis);
+      expect(find.text(l10n.optPresetOutputAnalysisValue), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: 'one line, ellipsised, at the narrowest panel');
+
+      await pumpPanel(tester, text: 'BASE', templateId: 1, expand: false);
+      expect(find.text(l10n.optPresetOutputPromptValue), findsOneWidget);
+      expect(find.text(l10n.optPresetOutputAnalysisValue), findsNothing);
+    });
+
     testWidgets('the instructions start folded, and the unsaved badge outlives the fold',
         (tester) async {
       await pumpPanel(tester, text: 'BASE and then some', templateId: 1, expand: false);
@@ -312,7 +325,7 @@ void main() {
         templateId: 1,
         width: 400,
         expand: false,
-        onTemplateChanged: (id, _) => loaded.add(id),
+        onTemplateChanged: (preset) => loaded.add(preset?.id),
       );
       final l10n = await en();
 
@@ -365,9 +378,9 @@ void main() {
         tester,
         text: 'BASE edited',
         templateId: 1,
-        onTemplateChanged: (id, content) {
-          gotId = id;
-          gotContent = content;
+        onTemplateChanged: (preset) {
+          gotId = preset?.id;
+          gotContent = preset?.content;
         },
       );
       final l10n = await en();

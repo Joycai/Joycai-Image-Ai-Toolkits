@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
+import '../../models/prompt.dart';
 import '../../models/result_feedback.dart';
 import 'assistant_context_usage.dart';
 import '../db/database_service.dart';
@@ -85,6 +86,11 @@ class PromptOptimizerAgent {
   static const String compactedNoticeToken = '__compacted__';
   static const String imageMissingNoticeToken = '__image_missing__';
   static const String kbEntryTooLargeNoticeToken = '__kb_entry_too_large__';
+
+  /// The turn's model does not accept images, and the session has some
+  /// (`A3e 5f`). The entry's `note` is how many were held back, its
+  /// `modelDbId` the model that could not take them.
+  static const String imagesNotOfferedNoticeToken = '__images_not_offered__';
   static const String kbDistillNoticeToken = '__kb_distill__';
 
   /// The divider a knowledge session leaves when its use is switched —
@@ -424,6 +430,7 @@ class PromptOptimizerAgent {
     required PromptOptimizerSession session,
     required dynamic modelIdentifier,
     String? systemPrompt,
+    PresetOutputKind outputKind = PresetOutputKind.prompt,
     required List<Map<String, String>> referenceImages,
     bool forceViewAllImages = false,
     bool acceptsImageInput = true,
@@ -459,6 +466,8 @@ class PromptOptimizerAgent {
     if (!acceptsImageInput && referenceImages.isNotEmpty) {
       onLog?.call('This model does not accept image input — '
           '${referenceImages.length} reference image(s) will not be offered to it.');
+      _noteImagesNotOffered(session, referenceImages.length,
+          modelIdentifier is int ? modelIdentifier : null);
     }
     final effectiveRefs =
         acceptsImageInput ? referenceImages : const <Map<String, String>>[];
@@ -500,6 +509,7 @@ class PromptOptimizerAgent {
       knowledgeMode: knowledgeMode,
       knowledgeEntryContent: knowledgeEntryContent,
       systemPrompt: systemPrompt,
+      outputKind: outputKind,
       refCount: effectiveRefs.length,
       forceView: effectiveForceView,
     );
@@ -594,7 +604,14 @@ class PromptOptimizerAgent {
               // "request failed" under a prompt that had just been delivered.
               // A turn opening on the user's message (or the final-round
               // nudge) keeps the failure: an empty answer there is one.
-              if (outgoing.last.role == LLMRole.tool) emptyReplyEndsTurnKey: true,
+              // Under an analysis preset the answer *is* the reply, so only
+              // a batch that delivered a prompt can be followed by silence:
+              // after a view_image, an empty reply is a missing answer.
+              if (outgoing.last.role == LLMRole.tool &&
+                  (knowledgeMode ||
+                      outputKind != PresetOutputKind.analysis ||
+                      _lastBatchSubmittedPrompt(outgoing)))
+                emptyReplyEndsTurnKey: true,
             },
             // Streamed where the route can carry tool calls over it (④
             // today), and silently downgraded everywhere else. Not for
@@ -683,6 +700,14 @@ class PromptOptimizerAgent {
             }
             continue;
           }
+          // Under an analysis preset the reply that closes the turn is what
+          // the turn was for (`A3e`). Not the last round's: that one is the
+          // status report [_finalRoundNudge] asks for, not an answer. Nor
+          // the word that follows a delivered prompt: the card was the answer.
+          final deliverable = !knowledgeMode &&
+              outputKind == PresetOutputKind.analysis &&
+              !finalRound &&
+              !_lastBatchSubmittedPrompt(outgoing);
           if (text.isNotEmpty) {
             // No echo obligation without tool calls (the payload builder only
             // replays reasoning on tool-call-bearing messages), but keep the
@@ -699,6 +724,7 @@ class PromptOptimizerAgent {
               rawModelParts: response.rawModelParts,
               rawResponseItems: response.rawResponseItems,
               truncated: truncated,
+              deliverable: deliverable,
               modelDbId: modelIdentifier is int ? modelIdentifier : null,
             ));
             // A cut chat reply stays a chat reply — it is what the model
@@ -707,6 +733,7 @@ class PromptOptimizerAgent {
               kind: OptimizerEntryKind.assistant,
               text: text,
               truncated: truncated,
+              deliverable: deliverable,
               modelDbId: modelIdentifier is int ? modelIdentifier : null,
             ));
           }
@@ -986,6 +1013,45 @@ class PromptOptimizerAgent {
       if (kind == OptimizerEntryKind.tool) steps++;
     }
     return steps;
+  }
+
+  /// Says in the conversation what the log alone used to say: the model
+  /// answers without having seen the images. Under a preset that asks it to
+  /// read them, that is the difference between an answer and an invention.
+  ///
+  /// Once per model, not per turn: the latest such notice naming the same
+  /// model (and the same count) has already said it. A different model that
+  /// is blind too, or more images, says it again.
+  static void _noteImagesNotOffered(PromptOptimizerSession session, int count, int? modelDbId) {
+    for (final e in session.transcript.reversed) {
+      if (e.kind != OptimizerEntryKind.notice || e.text != imagesNotOfferedNoticeToken) continue;
+      if (e.modelDbId == modelDbId && e.note == '$count') return;
+      break;
+    }
+    session._addEntry(OptimizerChatEntry(
+      kind: OptimizerEntryKind.notice,
+      text: imagesNotOfferedNoticeToken,
+      note: '$count',
+      modelDbId: modelDbId,
+    ));
+  }
+
+  /// Whether the tool results [messages] ends on belong to a batch that called
+  /// submit_prompt — after which the model has nothing left it must say.
+  @visibleForTesting
+  static bool lastBatchSubmittedPromptForTest(List<LLMMessage> messages) =>
+      _lastBatchSubmittedPrompt(messages);
+
+  static bool _lastBatchSubmittedPrompt(List<LLMMessage> messages) {
+    for (final m in messages.reversed) {
+      if (m.role == LLMRole.tool) continue;
+      // The image a view_image in the same batch attached: part of the
+      // batch's results, not a turn of the user's.
+      if (m.role == LLMRole.user && m.content.startsWith(viewResultMarker)) continue;
+      return m.role == LLMRole.assistant &&
+          m.toolCalls.any((c) => c.name == 'submit_prompt');
+    }
+    return false;
   }
 
   /// Chars in what a request actually carries: the system prompt (which is

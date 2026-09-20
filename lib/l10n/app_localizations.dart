@@ -5680,6 +5680,42 @@ abstract class AppLocalizations {
   /// **'Presets'**
   String get colorPresets;
 
+  /// No description provided for @presetOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Output'**
+  String get presetOutput;
+
+  /// No description provided for @presetOutputPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt'**
+  String get presetOutputPrompt;
+
+  /// No description provided for @presetOutputAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis text'**
+  String get presetOutputAnalysis;
+
+  /// No description provided for @presetOutputAnalysisShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis'**
+  String get presetOutputAnalysisShort;
+
+  /// No description provided for @presetOutputPromptHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant delivers the result as a versioned prompt card you can apply to the workbench in one click.'**
+  String get presetOutputPromptHelp;
+
+  /// No description provided for @presetOutputAnalysisHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant answers right in the chat, in the structure this preset lays down, and the result can be copied. It can still hand you a prompt when you ask for one.'**
+  String get presetOutputAnalysisHelp;
+
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:
@@ -10096,6 +10132,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits'**
   String get optKbUseWriteNotice;
+
+  /// No description provided for @optPresetOutputPromptValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt · delivered as a card'**
+  String get optPresetOutputPromptValue;
+
+  /// No description provided for @optPresetOutputAnalysisValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis text · answered in the chat'**
+  String get optPresetOutputAnalysisValue;
+
+  /// No description provided for @optEmptyAnalysisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What should it look at?'**
+  String get optEmptyAnalysisTitle;
+
+  /// No description provided for @optEmptyAnalysisSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Say which reference images to look at and what to pull out. The assistant answers directly, in the structure this preset lays down.'**
+  String get optEmptyAnalysisSub;
+
+  /// No description provided for @optEmptyAnalysisExample1.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell me what is in reference image 1'**
+  String get optEmptyAnalysisExample1;
+
+  /// No description provided for @optEmptyAnalysisExample2.
+  ///
+  /// In en, this message translates to:
+  /// **'Using reference images 1 and 2, describe how the garment is constructed'**
+  String get optEmptyAnalysisExample2;
+
+  /// No description provided for @optEmptyAnalysisExample3.
+  ///
+  /// In en, this message translates to:
+  /// **'Beyond the images, here is what else you should know: '**
+  String get optEmptyAnalysisExample3;
+
+  /// No description provided for @optChatHintAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Say which image to look at and what to pull out…'**
+  String get optChatHintAnalysis;
+
+  /// No description provided for @optResultMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} chars · Markdown'**
+  String optResultMeta(int count);
+
+  /// No description provided for @optImagesNotOfferedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This model cannot see images'**
+  String get optImagesNotOfferedTitle;
+
+  /// No description provided for @optImagesNotOfferedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} reference image(s) were not given to it; its answers rest on your text alone. Pick a model that accepts images, or check this one\'s image input in its settings.'**
+  String optImagesNotOfferedBody(int count);
+
+  /// No description provided for @optImagesNotOfferedAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open model settings'**
+  String get optImagesNotOfferedAction;
 }
 
 class _AppLocalizationsDelegate

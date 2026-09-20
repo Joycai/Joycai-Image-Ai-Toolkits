@@ -1659,6 +1659,12 @@
   "importReplaceDetail": "既存の {current} 件を削除し、ファイルの {count} 件だけを残す",
   "promptLibraryEmptyHint": "ワークベンチでよく使うプロンプトを保存すれば、次からワンクリックで適用できます。",
   "colorPresets": "プリセット",
+  "presetOutput": "出力",
+  "presetOutputPrompt": "プロンプト",
+  "presetOutputAnalysis": "分析テキスト",
+  "presetOutputAnalysisShort": "分析",
+  "presetOutputPromptHelp": "アシスタントは結果をバージョン付きのプロンプトカードとして渡し、ワンクリックでワークベンチに適用できます。",
+  "presetOutputAnalysisHelp": "アシスタントはこのプリセットが定める構成で会話の中に直接回答し、結果はコピーできます。明示的に頼めば、プロンプトも別に出せます。",
   "settings": "設定",
   "appearance": "外観",
   "connectivity": "接続性",
@@ -3207,5 +3213,31 @@
     }
   },
   "optKbUseMaintainNotice": "「メンテナンス」に切り替えました · アシスタントはナレッジベースの変更を提案できます",
-  "optKbUseWriteNotice": "「プロンプト作成」に切り替えました · アシスタントはナレッジベースの変更を提案しなくなります"
+  "optKbUseWriteNotice": "「プロンプト作成」に切り替えました · アシスタントはナレッジベースの変更を提案しなくなります",
+  "optPresetOutputPromptValue": "プロンプト · カードで渡す",
+  "optPresetOutputAnalysisValue": "分析テキスト · 会話の中で回答",
+  "optEmptyAnalysisTitle": "今回は何を見ますか？",
+  "optEmptyAnalysisSub": "どの参考画像を見て、何を取り出すのかを伝えてください。アシスタントはこのプリセットが定める構成でそのまま回答します。",
+  "optEmptyAnalysisExample1": "参考画像 1 の内容を読み取ってください",
+  "optEmptyAnalysisExample2": "参考画像 1 と 2 を合わせて、服のデザイン構造を説明してください",
+  "optEmptyAnalysisExample3": "画像のほかに、次の情報を補足します：",
+  "optChatHintAnalysis": "どの画像を見て、何を取り出すかを入力…",
+  "optResultMeta": "{count} 文字 · Markdown",
+  "@optResultMeta": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optImagesNotOfferedTitle": "このモデルは画像を見られません",
+  "optImagesNotOfferedBody": "{count} 枚の参考画像はこのモデルに渡されておらず、回答は入力した文章だけに基づきます。右側で画像を扱えるモデルに切り替えるか、モデル設定で画像入力の可否を確認してください。",
+  "@optImagesNotOfferedBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optImagesNotOfferedAction": "モデル設定を開く"
 }

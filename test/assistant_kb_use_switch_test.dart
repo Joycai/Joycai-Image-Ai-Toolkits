@@ -122,7 +122,7 @@ void main() {
               pendingKbEdits: PromptOptimizerAgent.pendingKbEdits(session),
               onModelChanged: (_) {},
               onSysPromptChanged: (_) {},
-              onSysPromptTemplateChanged: (_, _) {},
+              onPresetLoaded: (_) {},
               onSaveTemplate: (_, _) async {},
               onModeChanged: (_) {},
               onScaffoldKb: () async {},

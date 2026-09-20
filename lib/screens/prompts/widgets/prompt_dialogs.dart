@@ -167,12 +167,16 @@ Future<bool> showSystemPromptEditDialog(
   required List<PromptTag> tags,
   required String defaultType,
   String? initialContent,
+  PresetOutputKind initialOutputKind = PresetOutputKind.prompt,
 }) async {
   final titleCtrl = TextEditingController(text: prompt?.title ?? '');
   final contentCtrl =
       MarkdownTextEditingController(text: prompt?.content ?? initialContent ?? '');
   bool isMarkdown = prompt?.isMarkdown ?? true;
   String selectedType = prompt?.type ?? defaultType;
+  // Kept while the type is switched away and back: choosing 「AI 重命名」 by
+  // mistake should not cost the choice made here.
+  PresetOutputKind outputKind = prompt?.outputKind ?? initialOutputKind;
 
   final Set<int> selectedTagIds = {};
   if (prompt != null) {
@@ -209,6 +213,9 @@ Future<bool> showSystemPromptEditDialog(
                 size: AppFieldSize.regular,
                 child: AppSegmentedControl<String>(
                   compact: true,
+                  // Filling the row, so the two labels share a phone's width
+                  // instead of overflowing it (`A3e 5g`).
+                  expand: true,
                   segments: [
                     AppSegment(value: 'refiner', label: l10n.typeRefiner, icon: Icons.text_snippet_outlined),
                     AppSegment(value: 'rename', label: l10n.typeRename, icon: Icons.drive_file_rename_outline),
@@ -216,6 +223,23 @@ Future<bool> showSystemPromptEditDialog(
                   value: selectedType,
                   onChanged: (v) => setDialogState(() => selectedType = v),
                 ),
+              ),
+              // `A3e 5a`: what the preset hands back. Only the assistant's
+              // presets have such a thing, so the row folds away for a rename
+              // template rather than sitting there disabled.
+              AnimatedSize(
+                duration: AppMotion.durationOf(context, AppMotion.reveal),
+                curve: AppMotion.enter,
+                alignment: Alignment.topCenter,
+                child: selectedType != SystemPrompt.typeRefiner
+                    ? const SizedBox(width: double.infinity)
+                    : Padding(
+                        padding: const EdgeInsets.only(top: AppSpace.s16),
+                        child: _OutputKindField(
+                          value: outputKind,
+                          onChanged: (v) => setDialogState(() => outputKind = v),
+                        ),
+                      ),
               ),
               if (tags.isNotEmpty) ...[
                 const SizedBox(height: AppSpace.s16),
@@ -254,6 +278,8 @@ Future<bool> showSystemPromptEditDialog(
                   'title': titleCtrl.text,
                   'content': contentCtrl.text,
                   'type': selectedType,
+                  // The model drops it for a type that has none.
+                  'output_kind': outputKind.name,
                   'is_markdown': isMarkdown ? 1 : 0,
                   'sort_order': prompt?.sortOrder ?? (systemPrompts.isEmpty ? 0 : systemPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
                 };
@@ -543,6 +569,60 @@ Future<List<int>?> showBulkCategorizeDialog(
 
   if (confirmed != true) return null;
   return targetTagIds.toList();
+}
+
+/// `A3e 5a`: 「产出」 — the two kinds, and under them the one sentence that says
+/// what the chosen kind changes. The only place the feature is explained, so
+/// the explanation sits where the decision is made.
+class _OutputKindField extends StatelessWidget {
+  const _OutputKindField({required this.value, required this.onChanged});
+
+  final PresetOutputKind value;
+  final ValueChanged<PresetOutputKind> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return AppLabelledField(
+      label: l10n.presetOutput,
+      size: AppFieldSize.regular,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppSegmentedControl<PresetOutputKind>(
+            compact: true,
+            expand: true,
+            segments: [
+              AppSegment(
+                value: PresetOutputKind.prompt,
+                label: l10n.presetOutputPrompt,
+                icon: Icons.description_outlined,
+              ),
+              AppSegment(
+                value: PresetOutputKind.analysis,
+                label: l10n.presetOutputAnalysis,
+                icon: Icons.subject,
+              ),
+            ],
+            value: value,
+            onChanged: onChanged,
+          ),
+          const SizedBox(height: AppSpace.s6),
+          Text(
+            value == PresetOutputKind.analysis
+                ? l10n.presetOutputAnalysisHelp
+                : l10n.presetOutputPromptHelp,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: AppType.proseHeight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Selectable category chips shared by the prompt, template and bulk dialogs:

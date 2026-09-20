@@ -8,6 +8,8 @@
 @Tags(<String>['screenshots'])
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
@@ -42,14 +44,15 @@ void main() {
           size: kShotSizes.last,
           brightness: brightness,
           suffix: tab.name,
-          before: (_) async {
+          before: (WidgetTester tester) async {
             final AppState appState = AppState();
             appState.setWorkbenchTab(tab.index);
-            if (!tab.seedOnSettled) tab.seed(appState);
+            // In real time: a seed may read the fixture database.
+            if (!tab.seedOnSettled) await tester.runAsync(() async => tab.seed(appState));
           },
           after: tab.seedOnSettled
               ? (WidgetTester tester) async {
-                  tab.seed(AppState());
+                  await tab.seed(AppState());
                   await tester.pump();
                 }
               : null,
@@ -98,7 +101,7 @@ class _WorkbenchTab {
   const _WorkbenchTab(this.name, this.index, this.seed, {this.seedOnSettled = false});
   final String name;
   final int index;
-  final void Function(AppState appState) seed;
+  final FutureOr<void> Function(AppState appState) seed;
 
   /// Seed after the first frame instead of before it.
   ///
@@ -146,6 +149,9 @@ final List<_WorkbenchTab> _workbenchTabs = <_WorkbenchTab>[
   _WorkbenchTab('assistant_running', 4, seedOptimizerRunning),
   _WorkbenchTab('assistant_sysprompt', 4, seedOptimizerSystemPrompt),
   _WorkbenchTab('assistant_kbedit', 4, seedOptimizerKbEdit),
+  // `A3e 5e`: an analysis preset's answer — a reply with a copy row, not a
+  // card — and the prompt card the same session can still produce.
+  _WorkbenchTab('assistant_analysis', 4, seedOptimizerAnalysis),
   // The other half of the workbench. It has its own right panel — model,
   // resolution, aspect, duration, the first/last-frame drop targets — and
   // shares nothing with tab 0's below the shell, so leaving it out meant half

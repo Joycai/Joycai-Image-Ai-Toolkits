@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_stats.dart';
@@ -678,6 +679,54 @@ void main() {
       addTearDown(db.close);
       await DatabaseMigration.onCreate(db);
       expect(await columnsOf(db, 'image_layers'), contains('description'));
+    });
+  });
+
+  group('v47 gives a task preset an output kind', () {
+    test('every preset that was there hands back a prompt, idempotently', () async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      addTearDown(db.close);
+      await db.execute(
+          'CREATE TABLE system_prompts (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, type TEXT NOT NULL)');
+      await db.insert('system_prompts', {'title': 'old', 'content': 'c', 'type': 'refiner'});
+      await DatabaseMigration.migrate(db, 46, 47);
+      await DatabaseMigration.migrate(db, 46, 47);
+      expect((await db.query('system_prompts')).single['output_kind'], 'prompt');
+    });
+
+    test('a row written without the key — an older export — is a prompt', () async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      addTearDown(db.close);
+      await DatabaseMigration.onCreate(db);
+      expect(await columnsOf(db, 'system_prompts'), contains('output_kind'),
+          reason: 'a fresh database has the column too');
+      await db.insert('system_prompts', {'title': 't', 'content': 'c', 'type': 'refiner'});
+      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['t'])).single;
+      expect(row['output_kind'], 'prompt');
+      expect(SystemPrompt.fromMap(row).outputKind, PresetOutputKind.prompt);
+    });
+  });
+
+  group('SystemPrompt.outputKind', () {
+    SystemPrompt preset(String type, PresetOutputKind kind) =>
+        SystemPrompt(title: 't', content: 'c', type: type, outputKind: kind);
+
+    test('survives the map an export writes and an import reads', () {
+      final map = preset(SystemPrompt.typeRefiner, PresetOutputKind.analysis).toMap();
+      expect(map['output_kind'], 'analysis');
+      expect(SystemPrompt.fromMap(map).outputKind, PresetOutputKind.analysis);
+    });
+
+    test('a value this build does not know reads as a prompt', () {
+      final map = preset(SystemPrompt.typeRefiner, PresetOutputKind.prompt).toMap()
+        ..['output_kind'] = 'table';
+      expect(SystemPrompt.fromMap(map).outputKind, PresetOutputKind.prompt);
+    });
+
+    test('only a refiner preset has one', () {
+      final rename = preset(SystemPrompt.typeRename, PresetOutputKind.analysis);
+      expect(rename.outputKind, PresetOutputKind.prompt);
+      expect(rename.toMap()['output_kind'], 'prompt');
     });
   });
 }

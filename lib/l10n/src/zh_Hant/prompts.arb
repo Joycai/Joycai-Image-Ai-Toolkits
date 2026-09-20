@@ -68,5 +68,11 @@
   "importMergeDetail": "保留現有 {current} 條，追加不重複的",
   "importReplaceDetail": "刪除現有 {current} 條，只保留檔案裡的 {count} 條",
   "promptLibraryEmptyHint": "把工作台裡用順手的提示詞存下來，下次一鍵套用。",
-  "colorPresets": "預設"
+  "colorPresets": "預設",
+  "presetOutput": "產出",
+  "presetOutputPrompt": "提示詞",
+  "presetOutputAnalysis": "分析文字",
+  "presetOutputAnalysisShort": "分析",
+  "presetOutputPromptHelp": "助手把結果做成提示詞卡交付，帶版本，可一鍵套用到工作台。",
+  "presetOutputAnalysisHelp": "助手按這條預設規定的結構直接在對話裡回答，結果可複製。你明確要求時，它仍然可以另給一條提示詞。"
 }

@@ -71,6 +71,7 @@ class DatabaseMigration {
     if (oldVersion < 44) await _createV44Columns(db);
     if (oldVersion < 45) await _createV45Columns(db);
     if (oldVersion < 46) await _createV46Tables(db);
+    if (oldVersion < 47) await _createV47Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -116,7 +117,19 @@ class DatabaseMigration {
     await _createV44Columns(db);
     await _createV45Columns(db);
     await _createV46Tables(db);
+    await _createV47Columns(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// What a task preset hands back (`system_prompts.output_kind`, `A3e`):
+  /// `prompt` or `analysis`, a `PresetOutputKind` name. Every row that was
+  /// there becomes `prompt`, which is how all of them already behaved. Not
+  /// derivable: nothing else records what the preset's author meant it for.
+  static Future<void> _createV47Columns(Database db) async {
+    if (await _tableExists(db, 'system_prompts')) {
+      await _addColumnIfNotExists(
+          db, 'system_prompts', 'output_kind', "TEXT NOT NULL DEFAULT 'prompt'");
+    }
   }
 
   /// Layer decompositions (`image_layers`): one row per saved file of a

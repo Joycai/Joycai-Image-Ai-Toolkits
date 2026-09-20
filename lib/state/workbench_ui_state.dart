@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../models/app_image.dart';
+import '../models/prompt.dart';
 import '../models/result_feedback.dart';
 import '../models/task_item.dart';
 import '../services/assistant/assistant_kb_distill.dart';
@@ -83,6 +84,19 @@ class WorkbenchUIState extends ChangeNotifier {
   /// and that is exactly the state — "edited, unsaved" — that has to be able
   /// to name the template it came from.
   int? optSysPromptTemplateId;
+
+  /// What the loaded preset hands back (`A3e`). Travels with the text rather
+  /// than being looked up from [optSysPromptTemplateId] at send time: the
+  /// text outlives its library row — deleted, it is still what is sent — and
+  /// the same text under the other kind's framing is the surprise to avoid.
+  PresetOutputKind optPresetOutputKind = PresetOutputKind.prompt;
+
+  /// [optPresetOutputKind] as it will actually be used: no text is the
+  /// built-in preset, which hands back a prompt whatever was loaded before
+  /// the text was cleared. What the panel shows and what a turn is queued
+  /// with both read this, so they cannot disagree.
+  PresetOutputKind get effectivePresetOutputKind =>
+      (optSelectedSysPrompt ?? '').trim().isEmpty ? PresetOutputKind.prompt : optPresetOutputKind;
 
   // Video Generation State
   List<AppImage> videoReferenceImages = [];
@@ -232,13 +246,44 @@ class WorkbenchUIState extends ChangeNotifier {
   void setOptimizerModel(int? id) { optSelectedModelDbId = id; notifyListeners(); }
   void setOptimizerSysPrompt(String? prompt) { optSelectedSysPrompt = prompt; notifyListeners(); }
 
-  /// Loads a library template: both the identity and the text it starts from.
-  /// Set together, because a template id without its text would leave the
-  /// panel claiming an edit the user never made.
-  void setOptimizerSysPromptTemplate(int? id, String? content) {
-    optSysPromptTemplateId = id;
-    optSelectedSysPrompt = content;
+  /// Loads a preset — null for the built-in: its identity, the text it
+  /// starts from and what it hands back. Set together, because a template id
+  /// without its text would leave the panel claiming an edit the user never
+  /// made, and a text without its kind would be framed as the last one's.
+  void loadOptimizerPreset(SystemPrompt? preset) {
+    optSysPromptTemplateId = preset?.id;
+    // Empty, not null, for the built-in: null reads as "never chosen", which
+    // the first load answers by picking the library's first preset.
+    optSelectedSysPrompt = preset?.content ?? '';
+    optPresetOutputKind = preset?.outputKind ?? PresetOutputKind.prompt;
     notifyListeners();
+  }
+
+  /// What a turn of [session] is queued with. The preset — its text and what
+  /// it hands back — goes only with a task-preset session: a knowledge
+  /// session's system prompt is built in.
+  Map<String, dynamic> optimizerTurnParameters(PromptOptimizerSession session) => {
+        'sessionId': session.id,
+        'mode': session.mode.name,
+        if (session.mode == AssistantMode.systemPrompt) ...{
+          'systemPrompt': optSelectedSysPrompt,
+          'outputKind': effectivePresetOutputKind.name,
+        },
+      };
+
+  /// Follows the loaded preset's row when the library is re-read: its kind
+  /// can only be changed there, and unlike its text there is no edit in this
+  /// panel for the change to collide with. A row that is gone changes nothing.
+  void syncOptimizerPresetKind(List<SystemPrompt> library) {
+    final id = optSysPromptTemplateId;
+    if (id == null) return;
+    for (final p in library) {
+      if (p.id != id) continue;
+      if (p.outputKind == optPresetOutputKind) return;
+      optPresetOutputKind = p.outputKind;
+      notifyListeners();
+      return;
+    }
   }
 
   void sendToOptimizer(String prompt, List<AppImage> images) {

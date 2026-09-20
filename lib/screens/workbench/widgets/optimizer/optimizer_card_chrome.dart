@@ -18,6 +18,103 @@ extension _CardChrome on _PromptOptimizerChatViewState {
     );
   }
 
+  /// `A3e 5e`: the one action an analysis result has. Copies the Markdown as
+  /// written — what gets pasted elsewhere is the source, not its rendering.
+  Widget _buildResultActions(
+    String text,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpace.s6),
+      child: Transform.translate(
+        // The button's own inset, given back, so its label starts on the
+        // reply's left edge rather than a button-padding in from it.
+        offset: const Offset(-AppSpace.s10, 0),
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: AppSpace.s4,
+          children: [
+            AppButton(
+              // The prompt card's own words and glyph: two copy actions in
+              // one conversation should not look like two features.
+              label: l10n.optCopy,
+              icon: Icons.content_copy_outlined,
+              variant: AppButtonVariant.text,
+              size: AppButtonSize.compact,
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: text));
+                AppSnackBar.success(context, l10n.copiedAll);
+              },
+            ),
+            Text(
+              l10n.optResultMeta(text.characters.length),
+              style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// `A3e 5f`: the model answers blind. A card, not a line — the other
+  /// notices describe the conversation, this one says the answer under it
+  /// cannot be trusted about the images. Warning colours, which do not
+  /// follow the seed.
+  Widget _buildImagesNotOfferedCard(
+    OptimizerChatEntry entry,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    final semantic = context.semantic;
+    final count = int.tryParse(entry.note ?? '') ?? 0;
+    return _besideAvatar(
+      _avatar(Icons.visibility_off_outlined,
+          ground: semantic.warningContainer, ink: semantic.warning),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: semantic.warningContainer,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.optImagesNotOfferedTitle,
+              style: textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: semantic.onWarningContainer,
+              ),
+            ),
+            const SizedBox(height: AppSpace.s4),
+            Text(
+              l10n.optImagesNotOfferedBody(count),
+              style: textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w400,
+                color: semantic.onWarningContainer,
+                height: AppType.proseHeight,
+              ),
+            ),
+            if (widget.onOpenModelSettings != null) ...[
+              const SizedBox(height: AppSpace.s6),
+              AppButton(
+                label: l10n.optImagesNotOfferedAction,
+                variant: AppButtonVariant.tonal,
+                size: AppButtonSize.compact,
+                onPressed: () => widget.onOpenModelSettings!(entry.modelDbId),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   /// An avatar with its content beside it, capped at the body width.
   Widget _besideAvatar(Widget avatar, Widget content) {
     return Row(

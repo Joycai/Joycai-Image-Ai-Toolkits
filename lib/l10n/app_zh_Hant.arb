@@ -1659,6 +1659,12 @@
   "importReplaceDetail": "刪除現有 {current} 條，只保留檔案裡的 {count} 條",
   "promptLibraryEmptyHint": "把工作台裡用順手的提示詞存下來，下次一鍵套用。",
   "colorPresets": "預設",
+  "presetOutput": "產出",
+  "presetOutputPrompt": "提示詞",
+  "presetOutputAnalysis": "分析文字",
+  "presetOutputAnalysisShort": "分析",
+  "presetOutputPromptHelp": "助手把結果做成提示詞卡交付，帶版本，可一鍵套用到工作台。",
+  "presetOutputAnalysisHelp": "助手按這條預設規定的結構直接在對話裡回答，結果可複製。你明確要求時，它仍然可以另給一條提示詞。",
   "settings": "設定",
   "appearance": "外觀",
   "connectivity": "連線",
@@ -3207,5 +3213,31 @@
     }
   },
   "optKbUseMaintainNotice": "已切到「維護」· 助手現在可以提議知識庫變更",
-  "optKbUseWriteNotice": "已切到「出詞」· 助手不再提議知識庫變更"
+  "optKbUseWriteNotice": "已切到「出詞」· 助手不再提議知識庫變更",
+  "optPresetOutputPromptValue": "提示詞 · 以提示詞卡交付",
+  "optPresetOutputAnalysisValue": "分析文字 · 直接在對話裡回答",
+  "optEmptyAnalysisTitle": "這次要看什麼？",
+  "optEmptyAnalysisSub": "說清要看哪幾張參考圖、要擷取什麼。助手按這條預設規定的結構直接回答。",
+  "optEmptyAnalysisExample1": "幫我辨識一下參考圖 1 的內容",
+  "optEmptyAnalysisExample2": "結合參考圖 1 和 2，描述服裝的設計結構",
+  "optEmptyAnalysisExample3": "除圖片外，我補充以下資訊：",
+  "optChatHintAnalysis": "說說要看哪張圖、要擷取什麼…",
+  "optResultMeta": "{count} 字 · Markdown",
+  "@optResultMeta": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optImagesNotOfferedTitle": "這個模型看不到圖片",
+  "optImagesNotOfferedBody": "{count} 張參考圖沒有交給它，回答只依據你寫的文字。在右側換一個能看圖的模型，或到模型設定裡確認它的圖片輸入能力。",
+  "@optImagesNotOfferedBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optImagesNotOfferedAction": "開啟模型設定"
 }

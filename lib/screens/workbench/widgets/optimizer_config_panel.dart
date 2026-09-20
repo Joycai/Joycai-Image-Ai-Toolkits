@@ -90,8 +90,12 @@ class OptimizerConfigPanel extends StatefulWidget {
   final Function(int?) onModelChanged;
   final Function(String?) onSysPromptChanged;
 
-  /// Loads a template into the editor: its id and its text together.
-  final void Function(int? id, String? content) onSysPromptTemplateChanged;
+  /// What the loaded preset hands back (`A3e`). The state's, not the library
+  /// row's: text whose row was deleted still has the kind it was loaded with.
+  final PresetOutputKind presetOutputKind;
+
+  /// Loads a preset into the editor — null for the built-in.
+  final void Function(SystemPrompt? preset) onPresetLoaded;
 
   /// Writes the editor's text back over the template it came from. Owned by
   /// the parent, which is what holds the repository.
@@ -145,7 +149,8 @@ class OptimizerConfigPanel extends StatefulWidget {
     this.transcript = const [],
     required this.onModelChanged,
     required this.onSysPromptChanged,
-    required this.onSysPromptTemplateChanged,
+    this.presetOutputKind = PresetOutputKind.prompt,
+    required this.onPresetLoaded,
     required this.onSaveTemplate,
     this.onSaveAsPreset,
     this.onManagePresets,

@@ -11,6 +11,7 @@ import '../../core/file_utils.dart';
 import '../../core/video_magic.dart';
 import '../../models/image_layer.dart';
 import '../../models/llm_model.dart';
+import '../../models/prompt.dart';
 import '../../models/task_item.dart';
 import 'ai_rename_agent.dart';
 import '../db/database_service.dart';

@@ -168,6 +168,8 @@ class OptimizerChatEntry {
   final int? version;
 
   /// For [OptimizerEntryKind.prompt]: the model's short note about this revision.
+  /// For the images-not-offered notice: how many images were held back, as
+  /// digits — the token in [text] says which reading applies.
   final String? note;
 
   /// For [OptimizerEntryKind.tool]: which tool ran ('list_reference_images' /
@@ -233,6 +235,12 @@ class OptimizerChatEntry {
   /// setting. Survives a restart through [LLMMessage.truncated].
   final bool truncated;
 
+  /// For [OptimizerEntryKind.assistant]: this reply is the turn's answer —
+  /// an analysis preset's result (`A3e`) — rather than a remark, so it is the
+  /// one offered for copying. Survives a restart through
+  /// [LLMMessage.deliverable].
+  final bool deliverable;
+
   /// The model row (`llm_models.id`) whose reply this entry records, when
   /// the turn ran on a stored model. A cut reply's card jumps to *that*
   /// model's editor — the picker may have moved on by the time the user
@@ -243,6 +251,7 @@ class OptimizerChatEntry {
     required this.kind,
     required this.text,
     this.truncated = false,
+    this.deliverable = false,
     this.modelDbId,
     this.version,
     this.note,
@@ -275,6 +284,7 @@ class OptimizerChatEntry {
         kind: kind,
         text: text,
         truncated: truncated,
+        deliverable: deliverable,
         modelDbId: modelDbId ?? this.modelDbId,
         version: version,
         note: note,

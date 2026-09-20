@@ -3364,6 +3364,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get colorPresets => 'Presets';
 
   @override
+  String get presetOutput => 'Output';
+
+  @override
+  String get presetOutputPrompt => 'Prompt';
+
+  @override
+  String get presetOutputAnalysis => 'Analysis text';
+
+  @override
+  String get presetOutputAnalysisShort => 'Analysis';
+
+  @override
+  String get presetOutputPromptHelp =>
+      'The assistant delivers the result as a versioned prompt card you can apply to the workbench in one click.';
+
+  @override
+  String get presetOutputAnalysisHelp =>
+      'The assistant answers right in the chat, in the structure this preset lays down, and the result can be copied. It can still hand you a prompt when you ask for one.';
+
+  @override
   String get settings => 'Settings';
 
   @override
@@ -5925,4 +5945,49 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get optKbUseWriteNotice =>
       'Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits';
+
+  @override
+  String get optPresetOutputPromptValue => 'Prompt · delivered as a card';
+
+  @override
+  String get optPresetOutputAnalysisValue =>
+      'Analysis text · answered in the chat';
+
+  @override
+  String get optEmptyAnalysisTitle => 'What should it look at?';
+
+  @override
+  String get optEmptyAnalysisSub =>
+      'Say which reference images to look at and what to pull out. The assistant answers directly, in the structure this preset lays down.';
+
+  @override
+  String get optEmptyAnalysisExample1 => 'Tell me what is in reference image 1';
+
+  @override
+  String get optEmptyAnalysisExample2 =>
+      'Using reference images 1 and 2, describe how the garment is constructed';
+
+  @override
+  String get optEmptyAnalysisExample3 =>
+      'Beyond the images, here is what else you should know: ';
+
+  @override
+  String get optChatHintAnalysis =>
+      'Say which image to look at and what to pull out…';
+
+  @override
+  String optResultMeta(int count) {
+    return '$count chars · Markdown';
+  }
+
+  @override
+  String get optImagesNotOfferedTitle => 'This model cannot see images';
+
+  @override
+  String optImagesNotOfferedBody(int count) {
+    return '$count reference image(s) were not given to it; its answers rest on your text alone. Pick a model that accepts images, or check this one\'s image input in its settings.';
+  }
+
+  @override
+  String get optImagesNotOfferedAction => 'Open model settings';
 }

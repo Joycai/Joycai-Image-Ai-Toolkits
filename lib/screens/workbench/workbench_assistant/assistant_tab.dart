@@ -59,6 +59,7 @@ extension _AssistantTab on _WorkbenchScreenState {
                                 selectedId: _loadedPreset(wui)?.id,
                                 builtinSelected: _loadedPreset(wui) == null &&
                                     (wui.optSelectedSysPrompt ?? '').trim().isEmpty,
+                                selectedKind: wui.effectivePresetOutputKind,
                                 onPick: _handlePickPreset,
                                 onShowAll: _handleShowAllPresets,
                                 onManage: _handleManagePresets,
@@ -186,8 +187,8 @@ extension _AssistantTab on _WorkbenchScreenState {
           ),
           onModelChanged: (v) => wui.setOptimizerModel(v),
           onSysPromptChanged: (v) => wui.setOptimizerSysPrompt(v),
-          onSysPromptTemplateChanged: (id, content) =>
-              wui.setOptimizerSysPromptTemplate(id, content),
+          presetOutputKind: wui.effectivePresetOutputKind,
+          onPresetLoaded: wui.loadOptimizerPreset,
           onSaveTemplate: _handleSaveSysPromptTemplate,
           onSaveAsPreset: _handleSaveAsPreset,
           onManagePresets: _handleManagePresets,

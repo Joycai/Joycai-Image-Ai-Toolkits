@@ -670,6 +670,7 @@ class PromptOptimizerSession extends ChangeNotifier {
               kind: OptimizerEntryKind.assistant,
               text: msg.content.trim(),
               truncated: msg.truncated,
+              deliverable: msg.deliverable,
               modelDbId: msg.modelDbId,
             ));
           }

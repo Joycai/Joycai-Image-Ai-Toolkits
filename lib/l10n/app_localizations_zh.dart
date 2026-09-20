@@ -3185,6 +3185,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get colorPresets => '预设';
 
   @override
+  String get presetOutput => '产出';
+
+  @override
+  String get presetOutputPrompt => '提示词';
+
+  @override
+  String get presetOutputAnalysis => '分析文本';
+
+  @override
+  String get presetOutputAnalysisShort => '分析';
+
+  @override
+  String get presetOutputPromptHelp => '助手把结果做成提示词卡交付，带版本，可一键应用到工作台。';
+
+  @override
+  String get presetOutputAnalysisHelp =>
+      '助手按这条预设规定的结构直接在对话里回答，结果可复制。你明确要的时候，它仍然可以另给一条提示词。';
+
+  @override
   String get settings => '设置';
 
   @override
@@ -5647,6 +5666,46 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optKbUseWriteNotice => '已切到「出词」· 助手不再提议知识库改动';
+
+  @override
+  String get optPresetOutputPromptValue => '提示词 · 以提示词卡交付';
+
+  @override
+  String get optPresetOutputAnalysisValue => '分析文本 · 直接在对话里回答';
+
+  @override
+  String get optEmptyAnalysisTitle => '这次要看什么？';
+
+  @override
+  String get optEmptyAnalysisSub => '说清要看哪几张参考图、要提取什么。助手按这条预设规定的结构直接回答。';
+
+  @override
+  String get optEmptyAnalysisExample1 => '帮我识别一下参考图 1 的内容';
+
+  @override
+  String get optEmptyAnalysisExample2 => '结合参考图 1 和 2，描述服装的设计结构';
+
+  @override
+  String get optEmptyAnalysisExample3 => '除图片外，我补充以下信息：';
+
+  @override
+  String get optChatHintAnalysis => '说说要看哪张图、要提取什么…';
+
+  @override
+  String optResultMeta(int count) {
+    return '$count 字 · Markdown';
+  }
+
+  @override
+  String get optImagesNotOfferedTitle => '这个模型看不到图片';
+
+  @override
+  String optImagesNotOfferedBody(int count) {
+    return '$count 张参考图没有交给它，回答只依据你写的文字。在右侧换一个能看图的模型，或到模型设置里确认它的图片输入能力。';
+  }
+
+  @override
+  String get optImagesNotOfferedAction => '打开模型设置';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -8830,6 +8889,25 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get colorPresets => '預設';
 
   @override
+  String get presetOutput => '產出';
+
+  @override
+  String get presetOutputPrompt => '提示詞';
+
+  @override
+  String get presetOutputAnalysis => '分析文字';
+
+  @override
+  String get presetOutputAnalysisShort => '分析';
+
+  @override
+  String get presetOutputPromptHelp => '助手把結果做成提示詞卡交付，帶版本，可一鍵套用到工作台。';
+
+  @override
+  String get presetOutputAnalysisHelp =>
+      '助手按這條預設規定的結構直接在對話裡回答，結果可複製。你明確要求時，它仍然可以另給一條提示詞。';
+
+  @override
   String get settings => '設定';
 
   @override
@@ -11293,4 +11371,44 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optKbUseWriteNotice => '已切到「出詞」· 助手不再提議知識庫變更';
+
+  @override
+  String get optPresetOutputPromptValue => '提示詞 · 以提示詞卡交付';
+
+  @override
+  String get optPresetOutputAnalysisValue => '分析文字 · 直接在對話裡回答';
+
+  @override
+  String get optEmptyAnalysisTitle => '這次要看什麼？';
+
+  @override
+  String get optEmptyAnalysisSub => '說清要看哪幾張參考圖、要擷取什麼。助手按這條預設規定的結構直接回答。';
+
+  @override
+  String get optEmptyAnalysisExample1 => '幫我辨識一下參考圖 1 的內容';
+
+  @override
+  String get optEmptyAnalysisExample2 => '結合參考圖 1 和 2，描述服裝的設計結構';
+
+  @override
+  String get optEmptyAnalysisExample3 => '除圖片外，我補充以下資訊：';
+
+  @override
+  String get optChatHintAnalysis => '說說要看哪張圖、要擷取什麼…';
+
+  @override
+  String optResultMeta(int count) {
+    return '$count 字 · Markdown';
+  }
+
+  @override
+  String get optImagesNotOfferedTitle => '這個模型看不到圖片';
+
+  @override
+  String optImagesNotOfferedBody(int count) {
+    return '$count 張參考圖沒有交給它，回答只依據你寫的文字。在右側換一個能看圖的模型，或到模型設定裡確認它的圖片輸入能力。';
+  }
+
+  @override
+  String get optImagesNotOfferedAction => '開啟模型設定';
 }

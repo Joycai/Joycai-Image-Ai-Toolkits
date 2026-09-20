@@ -3220,6 +3220,26 @@ class AppLocalizationsJa extends AppLocalizations {
   String get colorPresets => 'プリセット';
 
   @override
+  String get presetOutput => '出力';
+
+  @override
+  String get presetOutputPrompt => 'プロンプト';
+
+  @override
+  String get presetOutputAnalysis => '分析テキスト';
+
+  @override
+  String get presetOutputAnalysisShort => '分析';
+
+  @override
+  String get presetOutputPromptHelp =>
+      'アシスタントは結果をバージョン付きのプロンプトカードとして渡し、ワンクリックでワークベンチに適用できます。';
+
+  @override
+  String get presetOutputAnalysisHelp =>
+      'アシスタントはこのプリセットが定める構成で会話の中に直接回答し、結果はコピーできます。明示的に頼めば、プロンプトも別に出せます。';
+
+  @override
   String get settings => '設定';
 
   @override
@@ -5708,4 +5728,45 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get optKbUseWriteNotice =>
       '「プロンプト作成」に切り替えました · アシスタントはナレッジベースの変更を提案しなくなります';
+
+  @override
+  String get optPresetOutputPromptValue => 'プロンプト · カードで渡す';
+
+  @override
+  String get optPresetOutputAnalysisValue => '分析テキスト · 会話の中で回答';
+
+  @override
+  String get optEmptyAnalysisTitle => '今回は何を見ますか？';
+
+  @override
+  String get optEmptyAnalysisSub =>
+      'どの参考画像を見て、何を取り出すのかを伝えてください。アシスタントはこのプリセットが定める構成でそのまま回答します。';
+
+  @override
+  String get optEmptyAnalysisExample1 => '参考画像 1 の内容を読み取ってください';
+
+  @override
+  String get optEmptyAnalysisExample2 => '参考画像 1 と 2 を合わせて、服のデザイン構造を説明してください';
+
+  @override
+  String get optEmptyAnalysisExample3 => '画像のほかに、次の情報を補足します：';
+
+  @override
+  String get optChatHintAnalysis => 'どの画像を見て、何を取り出すかを入力…';
+
+  @override
+  String optResultMeta(int count) {
+    return '$count 文字 · Markdown';
+  }
+
+  @override
+  String get optImagesNotOfferedTitle => 'このモデルは画像を見られません';
+
+  @override
+  String optImagesNotOfferedBody(int count) {
+    return '$count 枚の参考画像はこのモデルに渡されておらず、回答は入力した文章だけに基づきます。右側で画像を扱えるモデルに切り替えるか、モデル設定で画像入力の可否を確認してください。';
+  }
+
+  @override
+  String get optImagesNotOfferedAction => 'モデル設定を開く';
 }

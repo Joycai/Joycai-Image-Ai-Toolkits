@@ -227,7 +227,10 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
                               }),
                       dragHandle: PromptDragHandle(index: index, enabled: canDrag, onBlockedTap: _showBlocked),
                       leading: PromptTemplateTypeIcon(type: systemPrompt.type),
-                      badge: PromptTemplateTypeBadge(type: systemPrompt.type),
+                      badge: PromptTemplateTypeBadge(
+                        type: systemPrompt.type,
+                        outputKind: systemPrompt.outputKind,
+                      ),
                       showCategory: true,
                       onMoveUp: (selecting || index == 0)
                           ? null

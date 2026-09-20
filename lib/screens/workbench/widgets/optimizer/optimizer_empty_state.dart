@@ -9,6 +9,7 @@ class OptimizerPresetChoices {
     required this.presets,
     required this.selectedId,
     required this.builtinSelected,
+    this.selectedKind = PresetOutputKind.prompt,
     required this.onPick,
     this.onShowAll,
     this.onManage,
@@ -20,6 +21,10 @@ class OptimizerPresetChoices {
 
   /// True when nothing is loaded and the built-in preset will run.
   final bool builtinSelected;
+
+  /// What the loaded preset hands back (`A3e`) — of the text in the panel,
+  /// so it still holds once that text's library row is gone.
+  final PresetOutputKind selectedKind;
 
   /// Loads a preset; null loads the built-in one. Selects — never sends.
   final void Function(SystemPrompt? preset) onPick;
@@ -39,11 +44,15 @@ extension _EmptyState on _PromptOptimizerChatViewState {
     ColorScheme colorScheme,
   ) {
     final textTheme = Theme.of(context).textTheme;
+    // `A3e 5d`: under an analysis preset the first sentence is not obvious
+    // — least of all that the images are named by their number — so the
+    // empty chat asks a different question and shows how to put it.
+    final analysis = _analysisPresetLoaded(session);
     final (IconData icon, String title, String sub) = switch (session.mode) {
       AssistantMode.systemPrompt => (
           Icons.auto_awesome,
-          l10n.optEmptyPresetTitle,
-          l10n.optEmptyPresetSub,
+          analysis ? l10n.optEmptyAnalysisTitle : l10n.optEmptyPresetTitle,
+          analysis ? l10n.optEmptyAnalysisSub : l10n.optEmptyPresetSub,
         ),
       AssistantMode.knowledgeBase => (
           Icons.menu_book_outlined,
@@ -57,7 +66,13 @@ extension _EmptyState on _PromptOptimizerChatViewState {
         ),
     };
     final examples = switch (session.mode) {
-      AssistantMode.systemPrompt => const <String>[],
+      AssistantMode.systemPrompt => analysis
+          ? [
+              l10n.optEmptyAnalysisExample1,
+              l10n.optEmptyAnalysisExample2,
+              l10n.optEmptyAnalysisExample3,
+            ]
+          : const <String>[],
       AssistantMode.knowledgeBase => [
           l10n.optEmptyKbExample1,
           l10n.optEmptyKbExample2,
@@ -126,6 +141,11 @@ extension _EmptyState on _PromptOptimizerChatViewState {
     );
   }
 
+  /// Whether what is loaded answers in the chat rather than with a prompt.
+  bool _analysisPresetLoaded(PromptOptimizerSession session) =>
+      session.mode == AssistantMode.systemPrompt &&
+      widget.presetChoices?.selectedKind == PresetOutputKind.analysis;
+
   /// 2×2 on a wide column, one column on a phone. Picking loads the preset;
   /// it never sends — the user has not said anything yet.
   Widget _buildPresetTiles(
@@ -150,6 +170,9 @@ extension _EmptyState on _PromptOptimizerChatViewState {
           title: preset.title,
           summary: presetSummaryOf(preset.content),
           dotColor: preset.tags.isEmpty ? null : Color(preset.tags.first.color),
+          marker: preset.outputKind == PresetOutputKind.analysis
+              ? l10n.presetOutputAnalysisShort
+              : null,
           selected: preset.id == choices.selectedId,
           onTap: () => choices.onPick(preset),
         ),
@@ -243,11 +266,15 @@ class _PresetTile extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.dotColor,
+    this.marker,
   });
 
   final String title;
   final String summary;
   final Color? dotColor;
+
+  /// `A3e 5d`: the 「分析」 marker, ahead of the selection tick.
+  final String? marker;
   final bool selected;
   final VoidCallback onTap;
 
@@ -293,6 +320,10 @@ class _PresetTile extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (marker != null) ...[
+                      const SizedBox(width: AppSpace.s6),
+                      AppNeutralMarker(icon: Icons.subject, label: marker!),
+                    ],
                     if (selected) ...[
                       const SizedBox(width: AppSpace.s6),
                       Icon(Icons.check_circle, size: AppSize.iconMd, color: colorScheme.primary),

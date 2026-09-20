@@ -225,8 +225,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             wuiState.setOptimizerModel(_appState!.multimodalModels.first.id);
           }
           if (wuiState.optSelectedSysPrompt == null && refinerPrompts.isNotEmpty) {
-            final first = refinerPrompts.first;
-            wuiState.setOptimizerSysPromptTemplate(first.id, first.content);
+            wuiState.loadOptimizerPreset(refinerPrompts.first);
+          } else {
+            wuiState.syncOptimizerPresetKind(refinerPrompts);
           }
           _optIsLoadingData = false;
         });
@@ -247,13 +248,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     try {
       await _appState!.updateSystemPrompt(
         template.id!,
-        {
-          'title': template.title,
-          'content': content,
-          'type': template.type,
-          'is_markdown': template.isMarkdown ? 1 : 0,
-          'sort_order': template.sortOrder,
-        },
+        // The whole row with one field changed: a column listed by hand here
+        // is a column the next migration's value is lost from.
+        {...template.toMap(includeId: false), 'content': content},
         tagIds: [for (final t in template.tags) if (t.id != null) t.id!],
       );
       // Re-read rather than patch the local copy: the saved row is now what
@@ -285,6 +282,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       tags: tags,
       defaultType: 'refiner',
       initialContent: content,
+      // The text was written for this kind; filed as the other it would be
+      // framed wrongly the moment it was loaded back.
+      initialOutputKind: context.read<WorkbenchUIState>().effectivePresetOutputKind,
     );
     if (!saved || !mounted) return;
     final known = {for (final p in _optSysPrompts) p.id};
@@ -294,10 +294,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     // Nothing new in the refiner list means it was filed under another type.
     final created = refreshed.where((p) => !known.contains(p.id)).toList();
     if (created.length == 1) {
-      context.read<WorkbenchUIState>().setOptimizerSysPromptTemplate(
-            created.single.id,
-            created.single.content,
-          );
+      context.read<WorkbenchUIState>().loadOptimizerPreset(created.single);
     }
   }
 

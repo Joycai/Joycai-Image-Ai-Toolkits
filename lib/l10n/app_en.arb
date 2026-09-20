@@ -2315,6 +2315,12 @@
   },
   "promptLibraryEmptyHint": "Save the prompts you use most in the workbench and apply them in one click next time.",
   "colorPresets": "Presets",
+  "presetOutput": "Output",
+  "presetOutputPrompt": "Prompt",
+  "presetOutputAnalysis": "Analysis text",
+  "presetOutputAnalysisShort": "Analysis",
+  "presetOutputPromptHelp": "The assistant delivers the result as a versioned prompt card you can apply to the workbench in one click.",
+  "presetOutputAnalysisHelp": "The assistant answers right in the chat, in the structure this preset lays down, and the result can be copied. It can still hand you a prompt when you ask for one.",
   "settings": "Settings",
   "appearance": "Appearance",
   "connectivity": "Connectivity",
@@ -3988,5 +3994,31 @@
     }
   },
   "optKbUseMaintainNotice": "Switched to “Maintain” · the assistant can now propose knowledge-base edits",
-  "optKbUseWriteNotice": "Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits"
+  "optKbUseWriteNotice": "Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits",
+  "optPresetOutputPromptValue": "Prompt · delivered as a card",
+  "optPresetOutputAnalysisValue": "Analysis text · answered in the chat",
+  "optEmptyAnalysisTitle": "What should it look at?",
+  "optEmptyAnalysisSub": "Say which reference images to look at and what to pull out. The assistant answers directly, in the structure this preset lays down.",
+  "optEmptyAnalysisExample1": "Tell me what is in reference image 1",
+  "optEmptyAnalysisExample2": "Using reference images 1 and 2, describe how the garment is constructed",
+  "optEmptyAnalysisExample3": "Beyond the images, here is what else you should know: ",
+  "optChatHintAnalysis": "Say which image to look at and what to pull out…",
+  "optResultMeta": "{count} chars · Markdown",
+  "@optResultMeta": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optImagesNotOfferedTitle": "This model cannot see images",
+  "optImagesNotOfferedBody": "{count} reference image(s) were not given to it; its answers rest on your text alone. Pick a model that accepts images, or check this one's image input in its settings.",
+  "@optImagesNotOfferedBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optImagesNotOfferedAction": "Open model settings"
 }

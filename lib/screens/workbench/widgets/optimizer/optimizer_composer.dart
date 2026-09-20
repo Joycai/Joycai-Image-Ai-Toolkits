@@ -219,7 +219,11 @@ extension _Composer on _PromptOptimizerChatViewState {
                       decoration: InputDecoration(
                         isDense: true,
                         filled: false,
-                        hintText: busy ? l10n.optChatBusyHint : l10n.optChatHint,
+                        hintText: busy
+                            ? l10n.optChatBusyHint
+                            : _analysisPresetLoaded(session)
+                                ? l10n.optChatHintAnalysis
+                                : l10n.optChatHint,
                         hintStyle: textTheme.bodyMedium?.copyWith(
                           color: colorScheme.outline,
                           height: AppType.proseHeight,

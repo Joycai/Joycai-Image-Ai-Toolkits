@@ -18,6 +18,7 @@ import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/ui/app_breathing_dot.dart';
 import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_neutral_marker.dart';
 import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/ui/dashed_border.dart';
 import 'optimizer_config/preset_summary.dart';
@@ -471,6 +472,10 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                     ),
                   ),
                 ),
+                // `A3e 5e`: an analysis preset's answer is the deliverable, and
+                // this row is all the chrome it gets — no card, no version, no
+                // "apply": there is nowhere for an analysis to be applied to.
+                if (entry.deliverable) _buildResultActions(entry.text, l10n, colorScheme, textTheme),
                 // The reply ends where the host cut it, not where the model
                 // stopped: said at the tail, in the caption tone, with the
                 // one place the fix lives.
@@ -576,6 +581,9 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               ],
             ),
           );
+        }
+        if (entry.text == PromptOptimizerAgent.imagesNotOfferedNoticeToken) {
+          return _buildImagesNotOfferedCard(entry, l10n, colorScheme, textTheme);
         }
         {
           // The notices that ask the user to do something wear the warning

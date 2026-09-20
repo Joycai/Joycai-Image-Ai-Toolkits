@@ -317,7 +317,12 @@ around it:
   the model that produced the reply, not whatever the picker shows now. Both
   survive a restart: the agent stamps them on the stored assistant message
   (`LLMMessage.truncated` / `modelDbId`, host bookkeeping no protocol reads,
-  written to the JSON only when set) and `fromStored` reads them back. The
+  written to the JSON only when set) and `fromStored` reads them back.
+  `LLMMessage.deliverable` rides the same way: under an analysis preset
+  (`PresetOutputKind.analysis`, A3e) the text reply that closes a turn *is*
+  the result, and the flag is how the transcript knows which reply to offer
+  for copying — never the final round's status report, never a knowledge
+  session. The
   sub-agent loop applies the same rule (`maxTruncatedRounds`, in
   `sub_agent_runner.dart` because the agent library imports it, not the
   reverse). Pinned by `optimizer_truncation_test.dart`.

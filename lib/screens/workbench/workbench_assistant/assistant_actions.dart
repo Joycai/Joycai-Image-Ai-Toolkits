@@ -41,8 +41,7 @@ extension _AssistantActions on _WorkbenchScreenState {
       final name = loaded?.title ?? AppLocalizations.of(context)!.optPresetCustom;
       if (!await confirmDiscardPresetEdit(context, name) || !mounted) return;
     }
-    // Empty, not null, for the built-in: null reads as "never chosen".
-    wui.setOptimizerSysPromptTemplate(preset?.id, preset?.content ?? '');
+    wui.loadOptimizerPreset(preset);
   }
 
   Future<void> _handleShowAllPresets() async {

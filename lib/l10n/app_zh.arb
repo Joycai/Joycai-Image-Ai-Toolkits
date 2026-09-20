@@ -1792,6 +1792,12 @@
   "importReplaceDetail": "删除现有 {current} 条，只保留文件里的 {count} 条",
   "promptLibraryEmptyHint": "把工作台里用顺手的提示词存下来，下次一键套用。",
   "colorPresets": "预设",
+  "presetOutput": "产出",
+  "presetOutputPrompt": "提示词",
+  "presetOutputAnalysis": "分析文本",
+  "presetOutputAnalysisShort": "分析",
+  "presetOutputPromptHelp": "助手把结果做成提示词卡交付，带版本，可一键应用到工作台。",
+  "presetOutputAnalysisHelp": "助手按这条预设规定的结构直接在对话里回答，结果可复制。你明确要的时候，它仍然可以另给一条提示词。",
   "settings": "设置",
   "appearance": "外观",
   "connectivity": "连接设置",
@@ -3340,5 +3346,31 @@
     }
   },
   "optKbUseMaintainNotice": "已切到「维护」· 助手现在可以提议知识库改动",
-  "optKbUseWriteNotice": "已切到「出词」· 助手不再提议知识库改动"
+  "optKbUseWriteNotice": "已切到「出词」· 助手不再提议知识库改动",
+  "optPresetOutputPromptValue": "提示词 · 以提示词卡交付",
+  "optPresetOutputAnalysisValue": "分析文本 · 直接在对话里回答",
+  "optEmptyAnalysisTitle": "这次要看什么？",
+  "optEmptyAnalysisSub": "说清要看哪几张参考图、要提取什么。助手按这条预设规定的结构直接回答。",
+  "optEmptyAnalysisExample1": "帮我识别一下参考图 1 的内容",
+  "optEmptyAnalysisExample2": "结合参考图 1 和 2，描述服装的设计结构",
+  "optEmptyAnalysisExample3": "除图片外，我补充以下信息：",
+  "optChatHintAnalysis": "说说要看哪张图、要提取什么…",
+  "optResultMeta": "{count} 字 · Markdown",
+  "@optResultMeta": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optImagesNotOfferedTitle": "这个模型看不到图片",
+  "optImagesNotOfferedBody": "{count} 张参考图没有交给它，回答只依据你写的文字。在右侧换一个能看图的模型，或到模型设置里确认它的图片输入能力。",
+  "@optImagesNotOfferedBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optImagesNotOfferedAction": "打开模型设置"
 }

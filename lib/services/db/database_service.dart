@@ -56,7 +56,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 46;
+  static const int dbVersion = 47;
 
   /// Settings holding absolute paths from the machine that made the backup.
   /// Excluded when the user opts out of directories.
@@ -656,7 +656,7 @@ class DatabaseService {
     // Import System Prompts
     if (data['system_prompts'] != null) {
       for (var p in data['system_prompts']) {
-        final Map<String, dynamic> row = Map.from(p)..remove('id');
+        final Map<String, dynamic> row = _systemPromptRow(p);
         final List<dynamic>? tags = row['tags'];
         row.remove('tags');
 
@@ -769,10 +769,19 @@ class DatabaseService {
     }
   }
 
+  /// A `system_prompts` row out of an import file, ready to insert. A null
+  /// `output_kind` is dropped so the column's default stands in for it: the
+  /// column is NOT NULL, and one such row would roll the whole import back.
+  static Map<String, dynamic> _systemPromptRow(dynamic source) {
+    final Map<String, dynamic> row = Map.from(source as Map)..remove('id');
+    if (row['output_kind'] == null) row.remove('output_kind');
+    return row;
+  }
+
   Future<void> _importSystemPrompts(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> tagIdMap) async {
     if (rows == null) return;
     for (var p in rows) {
-      final Map<String, dynamic> row = Map.from(p)..remove('id');
+      final Map<String, dynamic> row = _systemPromptRow(p);
       final List<dynamic>? tagsFromData = row['tags'];
       row.remove('tags');
 
