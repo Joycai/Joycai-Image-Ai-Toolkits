@@ -19,7 +19,7 @@
 | # | 内容 | 文件 | 验收 | 状态 |
 |---|---|---|---|---|
 | 1 | `AppMarkdownMetrics` + `AppMarkdown` + 断言测试 | `core/design_tokens.dart`、`widgets/ui/app_markdown.dart`、`test/app_markdown_test.dart`、`pubspec.yaml`（`markdown` 转直接依赖） | 字号序 H1>H2>H3>正文；标题上距 > 下距；compact 无竖条；单换行保留；图片不建 `Image`；链接无 recognizer；列表项距 < 段距 | ✅ |
-| 2 | component_gallery 加一格 | `test/screenshots/component_gallery_test.dart` | 8 种子 × 明暗出图，肉眼过一遍 | 待办 |
+| 2 | component_gallery 加一格 | `test/screenshots/component_gallery_test.dart` | 8 种子 × 明暗出图，肉眼过一遍 | ✅ `markdown_<seed>_<明暗>.png`，单独一页而不是接在长画廊后面 |
 | 3 | 五处替换 | 两个编辑器、`prompt_optimizer_view`、`optimizer_prompt_card`、`prompt_card` | `grep MarkdownBody lib` 只剩 `app_markdown.dart`；截图前后对比 | 待办 |
 | 4 | 收尾：台账、设计稿「实施出入」、版本 | `docs/plans/README.md`、`docs/architecture/design-tokens.md`、A1e 稿 | 本文件删除，台账留 `git show` 指针 | 待办 |
 

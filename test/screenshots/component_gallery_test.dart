@@ -19,6 +19,11 @@
 //   · the key badges stay neutral at every seed — a shortcut is not a state,
 //     and an accent-tinted one would read as "this key is on"
 //
+// Rendered markdown (`A1e`) gets a page of its own, `markdown_<seed>_*.png`:
+// every element, prose beside compact. There the seed may reach exactly three
+// things — H2's bar, a link, a ticked task box — and the quote, the code
+// block and the table stay neutral.
+//
 // Two families here are drawn as specimens rather than mounted for real, and
 // the reason is the same for both: a [Tooltip]'s bubble and a [PopupMenu]'s
 // sheet live in the [Overlay], which is outside the subtree this golden
@@ -49,6 +54,7 @@ import 'package:joycai_image_ai_toolkits/widgets/ui/app_field_size.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_labelled_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_icon_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_key_label.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_markdown.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_neutral_marker.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_search_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_section_label.dart';
@@ -105,7 +111,119 @@ void main() {
           matchesGoldenFile('gallery_${seed.key.toLowerCase()}_${brightness.name}.png'),
         );
       });
+
+      testWidgets('markdown · ${seed.key} · ${brightness.name}', (tester) async {
+        tester.view.physicalSize = const Size(1000, 1300);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        await tester.pumpWidget(MaterialApp(
+          debugShowCheckedModeBanner: false,
+          locale: const Locale('zh'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: buildAppTheme(accent: seed.value, brightness: brightness, fontFamily: 'NotoSansSC'),
+          home: const _MarkdownGallery(),
+        ));
+        await tester.pump();
+
+        await expectLater(
+          find.byType(_MarkdownGallery),
+          matchesGoldenFile('markdown_${seed.key.toLowerCase()}_${brightness.name}.png'),
+        );
+      });
     }
+  }
+}
+
+/// Every element [AppMarkdown] draws, once.
+const String _markdownSpecimen = '''
+# 雨夜的霓虹街
+
+一份**完整的提示词**，行内有 *斜体*、~~删除线~~、`--ar 16:9` 和 [参考链接](https://example.com)。
+
+## 主体
+
+穿透明雨衣的女孩，撑一把红伞，
+回头看向镜头。
+
+### 服装
+
+- 雨衣：透明 PVC，边缘有反光
+  - 袖口收紧
+    - 露出湿发
+- 红伞：哑光，伞骨可见
+
+### 步骤
+
+9. 先定构图与机位
+10. 再写光线
+
+#### 检查项
+
+- [x] 主体只有一个
+- [ ] 负面词另放一段
+
+## 光线
+
+> 霓虹是**主光**，路面积水是反光板。
+
+| 参数 | 值 | 说明 |
+|---|---|---|
+| 镜头 | 35mm | 略广，带环境 |
+| 光圈 | `f/1.8` | 背景成光斑 |
+
+```json
+{
+  "light": "neon, wet asphalt reflections",
+  "lens": "35mm f/1.8"
+}
+```
+
+---
+
+![街景参考.png](https://example.com/street.png)
+''';
+
+class _MarkdownGallery extends StatelessWidget {
+  const _MarkdownGallery();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surfaceContainer,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 3,
+              child: AppCard(
+                padding: const EdgeInsets.all(24),
+                child: AppMarkdown(
+                  data: _markdownSpecimen,
+                  style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14, height: 1.7),
+                ),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              flex: 2,
+              child: AppCard(
+                padding: const EdgeInsets.all(12),
+                child: AppMarkdown(
+                  data: _markdownSpecimen,
+                  density: AppMarkdownDensity.compact,
+                  style: theme.textTheme.bodySmall?.copyWith(height: AppType.looseHeight),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

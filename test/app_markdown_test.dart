@@ -154,6 +154,17 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('inline marks: strong, emphasis, strike, code', (tester) async {
+    await pump(tester, 'a **strong** b *soft* c ~~gone~~ d `code`');
+    final all = spans(tester);
+    TextStyle of(String t) => all.firstWhere((s) => s.$1 == t).$2;
+    expect(of('strong').fontWeight, FontWeight.w700);
+    expect(of('soft').fontStyle, FontStyle.italic);
+    expect(of('gone').decoration, TextDecoration.lineThrough);
+    expect(of('code').backgroundColor, isNotNull);
+    expect(of('code').fontSize, lessThan(of('strong').fontSize!));
+  });
+
   testWidgets('a link is coloured and inert', (tester) async {
     await pump(tester, 'see [the **reference**](https://example.com) here');
     final all = spans(tester);
