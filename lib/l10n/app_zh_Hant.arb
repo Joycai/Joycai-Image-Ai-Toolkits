@@ -720,6 +720,26 @@
   "restoreWindow": "向下還原",
   "closeWindow": "關閉",
   "expandEditor": "放大編輯",
+  "collapseEditor": "收合",
+  "editorSplitView": "分欄",
+  "editorSourceText": "原始文字",
+  "editorOriginal": "原文",
+  "editorCopyAll": "複製全文",
+  "editorCopied": "已複製",
+  "editorReadOnly": "唯讀",
+  "editorDone": "完成",
+  "editorCount": "{chars} 字 · {lines} 行",
+  "@editorCount": {
+    "placeholders": {
+      "chars": {
+        "type": "int"
+      },
+      "lines": {
+        "type": "int"
+      }
+    }
+  },
+  "editorKeyHint": "Esc 收合 · Tab 縮排",
   "back": "返回",
   "next": "下一步",
   "finish": "完成",

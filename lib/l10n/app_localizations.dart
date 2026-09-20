@@ -1463,6 +1463,66 @@ abstract class AppLocalizations {
   /// **'Expand editor'**
   String get expandEditor;
 
+  /// No description provided for @collapseEditor.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse editor'**
+  String get collapseEditor;
+
+  /// No description provided for @editorSplitView.
+  ///
+  /// In en, this message translates to:
+  /// **'Split'**
+  String get editorSplitView;
+
+  /// No description provided for @editorSourceText.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get editorSourceText;
+
+  /// No description provided for @editorOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get editorOriginal;
+
+  /// No description provided for @editorCopyAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy all'**
+  String get editorCopyAll;
+
+  /// No description provided for @editorCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get editorCopied;
+
+  /// No description provided for @editorReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only'**
+  String get editorReadOnly;
+
+  /// No description provided for @editorDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get editorDone;
+
+  /// No description provided for @editorCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{chars, plural, =1{1 char} other{{chars} chars}} · {lines, plural, =1{1 line} other{{lines} lines}}'**
+  String editorCount(int chars, int lines);
+
+  /// No description provided for @editorKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Esc to collapse · Tab to indent'**
+  String get editorKeyHint;
+
   /// No description provided for @back.
   ///
   /// In en, this message translates to:

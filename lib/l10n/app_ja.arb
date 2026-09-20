@@ -720,6 +720,26 @@
   "restoreWindow": "元のサイズに戻す",
   "closeWindow": "閉じる",
   "expandEditor": "拡大編集",
+  "collapseEditor": "縮小",
+  "editorSplitView": "分割",
+  "editorSourceText": "ソース",
+  "editorOriginal": "原文",
+  "editorCopyAll": "すべてコピー",
+  "editorCopied": "コピーしました",
+  "editorReadOnly": "読み取り専用",
+  "editorDone": "完了",
+  "editorCount": "{chars} 文字 · {lines} 行",
+  "@editorCount": {
+    "placeholders": {
+      "chars": {
+        "type": "int"
+      },
+      "lines": {
+        "type": "int"
+      }
+    }
+  },
+  "editorKeyHint": "Esc で縮小 · Tab でインデント",
   "back": "戻る",
   "next": "次へ",
   "finish": "完了",

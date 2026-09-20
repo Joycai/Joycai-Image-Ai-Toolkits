@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -5,9 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../l10n/app_localizations.dart';
+import 'app_button.dart';
 import 'app_dialog.dart';
+import 'app_icon_button.dart';
 import 'app_segmented_control.dart';
+import 'app_switch.dart';
 import '../../core/design_tokens.dart';
+
+part 'markdown_editor_large.dart';
 
 /// A specialized controller that provides basic syntax highlighting for Markdown.
 class MarkdownTextEditingController extends TextEditingController {
@@ -95,6 +101,12 @@ class MarkdownTextEditingController extends TextEditingController {
 
 /// Normalizes all line endings to \n (LF) and provides smart list continuation.
 class SmartMarkdownFormatter extends TextInputFormatter {
+  const SmartMarkdownFormatter({this.continueLists = true});
+
+  /// Off for plain text: a line that happens to start with "- " is not a list
+  /// there. Line endings are normalized either way.
+  final bool continueLists;
+
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
@@ -107,7 +119,8 @@ class SmartMarkdownFormatter extends TextInputFormatter {
     }
 
     // 2. Detect if a newline was just added to handle list continuation
-    if (newValue.text.length == oldValue.text.length + 1 && 
+    if (continueLists &&
+        newValue.text.length == oldValue.text.length + 1 && 
         newValue.selection.isCollapsed && 
         newValue.selection.start > 0 &&
         newValue.text[newValue.selection.start - 1] == '\n') {
@@ -162,6 +175,20 @@ class SmartMarkdownFormatter extends TextInputFormatter {
 
     return newValue;
   }
+}
+
+/// Tab in a prompt is two spaces over the selection, not a focus move.
+///
+/// A write to the controller is not an edit as far as the field is concerned,
+/// so [onChanged] is called by hand — callers save from it.
+void _insertMarkdownTab(TextEditingController controller, ValueChanged<String>? onChanged) {
+  final TextSelection selection = controller.selection;
+  if (!selection.isValid) return;
+  controller.value = TextEditingValue(
+    text: controller.text.replaceRange(selection.start, selection.end, '  '),
+    selection: TextSelection.collapsed(offset: selection.start + 2),
+  );
+  onChanged?.call(controller.text);
 }
 
 class MarkdownEditor extends StatefulWidget {
@@ -243,11 +270,52 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    final header = Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
+    final viewControls = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.isMarkdown || widget.isRefined)
+          // Raised and wordless, the way `A1 16a` draws it. Two reasons,
+          // and neither is taste. This picks *which view of the same text*
+          // you are looking at, which is the case `AppSegmentStyle.raised`
+          // exists for — the lift says which one is chosen and the accent
+          // stays free to mean "selected" inside the prompt itself. And
+          // the icons had to go for the control to fit on the header's
+          // one line at the config panel's 340px, where the design has
+          // it side by side with the Markdown checkbox.
+          AppSegmentedControl<bool>(
+            segments: [
+              AppSegment(value: false, label: l10n.edit),
+              AppSegment(value: true, label: l10n.preview),
+            ],
+            value: _isPreview,
+            onChanged: (v) => setState(() => _isPreview = v),
+            compact: true,
+            style: AppSegmentStyle.raised,
+          ),
+        if (widget.allowExpand) ...[
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.open_in_full, size: 16),
+            onPressed: _openLargeEditor,
+            tooltip: l10n.expandEditor,
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ],
+    );
+
+    // A [Row], and one that needs the full width from its parent: the view
+    // toggle and the expand button sit against the right edge, the expand
+    // button where `A1 1a` draws it. (The toggle is on the right by the user's
+    // ruling — `1a` has it on the left, with the Markdown switch on the right.)
+    //
+    // This was a [Wrap] with `spaceBetween`, which failed twice. Under a
+    // start-aligned [Column] it shrank to its children and had no slack to
+    // hand out, so everything sat on the left. And a run holding one child is
+    // laid out from the start, so when the controls did wrap they landed on
+    // the left again. When the width runs short here, the right-hand group
+    // scales down in place instead — nothing moves and nothing overflows.
+    final header = Row(
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -273,39 +341,19 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
               ),
           ],
         ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.isMarkdown || widget.isRefined)
-              // Raised and wordless, the way `A1 16a` draws it. Two reasons,
-              // and neither is taste. This picks *which view of the same text*
-              // you are looking at, which is the case `AppSegmentStyle.raised`
-              // exists for — the lift says which one is chosen and the accent
-              // stays free to mean "selected" inside the prompt itself. And
-              // the icons had to go for the control to fit on the header's
-              // one line at the config panel's 340px: with them the [Wrap]
-              // broke, dropping the toggle onto a second row under the
-              // Markdown checkbox, where the design has the two side by side.
-              AppSegmentedControl<bool>(
-                segments: [
-                  AppSegment(value: false, label: l10n.edit),
-                  AppSegment(value: true, label: l10n.preview),
-                ],
-                value: _isPreview,
-                onChanged: (v) => setState(() => _isPreview = v),
-                compact: true,
-                style: AppSegmentStyle.raised,
-              ),
-            if (widget.allowExpand) ...[
-              const SizedBox(width: 4),
-              IconButton(
-                icon: const Icon(Icons.open_in_full, size: 16),
-                onPressed: _openLargeEditor,
-                tooltip: l10n.expandEditor,
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ],
+        const SizedBox(width: 8),
+        Expanded(
+          // The [Align] is load-bearing. [Expanded] hands down a tight width,
+          // and a [FittedBox] given one grows its child to fill it, taking the
+          // height up in proportion; loosened first, it only ever scales down.
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: viewControls,
+            ),
+          ),
         ),
       ],
     );
@@ -333,7 +381,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
         if (isSpaceTooTight) {
           return SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
                 header,
@@ -349,79 +397,41 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     );
   }
 
-  /// Opens the same controller in a large pop-out editor: a fullscreen dialog
-  /// on narrow screens, a large centered dialog elsewhere. Text stays in sync
-  /// automatically because the controller is shared.
+  /// Opens the same controller in the pop-out editor (`A1d`): a fullscreen
+  /// dialog on narrow screens, a large centered dialog elsewhere. Text stays
+  /// in sync automatically because the controller is shared.
   void _openLargeEditor() {
-    final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final isCompact = MediaQuery.sizeOf(context).width < 600;
-    bool localMarkdown = widget.isMarkdown;
+    // Outlives the switch between the two dialog forms below, so resizing the
+    // window across the breakpoint keeps the editor's state.
+    final editorKey = GlobalKey();
 
     showDialog(
       context: context,
       builder: (dialogContext) {
-        final body = StatefulBuilder(
-          builder: (dialogContext, setLocal) {
-            return Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 8, 10),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit_note, size: 22, color: colorScheme.primary),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          widget.label,
-                          style: Theme.of(context).textTheme.titleMedium,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 20),
-                        onPressed: () => Navigator.pop(dialogContext),
-                        tooltip: l10n.close,
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                    child: MarkdownEditor(
-                      controller: widget.controller,
-                      label: widget.label,
-                      hint: widget.hint,
-                      isMarkdown: localMarkdown,
-                      onMarkdownChanged: (v) {
-                        setLocal(() => localMarkdown = v);
-                        widget.onMarkdownChanged(v);
-                      },
-                      onChanged: widget.onChanged,
-                      isRefined: widget.isRefined,
-                      selectable: widget.selectable,
-                      initiallyPreview: _isPreview,
-                      expand: true,
-                      allowExpand: false,
-                    ),
-                  ),
-                ),
-              ],
-            );
+        // Read here, not once at open: the window can be resized under it.
+        final isCompact = MediaQuery.sizeOf(dialogContext).width < 600;
+        final body = _LargeEditor(
+          key: editorKey,
+          controller: widget.controller,
+          label: widget.label,
+          hint: widget.hint,
+          isMarkdown: widget.isMarkdown,
+          onMarkdownChanged: widget.onMarkdownChanged,
+          onChanged: widget.onChanged,
+          readOnly: widget.isRefined,
+          selectable: widget.selectable,
+          initiallyPreview: _isPreview,
+          onPreviewChanged: (v) {
+            if (mounted && !widget.isRefined) setState(() => _isPreview = v);
           },
+          compact: isCompact,
         );
 
         // Left as Dialog.fullscreen: on a phone the pop-out *is* the screen,
         // and a rounded card inset from the edges would waste the width the
         // user opened it to get.
         if (isCompact) {
-          return Dialog.fullscreen(child: body);
+          return Dialog.fullscreen(child: SafeArea(child: body));
         }
 
         final screen = MediaQuery.of(dialogContext).size;
@@ -431,7 +441,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           // A deliberate height, not a ceiling: the editor should not resize
           // as the text grows under the cursor.
           maxHeight: screen.height * 0.85,
-          // The body carries its own toolbar and padding, and fills the card.
+          // The body carries its own header and footer, and fills the card.
           contentPadding: EdgeInsets.zero,
           content: SizedBox(height: screen.height * 0.85, child: body),
         );
@@ -447,7 +457,10 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   /// in whether a [LayoutBuilder] sits above this.
   Widget _buildBodyColumn(ColorScheme colorScheme, {required Widget header}) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      // Stretch: the header is a [Row] that pins its controls to the right
+      // edge, and the body fills the width. Both need a bounded width — the
+      // text field always did.
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
       children: [
         if (widget.bordered) ...[
@@ -455,7 +468,6 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           const SizedBox(height: 8),
         ] else
           Container(
-            width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
               border: Border(
@@ -494,15 +506,8 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     } else {
       inner = CallbackShortcuts(
         bindings: {
-          const SingleActivator(LogicalKeyboardKey.tab): () {
-            final String text = widget.controller.text;
-            final TextSelection selection = widget.controller.selection;
-            final String newText = text.replaceRange(selection.start, selection.end, '  ');
-            widget.controller.value = TextEditingValue(
-              text: newText,
-              selection: TextSelection.collapsed(offset: selection.start + 2),
-            );
-          },
+          if (!widget.isRefined)
+            const SingleActivator(LogicalKeyboardKey.tab): () => _insertMarkdownTab(widget.controller, widget.onChanged),
         },
         child: TextField(
           controller: widget.controller,
@@ -512,7 +517,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           onChanged: widget.onChanged,
           readOnly: widget.isRefined,
           textAlignVertical: TextAlignVertical.top,
-          inputFormatters: [SmartMarkdownFormatter()],
+          inputFormatters: [SmartMarkdownFormatter(continueLists: widget.isMarkdown)],
           decoration: InputDecoration(
             hintText: widget.hint,
             border: InputBorder.none,
@@ -531,7 +536,6 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     }
 
     return Container(
-      width: double.infinity,
       constraints: shouldExpand ? null : BoxConstraints(
         minHeight: math.min(120.0, widget.maxLines * 24.0),
         maxHeight: widget.maxLines * 24.0,

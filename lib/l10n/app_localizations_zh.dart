@@ -834,6 +834,38 @@ class AppLocalizationsZh extends AppLocalizations {
   String get expandEditor => '放大编辑';
 
   @override
+  String get collapseEditor => '收起';
+
+  @override
+  String get editorSplitView => '分栏';
+
+  @override
+  String get editorSourceText => '源文本';
+
+  @override
+  String get editorOriginal => '原文';
+
+  @override
+  String get editorCopyAll => '复制全文';
+
+  @override
+  String get editorCopied => '已复制';
+
+  @override
+  String get editorReadOnly => '只读';
+
+  @override
+  String get editorDone => '完成';
+
+  @override
+  String editorCount(int chars, int lines) {
+    return '$chars 字 · $lines 行';
+  }
+
+  @override
+  String get editorKeyHint => 'Esc 收起 · Tab 缩进';
+
+  @override
   String get back => '返回';
 
   @override
@@ -6635,6 +6667,38 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get expandEditor => '放大編輯';
+
+  @override
+  String get collapseEditor => '收合';
+
+  @override
+  String get editorSplitView => '分欄';
+
+  @override
+  String get editorSourceText => '原始文字';
+
+  @override
+  String get editorOriginal => '原文';
+
+  @override
+  String get editorCopyAll => '複製全文';
+
+  @override
+  String get editorCopied => '已複製';
+
+  @override
+  String get editorReadOnly => '唯讀';
+
+  @override
+  String get editorDone => '完成';
+
+  @override
+  String editorCount(int chars, int lines) {
+    return '$chars 字 · $lines 行';
+  }
+
+  @override
+  String get editorKeyHint => 'Esc 收合 · Tab 縮排';
 
   @override
   String get back => '返回';
