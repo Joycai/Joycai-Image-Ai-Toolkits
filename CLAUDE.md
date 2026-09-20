@@ -3,7 +3,7 @@
 Cross-platform Flutter desktop/mobile app for AI image and video generation, built
 around a multi-vendor LLM layer, for artists and designers working with AI media.
 
-**Version:** 4.19.1 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
+**Version:** 4.20.0 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
 
 ## Key Commands
 
@@ -34,7 +34,7 @@ main.dart          MultiProvider root → MyApp → AppWindowFrame → MainNavig
 core/              Responsive breakpoints, AppConstants/enums, AppPaths, file utils, design_tokens
                      (incl. AppDock, the phone dock's size), app_theme, app_semantic_colors, theme_accent
 l10n/              generated — never edit; sources are l10n/src/<lang>/<module>.arb
-models/            LLMModel, LLMChannel, PricingGroup, Prompt/SystemPrompt, PromptTag, PromptHistoryEntry,
+models/            LLMModel, LLMChannel, PricingGroup, Prompt/SystemPrompt (+ PresetOutputKind), PromptTag, PromptHistoryEntry,
                      TaskItem (+ TaskType, TaskEvent), AppImage, BrowserFile, LogEntry,
                      ImageLayer (a saved Seedream layer decomposition)
 services/          all business logic, in domain folders only:
