@@ -245,7 +245,9 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: const Scaffold(
           body: SingleChildScrollView(
-            child: IntrinsicHeight(child: SizedBox(width: 320, child: AppMarkdown(data: everything))),
+            // Width first: intrinsic height is asked *at* a width, and has to be the
+            // one the text is then laid out at.
+            child: SizedBox(width: 320, child: IntrinsicHeight(child: AppMarkdown(data: everything))),
           ),
         ),
       ),
