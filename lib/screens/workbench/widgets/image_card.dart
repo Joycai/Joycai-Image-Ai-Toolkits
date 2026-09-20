@@ -19,6 +19,7 @@ import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/drag/app_drag_follower.dart';
 import '../../../widgets/drag/app_drag_session.dart';
+import '../../../widgets/ui/focus_pane.dart';
 import '../../../widgets/glass/app_glass.dart';
 import 'gallery_file_actions.dart';
 import 'image_card_context_menu.dart';
@@ -297,6 +298,10 @@ class _ImageCardState extends State<ImageCard> {
       BuildContext context, ColorScheme colorScheme, bool isMobile, ThumbnailFit thumbFit) {
     final isVideo = AppConstants.isVideoFile(widget.imageFile.path);
     final selected = widget.isSelected;
+    // A selection the keyboard no longer owns goes quiet — same number, same
+    // place, neutral ring (`00f` 帧 3). Asked only while selected, so a card
+    // the user has never picked never takes the dependency.
+    final paneActive = selected && FocusPane.activeOf(context);
     // On touch layouts there is no hover, so the strip is permanent there —
     // unchanged from before the restyle.
     // Under a pointer the strip follows hover. A phone has no hover, and a
@@ -319,18 +324,24 @@ class _ImageCardState extends State<ImageCard> {
           // (`0 0 0 2px --p, 0 0 0 4px --p 30%`), so a selected photo is not
           // washed or shrunk. Shadows paint outside the clip below, and in
           // list order — the halo first, the solid ring over it.
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: _ringHaloAlpha),
-                    spreadRadius: 4,
-                  ),
-                  BoxShadow(
-                    color: colorScheme.primary,
-                    spreadRadius: 2,
-                  ),
-                ]
-              : null,
+          boxShadow: switch ((selected, paneActive)) {
+            (true, true) => [
+                BoxShadow(
+                  color: colorScheme.primary.withValues(alpha: _ringHaloAlpha),
+                  spreadRadius: 4,
+                ),
+                BoxShadow(
+                  color: colorScheme.primary,
+                  spreadRadius: 2,
+                ),
+              ],
+            // No halo while the region is idle: one flat neutral ring, so the
+            // grid reads as "still picked, not listening".
+            (true, false) => [
+                BoxShadow(color: colorScheme.outline, spreadRadius: 2),
+              ],
+            _ => null,
+          },
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
@@ -539,12 +550,13 @@ class _ImageCardState extends State<ImageCard> {
   /// given them in this order, and the user has no other way to see it on the
   /// grid. Deliberately not animated — the number is read, not watched.
   Widget _buildSelectionBadge(BuildContext context, ColorScheme colorScheme) {
+    final bool paneActive = FocusPane.activeOf(context);
     return Container(
       width: 20,
       height: 20,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: colorScheme.primary,
+        color: paneActive ? colorScheme.primary : colorScheme.outline,
         shape: BoxShape.circle,
         boxShadow: const [
           BoxShadow(color: _selectionBadgeShadow, blurRadius: 3, offset: Offset(0, 1)),
@@ -554,7 +566,7 @@ class _ImageCardState extends State<ImageCard> {
         '${widget.selectionNumber}',
         maxLines: 1,
         style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-              color: colorScheme.onPrimary,
+              color: paneActive ? colorScheme.onPrimary : colorScheme.surface,
               fontWeight: FontWeight.w600,
               height: 1,
               // Tracking trails the last glyph and would push a lone digit

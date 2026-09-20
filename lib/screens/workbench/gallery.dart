@@ -3,16 +3,23 @@ import 'dart:ui' as ui;
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_shortcuts.dart';
 import '../../core/constants.dart';
+import '../../core/file_utils.dart';
+import '../../core/text_editing_focus.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../services/files/file_permission_service.dart';
 import '../../state/gallery_state.dart';
+import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/drag/app_drop_zone.dart';
 import '../../widgets/placeholders/permission_placeholder.dart';
+import '../../widgets/ui/focus_pane.dart';
+import 'widgets/gallery_file_actions.dart';
 import 'widgets/image_card.dart';
 import 'widgets/preview/media_preview_dialog.dart';
 import 'widgets/workbench_glass_toolbar.dart';
@@ -119,14 +126,96 @@ class _GalleryState extends State<Gallery> {
   /// by while the bar is up (`A1b`: 网格顶部留白同步 +46).
   static const double _outlineClearance = FolderOutlineBar.height + AppSpace.s6;
 
+  /// The gallery is a focus region (`00f` 帧 3): while it holds the keyboard,
+  /// `Delete` / `F2` / `Enter` / `⌘A` act on *its* selection. Click the folder
+  /// tree and the tree's row takes the keyboard, so those keys stop pointing
+  /// here — the same guarantee the file browser gained.
+  final FocusNode _pane = FocusPane.newNode('workbench-pane-grid');
+
   @override
   void initState() {
     super.initState();
     _outline.attach(_scroll);
   }
 
+  /// The gallery's keys (L2), read off the one registry so this screen and the
+  /// file browser cannot drift apart on what `Delete` means.
+  KeyEventResult _handleKeys(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (isTextEditingFocused()) return KeyEventResult.ignored;
+
+    final state = context.read<GalleryState>();
+    final selected = state.selectedImages;
+    bool bound(String id) => AppShortcuts.byId(id).matches(event);
+
+    if (bound(AppShortcutIds.selectAll)) {
+      state.selectAllImages();
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.clearSelection) && selected.isNotEmpty) {
+      state.clearImageSelection();
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.preview) && selected.isNotEmpty) {
+      final images = state.galleryImages;
+      final index = images.indexWhere((i) => i.path == selected.first.path);
+      if (index >= 0) {
+        showMediaPreview(
+          context,
+          galleryImages: images,
+          initialIndex: index,
+          heroScope: kWorkbenchPreviewHeroScope,
+        );
+      }
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.delete) && selected.isNotEmpty) {
+      // The one key in this round with two meanings, and it is deliberate
+      // (plan D2). The temporary workspace is a basket: Delete takes things
+      // out of it, which costs nothing and can be undone by dragging them
+      // back in. Every other view lists files on disk, where Delete is what
+      // it says. The context menu spells out which one is in force.
+      if (state.viewMode == GalleryViewMode.temp) {
+        for (final image in List<AppImage>.of(selected)) {
+          state.removeDroppedImage(image.path);
+        }
+      } else {
+        confirmAndDeleteImageFiles(context, List<AppImage>.of(selected));
+      }
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.rename) && selected.length == 1) {
+      showFileRenameDialog(
+        context: context,
+        filePath: selected.first.path,
+        onSuccess: () => state.refreshImages(),
+      );
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.copyFileName) && selected.isNotEmpty) {
+      Clipboard.setData(ClipboardData(text: selected.map((i) => i.name).join('\n')));
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.revealInFileManager) && selected.isNotEmpty) {
+      FileUtils.openFolder(selected.first.path);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  /// Single click picks one picture; Shift+click extends from the last plain
+  /// click to this one — the browser's rule, now the gallery's too.
+  void _handleSelectionTap(GalleryState state, AppImage image) {
+    if (HardwareKeyboard.instance.isShiftPressed) {
+      state.selectImageRangeTo(image);
+    } else {
+      state.toggleImageSelection(image);
+    }
+  }
+
   @override
   void dispose() {
+    _pane.dispose();
     _confirmTimer?.cancel();
     _outline.dispose();
     _scroll.dispose();
@@ -240,7 +329,15 @@ class _GalleryState extends State<Gallery> {
 
     final l10n = AppLocalizations.of(context)!;
 
-    return DropTarget(
+    return FocusPane(
+      node: _pane,
+      autofocus: true,
+      onKeyEvent: _handleKeys,
+      // The gallery fills the centre column under a floating toolbar, so its
+      // top edge is behind that glass. The active mark rides the selection
+      // instead (`00f` 帧 3), which is the half that matters here.
+      showActiveEdge: false,
+      child: DropTarget(
       onDragDone: (details) => _handleDrop(details, galleryState),
       onDragEntered: (details) => setState(() => _isDragging = true),
       onDragExited: (details) => setState(() => _isDragging = false),
@@ -286,6 +383,7 @@ class _GalleryState extends State<Gallery> {
               ),
             ),
         ],
+      ),
       ),
     );
   }
@@ -473,7 +571,7 @@ class _GalleryState extends State<Gallery> {
                                 if (isVideo) {
                                   showMediaPreview(context, galleryImages: images, initialIndex: globalIndex, heroScope: kWorkbenchPreviewHeroScope);
                                 } else {
-                                  state.toggleImageSelection(imageFile);
+                                  _handleSelectionTap(state, imageFile);
                                 }
                               },
                               onDoubleTap: isVideo
