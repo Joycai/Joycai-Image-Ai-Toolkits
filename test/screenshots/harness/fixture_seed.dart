@@ -482,13 +482,30 @@ Future<void> _seedPrompts(DatabaseService db) async {
           '风格参照的提示词，风格词写在最后一段。',
       <int>[styleTag],
     ),
+    // `A3e`: the one preset here that answers in the chat instead of handing
+    // back a prompt — what puts the 「分析」 marker on a tile, a picker row and
+    // a library row.
+    (
+      fixtureAnalysisPresetTitle,
+      '按用户指定的参考图识别服装，并以固定结构回答：总览、部件、面料与工艺、不确定处。\n\n'
+          '## 输出结构\n1. 总览 —— 品类、廓形、层次。\n2. 部件 —— 领、袖、门襟、腰线、下摆。\n'
+          '3. 面料与工艺 —— 只写看得见的。\n4. 不确定处 —— 看不清就说看不清。',
+      <int>[portraitTag],
+    ),
   ];
 
   for (int i = 0; i < systemPrompts.length; i++) {
     final (String title, String content, List<int> tags) = systemPrompts[i];
     await db.addSystemPrompt(
-      SystemPrompt(title: title, content: content, type: 'refiner', sortOrder: i)
-          .toMap(includeId: false),
+      SystemPrompt(
+        title: title,
+        content: content,
+        type: 'refiner',
+        sortOrder: i,
+        outputKind: title == fixtureAnalysisPresetTitle
+            ? PresetOutputKind.analysis
+            : PresetOutputKind.prompt,
+      ).toMap(includeId: false),
       tagIds: tags,
     );
   }
@@ -972,6 +989,50 @@ void seedOptimizerSystemPrompt(AppState appState) {
     mode: AssistantMode.systemPrompt,
   );
   appState.workbenchUIState.adoptOptimizerSession(session, images);
+}
+
+const String fixtureAnalysisPresetTitle = '服装结构分析';
+
+/// `A3e 5e`: a task-preset session under an analysis preset — the answer as a
+/// reply with its copy row, then the prompt the user went on to ask for, as
+/// the card it always was.
+///
+/// Loads the library's own analysis preset, by [fixtureAnalysisPresetTitle],
+/// so the panel names it and the tile wears its tick.
+Future<void> seedOptimizerAnalysis(AppState appState) async {
+  final List<AppImage> images = _galleryImages(appState).take(2).toList();
+  final PromptOptimizerSession session = PromptOptimizerSession.fromStored(
+    id: 'fixture-assistant-analysis',
+    mode: AssistantMode.systemPrompt,
+    history: <LLMMessage>[
+      LLMMessage(role: LLMRole.user, content: '结合参考图 1 和 2，描述一下服装的设计结构'),
+      LLMMessage(
+        role: LLMRole.assistant,
+        content: '## 总览\n图 1 是一件**短款收腰西装外套**，图 2 是同系列的高腰直筒裤。两件同料，合起来是一套偏正式的套装。\n\n'
+            '## 部件\n- 领：戗驳领，领面较宽，驳口落在胸线上方\n- 袖：两片袖，袖口三粒装饰扣\n- 门襟：单排一粒扣，扣位在腰线\n\n'
+            '## 不确定处\n图 2 的后腰被手臂挡住，有没有松紧看不出来。',
+        deliverable: true,
+      ),
+      LLMMessage(role: LLMRole.user, content: '顺手给我一条能复现这套衣服的提示词'),
+      LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        toolCalls: <LLMToolCall>[
+          LLMToolCall(id: 'fx-a1', name: 'submit_prompt', arguments: const <String, dynamic>{
+            'prompt': '一位模特身穿炭灰色戗驳领短款收腰西装外套，单排一粒扣，两片袖、袖口三粒装饰扣，'
+                '搭配同料高腰直筒裤；棚拍，柔和正面光，浅灰无缝背景，全身构图。',
+            'note': '按上面的结构分析反推。',
+          }),
+        ],
+      ),
+      LLMMessage(role: LLMRole.tool, content: '{"status":"ok"}', toolCallId: 'fx-a1', toolName: 'submit_prompt'),
+    ],
+  );
+  appState.workbenchUIState.adoptOptimizerSession(session, images);
+  final List<SystemPrompt> presets = await appState.getSystemPrompts(type: 'refiner');
+  appState.workbenchUIState.loadOptimizerPreset(
+    presets.firstWhere((SystemPrompt p) => p.title == fixtureAnalysisPresetTitle),
+  );
 }
 
 /// The assistant in library-edit mode with changes staged — `10h`.
