@@ -278,7 +278,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
 
     final text = checked == true ? body.copyWith(color: _scheme.onSurfaceVariant) : body;
     final lineHeight = _scaler.scale(_sizeOf(body)) * (body.height ?? 1.4);
-    return Row(
+    final row = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (checked != null)
@@ -295,6 +295,8 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
         Expanded(child: _column(_blocks(blocks, text, depth: depth + 1, gap: loose ? null : _m.itemGap))),
       ],
     );
+    // One stop for a screen reader: the box's state belongs to the item's text.
+    return checked != null ? MergeSemantics(child: row) : row;
   }
 
   static bool _isBlock(String tag) =>
@@ -307,7 +309,8 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
       for (final section in (el.children ?? const <md.Node>[]).whereType<md.Element>())
         ...(section.children ?? const <md.Node>[]).whereType<md.Element>().where((e) => e.tag == 'tr'),
     ];
-    final columns = rows.fold<int>(0, (n, r) => math.max(n, r.children?.length ?? 0));
+    List<md.Element> cellsOf(md.Element row) => (row.children ?? const <md.Node>[]).whereType<md.Element>().toList();
+    final columns = rows.fold<int>(0, (n, r) => math.max(n, cellsOf(r).length));
     if (columns == 0) return const SizedBox.shrink();
 
     final head = body.copyWith(
@@ -325,7 +328,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
           TableRow(
             decoration: _isHeader(row) ? BoxDecoration(color: _scheme.surfaceContainerLow) : null,
             children: [
-              for (final cell in (row.children ?? const <md.Node>[]).whereType<md.Element>())
+              for (final cell in cellsOf(row))
                 Padding(
                   padding: _m.cellPadding,
                   child: _inline(
@@ -338,7 +341,8 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
                     },
                   ),
                 ),
-              for (int i = row.children?.length ?? 0; i < columns; i++) const SizedBox.shrink(),
+              // Every row the same length, or [Table] asserts.
+              for (int i = cellsOf(row).length; i < columns; i++) const SizedBox.shrink(),
             ],
           ),
       ],

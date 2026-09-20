@@ -125,6 +125,14 @@ void main() {
     expect(find.byIcon(Icons.check), findsOneWidget);
     expect(find.text('•'), findsNothing);
 
+    // State and text are one semantics node, not a bare "checked" beside it.
+    final handle = tester.ensureSemantics();
+    expect(
+      tester.getSemantics(find.text('done', findRichText: true)),
+      matchesSemantics(label: 'done', hasCheckedState: true, isChecked: true),
+    );
+    handle.dispose();
+
     final scheme = Theme.of(tester.element(find.byType(AppMarkdown))).colorScheme;
     final all = spans(tester);
     expect(all.firstWhere((s) => s.$1 == 'done').$2.color, scheme.onSurfaceVariant);
