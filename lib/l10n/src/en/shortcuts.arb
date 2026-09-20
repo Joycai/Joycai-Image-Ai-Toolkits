@@ -38,5 +38,7 @@
   },
   "shortcutsInactiveRegion": "not active",
   "shortcutsActiveRegionNote": "These act on the active region — the part with the accent edge. Click the folder tree or the grid to move the keyboard.",
-  "shortcutsClose": "Close"
+  "shortcutsClose": "Close",
+  "shortcutsCustomise": "Custom key bindings",
+  "shortcutsCustomiseLater": "a later round"
 }

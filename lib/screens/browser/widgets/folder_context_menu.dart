@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/file_utils.dart';
+import '../../../core/app_shortcuts.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../widgets/ui/app_key_label.dart';
 import '../../../services/files/file_transfer_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/file_staging_state.dart';
@@ -23,6 +25,9 @@ import '../../../widgets/glass/app_glass_menu.dart';
 /// to the registered-root rules: "Delete" becomes "Remove from list" (the list
 /// entry goes, the disk is untouched) and "Move to…" is shown disabled with
 /// the reason under it — a root is a registration, not a folder to be moved.
+/// See `file_context_menu._keys`: the key a row really has, from the table.
+String? _keys(String id) => AppKeyLabel.menuHint(AppShortcuts.byId(id));
+
 void showFolderContextMenu({
   required BuildContext context,
   required String path,
@@ -83,13 +88,14 @@ void showFolderContextMenu({
         AppGlassMenuItem(
           icon: Icons.create_new_folder_outlined,
           label: l10n.newSubfolder,
+          trailing: _keys(AppShortcutIds.newSubfolder),
           onSelected: onNewSubfolder ?? () {},
           enabled: onNewSubfolder != null,
         ),
         AppGlassMenuItem(
           icon: Icons.drive_file_rename_outline,
           label: l10n.rename,
-          trailing: 'F2',
+          trailing: _keys(AppShortcutIds.renameFolder),
           onSelected: onRename ?? () {},
           enabled: onRename != null,
         ),
@@ -112,7 +118,7 @@ void showFolderContextMenu({
           AppGlassMenuItem(
             icon: Icons.delete_outline,
             label: l10n.delete,
-            trailing: 'Delete',
+            trailing: _keys(AppShortcutIds.deleteFolder),
             danger: true,
             onSelected: onDelete ?? () {},
             enabled: onDelete != null,

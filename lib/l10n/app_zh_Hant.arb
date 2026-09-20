@@ -1888,6 +1888,8 @@
   "shortcutsInactiveRegion": "目前不活動",
   "shortcutsActiveRegionNote": "這一組只作用於活動區——介面上帶強調色頂邊的那一塊。點目錄樹或網格即可換活動區。",
   "shortcutsClose": "關閉",
+  "shortcutsCustomise": "自訂鍵位",
+  "shortcutsCustomiseLater": "第二期",
   "tasks": "任務",
   "taskQueueManager": "任務佇列管理員",
   "noTasksInQueue": "佇列中沒有任務",

@@ -372,37 +372,10 @@ class _Row extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpace.s10),
-            _Keys(shortcut: shortcut),
+            AppShortcutKeys(shortcut),
           ],
         ),
       ),
     );
   }
 }
-
-/// The chords, with the two ranges written as ranges.
-///
-/// `⌘1…8` is eight chords in the table and one thing to a reader; drawing
-/// eight badges would be technically true and useless.
-class _Keys extends StatelessWidget {
-  const _Keys({required this.shortcut});
-
-  final AppShortcut shortcut;
-
-  @override
-  Widget build(BuildContext context) {
-    final int count = shortcut.keys.length;
-    final bool isRange = count > 3 &&
-        (shortcut.id == AppShortcutIds.navigateToDestination ||
-            shortcut.id == AppShortcutIds.selectWorkbenchTool);
-    if (!isRange) return AppShortcutKeys(shortcut);
-
-    final pieces = AppKeyLabel.spell(shortcut.keys.first);
-    if (pieces == null) return const SizedBox.shrink();
-    final collapsed = <String>[...pieces];
-    collapsed[collapsed.length - 1] =
-        '${collapsed.last.substring(0, collapsed.last.length - 1)}1…$count';
-    return AppKeyBadges(pieces: collapsed);
-  }
-}
-

@@ -56,6 +56,45 @@ class AppKeyLabel extends StatelessWidget {
     ];
   }
 
+  /// One chord, for a reminder rather than a reference — a context-menu
+  /// row's trailing.
+  ///
+  /// The table's first chord, which is the canonical one. A menu row has
+  /// about forty points for this; `Delete / Backspace / ⌘Backspace` is the
+  /// truth and it does not fit, so the full set belongs in the `⌘/` panel
+  /// and the settings list, where there is room for it.
+  static String? menuHint(AppShortcut shortcut, {bool? macOS}) {
+    if (shortcut.isDigitRange) return shortcutText(shortcut, macOS: macOS);
+    for (final key in shortcut.keys) {
+      final pieces = spell(key, macOS: macOS);
+      if (pieces != null) return pieces.join('+');
+    }
+    return null;
+  }
+
+  /// A shortcut as one line of text — for a place that has a text slot
+  /// rather than room for badges, which is what a context-menu row's
+  /// trailing is (it shares that slot with counts, and the two should read
+  /// alike).
+  ///
+  /// Null when nothing in this shortcut exists on this platform.
+  static String? shortcutText(AppShortcut shortcut, {bool? macOS}) {
+    if (shortcut.isDigitRange) {
+      final pieces = spell(shortcut.keys.first, macOS: macOS);
+      if (pieces == null) return null;
+      final joined = pieces.join('+');
+      return '${joined.substring(0, joined.length - 1)}'
+          '1…${shortcut.keys.length}';
+    }
+    final seen = <String>{};
+    final chords = <String>[
+      for (final key in shortcut.keys)
+        if (spell(key, macOS: macOS) case final pieces?)
+          if (seen.add(pieces.join('+'))) pieces.join('+'),
+    ];
+    return chords.isEmpty ? null : chords.join(' / ');
+  }
+
   /// The trigger key's own name. Ellipsised ranges (`1…8`) come from the
   /// caller, not from here.
   ///
@@ -100,6 +139,18 @@ class AppShortcutKeys extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A run of number keys reads as a range: eight badges would be correct
+    // and useless.
+    if (shortcut.isDigitRange) {
+      final pieces = AppKeyLabel.spell(shortcut.keys.first);
+      if (pieces == null) return const SizedBox.shrink();
+      final collapsed = <String>[...pieces];
+      final last = collapsed.last;
+      collapsed[collapsed.length - 1] =
+          '${last.substring(0, last.length - 1)}1…${shortcut.keys.length}';
+      return AppKeyBadges(pieces: collapsed, dense: dense);
+    }
+
     // Deduplicated: `Enter` and the numpad's `Enter` are two rows in the
     // table and one key to a reader, so the panel must not offer them as a
     // choice between identical things.

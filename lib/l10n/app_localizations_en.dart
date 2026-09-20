@@ -3953,6 +3953,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shortcutsClose => 'Close';
 
   @override
+  String get shortcutsCustomise => 'Custom key bindings';
+
+  @override
+  String get shortcutsCustomiseLater => 'a later round';
+
+  @override
   String get tasks => 'Tasks';
 
   @override

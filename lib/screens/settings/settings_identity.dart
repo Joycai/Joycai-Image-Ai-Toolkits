@@ -34,6 +34,13 @@ class SettingsIdentity {
           plate: dark ? const Color(0xFF383045) : const Color(0xFFECE4FA),
           ink: dark ? const Color(0xFFA97DFF) : const Color(0xFF7A4ECB),
         ),
+      // The neutral of the set: a keyboard is not a mood, and this category
+      // is a reference list rather than something to set.
+      SettingsCategory.keyboard => SettingsIdentity(
+          icon: Icons.keyboard_outlined,
+          plate: dark ? const Color(0xFF33322E) : const Color(0xFFE3E1DC),
+          ink: dark ? const Color(0xFFA9A69E) : const Color(0xFF625F58),
+        ),
       SettingsCategory.connectivity => SettingsIdentity(
           icon: Icons.lan_outlined,
           plate: dark ? const Color(0xFF1B3350) : const Color(0xFFDDEAF8),

@@ -3793,6 +3793,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get shortcutsClose => '閉じる';
 
   @override
+  String get shortcutsCustomise => 'キー割り当てのカスタマイズ';
+
+  @override
+  String get shortcutsCustomiseLater => '次のフェーズで';
+
+  @override
   String get tasks => 'タスク';
 
   @override

@@ -960,13 +960,22 @@ class _AppGlassMenuRow extends StatelessWidget {
                     ),
                     if (item.trailing != null) ...[
                       const SizedBox(width: AppSpace.s10),
-                      Text(
+                      // Flexible, not free: the label beside it is already
+                      // in an `Expanded`, so a trailing wide enough to leave
+                      // it no room overflows the row rather than shrinking
+                      // anything. A key that is too long for a menu should
+                      // be shortened by its caller (`AppKeyLabel.menuHint`),
+                      // but the row must not be the thing that breaks.
+                      Flexible(
+                        child: Text(
                         item.trailing!,
                         maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: textTheme.labelSmall!.mono.metricsOnly.copyWith(
                           fontWeight: FontWeight.w400,
                           color: enabled ? ink2 : dim,
                         ),
+                      ),
                       ),
                     ],
                     if (submenu)

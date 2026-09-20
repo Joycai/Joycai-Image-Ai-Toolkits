@@ -17,7 +17,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
+import 'package:joycai_image_ai_toolkits/core/app_shortcuts.dart';
 import 'package:joycai_image_ai_toolkits/core/text_editing_focus.dart';
+import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_key_label.dart';
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
 import 'package:joycai_image_ai_toolkits/screens/browser/widgets/file_card.dart';
 import 'package:joycai_image_ai_toolkits/screens/browser/widgets/browser_staging_panel.dart';
@@ -290,6 +293,60 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(tester);
     expect(field, findsNothing);
+  });
+
+  testWidgets('the context menu spells its keys from the table',
+      (WidgetTester tester) async {
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: const Size(1440, 900),
+      label: 'browser-menu-trailing',
+    );
+
+    // A picture, not the first card: the grid leads with an audio file, and
+    // the preview row only exists for something previewable.
+    await tester.tap(
+      find.ancestor(
+        of: find.text('photo_1.png'),
+        matching: find.byType(FileCard),
+      ),
+      buttons: kSecondaryButton,
+    );
+    await settle(tester);
+
+    final AppLocalizations l10n =
+        AppLocalizations.of(tester.element(find.byType(AppGlassMenu)))!;
+    for (final id in <String>[
+      AppShortcutIds.preview,
+      AppShortcutIds.rename,
+      AppShortcutIds.delete,
+      AppShortcutIds.copyFileName,
+      AppShortcutIds.revealInFileManager,
+    ]) {
+      final shortcut = AppShortcuts.byId(id);
+      final hint = AppKeyLabel.menuHint(shortcut);
+      expect(hint, isNotNull, reason: id);
+      expect(
+        find.descendant(
+            of: find.byType(AppGlassMenu), matching: find.text(hint!)),
+        findsWidgets,
+        reason: '$id must show the key it really has, not a literal — the '
+            'three that used to be hard-coded here were the app\'s only '
+            'mention of any shortcut',
+      );
+    }
+    // The label is there too, so the assertion above is about a row and not
+    // about some stray text.
+    expect(
+      find.descendant(
+          of: find.byType(AppGlassMenu), matching: find.text(l10n.rename)),
+      findsOneWidget,
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await settle(tester);
   });
 
   testWidgets('Cmd+\\ hides and shows the folder column', (WidgetTester tester) async {

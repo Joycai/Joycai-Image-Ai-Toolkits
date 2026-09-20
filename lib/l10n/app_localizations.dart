@@ -6766,6 +6766,18 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get shortcutsClose;
 
+  /// No description provided for @shortcutsCustomise.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom key bindings'**
+  String get shortcutsCustomise;
+
+  /// No description provided for @shortcutsCustomiseLater.
+  ///
+  /// In en, this message translates to:
+  /// **'a later round'**
+  String get shortcutsCustomiseLater;
+
   /// No description provided for @tasks.
   ///
   /// In en, this message translates to:

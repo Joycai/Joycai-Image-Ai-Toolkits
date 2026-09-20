@@ -569,7 +569,10 @@ class _ToolRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final layout = context.watch<WorkbenchLayoutState>();
     final tabs = _tabs(l10n);
-    final showTune = layout.rightInDrawer;
+    // Same escape hatch as the gallery row's: `⇧⌘\` collapses the panel on
+    // these tabs too, and a column with no visible way back is a trap.
+    final configCollapsed = !context.select<AppState, bool>((s) => s.isConfigPanelExpanded);
+    final showTune = layout.rightInDrawer || configCollapsed;
 
     final tabLabels = !phone && _tabLabelsFit(context, width);
     final controlsFloor = controls == null ? 0.0 : math.min(controlsWidth, _kControlsFloor);
@@ -625,7 +628,13 @@ class _ToolRow extends StatelessWidget {
         GlassIconButton(
           icon: Icons.tune,
           tooltip: l10n.wbGenerationConfig,
-          onPressed: () => context.read<WorkbenchLayoutState>().openRightPanel(),
+          onPressed: () {
+            if (configCollapsed) {
+              context.read<AppState>().setConfigPanelExpanded(true);
+            } else {
+              context.read<WorkbenchLayoutState>().openRightPanel();
+            }
+          },
         ),
     ]);
   }

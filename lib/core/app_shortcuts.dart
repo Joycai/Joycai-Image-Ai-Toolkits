@@ -174,6 +174,33 @@ class AppShortcut {
   /// Which focus regions claim it. Empty except for [ShortcutLayer.pane].
   final Set<ShortcutPane> panes;
 
+  /// Whether this row's chords are a run of number keys — `⌘1…8`, `⌘⌥1…5`.
+  ///
+  /// Eight chords is what the table holds and one range is what a reader
+  /// wants; every surface that draws keys collapses these the same way,
+  /// which is why the question is answered here rather than by each of them.
+  bool get isDigitRange {
+    if (keys.length < 3) return false;
+    const digits = <LogicalKeyboardKey>[
+      LogicalKeyboardKey.digit1,
+      LogicalKeyboardKey.digit2,
+      LogicalKeyboardKey.digit3,
+      LogicalKeyboardKey.digit4,
+      LogicalKeyboardKey.digit5,
+      LogicalKeyboardKey.digit6,
+      LogicalKeyboardKey.digit7,
+      LogicalKeyboardKey.digit8,
+      LogicalKeyboardKey.digit9,
+    ];
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].key != digits[i]) return false;
+      if (keys[i].primary != keys.first.primary) return false;
+      if (keys[i].shift != keys.first.shift) return false;
+      if (keys[i].alt != keys.first.alt) return false;
+    }
+    return true;
+  }
+
   /// Whether [event] triggers this action right now.
   bool matches(KeyEvent event, {bool? macOS, HardwareKeyboard? keyboard}) =>
       keys.any((k) => k.matches(event, macOS: macOS, keyboard: keyboard));

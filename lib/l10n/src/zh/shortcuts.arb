@@ -38,5 +38,7 @@
   },
   "shortcutsInactiveRegion": "当前不活动",
   "shortcutsActiveRegionNote": "这一组只作用于活动区——界面上带强调色顶边的那一块。点目录树或网格即可换活动区。",
-  "shortcutsClose": "关闭"
+  "shortcutsClose": "关闭",
+  "shortcutsCustomise": "自定义键位",
+  "shortcutsCustomiseLater": "第二期"
 }

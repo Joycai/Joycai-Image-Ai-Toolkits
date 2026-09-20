@@ -3748,6 +3748,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get shortcutsClose => '关闭';
 
   @override
+  String get shortcutsCustomise => '自定义键位';
+
+  @override
+  String get shortcutsCustomiseLater => '第二期';
+
+  @override
   String get tasks => '任务';
 
   @override
@@ -9553,6 +9559,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get shortcutsClose => '關閉';
+
+  @override
+  String get shortcutsCustomise => '自訂鍵位';
+
+  @override
+  String get shortcutsCustomiseLater => '第二期';
 
   @override
   String get tasks => '任務';

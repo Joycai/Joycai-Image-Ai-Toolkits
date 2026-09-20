@@ -1888,6 +1888,8 @@
   "shortcutsInactiveRegion": "現在は非アクティブ",
   "shortcutsActiveRegionNote": "この一群はアクティブ領域（アクセント色の上辺が付いている部分）にのみ作用します。フォルダツリーかグリッドをクリックすると切り替わります。",
   "shortcutsClose": "閉じる",
+  "shortcutsCustomise": "キー割り当てのカスタマイズ",
+  "shortcutsCustomiseLater": "次のフェーズで",
   "tasks": "タスク",
   "taskQueueManager": "タスクキューマネージャー",
   "noTasksInQueue": "キューにタスクがありません",
