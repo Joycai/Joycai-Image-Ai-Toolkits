@@ -4525,9 +4525,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optPromptCopied => '提示词已复制到剪贴板';
 
   @override
-  String get optEmptyChat => '发送粗略提示词或想法开始优化。AI 会按需查看参考图，你可以多轮追问持续调整结果。';
-
-  @override
   String get optViewed => 'AI 已查看';
 
   @override
@@ -5592,6 +5589,50 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optPresetDiscardAction => '丢弃改动';
+
+  @override
+  String get optEmptyPresetTitle => '这次要做什么？';
+
+  @override
+  String get optEmptyPresetSub => '选一个任务预设，然后把想法发给助手。它会按需查看参考图，你可以多轮追问。';
+
+  @override
+  String optEmptyPresetAll(int count) {
+    return '全部 $count 个预设…';
+  }
+
+  @override
+  String get optEmptyPresetCreate => '去提示词库新建预设';
+
+  @override
+  String get optEmptyKbTitle => '按你的知识库写提示词';
+
+  @override
+  String get optEmptyKbSub => '助手先读知识库的文件地图，只翻这次用得上的规则文档。';
+
+  @override
+  String get optEmptyKbExample1 => '按知识库的规则，帮我写一条提示词：';
+
+  @override
+  String get optEmptyKbExample2 => '对照知识库，检查这条提示词哪里不合规：';
+
+  @override
+  String get optEmptyKbExample3 => '看一下参考图里的人物，按知识库的模板写成一条完整提示词。';
+
+  @override
+  String get optEmptyKbEditTitle => '维护你的知识库';
+
+  @override
+  String get optEmptyKbEditSub => '告诉助手要补什么、改什么。每处改动都会先给你看 diff，确认后才写入。';
+
+  @override
+  String get optEmptyKbEditExample1 => '新增一篇文档，记录这类画面的写法：';
+
+  @override
+  String get optEmptyKbEditExample2 => '检查知识库里有没有互相矛盾的规则。';
+
+  @override
+  String get optEmptyKbEditExample3 => '把入口文件里的文件地图更新到和实际目录一致。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -10116,9 +10157,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optPromptCopied => '提示詞已複製到剪貼簿';
 
   @override
-  String get optEmptyChat => '傳送粗略提示詞或想法開始優化。AI 會按需查看參考圖，你可以多輪追問持續調整結果。';
-
-  @override
   String get optViewed => 'AI 已查看';
 
   @override
@@ -11183,4 +11221,48 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optPresetDiscardAction => '捨棄變更';
+
+  @override
+  String get optEmptyPresetTitle => '這次要做什麼？';
+
+  @override
+  String get optEmptyPresetSub => '選一個任務預設，然後把想法傳給助手。它會視需要查看參考圖，你可以多輪追問。';
+
+  @override
+  String optEmptyPresetAll(int count) {
+    return '全部 $count 個預設…';
+  }
+
+  @override
+  String get optEmptyPresetCreate => '到提示詞庫新增預設';
+
+  @override
+  String get optEmptyKbTitle => '依你的知識庫寫提示詞';
+
+  @override
+  String get optEmptyKbSub => '助手先讀知識庫的檔案地圖，只翻這次用得上的規則文件。';
+
+  @override
+  String get optEmptyKbExample1 => '依知識庫的規則，幫我寫一條提示詞：';
+
+  @override
+  String get optEmptyKbExample2 => '對照知識庫，檢查這條提示詞哪裡不合規：';
+
+  @override
+  String get optEmptyKbExample3 => '看一下參考圖裡的人物，依知識庫的範本寫成一條完整提示詞。';
+
+  @override
+  String get optEmptyKbEditTitle => '維護你的知識庫';
+
+  @override
+  String get optEmptyKbEditSub => '告訴助手要補什麼、改什麼。每處變更都會先給你看 diff，確認後才寫入。';
+
+  @override
+  String get optEmptyKbEditExample1 => '新增一篇文件，記錄這類畫面的寫法：';
+
+  @override
+  String get optEmptyKbEditExample2 => '檢查知識庫裡有沒有互相矛盾的規則。';
+
+  @override
+  String get optEmptyKbEditExample3 => '把入口檔案裡的檔案地圖更新到和實際目錄一致。';
 }

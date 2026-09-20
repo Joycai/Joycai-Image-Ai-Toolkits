@@ -8151,12 +8151,6 @@ abstract class AppLocalizations {
   /// **'Prompt copied to clipboard'**
   String get optPromptCopied;
 
-  /// No description provided for @optEmptyChat.
-  ///
-  /// In en, this message translates to:
-  /// **'Send a rough prompt or idea to start. The AI inspects reference images on demand, and you can refine the result over multiple turns.'**
-  String get optEmptyChat;
-
   /// No description provided for @optViewed.
   ///
   /// In en, this message translates to:
@@ -9994,6 +9988,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard changes'**
   String get optPresetDiscardAction;
+
+  /// No description provided for @optEmptyPresetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What are we doing this time?'**
+  String get optEmptyPresetTitle;
+
+  /// No description provided for @optEmptyPresetSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a task preset, then send the assistant your idea. It looks at reference images when it needs to, and you can keep refining over several turns.'**
+  String get optEmptyPresetSub;
+
+  /// No description provided for @optEmptyPresetAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All {count} presets…'**
+  String optEmptyPresetAll(int count);
+
+  /// No description provided for @optEmptyPresetCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a preset in the prompt library'**
+  String get optEmptyPresetCreate;
+
+  /// No description provided for @optEmptyKbTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompts written by your knowledge base'**
+  String get optEmptyKbTitle;
+
+  /// No description provided for @optEmptyKbSub.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant reads the knowledge base’s file map first, then opens only the rule documents this request needs.'**
+  String get optEmptyKbSub;
+
+  /// No description provided for @optEmptyKbExample1.
+  ///
+  /// In en, this message translates to:
+  /// **'Following the knowledge base’s rules, write me a prompt for: '**
+  String get optEmptyKbExample1;
+
+  /// No description provided for @optEmptyKbExample2.
+  ///
+  /// In en, this message translates to:
+  /// **'Check this prompt against the knowledge base and tell me what breaks the rules: '**
+  String get optEmptyKbExample2;
+
+  /// No description provided for @optEmptyKbExample3.
+  ///
+  /// In en, this message translates to:
+  /// **'Look at the person in the reference images and write a complete prompt using the knowledge base’s template.'**
+  String get optEmptyKbExample3;
+
+  /// No description provided for @optEmptyKbEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain your knowledge base'**
+  String get optEmptyKbEditTitle;
+
+  /// No description provided for @optEmptyKbEditSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell the assistant what to add or change. Every edit is shown to you as a diff first and written only after you confirm.'**
+  String get optEmptyKbEditSub;
+
+  /// No description provided for @optEmptyKbEditExample1.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a document that records how to write this kind of shot: '**
+  String get optEmptyKbEditExample1;
+
+  /// No description provided for @optEmptyKbEditExample2.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the knowledge base for rules that contradict each other.'**
+  String get optEmptyKbEditExample2;
+
+  /// No description provided for @optEmptyKbEditExample3.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring the file map in the entry file in line with the actual folders.'**
+  String get optEmptyKbEditExample3;
 }
 
 class _AppLocalizationsDelegate

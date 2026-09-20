@@ -278,7 +278,7 @@ void main() {
         inputText: longPrompt,
       );
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-      expect(find.text(l10n.optEmptyChat), findsOneWidget);
+      expect(find.text(l10n.optEmptyKbSub), findsOneWidget);
       expect(find.byType(SingleChildScrollView), findsWidgets);
     });
   });

@@ -2432,7 +2432,6 @@
   "optPromptTitle": "優化提示詞",
   "optCopy": "複製",
   "optPromptCopied": "提示詞已複製到剪貼簿",
-  "optEmptyChat": "傳送粗略提示詞或想法開始優化。AI 會按需查看參考圖，你可以多輪追問持續調整結果。",
   "optViewed": "AI 已查看",
   "optRemoveImage": "移除圖片",
   "optEmptyImagesHint": "在圖庫中右鍵圖片，選擇「發送到提示詞助手」即可加入此處。",
@@ -3176,5 +3175,26 @@
       }
     }
   },
-  "optPresetDiscardAction": "捨棄變更"
+  "optPresetDiscardAction": "捨棄變更",
+  "optEmptyPresetTitle": "這次要做什麼？",
+  "optEmptyPresetSub": "選一個任務預設，然後把想法傳給助手。它會視需要查看參考圖，你可以多輪追問。",
+  "optEmptyPresetAll": "全部 {count} 個預設…",
+  "@optEmptyPresetAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optEmptyPresetCreate": "到提示詞庫新增預設",
+  "optEmptyKbTitle": "依你的知識庫寫提示詞",
+  "optEmptyKbSub": "助手先讀知識庫的檔案地圖，只翻這次用得上的規則文件。",
+  "optEmptyKbExample1": "依知識庫的規則，幫我寫一條提示詞：",
+  "optEmptyKbExample2": "對照知識庫，檢查這條提示詞哪裡不合規：",
+  "optEmptyKbExample3": "看一下參考圖裡的人物，依知識庫的範本寫成一條完整提示詞。",
+  "optEmptyKbEditTitle": "維護你的知識庫",
+  "optEmptyKbEditSub": "告訴助手要補什麼、改什麼。每處變更都會先給你看 diff，確認後才寫入。",
+  "optEmptyKbEditExample1": "新增一篇文件，記錄這類畫面的寫法：",
+  "optEmptyKbEditExample2": "檢查知識庫裡有沒有互相矛盾的規則。",
+  "optEmptyKbEditExample3": "把入口檔案裡的檔案地圖更新到和實際目錄一致。"
 }

@@ -1,5 +1,31 @@
 part of '../optimizer_config_panel.dart';
 
+/// Asked once, at the moment an edit would be lost — loading a preset replaces
+/// the editor's text, and an unsaved edit lives nowhere else. Public because
+/// the empty chat's preset tiles load presets too (`A3d 4c`), from outside
+/// this panel, and have to pass the same question.
+Future<bool> confirmDiscardPresetEdit(BuildContext context, String name) async {
+  final l10n = AppLocalizations.of(context)!;
+  final discard = await AppDialog.show<bool>(
+    context,
+    title: l10n.optPresetDiscardTitle,
+    content: Text(l10n.optPresetDiscardBody(name)),
+    actions: [
+      AppButton(
+        label: l10n.cancel,
+        variant: AppButtonVariant.text,
+        onPressed: () => Navigator.pop(context, false),
+      ),
+      AppButton(
+        label: l10n.optPresetDiscardAction,
+        variant: AppButtonVariant.destructive,
+        onPressed: () => Navigator.pop(context, true),
+      ),
+    ],
+  );
+  return discard == true;
+}
+
 /// The built-in preset's place in the picker. Library ids start at 1.
 const int _builtinPresetId = -1;
 
@@ -120,7 +146,8 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
         // back to, so it is the least recoverable thing on this card.
         final unsaved = dirty || (template == null && !_isBuiltinPreset);
         if (unsaved &&
-            !await _confirmDiscardPresetEdit(l10n, template?.title ?? l10n.optPresetCustom)) {
+            (!await confirmDiscardPresetEdit(context, template?.title ?? l10n.optPresetCustom) ||
+                !mounted)) {
           return;
         }
         if (id == _builtinPresetId) {
@@ -143,29 +170,6 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
       // coloured box with no letters left in it.
       badgeStyle: PickerBadge.dot,
     );
-  }
-
-  /// Asked once, at the moment the edit would be lost — loading a preset
-  /// replaces the editor's text, and an unsaved edit lives nowhere else.
-  Future<bool> _confirmDiscardPresetEdit(AppLocalizations l10n, String name) async {
-    final discard = await AppDialog.show<bool>(
-      context,
-      title: l10n.optPresetDiscardTitle,
-      content: Text(l10n.optPresetDiscardBody(name)),
-      actions: [
-        AppButton(
-          label: l10n.cancel,
-          variant: AppButtonVariant.text,
-          onPressed: () => Navigator.pop(context, false),
-        ),
-        AppButton(
-          label: l10n.optPresetDiscardAction,
-          variant: AppButtonVariant.destructive,
-          onPressed: () => Navigator.pop(context, true),
-        ),
-      ],
-    );
-    return discard == true && mounted;
   }
 
   /// The fold: a chevron, what opening it gets you, and what the text costs

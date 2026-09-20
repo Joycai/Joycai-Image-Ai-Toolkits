@@ -4745,10 +4745,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optPromptCopied => 'Prompt copied to clipboard';
 
   @override
-  String get optEmptyChat =>
-      'Send a rough prompt or idea to start. The AI inspects reference images on demand, and you can refine the result over multiple turns.';
-
-  @override
   String get optViewed => 'Viewed by AI';
 
   @override
@@ -5860,4 +5856,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optPresetDiscardAction => 'Discard changes';
+
+  @override
+  String get optEmptyPresetTitle => 'What are we doing this time?';
+
+  @override
+  String get optEmptyPresetSub =>
+      'Pick a task preset, then send the assistant your idea. It looks at reference images when it needs to, and you can keep refining over several turns.';
+
+  @override
+  String optEmptyPresetAll(int count) {
+    return 'All $count presets…';
+  }
+
+  @override
+  String get optEmptyPresetCreate => 'Create a preset in the prompt library';
+
+  @override
+  String get optEmptyKbTitle => 'Prompts written by your knowledge base';
+
+  @override
+  String get optEmptyKbSub =>
+      'The assistant reads the knowledge base’s file map first, then opens only the rule documents this request needs.';
+
+  @override
+  String get optEmptyKbExample1 =>
+      'Following the knowledge base’s rules, write me a prompt for: ';
+
+  @override
+  String get optEmptyKbExample2 =>
+      'Check this prompt against the knowledge base and tell me what breaks the rules: ';
+
+  @override
+  String get optEmptyKbExample3 =>
+      'Look at the person in the reference images and write a complete prompt using the knowledge base’s template.';
+
+  @override
+  String get optEmptyKbEditTitle => 'Maintain your knowledge base';
+
+  @override
+  String get optEmptyKbEditSub =>
+      'Tell the assistant what to add or change. Every edit is shown to you as a diff first and written only after you confirm.';
+
+  @override
+  String get optEmptyKbEditExample1 =>
+      'Add a document that records how to write this kind of shot: ';
+
+  @override
+  String get optEmptyKbEditExample2 =>
+      'Check the knowledge base for rules that contradict each other.';
+
+  @override
+  String get optEmptyKbEditExample3 =>
+      'Bring the file map in the entry file in line with the actual folders.';
 }

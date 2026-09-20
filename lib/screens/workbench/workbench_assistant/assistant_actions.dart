@@ -11,11 +11,7 @@ extension _AssistantActions on _WorkbenchScreenState {
       case AssistantMode.knowledgeEdit:
         return l10n.optModeBadge(l10n.optModeKnowledge, l10n.optModeKnowledgeEdit);
       case AssistantMode.systemPrompt:
-        final id = wui.optSysPromptTemplateId;
-        final preset = _optSysPrompts.cast<SystemPrompt?>().firstWhere(
-              (p) => p?.id == id,
-              orElse: () => null,
-            );
+        final preset = _loadedPreset(wui);
         // No preset and no text is the built-in; text with no preset behind
         // it (its library row was deleted) is the user's own, and the badge
         // must not name a preset that is not what will be sent.
@@ -25,6 +21,63 @@ extension _AssistantActions on _WorkbenchScreenState {
           preset?.title ?? (custom ? l10n.optPresetCustom : l10n.optPresetBuiltinName),
         );
     }
+  }
+
+  /// The preset [wui] has loaded, if it is still in the library.
+  SystemPrompt? _loadedPreset(WorkbenchUIState wui) => _optSysPrompts
+      .cast<SystemPrompt?>()
+      .firstWhere((p) => p?.id == wui.optSysPromptTemplateId, orElse: () => null);
+
+  /// Loads [preset] — null for the built-in — from outside the right panel:
+  /// the empty chat's tiles and its "all presets" list (`A3d 4c`). Passes the
+  /// same unsaved-edit question the panel's own picker asks.
+  Future<void> _handlePickPreset(SystemPrompt? preset) async {
+    final wui = Provider.of<WorkbenchUIState>(context, listen: false);
+    final loaded = _loadedPreset(wui);
+    final text = wui.optSelectedSysPrompt ?? '';
+    if (preset?.id == loaded?.id && (preset != null || text.trim().isEmpty)) return;
+    final unsaved = loaded != null ? text != loaded.content : text.trim().isNotEmpty;
+    if (unsaved) {
+      final name = loaded?.title ?? AppLocalizations.of(context)!.optPresetCustom;
+      if (!await confirmDiscardPresetEdit(context, name) || !mounted) return;
+    }
+    // Empty, not null, for the built-in: null reads as "never chosen".
+    wui.setOptimizerSysPromptTemplate(preset?.id, preset?.content ?? '');
+  }
+
+  Future<void> _handleShowAllPresets() async {
+    final l10n = AppLocalizations.of(context)!;
+    final wui = Provider.of<WorkbenchUIState>(context, listen: false);
+    final picked = await showSearchablePicker<int>(
+      context: context,
+      title: l10n.optSysPromptPick,
+      searchHint: l10n.optSysPromptSearch,
+      icon: Icons.notes_outlined,
+      selected: _loadedPreset(wui)?.id,
+      options: [
+        PickerOption<int>(
+          value: -1,
+          label: l10n.optPresetBuiltinName,
+          badge: l10n.optPresetBuiltinBadge,
+          badgeColor: Theme.of(context).colorScheme.outline,
+        ),
+        for (final p in _optSysPrompts)
+          if (p.id != null)
+            PickerOption<int>(
+              value: p.id!,
+              label: p.title,
+              badge: p.tags.isEmpty ? null : p.tags.first.name,
+              badgeColor: p.tags.isEmpty ? null : Color(p.tags.first.color),
+            ),
+      ],
+    );
+    if (picked == null || !mounted) return;
+    await _handlePickPreset(
+      _optSysPrompts.cast<SystemPrompt?>().firstWhere(
+            (p) => p?.id == picked.value,
+            orElse: () => null,
+          ),
+    );
   }
 
   /// Task preset ⇄ knowledge base is a different conversation, not a setting

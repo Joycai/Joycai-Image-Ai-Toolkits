@@ -4571,10 +4571,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optPromptCopied => 'プロンプトをコピーしました';
 
   @override
-  String get optEmptyChat =>
-      'ラフなプロンプトやアイデアを送信して開始します。AIは必要に応じて参照画像を確認し、複数ターンで結果を調整できます。';
-
-  @override
   String get optViewed => 'AI が閲覧済み';
 
   @override
@@ -5649,4 +5645,51 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optPresetDiscardAction => '変更を破棄';
+
+  @override
+  String get optEmptyPresetTitle => '今回は何をしますか？';
+
+  @override
+  String get optEmptyPresetSub =>
+      'タスクプリセットを選んで、アイデアをアシスタントに送ってください。必要に応じて参考画像を確認し、何度でもやり取りできます。';
+
+  @override
+  String optEmptyPresetAll(int count) {
+    return 'すべてのプリセット（$count）…';
+  }
+
+  @override
+  String get optEmptyPresetCreate => 'プロンプトライブラリでプリセットを作成';
+
+  @override
+  String get optEmptyKbTitle => 'ナレッジベースに沿ってプロンプトを書く';
+
+  @override
+  String get optEmptyKbSub => 'アシスタントはまずナレッジベースのファイルマップを読み、今回必要なルール文書だけを開きます。';
+
+  @override
+  String get optEmptyKbExample1 => 'ナレッジベースのルールに沿って、プロンプトを書いてください：';
+
+  @override
+  String get optEmptyKbExample2 => 'ナレッジベースと照らして、このプロンプトの問題点を確認してください：';
+
+  @override
+  String get optEmptyKbExample3 => '参考画像の人物を見て、ナレッジベースのテンプレートで完全なプロンプトにしてください。';
+
+  @override
+  String get optEmptyKbEditTitle => 'ナレッジベースをメンテナンスする';
+
+  @override
+  String get optEmptyKbEditSub =>
+      '追加・修正したい内容を伝えてください。変更はすべて diff で確認してから書き込まれます。';
+
+  @override
+  String get optEmptyKbEditExample1 => 'この種の画の書き方を記録する文書を追加してください：';
+
+  @override
+  String get optEmptyKbEditExample2 => 'ナレッジベース内に矛盾するルールがないか確認してください。';
+
+  @override
+  String get optEmptyKbEditExample3 =>
+      'エントリファイルのファイルマップを実際のディレクトリに合わせて更新してください。';
 }

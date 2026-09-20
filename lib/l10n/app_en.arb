@@ -3095,7 +3095,6 @@
   "optPromptTitle": "Optimized Prompt",
   "optCopy": "Copy",
   "optPromptCopied": "Prompt copied to clipboard",
-  "optEmptyChat": "Send a rough prompt or idea to start. The AI inspects reference images on demand, and you can refine the result over multiple turns.",
   "optViewed": "Viewed by AI",
   "optRemoveImage": "Remove image",
   "optEmptyImagesHint": "Right-click an image in the gallery and choose \"Send to Prompt Assistant\" to add it here.",
@@ -3957,5 +3956,26 @@
       }
     }
   },
-  "optPresetDiscardAction": "Discard changes"
+  "optPresetDiscardAction": "Discard changes",
+  "optEmptyPresetTitle": "What are we doing this time?",
+  "optEmptyPresetSub": "Pick a task preset, then send the assistant your idea. It looks at reference images when it needs to, and you can keep refining over several turns.",
+  "optEmptyPresetAll": "All {count} presets…",
+  "@optEmptyPresetAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optEmptyPresetCreate": "Create a preset in the prompt library",
+  "optEmptyKbTitle": "Prompts written by your knowledge base",
+  "optEmptyKbSub": "The assistant reads the knowledge base’s file map first, then opens only the rule documents this request needs.",
+  "optEmptyKbExample1": "Following the knowledge base’s rules, write me a prompt for: ",
+  "optEmptyKbExample2": "Check this prompt against the knowledge base and tell me what breaks the rules: ",
+  "optEmptyKbExample3": "Look at the person in the reference images and write a complete prompt using the knowledge base’s template.",
+  "optEmptyKbEditTitle": "Maintain your knowledge base",
+  "optEmptyKbEditSub": "Tell the assistant what to add or change. Every edit is shown to you as a diff first and written only after you confirm.",
+  "optEmptyKbEditExample1": "Add a document that records how to write this kind of shot: ",
+  "optEmptyKbEditExample2": "Check the knowledge base for rules that contradict each other.",
+  "optEmptyKbEditExample3": "Bring the file map in the entry file in line with the actual folders."
 }

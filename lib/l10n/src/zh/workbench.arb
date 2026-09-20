@@ -413,7 +413,6 @@
   "optPromptTitle": "优化提示词",
   "optCopy": "复制",
   "optPromptCopied": "提示词已复制到剪贴板",
-  "optEmptyChat": "发送粗略提示词或想法开始优化。AI 会按需查看参考图，你可以多轮追问持续调整结果。",
   "optViewed": "AI 已查看",
   "optRemoveImage": "移除图片",
   "optEmptyImagesHint": "在图库中右键图片，选择“发送到提示词助手”即可添加到这里。",
@@ -1157,5 +1156,26 @@
       }
     }
   },
-  "optPresetDiscardAction": "丢弃改动"
+  "optPresetDiscardAction": "丢弃改动",
+  "optEmptyPresetTitle": "这次要做什么？",
+  "optEmptyPresetSub": "选一个任务预设，然后把想法发给助手。它会按需查看参考图，你可以多轮追问。",
+  "optEmptyPresetAll": "全部 {count} 个预设…",
+  "@optEmptyPresetAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optEmptyPresetCreate": "去提示词库新建预设",
+  "optEmptyKbTitle": "按你的知识库写提示词",
+  "optEmptyKbSub": "助手先读知识库的文件地图，只翻这次用得上的规则文档。",
+  "optEmptyKbExample1": "按知识库的规则，帮我写一条提示词：",
+  "optEmptyKbExample2": "对照知识库，检查这条提示词哪里不合规：",
+  "optEmptyKbExample3": "看一下参考图里的人物，按知识库的模板写成一条完整提示词。",
+  "optEmptyKbEditTitle": "维护你的知识库",
+  "optEmptyKbEditSub": "告诉助手要补什么、改什么。每处改动都会先给你看 diff，确认后才写入。",
+  "optEmptyKbEditExample1": "新增一篇文档，记录这类画面的写法：",
+  "optEmptyKbEditExample2": "检查知识库里有没有互相矛盾的规则。",
+  "optEmptyKbEditExample3": "把入口文件里的文件地图更新到和实际目录一致。"
 }

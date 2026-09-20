@@ -413,7 +413,6 @@
   "optPromptTitle": "最適化プロンプト",
   "optCopy": "コピー",
   "optPromptCopied": "プロンプトをコピーしました",
-  "optEmptyChat": "ラフなプロンプトやアイデアを送信して開始します。AIは必要に応じて参照画像を確認し、複数ターンで結果を調整できます。",
   "optViewed": "AI が閲覧済み",
   "optRemoveImage": "画像を削除",
   "optEmptyImagesHint": "ギャラリーで画像を右クリックし、「プロンプトアシスタントに送信」を選択すると追加できます。",
@@ -1157,5 +1156,26 @@
       }
     }
   },
-  "optPresetDiscardAction": "変更を破棄"
+  "optPresetDiscardAction": "変更を破棄",
+  "optEmptyPresetTitle": "今回は何をしますか？",
+  "optEmptyPresetSub": "タスクプリセットを選んで、アイデアをアシスタントに送ってください。必要に応じて参考画像を確認し、何度でもやり取りできます。",
+  "optEmptyPresetAll": "すべてのプリセット（{count}）…",
+  "@optEmptyPresetAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optEmptyPresetCreate": "プロンプトライブラリでプリセットを作成",
+  "optEmptyKbTitle": "ナレッジベースに沿ってプロンプトを書く",
+  "optEmptyKbSub": "アシスタントはまずナレッジベースのファイルマップを読み、今回必要なルール文書だけを開きます。",
+  "optEmptyKbExample1": "ナレッジベースのルールに沿って、プロンプトを書いてください：",
+  "optEmptyKbExample2": "ナレッジベースと照らして、このプロンプトの問題点を確認してください：",
+  "optEmptyKbExample3": "参考画像の人物を見て、ナレッジベースのテンプレートで完全なプロンプトにしてください。",
+  "optEmptyKbEditTitle": "ナレッジベースをメンテナンスする",
+  "optEmptyKbEditSub": "追加・修正したい内容を伝えてください。変更はすべて diff で確認してから書き込まれます。",
+  "optEmptyKbEditExample1": "この種の画の書き方を記録する文書を追加してください：",
+  "optEmptyKbEditExample2": "ナレッジベース内に矛盾するルールがないか確認してください。",
+  "optEmptyKbEditExample3": "エントリファイルのファイルマップを実際のディレクトリに合わせて更新してください。"
 }
