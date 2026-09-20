@@ -597,7 +597,14 @@ class PromptOptimizerAgent {
               // "request failed" under a prompt that had just been delivered.
               // A turn opening on the user's message (or the final-round
               // nudge) keeps the failure: an empty answer there is one.
-              if (outgoing.last.role == LLMRole.tool) emptyReplyEndsTurnKey: true,
+              // Under an analysis preset the answer *is* the reply, so only
+              // a batch that delivered a prompt can be followed by silence:
+              // after a view_image, an empty reply is a missing answer.
+              if (outgoing.last.role == LLMRole.tool &&
+                  (knowledgeMode ||
+                      outputKind != PresetOutputKind.analysis ||
+                      _lastBatchSubmittedPrompt(outgoing)))
+                emptyReplyEndsTurnKey: true,
             },
             // Streamed where the route can carry tool calls over it (④
             // today), and silently downgraded everywhere else. Not for
@@ -688,10 +695,12 @@ class PromptOptimizerAgent {
           }
           // Under an analysis preset the reply that closes the turn is what
           // the turn was for (`A3e`). Not the last round's: that one is the
-          // status report [_finalRoundNudge] asks for, not an answer.
+          // status report [_finalRoundNudge] asks for, not an answer. Nor
+          // the word that follows a delivered prompt: the card was the answer.
           final deliverable = !knowledgeMode &&
               outputKind == PresetOutputKind.analysis &&
-              !finalRound;
+              !finalRound &&
+              !_lastBatchSubmittedPrompt(outgoing);
           if (text.isNotEmpty) {
             // No echo obligation without tool calls (the payload builder only
             // replays reasoning on tool-call-bearing messages), but keep the
@@ -1010,6 +1019,17 @@ class PromptOptimizerAgent {
   /// This is also the number [ContextBudget.calibrate] divides into the
   /// provider's reported token count, so it has to measure the same request the
   /// provider billed — hence system prompt included, not history alone.
+  /// Whether the tool results [messages] ends on belong to a batch that called
+  /// submit_prompt — after which the model has nothing left it must say.
+  static bool _lastBatchSubmittedPrompt(List<LLMMessage> messages) {
+    for (final m in messages.reversed) {
+      if (m.role == LLMRole.tool) continue;
+      return m.role == LLMRole.assistant &&
+          m.toolCalls.any((c) => c.name == 'submit_prompt');
+    }
+    return false;
+  }
+
   static int occupiedChars(String systemPrompt, List<LLMMessage> messages) {
     int total = systemPrompt.length;
     for (final m in messages) {

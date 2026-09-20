@@ -176,6 +176,53 @@ void main() {
     });
   });
 
+  test('an analysis turn may end in silence only after delivering a prompt', () async {
+    Future<List<bool>> declared(String tool, Map<String, dynamic> args) async {
+      final session = PromptOptimizerSession()..addUserTurn('go');
+      final seen = <bool>[];
+      PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
+        seen.add(options[emptyReplyEndsTurnKey] == true);
+        if (seen.length == 1) {
+          return LLMResponse(text: '', toolCalls: [LLMToolCall(id: 'c1', name: tool, arguments: args)]);
+        }
+        return LLMResponse(text: 'The answer.');
+      };
+      await PromptOptimizerAgent.runTurn(
+        session: session,
+        modelIdentifier: 'm',
+        outputKind: PresetOutputKind.analysis,
+        referenceImages: const [],
+      );
+      return seen;
+    }
+
+    // After looking, an empty reply is a missing answer, and must fail as one.
+    expect(await declared('list_reference_images', const {}), [false, false]);
+    expect(await declared('submit_prompt', const {'prompt': 'p'}), [false, true]);
+  });
+
+  test('the word after a delivered prompt is a remark', () async {
+    final session = PromptOptimizerSession()..addUserTurn('now a prompt for it');
+    var calls = 0;
+    PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
+      calls++;
+      if (calls == 1) {
+        return LLMResponse(text: '', toolCalls: [
+          LLMToolCall(id: 'c1', name: 'submit_prompt', arguments: const {'prompt': 'p'}),
+        ]);
+      }
+      return LLMResponse(text: 'There you go.');
+    };
+    await PromptOptimizerAgent.runTurn(
+      session: session,
+      modelIdentifier: 'm',
+      outputKind: PresetOutputKind.analysis,
+      referenceImages: const [],
+    );
+    expect(session.transcript.last.text, 'There you go.');
+    expect(session.transcript.last.deliverable, isFalse);
+  });
+
   test('a knowledge session is never framed by a preset\'s kind', () async {
     final session = PromptOptimizerSession(mode: AssistantMode.knowledgeBase)..addUserTurn('go');
     late String system;
