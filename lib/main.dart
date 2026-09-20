@@ -10,6 +10,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'bench/render_bench.dart';
 import 'core/app_effects.dart';
+import 'core/app_shortcuts.dart';
 import 'core/app_theme.dart';
 import 'core/design_tokens.dart';
 import 'core/responsive.dart';
@@ -251,20 +252,6 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   bool _wizardShown = false;
 
-  // Ctrl+1..8 (Cmd on macOS) jumps to the corresponding destination.
-  // Registered on HardwareKeyboard rather than as a Shortcuts widget so it
-  // works wherever focus sits. Order matches [AppDestination].
-  static const List<LogicalKeyboardKey> _navDigitKeys = [
-    LogicalKeyboardKey.digit1,
-    LogicalKeyboardKey.digit2,
-    LogicalKeyboardKey.digit3,
-    LogicalKeyboardKey.digit4,
-    LogicalKeyboardKey.digit5,
-    LogicalKeyboardKey.digit6,
-    LogicalKeyboardKey.digit7,
-    LogicalKeyboardKey.digit8,
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -277,16 +264,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.dispose();
   }
 
+  /// `Ctrl/⌘ + 1…8` — the app tier (L0), read off [AppShortcuts].
+  ///
+  /// Registered on `HardwareKeyboard` rather than as a `Shortcuts` widget so
+  /// it works wherever focus sits. The index *is* the `AppDestination` index.
   bool _handleGlobalKey(KeyEvent event) {
     if (event is! KeyDownEvent || !mounted) return false;
-    if (Platform.isAndroid || Platform.isIOS) return false;
+    if (!AppShortcuts.registersShortcuts) return false;
 
-    final hw = HardwareKeyboard.instance;
-    final isCtrl = Platform.isMacOS ? hw.isMetaPressed : hw.isControlPressed;
-    if (!isCtrl) return false;
-
-    final index = _navDigitKeys.indexOf(event.logicalKey);
-    if (index == -1) return false;
+    final index = AppShortcuts.navigationIndexFor(event);
+    if (index < 0) return false;
 
     // Only while this screen is frontmost — never under a dialog or the
     // setup wizard.

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_semantic_colors.dart';
+import '../../core/app_shortcuts.dart';
 import '../../core/design_tokens.dart';
 import '../../core/file_utils.dart';
 import '../../core/folder_outline_geometry.dart';
@@ -190,21 +191,19 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
     final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
-    final key = event.logicalKey;
-    final hw = HardwareKeyboard.instance;
-    final isCtrl = Platform.isMacOS ? hw.isMetaPressed : hw.isControlPressed;
+    bool bound(String id) => AppShortcuts.byId(id).matches(event);
 
-    if (isCtrl && key == LogicalKeyboardKey.keyF) {
+    if (bound(AppShortcutIds.focusSearch)) {
       _focusSearch();
       return KeyEventResult.handled;
     }
-    if (key == LogicalKeyboardKey.f5 || (isCtrl && key == LogicalKeyboardKey.keyR)) {
+    if (bound(AppShortcutIds.refresh)) {
       _refresh(state);
       return KeyEventResult.handled;
     }
 
     if (_searchFocusNode.hasFocus) {
-      if (key == LogicalKeyboardKey.escape) {
+      if (bound(AppShortcutIds.exitSearch)) {
         _searchController.clear();
         state.setSearchQuery('');
         _searchFocusNode.unfocus();
@@ -223,25 +222,23 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     // selected while the user is typing a folder's name.
     if (isTextEditingFocused()) return KeyEventResult.ignored;
 
-    if (isCtrl && key == LogicalKeyboardKey.keyA) {
+    if (bound(AppShortcutIds.selectAll)) {
       state.selectAll();
       return KeyEventResult.handled;
     }
-    if (key == LogicalKeyboardKey.escape && state.selectedFiles.isNotEmpty) {
+    if (bound(AppShortcutIds.clearSelection) && state.selectedFiles.isNotEmpty) {
       state.clearSelection();
       return KeyEventResult.handled;
     }
-    if ((key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) &&
-        state.selectedFiles.isNotEmpty) {
+    if (bound(AppShortcutIds.preview) && state.selectedFiles.isNotEmpty) {
       _openWithPreview(context, state.selectedFiles.first, state);
       return KeyEventResult.handled;
     }
-    if ((key == LogicalKeyboardKey.delete || key == LogicalKeyboardKey.backspace) &&
-        state.selectedFiles.isNotEmpty) {
+    if (bound(AppShortcutIds.delete) && state.selectedFiles.isNotEmpty) {
       _deleteSelection(context, state);
       return KeyEventResult.handled;
     }
-    if (key == LogicalKeyboardKey.f2 && state.selectedFiles.length == 1) {
+    if (bound(AppShortcutIds.rename) && state.selectedFiles.length == 1) {
       showFileRenameDialog(
         context: context,
         filePath: state.selectedFiles.first.path,

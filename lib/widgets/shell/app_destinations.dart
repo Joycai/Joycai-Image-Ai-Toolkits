@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../core/app_shortcuts.dart';
 import '../../l10n/app_localizations.dart';
 
 /// The app's eight top-level destinations, in the order `Ctrl/⌘ + 1…8` maps
@@ -55,8 +56,9 @@ enum AppDestination {
       };
 
   /// `Ctrl+3` / `⌘+3` — surfaced in the tooltip, the one place that says the
-  /// shortcut exists.
-  String get shortcutHint => '${Platform.isMacOS ? '⌘' : 'Ctrl'}+${index + 1}';
+  /// shortcut exists. The modifier comes from [AppShortcuts] so this label
+  /// cannot disagree with the key that is actually bound.
+  String get shortcutHint => '${AppShortcuts.primaryModifierLabel}+${index + 1}';
 
   /// Whether this platform offers the destination at all.
   static bool isAvailable(AppDestination d) =>
