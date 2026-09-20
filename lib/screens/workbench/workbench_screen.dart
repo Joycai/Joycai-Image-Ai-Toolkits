@@ -524,9 +524,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         showLeftPanel = false;
       case 4: // Prompt Optimizer
         centerContent = _buildAssistantChat();
-        // `10h` swaps this column for the knowledge tree in library-edit
-        // mode; [OptimizerLeftPanel] owns that choice so the screen still
-        // hands the layout one widget rather than rebuilding the decision.
+        // `10h` gives this column to the knowledge tree in maintenance mode
+        // (`A3d 4e`: beside the references, not instead of them);
+        // [OptimizerLeftPanel] owns that choice so the screen still hands the
+        // layout one widget rather than rebuilding the decision.
         // The assistant's header lives in the floating glass toolbar
         // (`A3a 1a`), fed by the same session and queue the chat reads.
         toolControls = _buildAssistantToolControls();

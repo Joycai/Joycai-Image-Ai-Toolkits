@@ -166,7 +166,10 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
           widget.onSysPromptTemplateChanged(null, '');
           return;
         }
-        final picked = widget.sysPrompts.firstWhere((p) => p.id == id);
+        // Looked up after the dialog, in the list as it is now: a save or a
+        // delete elsewhere can have replaced it while the question was up.
+        final picked = widget.sysPrompts.where((p) => p.id == id).firstOrNull;
+        if (picked == null) return;
         widget.onSysPromptTemplateChanged(picked.id, picked.content);
       },
       // Never shown — something is always selected — but the field requires one.

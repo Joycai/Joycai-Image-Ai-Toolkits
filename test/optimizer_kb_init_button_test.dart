@@ -33,6 +33,7 @@ void main() {
     Future<void> Function()? onScaffold,
     bool running = false,
     ValueChanged<AssistantMode>? onModeChanged,
+    Locale? locale,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -47,6 +48,7 @@ void main() {
     await tester.pumpWidget(ChangeNotifierProvider<AppState>.value(
       value: appState!,
       child: MaterialApp(
+        locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
@@ -159,6 +161,14 @@ void main() {
     }
     expect(tester.takeException(), isNull);
   });
+
+  // The longest labels are not the Chinese ones the design was drawn with.
+  for (final locale in AppLocalizations.supportedLocales) {
+    testWidgets('both levels fit the 250px column in $locale', (tester) async {
+      await pumpPanel(tester, KbStatus.ok, size: const Size(250, 900), locale: locale);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('an unconfigured base keeps the basis open and the use closed', (tester) async {
     final asked = <AssistantMode>[];

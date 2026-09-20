@@ -18,8 +18,9 @@ import '../../../widgets/files/thumbnail_fit_toggle.dart';
 import '../../../widgets/ui/listenable_selector.dart';
 import 'optimizer_context_card.dart';
 
-/// The Prompt Assistant's left column outside library-edit mode (`A3a 1a` /
-/// `1b`): the reference images the agent can view, then the result images the
+/// The Prompt Assistant's reference column (`A3a 1a` / `1b`) — the whole left
+/// column outside maintenance, and one of its two segments inside it
+/// (`A3d 4e`): the reference images the agent can view, then the result images the
 /// user has fed back on.
 class OptimizerReferencePanel extends StatelessWidget {
   const OptimizerReferencePanel({super.key});

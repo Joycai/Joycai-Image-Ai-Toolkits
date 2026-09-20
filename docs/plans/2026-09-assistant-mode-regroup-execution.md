@@ -85,3 +85,8 @@
 - 不变量写进 `architecture/assistant-context.md`「What about a session may change」。
 - 片 1 留下的那条（出词⇄维护走跨依据确认框）在这里消掉：同会话切换不弹框。
 - review（2 条，全修）：待确认改动卡在有待确认项时就显示，不再只属于维护（切回出词后、或出词里总结经验暂存的改动都能在右栏看到）；切换提示画成横贯对话的分隔线，而不是一条 info 备注。
+
+### 整体 review（片 5 之后，范围 `5913b2f..HEAD`）
+
+- 3 条，全修：确认框之后按「现在的列表」找预设（`firstOrNull`，不再 `firstWhere`）；两处「library-edit 之外才有参考图」的旧注释改正；两级开关在 250px 列宽下按四种语言各跑一遍（日文标签最长）。
+- 跨片扫过：旧术语（库编辑 / 知识库编辑 / · Agent）在 lib 与 docs 里无残留；本轮新增的 l10n 键全部有引用；删除的五个键（`optModeKnowledgeEditShort`、`optModeBadgeAgent`、`optModeSwitchConfirm`、`optSysPromptNone`、`optEmptyChat`）无残留引用。
