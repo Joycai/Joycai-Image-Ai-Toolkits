@@ -14,9 +14,14 @@ import '../../../widgets/glass/glass_controls.dart';
 /// are selected — `B1a · 1a`.
 ///
 /// G2 glass, 44 tall at r16, 16 above the bottom: "3 selected" in the deep
-/// ink · Select All · Clear | Add to Staging · AI Batch Rename on tinted
-/// glass. Enters from below on M3 and leaves the same way. Under *reduce
-/// visual effects* it is the opaque panel of the same size (`1d`).
+/// ink · Select All · Clear | Add to Staging | Delete | AI Batch Rename on
+/// tinted glass. Enters from below on M3 and leaves the same way. Under
+/// *reduce visual effects* it is the opaque panel of the same size (`1d`).
+///
+/// Delete (`B1c · 1c`) sits between two rules and keeps only its glyph at
+/// every width — the bar's one red element, quiet but findable, and not next
+/// to Clear, which costs nothing to press. It needs no disabled state: the
+/// bar is gone by the time the selection is empty.
 ///
 /// When the column is too narrow for the labels — measured, not guessed —
 /// every action keeps only its glyph and names itself in a tooltip.
@@ -41,11 +46,13 @@ _BarInputs _barInputs(FileBrowserState browser, FileStagingState staging) {
 class BrowserSelectionBar extends StatelessWidget {
   final VoidCallback onAiRename;
   final VoidCallback onAddToStaging;
+  final VoidCallback onDelete;
 
   const BrowserSelectionBar({
     super.key,
     required this.onAiRename,
     required this.onAddToStaging,
+    required this.onDelete,
   });
 
   static const double height = 44;
@@ -90,6 +97,7 @@ class BrowserSelectionBar extends StatelessWidget {
               maxWidth: constraints.maxWidth,
               onAiRename: onAiRename,
               onAddToStaging: onAddToStaging,
+              onDelete: onDelete,
               allSelectionStaged: bar.allStaged,
             ),
           ),
@@ -106,6 +114,7 @@ class _BarContent extends StatelessWidget {
     required this.maxWidth,
     required this.onAiRename,
     required this.onAddToStaging,
+    required this.onDelete,
     required this.allSelectionStaged,
   });
 
@@ -114,6 +123,7 @@ class _BarContent extends StatelessWidget {
   final double maxWidth;
   final VoidCallback onAiRename;
   final VoidCallback onAddToStaging;
+  final VoidCallback onDelete;
   final bool allSelectionStaged;
 
   static const double _padStart = 14;
@@ -138,6 +148,8 @@ class _BarContent extends StatelessWidget {
         GlassIconButton.widthFor(context, label: l10n.clear, hasIcon: false) +
         GlassDivider.extent +
         GlassIconButton.widthFor(context, label: l10n.addToStaging) +
+        GlassDivider.extent +
+        AppSize.control +
         _gap +
         _AiRenameButton.widthFor(context, l10n.aiBatchRename, compact: false) +
         _padEnd;
@@ -174,6 +186,13 @@ class _BarContent extends StatelessWidget {
                 label: compact ? null : l10n.addToStaging,
                 tooltip: compact ? l10n.addToStaging : null,
                 onPressed: allSelectionStaged ? null : onAddToStaging,
+              ),
+              const GlassDivider(),
+              GlassIconButton(
+                icon: Icons.delete_outline,
+                tooltip: count > 1 ? l10n.deleteFiles(count) : l10n.delete,
+                danger: true,
+                onPressed: onDelete,
               ),
               const SizedBox(width: _gap),
               _AiRenameButton(

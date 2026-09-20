@@ -38,6 +38,7 @@ import 'widgets/browser_file_list_row.dart';
 import 'widgets/browser_filter_bar.dart';
 import 'widgets/browser_header.dart';
 import 'widgets/browser_selection_bar.dart';
+import 'widgets/file_delete_dialog.dart';
 import 'widgets/browser_staging_panel.dart';
 import 'widgets/file_card.dart';
 import 'widgets/file_context_menu.dart';
@@ -222,6 +223,11 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     if ((key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) &&
         state.selectedFiles.isNotEmpty) {
       _openWithPreview(context, state.selectedFiles.first, state);
+      return KeyEventResult.handled;
+    }
+    if ((key == LogicalKeyboardKey.delete || key == LogicalKeyboardKey.backspace) &&
+        state.selectedFiles.isNotEmpty) {
+      _deleteSelection(context, state);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.f2 && state.selectedFiles.length == 1) {
@@ -459,6 +465,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                                   browser,
                                   Provider.of<FileStagingState>(context, listen: false),
                                 ),
+                                onDelete: () => _deleteSelection(context, browser),
                               ),
                             ),
                           ),
@@ -482,6 +489,13 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
   void _addSelectionToStaging(FileBrowserState state, FileStagingState staging) {
     staging.addAll(state.selectedFiles);
+  }
+
+  /// The floating bar's delete and the Delete key are the same act on the
+  /// same set — `B1c · 1c`. The selection is copied here because the run
+  /// refreshes the browser at the end, which rewrites it.
+  void _deleteSelection(BuildContext context, FileBrowserState state) {
+    runFileDelete(context, state.selectedFiles.toList());
   }
 
   /// Single click toggles one file; Shift+click extends the selection from the
