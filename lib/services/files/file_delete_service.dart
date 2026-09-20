@@ -47,10 +47,15 @@ class FileDeleteService {
   ///
   /// Asking for [toTrash] where the trash does not exist throws rather than
   /// deleting anything — the caller asked for something recoverable and must
-  /// not get something else. Directories are refused per entry: this service
-  /// deletes files, and a folder is [FolderOperationsService.delete]'s job,
-  /// which has the inventory and the root protection the user expects to see
-  /// first. [protectedRoots] is checked again for the same reason it is there.
+  /// not get something else. That is the **only** exception this ever throws:
+  /// whatever one path does on the way out is recorded against that path, so
+  /// one bad entry can neither abort the batch nor escape a caller that
+  /// catches this one case.
+  ///
+  /// Directories are refused per entry: this service deletes files, and a
+  /// folder is [FolderOperationsService.delete]'s job, which has the
+  /// inventory and the root protection the user expects to see first.
+  /// [protectedRoots] is checked again for the same reason it is there.
   static Future<FileDeleteOutcome> delete(
     Iterable<String> paths, {
     required bool toTrash,
@@ -69,12 +74,11 @@ class FileDeleteService {
         failed.add(FileDeleteFailure(path, 'A registered root cannot be deleted here'));
         continue;
       }
-      if (await Directory(path).exists()) {
-        failed.add(FileDeleteFailure(path, 'Not a file: ${p.basename(path)}'));
-        continue;
-      }
-
       try {
+        if (await Directory(path).exists()) {
+          failed.add(FileDeleteFailure(path, 'Not a file: ${p.basename(path)}'));
+          continue;
+        }
         if (toTrash) {
           await TrashService.trash(path);
         } else {
@@ -82,6 +86,17 @@ class FileDeleteService {
         }
       } on FileSystemException catch (e) {
         failed.add(FileDeleteFailure(path, e.message));
+        continue;
+      } on Exception catch (e) {
+        // Not every way this fails is a [FileSystemException]: the trash is
+        // three platform glue paths and the Linux one shells out to `gio`,
+        // which throws a [ProcessException] when the binary is no longer
+        // there — the support probe answered once, at startup. One entry's
+        // mishap has to stay one entry's failure; out of the loop it would
+        // abort the rest of the batch and reach a caller that is promised
+        // only the one exception below, so the user would see nothing happen
+        // and nothing said.
+        failed.add(FileDeleteFailure(path, '$e'));
         continue;
       }
 

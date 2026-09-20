@@ -22,6 +22,7 @@ void main() {
 
   tearDown(() async {
     TrashService.overrideSupport(null);
+    TrashService.overrideTrash = null;
     if (await root.exists()) await root.delete(recursive: true);
   });
 
@@ -96,5 +97,40 @@ void main() {
       throwsA(isA<FileSystemException>()),
     );
     expect(a.existsSync(), isTrue);
+  });
+
+  test('a trash that refuses is reported, never downgraded to a delete', () async {
+    final a = await write('a.png');
+    TrashService.overrideSupport(true);
+    TrashService.overrideTrash = (String path) async {
+      throw FileSystemException('Operation not permitted', path);
+    };
+
+    final outcome = await FileDeleteService.delete([a.path], toTrash: true);
+
+    expect(outcome.deleted, isEmpty);
+    expect(outcome.failed.single.message, 'Operation not permitted');
+    expect(a.existsSync(), isTrue, reason: 'the file must still be there');
+  });
+
+  test('a platform mishap that is not a FileSystemException stays one failure', () async {
+    // What the Linux route actually throws when `gio` has gone since the
+    // support probe: a ProcessException, which is an Exception and not a
+    // FileSystemException. Out of the loop it would abort the batch and
+    // escape the caller, which is promised only the unsupported-trash case.
+    final a = await write('a.png');
+    final b = await write('b.png');
+    TrashService.overrideSupport(true);
+    TrashService.overrideTrash = (String path) async {
+      if (path == a.path) throw const ProcessException('gio', <String>['trash']);
+      await File(path).delete();
+    };
+
+    final outcome = await FileDeleteService.delete([a.path, b.path], toTrash: true);
+
+    expect(outcome.failed.single.path, a.path);
+    expect(outcome.deleted, [b.path], reason: 'the rest of the batch still runs');
+    expect(a.existsSync(), isTrue);
+    expect(b.existsSync(), isFalse);
   });
 }

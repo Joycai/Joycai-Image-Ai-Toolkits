@@ -39,6 +39,13 @@ class TrashService {
     _probe = supported == null ? null : Future.value(supported);
   }
 
+  /// Test seam: stands in for the platform call itself, so a test can make
+  /// the trash refuse without a real bin and without `gio` on the runner.
+  /// Null everywhere but in a test — the real call is the only thing that
+  /// can put a file somewhere the user can get it back from.
+  @visibleForTesting
+  static Future<void> Function(String path)? overrideTrash;
+
   static Future<bool> _detect() async {
     if (kIsWeb) return false;
     if (Platform.isWindows) return true;
@@ -67,6 +74,8 @@ class TrashService {
   /// no recycle bin. Never falls back to a permanent delete: the caller asked
   /// for something recoverable and must not get something else.
   static Future<void> trash(String path) async {
+    final Future<void> Function(String path)? stub = overrideTrash;
+    if (stub != null) return stub(path);
     if (Platform.isWindows) {
       // Off the UI isolate: the shell call is synchronous and, for a large
       // tree, not quick.
