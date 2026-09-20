@@ -404,8 +404,13 @@ class _GalleryRow extends StatelessWidget {
     // The way back to the parameter column: when it is a drawer, and also
     // when `⇧⌘\` has collapsed it inline. A column you can only bring back
     // with a shortcut you already know about is a trap.
+    //
+    // `canShowRightPanel` is what keeps the offer honest: on a tab with no
+    // parameter column the preference is still collapsed, and without this
+    // the button would appear there and bring nothing back.
     final configCollapsed = !context.select<AppState, bool>((s) => s.isConfigPanelExpanded);
-    final showTune = !phone && (layout.rightInDrawer || configCollapsed);
+    final showTune = !phone &&
+        (layout.rightInDrawer || (configCollapsed && layout.canShowRightPanel));
 
     bool viewLabels = true;
     double viewNatural() => viewLabels
@@ -569,10 +574,13 @@ class _ToolRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final layout = context.watch<WorkbenchLayoutState>();
     final tabs = _tabs(l10n);
-    // Same escape hatch as the gallery row's: `⇧⌘\` collapses the panel on
-    // these tabs too, and a column with no visible way back is a trap.
+    // Same escape hatch as the gallery row's, and the same guard: the mask
+    // and crop tools have no parameter column, and the comparator's appears
+    // only with its metadata switch on, so `canShowRightPanel` is what stops
+    // this offering a column that is not there.
     final configCollapsed = !context.select<AppState, bool>((s) => s.isConfigPanelExpanded);
-    final showTune = layout.rightInDrawer || configCollapsed;
+    final showTune =
+        layout.rightInDrawer || (configCollapsed && layout.canShowRightPanel);
 
     final tabLabels = !phone && _tabLabelsFit(context, width);
     final controlsFloor = controls == null ? 0.0 : math.min(controlsWidth, _kControlsFloor);

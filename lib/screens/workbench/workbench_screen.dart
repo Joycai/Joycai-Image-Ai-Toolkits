@@ -436,6 +436,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   /// and the assistant's composer both live here.
   KeyEventResult _handleKeys(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    // The same gate `main.dart` puts on the app tier. This screen is the one
+    // that also exists on a phone, so without it an iPad with an external
+    // keyboard would answer keys the `⌘/` panel refuses to open and the
+    // settings page does not list — working shortcuts nothing can discover.
+    if (!AppShortcuts.registersShortcuts) return KeyEventResult.ignored;
     if (isTextEditingFocused()) return KeyEventResult.ignored;
 
     // The handler runs inside the layout, so the node's own context is the
@@ -449,9 +454,13 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       appState.galleryState.refreshImages();
       return KeyEventResult.handled;
     }
+    // `toggle`, not `open`: the drawer is reachable while it is itself open
+    // — it lives in this Scaffold, under this handler — so an open-only key
+    // is dead on the second press. The browser's narrow branch has always
+    // toggled, and one chord must not mean two things on two screens.
     if (bound(AppShortcutIds.toggleLeftPanel)) {
       if (layout != null && layout.leftInDrawer) {
-        layout.openLeftPanel();
+        layout.toggleLeftPanel();
       } else {
         appState.setSidebarExpanded(!appState.isSidebarExpanded);
       }
@@ -459,7 +468,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
     if (bound(AppShortcutIds.toggleConfigPanel)) {
       if (layout != null && layout.rightPanelDetached) {
-        layout.openRightPanel();
+        layout.toggleRightPanel();
       } else {
         appState.setConfigPanelExpanded(!appState.isConfigPanelExpanded);
       }
@@ -697,6 +706,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       onKeyEvent: _handleKeys,
       showLeftPanel: showLeftPanel,
       showRightPanel: showRightPanel && appState.isConfigPanelExpanded,
+      // Without the preference: whether this tab has a parameter column to
+      // offer back at all. The toolbar's `tune` button reads it so it does
+      // not appear on the mask and crop tools, which have none.
+      rightPanelAvailable: showRightPanel,
       fabIcon: fabIcon,
     );
   }

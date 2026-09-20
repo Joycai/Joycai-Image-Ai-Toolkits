@@ -45,6 +45,15 @@ class WorkbenchLayoutState {
   final bool leftInDrawer;
   final bool rightInDrawer;
 
+  /// Whether this tab has a parameter column *at all* — one it would be
+  /// showing if a preference had not collapsed it.
+  ///
+  /// Distinct from [rightInDrawer], which says where that column currently
+  /// lives. The mask and crop tools have no such column, and a control
+  /// offering to bring one back there brings nothing back: the button
+  /// vanishes and the screen does not change.
+  final bool canShowRightPanel;
+
   /// How much of the centre column the toolbar covers from the top, and the
   /// floating overlay from the bottom — content that scrolls under the chrome
   /// pads itself by these.
@@ -63,6 +72,7 @@ class WorkbenchLayoutState {
     required this.contentWidth,
     required this.leftInDrawer,
     required this.rightInDrawer,
+    this.canShowRightPanel = false,
     this.hasLeftPanel = true,
     this.topClearance = 0,
     this.bottomClearance = 0,
@@ -73,6 +83,20 @@ class WorkbenchLayoutState {
   bool get isNarrow => contentWidth < Responsive.tabletBreakpoint;
 
   void openLeftPanel() => scaffoldKey.currentState?.openDrawer();
+
+  /// Opens the drawer, or closes it if it is already open.
+  ///
+  /// What a key called "show or hide the folder column" has to do. Opening
+  /// an open drawer is a no-op, so an open-only version leaves the chord
+  /// dead on every press after the first — which is exactly how the file
+  /// browser's narrow branch is written ([`_toggleFolderPanel`]) and how
+  /// this one was not.
+  void toggleLeftPanel() {
+    final scaffold = scaffoldKey.currentState;
+    if (scaffold == null) return;
+    scaffold.isDrawerOpen ? scaffold.closeDrawer() : scaffold.openDrawer();
+  }
+
   /// Whether the right panel is off screen until something opens it — a
   /// drawer on a tablet, a sheet on a phone. A control that shows or hides
   /// the panel inline has to open it instead here.
@@ -87,6 +111,21 @@ class WorkbenchLayoutState {
     }
   }
 
+  /// The same toggle for the right column. The phone's sheet is a route of
+  /// its own and takes the keyboard with it, so no key can reach this while
+  /// it is up; there, opening is all there is to do.
+  void toggleRightPanel() {
+    if (rightSheetOpener != null) {
+      openRightPanel();
+      return;
+    }
+    final scaffold = scaffoldKey.currentState;
+    if (scaffold == null) return;
+    scaffold.isEndDrawerOpen
+        ? scaffold.closeEndDrawer()
+        : scaffold.openEndDrawer();
+  }
+
   // Value equality: this is handed to `Provider.value` from a build method,
   // and the layout rebuilds on every frame of a panel drag, where none of
   // these move.
@@ -99,13 +138,14 @@ class WorkbenchLayoutState {
           hasLeftPanel == other.hasLeftPanel &&
           leftInDrawer == other.leftInDrawer &&
           rightInDrawer == other.rightInDrawer &&
+          canShowRightPanel == other.canShowRightPanel &&
           topClearance == other.topClearance &&
           bottomClearance == other.bottomClearance &&
           rightSheetOpener == other.rightSheetOpener;
 
   @override
   int get hashCode => Object.hash(scaffoldKey, contentWidth, hasLeftPanel, leftInDrawer, rightInDrawer,
-      topClearance, bottomClearance, rightSheetOpener);
+      canShowRightPanel, topClearance, bottomClearance, rightSheetOpener);
 }
 
 typedef WorkbenchRightPanelBuilder = Widget Function(ScrollController? scrollController);
@@ -162,6 +202,17 @@ class WorkbenchLayout extends StatefulWidget {
   /// until the next click. Focus falls back to the enclosing scope, so making
   /// this one a scope is what keeps the screen answering.
   final KeyEventResult Function(FocusNode, KeyEvent)? onKeyEvent;
+
+  /// Whether this tab would be showing its parameter column if the user's
+  /// `⇧⌘\` preference were not collapsing it — [showRightPanel] with that
+  /// preference taken back out.
+  ///
+  /// The chrome needs both: [showRightPanel] decides whether the column is
+  /// drawn, this decides whether offering it back means anything. Defaults
+  /// to [showRightPanel]'s own value for a caller that does not collapse
+  /// anything.
+  final bool? rightPanelAvailable;
+
   final WorkbenchToolbarBuilder? toolbarBuilder;
 
   /// A floating control at the bottom centre of the centre column — the
@@ -192,6 +243,7 @@ class WorkbenchLayout extends StatefulWidget {
     this.leftPanel,
     this.rightPanelBuilder,
     this.onKeyEvent,
+    this.rightPanelAvailable,
     this.toolbarBuilder,
     this.centerOverlay,
     this.bottomPanel,
@@ -233,6 +285,11 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
   bool get _hasLeft => widget.hasLeftPanel && widget.leftPanel != null;
   bool get _hasRight => widget.hasRightPanel && widget.rightPanelBuilder != null;
 
+  /// A column exists on this tab and the tab wants it — whether or not a
+  /// preference is currently keeping it off screen.
+  bool get _canShowRight =>
+      _hasRight && (widget.rightPanelAvailable ?? widget.showRightPanel);
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -261,6 +318,7 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
       hasLeftPanel: _hasLeft,
       leftInDrawer: leftInDrawer,
       rightInDrawer: rightInDrawer,
+      canShowRightPanel: _canShowRight,
       topClearance: widget.toolbarBuilder != null ? WorkbenchGlassToolbar.clearance : 0,
       bottomClearance: widget.centerOverlay != null ? _overlayClearance : 0,
     );
@@ -471,6 +529,7 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
       hasLeftPanel: _hasLeft,
       leftInDrawer: _hasLeft,
       rightInDrawer: false,
+      canShowRightPanel: _canShowRight,
       topClearance: widget.toolbarBuilder != null ? WorkbenchGlassToolbar.phoneHeight : 0,
       bottomClearance: widget.centerOverlay != null ? _overlayClearance : 0,
       rightSheetOpener: _hasRight ? _openRightSheet : null,

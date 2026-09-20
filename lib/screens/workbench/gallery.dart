@@ -142,6 +142,10 @@ class _GalleryState extends State<Gallery> {
   /// file browser cannot drift apart on what `Delete` means.
   KeyEventResult _handleKeys(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    // See `WorkbenchScreen._handleKeys`: the workbench is the one screen a
+    // phone or tablet also shows, and a platform that registers no shortcuts
+    // must not answer them here either — least of all `Delete`.
+    if (!AppShortcuts.registersShortcuts) return KeyEventResult.ignored;
     if (isTextEditingFocused()) return KeyEventResult.ignored;
 
     final state = context.read<GalleryState>();

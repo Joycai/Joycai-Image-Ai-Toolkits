@@ -902,6 +902,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String copiedFilenames(int count) {
+    return '$count件のファイル名をコピーしました';
+  }
+
+  @override
   String selectedCount(int count) {
     return '$count個選択済み';
   }
@@ -3787,7 +3792,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get shortcutsActiveRegionNote =>
-      'この一群はアクティブ領域（アクセント色の上辺が付いている部分）にのみ作用します。フォルダツリーかグリッドをクリックすると切り替わります。';
+      'この一群は上に示したアクティブ領域にのみ作用します。領域をクリックするとキーボードがそちらへ移ります。キーを受け取っている領域は、選択項目がアクセント色で描かれます。';
 
   @override
   String get shortcutsClose => '閉じる';

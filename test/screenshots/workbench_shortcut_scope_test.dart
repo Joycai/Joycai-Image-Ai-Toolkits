@@ -13,10 +13,12 @@
 
 import 'dart:io';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/image_card.dart';
 import 'package:joycai_image_ai_toolkits/services/files/trash_service.dart';
@@ -169,6 +171,38 @@ void main() {
     await settle(tester);
   });
 
+  testWidgets('the way back to the parameter column is offered only where '
+      'there is a column', (WidgetTester tester) async {
+    final appState = AppState();
+    await mountGallery(tester, 'workbench-tune-scope');
+    addTearDown(() {
+      appState.setConfigPanelExpanded(true);
+      appState.setWorkbenchTab(0);
+    });
+
+    // `⇧⌘\` collapses the column app-wide, so the toolbar owes the user a
+    // visible way back — on the tabs that have one.
+    await pressChord(tester, LogicalKeyboardKey.backslash, shift: true, real: true);
+    expect(appState.isConfigPanelExpanded, isFalse);
+    expect(find.byIcon(Icons.tune), findsOneWidget);
+
+    // The mask editor has no parameter column at all (`hasRightPanel: false`),
+    // so there is nothing to offer back. Without the `canShowRightPanel`
+    // guard the button appeared here too and did nothing visible: it set the
+    // preference, removed itself, and left the screen exactly as it was.
+    await pressChord(tester, LogicalKeyboardKey.digit3, alt: true, real: true);
+    expect(appState.workbenchTabIndex, 2, reason: 'the mask editor');
+    expect(appState.isConfigPanelExpanded, isFalse, reason: 'still collapsed');
+    expect(find.byIcon(Icons.tune), findsNothing,
+        reason: 'a button that would bring back a column this tab does not '
+            'have is a button that does nothing');
+
+    // Back on the gallery it is owed again.
+    await pressChord(tester, LogicalKeyboardKey.digit1, alt: true, real: true);
+    expect(appState.workbenchTabIndex, 0);
+    expect(find.byIcon(Icons.tune), findsOneWidget);
+  });
+
   testWidgets('Cmd+A selects the gallery, Escape clears it', (WidgetTester tester) async {
     final gallery = await mountGallery(tester, 'workbench-select-all');
 
@@ -215,6 +249,41 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.f2);
     await settle(tester, 12);
     expect(find.byType(FileRenameDialog), findsOneWidget);
+  });
+
+  testWidgets('the menu row and the key it advertises act on the same files',
+      (WidgetTester tester) async {
+    // A row that carries a key's badge and then acts on one file while the
+    // key acts on five is the drift the round exists to remove — the browser's
+    // menu was given `targets` for exactly this reason, and the gallery's was
+    // left behind.
+    final l10n = await AppLocalizations.delegate.load(const Locale('zh'));
+    final gallery = await mountGallery(tester, 'workbench-menu-targets');
+
+    final cards = find.byType(ImageCard);
+    await tester.tap(cards.at(0));
+    await settle(tester);
+    await shiftClick(tester, cards.at(2));
+    expect(gallery.selectedImages, hasLength(3));
+
+    // Right-click a card that is part of that selection.
+    final TestGesture gesture = await tester.startGesture(
+      tester.getCenter(cards.at(1)),
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryButton,
+    );
+    await gesture.up();
+    await settle(tester, 12);
+
+    expect(find.text(l10n.deleteFiles(3)), findsOneWidget,
+        reason: 'the row names the selection it would delete, like the key '
+            'that is badged beside it');
+    expect(find.text(l10n.delete), findsNothing,
+        reason: 'and never the bare singular while three are picked');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await settle(tester, 12);
+    gallery.clearImageSelection();
   });
 
   testWidgets('Delete opens the shared confirmation outside the temp workspace',

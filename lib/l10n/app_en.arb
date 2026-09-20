@@ -791,6 +791,14 @@
       }
     }
   },
+  "copiedFilenames": "Copied {count} file names",
+  "@copiedFilenames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "selectedCount": "{count} selected",
   "@selectedCount": {
     "placeholders": {
@@ -2542,7 +2550,7 @@
     }
   },
   "shortcutsInactiveRegion": "not active",
-  "shortcutsActiveRegionNote": "These act on the active region — the part with the accent edge. Click the folder tree or the grid to move the keyboard.",
+  "shortcutsActiveRegionNote": "These act on the active region, the one named above. Click a region to move the keyboard there — whichever region is listening draws its selection in the accent colour.",
   "shortcutsClose": "Close",
   "shortcutsCustomise": "Custom key bindings",
   "shortcutsCustomiseLater": "a later round",

@@ -913,6 +913,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String copiedFilenames(int count) {
+    return 'Copied $count file names';
+  }
+
+  @override
   String selectedCount(int count) {
     return '$count selected';
   }
@@ -3947,7 +3952,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shortcutsActiveRegionNote =>
-      'These act on the active region — the part with the accent edge. Click the folder tree or the grid to move the keyboard.';
+      'These act on the active region, the one named above. Click a region to move the keyboard there — whichever region is listening draws its selection in the accent colour.';
 
   @override
   String get shortcutsClose => 'Close';

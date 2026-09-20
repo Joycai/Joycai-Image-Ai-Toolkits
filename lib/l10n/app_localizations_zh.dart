@@ -902,6 +902,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String copiedFilenames(int count) {
+    return '已复制 $count 个文件名';
+  }
+
+  @override
   String selectedCount(int count) {
     return '已选择 $count 项';
   }
@@ -3742,7 +3747,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get shortcutsActiveRegionNote =>
-      '这一组只作用于活动区——界面上带强调色顶边的那一块。点目录树或网格即可换活动区。';
+      '这一组只作用于活动区，也就是上面点名的那一块。点某个区即可把键盘交给它——正在听键的那个区，选中项画成强调色。';
 
   @override
   String get shortcutsClose => '关闭';
@@ -6700,6 +6705,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
+  String copiedFilenames(int count) {
+    return '已複製 $count 個檔名';
+  }
+
+  @override
   String selectedCount(int count) {
     return '已選取 $count 個';
   }
@@ -9541,7 +9551,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get shortcutsActiveRegionNote =>
-      '這一組只作用於活動區——介面上帶強調色頂邊的那一塊。點目錄樹或網格即可換活動區。';
+      '這一組只作用於活動區，也就是上面點名的那一塊。點某個區即可把鍵盤交給它——正在聽鍵的那個區，選取項畫成強調色。';
 
   @override
   String get shortcutsClose => '關閉';

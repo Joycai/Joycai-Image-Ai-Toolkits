@@ -215,11 +215,20 @@ Future<void> showImageCardContextMenu(
           icon: Icons.content_copy_outlined,
           label: l10n.copyFilename,
           trailing: _keys(AppShortcutIds.copyFileName),
+          // The whole selection, one name per line — what `⇧⌘C` does. A row
+          // that carries a key's badge and then acts on one file while the
+          // key acts on five is the drift this round exists to remove.
           onSelected: () {
-            final filename = imageFile.name;
-            Clipboard.setData(ClipboardData(text: filename));
+            Clipboard.setData(
+              ClipboardData(text: targets.map((i) => i.name).join('\n')),
+            );
             if (!context.mounted) return;
-            AppSnackBar.success(context, l10n.copiedToClipboard(filename));
+            AppSnackBar.success(
+              context,
+              multi
+                  ? l10n.copiedFilenames(targets.length)
+                  : l10n.copiedToClipboard(imageFile.name),
+            );
           },
         ),
         AppGlassMenuItem(
@@ -269,19 +278,26 @@ Future<void> showImageCardContextMenu(
         icon: Icons.remove_circle_outline,
         label: l10n.removeFromWorkspace,
         trailing: _keys(AppShortcutIds.delete),
-        onSelected: () => appState.galleryState.removeDroppedImage(imageFile.path),
+        onSelected: () => appState.galleryState
+            .removeDroppedImages(targets.map((i) => i.path).toList()),
       ),
     AppGlassMenuItem(
       icon: Icons.delete_outline,
       // The dialog says which it will be — trash where the platform has one,
       // a permanent delete only where it does not — so the row no longer has
       // to guess per platform.
-      label: l10n.delete,
+      //
+      // `targets`, like the share row above and like the key: the count is
+      // in the label so a selection of five cannot be mistaken for the one
+      // picture under the pointer.
+      label: multi ? l10n.deleteFiles(targets.length) : l10n.delete,
       trailing: inTempWorkspace ? null : _keys(AppShortcutIds.delete),
       danger: true,
       onSelected: () {
         if (!context.mounted) return;
-        confirmAndDeleteImageFiles(context, [imageFile]);
+        // Copied: the run refreshes the gallery at the end, which rewrites
+        // the live selection this list is.
+        confirmAndDeleteImageFiles(context, List<AppImage>.of(targets));
       },
     ),
   ];

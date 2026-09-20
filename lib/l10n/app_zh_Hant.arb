@@ -742,6 +742,14 @@
   "openInFolder": "在資料夾中開啟",
   "openInPreview": "在預覽中開啟",
   "copiedToClipboard": "已複製: {text}",
+  "copiedFilenames": "已複製 {count} 個檔名",
+  "@copiedFilenames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "selectedCount": "已選取 {count} 個",
   "shareFiles": "分享選取的 {count} 個項目",
   "comingSoon": "即將推出",
@@ -1886,7 +1894,7 @@
     }
   },
   "shortcutsInactiveRegion": "目前不活動",
-  "shortcutsActiveRegionNote": "這一組只作用於活動區——介面上帶強調色頂邊的那一塊。點目錄樹或網格即可換活動區。",
+  "shortcutsActiveRegionNote": "這一組只作用於活動區，也就是上面點名的那一塊。點某個區即可把鍵盤交給它——正在聽鍵的那個區，選取項畫成強調色。",
   "shortcutsClose": "關閉",
   "shortcutsCustomise": "自訂鍵位",
   "shortcutsCustomiseLater": "第二期",

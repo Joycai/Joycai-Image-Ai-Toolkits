@@ -1595,6 +1595,12 @@ abstract class AppLocalizations {
   /// **'Copied: {text}'**
   String copiedToClipboard(String text);
 
+  /// No description provided for @copiedFilenames.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied {count} file names'**
+  String copiedFilenames(int count);
+
   /// No description provided for @selectedCount.
   ///
   /// In en, this message translates to:
@@ -6757,7 +6763,7 @@ abstract class AppLocalizations {
   /// No description provided for @shortcutsActiveRegionNote.
   ///
   /// In en, this message translates to:
-  /// **'These act on the active region — the part with the accent edge. Click the folder tree or the grid to move the keyboard.'**
+  /// **'These act on the active region, the one named above. Click a region to move the keyboard there — whichever region is listening draws its selection in the accent colour.'**
   String get shortcutsActiveRegionNote;
 
   /// No description provided for @shortcutsClose.

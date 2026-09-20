@@ -37,7 +37,7 @@
     }
   },
   "shortcutsInactiveRegion": "当前不活动",
-  "shortcutsActiveRegionNote": "这一组只作用于活动区——界面上带强调色顶边的那一块。点目录树或网格即可换活动区。",
+  "shortcutsActiveRegionNote": "这一组只作用于活动区，也就是上面点名的那一块。点某个区即可把键盘交给它——正在听键的那个区，选中项画成强调色。",
   "shortcutsClose": "关闭",
   "shortcutsCustomise": "自定义键位",
   "shortcutsCustomiseLater": "第二期"

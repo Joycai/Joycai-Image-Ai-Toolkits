@@ -742,6 +742,14 @@
   "openInFolder": "フォルダで開く",
   "openInPreview": "プレビューで開く",
   "copiedToClipboard": "コピーしました: {text}",
+  "copiedFilenames": "{count}件のファイル名をコピーしました",
+  "@copiedFilenames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "selectedCount": "{count}個選択済み",
   "shareFiles": "選択した{count}個のアイテムを共有",
   "comingSoon": "近日公開",
@@ -1886,7 +1894,7 @@
     }
   },
   "shortcutsInactiveRegion": "現在は非アクティブ",
-  "shortcutsActiveRegionNote": "この一群はアクティブ領域（アクセント色の上辺が付いている部分）にのみ作用します。フォルダツリーかグリッドをクリックすると切り替わります。",
+  "shortcutsActiveRegionNote": "この一群は上に示したアクティブ領域にのみ作用します。領域をクリックするとキーボードがそちらへ移ります。キーを受け取っている領域は、選択項目がアクセント色で描かれます。",
   "shortcutsClose": "閉じる",
   "shortcutsCustomise": "キー割り当てのカスタマイズ",
   "shortcutsCustomiseLater": "次のフェーズで",

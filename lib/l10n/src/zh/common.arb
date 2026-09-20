@@ -38,6 +38,14 @@
       }
     }
   },
+  "copiedFilenames": "已复制 {count} 个文件名",
+  "@copiedFilenames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "selectedCount": "已选择 {count} 项",
   "@selectedCount": {
     "placeholders": {
