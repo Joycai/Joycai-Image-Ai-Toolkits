@@ -17,7 +17,7 @@
 
 | # | 片 | 文件 | 验收 | 状态 |
 |---|---|---|---|---|
-| 1 | 服务层 | 新 `lib/services/files/file_delete_service.dart`、新 `test/file_delete_service_test.dart` | 目录 / 注册根 / 无废纸篓三条拒绝各有测试；单条失败不拖垮整批；删成功即 `ImageLayerRepository().forget` | ☐ |
+| 1 | 服务层 | 新 `lib/services/files/file_delete_service.dart`、新 `test/file_delete_service_test.dart` | 目录 / 注册根 / 无废纸篓三条拒绝各有测试；单条失败不拖垮整批；删成功即 `ImageLayerRepository().forget` | ☑ |
 | 2 | l10n | `lib/l10n/src/{en,zh,zh_Hant,ja}/browser.arb` | 四语同步，`merge_l10n` + `gen-l10n` 通过 | ☐ |
 | 3 | 确认框 | 新 `lib/screens/browser/widgets/file_delete_dialog.dart` | `B1c · 1d / 1e`：warn+delete / err+delete_forever、清单卡 4 行 + 汇总行、Delete 键确认、取消 autofocus | ☐ |
 | 4 | 右键菜单 | `lib/screens/browser/widgets/file_context_menu.dart` | `B1c · 1a / 1b`：末组独占一行、`danger: true`、trailing `Delete`、多选写进标签 | ☐ |
