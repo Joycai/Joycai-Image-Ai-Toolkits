@@ -386,7 +386,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     final showStagingColumn = _stagingOpen && !isNarrow;
 
     return Focus(
-      autofocus: true,
+      // Not autofocused: the grid pane below takes the keyboard instead, so
+      // the selection keys work on a freshly opened screen. This node stays
+      // the L1 handler either way — events bubble up to it from whichever
+      // pane holds focus.
       onKeyEvent: _handleKeyEvent,
       child: Scaffold(
         key: _scaffoldKey,
@@ -497,6 +500,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                           Positioned.fill(
                             child: FocusPane(
                               node: _gridPane,
+                              autofocus: true,
                               onKeyEvent: _handleGridKeys,
                               child: _FileArea(
                               pendingRefreshes: _pendingRefreshes,

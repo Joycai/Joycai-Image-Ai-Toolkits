@@ -30,6 +30,7 @@ class FocusPane extends StatelessWidget {
     required this.child,
     this.onKeyEvent,
     this.showActiveEdge = true,
+    this.autofocus = false,
   });
 
   /// Owned by the caller — a pane outlives any one build.
@@ -46,6 +47,12 @@ class FocusPane extends StatelessWidget {
   /// top edge is not visible (a drawer).
   final bool showActiveEdge;
 
+  /// Whether this pane owns the keyboard when the screen opens. Exactly one
+  /// pane per screen should set it: a screen whose keys all need an active
+  /// pane would otherwise answer nothing at all until the first click, and
+  /// `⌘A` in particular is a reasonable first act.
+  final bool autofocus;
+
   /// The rule's thickness (`00f` 规格).
   static const double activeEdgeThickness = 2;
 
@@ -55,15 +62,17 @@ class FocusPane extends StatelessWidget {
   static FocusNode newNode(String debugLabel) =>
       FocusNode(debugLabel: debugLabel, skipTraversal: true);
 
-  /// Whether [node] — or anything inside it — currently owns the keyboard.
-  static bool isActive(FocusNode node) => node.hasFocus;
-
   /// Whether the enclosing pane owns the keyboard, from inside it.
   ///
-  /// Call it only from something that is actually drawing a selection: the
-  /// call registers a dependency, so an unselected card that asks anyway
-  /// would rebuild on every pane switch for a value it does not use. True
-  /// outside any pane, so a widget reused off a pane keeps its normal look.
+  /// Ask only while actually drawing a selection. The dependency this
+  /// registers is not dropped on a later rebuild — `Element._dependencies`
+  /// survives until the element is deactivated — so a card that asks once
+  /// keeps rebuilding on every pane switch for the rest of its life. Cards
+  /// that have never been selected stay out of it, which is what keeps the
+  /// cost proportional to the selection rather than to the grid.
+  ///
+  /// True outside any pane, so a widget reused off a pane keeps its normal
+  /// look.
   static bool activeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_PaneActiveScope>()?.active ??
       true;
@@ -75,11 +84,20 @@ class FocusPane extends StatelessWidget {
     return Focus(
       focusNode: node,
       onKeyEvent: onKeyEvent,
+      autofocus: autofocus,
       child: Listener(
         behavior: HitTestBehavior.translucent,
-        // Only when nothing inside already holds it: a click that lands in the
-        // tree's inline rename field must not be answered by stealing focus
-        // from that field, which commits the half-typed name on blur.
+        // Only when nothing inside already holds it: a click that lands in
+        // this pane's own text field — the tree's inline rename — must not be
+        // answered by stealing focus from it.
+        //
+        // A click in a *different* pane does move the keyboard, and the
+        // editor then commits on blur. That is deliberate and is the rule
+        // `FolderNameEditor` documents ("clicking away commits", an invalid
+        // name being abandoned instead) — the same rule every file manager
+        // has trained the user on. It is worth knowing that one such click
+        // does two things: it commits the name and it still activates
+        // whatever it landed on.
         onPointerDown: (_) {
           if (!node.hasFocus) node.requestFocus();
         },

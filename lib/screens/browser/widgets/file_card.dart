@@ -179,9 +179,9 @@ class _FileCardState extends State<FileCard> {
     final l10n = AppLocalizations.of(context)!;
     final selected = widget.isSelected;
     // A selection the keyboard no longer owns goes quiet: same check, same
-    // count, neutral ring (`00f` 帧 3). Asked only while something *is*
-    // selected, so an unselected card takes no dependency and does not
-    // rebuild when the active pane changes.
+    // count, neutral ring (`00f` 帧 3). Asked only while selected, so a card
+    // the user has never picked never takes the dependency (see
+    // [FocusPane.activeOf] for why "never" and not "not any more").
     final paneActive = selected && FocusPane.activeOf(context);
     // Shared with the gallery and the assistant panel — see [ThumbnailFit].
     // `select` keeps a grid of these out of AppState's general traffic.

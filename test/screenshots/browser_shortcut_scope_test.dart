@@ -146,6 +146,7 @@ void main() {
       label: 'browser-pane-delete',
     );
     await clickFolderThenFile(tester);
+    final BrowserFile picked = AppState().fileBrowserState.selectedFiles.single;
 
     // `runFileDelete` asks the filesystem whether a trash exists before it
     // can word the confirmation, and that answer only arrives out here —
@@ -164,8 +165,13 @@ void main() {
             'is the grid');
     expect(find.byType(AppDialog), findsOneWidget,
         reason: 'the file delete confirmation is what should have opened');
-    expect(find.descendant(of: find.byType(AppDialog), matching: find.text('移除文件夹？')),
-        findsNothing);
+    // …and it is about the selected file, not about anything else: the
+    // confirmation lists what it is going to delete.
+    expect(
+        find.descendant(
+            of: find.byType(AppDialog), matching: find.text(picked.name)),
+        findsOneWidget,
+        reason: 'the dialog must name the file that was selected');
   });
 
   testWidgets('F2 after clicking a folder renames the file, not the folder',
@@ -232,9 +238,16 @@ void main() {
 
     expect(field, findsOneWidget, reason: 'the editor must still be open');
     expect(isTextEditingFocused(), isTrue,
-        reason: 'and still hold the keyboard — nothing may pull focus out of '
-            'a live editor, because leaving it is what commits');
-    expect(Directory(p.join(env.root.path, 'browser', 'half-typed')).existsSync(), isFalse,
+        reason: 'and still hold the keyboard — no *key* may pull focus out of '
+            'a live editor, because leaving it is what commits. A click in '
+            'another pane still does, deliberately: that is the rule '
+            'FolderNameEditor documents.');
+    // `FolderOperationsService.rename` writes to `dirname(path)/newName`, and
+    // the row being renamed is the registered root `<root>/browser` — so the
+    // half-typed name would land beside it, not inside it. (It landed inside
+    // it in the first draft of this test, which made the assertion unfailable
+    // and the disk check worthless.)
+    expect(Directory(p.join(env.root.path, 'half-typed')).existsSync(), isFalse,
         reason: 'and the half-typed name must not have reached the disk');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);

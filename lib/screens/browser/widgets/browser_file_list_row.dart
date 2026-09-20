@@ -90,7 +90,8 @@ class _BrowserFileListRowState extends State<BrowserFileListRow> {
     final textTheme = Theme.of(context).textTheme;
     final selected = widget.isSelected;
     // See `FileCard`: a selection the keyboard no longer owns drops to a
-    // neutral wash rather than disappearing (`00f` 帧 3).
+    // neutral wash rather than disappearing (`00f` 帧 3). Asked only while
+    // selected — see [FocusPane.activeOf].
     final paneActive = selected && FocusPane.activeOf(context);
     final plate = browserFileTypeColors(context, widget.file.category);
 

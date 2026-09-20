@@ -535,7 +535,10 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
           label: folderName,
           labelColor: isUnreachable ? colorScheme.error : null,
           selected: highlight,
-          focused: _focused,
+          // Only where the keys behind it exist: the workbench shares this
+          // tree with folder management switched off, and a keyboard ring
+          // there would advertise an F2 that does nothing.
+          focused: _focused && widget.useFileBrowserState,
           dropTone: drop?.tone,
           dropNote: drop?.note,
           // The workbench has no context menu, so this is its only way to
