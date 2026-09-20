@@ -243,11 +243,52 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    final header = Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
+    final viewControls = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.isMarkdown || widget.isRefined)
+          // Raised and wordless, the way `A1 16a` draws it. Two reasons,
+          // and neither is taste. This picks *which view of the same text*
+          // you are looking at, which is the case `AppSegmentStyle.raised`
+          // exists for — the lift says which one is chosen and the accent
+          // stays free to mean "selected" inside the prompt itself. And
+          // the icons had to go for the control to fit on the header's
+          // one line at the config panel's 340px, where the design has
+          // it side by side with the Markdown checkbox.
+          AppSegmentedControl<bool>(
+            segments: [
+              AppSegment(value: false, label: l10n.edit),
+              AppSegment(value: true, label: l10n.preview),
+            ],
+            value: _isPreview,
+            onChanged: (v) => setState(() => _isPreview = v),
+            compact: true,
+            style: AppSegmentStyle.raised,
+          ),
+        if (widget.allowExpand) ...[
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.open_in_full, size: 16),
+            onPressed: _openLargeEditor,
+            tooltip: l10n.expandEditor,
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ],
+    );
+
+    // A [Row], and one that needs the full width from its parent: the view
+    // toggle and the expand button sit against the right edge, the expand
+    // button where `A1 1a` draws it. (The toggle is on the right by the user's
+    // ruling — `1a` has it on the left, with the Markdown switch on the right.)
+    //
+    // This was a [Wrap] with `spaceBetween`, which failed twice. Under a
+    // start-aligned [Column] it shrank to its children and had no slack to
+    // hand out, so everything sat on the left. And a run holding one child is
+    // laid out from the start, so when the controls did wrap they landed on
+    // the left again. When the width runs short here, the right-hand group
+    // scales down in place instead — nothing moves and nothing overflows.
+    final header = Row(
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -273,39 +314,19 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
               ),
           ],
         ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.isMarkdown || widget.isRefined)
-              // Raised and wordless, the way `A1 16a` draws it. Two reasons,
-              // and neither is taste. This picks *which view of the same text*
-              // you are looking at, which is the case `AppSegmentStyle.raised`
-              // exists for — the lift says which one is chosen and the accent
-              // stays free to mean "selected" inside the prompt itself. And
-              // the icons had to go for the control to fit on the header's
-              // one line at the config panel's 340px: with them the [Wrap]
-              // broke, dropping the toggle onto a second row under the
-              // Markdown checkbox, where the design has the two side by side.
-              AppSegmentedControl<bool>(
-                segments: [
-                  AppSegment(value: false, label: l10n.edit),
-                  AppSegment(value: true, label: l10n.preview),
-                ],
-                value: _isPreview,
-                onChanged: (v) => setState(() => _isPreview = v),
-                compact: true,
-                style: AppSegmentStyle.raised,
-              ),
-            if (widget.allowExpand) ...[
-              const SizedBox(width: 4),
-              IconButton(
-                icon: const Icon(Icons.open_in_full, size: 16),
-                onPressed: _openLargeEditor,
-                tooltip: l10n.expandEditor,
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ],
+        const SizedBox(width: 8),
+        Expanded(
+          // The [Align] is load-bearing. [Expanded] hands down a tight width,
+          // and a [FittedBox] given one grows its child to fill it, taking the
+          // height up in proportion; loosened first, it only ever scales down.
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: viewControls,
+            ),
+          ),
         ),
       ],
     );
@@ -333,7 +354,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
         if (isSpaceTooTight) {
           return SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
                 header,
@@ -447,7 +468,10 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   /// in whether a [LayoutBuilder] sits above this.
   Widget _buildBodyColumn(ColorScheme colorScheme, {required Widget header}) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      // Stretch: the header is a [Row] that pins its controls to the right
+      // edge, and the body fills the width. Both need a bounded width — the
+      // text field always did.
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
       children: [
         if (widget.bordered) ...[
@@ -455,7 +479,6 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           const SizedBox(height: 8),
         ] else
           Container(
-            width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
               border: Border(
@@ -531,7 +554,6 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     }
 
     return Container(
-      width: double.infinity,
       constraints: shouldExpand ? null : BoxConstraints(
         minHeight: math.min(120.0, widget.maxLines * 24.0),
         maxHeight: widget.maxLines * 24.0,
