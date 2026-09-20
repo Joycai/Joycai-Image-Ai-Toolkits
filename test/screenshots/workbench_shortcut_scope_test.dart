@@ -50,6 +50,20 @@ void main() {
   final LogicalKeyboardKey primary =
       Platform.isMacOS ? LogicalKeyboardKey.metaLeft : LogicalKeyboardKey.controlLeft;
 
+  /// Shift+click, with the modifier still down when the tap actually lands.
+  ///
+  /// A card carries a double-tap recognizer, so its `onTap` fires only after
+  /// the double-tap window closes (~300ms) — release Shift on the next line
+  /// and the click resolves as a plain one. The app reads the modifier at
+  /// `onTap` time, so a real user has to keep Shift down for that beat too.
+  Future<void> shiftClick(WidgetTester tester, Finder card) async {
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.tap(card);
+    await settle(tester);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await settle(tester);
+  }
+
   Future<void> pressChord(WidgetTester tester, LogicalKeyboardKey key) async {
     await tester.sendKeyDownEvent(primary);
     await tester.sendKeyEvent(key);
@@ -100,13 +114,11 @@ void main() {
     await settle(tester);
     expect(gallery.selectedImages, hasLength(1));
 
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
-    await tester.tap(cards.at(2));
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
-    await settle(tester);
+    await shiftClick(tester, cards.at(2));
 
-    expect(gallery.selectedImages.length, greaterThan(1),
-        reason: 'the span between the two clicks joins the selection');
+    expect(gallery.selectedImages, hasLength(3),
+        reason: 'the span between the two clicks — all three — joins the '
+            'selection, not just the card that was clicked');
     final paths = gallery.selectedImages.map((i) => i.path).toList();
     expect(paths.toSet(), hasLength(paths.length), reason: 'no duplicates');
   });
@@ -146,6 +158,56 @@ void main() {
       findsOneWidget,
       reason: 'the same dialog the file browser opens — one key, one meaning',
     );
+  });
+
+  testWidgets('the keys read the view the grid is showing, not the source list',
+      (WidgetTester tester) async {
+    // The regression this pins: the range and the preview used to look their
+    // ends up in `galleryImages` — the aggregate behind the *all* view — so
+    // in the temporary workspace neither end was found and Shift+click
+    // silently became a plain click.
+    final gallery = AppState().galleryState;
+    gallery.clearImageSelection();
+    gallery.clearDroppedImages();
+
+    final sources = Directory(env.browserDir.path)
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.png'))
+        .take(3)
+        .map((f) => AppImage.fromFile(f))
+        .toList();
+    expect(sources, hasLength(3));
+    gallery.addDroppedFiles(sources);
+    gallery.setViewMode(GalleryViewMode.temp);
+
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.workbench,
+      size: const Size(1440, 900),
+      label: 'workbench-view-scoped-keys',
+    );
+
+    final cards = find.byType(ImageCard);
+    expect(cards, findsNWidgets(3));
+
+    await tester.tap(cards.at(0));
+    await settle(tester);
+    await shiftClick(tester, cards.at(2));
+
+    expect(gallery.selectedImages, hasLength(3),
+        reason: 'the span is the three pictures in the basket');
+
+    // …and select-all takes the basket, not the source aggregate behind it.
+    gallery.clearImageSelection();
+    await settle(tester);
+    await pressChord(tester, LogicalKeyboardKey.keyA);
+    expect(gallery.selectedImages, hasLength(3));
+
+    gallery.clearImageSelection();
+    gallery.clearDroppedImages();
+    gallery.setViewMode(GalleryViewMode.all);
   });
 
   testWidgets('Delete in the temporary workspace takes the picture out of the basket, '

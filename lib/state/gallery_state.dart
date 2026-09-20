@@ -607,6 +607,21 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Drops several pictures out of the temporary workspace at once.
+  ///
+  /// One pass and one notification: removing a selection one call at a time
+  /// re-filtered the list, re-validated the selection against all four
+  /// collections and rebuilt the grid once per picture.
+  void removeDroppedImages(Iterable<String> paths) {
+    final gone = paths.toSet();
+    final remaining =
+        droppedImages.where((img) => !gone.contains(img.path)).toList();
+    if (remaining.length == droppedImages.length) return;
+    droppedImages = remaining;
+    _cleanupSelection();
+    notifyListeners();
+  }
+
   /// Drops one picture out of the temporary workspace.
   ///
   /// The file is left alone: what the workspace holds is a reference, and the
@@ -657,7 +672,12 @@ class GalleryState extends ChangeNotifier {
     if (AppConstants.isVideoFile(image.path)) return;
 
     final anchorPath = _selectionAnchorPath;
-    final view = galleryImages;
+    // What the grid is *showing*, not the source list: the gallery has four
+    // views (all / processed / temp / folder) and a range has to mean the
+    // span the user can see. Looking it up in `galleryImages` while the temp
+    // workspace was on screen found neither end and quietly degraded
+    // Shift+click to a plain click.
+    final view = currentViewImages;
     final anchorIndex =
         anchorPath == null ? -1 : view.indexWhere((i) => i.path == anchorPath);
     final targetIndex = view.indexWhere((i) => i.path == image.path);
@@ -692,9 +712,13 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Everything the grid is currently showing, videos excepted.
+  ///
+  /// Reads [currentViewImages] for the same reason [selectImageRangeTo]
+  /// does: in the temporary workspace or a single folder, "select all" has
+  /// to mean what is on screen, not the aggregate behind it.
   void selectAllImages() {
-    // Select all from current active collections that are not videos
-    selectedImages = galleryImages
+    selectedImages = currentViewImages
         .where((img) => !AppConstants.isVideoFile(img.path))
         .toList();
     notifyListeners();

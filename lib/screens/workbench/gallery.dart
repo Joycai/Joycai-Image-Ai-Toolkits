@@ -157,7 +157,8 @@ class _GalleryState extends State<Gallery> {
       return KeyEventResult.handled;
     }
     if (bound(AppShortcutIds.preview) && selected.isNotEmpty) {
-      final images = state.galleryImages;
+      // The view the grid is showing — see `GalleryState.currentViewImages`.
+      final images = state.currentViewImages;
       final index = images.indexWhere((i) => i.path == selected.first.path);
       if (index >= 0) {
         showMediaPreview(
@@ -176,9 +177,7 @@ class _GalleryState extends State<Gallery> {
       // back in. Every other view lists files on disk, where Delete is what
       // it says. The context menu spells out which one is in force.
       if (state.viewMode == GalleryViewMode.temp) {
-        for (final image in List<AppImage>.of(selected)) {
-          state.removeDroppedImage(image.path);
-        }
+        state.removeDroppedImages(selected.map((i) => i.path).toList());
       } else {
         confirmAndDeleteImageFiles(context, List<AppImage>.of(selected));
       }
