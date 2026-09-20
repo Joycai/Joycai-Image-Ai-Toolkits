@@ -166,9 +166,11 @@ Future<bool> showSystemPromptEditDialog(
   required List<SystemPrompt> systemPrompts,
   required List<PromptTag> tags,
   required String defaultType,
+  String? initialContent,
 }) async {
   final titleCtrl = TextEditingController(text: prompt?.title ?? '');
-  final contentCtrl = MarkdownTextEditingController(text: prompt?.content ?? '');
+  final contentCtrl =
+      MarkdownTextEditingController(text: prompt?.content ?? initialContent ?? '');
   bool isMarkdown = prompt?.isMarkdown ?? true;
   String selectedType = prompt?.type ?? defaultType;
 

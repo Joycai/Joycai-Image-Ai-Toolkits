@@ -180,6 +180,8 @@ extension _AssistantTab on _WorkbenchScreenState {
           onSysPromptTemplateChanged: (id, content) =>
               wui.setOptimizerSysPromptTemplate(id, content),
           onSaveTemplate: _handleSaveSysPromptTemplate,
+          onSaveAsPreset: _handleSaveAsPreset,
+          onManagePresets: () => appState.navigateToScreen(AppDestination.prompts.index),
         ),
       ),
     );

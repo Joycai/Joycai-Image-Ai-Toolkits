@@ -783,13 +783,12 @@
   "optAbortHint": "Esc 中斷",
   "optKbSearching": "檢索中",
   "optKbCitedRunning": "進行中",
-  "optSysPromptPick": "選擇範本",
-  "optSysPromptSearch": "搜尋範本…",
-  "optSysPromptNone": "未選擇範本",
+  "optSysPromptPick": "選擇任務預設",
+  "optSysPromptSearch": "搜尋預設…",
   "optSysPromptUnsaved": "未儲存",
   "optSysPromptSave": "儲存",
   "optSysPromptReset": "重設",
-  "optSysPromptSaved": "範本已儲存",
+  "optSysPromptSaved": "預設已儲存",
   "optSysPromptHint": "寫下希望助手遵循的指令…",
   "optSysPromptChars": "{count} 字",
   "@optSysPromptChars": {
@@ -1141,5 +1140,22 @@
   },
   "optModeSwitchBody": "任務預設和知識庫的對話不能接在一起，切換會開始一個新對話。目前的對話已儲存，可以隨時從「歷史對話」回來。",
   "optModeSwitchStart": "開始新對話",
-  "optPresetCustom": "自訂指令"
+  "optPresetCustom": "自訂指令",
+  "optPresetBuiltinBadge": "內建",
+  "optPresetBuiltinDesc": "不帶專門指令：把粗略想法整理成可直接使用的圖像 / 影片提示詞。",
+  "optPresetBuiltinLocked": "內建指令無法編輯",
+  "optPresetSaveAs": "另存為預設…",
+  "optPresetEditInstructions": "檢視 / 編輯指令",
+  "optPresetViewInstructions": "檢視指令",
+  "optPresetManage": "在提示詞庫中管理預設",
+  "optPresetDiscardTitle": "捨棄未儲存的變更？",
+  "optPresetDiscardBody": "「{name}」的指令改過還沒儲存，換預設會捨棄這些變更。",
+  "@optPresetDiscardBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetDiscardAction": "捨棄變更"
 }

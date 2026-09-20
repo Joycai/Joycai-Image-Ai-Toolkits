@@ -785,13 +785,12 @@
   "optAbortHint": "Esc to stop",
   "optKbSearching": "Reading",
   "optKbCitedRunning": "in progress",
-  "optSysPromptPick": "Choose a template",
-  "optSysPromptSearch": "Search templates...",
-  "optSysPromptNone": "No template",
+  "optSysPromptPick": "Choose a task preset",
+  "optSysPromptSearch": "Search presets…",
   "optSysPromptUnsaved": "Unsaved",
   "optSysPromptSave": "Save",
   "optSysPromptReset": "Reset",
-  "optSysPromptSaved": "Template saved",
+  "optSysPromptSaved": "Preset saved",
   "optSysPromptHint": "Write the instructions the assistant should follow...",
   "optSysPromptChars": "{count} characters",
   "@optSysPromptChars": {
@@ -1259,5 +1258,22 @@
   },
   "optModeSwitchBody": "Task-preset and knowledge-base conversations can’t continue one another, so switching starts a new conversation. The current one is saved — come back to it any time from Conversation History.",
   "optModeSwitchStart": "Start new conversation",
-  "optPresetCustom": "Custom instructions"
+  "optPresetCustom": "Custom instructions",
+  "optPresetBuiltinBadge": "Built-in",
+  "optPresetBuiltinDesc": "No special instructions: turns a rough idea into a ready-to-use image or video prompt.",
+  "optPresetBuiltinLocked": "Built-in instructions can’t be edited",
+  "optPresetSaveAs": "Save as preset…",
+  "optPresetEditInstructions": "View / edit instructions",
+  "optPresetViewInstructions": "View instructions",
+  "optPresetManage": "Manage presets in the prompt library",
+  "optPresetDiscardTitle": "Discard unsaved changes?",
+  "optPresetDiscardBody": "The instructions of “{name}” have unsaved edits. Switching presets will lose them.",
+  "@optPresetDiscardBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetDiscardAction": "Discard changes"
 }

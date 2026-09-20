@@ -5126,13 +5126,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optKbCitedRunning => '実行中';
 
   @override
-  String get optSysPromptPick => 'テンプレートを選択';
+  String get optSysPromptPick => 'タスクプリセットを選択';
 
   @override
-  String get optSysPromptSearch => 'テンプレートを検索…';
-
-  @override
-  String get optSysPromptNone => 'テンプレート未選択';
+  String get optSysPromptSearch => 'プリセットを検索…';
 
   @override
   String get optSysPromptUnsaved => '未保存';
@@ -5144,7 +5141,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optSysPromptReset => 'リセット';
 
   @override
-  String get optSysPromptSaved => 'テンプレートを保存しました';
+  String get optSysPromptSaved => 'プリセットを保存しました';
 
   @override
   String get optSysPromptHint => 'アシスタントに従わせたい指示を書いてください…';
@@ -5620,4 +5617,36 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optPresetCustom => 'カスタム指示';
+
+  @override
+  String get optPresetBuiltinBadge => '組み込み';
+
+  @override
+  String get optPresetBuiltinDesc => '専用の指示なし：ラフなアイデアを、そのまま使える画像・動画プロンプトに整えます。';
+
+  @override
+  String get optPresetBuiltinLocked => '組み込みの指示は編集できません';
+
+  @override
+  String get optPresetSaveAs => 'プリセットとして保存…';
+
+  @override
+  String get optPresetEditInstructions => '指示を表示 / 編集';
+
+  @override
+  String get optPresetViewInstructions => '指示を表示';
+
+  @override
+  String get optPresetManage => 'プロンプトライブラリでプリセットを管理';
+
+  @override
+  String get optPresetDiscardTitle => '未保存の変更を破棄しますか？';
+
+  @override
+  String optPresetDiscardBody(String name) {
+    return '「$name」の指示には未保存の変更があります。プリセットを切り替えると失われます。';
+  }
+
+  @override
+  String get optPresetDiscardAction => '変更を破棄';
 }

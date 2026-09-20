@@ -29,6 +29,7 @@ import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
+import '../../widgets/shell/app_destinations.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_field_size.dart';
@@ -263,6 +264,39 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       AppSnackBar.success(context, l10n.optSysPromptSaved);
     } catch (e) {
       if (mounted) AppSnackBar.error(context, e.toString());
+    }
+  }
+
+  /// Files [content] as a new refiner preset through the library's own
+  /// dialog (`A3d 4b`), then loads whichever preset that created — so "save
+  /// as" ends on the thing that was saved, not on the text it was copied from.
+  Future<void> _handleSaveAsPreset(String content) async {
+    final appState = _appState;
+    if (appState == null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final all = await appState.getSystemPrompts();
+    final tags = await appState.getPromptTags();
+    if (!mounted) return;
+    final saved = await showSystemPromptEditDialog(
+      context,
+      l10n,
+      systemPrompts: all,
+      tags: tags,
+      defaultType: 'refiner',
+      initialContent: content,
+    );
+    if (!saved || !mounted) return;
+    final known = {for (final p in _optSysPrompts) p.id};
+    final refreshed = await appState.getSystemPrompts(type: 'refiner');
+    if (!mounted) return;
+    setState(() => _optSysPrompts = refreshed);
+    // Nothing new in the refiner list means it was filed under another type.
+    final created = refreshed.where((p) => !known.contains(p.id)).toList();
+    if (created.length == 1) {
+      context.read<WorkbenchUIState>().setOptimizerSysPromptTemplate(
+            created.single.id,
+            created.single.content,
+          );
     }
   }
 

@@ -2935,13 +2935,12 @@
   "optAbortHint": "Esc 中断",
   "optKbSearching": "检索中",
   "optKbCitedRunning": "进行中",
-  "optSysPromptPick": "选择模板",
-  "optSysPromptSearch": "搜索模板…",
-  "optSysPromptNone": "未选择模板",
+  "optSysPromptPick": "选择任务预设",
+  "optSysPromptSearch": "搜索预设…",
   "optSysPromptUnsaved": "未保存",
   "optSysPromptSave": "保存",
   "optSysPromptReset": "重置",
-  "optSysPromptSaved": "模板已保存",
+  "optSysPromptSaved": "预设已保存",
   "optSysPromptHint": "写下希望助手遵循的指令…",
   "optSysPromptChars": "{count} 字",
   "@optSysPromptChars": {
@@ -3293,5 +3292,22 @@
   },
   "optModeSwitchBody": "任务预设和知识库的对话不能接在一起，切换会开始一个新会话。当前会话已保存，可以随时从「历史会话」回来。",
   "optModeSwitchStart": "开始新会话",
-  "optPresetCustom": "自定义指令"
+  "optPresetCustom": "自定义指令",
+  "optPresetBuiltinBadge": "内置",
+  "optPresetBuiltinDesc": "不带专门指令：把粗略想法整理成可直接使用的图像 / 视频提示词。",
+  "optPresetBuiltinLocked": "内置指令不可编辑",
+  "optPresetSaveAs": "另存为预设…",
+  "optPresetEditInstructions": "查看 / 编辑指令",
+  "optPresetViewInstructions": "查看指令",
+  "optPresetManage": "在提示词库中管理预设",
+  "optPresetDiscardTitle": "丢弃未保存的改动？",
+  "optPresetDiscardBody": "「{name}」的指令改过还没保存，换预设会丢掉这些改动。",
+  "@optPresetDiscardBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetDiscardAction": "丢弃改动"
 }

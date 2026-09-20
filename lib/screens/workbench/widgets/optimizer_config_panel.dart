@@ -15,11 +15,13 @@ import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/ui/app_breathing_dot.dart';
 import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_segmented_control.dart';
 import '../../../widgets/ui/app_switch.dart';
 import '../../../widgets/models/chat_model_selector.dart';
 import '../../../widgets/ui/searchable_picker.dart';
+import 'optimizer_config/preset_summary.dart';
 import 'optimizer_context_card.dart';
 import 'result_feedback_labels.dart';
 
@@ -94,6 +96,13 @@ class OptimizerConfigPanel extends StatefulWidget {
   /// the parent, which is what holds the repository.
   final Future<void> Function(SystemPrompt template, String content) onSaveTemplate;
 
+  /// Files [content] as a new library preset — the built-in's text, or text
+  /// whose preset is gone. Owned by the parent, which holds the repository.
+  final Future<void> Function(String content)? onSaveAsPreset;
+
+  /// Opens the prompt library, where presets are created, tagged and deleted.
+  final VoidCallback? onManagePresets;
+
   /// Answers every staged edit at once — Write all / Discard all.
   final VoidCallback? onWriteAllKbEdits;
   final VoidCallback? onDiscardAllKbEdits;
@@ -137,6 +146,8 @@ class OptimizerConfigPanel extends StatefulWidget {
     required this.onSysPromptChanged,
     required this.onSysPromptTemplateChanged,
     required this.onSaveTemplate,
+    this.onSaveAsPreset,
+    this.onManagePresets,
     required this.onModeChanged,
     required this.onScaffoldKb,
     this.scrollController,
@@ -150,6 +161,17 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
   late final TextEditingController _sysPromptCtrl;
   bool _scaffolding = false;
   bool _savingTemplate = false;
+
+  /// Whether the preset's instructions are unfolded (`A3d 4b`). Shut by
+  /// default and not persisted: most sessions pick a preset and never read it.
+  bool _presetExpanded = false;
+
+  void _setPresetExpanded(bool expanded) => setState(() => _presetExpanded = expanded);
+
+  /// No preset and no text: the built-in one — what the agent falls back to
+  /// when it is handed nothing.
+  bool get _isBuiltinPreset =>
+      _template == null && (widget.selectedSysPrompt ?? '').trim().isEmpty;
 
   /// Line counts per staged edit id — see [_KbWriteCards._pendingCounts].
   final Map<String, (int, int)> _kbEditCounts = {};

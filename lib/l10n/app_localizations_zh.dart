@@ -5072,13 +5072,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optKbCitedRunning => '进行中';
 
   @override
-  String get optSysPromptPick => '选择模板';
+  String get optSysPromptPick => '选择任务预设';
 
   @override
-  String get optSysPromptSearch => '搜索模板…';
-
-  @override
-  String get optSysPromptNone => '未选择模板';
+  String get optSysPromptSearch => '搜索预设…';
 
   @override
   String get optSysPromptUnsaved => '未保存';
@@ -5090,7 +5087,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optSysPromptReset => '重置';
 
   @override
-  String get optSysPromptSaved => '模板已保存';
+  String get optSysPromptSaved => '预设已保存';
 
   @override
   String get optSysPromptHint => '写下希望助手遵循的指令…';
@@ -5563,6 +5560,38 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optPresetCustom => '自定义指令';
+
+  @override
+  String get optPresetBuiltinBadge => '内置';
+
+  @override
+  String get optPresetBuiltinDesc => '不带专门指令：把粗略想法整理成可直接使用的图像 / 视频提示词。';
+
+  @override
+  String get optPresetBuiltinLocked => '内置指令不可编辑';
+
+  @override
+  String get optPresetSaveAs => '另存为预设…';
+
+  @override
+  String get optPresetEditInstructions => '查看 / 编辑指令';
+
+  @override
+  String get optPresetViewInstructions => '查看指令';
+
+  @override
+  String get optPresetManage => '在提示词库中管理预设';
+
+  @override
+  String get optPresetDiscardTitle => '丢弃未保存的改动？';
+
+  @override
+  String optPresetDiscardBody(String name) {
+    return '「$name」的指令改过还没保存，换预设会丢掉这些改动。';
+  }
+
+  @override
+  String get optPresetDiscardAction => '丢弃改动';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -10634,13 +10663,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optKbCitedRunning => '進行中';
 
   @override
-  String get optSysPromptPick => '選擇範本';
+  String get optSysPromptPick => '選擇任務預設';
 
   @override
-  String get optSysPromptSearch => '搜尋範本…';
-
-  @override
-  String get optSysPromptNone => '未選擇範本';
+  String get optSysPromptSearch => '搜尋預設…';
 
   @override
   String get optSysPromptUnsaved => '未儲存';
@@ -10652,7 +10678,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optSysPromptReset => '重設';
 
   @override
-  String get optSysPromptSaved => '範本已儲存';
+  String get optSysPromptSaved => '預設已儲存';
 
   @override
   String get optSysPromptHint => '寫下希望助手遵循的指令…';
@@ -11125,4 +11151,36 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optPresetCustom => '自訂指令';
+
+  @override
+  String get optPresetBuiltinBadge => '內建';
+
+  @override
+  String get optPresetBuiltinDesc => '不帶專門指令：把粗略想法整理成可直接使用的圖像 / 影片提示詞。';
+
+  @override
+  String get optPresetBuiltinLocked => '內建指令無法編輯';
+
+  @override
+  String get optPresetSaveAs => '另存為預設…';
+
+  @override
+  String get optPresetEditInstructions => '檢視 / 編輯指令';
+
+  @override
+  String get optPresetViewInstructions => '檢視指令';
+
+  @override
+  String get optPresetManage => '在提示詞庫中管理預設';
+
+  @override
+  String get optPresetDiscardTitle => '捨棄未儲存的變更？';
+
+  @override
+  String optPresetDiscardBody(String name) {
+    return '「$name」的指令改過還沒儲存，換預設會捨棄這些變更。';
+  }
+
+  @override
+  String get optPresetDiscardAction => '捨棄變更';
 }

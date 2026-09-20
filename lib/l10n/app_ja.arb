@@ -2802,13 +2802,12 @@
   "optAbortHint": "Esc で中断",
   "optKbSearching": "検索中",
   "optKbCitedRunning": "実行中",
-  "optSysPromptPick": "テンプレートを選択",
-  "optSysPromptSearch": "テンプレートを検索…",
-  "optSysPromptNone": "テンプレート未選択",
+  "optSysPromptPick": "タスクプリセットを選択",
+  "optSysPromptSearch": "プリセットを検索…",
   "optSysPromptUnsaved": "未保存",
   "optSysPromptSave": "保存",
   "optSysPromptReset": "リセット",
-  "optSysPromptSaved": "テンプレートを保存しました",
+  "optSysPromptSaved": "プリセットを保存しました",
   "optSysPromptHint": "アシスタントに従わせたい指示を書いてください…",
   "optSysPromptChars": "{count} 文字",
   "@optSysPromptChars": {
@@ -3160,5 +3159,22 @@
   },
   "optModeSwitchBody": "タスクプリセットとナレッジベースの会話はつなげられないため、切り替えると新しい会話が始まります。現在の会話は保存済みで、「会話履歴」からいつでも戻れます。",
   "optModeSwitchStart": "新しい会話を始める",
-  "optPresetCustom": "カスタム指示"
+  "optPresetCustom": "カスタム指示",
+  "optPresetBuiltinBadge": "組み込み",
+  "optPresetBuiltinDesc": "専用の指示なし：ラフなアイデアを、そのまま使える画像・動画プロンプトに整えます。",
+  "optPresetBuiltinLocked": "組み込みの指示は編集できません",
+  "optPresetSaveAs": "プリセットとして保存…",
+  "optPresetEditInstructions": "指示を表示 / 編集",
+  "optPresetViewInstructions": "指示を表示",
+  "optPresetManage": "プロンプトライブラリでプリセットを管理",
+  "optPresetDiscardTitle": "未保存の変更を破棄しますか？",
+  "optPresetDiscardBody": "「{name}」の指示には未保存の変更があります。プリセットを切り替えると失われます。",
+  "@optPresetDiscardBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetDiscardAction": "変更を破棄"
 }

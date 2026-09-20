@@ -9126,20 +9126,14 @@ abstract class AppLocalizations {
   /// No description provided for @optSysPromptPick.
   ///
   /// In en, this message translates to:
-  /// **'Choose a template'**
+  /// **'Choose a task preset'**
   String get optSysPromptPick;
 
   /// No description provided for @optSysPromptSearch.
   ///
   /// In en, this message translates to:
-  /// **'Search templates...'**
+  /// **'Search presets…'**
   String get optSysPromptSearch;
-
-  /// No description provided for @optSysPromptNone.
-  ///
-  /// In en, this message translates to:
-  /// **'No template'**
-  String get optSysPromptNone;
 
   /// No description provided for @optSysPromptUnsaved.
   ///
@@ -9162,7 +9156,7 @@ abstract class AppLocalizations {
   /// No description provided for @optSysPromptSaved.
   ///
   /// In en, this message translates to:
-  /// **'Template saved'**
+  /// **'Preset saved'**
   String get optSysPromptSaved;
 
   /// No description provided for @optSysPromptHint.
@@ -9940,6 +9934,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Custom instructions'**
   String get optPresetCustom;
+
+  /// No description provided for @optPresetBuiltinBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in'**
+  String get optPresetBuiltinBadge;
+
+  /// No description provided for @optPresetBuiltinDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'No special instructions: turns a rough idea into a ready-to-use image or video prompt.'**
+  String get optPresetBuiltinDesc;
+
+  /// No description provided for @optPresetBuiltinLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in instructions can’t be edited'**
+  String get optPresetBuiltinLocked;
+
+  /// No description provided for @optPresetSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as preset…'**
+  String get optPresetSaveAs;
+
+  /// No description provided for @optPresetEditInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'View / edit instructions'**
+  String get optPresetEditInstructions;
+
+  /// No description provided for @optPresetViewInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'View instructions'**
+  String get optPresetViewInstructions;
+
+  /// No description provided for @optPresetManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage presets in the prompt library'**
+  String get optPresetManage;
+
+  /// No description provided for @optPresetDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard unsaved changes?'**
+  String get optPresetDiscardTitle;
+
+  /// No description provided for @optPresetDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The instructions of “{name}” have unsaved edits. Switching presets will lose them.'**
+  String optPresetDiscardBody(String name);
+
+  /// No description provided for @optPresetDiscardAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes'**
+  String get optPresetDiscardAction;
 }
 
 class _AppLocalizationsDelegate

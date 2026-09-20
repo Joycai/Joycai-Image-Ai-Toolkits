@@ -5312,13 +5312,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optKbCitedRunning => 'in progress';
 
   @override
-  String get optSysPromptPick => 'Choose a template';
+  String get optSysPromptPick => 'Choose a task preset';
 
   @override
-  String get optSysPromptSearch => 'Search templates...';
-
-  @override
-  String get optSysPromptNone => 'No template';
+  String get optSysPromptSearch => 'Search presets…';
 
   @override
   String get optSysPromptUnsaved => 'Unsaved';
@@ -5330,7 +5327,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optSysPromptReset => 'Reset';
 
   @override
-  String get optSysPromptSaved => 'Template saved';
+  String get optSysPromptSaved => 'Preset saved';
 
   @override
   String get optSysPromptHint =>
@@ -5830,4 +5827,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optPresetCustom => 'Custom instructions';
+
+  @override
+  String get optPresetBuiltinBadge => 'Built-in';
+
+  @override
+  String get optPresetBuiltinDesc =>
+      'No special instructions: turns a rough idea into a ready-to-use image or video prompt.';
+
+  @override
+  String get optPresetBuiltinLocked => 'Built-in instructions can’t be edited';
+
+  @override
+  String get optPresetSaveAs => 'Save as preset…';
+
+  @override
+  String get optPresetEditInstructions => 'View / edit instructions';
+
+  @override
+  String get optPresetViewInstructions => 'View instructions';
+
+  @override
+  String get optPresetManage => 'Manage presets in the prompt library';
+
+  @override
+  String get optPresetDiscardTitle => 'Discard unsaved changes?';
+
+  @override
+  String optPresetDiscardBody(String name) {
+    return 'The instructions of “$name” have unsaved edits. Switching presets will lose them.';
+  }
+
+  @override
+  String get optPresetDiscardAction => 'Discard changes';
 }

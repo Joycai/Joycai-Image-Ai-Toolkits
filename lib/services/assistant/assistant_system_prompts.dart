@@ -71,7 +71,7 @@ String _buildSystemPrompt(
   bool forceViewAllImages,
 ) {
   final base = (template == null || template.trim().isEmpty)
-      ? 'You are an expert prompt engineer for AI image and video generation.'
+      ? PromptOptimizerAgent.builtinPresetInstructions
       : template.trim();
   // Per-model setting: smaller local models look at one image and submit
   // straight away, so viewing every image can be made a hard requirement.
