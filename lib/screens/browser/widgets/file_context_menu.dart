@@ -15,13 +15,17 @@ import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
+import 'file_delete_dialog.dart';
 
-/// The file context menu — `B1a · 1b`: G2 glass, 230 wide, four groups.
+/// The file context menu — `B1a · 1b`, `B1c · 1a`: G2 glass, 230 wide, five
+/// groups.
 ///
 /// Open (preview · system default) | selection · staging | rename · copy name
-/// | reveal · share. Staging and sharing act on the same set: right-clicking
-/// inside the selection means the selection, outside it means that one file,
-/// and the count on the right of those rows says which.
+/// | reveal · share | delete. Staging, sharing and deleting act on the same
+/// set: right-clicking inside the selection means the selection, outside it
+/// means that one file, and the count says which — on the right of those
+/// rows, and in the *label* of the delete row, whose trailing corner is
+/// spoken for by its shortcut.
 void showFileContextMenu({
   required BuildContext context,
   required BrowserFile file,
@@ -144,6 +148,22 @@ void showFileContextMenu({
               AppSnackBar.error(context, l10n.shareFailed('$e'));
             }
           }
+        },
+      ),
+      // Its own group at the end: the one row here that cannot be taken back
+      // keeps a rule between itself and everything that can. The label stays
+      // "Delete" on every platform — whether the file goes to the trash or
+      // for good is a question only an `await` can answer, and the menu has
+      // to be on screen before then. The dialog says it, and must.
+      const AppGlassMenuDivider(),
+      AppGlassMenuItem(
+        icon: Icons.delete_outline,
+        label: targets.length > 1 ? l10n.deleteFiles(targets.length) : l10n.delete,
+        trailing: 'Delete',
+        danger: true,
+        onSelected: () {
+          if (!context.mounted) return;
+          runFileDelete(context, targets);
         },
       ),
     ],
