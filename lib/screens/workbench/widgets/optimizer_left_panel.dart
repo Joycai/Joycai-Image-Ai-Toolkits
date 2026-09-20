@@ -95,8 +95,10 @@ class _MaintenanceLeftPanelState extends State<_MaintenanceLeftPanel> {
             children: [
               Offstage(
                 offstage: _showReferences,
-                child: TickerMode(
-                  enabled: !_showReferences,
+                // Offstage stops paint and hit-testing, not focus: without
+                // this the hidden search box keeps taking the keystrokes.
+                child: ExcludeFocus(
+                  excluding: _showReferences,
                   child:
                       // The pending list does have to be watched here — it
                       // drives the tree's badges and its footer.

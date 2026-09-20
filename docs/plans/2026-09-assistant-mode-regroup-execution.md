@@ -72,5 +72,6 @@
 ### 片 4
 
 - 「文档」段不带篇数：数目在树自己的标题行里（树才知道扫描结果）；「参考图 · N」带。
-- 树常驻（Offstage + TickerMode 关），参考图面板**只在显示时才建**：它跟随会话的每一次通知，一开始用 IndexedStack 两个都建，`rebuild_scope_test` 立刻变红（一次用量通知 185 次 build，上限 100）。
+- 树常驻（Offstage + ExcludeFocus），参考图面板**只在显示时才建**：它跟随会话的每一次通知，一开始用 IndexedStack 两个都建，`rebuild_scope_test` 立刻变红（一次用量通知 185 次 build，上限 100）。
 - 选中的段记在这个列自己的 State 上；离开维护模式再回来会回到「文档」。
+- review（1 条，已修）：藏起来的树不再留着键盘焦点（Offstage 不管焦点）。
