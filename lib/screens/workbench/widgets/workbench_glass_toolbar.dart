@@ -71,6 +71,24 @@ _View _currentView(GalleryState s) {
 /// this one item stands for both and returns to whichever was open last.
 const int _kGalleryTab = -1;
 
+/// The `tune` button's one action, shared by both rows of the bar.
+///
+/// Where the column is detached — a drawer on a tablet, a sheet on a phone —
+/// it is *opened*. The `⇧⌘\` preference governs the inline column and
+/// nothing else, so reaching for it first left the button dead wherever the
+/// column was detached *and* the preference collapsed: the press expanded a
+/// preference no one could see and opened nothing, and the panel arrived
+/// only on the second press. Collapse the column on a desktop window, then
+/// narrow it to a tablet, and that is the state you are in.
+void _openRightPanel(BuildContext context, {required bool configCollapsed}) {
+  final layout = context.read<WorkbenchLayoutState>();
+  if (!layout.rightPanelDetached && configCollapsed) {
+    context.read<AppState>().setConfigPanelExpanded(true);
+    return;
+  }
+  layout.openRightPanel();
+}
+
 /// What a tool tab's controls are guaranteed before the tab strip folds into
 /// a menu to make room for them: enough for their overflow button and a
 /// primary action.
@@ -201,6 +219,7 @@ class WorkbenchGlassToolbar extends StatefulWidget {
     super.key,
     required this.tabController,
     this.phone = false,
+    this.galleryTarget = WorkbenchTab.image,
     this.toolControls,
     this.toolControlsWidth = 0,
   });
@@ -209,6 +228,14 @@ class WorkbenchGlassToolbar extends StatefulWidget {
 
   /// The phone's full-width bar instead of the floating one.
   final bool phone;
+
+  /// The gallery tab the strip's 画廊 item returns to — image or video,
+  /// whichever was open last.
+  ///
+  /// Held by the screen rather than here, because `⌘⌥1` stands for this same
+  /// item and has to land in the same place; two copies of "where was I"
+  /// would be two answers to one question.
+  final int galleryTarget;
 
   /// A tool tab's own controls, laid out in the rest of the bar after the
   /// tab strip (`A4-A6`: the tools share the header's place and height and
@@ -238,17 +265,12 @@ class WorkbenchGlassToolbar extends StatefulWidget {
 }
 
 class _WorkbenchGlassToolbarState extends State<WorkbenchGlassToolbar> {
-  /// The gallery tab the strip's 画廊 item returns to. UI-only memory,
-  /// deliberately not persisted: it answers "where was I a moment ago".
-  int _lastGalleryTab = WorkbenchTab.image;
-
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: widget.tabController,
       builder: (context, _) {
         final active = widget.tabController.index;
-        if (WorkbenchTab.isGallery(active)) _lastGalleryTab = active;
 
         final row = LayoutBuilder(
           builder: (context, constraints) {
@@ -265,7 +287,7 @@ class _WorkbenchGlassToolbarState extends State<WorkbenchGlassToolbar> {
                     active: active,
                     width: width,
                     phone: widget.phone,
-                    galleryTarget: _lastGalleryTab,
+                    galleryTarget: widget.galleryTarget,
                     controls: widget.toolControls,
                     controlsWidth: widget.toolControlsWidth,
                   );
@@ -534,13 +556,8 @@ class _GalleryRow extends StatelessWidget {
         GlassIconButton(
           icon: Icons.tune,
           tooltip: l10n.wbGenerationConfig,
-          onPressed: () {
-            if (configCollapsed) {
-              context.read<AppState>().setConfigPanelExpanded(true);
-            } else {
-              context.read<WorkbenchLayoutState>().openRightPanel();
-            }
-          },
+          onPressed: () =>
+              _openRightPanel(context, configCollapsed: configCollapsed),
         ),
     ];
 
@@ -636,13 +653,8 @@ class _ToolRow extends StatelessWidget {
         GlassIconButton(
           icon: Icons.tune,
           tooltip: l10n.wbGenerationConfig,
-          onPressed: () {
-            if (configCollapsed) {
-              context.read<AppState>().setConfigPanelExpanded(true);
-            } else {
-              context.read<WorkbenchLayoutState>().openRightPanel();
-            }
-          },
+          onPressed: () =>
+              _openRightPanel(context, configCollapsed: configCollapsed),
         ),
     ]);
   }

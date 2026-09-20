@@ -21,9 +21,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/image_card.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/workbench_glass_toolbar.dart';
 import 'package:joycai_image_ai_toolkits/services/files/trash_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/glass/glass_controls.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dialogs/file_rename_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/files/transfer_dialog_parts.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
@@ -406,5 +408,164 @@ void main() {
 
     gallery.clearDroppedImages();
     gallery.setViewMode(GalleryViewMode.all);
+  });
+
+  testWidgets('a key with nothing to act on changes nothing, here or later',
+      (WidgetTester tester) async {
+    final appState = AppState();
+    await mountGallery(tester, 'workbench-config-key-scope');
+    addTearDown(() {
+      appState.setConfigPanelExpanded(true);
+      appState.setWorkbenchTab(0);
+    });
+
+    // The mask editor has no parameter column (`hasRightPanel: false`), so
+    // `⇧⌘\` has nothing to show or hide here. It used to fall through to the
+    // preference anyway — a *persisted* one, and one nothing on this tab
+    // reflects, so the press looked like a dead key and the gallery's column
+    // was gone next time the user went back to it, with no press to blame.
+    await pressChord(tester, LogicalKeyboardKey.digit3, alt: true, real: true);
+    expect(appState.workbenchTabIndex, 2, reason: 'the mask editor');
+    expect(appState.isConfigPanelExpanded, isTrue);
+
+    await pressChord(tester, LogicalKeyboardKey.backslash, shift: true, real: true);
+    expect(appState.isConfigPanelExpanded, isTrue,
+        reason: 'a tab with no column must not move the column preference');
+
+    // And the proof that it did not move is on the tab that has one.
+    await pressChord(tester, LogicalKeyboardKey.digit1, alt: true, real: true);
+    expect(appState.workbenchTabIndex, 0);
+    expect(find.byIcon(Icons.tune), findsNothing,
+        reason: 'the column is still there, so nothing is offering it back');
+  });
+
+  testWidgets('the way back opens the column where the column is a drawer',
+      (WidgetTester tester) async {
+    final appState = AppState();
+    final gallery = AppState().galleryState;
+    gallery.clearImageSelection();
+    gallery.setViewMode(GalleryViewMode.all);
+
+    // Collapsed on a wide window, then narrowed: the preference governs the
+    // *inline* column, and at tablet width there is no inline column to
+    // govern — the panel is a drawer. Reaching for the preference first left
+    // the button expanding something invisible and opening nothing, so the
+    // first press did nothing at all and the panel arrived on the second.
+    await tester.runAsync(() async {
+      appState.setConfigPanelExpanded(false);
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    });
+    addTearDown(() {
+      appState.setConfigPanelExpanded(true);
+      appState.setWorkbenchTab(0);
+    });
+
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.workbench,
+      size: const Size(900, 800),
+      label: 'workbench-tune-drawer',
+    );
+
+    expect(find.byIcon(Icons.tune), findsOneWidget,
+        reason: 'a drawer always owes the user a button that opens it');
+    expect(find.byType(Drawer), findsNothing,
+        reason: 'a dismissed drawer builds no content');
+
+    await tester.runAsync(() async {
+      await tester.tap(find.byIcon(Icons.tune));
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    });
+    await settle(tester);
+
+    expect(find.byType(Drawer), findsOneWidget,
+        reason: 'one press, one panel — not a silent preference and a second '
+            'press to actually see it');
+  });
+
+  testWidgets('Cmd+Alt+1 goes to the gallery you were last in',
+      (WidgetTester tester) async {
+    final appState = AppState();
+    await mountGallery(tester, 'workbench-gallery-key-target');
+    addTearDown(() {
+      appState.setWorkbenchTab(0);
+    });
+
+    // 画廊 is two tabs, and the strip's 画廊 item has always returned to
+    // whichever was open last. The key stands for that item, so jumping to
+    // `image` outright dropped a video session into image mode — the mode
+    // segment flipped and the video parameters went with it — for pressing
+    // "go to the gallery".
+    await tester.runAsync(() async {
+      appState.setWorkbenchTab(WorkbenchTab.video);
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    });
+    await settle(tester);
+    expect(appState.workbenchTabIndex, WorkbenchTab.video);
+
+    await pressChord(tester, LogicalKeyboardKey.digit2, alt: true, real: true);
+    expect(appState.workbenchTabIndex, WorkbenchTab.comparator);
+
+    await pressChord(tester, LogicalKeyboardKey.digit1, alt: true, real: true);
+    expect(appState.workbenchTabIndex, WorkbenchTab.video,
+        reason: 'back to the gallery means back to the one you left');
+  });
+
+  testWidgets('the selection bar empties the basket in one pass',
+      (WidgetTester tester) async {
+    final gallery = AppState().galleryState;
+    gallery.clearImageSelection();
+    gallery.clearDroppedImages();
+    addTearDown(() {
+      gallery.clearDroppedImages();
+      gallery.setViewMode(GalleryViewMode.all);
+    });
+
+    final sources = Directory(env.browserDir.path)
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.png'))
+        .take(3)
+        .map((f) => AppImage.fromFile(f))
+        .toList();
+    expect(sources, hasLength(3), reason: 'the fixture must have three pictures');
+    gallery.addDroppedFiles(sources);
+    gallery.setViewMode(GalleryViewMode.temp);
+
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.workbench,
+      size: const Size(1440, 900),
+      label: 'workbench-basket-batch',
+    );
+
+    gallery.selectAllImages();
+    await settle(tester);
+    expect(gallery.selectedImages, hasLength(3));
+
+    // One press, one pass. The bar used to call the single-image removal
+    // once per picture, and each call re-filtered the basket, re-validated
+    // the selection against all four collections and rebuilt the grid — the
+    // very cost `removeDroppedImages` was added for, left behind at the one
+    // call site nobody migrated.
+    int notifications = 0;
+    void count() => notifications++;
+    gallery.addListener(count);
+    addTearDown(() => gallery.removeListener(count));
+
+    final l10n = await AppLocalizations.delegate.load(const Locale('zh'));
+    // The bar labels its buttons when it fits and falls back to tooltips
+    // when it does not, and which one it is is not this test's subject.
+    await tester.tap(find.byWidgetPredicate((w) =>
+        w is GlassIconButton &&
+        (w.label == l10n.removeFromWorkspace ||
+            w.tooltip == l10n.removeFromWorkspace)));
+    await settle(tester);
+
+    expect(gallery.droppedImages, isEmpty);
+    expect(notifications, 1,
+        reason: 'three pictures, one notification — not one rebuild each');
   });
 }
