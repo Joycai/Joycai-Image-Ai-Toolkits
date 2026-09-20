@@ -1,3 +1,9 @@
+final RegExp _rule = RegExp(r'^([-*_=])\1{2,}$');
+final RegExp _marker = RegExp(r'^(?:>+\s*|[-*+]\s+|\d+[.)]\s+)+');
+final RegExp _link = RegExp(r'\[([^\]]*)\]\([^)]*\)');
+final RegExp _emphasis = RegExp(r'[*_`]+');
+final RegExp _space = RegExp(r'\s+');
+
 /// One or two lines saying what a task preset is for (`A3d 4b`).
 ///
 /// Derived from the preset's own text rather than stored beside it: the
@@ -20,7 +26,7 @@ String presetSummaryOf(String content) {
     if (inFence) continue;
     final structural = line.isEmpty ||
         line.startsWith('#') ||
-        RegExp(r'^([-*_=])\1{2,}$').hasMatch(line);
+        _rule.hasMatch(line);
     if (structural) {
       if (lines.isNotEmpty) break;
       continue;
@@ -29,10 +35,10 @@ String presetSummaryOf(String content) {
   }
   return lines
       .map((l) => l
-          .replaceFirst(RegExp(r'^(?:>+\s*|[-*+]\s+|\d+[.)]\s+)+'), '')
-          .replaceAllMapped(RegExp(r'\[([^\]]*)\]\([^)]*\)'), (m) => m[1]!)
-          .replaceAll(RegExp(r'[*_`]+'), ''))
+          .replaceFirst(_marker, '')
+          .replaceAllMapped(_link, (m) => m[1]!)
+          .replaceAll(_emphasis, ''))
       .join(' ')
-      .replaceAll(RegExp(r'\s+'), ' ')
+      .replaceAll(_space, ' ')
       .trim();
 }

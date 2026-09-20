@@ -116,7 +116,13 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
       ],
       onChanged: (id) async {
         if (id == (template?.id ?? (_isBuiltinPreset ? _builtinPresetId : 0))) return;
-        if (dirty && !await _confirmDiscardPresetEdit(l10n, template!.title)) return;
+        // Orphaned text counts too: it is the one edit with no preset to go
+        // back to, so it is the least recoverable thing on this card.
+        final unsaved = dirty || (template == null && !_isBuiltinPreset);
+        if (unsaved &&
+            !await _confirmDiscardPresetEdit(l10n, template?.title ?? l10n.optPresetCustom)) {
+          return;
+        }
         if (id == _builtinPresetId) {
           // Empty, not null: null is "never chosen", which the first load
           // answers by picking the library's first preset.

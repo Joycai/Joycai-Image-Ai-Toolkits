@@ -304,6 +304,28 @@ void main() {
       expect(find.text(l10n.optPresetBuiltinLocked), findsOneWidget);
     });
 
+    testWidgets('switching presets over an unsaved edit asks first', (tester) async {
+      final loaded = <int?>[];
+      await pumpPanel(
+        tester,
+        text: 'BASE edited',
+        templateId: 1,
+        width: 400,
+        expand: false,
+        onTemplateChanged: (id, _) => loaded.add(id),
+      );
+      final l10n = await en();
+
+      await tester.tap(find.text('Photo v3'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Product').last);
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.optPresetDiscardTitle), findsOneWidget);
+      await tester.tap(find.text(l10n.cancel));
+      await tester.pumpAndSettle();
+      expect(loaded, isEmpty);
+    });
+
     testWidgets('text whose preset is gone is called custom, not built-in', (tester) async {
       await pumpPanel(tester, text: 'ORPHAN', templateId: 99, expand: false);
       final l10n = await en();
