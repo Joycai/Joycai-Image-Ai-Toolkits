@@ -3185,6 +3185,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get colorPresets => '预设';
 
   @override
+  String get presetOutput => '产出';
+
+  @override
+  String get presetOutputPrompt => '提示词';
+
+  @override
+  String get presetOutputAnalysis => '分析文本';
+
+  @override
+  String get presetOutputAnalysisShort => '分析';
+
+  @override
+  String get presetOutputPromptHelp => '助手把结果做成提示词卡交付，带版本，可一键应用到工作台。';
+
+  @override
+  String get presetOutputAnalysisHelp =>
+      '助手按这条预设规定的结构直接在对话里回答，结果可复制。你明确要的时候，它仍然可以另给一条提示词。';
+
+  @override
   String get settings => '设置';
 
   @override
@@ -8828,6 +8847,25 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get colorPresets => '預設';
+
+  @override
+  String get presetOutput => '產出';
+
+  @override
+  String get presetOutputPrompt => '提示詞';
+
+  @override
+  String get presetOutputAnalysis => '分析文字';
+
+  @override
+  String get presetOutputAnalysisShort => '分析';
+
+  @override
+  String get presetOutputPromptHelp => '助手把結果做成提示詞卡交付，帶版本，可一鍵套用到工作台。';
+
+  @override
+  String get presetOutputAnalysisHelp =>
+      '助手按這條預設規定的結構直接在對話裡回答，結果可複製。你明確要求時，它仍然可以另給一條提示詞。';
 
   @override
   String get settings => '設定';

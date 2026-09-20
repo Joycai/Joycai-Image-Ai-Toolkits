@@ -5680,6 +5680,42 @@ abstract class AppLocalizations {
   /// **'Presets'**
   String get colorPresets;
 
+  /// No description provided for @presetOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Output'**
+  String get presetOutput;
+
+  /// No description provided for @presetOutputPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt'**
+  String get presetOutputPrompt;
+
+  /// No description provided for @presetOutputAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis text'**
+  String get presetOutputAnalysis;
+
+  /// No description provided for @presetOutputAnalysisShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis'**
+  String get presetOutputAnalysisShort;
+
+  /// No description provided for @presetOutputPromptHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant delivers the result as a versioned prompt card you can apply to the workbench in one click.'**
+  String get presetOutputPromptHelp;
+
+  /// No description provided for @presetOutputAnalysisHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant answers right in the chat, in the structure this preset lays down, and the result can be copied. It can still hand you a prompt when you ask for one.'**
+  String get presetOutputAnalysisHelp;
+
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:

@@ -3364,6 +3364,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get colorPresets => 'Presets';
 
   @override
+  String get presetOutput => 'Output';
+
+  @override
+  String get presetOutputPrompt => 'Prompt';
+
+  @override
+  String get presetOutputAnalysis => 'Analysis text';
+
+  @override
+  String get presetOutputAnalysisShort => 'Analysis';
+
+  @override
+  String get presetOutputPromptHelp =>
+      'The assistant delivers the result as a versioned prompt card you can apply to the workbench in one click.';
+
+  @override
+  String get presetOutputAnalysisHelp =>
+      'The assistant answers right in the chat, in the structure this preset lays down, and the result can be copied. It can still hand you a prompt when you ask for one.';
+
+  @override
   String get settings => 'Settings';
 
   @override

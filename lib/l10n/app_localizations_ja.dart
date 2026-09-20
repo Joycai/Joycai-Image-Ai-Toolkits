@@ -3220,6 +3220,26 @@ class AppLocalizationsJa extends AppLocalizations {
   String get colorPresets => 'プリセット';
 
   @override
+  String get presetOutput => '出力';
+
+  @override
+  String get presetOutputPrompt => 'プロンプト';
+
+  @override
+  String get presetOutputAnalysis => '分析テキスト';
+
+  @override
+  String get presetOutputAnalysisShort => '分析';
+
+  @override
+  String get presetOutputPromptHelp =>
+      'アシスタントは結果をバージョン付きのプロンプトカードとして渡し、ワンクリックでワークベンチに適用できます。';
+
+  @override
+  String get presetOutputAnalysisHelp =>
+      'アシスタントはこのプリセットが定める構成で会話の中に直接回答し、結果はコピーできます。明示的に頼めば、プロンプトも別に出せます。';
+
+  @override
   String get settings => '設定';
 
   @override

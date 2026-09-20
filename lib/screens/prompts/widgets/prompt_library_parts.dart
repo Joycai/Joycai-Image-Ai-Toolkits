@@ -6,7 +6,9 @@ import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/prompt.dart';
 import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_neutral_marker.dart';
 
 /// Small pieces the Prompt Library (`C1`) draws in more than one place.
 ///
@@ -166,12 +168,36 @@ class PromptTemplateTypeIcon extends StatelessWidget {
 
 /// The r4 type badge beside a template's title.
 class PromptTemplateTypeBadge extends StatelessWidget {
-  const PromptTemplateTypeBadge({super.key, required this.type});
+  const PromptTemplateTypeBadge({
+    super.key,
+    required this.type,
+    this.outputKind = PresetOutputKind.prompt,
+  });
 
   final String type;
 
+  /// `A3e 5b`: an analysis preset says so beside its type. A prompt preset —
+  /// the default, and every row there was before — says nothing.
+  final PresetOutputKind outputKind;
+
   @override
   Widget build(BuildContext context) {
+    final type = _typeBadge(context);
+    if (outputKind != PresetOutputKind.analysis) return type;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        type,
+        const SizedBox(width: AppSpace.s6),
+        AppNeutralMarker(
+          icon: Icons.subject,
+          label: AppLocalizations.of(context)!.presetOutputAnalysis,
+        ),
+      ],
+    );
+  }
+
+  Widget _typeBadge(BuildContext context) {
     final style = promptTemplateTypeStyle(context, type);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
