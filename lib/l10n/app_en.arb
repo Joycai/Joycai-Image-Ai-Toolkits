@@ -3986,5 +3986,7 @@
         "type": "int"
       }
     }
-  }
+  },
+  "optKbUseMaintainNotice": "Switched to “Maintain” · the assistant can now propose knowledge-base edits",
+  "optKbUseWriteNotice": "Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits"
 }

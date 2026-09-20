@@ -1186,5 +1186,7 @@
         "type": "int"
       }
     }
-  }
+  },
+  "optKbUseMaintainNotice": "已切到「維護」· 助手現在可以提議知識庫變更",
+  "optKbUseWriteNotice": "已切到「出詞」· 助手不再提議知識庫變更"
 }

@@ -1186,5 +1186,7 @@
         "type": "int"
       }
     }
-  }
+  },
+  "optKbUseMaintainNotice": "已切到「维护」· 助手现在可以提议知识库改动",
+  "optKbUseWriteNotice": "已切到「出词」· 助手不再提议知识库改动"
 }

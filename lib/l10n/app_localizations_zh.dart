@@ -5641,6 +5641,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String optLeftRefs(int count) {
     return '参考图 · $count';
   }
+
+  @override
+  String get optKbUseMaintainNotice => '已切到「维护」· 助手现在可以提议知识库改动';
+
+  @override
+  String get optKbUseWriteNotice => '已切到「出词」· 助手不再提议知识库改动';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -11281,4 +11287,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String optLeftRefs(int count) {
     return '參考圖 · $count';
   }
+
+  @override
+  String get optKbUseMaintainNotice => '已切到「維護」· 助手現在可以提議知識庫變更';
+
+  @override
+  String get optKbUseWriteNotice => '已切到「出詞」· 助手不再提議知識庫變更';
 }

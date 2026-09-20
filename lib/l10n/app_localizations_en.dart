@@ -5917,4 +5917,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String optLeftRefs(int count) {
     return 'References · $count';
   }
+
+  @override
+  String get optKbUseMaintainNotice =>
+      'Switched to “Maintain” · the assistant can now propose knowledge-base edits';
+
+  @override
+  String get optKbUseWriteNotice =>
+      'Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits';
 }

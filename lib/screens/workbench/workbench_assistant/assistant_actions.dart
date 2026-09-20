@@ -76,7 +76,10 @@ extension _AssistantActions on _WorkbenchScreenState {
     // The panel greys the switch during a turn; this is the gate that holds
     // if something else asks.
     if (_optRunningForSession(session)) return;
-    if (session.transcript.isNotEmpty) {
+    // 出词 ⇄ 维护 keeps the conversation, so there is nothing to confirm.
+    final sameSession =
+        session.usesKnowledgeBase && PromptOptimizerSession.isKnowledgeMode(next);
+    if (!sameSession && session.transcript.isNotEmpty) {
       final l10n = AppLocalizations.of(context)!;
       final target = next == AssistantMode.systemPrompt
           ? l10n.optModeSystemPrompt

@@ -10084,6 +10084,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'References · {count}'**
   String optLeftRefs(int count);
+
+  /// No description provided for @optKbUseMaintainNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to “Maintain” · the assistant can now propose knowledge-base edits'**
+  String get optKbUseMaintainNotice;
+
+  /// No description provided for @optKbUseWriteNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits'**
+  String get optKbUseWriteNotice;
 }
 
 class _AppLocalizationsDelegate

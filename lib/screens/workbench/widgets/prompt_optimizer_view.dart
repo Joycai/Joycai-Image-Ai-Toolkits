@@ -558,6 +558,8 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             PromptOptimizerAgent.imageMissingNoticeToken => l10n.optImageMissing,
             PromptOptimizerAgent.kbEntryTooLargeNoticeToken => l10n.optKbEntryTooLarge,
             PromptOptimizerAgent.roundLimitNoticeToken => l10n.optRoundLimitNotice,
+            PromptOptimizerAgent.kbUseMaintainNoticeToken => l10n.optKbUseMaintainNotice,
+            PromptOptimizerAgent.kbUseWriteNoticeToken => l10n.optKbUseWriteNotice,
             _ => entry.text,
           };
           return _besideAvatar(

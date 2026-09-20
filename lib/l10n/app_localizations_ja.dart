@@ -5700,4 +5700,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String optLeftRefs(int count) {
     return '参考画像 · $count';
   }
+
+  @override
+  String get optKbUseMaintainNotice =>
+      '「メンテナンス」に切り替えました · アシスタントはナレッジベースの変更を提案できます';
+
+  @override
+  String get optKbUseWriteNotice =>
+      '「プロンプト作成」に切り替えました · アシスタントはナレッジベースの変更を提案しなくなります';
 }

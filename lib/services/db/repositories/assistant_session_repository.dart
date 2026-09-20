@@ -99,6 +99,9 @@ class AssistantSessionRepository {
         'assistant_sessions',
         {
           'title': ?title,
+          // Not fixed at insert: a knowledge session moves between writing
+          // prompts and maintenance without becoming another session.
+          'mode': mode.name,
           'ref_images': jsonEncode(refImages),
           'updated_at': now,
         },
@@ -106,6 +109,15 @@ class AssistantSessionRepository {
         whereArgs: [id],
       );
     }
+  }
+
+  /// Records a knowledge session's switch of use at once, rather than at the
+  /// next turn's sync — a switch followed by quitting would otherwise restore
+  /// into the mode it left. A session with no row yet has nothing to update;
+  /// its first sync writes the mode it has by then.
+  Future<void> setSessionMode(String id, AssistantMode mode) async {
+    final db = await _getDb();
+    await db.update('assistant_sessions', {'mode': mode.name}, where: 'id = ?', whereArgs: [id]);
   }
 
   /// Appends [messages] starting at [startSeq] (the session's message count

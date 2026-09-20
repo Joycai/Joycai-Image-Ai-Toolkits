@@ -363,6 +363,51 @@ around it:
   mode, because the default is the one destructive choice. Pinned by
   `knowledge_base_splice_test.dart`.
 
+## What about a session may change (2026-09-20, `A3d`)
+
+`session.mode` has two halves, and only one of them is fixed.
+
+- **What the session works from — a task preset or the knowledge base — is
+  fixed for its lifetime.** The two histories cannot continue each other: a
+  preset conversation has no file map in its system prompt and no knowledge
+  reads to build on, and a knowledge conversation's reads mean nothing to a
+  preset. That switch is `WorkbenchUIState.newOptimizerSession`.
+- **What a knowledge session is used for — `knowledgeBase` (write prompts) or
+  `knowledgeEdit` (maintain the base) — may change mid-conversation**, through
+  `PromptOptimizerSession.switchKnowledgeUse`. Nothing in the history depends
+  on which of the two it was: both read the same files through the same tools,
+  and the write tools already came and went inside one session before this —
+  a distill request attaches them for a turn (`hasPendingKbDistill`). The
+  system prompt and the tool list are rebuilt per turn from `session.mode`
+  (`runTurn` reads `usesKnowledgeBase` and `canWriteKnowledge` once, at its
+  top), so the switch lands on the next question.
+
+What keeps it safe:
+
+- **Refused while a turn runs.** The turn read the mode when it started; the
+  write executor re-checks `canWriteKnowledge` per call, and a mode flipped
+  under it would have that gate answer for a different turn than the one
+  asking. The panel locks the switch during a turn and
+  `_handleAssistantModeChange` checks the queue as well; the session's own
+  refusal is the gate that holds if both are wrong — and
+  `WorkbenchUIState.setAssistantMode` drops a refused switch rather than
+  falling through to a new session.
+- **Staged edits outlive the switch.** `applyStagedKbEdit` is the user's act,
+  gated on the card's state and never on the mode, and `_drainKbEditOutcomes`
+  runs in every mode — invariant 11 holds after 维护 → 出词.
+- **The divider is not history.** `switchKnowledgeUse` appends a transcript
+  notice (`kbUseMaintainNoticeToken` / `kbUseWriteNoticeToken`) and nothing to
+  `history`: it is a fact about the interface, and the model learns the change
+  from the next request's prompt and tools. A restored session therefore does
+  not replay it — the same trade a restored `kbEdit` card makes. Two switches
+  with nothing said between them leave one divider (replaced, never removed:
+  the transcript only grows, and the chat keys rows by index).
+- **The stored mode follows.** `upsertSession` now writes `mode` on update as
+  well as insert, and `setSessionMode` records a switch at once so that
+  quitting before the next turn does not restore into the mode that was left.
+
+Pinned by `test/assistant_kb_use_switch_test.dart`.
+
 ## Accepted limits
 
 - **No mid-loop compaction, structurally.** `_maybeCompact` runs outside the

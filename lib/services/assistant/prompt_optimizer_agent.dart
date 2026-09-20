@@ -87,6 +87,11 @@ class PromptOptimizerAgent {
   static const String kbEntryTooLargeNoticeToken = '__kb_entry_too_large__';
   static const String kbDistillNoticeToken = '__kb_distill__';
 
+  /// The divider a knowledge session leaves when its use is switched —
+  /// see [PromptOptimizerSession.switchKnowledgeUse].
+  static const String kbUseMaintainNoticeToken = '__kb_use_maintain__';
+  static const String kbUseWriteNoticeToken = '__kb_use_write__';
+
   /// A turn used every round and the final, tools-free one still produced no
   /// answer (standard 07 §3.8).
   static const String roundLimitNoticeToken = '__round_limit__';

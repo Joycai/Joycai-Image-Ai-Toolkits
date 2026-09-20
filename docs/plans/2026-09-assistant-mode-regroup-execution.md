@@ -30,7 +30,7 @@
 | 2 | 任务预设卡：折叠 + 内置项。选择器首项恒为内置「通用优化」（灰「内置」徽标）；说明行 = 预设正文首段去 markdown（不加库列）；披露行「查看 / 编辑指令」+ 右侧 mono「约 N tokens」，默认折叠，展开态按会话记（不持久化）；「未保存」徽标折叠时保留在标题行；内置项：锁 +「内置指令不可编辑」+「另存为预设…」；页脚「在提示词库中管理预设」；未保存时换预设先确认一次。删 `optSysPromptNone` | `optimizer_config/sys_prompt_card.dart`、`assistant_system_prompts.dart`（内置文案出口）、`assistant_actions.dart` | 稿 4b 五态；1440 下折叠态时间线与上下文卡进首屏 | ✅ |
 | 3 | 分模式空状态。任务预设：标题 + 副标 + 2×2 预设砖（<600 单列；0 预设 → 内置 + 去新建）+「全部 N 个预设…」，点砖 = 选中不发送；出词 / 维护：标题 + 副标 + 三条示例，点示例 = 填入输入框不发送。删 `optEmptyChat` | `prompt_optimizer_view.dart`（+ part）、`assistant_tab.dart` | 稿 4c 三态 | ✅ |
 | 4 | 维护左栏分段「文档 · N｜参考图 · N」（plain·28 高，默认文档）；其余模式无分段 | `optimizer_left_panel.dart` | 稿 4e；维护模式下参考图可见可管 | ✅ |
-| 5 | 出词⇄维护同会话。先读 `architecture/assistant-context.md`。`session.mode` 在知识库对内可变（`switchKnowledgeUse`，运行中 / 跨依据拒绝——UI 与 session 两层都拦）；`upsertSession` 回写 mode；对话里插分隔提示；写工具从下一轮起挂 / 卸；运行中第二级锁定；维护→出词后待确认改动仍可应答 | `prompt_optimizer_session.dart`、`assistant_session_repository.dart`、`workbench_ui_state.dart`、`assistant_actions.dart`、`prompt_optimizer_view.dart`、`assistant-context.md` | 单测：切换不换会话、运行中拒绝、跨依据拒绝、mode 落库并可恢复、切回出词后 `canWriteKnowledge` 为假；稿 4d | ⬜ |
+| 5 | 出词⇄维护同会话。先读 `architecture/assistant-context.md`。`session.mode` 在知识库对内可变（`switchKnowledgeUse`，运行中 / 跨依据拒绝——UI 与 session 两层都拦）；`upsertSession` 回写 mode；对话里插分隔提示；写工具从下一轮起挂 / 卸；运行中第二级锁定；维护→出词后待确认改动仍可应答 | `prompt_optimizer_session.dart`、`assistant_session_repository.dart`、`workbench_ui_state.dart`、`assistant_actions.dart`、`prompt_optimizer_view.dart`、`assistant-context.md` | 单测：切换不换会话、运行中拒绝、跨依据拒绝、mode 落库并可恢复、切回出词后 `canWriteKnowledge` 为假；稿 4d | ✅ |
 | 6 | 收尾：整体 review 修复；本文退休、台账加行；bump version | `docs/plans/README.md`、`CLAUDE.md` 版本行 | — | ⬜ |
 
 ## 决策记录
@@ -75,3 +75,12 @@
 - 树常驻（Offstage + ExcludeFocus），参考图面板**只在显示时才建**：它跟随会话的每一次通知，一开始用 IndexedStack 两个都建，`rebuild_scope_test` 立刻变红（一次用量通知 185 次 build，上限 100）。
 - 选中的段记在这个列自己的 State 上；离开维护模式再回来会回到「文档」。
 - review（1 条，已修）：藏起来的树不再留着键盘焦点（Offstage 不管焦点）。
+
+### 片 5
+
+- `session.mode` 从 `final` 改为 getter + `switchKnowledgeUse`；只有知识库对内可变，跨依据、运行中一律拒绝（返回 false，不抛）。
+- `WorkbenchUIState.setAssistantMode`：被拒绝的切换直接丢弃，**不会**落到 `newOptimizerSession`——否则「运行中点了维护」会把正在跑的会话换掉。
+- 分隔提示：会话为空时不插；连续切换只留最后一条（替换，不删除——transcript 只增不减，聊天行按下标做 key）。
+- mode 落库两处：`upsertSession` 更新分支补写 `mode`；`setSessionMode` 切换当时就写（没有行就什么都不做）。无迁移——列一直都在。
+- 不变量写进 `architecture/assistant-context.md`「What about a session may change」。
+- 片 1 留下的那条（出词⇄维护走跨依据确认框）在这里消掉：同会话切换不弹框。
