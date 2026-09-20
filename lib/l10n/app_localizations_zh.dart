@@ -3646,6 +3646,108 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpComingSoon => '即将推出（当前版本未实现）';
 
   @override
+  String get shortcutNavigateToDestination => '切到第 1…8 个页面';
+
+  @override
+  String get shortcutShowShortcutPanel => '快捷键面板';
+
+  @override
+  String get shortcutOpenSettings => '设置';
+
+  @override
+  String get shortcutFocusSearch => '搜索文件';
+
+  @override
+  String get shortcutRefresh => '刷新';
+
+  @override
+  String get shortcutToggleLeftPanel => '显示 / 隐藏 目录栏';
+
+  @override
+  String get shortcutToggleStaging => '显示 / 隐藏 暂存栏';
+
+  @override
+  String get shortcutToggleConfigPanel => '显示 / 隐藏 参数栏';
+
+  @override
+  String get shortcutExitSearch => '退出搜索';
+
+  @override
+  String get shortcutSelectWorkbenchTool => '切换工具';
+
+  @override
+  String get shortcutPreview => '打开预览';
+
+  @override
+  String get shortcutRename => '重命名';
+
+  @override
+  String get shortcutDelete => '删除';
+
+  @override
+  String get shortcutRenameFolder => '重命名文件夹';
+
+  @override
+  String get shortcutDeleteFolder => '删除文件夹';
+
+  @override
+  String get shortcutSelectAll => '全选';
+
+  @override
+  String get shortcutClearSelection => '清空选区';
+
+  @override
+  String get shortcutCopyFileName => '复制文件名';
+
+  @override
+  String get shortcutRevealInFileManager => '在文件夹中显示';
+
+  @override
+  String get shortcutOpenWithSystem => '用默认应用打开';
+
+  @override
+  String get shortcutNewSubfolder => '新建子文件夹';
+
+  @override
+  String get shortcutsTitle => '键盘快捷键';
+
+  @override
+  String get shortcutsGroupGlobal => '全局';
+
+  @override
+  String get shortcutsGroupScreen => '当前页面';
+
+  @override
+  String get shortcutsGroupFiles => '文件操作';
+
+  @override
+  String get shortcutsPaneTree => '目录树';
+
+  @override
+  String get shortcutsPaneGrid => '文件网格';
+
+  @override
+  String get shortcutsPaneGallery => '画廊';
+
+  @override
+  String get shortcutsPaneStaging => '暂存栏';
+
+  @override
+  String shortcutsActiveRegion(String region) {
+    return '活动区：$region';
+  }
+
+  @override
+  String get shortcutsInactiveRegion => '当前不活动';
+
+  @override
+  String get shortcutsActiveRegionNote =>
+      '这一组只作用于活动区——界面上带强调色顶边的那一块。点目录树或网格即可换活动区。';
+
+  @override
+  String get shortcutsClose => '关闭';
+
+  @override
   String get tasks => '任务';
 
   @override
@@ -9349,6 +9451,108 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get mcpComingSoon => '即將推出（目前版本未實作）';
+
+  @override
+  String get shortcutNavigateToDestination => '切到第 1…8 個頁面';
+
+  @override
+  String get shortcutShowShortcutPanel => '快捷鍵面板';
+
+  @override
+  String get shortcutOpenSettings => '設定';
+
+  @override
+  String get shortcutFocusSearch => '搜尋檔案';
+
+  @override
+  String get shortcutRefresh => '重新整理';
+
+  @override
+  String get shortcutToggleLeftPanel => '顯示 / 隱藏 目錄欄';
+
+  @override
+  String get shortcutToggleStaging => '顯示 / 隱藏 暫存欄';
+
+  @override
+  String get shortcutToggleConfigPanel => '顯示 / 隱藏 參數欄';
+
+  @override
+  String get shortcutExitSearch => '離開搜尋';
+
+  @override
+  String get shortcutSelectWorkbenchTool => '切換工具';
+
+  @override
+  String get shortcutPreview => '開啟預覽';
+
+  @override
+  String get shortcutRename => '重新命名';
+
+  @override
+  String get shortcutDelete => '刪除';
+
+  @override
+  String get shortcutRenameFolder => '重新命名資料夾';
+
+  @override
+  String get shortcutDeleteFolder => '刪除資料夾';
+
+  @override
+  String get shortcutSelectAll => '全選';
+
+  @override
+  String get shortcutClearSelection => '清空選取';
+
+  @override
+  String get shortcutCopyFileName => '複製檔名';
+
+  @override
+  String get shortcutRevealInFileManager => '在資料夾中顯示';
+
+  @override
+  String get shortcutOpenWithSystem => '用預設應用程式開啟';
+
+  @override
+  String get shortcutNewSubfolder => '新增子資料夾';
+
+  @override
+  String get shortcutsTitle => '鍵盤快捷鍵';
+
+  @override
+  String get shortcutsGroupGlobal => '全域';
+
+  @override
+  String get shortcutsGroupScreen => '目前頁面';
+
+  @override
+  String get shortcutsGroupFiles => '檔案操作';
+
+  @override
+  String get shortcutsPaneTree => '目錄樹';
+
+  @override
+  String get shortcutsPaneGrid => '檔案網格';
+
+  @override
+  String get shortcutsPaneGallery => '畫廊';
+
+  @override
+  String get shortcutsPaneStaging => '暫存欄';
+
+  @override
+  String shortcutsActiveRegion(String region) {
+    return '活動區：$region';
+  }
+
+  @override
+  String get shortcutsInactiveRegion => '目前不活動';
+
+  @override
+  String get shortcutsActiveRegionNote =>
+      '這一組只作用於活動區——介面上帶強調色頂邊的那一塊。點目錄樹或網格即可換活動區。';
+
+  @override
+  String get shortcutsClose => '關閉';
 
   @override
   String get tasks => '任務';

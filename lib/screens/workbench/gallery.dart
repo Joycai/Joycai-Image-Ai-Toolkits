@@ -330,6 +330,7 @@ class _GalleryState extends State<Gallery> {
 
     return FocusPane(
       node: _pane,
+      pane: ShortcutPane.grid,
       autofocus: true,
       onKeyEvent: _handleKeys,
       // The gallery fills the centre column under a floating toolbar, so its

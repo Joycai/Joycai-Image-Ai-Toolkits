@@ -1,0 +1,42 @@
+{
+  "shortcutNavigateToDestination": "1〜8 番目のページへ",
+  "shortcutShowShortcutPanel": "キーボードショートカット",
+  "shortcutOpenSettings": "設定",
+  "shortcutFocusSearch": "ファイルを検索",
+  "shortcutRefresh": "再読み込み",
+  "shortcutToggleLeftPanel": "フォルダ欄の表示切り替え",
+  "shortcutToggleStaging": "ステージング欄の表示切り替え",
+  "shortcutToggleConfigPanel": "パラメータ欄の表示切り替え",
+  "shortcutExitSearch": "検索を終了",
+  "shortcutSelectWorkbenchTool": "ツールを切り替え",
+  "shortcutPreview": "プレビューを開く",
+  "shortcutRename": "名前を変更",
+  "shortcutDelete": "削除",
+  "shortcutRenameFolder": "フォルダ名を変更",
+  "shortcutDeleteFolder": "フォルダを削除",
+  "shortcutSelectAll": "すべて選択",
+  "shortcutClearSelection": "選択を解除",
+  "shortcutCopyFileName": "ファイル名をコピー",
+  "shortcutRevealInFileManager": "フォルダで表示",
+  "shortcutOpenWithSystem": "既定のアプリで開く",
+  "shortcutNewSubfolder": "サブフォルダを作成",
+  "shortcutsTitle": "キーボードショートカット",
+  "shortcutsGroupGlobal": "全体",
+  "shortcutsGroupScreen": "このページ",
+  "shortcutsGroupFiles": "ファイル操作",
+  "shortcutsPaneTree": "フォルダツリー",
+  "shortcutsPaneGrid": "ファイルグリッド",
+  "shortcutsPaneGallery": "ギャラリー",
+  "shortcutsPaneStaging": "ステージング",
+  "shortcutsActiveRegion": "アクティブ領域：{region}",
+  "@shortcutsActiveRegion": {
+    "placeholders": {
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsInactiveRegion": "現在は非アクティブ",
+  "shortcutsActiveRegionNote": "この一群はアクティブ領域（アクセント色の上辺が付いている部分）にのみ作用します。フォルダツリーかグリッドをクリックすると切り替わります。",
+  "shortcutsClose": "閉じる"
+}

@@ -1,0 +1,42 @@
+{
+  "shortcutNavigateToDestination": "切到第 1…8 个页面",
+  "shortcutShowShortcutPanel": "快捷键面板",
+  "shortcutOpenSettings": "设置",
+  "shortcutFocusSearch": "搜索文件",
+  "shortcutRefresh": "刷新",
+  "shortcutToggleLeftPanel": "显示 / 隐藏 目录栏",
+  "shortcutToggleStaging": "显示 / 隐藏 暂存栏",
+  "shortcutToggleConfigPanel": "显示 / 隐藏 参数栏",
+  "shortcutExitSearch": "退出搜索",
+  "shortcutSelectWorkbenchTool": "切换工具",
+  "shortcutPreview": "打开预览",
+  "shortcutRename": "重命名",
+  "shortcutDelete": "删除",
+  "shortcutRenameFolder": "重命名文件夹",
+  "shortcutDeleteFolder": "删除文件夹",
+  "shortcutSelectAll": "全选",
+  "shortcutClearSelection": "清空选区",
+  "shortcutCopyFileName": "复制文件名",
+  "shortcutRevealInFileManager": "在文件夹中显示",
+  "shortcutOpenWithSystem": "用默认应用打开",
+  "shortcutNewSubfolder": "新建子文件夹",
+  "shortcutsTitle": "键盘快捷键",
+  "shortcutsGroupGlobal": "全局",
+  "shortcutsGroupScreen": "当前页面",
+  "shortcutsGroupFiles": "文件操作",
+  "shortcutsPaneTree": "目录树",
+  "shortcutsPaneGrid": "文件网格",
+  "shortcutsPaneGallery": "画廊",
+  "shortcutsPaneStaging": "暂存栏",
+  "shortcutsActiveRegion": "活动区：{region}",
+  "@shortcutsActiveRegion": {
+    "placeholders": {
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsInactiveRegion": "当前不活动",
+  "shortcutsActiveRegionNote": "这一组只作用于活动区——界面上带强调色顶边的那一块。点目录树或网格即可换活动区。",
+  "shortcutsClose": "关闭"
+}

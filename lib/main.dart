@@ -33,6 +33,7 @@ import 'services/media/video_thumbnail_service.dart';
 import 'services/system/window_chrome_service.dart';
 import 'state/app_state.dart';
 import 'widgets/shell/app_window_frame.dart';
+import 'widgets/shell/shortcut_panel.dart';
 import 'widgets/shell/app_destinations.dart';
 import 'widgets/shell/app_top_bar.dart';
 import 'widgets/shell/phone_dock.dart';
@@ -272,16 +273,42 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (event is! KeyDownEvent || !mounted) return false;
     if (!AppShortcuts.registersShortcuts) return false;
 
-    final index = AppShortcuts.navigationIndexFor(event);
-    if (index < 0) return false;
+    final appState = Provider.of<AppState>(context, listen: false);
+
+    // The panel is the one app-level key that may fire while it is itself
+    // frontmost — that is how it closes again.
+    if (AppShortcuts.byId(AppShortcutIds.showShortcutPanel).matches(event)) {
+      if (isShortcutPanelOpen || ModalRoute.of(context)?.isCurrent == true) {
+        toggleShortcutPanel(context, screen: _shortcutScreen(appState));
+        return true;
+      }
+      return false;
+    }
 
     // Only while this screen is frontmost — never under a dialog or the
     // setup wizard.
     if (ModalRoute.of(context)?.isCurrent != true) return false;
 
-    Provider.of<AppState>(context, listen: false).navigateToScreen(index);
+    if (AppShortcuts.byId(AppShortcutIds.openSettings).matches(event)) {
+      appState.navigateToScreen(AppDestination.settings.index);
+      return true;
+    }
+
+    final index = AppShortcuts.navigationIndexFor(event);
+    if (index < 0) return false;
+
+    appState.navigateToScreen(index);
     return true;
   }
+
+  /// Which screen's keys the panel should list, or null on a screen that
+  /// claims none of its own.
+  ShortcutScreen? _shortcutScreen(AppState appState) =>
+      switch (AppDestination.values[appState.activeScreenIndex]) {
+        AppDestination.workbench => ShortcutScreen.workbench,
+        AppDestination.fileBrowser => ShortcutScreen.fileBrowser,
+        _ => null,
+      };
 
   @override
   void didChangeDependencies() {

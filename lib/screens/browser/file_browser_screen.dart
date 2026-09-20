@@ -474,6 +474,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                 // screen while it is open, so there is nothing to tell apart.
                 child: FocusPane(
                   node: _treePane,
+                  pane: ShortcutPane.tree,
                   showActiveEdge: false,
                   child: const UnifiedSidebar(useFileBrowserState: true),
                 ),
@@ -484,6 +485,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                 width: kStagingPanelWidth,
                 child: FocusPane(
                   node: _stagingPane,
+                  pane: ShortcutPane.staging,
                   showActiveEdge: false,
                   child: BrowserStagingPanel(
                     destination: staging.destination,
@@ -510,6 +512,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                 shape: PanelShape.column,
                 child: FocusPane(
                   node: _treePane,
+                  pane: ShortcutPane.tree,
                   child: const UnifiedSidebar(useFileBrowserState: true),
                 ),
               ),
@@ -571,6 +574,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                           Positioned.fill(
                             child: FocusPane(
                               node: _gridPane,
+                              pane: ShortcutPane.grid,
                               autofocus: true,
                               onKeyEvent: _handleGridKeys,
                               child: _FileArea(
@@ -610,6 +614,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
             if (showStagingColumn)
               FocusPane(
                 node: _stagingPane,
+                pane: ShortcutPane.staging,
                 child: BrowserStagingPanel(
                   destination: staging.destination,
                   onPaste: (mode) => runStagingPaste(context, mode: mode),

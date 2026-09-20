@@ -3691,6 +3691,108 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mcpComingSoon => '近日公開（このバージョンでは未実装）';
 
   @override
+  String get shortcutNavigateToDestination => '1〜8 番目のページへ';
+
+  @override
+  String get shortcutShowShortcutPanel => 'キーボードショートカット';
+
+  @override
+  String get shortcutOpenSettings => '設定';
+
+  @override
+  String get shortcutFocusSearch => 'ファイルを検索';
+
+  @override
+  String get shortcutRefresh => '再読み込み';
+
+  @override
+  String get shortcutToggleLeftPanel => 'フォルダ欄の表示切り替え';
+
+  @override
+  String get shortcutToggleStaging => 'ステージング欄の表示切り替え';
+
+  @override
+  String get shortcutToggleConfigPanel => 'パラメータ欄の表示切り替え';
+
+  @override
+  String get shortcutExitSearch => '検索を終了';
+
+  @override
+  String get shortcutSelectWorkbenchTool => 'ツールを切り替え';
+
+  @override
+  String get shortcutPreview => 'プレビューを開く';
+
+  @override
+  String get shortcutRename => '名前を変更';
+
+  @override
+  String get shortcutDelete => '削除';
+
+  @override
+  String get shortcutRenameFolder => 'フォルダ名を変更';
+
+  @override
+  String get shortcutDeleteFolder => 'フォルダを削除';
+
+  @override
+  String get shortcutSelectAll => 'すべて選択';
+
+  @override
+  String get shortcutClearSelection => '選択を解除';
+
+  @override
+  String get shortcutCopyFileName => 'ファイル名をコピー';
+
+  @override
+  String get shortcutRevealInFileManager => 'フォルダで表示';
+
+  @override
+  String get shortcutOpenWithSystem => '既定のアプリで開く';
+
+  @override
+  String get shortcutNewSubfolder => 'サブフォルダを作成';
+
+  @override
+  String get shortcutsTitle => 'キーボードショートカット';
+
+  @override
+  String get shortcutsGroupGlobal => '全体';
+
+  @override
+  String get shortcutsGroupScreen => 'このページ';
+
+  @override
+  String get shortcutsGroupFiles => 'ファイル操作';
+
+  @override
+  String get shortcutsPaneTree => 'フォルダツリー';
+
+  @override
+  String get shortcutsPaneGrid => 'ファイルグリッド';
+
+  @override
+  String get shortcutsPaneGallery => 'ギャラリー';
+
+  @override
+  String get shortcutsPaneStaging => 'ステージング';
+
+  @override
+  String shortcutsActiveRegion(String region) {
+    return 'アクティブ領域：$region';
+  }
+
+  @override
+  String get shortcutsInactiveRegion => '現在は非アクティブ';
+
+  @override
+  String get shortcutsActiveRegionNote =>
+      'この一群はアクティブ領域（アクセント色の上辺が付いている部分）にのみ作用します。フォルダツリーかグリッドをクリックすると切り替わります。';
+
+  @override
+  String get shortcutsClose => '閉じる';
+
+  @override
   String get tasks => 'タスク';
 
   @override

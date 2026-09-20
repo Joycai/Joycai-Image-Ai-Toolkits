@@ -12,6 +12,7 @@ import 'dart:io';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
 import 'package:joycai_image_ai_toolkits/screens/browser/widgets/file_card.dart';
@@ -30,6 +31,42 @@ void main() {
   setUpScreenSuite((FixtureEnv e) => env = e);
 
   shootMatrix(() => env, const <AppScreen>[AppScreen.fileBrowser, AppScreen.downloader]);
+
+  // The `⌘/` panel (`00f` 帧 1), over the browser it is describing. Both
+  // tones and both widths: it is a float over a scrim, so the thing to look
+  // at is whether the rows stay legible through the glass, and whether the
+  // two columns still fit once the labels are long.
+  //
+  // `⌥` comes out as a tofu box in these PNGs. That is the harness, not the
+  // app: the fonts loaded here are Noto Sans SC, which carries `⌘` and `⇧`
+  // but not `⌥`; the system font the app actually renders with has all
+  // three. Every other glyph in a badge is a word for exactly this reason
+  // (see `AppKeyLabel`).
+  for (final Brightness brightness in Brightness.values) {
+    for (final ShotSize size in <ShotSize>[kShotSizes.last, kShotSizes[1]]) {
+      testWidgets(
+          'fileBrowser · shortcutPanel @ ${size.label} ${brightness.name}',
+          (WidgetTester tester) async {
+        await shoot(
+          tester,
+          env: env,
+          screen: AppScreen.fileBrowser,
+          size: size,
+          brightness: brightness,
+          suffix: 'shortcutPanel',
+          after: (WidgetTester tester) async {
+            final LogicalKeyboardKey primary = Platform.isMacOS
+                ? LogicalKeyboardKey.metaLeft
+                : LogicalKeyboardKey.controlLeft;
+            await tester.sendKeyDownEvent(primary);
+            await tester.sendKeyEvent(LogicalKeyboardKey.slash);
+            await tester.sendKeyUpEvent(primary);
+            await settle(tester, 12);
+          },
+        );
+      });
+    }
+  }
 
   // The staging area only exists once something is in it, and the matrix
   // photographs the browser with an empty one — which is the one state of this

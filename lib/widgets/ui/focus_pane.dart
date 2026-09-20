@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_shortcuts.dart';
 import '../../core/design_tokens.dart';
 
 /// A focus region — the unit that answers selection keys (`00f` 帧 3).
@@ -23,11 +24,12 @@ import '../../core/design_tokens.dart';
 /// while it is not (see `FocusPane.isActive`). The question a user actually
 /// has is "does the keyboard still own the things I picked", so the answer is
 /// painted on the things they picked.
-class FocusPane extends StatelessWidget {
+class FocusPane extends StatefulWidget {
   const FocusPane({
     super.key,
     required this.node,
     required this.child,
+    this.pane,
     this.onKeyEvent,
     this.showActiveEdge = true,
     this.autofocus = false,
@@ -35,6 +37,11 @@ class FocusPane extends StatelessWidget {
 
   /// Owned by the caller — a pane outlives any one build.
   final FocusNode node;
+
+  /// Which region this is, for anything that has to *say* where the keyboard
+  /// is — the `⌘/` panel names it and dims the others. Published through
+  /// [active] rather than guessed from a focus node's debug label.
+  final ShortcutPane? pane;
 
   /// The pane's keys. Events reach this only while the pane (or something
   /// inside it) holds focus, which is what makes "who answers `Delete`" a
@@ -62,6 +69,12 @@ class FocusPane extends StatelessWidget {
   static FocusNode newNode(String debugLabel) =>
       FocusNode(debugLabel: debugLabel, skipTraversal: true);
 
+  /// The region that owns the keyboard right now, or null when none does —
+  /// a legal state (just after a screen opens, or after a click on the
+  /// chrome), in which no pane-level key is claimed at all.
+  static final ValueNotifier<ShortcutPane?> active =
+      ValueNotifier<ShortcutPane?>(null);
+
   /// Whether the enclosing pane owns the keyboard, from inside it.
   ///
   /// Ask only while actually drawing a selection. The dependency this
@@ -78,13 +91,58 @@ class FocusPane extends StatelessWidget {
       true;
 
   @override
+  State<FocusPane> createState() => _FocusPaneState();
+}
+
+class _FocusPaneState extends State<FocusPane> {
+  @override
+  void initState() {
+    super.initState();
+    widget.node.addListener(_publish);
+  }
+
+  @override
+  void didUpdateWidget(FocusPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.node != widget.node) {
+      oldWidget.node.removeListener(_publish);
+      widget.node.addListener(_publish);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.node.removeListener(_publish);
+    // Not owned here, so it may already be gone; only the claim is dropped.
+    if (FocusPane.active.value == widget.pane) {
+      FocusPane.active.value = null;
+    }
+    super.dispose();
+  }
+
+  /// Keeps [FocusPane.active] in step. The clear is conditional so the order
+  /// two panes report a handover in cannot matter: whoever gained focus has
+  /// already written its own name, and the one losing it leaves that alone.
+  void _publish() {
+    final pane = widget.pane;
+    if (pane == null) return;
+    if (widget.node.hasFocus) {
+      FocusPane.active.value = pane;
+    } else if (FocusPane.active.value == pane) {
+      FocusPane.active.value = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final node = widget.node;
+    final showActiveEdge = widget.showActiveEdge;
 
     return Focus(
       focusNode: node,
-      onKeyEvent: onKeyEvent,
-      autofocus: autofocus,
+      onKeyEvent: widget.onKeyEvent,
+      autofocus: widget.autofocus,
       child: Listener(
         behavior: HitTestBehavior.translucent,
         // Only when nothing inside already holds it: a click that lands in
@@ -118,14 +176,14 @@ class FocusPane extends StatelessWidget {
                     child: AnimatedContainer(
                       duration: AppMotion.hover,
                       curve: AppMotion.quick,
-                      height: activeEdgeThickness,
+                      height: FocusPane.activeEdgeThickness,
                       color: node.hasFocus ? scheme.primary : Colors.transparent,
                     ),
                   ),
                 ),
             ],
           ),
-          child: child,
+          child: widget.child,
         ),
       ),
     );
