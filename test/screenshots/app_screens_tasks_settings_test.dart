@@ -59,6 +59,10 @@ void main() {
     (kShotSizes.last, Brightness.light),
     (kShotSizes.last, Brightness.dark),
     (kShotSizes[1], Brightness.light),
+    // The narrowest form too: a long action name and a three-chord badge
+    // have to share one row there, and the phone page is the only place
+    // where they genuinely might not.
+    (kShotSizes.first, Brightness.light),
   ]) {
     testWidgets('settings · keyboard @ ${size.label} ${brightness.name}',
         (WidgetTester tester) async {

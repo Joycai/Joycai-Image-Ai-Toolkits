@@ -400,6 +400,37 @@ void main() {
         reason: 'the same chord puts it back');
   });
 
+  testWidgets('the screen keeps its keys after the focused region goes away',
+      (WidgetTester tester) async {
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: const Size(1440, 900),
+      label: 'browser-pane-unmount',
+    );
+    addTearDown(() => AppState().setSidebarExpanded(true));
+
+    // Open the staging column and give it the keyboard.
+    await pressChord(tester, LogicalKeyboardKey.backslash, shift: true);
+    expect(find.byType(BrowserStagingPanel), findsOneWidget);
+    await tester.tap(find.byType(BrowserStagingPanel));
+    await settle(tester);
+
+    // Close it again — the region holding the keyboard is now gone.
+    await pressChord(tester, LogicalKeyboardKey.backslash, shift: true);
+    expect(find.byType(BrowserStagingPanel), findsNothing);
+
+    // A key event only travels up from whatever holds the keyboard, so if the
+    // screen's handler is not a focus scope there is nothing under it any
+    // more and every screen-level key is dead until the next click.
+    await pressChord(tester, LogicalKeyboardKey.backslash, real: true);
+    expect(AppState().isSidebarExpanded, isFalse,
+        reason: '⌘\\ must still reach the screen with no region focused');
+    await pressChord(tester, LogicalKeyboardKey.backslash, real: true);
+    expect(AppState().isSidebarExpanded, isTrue);
+  });
+
   testWidgets('Shift+Cmd+C copies every selected name, one per line',
       (WidgetTester tester) async {
     String? copied;
