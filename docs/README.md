@@ -32,6 +32,10 @@ Required reading before touching the subsystem each one covers.
   where the tokens live, why the greys never follow the accent, the three
   forms the accent may take, the glass grades and their budget, and the
   deliberate divergences from the design spec.
+* **[Keyboard shortcuts](architecture/keyboard-shortcuts.md)** — the three
+  tiers a key can be claimed at, why anything acting on a selection belongs to
+  a focus region rather than to a screen, the text-field gate that has no
+  exceptions, and the handful of ways all of this fails silently.
 
 ## API reference
 
