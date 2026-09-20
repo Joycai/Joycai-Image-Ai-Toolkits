@@ -255,6 +255,39 @@ void main() {
     expect(gap, AppMarkdownMetrics.prose.blockGap);
   });
 
+  testWidgets('the ambient text scale reaches every kind of text, and the marks beside it', (tester) async {
+    Future<void> at(double scale) => tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: MediaQuery(
+              data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+              child: const Scaffold(
+                body: SingleChildScrollView(
+                  child: SizedBox(width: 600, child: AppMarkdown(data: '## heading\n\nparagraph\n\n- item')),
+                ),
+              ),
+            ),
+          ),
+        );
+
+    double h(String text) => tester.getSize(find.text(text, findRichText: true)).height;
+
+    await at(1);
+    final heading = h('heading'), paragraph = h('paragraph'), item = h('item'), bullet = h('•');
+    final bar = tester.getSize(find.byKey(h2Bar)).height;
+
+    await at(2);
+    // The library's RichText does not read MediaQuery by itself: paragraph and
+    // heading are the ones that would stay behind.
+    expect(h('heading'), closeTo(heading * 2, 1));
+    expect(h('paragraph'), closeTo(paragraph * 2, 1));
+    expect(h('item'), closeTo(item * 2, 1));
+    expect(h('•'), closeTo(bullet * 2, 1));
+    expect(tester.getSize(find.byKey(h2Bar)).height, greaterThan(bar * 1.8));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('new data re-renders; empty data renders nothing and does not throw', (tester) async {
     await pump(tester, 'one');
     expect(find.text('one', findRichText: true), findsOneWidget);

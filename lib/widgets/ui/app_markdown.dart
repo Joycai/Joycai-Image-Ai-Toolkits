@@ -13,6 +13,9 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import 'dashed_border.dart';
 
+/// A style's size, for the arithmetic done on it here.
+double _sizeOf(TextStyle style) => style.fontSize ?? 14;
+
 /// How much room rendered markdown is given. See [AppMarkdownMetrics].
 enum AppMarkdownDensity {
   /// Editor previews and the assistant's replies.
@@ -72,6 +75,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
   late ColorScheme _scheme;
   late TextStyle _body;
   late MarkdownStyleSheet _fallback;
+  late TextScaler _scaler;
 
   // One sheet per text style in play — body, each heading, quote, table head —
   // rather than one per paragraph.
@@ -97,7 +101,11 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     _scheme = theme.colorScheme;
     final base = widget.style ?? theme.textTheme.bodyMedium ?? const TextStyle(fontSize: 14);
     _body = base.copyWith(color: base.color ?? _scheme.onSurface);
-    _fallback = MarkdownStyleSheet.fromTheme(theme);
+    // The library draws with [RichText], which does not read the ambient text
+    // scale by itself; the sheet has to carry it. The marks measured against a
+    // line of text — H2's bar, the task box — are scaled with it.
+    _scaler = MediaQuery.textScalerOf(context);
+    _fallback = MarkdownStyleSheet.fromTheme(theme).copyWith(textScaler: _scaler);
     _sheets.clear();
 
     final document = md.Document(extensionSet: md.ExtensionSet.gitHubFlavored, encodeHtml: false);
@@ -145,7 +153,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
   }
 
   Widget _heading(md.Element el, int level, TextStyle body) {
-    final size = (body.fontSize ?? 14) + _m.headingDelta[level];
+    final size = _sizeOf(body) + _m.headingDelta[level];
     final style = body.copyWith(
       fontSize: size,
       fontWeight: FontWeight.w600,
@@ -164,7 +172,8 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     } else if (_m.headingMarks && level == 1) {
       // The same sign as the accent-coloured `##` in the source pane: H2 is
       // the skeleton of a prompt, and the one thing the eye scans for.
-      final bar = size - 2;
+      final drawn = _scaler.scale(size);
+      final bar = drawn - 2;
       child = Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -173,7 +182,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
             width: AppMarkdownMetrics.headingBarWidth,
             height: bar,
             margin: EdgeInsets.only(
-              top: (size * AppMarkdownMetrics.headingHeight - bar) / 2,
+              top: (drawn * AppMarkdownMetrics.headingHeight - bar) / 2,
               right: AppMarkdownMetrics.headingBarGap,
             ),
             decoration: BoxDecoration(color: _scheme.primary, borderRadius: BorderRadius.circular(2)),
@@ -214,7 +223,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     // One slot for the whole list, sized by its longest number.
     final digits = '${start + items.length - 1}'.length;
     final slot = ordered
-        ? math.max(AppMarkdownMetrics.numberSlot, (digits + 1) * (body.fontSize ?? 14) * 0.62 + 6)
+        ? math.max(AppMarkdownMetrics.numberSlot, (digits + 1) * _scaler.scale(_sizeOf(body)) * 0.62 + 6)
         : AppMarkdownMetrics.listIndent;
 
     final rows = <Widget>[];
@@ -268,7 +277,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     }
 
     final text = checked == true ? body.copyWith(color: _scheme.onSurfaceVariant) : body;
-    final lineHeight = (body.fontSize ?? 14) * (body.height ?? 1.4);
+    final lineHeight = _scaler.scale(_sizeOf(body)) * (body.height ?? 1.4);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -302,7 +311,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     if (columns == 0) return const SizedBox.shrink();
 
     final head = body.copyWith(
-      fontSize: (body.fontSize ?? 14) - 1,
+      fontSize: _sizeOf(body) - 1,
       fontWeight: FontWeight.w600,
       color: _scheme.onSurfaceVariant,
     );
@@ -361,7 +370,10 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
       selectable: false,
       styleSheet: sheet,
       imageDirectory: null,
-      imageBuilder: (uri, title, alt) => _ImagePlaceholder(label: alt ?? title ?? uri.pathSegments.lastOrNull ?? '', style: style),
+      imageBuilder: (uri, title, alt) => _ImagePlaceholder(
+        label: alt ?? title ?? uri.pathSegments.lastOrNull ?? '',
+        style: style,
+      ),
       checkboxBuilder: null,
       bulletBuilder: null,
       builders: {'a': _InertLinkBuilder()},
@@ -373,7 +385,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
   }
 
   MarkdownStyleSheet _sheetFor(TextStyle style, WrapAlignment align) {
-    final size = style.fontSize ?? 14;
+    final size = _sizeOf(style);
     return _fallback.merge(MarkdownStyleSheet(
 
       p: style,
@@ -464,7 +476,7 @@ class _ImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final size = (style.fontSize ?? 14) - 2;
+    final size = _sizeOf(style) - 2;
     return DashedBorder(
       color: scheme.outline,
       radius: AppRadius.sm,
@@ -559,13 +571,13 @@ class _CodeBlockState extends State<_CodeBlock> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
-    final size = (widget.style.fontSize ?? 14) - 2;
+    final size = _sizeOf(widget.style) - 2;
     final copies = widget.metrics.copiesCode && l10n != null;
     final showCopy = copies && (_hovered || _touch || _copied);
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
+      onEnter: copies ? (_) => setState(() => _hovered = true) : null,
+      onExit: copies ? (_) => setState(() => _hovered = false) : null,
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
@@ -587,44 +599,57 @@ class _CodeBlockState extends State<_CodeBlock> {
             Positioned(
               top: 6,
               right: 6,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (widget.language != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(
-                        widget.language!,
-                        style: widget.style.mono.copyWith(fontSize: 10.5, height: 1.3, color: scheme.onSurfaceVariant),
-                      ),
-                    ),
-                  if (showCopy)
-                    Tooltip(
-                      message: _copied ? l10n.editorCopied : l10n.copy,
-                      child: Material(
-                        color: _copied ? scheme.accentTint : scheme.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                          side: BorderSide(
-                            color: _copied ? scheme.accentRing : scheme.outlineVariant,
+              // On the block's own ground, so a first line long enough to
+              // reach this corner passes under the label instead of through it.
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.language != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        // Chrome, not content: a selection dragged across the
+                        // block copies the code without a stray "json" in it.
+                        child: SelectionContainer.disabled(
+                          child: Text(
+                            widget.language!,
+                            style:
+                                widget.style.mono.copyWith(fontSize: 10.5, height: 1.3, color: scheme.onSurfaceVariant),
                           ),
                         ),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: _copy,
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: Icon(
-                              _copied ? Icons.check : Icons.content_copy,
-                              size: 13,
-                              color: _copied ? scheme.primary : scheme.onSurfaceVariant,
+                      ),
+                    if (showCopy)
+                      Tooltip(
+                        message: _copied ? l10n.editorCopied : l10n.copy,
+                        child: Material(
+                          color: _copied ? scheme.accentTint : scheme.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                            side: BorderSide(
+                              color: _copied ? scheme.accentRing : scheme.outlineVariant,
+                            ),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: _copy,
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: Icon(
+                                _copied ? Icons.check : Icons.content_copy,
+                                size: 13,
+                                color: _copied ? scheme.primary : scheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
