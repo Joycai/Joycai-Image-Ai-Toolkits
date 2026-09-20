@@ -5697,9 +5697,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get optResultCopied => '已复制';
-
-  @override
   String get optImagesNotOfferedTitle => '这个模型看不到图片';
 
   @override
@@ -11403,9 +11400,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String optResultMeta(int count) {
     return '$count 字 · Markdown';
   }
-
-  @override
-  String get optResultCopied => '已複製';
 
   @override
   String get optImagesNotOfferedTitle => '這個模型看不到圖片';

@@ -698,8 +698,11 @@ void main() {
       final db = await factory.openDatabase(inMemoryDatabasePath);
       addTearDown(db.close);
       await DatabaseMigration.onCreate(db);
+      expect(await columnsOf(db, 'system_prompts'), contains('output_kind'),
+          reason: 'a fresh database has the column too');
       await db.insert('system_prompts', {'title': 't', 'content': 'c', 'type': 'refiner'});
       final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['t'])).single;
+      expect(row['output_kind'], 'prompt');
       expect(SystemPrompt.fromMap(row).outputKind, PresetOutputKind.prompt);
     });
   });

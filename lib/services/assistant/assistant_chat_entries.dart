@@ -168,6 +168,8 @@ class OptimizerChatEntry {
   final int? version;
 
   /// For [OptimizerEntryKind.prompt]: the model's short note about this revision.
+  /// For the images-not-offered notice: how many images were held back, as
+  /// digits — the token in [text] says which reading applies.
   final String? note;
 
   /// For [OptimizerEntryKind.tool]: which tool ran ('list_reference_images' /
@@ -282,6 +284,7 @@ class OptimizerChatEntry {
         kind: kind,
         text: text,
         truncated: truncated,
+        deliverable: deliverable,
         modelDbId: modelDbId ?? this.modelDbId,
         version: version,
         note: note,

@@ -282,6 +282,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       tags: tags,
       defaultType: 'refiner',
       initialContent: content,
+      // The text was written for this kind; filed as the other it would be
+      // framed wrongly the moment it was loaded back.
+      initialOutputKind: context.read<WorkbenchUIState>().effectivePresetOutputKind,
     );
     if (!saved || !mounted) return;
     final known = {for (final p in _optSysPrompts) p.id};

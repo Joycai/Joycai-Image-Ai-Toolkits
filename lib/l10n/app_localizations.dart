@@ -10187,12 +10187,6 @@ abstract class AppLocalizations {
   /// **'{count} chars · Markdown'**
   String optResultMeta(int count);
 
-  /// No description provided for @optResultCopied.
-  ///
-  /// In en, this message translates to:
-  /// **'Copied'**
-  String get optResultCopied;
-
   /// No description provided for @optImagesNotOfferedTitle.
   ///
   /// In en, this message translates to:

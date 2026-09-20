@@ -440,8 +440,10 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
     // and ring on top of `labelSmall` — so a row of channels, which carries a
     // tag and no second line, is sized by the chip rather than by its name.
     // Left out, the chip was silently squeezed instead of the row growing.
-    final badge =
-        _hasBadge ? lineHeight(textTheme.labelSmall) + ModelTagChip.chromeHeight : 0.0;
+    final badge = _hasBadge
+        ? lineHeight(textTheme.labelSmall) +
+            math.max(ModelTagChip.chromeHeight, AppNeutralMarker.chromeHeight)
+        : 0.0;
 
     return (math.max(text, badge) + _rowChrome).ceilToDouble();
   }
@@ -659,7 +661,14 @@ class _PickerRow<T> extends StatelessWidget {
                   ),
                   if (option.marker != null && option.marker!.isNotEmpty) ...[
                     const SizedBox(width: 8),
-                    AppNeutralMarker(icon: option.markerIcon ?? Icons.label_outline, label: option.marker!),
+                    ConstrainedBox(
+                      // Bounded like the badge: the name keeps the row.
+                      constraints: const BoxConstraints(maxWidth: 96),
+                      child: AppNeutralMarker(
+                        icon: option.markerIcon ?? Icons.label_outline,
+                        label: option.marker!,
+                      ),
+                    ),
                   ],
                   if (selected) ...[
                     const SizedBox(width: 8),

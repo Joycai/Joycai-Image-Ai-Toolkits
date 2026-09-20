@@ -5981,9 +5981,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get optResultCopied => 'Copied';
-
-  @override
   String get optImagesNotOfferedTitle => 'This model cannot see images';
 
   @override

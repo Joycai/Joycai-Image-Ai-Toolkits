@@ -91,6 +91,13 @@ class WorkbenchUIState extends ChangeNotifier {
   /// the same text under the other kind's framing is the surprise to avoid.
   PresetOutputKind optPresetOutputKind = PresetOutputKind.prompt;
 
+  /// [optPresetOutputKind] as it will actually be used: no text is the
+  /// built-in preset, which hands back a prompt whatever was loaded before
+  /// the text was cleared. What the panel shows and what a turn is queued
+  /// with both read this, so they cannot disagree.
+  PresetOutputKind get effectivePresetOutputKind =>
+      (optSelectedSysPrompt ?? '').trim().isEmpty ? PresetOutputKind.prompt : optPresetOutputKind;
+
   // Video Generation State
   List<AppImage> videoReferenceImages = [];
   AppImage? videoFirstFrame;
@@ -260,7 +267,7 @@ class WorkbenchUIState extends ChangeNotifier {
         'mode': session.mode.name,
         if (session.mode == AssistantMode.systemPrompt) ...{
           'systemPrompt': optSelectedSysPrompt,
-          'outputKind': optPresetOutputKind.name,
+          'outputKind': effectivePresetOutputKind.name,
         },
       };
 

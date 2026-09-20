@@ -5760,9 +5760,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get optResultCopied => 'コピーしました';
-
-  @override
   String get optImagesNotOfferedTitle => 'このモデルは画像を見られません';
 
   @override

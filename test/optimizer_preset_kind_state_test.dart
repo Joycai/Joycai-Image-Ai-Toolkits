@@ -40,6 +40,16 @@ void main() {
     expect(queued()['outputKind'], 'analysis');
   });
 
+  test('text cleared down to nothing is the built-in, and hands back a prompt', () {
+    wui.loadOptimizerPreset(preset(1, PresetOutputKind.analysis));
+    wui.setOptimizerSysPrompt('');
+    expect(wui.effectivePresetOutputKind, PresetOutputKind.prompt);
+    expect(queued()['outputKind'], 'prompt');
+    // Typing again is still an edit of the analysis preset.
+    wui.setOptimizerSysPrompt('TEXT again');
+    expect(queued()['outputKind'], 'analysis');
+  });
+
   test('a preset deleted from the library leaves text and kind as they were', () {
     wui.loadOptimizerPreset(preset(1, PresetOutputKind.analysis));
     wui.syncOptimizerPresetKind([preset(2, PresetOutputKind.prompt)]);

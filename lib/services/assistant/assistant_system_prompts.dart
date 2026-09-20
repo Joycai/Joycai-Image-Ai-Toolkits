@@ -77,10 +77,12 @@ String _buildSystemPrompt(
   bool forceViewAllImages,
   PresetOutputKind outputKind,
 ) {
-  final base = (template == null || template.trim().isEmpty)
-      ? PromptOptimizerAgent.builtinPresetInstructions
-      : template.trim();
-  if (outputKind == PresetOutputKind.analysis) {
+  final builtin = template == null || template.trim().isEmpty;
+  final base = builtin ? PromptOptimizerAgent.builtinPresetInstructions : template.trim();
+  // The built-in instructions are a prompt engineer's: whatever kind arrives
+  // with an empty text — left over from a preset since cleared — they run
+  // under the frame they were written for.
+  if (!builtin && outputKind == PresetOutputKind.analysis) {
     return _buildAnalysisSystemPrompt(base, referenceImageCount, forceViewAllImages);
   }
   // Per-model setting: smaller local models look at one image and submit

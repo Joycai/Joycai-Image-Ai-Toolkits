@@ -228,6 +228,9 @@ void main() {
               'title': 'My system prompt',
               'content': 'sys',
               'type': 'refiner',
+              // A hand-edited or damaged file: the column is NOT NULL, and
+              // this one row must not roll the whole restore back.
+              'output_kind': null,
               'tags': [
                 {'id': 41, 'name': 'Portrait', 'color': 100, 'is_system': 0},
               ],
@@ -258,6 +261,8 @@ void main() {
 
       final refs = await db.query('prompt_tag_refs');
       expect(refs.single['tag_id'], newTagId);
+
+      expect((await db.query('system_prompts')).single['output_kind'], 'prompt');
 
       final sysRefs = await db.query('system_prompt_tag_refs');
       expect(sysRefs.single['tag_id'], newTagId);

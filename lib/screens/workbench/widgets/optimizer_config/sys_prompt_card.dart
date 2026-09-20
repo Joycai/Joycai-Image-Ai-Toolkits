@@ -144,7 +144,7 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
         const SizedBox(width: AppSpace.s10),
         Icon(
           analysis ? Icons.subject : Icons.description_outlined,
-          size: 14,
+          size: AppSize.iconSm,
           color: colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: AppSpace.s4),

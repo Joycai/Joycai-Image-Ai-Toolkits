@@ -43,6 +43,7 @@ void main() {
     WidgetTester tester, {
     SystemPrompt? prompt,
     String defaultType = SystemPrompt.typeRefiner,
+    PresetOutputKind initialOutputKind = PresetOutputKind.prompt,
     Size size = const Size(1200, 900),
   }) async {
     tester.view.physicalSize = size;
@@ -66,6 +67,7 @@ void main() {
                   tags: const [],
                   defaultType: defaultType,
                   initialContent: 'BODY',
+                  initialOutputKind: initialOutputKind,
                 ),
                 child: const Text('open'),
               ),
@@ -136,6 +138,14 @@ void main() {
     final saved = rows.singleWhere((p) => p.title == 'Renamer');
     expect(saved.type, SystemPrompt.typeRename);
     expect(saved.outputKind, PresetOutputKind.prompt);
+  });
+
+  testWidgets('"save as" from an analysis preset files an analysis preset', (tester) async {
+    await openDialog(tester, initialOutputKind: PresetOutputKind.analysis);
+    expect(find.text(l10n.presetOutputAnalysisHelp), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'Saved as');
+    final rows = await saveAndRead(tester);
+    expect(rows.singleWhere((p) => p.title == 'Saved as').outputKind, PresetOutputKind.analysis);
   });
 
   testWidgets('editing opens on the kind the preset has', (tester) async {

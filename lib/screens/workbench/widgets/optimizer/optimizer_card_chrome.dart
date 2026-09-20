@@ -18,7 +18,6 @@ extension _CardChrome on _PromptOptimizerChatViewState {
     );
   }
 
-  /// An avatar with its content beside it, capped at the body width.
   /// `A3e 5e`: the one action an analysis result has. Copies the Markdown as
   /// written — what gets pasted elsewhere is the source, not its rendering.
   Widget _buildResultActions(
@@ -38,13 +37,15 @@ extension _CardChrome on _PromptOptimizerChatViewState {
           spacing: AppSpace.s4,
           children: [
             AppButton(
-              label: l10n.copy,
-              icon: Icons.content_copy,
+              // The prompt card's own words and glyph: two copy actions in
+              // one conversation should not look like two features.
+              label: l10n.optCopy,
+              icon: Icons.content_copy_outlined,
               variant: AppButtonVariant.text,
               size: AppButtonSize.compact,
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: text));
-                AppSnackBar.success(context, l10n.optResultCopied);
+                AppSnackBar.success(context, l10n.copiedAll);
               },
             ),
             Text(
@@ -114,6 +115,7 @@ extension _CardChrome on _PromptOptimizerChatViewState {
     );
   }
 
+  /// An avatar with its content beside it, capped at the body width.
   Widget _besideAvatar(Widget avatar, Widget content) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -1015,17 +1015,6 @@ class PromptOptimizerAgent {
     return steps;
   }
 
-  /// Chars in what a request actually carries: the system prompt (which is
-  /// rebuilt and re-sent every turn, knowledge-base file map and all), message
-  /// text, tool-call arguments, and a stand-in for attachments.
-  ///
-  /// Tool-call arguments are counted because they are not small: a staged
-  /// write_knowledge_file or submit_prompt puts a whole file body in the
-  /// assistant message, which a content-only tally misses entirely.
-  ///
-  /// This is also the number [ContextBudget.calibrate] divides into the
-  /// provider's reported token count, so it has to measure the same request the
-  /// provider billed — hence system prompt included, not history alone.
   /// Says in the conversation what the log alone used to say: the model
   /// answers without having seen the images. Under a preset that asks it to
   /// read them, that is the difference between an answer and an invention.
@@ -1049,15 +1038,33 @@ class PromptOptimizerAgent {
 
   /// Whether the tool results [messages] ends on belong to a batch that called
   /// submit_prompt — after which the model has nothing left it must say.
+  @visibleForTesting
+  static bool lastBatchSubmittedPromptForTest(List<LLMMessage> messages) =>
+      _lastBatchSubmittedPrompt(messages);
+
   static bool _lastBatchSubmittedPrompt(List<LLMMessage> messages) {
     for (final m in messages.reversed) {
       if (m.role == LLMRole.tool) continue;
+      // The image a view_image in the same batch attached: part of the
+      // batch's results, not a turn of the user's.
+      if (m.role == LLMRole.user && m.content.startsWith(viewResultMarker)) continue;
       return m.role == LLMRole.assistant &&
           m.toolCalls.any((c) => c.name == 'submit_prompt');
     }
     return false;
   }
 
+  /// Chars in what a request actually carries: the system prompt (which is
+  /// rebuilt and re-sent every turn, knowledge-base file map and all), message
+  /// text, tool-call arguments, and a stand-in for attachments.
+  ///
+  /// Tool-call arguments are counted because they are not small: a staged
+  /// write_knowledge_file or submit_prompt puts a whole file body in the
+  /// assistant message, which a content-only tally misses entirely.
+  ///
+  /// This is also the number [ContextBudget.calibrate] divides into the
+  /// provider's reported token count, so it has to measure the same request the
+  /// provider billed — hence system prompt included, not history alone.
   static int occupiedChars(String systemPrompt, List<LLMMessage> messages) {
     int total = systemPrompt.length;
     for (final m in messages) {

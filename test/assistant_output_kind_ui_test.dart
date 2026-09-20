@@ -183,7 +183,7 @@ void main() {
       expect(find.text(l10n.optResultMeta('## Overview\nA **short** jacket.'.length)),
           findsOneWidget);
 
-      await tester.tap(find.text(l10n.copy));
+      await tester.tap(find.text(l10n.optCopy));
       await tester.pump();
       expect(copied, '## Overview\nA **short** jacket.');
       // Let the snackbar run out before the test ends.
@@ -193,7 +193,7 @@ void main() {
 
     testWidgets('a remark has no copy row', (tester) async {
       await pumpChat(tester, session: sessionWith(deliverable: false));
-      expect(find.text(l10n.copy), findsNothing);
+      expect(find.text(l10n.optCopy), findsNothing);
     });
 
     testWidgets('fits a phone', (tester) async {
@@ -203,7 +203,7 @@ void main() {
         selectedKind: PresetOutputKind.analysis,
         size: const Size(390, 800),
       );
-      expect(find.text(l10n.copy), findsOneWidget);
+      expect(find.text(l10n.optCopy), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

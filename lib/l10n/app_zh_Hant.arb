@@ -3230,7 +3230,6 @@
       }
     }
   },
-  "optResultCopied": "已複製",
   "optImagesNotOfferedTitle": "這個模型看不到圖片",
   "optImagesNotOfferedBody": "{count} 張參考圖沒有交給它，回答只依據你寫的文字。在右側換一個能看圖的模型，或到模型設定裡確認它的圖片輸入能力。",
   "@optImagesNotOfferedBody": {

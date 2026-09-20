@@ -167,6 +167,7 @@ Future<bool> showSystemPromptEditDialog(
   required List<PromptTag> tags,
   required String defaultType,
   String? initialContent,
+  PresetOutputKind initialOutputKind = PresetOutputKind.prompt,
 }) async {
   final titleCtrl = TextEditingController(text: prompt?.title ?? '');
   final contentCtrl =
@@ -175,7 +176,7 @@ Future<bool> showSystemPromptEditDialog(
   String selectedType = prompt?.type ?? defaultType;
   // Kept while the type is switched away and back: choosing 「AI 重命名」 by
   // mistake should not cost the choice made here.
-  PresetOutputKind outputKind = prompt?.outputKind ?? PresetOutputKind.prompt;
+  PresetOutputKind outputKind = prompt?.outputKind ?? initialOutputKind;
 
   final Set<int> selectedTagIds = {};
   if (prompt != null) {
@@ -570,8 +571,6 @@ Future<List<int>?> showBulkCategorizeDialog(
   return targetTagIds.toList();
 }
 
-/// Selectable category chips shared by the prompt, template and bulk dialogs:
-/// 28px pills with the identity dot; chosen ones take the accent wash.
 /// `A3e 5a`: 「产出」 — the two kinds, and under them the one sentence that says
 /// what the chosen kind changes. The only place the feature is explained, so
 /// the explanation sits where the decision is made.
@@ -626,6 +625,8 @@ class _OutputKindField extends StatelessWidget {
   }
 }
 
+/// Selectable category chips shared by the prompt, template and bulk dialogs:
+/// 28px pills with the identity dot; chosen ones take the accent wash.
 class _TagChips extends StatelessWidget {
   final List<PromptTag> tags;
   final Set<int> selectedTagIds;

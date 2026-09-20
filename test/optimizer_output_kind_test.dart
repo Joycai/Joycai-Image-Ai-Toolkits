@@ -201,6 +201,63 @@ void main() {
     expect(await declared('submit_prompt', const {'prompt': 'p'}), [false, true]);
   });
 
+  test('cleared text is the built-in, framed as a prompt whatever kind arrives', () async {
+    late String system;
+    PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
+      system = messages.firstWhere((m) => m.role == LLMRole.system).content;
+      return LLMResponse(text: 'ok');
+    };
+    final session = PromptOptimizerSession()..addUserTurn('go');
+    await PromptOptimizerAgent.runTurn(
+      session: session,
+      modelIdentifier: 'm',
+      systemPrompt: '  ',
+      outputKind: PresetOutputKind.analysis,
+      referenceImages: const [],
+    );
+    expect(system, startsWith(PromptOptimizerAgent.builtinPresetInstructions));
+    expect(system, contains('ONLY way'));
+  });
+
+  test('a channel merge re-linking an entry keeps it the deliverable', () {
+    final entry = OptimizerChatEntry(
+        kind: OptimizerEntryKind.assistant, text: 'a', deliverable: true, modelDbId: 1);
+    expect(entry.copyWith(modelDbId: 2).deliverable, isTrue);
+  });
+
+  test('a prompt delivered beside a view_image still ends the answer', () async {
+    final session = PromptOptimizerSession()..addUserTurn('look, then a prompt');
+    var calls = 0;
+    PromptOptimizerAgent.debugRequestOverride = (messages, tools, options) async {
+      calls++;
+      if (calls == 1) {
+        return LLMResponse(text: '', toolCalls: [
+          LLMToolCall(id: 'c1', name: 'submit_prompt', arguments: const {'prompt': 'p'}),
+        ]);
+      }
+      return LLMResponse(text: 'There you go.');
+    };
+    await PromptOptimizerAgent.runTurn(
+      session: session,
+      modelIdentifier: 'm',
+      outputKind: PresetOutputKind.analysis,
+      referenceImages: const [],
+    );
+    // What a view_image in that batch leaves after the tool results.
+    final withView = [
+      ...session.history.take(session.history.length - 1),
+      LLMMessage(
+          role: LLMRole.user,
+          content: '${PromptOptimizerAgent.viewResultMarker} Reference image #1 (a.png) is attached.'),
+    ];
+    expect(PromptOptimizerAgent.lastBatchSubmittedPromptForTest(withView), isTrue);
+    expect(
+      PromptOptimizerAgent.lastBatchSubmittedPromptForTest(
+          [...withView, LLMMessage(role: LLMRole.user, content: 'thanks')]),
+      isFalse,
+    );
+  });
+
   test('the word after a delivered prompt is a remark', () async {
     final session = PromptOptimizerSession()..addUserTurn('now a prompt for it');
     var calls = 0;
