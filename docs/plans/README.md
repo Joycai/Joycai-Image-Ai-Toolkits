@@ -71,8 +71,9 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 |---|---|
 | 两个新快捷键在代码里没有进注册表 | `00f` 规定键位全从 `core/app_shortcuts.dart` 读，但那个注册表在 main 上还不存在；⌘↩ / ⇧⌘P 目前是放大框自己的 `CallbackShortcuts`，稿里已补登（`00f` 设置页帧 + 规格）。注册表落地时把这两个键搬进去 |
 
-第一轮欠的另外四条已清（2026-09-20）：Markdown 关掉即停语法高亮（`MarkdownTextEditingController.highlight`，由编辑器随开关同步，
-不通知——它在重建途中被设）；视图分段定宽 56（手机 64）；手机 ⋮ 菜单换成 `AppGlassMenu`；小编辑器头部的勾选框换成 `AppSwitch`，
+第一轮欠的另外四条已清（2026-09-20）：Markdown 关掉即停语法高亮（`MarkdownTextEditingController.highlight`，由编辑器随开关同步；
+公开的 setter 会通知，编辑器在 `initState` / `didUpdateWidget` 里走不通知的库内入口）；视图分段各段等宽、下限 56（手机 64），
+长标签撑宽而不截断；手机 ⋮ 菜单换成 `AppGlassMenu`；小编辑器头部的勾选框换成 `AppSwitch`，
 「开关在左、分段与放大贴右」作为裁定写进了 `A1d` 规格末尾，取代 `A1·1a` 的排布。
 
 ### 任务预设 · 产出类型（A3e，2026-09-20）

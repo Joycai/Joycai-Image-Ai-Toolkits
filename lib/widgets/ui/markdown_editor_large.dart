@@ -72,14 +72,16 @@ class _LargeEditorState extends State<_LargeEditor> {
   /// views, which put it at different places in the tree.
   final GlobalKey _fieldKey = GlobalKey();
 
-  /// The text the previews were last built from. The controller also notifies
-  /// for every caret and selection move, and re-parsing the Markdown for those
-  /// is wasted work.
-  late String _renderedText;
+  /// The text as of the last notification. The controller also notifies for
+  /// every caret and selection move, and re-parsing the Markdown for those is
+  /// wasted work — as is rebuilding at all while no preview is on screen: in
+  /// the edit view only the footer follows the text, and it listens for itself.
+  late String _lastText;
 
   void _onControllerChanged() {
-    if (widget.controller.text == _renderedText) return;
-    setState(() => _renderedText = widget.controller.text);
+    if (widget.controller.text == _lastText) return;
+    _lastText = widget.controller.text;
+    if (_view != _LargeView.edit) setState(() {});
   }
 
   @override
@@ -88,14 +90,14 @@ class _LargeEditorState extends State<_LargeEditor> {
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onControllerChanged);
       widget.controller.addListener(_onControllerChanged);
-      _renderedText = widget.controller.text;
+      _lastText = widget.controller.text;
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _renderedText = widget.controller.text;
+    _lastText = widget.controller.text;
     widget.controller.addListener(_onControllerChanged);
     _markdown = widget.isMarkdown;
     _view = (widget.readOnly || (widget.initiallyPreview && _markdown)) ? _LargeView.preview : _LargeView.edit;
@@ -433,11 +435,11 @@ class _LargeEditorState extends State<_LargeEditor> {
     final style = _textStyle(context);
     Widget text = _rendersMarkdown
         ? MarkdownBody(
-            data: _renderedText,
+            data: widget.controller.text,
             selectable: false, // Handled by SelectionArea
             styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(p: style),
           )
-        : Text(_renderedText, style: style);
+        : Text(widget.controller.text, style: style);
     if (widget.selectable) text = SelectionArea(child: text);
 
     return ColoredBox(

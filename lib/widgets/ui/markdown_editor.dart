@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
@@ -26,30 +25,22 @@ class MarkdownTextEditingController extends TextEditingController {
   /// to hold a `#` or a `_` is not a heading or an emphasis.
   ///
   /// Setting it notifies, so a field showing this controller repaints
-  /// whoever set it. The editor sets it from `didUpdateWidget`, which is
-  /// mid-build, and a listener that calls `setState` there would throw — so
-  /// during a build the notification waits for the frame to end.
+  /// whoever set it.
   bool get highlight => _highlight;
   bool _highlight = true;
   set highlight(bool value) {
-    if (_highlight == value) return;
-    _highlight = value;
-    _cachedSpan = null;
-    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        if (!_disposed) notifyListeners();
-      });
-    } else {
-      notifyListeners();
-    }
+    if (_setHighlight(value)) notifyListeners();
   }
 
-  bool _disposed = false;
-
-  @override
-  void dispose() {
-    _disposed = true;
-    super.dispose();
+  /// The editor's own way in, from `initState` and `didUpdateWidget`: both run
+  /// mid-build, where a notification would have listeners calling `setState`
+  /// during a build — and where none is needed, since the field showing this
+  /// controller is being rebuilt by the same pass.
+  bool _setHighlight(bool value) {
+    if (_highlight == value) return false;
+    _highlight = value;
+    _cachedSpan = null;
+    return true;
   }
 
   /// Compiled once for the class, not once per call.
@@ -87,7 +78,7 @@ class MarkdownTextEditingController extends TextEditingController {
         _cachedText == text &&
         _cachedStyle == style &&
         _cachedScheme == colorScheme) {
-      return _cachedSpan!;
+      return _withComposing(_cachedSpan!, withComposing);
     }
 
     final List<TextSpan> children = [];
@@ -133,7 +124,40 @@ class MarkdownTextEditingController extends TextEditingController {
     _cachedStyle = style;
     _cachedScheme = colorScheme;
     _cachedSpan = span;
-    return span;
+    return _withComposing(span, withComposing);
+  }
+
+  /// [span] with the IME's composing run underlined, as the base class does
+  /// for plain text. Laid over the cached span rather than built into it: the
+  /// run moves with every keystroke of a composition and the syntax does not.
+  TextSpan _withComposing(TextSpan span, bool withComposing) {
+    final TextRange composing = value.composing;
+    if (!withComposing || !value.isComposingRangeValid || composing.isCollapsed) return span;
+
+    const underline = TextStyle(decoration: TextDecoration.underline);
+    final List<InlineSpan> children = [];
+    int offset = 0;
+    for (final InlineSpan child in span.children ?? const <InlineSpan>[]) {
+      final TextSpan piece = child as TextSpan;
+      final String pieceText = piece.text ?? '';
+      final int start = offset;
+      final int end = offset + pieceText.length;
+      offset = end;
+
+      final int from = composing.start.clamp(start, end);
+      final int to = composing.end.clamp(start, end);
+      if (from == to) {
+        children.add(piece);
+        continue;
+      }
+      if (from > start) children.add(TextSpan(text: pieceText.substring(0, from - start), style: piece.style));
+      children.add(TextSpan(
+        text: pieceText.substring(from - start, to - start),
+        style: piece.style?.merge(underline) ?? underline,
+      ));
+      if (to < end) children.add(TextSpan(text: pieceText.substring(to - start), style: piece.style));
+    }
+    return TextSpan(style: span.style, children: children);
   }
 }
 
@@ -221,8 +245,16 @@ class SmartMarkdownFormatter extends TextInputFormatter {
 /// so [onChanged] is called by hand — callers save from it.
 /// Colours Markdown syntax in [controller] only while Markdown is on. A plain
 /// [TextEditingController] never coloured anything and is left alone.
-void _syncMarkdownHighlight(TextEditingController controller, bool isMarkdown) {
-  if (controller is MarkdownTextEditingController) controller.highlight = isMarkdown;
+///
+/// [duringBuild] is for `initState` / `didUpdateWidget`; see
+/// [MarkdownTextEditingController._setHighlight].
+void _syncMarkdownHighlight(TextEditingController controller, bool isMarkdown, {bool duringBuild = false}) {
+  if (controller is! MarkdownTextEditingController) return;
+  if (duringBuild) {
+    controller._setHighlight(isMarkdown);
+  } else {
+    controller.highlight = isMarkdown;
+  }
 }
 
 void _insertMarkdownTab(TextEditingController controller, ValueChanged<String>? onChanged) {
@@ -307,7 +339,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   void initState() {
     super.initState();
     _isPreview = (widget.initiallyPreview && widget.isMarkdown) || widget.isRefined;
-    _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined);
+    _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined, duringBuild: true);
   }
 
   /// While the pop-out is open it is the editor on screen, and the one that
@@ -319,8 +351,9 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   @override
   void didUpdateWidget(MarkdownEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_popOutOpen) return;
-    _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined);
+    // A controller swapped in behind the pop-out is nobody else's to colour.
+    if (_popOutOpen && oldWidget.controller == widget.controller) return;
+    _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined, duringBuild: true);
   }
 
   @override

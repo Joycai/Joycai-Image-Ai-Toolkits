@@ -270,6 +270,24 @@ void main() {
 
     expect(coloured(find.byType(EditableText)), isTrue);
 
+    // Coloured, and the IME's composing run is still underlined — across the
+    // heading's own span, keeping its weight.
+    await tester.tap(find.byType(EditableText));
+    await tester.pump();
+    controller.value = const TextEditingValue(
+      text: '## Subject',
+      selection: TextSelection.collapsed(offset: 10),
+      composing: TextRange(start: 3, end: 10),
+    );
+    await tester.pump();
+    final spans = tester.state<EditableTextState>(find.byType(EditableText)).buildTextSpan().children!;
+    expect(spans.map((c) => (c as TextSpan).text).join(), '## Subject');
+    final run = spans.cast<TextSpan>().singleWhere((c) => c.style?.decoration == TextDecoration.underline);
+    expect(run.text, 'Subject');
+    expect(run.style?.fontWeight, FontWeight.bold);
+    controller.value = const TextEditingValue(text: '## Subject', selection: TextSelection.collapsed(offset: 10));
+    await tester.pump();
+
     await tester.tap(find.byIcon(Icons.open_in_full));
     await tester.pumpAndSettle();
     await tester.tap(inDialog(find.byType(AppSwitch)));
