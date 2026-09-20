@@ -40,8 +40,16 @@ const int _kNamedFiles = 4;
 /// [protectedRoots] are folders the run must refuse to delete — a registered
 /// source folder is not a file the user can throw away from a grid.
 /// [onDeleted] is the caller's tidy-up: what each screen has to re-read once
-/// something is actually gone. It runs only when at least one file was
-/// deleted, and only while the caller is still mounted.
+/// something is actually gone. It runs when at least one file was deleted,
+/// and **whether or not the caller is still mounted** — deliberately, and
+/// unlike the snackbar above it, which is guarded. What it re-reads is
+/// app-level state (`FileBrowserState.refresh`, `FileStagingState.revalidate`,
+/// `GalleryState.refreshImages`), and that state has to be right whether or
+/// not the screen that asked for the delete is still on screen; skipping it
+/// because the user navigated away would leave a grid listing files that are
+/// no longer there. The price is the rule for whoever writes one: an
+/// [onDeleted] may touch state and nothing else — no `context`, no
+/// `setState`, no snackbar.
 Future<void> runFileDelete(
   BuildContext context,
   List<BrowserFile> files, {

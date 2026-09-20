@@ -451,13 +451,15 @@ void main() {
     // govern — the panel is a drawer. Reaching for the preference first left
     // the button expanding something invisible and opening nothing, so the
     // first press did nothing at all and the panel arrived on the second.
-    await tester.runAsync(() async {
-      appState.setConfigPanelExpanded(false);
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-    });
+    // Registered before the state is touched: a tearDown that only exists
+    // after the mutation succeeded is no tearDown at all.
     addTearDown(() {
       appState.setConfigPanelExpanded(true);
       appState.setWorkbenchTab(0);
+    });
+    await tester.runAsync(() async {
+      appState.setConfigPanelExpanded(false);
+      await Future<void>.delayed(const Duration(milliseconds: 300));
     });
 
     await mountApp(
