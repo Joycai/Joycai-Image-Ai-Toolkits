@@ -26,8 +26,34 @@ Future<bool> confirmDiscardPresetEdit(BuildContext context, String name) async {
   return discard == true;
 }
 
-/// The built-in preset's place in the picker. Library ids start at 1.
-const int _builtinPresetId = -1;
+/// The built-in preset's place in a picker. Library ids start at 1.
+const int builtinPresetPickerId = -1;
+
+/// The rows of a preset picker: the built-in first — it was always what ran
+/// when nothing was picked; listing it is what makes that a choice — then the
+/// library's, each wearing its first tag. One list for the panel's field and
+/// the empty chat's "all presets", so the two cannot disagree.
+List<PickerOption<int>> presetPickerOptions(
+  AppLocalizations l10n,
+  ColorScheme colorScheme,
+  List<SystemPrompt> presets,
+) =>
+    [
+      PickerOption<int>(
+        value: builtinPresetPickerId,
+        label: l10n.optPresetBuiltinName,
+        badge: l10n.optPresetBuiltinBadge,
+        badgeColor: colorScheme.outline,
+      ),
+      for (final p in presets)
+        if (p.id != null)
+          PickerOption<int>(
+            value: p.id!,
+            label: p.title,
+            badge: p.tags.isEmpty ? null : p.tags.first.name,
+            badgeColor: p.tags.isEmpty ? null : Color(p.tags.first.color),
+          ),
+    ];
 
 extension _SysPromptCard on _OptimizerConfigPanelState {
   /// `A3d 4b`'s task-preset card: which preset, a line saying what it is for,
@@ -106,42 +132,26 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
   /// row's badge and the picker matches on it, so filtering by tag is typing
   /// its name rather than setting a second control first.
   ///
-  /// The built-in preset is always the first row. It was always what ran when
-  /// nothing was picked; listing it is what makes that a choice.
+  /// Its rows are [presetPickerOptions].
   Widget _buildTemplatePicker(
     AppLocalizations l10n,
     ColorScheme colorScheme,
     SystemPrompt? template, {
     required bool dirty,
   }) {
-    final builtinOption = PickerOption<int>(
-      value: _builtinPresetId,
-      label: l10n.optPresetBuiltinName,
-      badge: l10n.optPresetBuiltinBadge,
-      badgeColor: colorScheme.outline,
-    );
-    PickerOption<int> optionOf(SystemPrompt p) => PickerOption<int>(
-          value: p.id!,
-          label: p.title,
-          badge: p.tags.isEmpty ? null : p.tags.first.name,
-          badgeColor: p.tags.isEmpty ? null : Color(p.tags.first.color),
-        );
+    final options = presetPickerOptions(l10n, colorScheme, widget.sysPrompts);
 
     return SearchablePickerField<int>(
       selected: template != null
-          ? optionOf(template)
+          ? options.firstWhere((o) => o.value == template.id)
           : _isBuiltinPreset
-              ? builtinOption
+              ? options.first
               // Orphaned text: named for what it is, and not an option —
               // there is nothing in the list to go back to it from.
               : PickerOption<int>(value: 0, label: l10n.optPresetCustom),
-      optionsBuilder: () => [
-        builtinOption,
-        for (final p in widget.sysPrompts)
-          if (p.id != null) optionOf(p),
-      ],
+      optionsBuilder: () => options,
       onChanged: (id) async {
-        if (id == (template?.id ?? (_isBuiltinPreset ? _builtinPresetId : 0))) return;
+        if (id == (template?.id ?? (_isBuiltinPreset ? builtinPresetPickerId : 0))) return;
         // Orphaned text counts too: it is the one edit with no preset to go
         // back to, so it is the least recoverable thing on this card.
         final unsaved = dirty || (template == null && !_isBuiltinPreset);
@@ -150,7 +160,7 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
                 !mounted)) {
           return;
         }
-        if (id == _builtinPresetId) {
+        if (id == builtinPresetPickerId) {
           // Empty, not null: null is "never chosen", which the first load
           // answers by picking the library's first preset.
           widget.onSysPromptTemplateChanged(null, '');

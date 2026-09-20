@@ -126,6 +126,16 @@ void main() {
     expect(host.sends, isEmpty);
   });
 
+  testWidgets('an example goes ahead of a draft, never over it', (tester) async {
+    final host = await pump(tester, AssistantMode.knowledgeBase);
+    final l10n = await en();
+    host.input.text = 'my rough prompt';
+
+    await tester.tap(find.text(l10n.optEmptyKbExample1));
+    await tester.pump();
+    expect(host.input.text, '${l10n.optEmptyKbExample1}my rough prompt');
+  });
+
   testWidgets('tiles stack in one column on a phone without overflowing', (tester) async {
     await pump(
       tester,

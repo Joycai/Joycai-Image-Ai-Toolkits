@@ -53,23 +53,9 @@ extension _AssistantActions on _WorkbenchScreenState {
       title: l10n.optSysPromptPick,
       searchHint: l10n.optSysPromptSearch,
       icon: Icons.notes_outlined,
-      selected: _loadedPreset(wui)?.id,
-      options: [
-        PickerOption<int>(
-          value: -1,
-          label: l10n.optPresetBuiltinName,
-          badge: l10n.optPresetBuiltinBadge,
-          badgeColor: Theme.of(context).colorScheme.outline,
-        ),
-        for (final p in _optSysPrompts)
-          if (p.id != null)
-            PickerOption<int>(
-              value: p.id!,
-              label: p.title,
-              badge: p.tags.isEmpty ? null : p.tags.first.name,
-              badgeColor: p.tags.isEmpty ? null : Color(p.tags.first.color),
-            ),
-      ],
+      selected: _loadedPreset(wui)?.id ??
+          ((wui.optSelectedSysPrompt ?? '').trim().isEmpty ? builtinPresetPickerId : null),
+      options: presetPickerOptions(l10n, Theme.of(context).colorScheme, _optSysPrompts),
     );
     if (picked == null || !mounted) return;
     await _handlePickPreset(

@@ -202,9 +202,15 @@ extension _EmptyState on _PromptOptimizerChatViewState {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
+          // Ahead of a draft, never over it: the empty state stays up while
+          // the user types, and most examples end on a colon precisely so
+          // that their text can follow.
+          final draft = widget.inputCtrl.text;
+          final joint = draft.isEmpty || example.endsWith(' ') || example.endsWith('：') ? '' : '\n';
+          final text = '$example$joint$draft';
           widget.inputCtrl.value = TextEditingValue(
-            text: example,
-            selection: TextSelection.collapsed(offset: example.length),
+            text: text,
+            selection: TextSelection.collapsed(offset: text.length),
           );
         },
         child: Padding(
