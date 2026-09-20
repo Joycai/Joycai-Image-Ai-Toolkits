@@ -4170,20 +4170,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get thumbnailFitCover => 'フィル（切り抜き）';
 
   @override
-  String get deleteFileConfirmTitle => 'ファイルを削除しますか？';
-
-  @override
-  String deleteFileConfirmMessage(String filename) {
-    return '「$filename」を削除してもよろしいですか？';
-  }
-
-  @override
-  String get permanentlyDelete => '完全に削除';
-
-  @override
-  String get deleteSuccess => '削除に成功しました';
-
-  @override
   String deleteFailed(String error) {
     return '削除に失敗しました: $error';
   }

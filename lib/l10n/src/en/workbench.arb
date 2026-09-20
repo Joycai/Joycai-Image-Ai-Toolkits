@@ -46,18 +46,7 @@
   "thumbnailDisplay": "Thumbnail Display",
   "thumbnailFitContain": "Fit (whole image)",
   "thumbnailFitCover": "Fill (cropped)",
-  "deleteFileConfirmTitle": "Delete File?",
-  "deleteFileConfirmMessage": "Are you sure you want to delete \"{filename}\"?",
-  "@deleteFileConfirmMessage": {
-    "placeholders": {
-      "filename": {
-        "type": "String"
-      }
-    }
-  },
   "moveToTrash": "Move to Trash",
-  "permanentlyDelete": "Permanently Delete",
-  "deleteSuccess": "Deleted successfully",
   "deleteFailed": "Failed to delete: {error}",
   "@deleteFailed": {
     "placeholders": {
@@ -1318,14 +1307,18 @@
   "optResultMeta": "{count} chars · Markdown",
   "@optResultMeta": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "optImagesNotOfferedTitle": "This model cannot see images",
   "optImagesNotOfferedBody": "{count} reference image(s) were not given to it; its answers rest on your text alone. Pick a model that accepts images, or check this one's image input in its settings.",
   "@optImagesNotOfferedBody": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "optImagesNotOfferedAction": "Open model settings"

@@ -2777,17 +2777,6 @@
   "thumbnailDisplay": "Thumbnail Display",
   "thumbnailFitContain": "Fit (whole image)",
   "thumbnailFitCover": "Fill (cropped)",
-  "deleteFileConfirmTitle": "Delete File?",
-  "deleteFileConfirmMessage": "Are you sure you want to delete \"{filename}\"?",
-  "@deleteFileConfirmMessage": {
-    "placeholders": {
-      "filename": {
-        "type": "String"
-      }
-    }
-  },
-  "permanentlyDelete": "Permanently Delete",
-  "deleteSuccess": "Deleted successfully",
   "deleteFailed": "Failed to delete: {error}",
   "@deleteFailed": {
     "placeholders": {

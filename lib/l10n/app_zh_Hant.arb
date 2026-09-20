@@ -2114,17 +2114,6 @@
   "thumbnailDisplay": "縮圖顯示",
   "thumbnailFitContain": "適應（完整顯示）",
   "thumbnailFitCover": "填滿（裁切鋪滿）",
-  "deleteFileConfirmTitle": "刪除檔案？",
-  "deleteFileConfirmMessage": "您確定要刪除「{filename}」嗎？",
-  "@deleteFileConfirmMessage": {
-    "placeholders": {
-      "filename": {
-        "type": "String"
-      }
-    }
-  },
-  "permanentlyDelete": "永久刪除",
-  "deleteSuccess": "刪除成功",
   "deleteFailed": "刪除失敗：{error}",
   "@deleteFailed": {
     "placeholders": {

@@ -7450,30 +7450,6 @@ abstract class AppLocalizations {
   /// **'Fill (cropped)'**
   String get thumbnailFitCover;
 
-  /// No description provided for @deleteFileConfirmTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete File?'**
-  String get deleteFileConfirmTitle;
-
-  /// No description provided for @deleteFileConfirmMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Are you sure you want to delete \"{filename}\"?'**
-  String deleteFileConfirmMessage(String filename);
-
-  /// No description provided for @permanentlyDelete.
-  ///
-  /// In en, this message translates to:
-  /// **'Permanently Delete'**
-  String get permanentlyDelete;
-
-  /// No description provided for @deleteSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Deleted successfully'**
-  String get deleteSuccess;
-
   /// No description provided for @deleteFailed.
   ///
   /// In en, this message translates to:

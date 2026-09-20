@@ -4339,20 +4339,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get thumbnailFitCover => 'Fill (cropped)';
 
   @override
-  String get deleteFileConfirmTitle => 'Delete File?';
-
-  @override
-  String deleteFileConfirmMessage(String filename) {
-    return 'Are you sure you want to delete \"$filename\"?';
-  }
-
-  @override
-  String get permanentlyDelete => 'Permanently Delete';
-
-  @override
-  String get deleteSuccess => 'Deleted successfully';
-
-  @override
   String deleteFailed(String error) {
     return 'Failed to delete: $error';
   }

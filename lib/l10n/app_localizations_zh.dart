@@ -4124,20 +4124,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get thumbnailFitCover => '填充（裁切铺满）';
 
   @override
-  String get deleteFileConfirmTitle => '删除文件？';
-
-  @override
-  String deleteFileConfirmMessage(String filename) {
-    return '确定要删除“$filename”吗？';
-  }
-
-  @override
-  String get permanentlyDelete => '永久删除';
-
-  @override
-  String get deleteSuccess => '删除成功';
-
-  @override
   String deleteFailed(String error) {
     return '删除失败: $error';
   }
@@ -9935,20 +9921,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get thumbnailFitCover => '填滿（裁切鋪滿）';
-
-  @override
-  String get deleteFileConfirmTitle => '刪除檔案？';
-
-  @override
-  String deleteFileConfirmMessage(String filename) {
-    return '您確定要刪除「$filename」嗎？';
-  }
-
-  @override
-  String get permanentlyDelete => '永久刪除';
-
-  @override
-  String get deleteSuccess => '刪除成功';
 
   @override
   String deleteFailed(String error) {
