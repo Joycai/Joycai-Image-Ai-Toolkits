@@ -73,6 +73,10 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
   late TextStyle _body;
   late MarkdownStyleSheet _fallback;
 
+  // One sheet per text style in play — body, each heading, quote, table head —
+  // rather than one per paragraph.
+  final Map<(TextStyle, WrapAlignment), MarkdownStyleSheet> _sheets = {};
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -94,6 +98,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     final base = widget.style ?? theme.textTheme.bodyMedium ?? const TextStyle(fontSize: 14);
     _body = base.copyWith(color: base.color ?? _scheme.onSurface);
     _fallback = MarkdownStyleSheet.fromTheme(theme);
+    _sheets.clear();
 
     final document = md.Document(extensionSet: md.ExtensionSet.gitHubFlavored, encodeHtml: false);
     _children = _blocks(document.parse(widget.data), _body);
@@ -354,8 +359,28 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
 
   /// One run of inline text, set by the library in [style].
   Widget _inline(md.Element el, TextStyle style, {WrapAlignment align = WrapAlignment.start}) {
+    final sheet = _sheets.putIfAbsent((style, align), () => _sheetFor(style, align));
+
+    final built = MarkdownBuilder(
+      delegate: this,
+      selectable: false,
+      styleSheet: sheet,
+      imageDirectory: null,
+      imageBuilder: (uri, title, alt) => _ImagePlaceholder(label: alt ?? title ?? uri.pathSegments.lastOrNull ?? '', style: style),
+      checkboxBuilder: null,
+      bulletBuilder: null,
+      builders: {'a': _InertLinkBuilder()},
+      paddingBuilders: const {},
+      listItemCrossAxisAlignment: MarkdownListItemCrossAxisAlignment.start,
+      softLineBreak: true,
+    ).build([el]);
+    return built.length == 1 ? built.single : _column(built);
+  }
+
+  MarkdownStyleSheet _sheetFor(TextStyle style, WrapAlignment align) {
     final size = style.fontSize ?? 14;
-    final sheet = _fallback.merge(MarkdownStyleSheet(
+    return _fallback.merge(MarkdownStyleSheet(
+
       p: style,
       h1: style,
       h2: style,
@@ -388,21 +413,6 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
       ),
       blockSpacing: _m.itemGap,
     ));
-
-    final built = MarkdownBuilder(
-      delegate: this,
-      selectable: false,
-      styleSheet: sheet,
-      imageDirectory: null,
-      imageBuilder: (uri, title, alt) => _ImagePlaceholder(label: alt ?? title ?? uri.pathSegments.lastOrNull ?? '', style: style),
-      checkboxBuilder: null,
-      bulletBuilder: null,
-      builders: {'a': _InertLinkBuilder()},
-      paddingBuilders: const {},
-      listItemCrossAxisAlignment: MarkdownListItemCrossAxisAlignment.start,
-      softLineBreak: true,
-    ).build([el]);
-    return built.length == 1 ? built.single : _column(built);
   }
 
   static Widget _column(List<Widget> children) => children.length == 1

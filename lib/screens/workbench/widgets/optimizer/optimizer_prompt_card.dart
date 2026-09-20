@@ -72,14 +72,13 @@ extension _PromptCard on _PromptOptimizerChatViewState {
             // box: a long prompt otherwise pushes the reply that explains it,
             // and the composer, off the bottom of the conversation.
             child: _fold(
-              MarkdownBody(
+              AppMarkdown(
                 data: entry.text,
+                density: AppMarkdownDensity.compact,
                 selectable: true,
-                styleSheet: MarkdownStyleSheet(
-                  p: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface,
-                    height: AppType.looseHeight,
-                  ),
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface,
+                  height: AppType.looseHeight,
                 ),
               ),
               folded: isLong && !expanded,

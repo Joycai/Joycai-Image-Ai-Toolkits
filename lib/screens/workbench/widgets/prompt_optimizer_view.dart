@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/app_semantic_colors.dart';
@@ -18,6 +17,7 @@ import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/ui/app_breathing_dot.dart';
 import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_markdown.dart';
 import '../../../widgets/ui/app_neutral_marker.dart';
 import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/ui/dashed_border.dart';
@@ -462,14 +462,12 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                MarkdownBody(
+                AppMarkdown(
                   data: entry.text,
                   selectable: true,
-                  styleSheet: MarkdownStyleSheet(
-                    p: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface,
-                      height: AppType.proseHeight,
-                    ),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    height: AppType.proseHeight,
                   ),
                 ),
                 // `A3e 5e`: an analysis preset's answer is the deliverable, and

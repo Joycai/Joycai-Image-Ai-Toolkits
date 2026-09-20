@@ -3,12 +3,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../l10n/app_localizations.dart';
 import 'app_button.dart';
 import 'app_dialog.dart';
 import 'app_icon_button.dart';
+import 'app_markdown.dart';
 import 'app_segmented_control.dart';
 import 'app_switch.dart';
 import '../../core/design_tokens.dart';
@@ -630,15 +630,12 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     final bool shouldExpand = widget.expand && !forceDisableExpand;
     Widget inner;
     if (_isPreview) {
-      inner = MarkdownBody(
+      inner = AppMarkdown(
         data: widget.controller.text,
-        selectable: false, // Handled by SelectionArea
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: AppType.looseHeight),
+        selectable: widget.selectable,
       );
-      
-      if (widget.selectable) {
-        inner = SelectionArea(child: inner);
-      }
-      
+
       inner = SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: inner,
