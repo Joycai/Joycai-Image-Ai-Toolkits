@@ -26,4 +26,13 @@
 
 ## 施工记录（与稿的偏离写在这里）
 
-（施工中填写）
+
+
+- **Delete / Backspace 要先问「键盘是不是在文本框里」。** 一个文本框没吃掉的键
+  仍会向上走到每一层 `Focus`；目录树的行内改名编辑器更是**故意**把键让上去
+  （`directory_tree_item._onKey` 在编辑时一律 ignored），而上面那一层正好是本屏。
+  没有这道闸门，用户在改文件夹名时按退格改错字，就会删掉当时选中的文件。
+  闸门落在 `lib/core/text_editing_focus.dart`，`test/text_editing_focus_test.dart`
+  把「退格确实会上浮」这条 Flutter 行为一并钉住——哪天它不成立了，这道闸门
+  也就不再承重，测试会说出来。
+- 失败提示沿用 `folderOpFailed`（「操作失败：{error}」），文案与文件夹无关，不另开键。

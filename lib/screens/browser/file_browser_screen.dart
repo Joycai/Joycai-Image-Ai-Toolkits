@@ -12,6 +12,7 @@ import '../../core/folder_outline_geometry.dart';
 import '../../core/folder_outline_labels.dart';
 import '../../core/folder_outline_spy.dart';
 import '../../core/responsive.dart';
+import '../../core/text_editing_focus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/browser_file.dart';
@@ -38,10 +39,10 @@ import 'widgets/browser_file_list_row.dart';
 import 'widgets/browser_filter_bar.dart';
 import 'widgets/browser_header.dart';
 import 'widgets/browser_selection_bar.dart';
-import 'widgets/file_delete_dialog.dart';
 import 'widgets/browser_staging_panel.dart';
 import 'widgets/file_card.dart';
 import 'widgets/file_context_menu.dart';
+import 'widgets/file_delete_dialog.dart';
 
 /// The file browser — `B1a` (layout and selection) with `B1b`'s staging
 /// column on the right.
@@ -225,8 +226,14 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       _openWithPreview(context, state.selectedFiles.first, state);
       return KeyEventResult.handled;
     }
+    // Not while a field is live. Backspace travels up past a text field that
+    // did not consume it, and the tree's inline folder-name editor hands its
+    // keys upward on purpose (`directory_tree_item._onKey` ignores everything
+    // while editing) — the next handler in line is this one, and correcting a
+    // typo must not delete the files that happen to be selected.
     if ((key == LogicalKeyboardKey.delete || key == LogicalKeyboardKey.backspace) &&
-        state.selectedFiles.isNotEmpty) {
+        state.selectedFiles.isNotEmpty &&
+        !isTextEditingFocused()) {
       _deleteSelection(context, state);
       return KeyEventResult.handled;
     }
