@@ -61,9 +61,7 @@ extension _AssistantTab on _WorkbenchScreenState {
                                     (wui.optSelectedSysPrompt ?? '').trim().isEmpty,
                                 onPick: _handlePickPreset,
                                 onShowAll: _handleShowAllPresets,
-                                onManage: () => context
-                                    .read<AppState>()
-                                    .navigateToScreen(AppDestination.prompts.index),
+                                onManage: _handleManagePresets,
                               ),
                               // Only while there is a task to stop. A
                               // session whose `isRunning` outlived its
@@ -192,7 +190,7 @@ extension _AssistantTab on _WorkbenchScreenState {
               wui.setOptimizerSysPromptTemplate(id, content),
           onSaveTemplate: _handleSaveSysPromptTemplate,
           onSaveAsPreset: _handleSaveAsPreset,
-          onManagePresets: () => appState.navigateToScreen(AppDestination.prompts.index),
+          onManagePresets: _handleManagePresets,
         ),
       ),
     );

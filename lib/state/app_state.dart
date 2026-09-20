@@ -174,6 +174,15 @@ class AppState extends ChangeNotifier {
   int activeScreenIndex = 0;
   int workbenchTabIndex = 0;
 
+  /// The kind of system template ([SystemPrompt.types]) the prompt library
+  /// should open on, set by the navigation that sends the user there.
+  ///
+  /// One-shot, and deliberately not a notification: screens are mounted fresh
+  /// on every navigation, so the library reads this once as it starts and
+  /// clears it. Every navigation overwrites it, so a request nobody took
+  /// cannot wait for the user's own next visit.
+  String? _pendingSystemTemplateType;
+
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
   // The design spec's own accent, as a light/dark pair. Only a default: the
@@ -676,9 +685,19 @@ class AppState extends ChangeNotifier {
     });
   }
 
-  void navigateToScreen(int index) {
+  /// [systemTemplateType] asks the prompt library to open on its system
+  /// templates filtered to that type; it means nothing to another screen.
+  void navigateToScreen(int index, {String? systemTemplateType}) {
     activeScreenIndex = index;
+    _pendingSystemTemplateType = systemTemplateType;
     notifyListeners();
+  }
+
+  /// The pending request, which this clears.
+  String? takeSystemTemplateRequest() {
+    final type = _pendingSystemTemplateType;
+    _pendingSystemTemplateType = null;
+    return type;
   }
 
   void setWorkbenchTab(int index) {
