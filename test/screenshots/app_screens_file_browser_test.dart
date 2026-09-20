@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
 import 'package:joycai_image_ai_toolkits/screens/browser/widgets/file_card.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/directory_tree_item.dart';
+import 'package:joycai_image_ai_toolkits/services/files/trash_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
 import 'package:path/path.dart' as p;
@@ -306,5 +307,66 @@ void main() {
         },
       );
     });
+  }
+
+  // `B1c · 1a` — the file menu with a selection live, so the delete row is
+  // the one that speaks for three files. The row is last, alone under a rule,
+  // and red.
+  testWidgets('fileBrowser · fileMenu @ desktop light', (WidgetTester tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: kShotSizes.last,
+      suffix: 'fileMenu',
+      before: selectThree,
+      after: (WidgetTester tester) async {
+        await tester.tap(find.byType(FileCard).first, buttons: kSecondaryButton);
+        await settle(tester);
+      },
+    );
+  });
+
+  // `B1c · 1d/1e` — the two delete confirmations. Which one opens is the
+  // platform's answer about the trash, so both are forced here: the machine
+  // running the suite must not decide which frame gets photographed.
+  for (final bool toTrash in <bool>[true, false]) {
+    testWidgets('fileBrowser · ${toTrash ? 'fileTrash' : 'fileDelete'} @ desktop light',
+        (WidgetTester tester) async {
+      TrashService.overrideSupport(toTrash);
+      addTearDown(() => TrashService.overrideSupport(null));
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.fileBrowser,
+        size: kShotSizes.last,
+        suffix: toTrash ? 'fileTrash' : 'fileDelete',
+        before: selectThree,
+        after: (WidgetTester tester) async {
+          await tester.tap(find.byType(FileCard).first, buttons: kSecondaryButton);
+          await settle(tester);
+          // `runAsync`: the run asks the platform about the trash before it
+          // opens anything, and that future never completes in the
+          // fake-async zone.
+          await tester.runAsync(() async {
+            await tester.tap(menuItem('删除 3 个文件'));
+            await tester.pump();
+            await Future<void>.delayed(const Duration(milliseconds: 400));
+          });
+          await settle(tester);
+        },
+      );
+    });
+  }
+}
+
+/// Three files picked, nothing staged — what both `B1c` shots stand on.
+Future<void> selectThree(WidgetTester tester) async {
+  final AppState appState = AppState();
+  appState.fileStagingState.clear();
+  final browser = appState.fileBrowserState;
+  browser.clearSelection();
+  for (final BrowserFile f in browser.filteredFiles.take(3)) {
+    browser.toggleSelection(f);
   }
 }
