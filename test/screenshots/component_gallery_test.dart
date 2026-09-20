@@ -45,6 +45,7 @@ import 'package:joycai_image_ai_toolkits/widgets/ui/app_empty_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_field_size.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_labelled_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_icon_button.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_neutral_marker.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_search_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_section_label.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
@@ -311,6 +312,11 @@ class _Gallery extends StatelessWidget {
                   onSelected: null,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
+              ]),
+              const _Label('中性标记 · 七个种子色下应完全一致（A3e）'),
+              const Wrap(spacing: 8, runSpacing: 8, children: [
+                AppNeutralMarker(icon: Icons.subject, label: '分析'),
+                AppNeutralMarker(icon: Icons.subject, label: '分析文本'),
               ]),
               const _Label('进度条'),
               const _Progress(),
