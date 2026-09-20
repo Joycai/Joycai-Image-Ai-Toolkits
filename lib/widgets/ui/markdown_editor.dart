@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
@@ -24,14 +25,31 @@ class MarkdownTextEditingController extends TextEditingController {
   /// turns it off while its Markdown switch is off — plain text that happens
   /// to hold a `#` or a `_` is not a heading or an emphasis.
   ///
-  /// Setting it does not notify: the editor sets it while it is itself being
-  /// rebuilt for the same switch, and the field under it rebuilds with it.
+  /// Setting it notifies, so a field showing this controller repaints
+  /// whoever set it. The editor sets it from `didUpdateWidget`, which is
+  /// mid-build, and a listener that calls `setState` there would throw — so
+  /// during a build the notification waits for the frame to end.
   bool get highlight => _highlight;
   bool _highlight = true;
   set highlight(bool value) {
     if (_highlight == value) return;
     _highlight = value;
     _cachedSpan = null;
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!_disposed) notifyListeners();
+      });
+    } else {
+      notifyListeners();
+    }
+  }
+
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   /// Compiled once for the class, not once per call.
@@ -58,7 +76,10 @@ class MarkdownTextEditingController extends TextEditingController {
     TextStyle? style,
     required bool withComposing,
   }) {
-    if (!_highlight) return TextSpan(style: style, text: text);
+    // The base class, not a bare span: it underlines the IME's composing run.
+    if (!_highlight) {
+      return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
+    }
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -289,9 +310,16 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined);
   }
 
+  /// While the pop-out is open it is the editor on screen, and the one that
+  /// says how the shared controller is coloured. This one, behind it, may be a
+  /// rebuild late in hearing about the switch and must not write the old
+  /// answer back over it.
+  bool _popOutOpen = false;
+
   @override
   void didUpdateWidget(MarkdownEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (_popOutOpen) return;
     _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined);
   }
 
@@ -299,6 +327,11 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+
+    void setMarkdown(bool v) {
+      widget.onMarkdownChanged(v);
+      if (!v) setState(() => _isPreview = false);
+    }
 
     final viewControls = Row(
       mainAxisSize: MainAxisSize.min,
@@ -353,21 +386,27 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           children: [
             if (!widget.isRefined) ...[
               // A switch, as `A1 1a` and the pop-out (`A1d`) both draw it: this
-              // turns a mode on, it does not tick an item off.
-              // The checkbox this replaced carried its own margin; the
-              // switch's track starts at its box.
-              const SizedBox(width: 4),
-              AppSwitch(
-                value: widget.isMarkdown,
-                onChanged: (v) {
-                  widget.onMarkdownChanged(v);
-                  if (!v) setState(() => _isPreview = false);
-                },
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Markdown',
-                style: Theme.of(context).textTheme.bodySmall,
+              // turns a mode on, it does not tick an item off. The word is part
+              // of the control — the switch alone is 36×22, and the checkbox it
+              // replaced brought a 48px target with it.
+              // One node for a screen reader — 「Markdown, switch, on」 — not a
+              // button and a switch that do the same thing.
+              MergeSemantics(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.control),
+                  onTap: () => setMarkdown(!widget.isMarkdown),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AppSwitch(value: widget.isMarkdown, onChanged: setMarkdown),
+                        const SizedBox(width: 6),
+                        Text('Markdown', style: Theme.of(context).textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ] else
               Text(
@@ -440,7 +479,8 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     // window across the breakpoint keeps the editor's state.
     final editorKey = GlobalKey();
 
-    showDialog(
+    _popOutOpen = true;
+    showDialog<void>(
       context: context,
       builder: (dialogContext) {
         // Read here, not once at open: the window can be resized under it.
@@ -481,7 +521,10 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           content: SizedBox(height: screen.height * 0.85, child: body),
         );
       },
-    );
+    ).whenComplete(() {
+      _popOutOpen = false;
+      if (mounted) _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined);
+    });
   }
 
   /// Header over body, with the body taking the rest of the height when

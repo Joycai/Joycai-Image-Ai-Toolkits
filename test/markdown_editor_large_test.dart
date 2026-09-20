@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
@@ -15,6 +16,7 @@ void main() {
     bool isRefined = false,
     String text = '## Subject\n- one\n- two',
     ValueChanged<String>? onChanged,
+    Locale? locale,
   }) async {
     tester.view.physicalSize = screen;
     tester.view.devicePixelRatio = 1;
@@ -24,6 +26,7 @@ void main() {
     bool markdown = isMarkdown;
     await tester.pumpWidget(
       MaterialApp(
+        locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
@@ -207,13 +210,34 @@ void main() {
     expect(tester.widget<EditableText>(editable).focusNode.hasFocus, isTrue);
   });
 
-  testWidgets('the view toggle has fixed 56px segments', (tester) async {
+  testWidgets('view segments are equal, 56 at the least, and never cut a label', (tester) async {
     await open(tester, const Size(1440, 900));
     final edit = tester.getRect(inDialog(find.text('Edit')));
     final split = tester.getRect(inDialog(find.text('Split')));
     final preview = tester.getRect(inDialog(find.text('Preview')));
-    expect(split.center.dx - edit.center.dx, closeTo(56, 0.5));
-    expect(preview.center.dx - split.center.dx, closeTo(56, 0.5));
+    final pitch = split.center.dx - edit.center.dx;
+    expect(pitch, greaterThanOrEqualTo(56));
+    expect(preview.center.dx - split.center.dx, closeTo(pitch, 0.5));
+  });
+
+  testWidgets('a long label widens the segments instead of being cut', (tester) async {
+    await open(tester, const Size(1440, 900), locale: const Locale('ja'));
+    final label = inDialog(find.text('プレビュー'));
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.descendant(of: label, matching: find.byType(RichText)),
+    );
+    expect(paragraph.didExceedMaxLines, isFalse);
+    expect(paragraph.size.width, greaterThanOrEqualTo(paragraph.getMaxIntrinsicWidth(double.infinity)));
+  });
+
+  testWidgets('the word Markdown is part of the switch', (tester) async {
+    await open(tester, const Size(1440, 900));
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(find.text('Preview'), findsOneWidget);
+    await tester.tap(find.text('Markdown'));
+    await tester.pumpAndSettle();
+    expect(find.text('Preview'), findsNothing);
   });
 
   testWidgets('Markdown off stops the syntax colouring, in both editors', (tester) async {
@@ -253,6 +277,28 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(controller.highlight, isFalse);
     expect(coloured(inDialog(find.byType(EditableText))), isFalse);
+
+    // Plain, but still the base class's span: the IME's composing run keeps
+    // its underline.
+    final field = inDialog(find.byType(EditableText));
+    await tester.tap(field);
+    await tester.pump();
+    controller.value = const TextEditingValue(
+      text: '## Subject',
+      selection: TextSelection.collapsed(offset: 10),
+      composing: TextRange(start: 3, end: 10),
+    );
+    await tester.pump();
+    final composing = tester.state<EditableTextState>(field).buildTextSpan().children ?? const <InlineSpan>[];
+    expect(composing.any((c) => c.style?.decoration == TextDecoration.underline), isTrue);
+    controller.value = const TextEditingValue(text: '## Subject', selection: TextSelection.collapsed(offset: 10));
+
+    // Set from outside a build, it repaints on its own.
+    int notified = 0;
+    controller.addListener(() => notified++);
+    controller.highlight = true;
+    expect(notified, 1);
+    controller.highlight = false;
 
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();

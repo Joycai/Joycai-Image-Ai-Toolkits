@@ -183,9 +183,9 @@ class _LargeEditorState extends State<_LargeEditor> {
     );
   }
 
-  /// `A1d`: every segment 56 wide (touch-sized on a phone), so the control
-  /// does not change width with the language or when 「分栏」 comes and goes
-  /// by more than that one segment.
+  /// `A1d`: every segment at least 56 wide (touch-sized on a phone), all of
+  /// them equal. A floor, not a fixed width: 「プレビュー」 does not fit in 56,
+  /// and a label cut to 「プレ…」 is worse than a control a little wider.
   static const double _segmentWidth = 56;
   static const double _segmentWidthCompact = 64;
 
@@ -195,18 +195,24 @@ class _LargeEditorState extends State<_LargeEditor> {
       if (canSplit) AppSegment(value: _LargeView.split, label: l10n.editorSplitView),
       AppSegment(value: _LargeView.preview, label: l10n.preview),
     ];
-    return SizedBox(
+    return ConstrainedBox(
       // Plus the track's 3px inset either side.
-      width: segments.length * (widget.compact ? _segmentWidthCompact : _segmentWidth) + 6,
-      child: AppSegmentedControl<_LargeView>(
-        segments: segments,
-        value: view,
-        onChanged: _setView,
-        expand: true,
-        compact: !widget.compact,
-        // Raised for the small editor's reason: this picks a view of the same
-        // text, and the accent stays free for the syntax inside it.
-        style: AppSegmentStyle.raised,
+      constraints: BoxConstraints(
+        minWidth: segments.length * (widget.compact ? _segmentWidthCompact : _segmentWidth) + 6,
+      ),
+      // With `expand`, the row's intrinsic width is its widest segment times
+      // their number — equal segments, none narrower than its label.
+      child: IntrinsicWidth(
+        child: AppSegmentedControl<_LargeView>(
+          segments: segments,
+          value: view,
+          onChanged: _setView,
+          expand: true,
+          compact: !widget.compact,
+          // Raised for the small editor's reason: this picks a view of the same
+          // text, and the accent stays free for the syntax inside it.
+          style: AppSegmentStyle.raised,
+        ),
       ),
     );
   }
