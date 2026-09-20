@@ -214,7 +214,7 @@ void main() {
     expect(find.byIcon(Icons.content_copy), findsNothing);
   });
 
-  testWidgets('a table fills the measure, and scrolls by itself when it cannot fit', (tester) async {
+  testWidgets('a table fills the measure and never pushes past it', (tester) async {
     const table = '| param | value |\n|---|:-:|\n| lens | **35mm** |\n| stop | f/1.8 |';
     await pump(tester, table, width: 500);
     expect(tester.takeException(), isNull);
@@ -223,8 +223,27 @@ void main() {
 
     await pump(tester, '| a | b |\n|---|---|\n| ${'wide ' * 40} | x |', width: 200);
     expect(tester.takeException(), isNull);
-    expect(tester.getSize(find.byType(Table)).width, greaterThan(200));
-    expect(tester.getSize(find.byType(AppMarkdown)).width, 200);
+    expect(tester.getSize(find.byType(Table)).width, lessThanOrEqualTo(200));
+  });
+
+  testWidgets('every element can be asked its intrinsic height', (tester) async {
+    // The workbench's config panel wraps the editor — and so its preview — in
+    // an IntrinsicHeight. One LayoutBuilder anywhere in here would throw.
+    const everything = '# h\n\n## h\n\ntext\n\n- a\n  - b\n\n1. one\n\n- [x] t\n\n> q\n\n'
+        '| a | b |\n|---|---|\n| c | d |\n\n```json\n{}\n```\n\n---\n\n![alt](https://example.com/x.png)';
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const Scaffold(
+          body: SingleChildScrollView(
+            child: IntrinsicHeight(child: SizedBox(width: 320, child: AppMarkdown(data: everything))),
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(find.byType(AppMarkdown)).height, greaterThan(200));
   });
 
   testWidgets('a quote is neutral and spaces its own paragraphs', (tester) async {

@@ -33,3 +33,6 @@
 - **列表、表格也自绘**（原计划用库的 `bulletBuilder`）：库把无序与有序的记号塞进同一个 `listIndent` 槽，做不到「圆点槽 16 / 数字槽 22」；
   已勾任务项的文字退到 `onSurfaceVariant` 也只有自绘拿得到。
 - 选区：`selectable` = 外包一个 `SelectionArea`（不是库的逐块 `SelectableText`），可以跨块选。
+- **表格不横向滚动，等宽列铺满限宽、单元格折行**（阶段 review 发现）：「窄则铺满、宽则自己横滚」要一个 `LayoutBuilder`，
+  而工作台配置栏用 `IntrinsicHeight` 问小编辑器要高度（`MarkdownEditor.probeAvailableHeight` 的注释），预览里出现一张表就会抛。
+  `app_markdown_test` 有一条「全部元素放进 IntrinsicHeight 不抛」钉住这件事。

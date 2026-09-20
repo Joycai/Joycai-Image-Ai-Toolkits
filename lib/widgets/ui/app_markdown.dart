@@ -309,7 +309,7 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
     final line = BorderSide(color: _scheme.outlineVariant);
 
     final table = Table(
-      defaultColumnWidth: const IntrinsicColumnWidth(flex: 1),
+      defaultColumnWidth: const FlexColumnWidth(),
       border: TableBorder(horizontalInside: line),
       children: [
         for (final row in rows)
@@ -335,20 +335,15 @@ class _AppMarkdownState extends State<AppMarkdown> implements MarkdownBuilderDel
       ],
     );
 
-    // Too wide for the measure, the table scrolls by itself rather than
-    // pushing the text column out; narrower, it fills the measure.
+    // Equal columns across the measure, cells wrapping. Not "as wide as it
+    // likes, scrolled sideways": filling the measure *and* scrolling past it
+    // takes a [LayoutBuilder], and the workbench's config panel asks this
+    // subtree for its intrinsic height (see `MarkdownEditor.probeAvailableHeight`),
+    // which a [LayoutBuilder] cannot answer.
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(border: Border.fromBorderSide(line), borderRadius: BorderRadius.circular(AppRadius.sm)),
-      child: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: constraints.hasBoundedWidth ? constraints.maxWidth : 0),
-            child: table,
-          ),
-        ),
-      ),
+      child: table,
     );
   }
 
