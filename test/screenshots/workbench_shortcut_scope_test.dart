@@ -13,6 +13,7 @@
 
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -64,10 +65,36 @@ void main() {
     await settle(tester);
   }
 
-  Future<void> pressChord(WidgetTester tester, LogicalKeyboardKey key) async {
-    await tester.sendKeyDownEvent(primary);
-    await tester.sendKeyEvent(key);
-    await tester.sendKeyUpEvent(primary);
+  /// [real] runs the chord through `runAsync`, which the keys that persist a
+  /// setting need: each `saveSetting` starts sqflite's ten-second
+  /// lock watchdog, and under fake async that write never finishes, so the
+  /// timer is still pending when the test ends — and a pending timer fails a
+  /// `testWidgets` on something other than its subject.
+  Future<void> pressChord(
+    WidgetTester tester,
+    LogicalKeyboardKey key, {
+    bool shift = false,
+    bool alt = false,
+    bool real = false,
+  }) async {
+    Future<void> send() async {
+      await tester.sendKeyDownEvent(primary);
+      if (shift) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      if (alt) await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+      await tester.sendKeyEvent(key);
+      if (alt) await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+      if (shift) await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(primary);
+    }
+
+    if (real) {
+      await tester.runAsync(() async {
+        await send();
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+    } else {
+      await send();
+    }
     await settle(tester);
   }
 
@@ -86,6 +113,61 @@ void main() {
     expect(find.byType(ImageCard), findsWidgets);
     return gallery;
   }
+
+  testWidgets('the screen-level keys: refresh, the two columns, the tools',
+      (WidgetTester tester) async {
+    final appState = AppState();
+    await mountGallery(tester, 'workbench-screen-keys');
+    addTearDown(() {
+      appState.setSidebarExpanded(true);
+      appState.setConfigPanelExpanded(true);
+      appState.setWorkbenchTab(0);
+    });
+
+    // `⌘\` — the folder column, the same app-level preference the browser
+    // and the toolbar button drive.
+    expect(appState.isSidebarExpanded, isTrue);
+    await pressChord(tester, LogicalKeyboardKey.backslash, real: true);
+    expect(appState.isSidebarExpanded, isFalse);
+    await pressChord(tester, LogicalKeyboardKey.backslash, real: true);
+    expect(appState.isSidebarExpanded, isTrue);
+
+    // `⇧⌘\` — the parameter column, and a visible way back once it is gone.
+    expect(appState.isConfigPanelExpanded, isTrue);
+    await pressChord(tester, LogicalKeyboardKey.backslash, shift: true, real: true);
+    expect(appState.isConfigPanelExpanded, isFalse);
+    expect(find.byIcon(Icons.tune), findsOneWidget,
+        reason: 'the toolbar offers the column back');
+
+    await tester.runAsync(() async {
+      await tester.tap(find.byIcon(Icons.tune));
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    });
+    await settle(tester);
+    expect(appState.isConfigPanelExpanded, isTrue);
+
+    // `⌘⌥1…4` — the tools, in `WorkbenchTab` order. The fifth (the
+    // assistant) is left out of this loop on purpose: arriving there starts
+    // a knowledge-base re-check whose timers outlive the test, and a pending
+    // timer fails a `testWidgets` on something other than its subject. The
+    // registry's fifth chord is covered by `app_shortcuts_test`.
+    for (final (index, key) in <LogicalKeyboardKey>[
+      LogicalKeyboardKey.digit1,
+      LogicalKeyboardKey.digit2,
+      LogicalKeyboardKey.digit3,
+      LogicalKeyboardKey.digit4,
+    ].indexed) {
+      await pressChord(tester, key, alt: true, real: true);
+      expect(appState.workbenchTabIndex, index,
+          reason: 'Cmd+Alt+${index + 1} is tool $index');
+    }
+
+    await tester.runAsync(() async {
+      appState.setWorkbenchTab(0);
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    });
+    await settle(tester);
+  });
 
   testWidgets('Cmd+A selects the gallery, Escape clears it', (WidgetTester tester) async {
     final gallery = await mountGallery(tester, 'workbench-select-all');

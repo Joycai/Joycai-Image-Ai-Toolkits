@@ -150,6 +150,18 @@ class WorkbenchLayout extends StatefulWidget {
   final Widget centerContent;
   final Widget? leftPanel;
   final WorkbenchRightPanelBuilder? rightPanelBuilder;
+
+  /// The screen's own keys, handled inside this layout rather than above it
+  /// so the handler's `FocusNode.context` can reach [WorkbenchLayoutState] —
+  /// `⌘\` has to know whether the column is inline or a drawer.
+  ///
+  /// Carried by a [FocusScope] rather than a plain [Focus], and that is not a
+  /// detail: a key event only travels up from whatever holds the keyboard, so
+  /// when the gallery's focus region unmounted on a tab switch there was
+  /// nothing under this handler any more and the screen's keys went dead
+  /// until the next click. Focus falls back to the enclosing scope, so making
+  /// this one a scope is what keeps the screen answering.
+  final KeyEventResult Function(FocusNode, KeyEvent)? onKeyEvent;
   final WorkbenchToolbarBuilder? toolbarBuilder;
 
   /// A floating control at the bottom centre of the centre column — the
@@ -179,6 +191,7 @@ class WorkbenchLayout extends StatefulWidget {
     required this.centerContent,
     this.leftPanel,
     this.rightPanelBuilder,
+    this.onKeyEvent,
     this.toolbarBuilder,
     this.centerOverlay,
     this.bottomPanel,
@@ -278,7 +291,9 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
     return Provider<WorkbenchLayoutState>.value(
       value: layoutState,
-      child: Scaffold(
+      child: FocusScope(
+        onKeyEvent: widget.onKeyEvent,
+        child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: Colors.transparent,
         body: Column(
@@ -317,6 +332,7 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                 ),
               )
             : null,
+        ),
       ),
     );
   }
@@ -465,7 +481,9 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
     return Provider<WorkbenchLayoutState>.value(
       value: layoutState,
-      child: Scaffold(
+      child: FocusScope(
+        onKeyEvent: widget.onKeyEvent,
+        child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: Colors.transparent,
         drawer: _hasLeft
@@ -522,7 +540,8 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
             ),
           ),
         ),
-      ),
+          ),
+        ),
     );
   }
 

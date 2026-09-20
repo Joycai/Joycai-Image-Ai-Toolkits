@@ -401,7 +401,11 @@ class _GalleryRow extends StatelessWidget {
     bool toolsInline = !phone;
     bool toolsMenuCompact = false;
     final folded = <_Fold>{if (phone) ..._Fold.values};
-    final showTune = layout.rightInDrawer && !phone;
+    // The way back to the parameter column: when it is a drawer, and also
+    // when `⇧⌘\` has collapsed it inline. A column you can only bring back
+    // with a shortcut you already know about is a trap.
+    final configCollapsed = !context.select<AppState, bool>((s) => s.isConfigPanelExpanded);
+    final showTune = !phone && (layout.rightInDrawer || configCollapsed);
 
     bool viewLabels = true;
     double viewNatural() => viewLabels
@@ -525,7 +529,13 @@ class _GalleryRow extends StatelessWidget {
         GlassIconButton(
           icon: Icons.tune,
           tooltip: l10n.wbGenerationConfig,
-          onPressed: () => context.read<WorkbenchLayoutState>().openRightPanel(),
+          onPressed: () {
+            if (configCollapsed) {
+              context.read<AppState>().setConfigPanelExpanded(true);
+            } else {
+              context.read<WorkbenchLayoutState>().openRightPanel();
+            }
+          },
         ),
     ];
 

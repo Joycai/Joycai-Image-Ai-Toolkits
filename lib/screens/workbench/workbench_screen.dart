@@ -12,9 +12,11 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/app_paths.dart';
+import '../../core/app_shortcuts.dart';
 import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
+import '../../core/text_editing_focus.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
@@ -426,6 +428,52 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     super.dispose();
   }
 
+  /// The workbench's screen-level keys (L1).
+  ///
+  /// Nothing here touches a selection — those belong to the gallery's focus
+  /// region ([Gallery]) — and nothing is claimed while a text field has the
+  /// keyboard, which on this screen is most of the time: the prompt editor
+  /// and the assistant's composer both live here.
+  KeyEventResult _handleKeys(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (isTextEditingFocused()) return KeyEventResult.ignored;
+
+    // The handler runs inside the layout, so the node's own context is the
+    // one that can see `WorkbenchLayoutState` — the screen's cannot.
+    final BuildContext ctx = node.context ?? context;
+    final appState = Provider.of<AppState>(ctx, listen: false);
+    final layout = Provider.of<WorkbenchLayoutState?>(ctx, listen: false);
+    bool bound(String id) => AppShortcuts.byId(id).matches(event);
+
+    if (bound(AppShortcutIds.refresh)) {
+      appState.galleryState.refreshImages();
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.toggleLeftPanel)) {
+      if (layout != null && layout.leftInDrawer) {
+        layout.openLeftPanel();
+      } else {
+        appState.setSidebarExpanded(!appState.isSidebarExpanded);
+      }
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.toggleConfigPanel)) {
+      if (layout != null && layout.rightPanelDetached) {
+        layout.openRightPanel();
+      } else {
+        appState.setConfigPanelExpanded(!appState.isConfigPanelExpanded);
+      }
+      return KeyEventResult.handled;
+    }
+
+    final tool = AppShortcuts.workbenchToolIndexFor(event);
+    if (tool >= 0) {
+      appState.setWorkbenchTab(tool);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
@@ -646,8 +694,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         }
       },
       bottomPanel: const AppRunConsole(onExpand: showTaskQueueSheet),
+      onKeyEvent: _handleKeys,
       showLeftPanel: showLeftPanel,
-      showRightPanel: showRightPanel,
+      showRightPanel: showRightPanel && appState.isConfigPanelExpanded,
       fabIcon: fabIcon,
     );
   }
