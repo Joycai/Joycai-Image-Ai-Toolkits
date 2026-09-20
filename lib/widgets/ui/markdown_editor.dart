@@ -134,11 +134,16 @@ class MarkdownTextEditingController extends TextEditingController {
     final TextRange composing = value.composing;
     if (!withComposing || !value.isComposingRangeValid || composing.isCollapsed) return span;
 
+    // Walks a flat run of text-only spans, which is what [buildTextSpan]
+    // makes. Anything else has offsets this cannot count; better no underline
+    // than one under the wrong characters.
+    final List<InlineSpan> pieces = span.children ?? const <InlineSpan>[];
+    if (pieces.any((p) => p is! TextSpan || p.children != null)) return span;
+
     const underline = TextStyle(decoration: TextDecoration.underline);
     final List<InlineSpan> children = [];
     int offset = 0;
-    for (final InlineSpan child in span.children ?? const <InlineSpan>[]) {
-      final TextSpan piece = child as TextSpan;
+    for (final TextSpan piece in pieces.cast<TextSpan>()) {
       final String pieceText = piece.text ?? '';
       final int start = offset;
       final int end = offset + pieceText.length;
@@ -239,10 +244,6 @@ class SmartMarkdownFormatter extends TextInputFormatter {
   }
 }
 
-/// Tab in a prompt is two spaces over the selection, not a focus move.
-///
-/// A write to the controller is not an edit as far as the field is concerned,
-/// so [onChanged] is called by hand — callers save from it.
 /// Colours Markdown syntax in [controller] only while Markdown is on. A plain
 /// [TextEditingController] never coloured anything and is left alone.
 ///
@@ -257,6 +258,45 @@ void _syncMarkdownHighlight(TextEditingController controller, bool isMarkdown, {
   }
 }
 
+/// The Markdown switch of both editors: the word is part of the control. The
+/// switch alone is 36×22, and the checkbox it replaced brought a 48px target
+/// with it. One node for a screen reader — 「Markdown, switch, on」 — not a
+/// button and a switch that do the same thing.
+class _MarkdownSwitch extends StatelessWidget {
+  const _MarkdownSwitch({required this.value, required this.onChanged, this.labelFirst = false, this.labelColor});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  /// The pop-out's header reads right to left from its edge, label before
+  /// switch; the small editor's starts with the switch.
+  final bool labelFirst;
+  final Color? labelColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = Text('Markdown', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: labelColor));
+    final control = AppSwitch(value: value, onChanged: onChanged);
+    return MergeSemantics(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        onTap: () => onChanged(!value),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: labelFirst ? [label, const SizedBox(width: 6), control] : [control, const SizedBox(width: 6), label],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tab in a prompt is two spaces over the selection, not a focus move.
+///
+/// A write to the controller is not an edit as far as the field is concerned,
+/// so [onChanged] is called by hand — callers save from it.
 void _insertMarkdownTab(TextEditingController controller, ValueChanged<String>? onChanged) {
   final TextSelection selection = controller.selection;
   if (!selection.isValid) return;
@@ -419,28 +459,8 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           children: [
             if (!widget.isRefined) ...[
               // A switch, as `A1 1a` and the pop-out (`A1d`) both draw it: this
-              // turns a mode on, it does not tick an item off. The word is part
-              // of the control — the switch alone is 36×22, and the checkbox it
-              // replaced brought a 48px target with it.
-              // One node for a screen reader — 「Markdown, switch, on」 — not a
-              // button and a switch that do the same thing.
-              MergeSemantics(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(AppRadius.control),
-                  onTap: () => setMarkdown(!widget.isMarkdown),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AppSwitch(value: widget.isMarkdown, onChanged: setMarkdown),
-                        const SizedBox(width: 6),
-                        Text('Markdown', style: Theme.of(context).textTheme.bodySmall),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              // turns a mode on, it does not tick an item off.
+              _MarkdownSwitch(value: widget.isMarkdown, onChanged: setMarkdown),
             ] else
               Text(
                 widget.label,
@@ -512,6 +532,10 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     // window across the breakpoint keeps the editor's state.
     final editorKey = GlobalKey();
 
+    // What the pop-out last asked for. A caller that saves before it rebuilds
+    // may not have handed the new `isMarkdown` down by the time this closes.
+    bool? asked;
+
     _popOutOpen = true;
     showDialog<void>(
       context: context,
@@ -524,7 +548,10 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           label: widget.label,
           hint: widget.hint,
           isMarkdown: widget.isMarkdown,
-          onMarkdownChanged: widget.onMarkdownChanged,
+          onMarkdownChanged: (v) {
+            asked = v;
+            widget.onMarkdownChanged(v);
+          },
           onChanged: widget.onChanged,
           readOnly: widget.isRefined,
           selectable: widget.selectable,
@@ -556,7 +583,9 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       },
     ).whenComplete(() {
       _popOutOpen = false;
-      if (mounted) _syncMarkdownHighlight(widget.controller, widget.isMarkdown || widget.isRefined);
+      // The caller has the last word either way: its next rebuild goes through
+      // [didUpdateWidget], which colours by whatever it then says.
+      if (mounted) _syncMarkdownHighlight(widget.controller, (asked ?? widget.isMarkdown) || widget.isRefined);
     });
   }
 

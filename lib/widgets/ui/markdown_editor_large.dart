@@ -81,8 +81,12 @@ class _LargeEditorState extends State<_LargeEditor> {
   void _onControllerChanged() {
     if (widget.controller.text == _lastText) return;
     _lastText = widget.controller.text;
-    if (_view != _LargeView.edit) setState(() {});
+    if (_previewShown) setState(() {});
   }
+
+  /// Whether the last build put a preview on screen. Not `_view`: a split the
+  /// window has grown too narrow for is shown as the edit view.
+  bool _previewShown = false;
 
   @override
   void didUpdateWidget(_LargeEditor oldWidget) {
@@ -172,6 +176,7 @@ class _LargeEditorState extends State<_LargeEditor> {
           final bool canSplit = !widget.compact && !widget.readOnly && constraints.maxWidth >= _splitMinWidth;
           // A window dragged narrower with the split open falls back to edit.
           final view = (_view == _LargeView.split && !canSplit) ? _LargeView.edit : _view;
+          _previewShown = view != _LargeView.edit;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -298,11 +303,15 @@ class _LargeEditorState extends State<_LargeEditor> {
           const SizedBox(width: 10),
         ],
         if (!widget.readOnly) ...[
-          if (_rendersMarkdown) ...[rule, const SizedBox(width: 10)],
-          Text('Markdown', style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+          if (_rendersMarkdown) ...[rule, const SizedBox(width: 6)],
+          // Its own 4 of padding each side stands in for part of the gaps.
+          _MarkdownSwitch(
+            value: _markdown,
+            onChanged: _setMarkdown,
+            labelFirst: true,
+            labelColor: scheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 6),
-          AppSwitch(value: _markdown, onChanged: _setMarkdown),
-          const SizedBox(width: 10),
         ],
         rule,
         const SizedBox(width: 6),

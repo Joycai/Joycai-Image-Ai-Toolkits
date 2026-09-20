@@ -240,6 +240,101 @@ void main() {
     expect(find.text('Preview'), findsNothing);
   });
 
+  testWidgets('in the pop-out too, the word Markdown is part of the switch', (tester) async {
+    await open(tester, const Size(1440, 900));
+    expect(inDialog(find.text('Preview')), findsWidgets);
+    await tester.tap(inDialog(find.text('Markdown')));
+    await tester.pumpAndSettle();
+    expect(inDialog(find.text('Preview')), findsNothing);
+  });
+
+  testWidgets('typing rebuilds the pop-out only while a preview is on screen', (tester) async {
+    final controller = await open(tester, const Size(1440, 900));
+    // The same widget instance after a pump means its parent did not rebuild.
+    Widget header() => tester.widget(inDialog(find.byIcon(Icons.close_fullscreen)));
+
+    Widget before = header();
+    controller.text = 'a';
+    await tester.pump();
+    expect(identical(header(), before), isTrue);
+
+    await tester.tap(find.text('Split'));
+    await tester.pumpAndSettle();
+    before = header();
+    controller.text = 'ab';
+    await tester.pump();
+    expect(identical(header(), before), isFalse);
+
+    // Too narrow for the split: what is shown is the edit view again.
+    tester.view.physicalSize = const Size(800, 900);
+    await tester.pumpAndSettle();
+    expect(find.text('Split'), findsNothing);
+    before = header();
+    controller.text = 'abc';
+    await tester.pump();
+    expect(identical(header(), before), isTrue);
+  });
+
+  testWidgets('the pop-out open, a swapped-in controller is still coloured by the switch', (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    TextEditingController controller = MarkdownTextEditingController(text: '## a');
+    late StateSetter rebuild;
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: StatefulBuilder(builder: (context, setState) {
+          rebuild = setState;
+          return SizedBox(
+            width: 340,
+            child: MarkdownEditor(
+              controller: controller,
+              label: 'Prompt',
+              isMarkdown: false,
+              onMarkdownChanged: (_) {},
+            ),
+          );
+        }),
+      ),
+    ));
+    await tester.tap(find.byIcon(Icons.open_in_full));
+    await tester.pumpAndSettle();
+
+    final swapped = MarkdownTextEditingController(text: '## b');
+    expect(swapped.highlight, isTrue);
+    rebuild(() => controller = swapped);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(swapped.highlight, isFalse);
+  });
+
+  testWidgets('closing keeps what the pop-out asked for until the caller says otherwise', (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final controller = MarkdownTextEditingController(text: '## a');
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: SizedBox(
+          width: 340,
+          // A caller that saves first and has not rebuilt by the time of close.
+          child: MarkdownEditor(controller: controller, label: 'Prompt', isMarkdown: true, onMarkdownChanged: (_) {}),
+        ),
+      ),
+    ));
+    await tester.tap(find.byIcon(Icons.open_in_full));
+    await tester.pumpAndSettle();
+    await tester.tap(inDialog(find.byType(AppSwitch)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(controller.highlight, isFalse);
+  });
+
   testWidgets('Markdown off stops the syntax colouring, in both editors', (tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
