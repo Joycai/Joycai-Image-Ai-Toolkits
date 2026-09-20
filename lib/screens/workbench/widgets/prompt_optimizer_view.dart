@@ -547,6 +547,36 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         return _buildKbDistillRequestCard(l10n, colorScheme);
 
       case OptimizerEntryKind.notice:
+        if (entry.text == PromptOptimizerAgent.kbUseMaintainNoticeToken ||
+            entry.text == PromptOptimizerAgent.kbUseWriteNoticeToken) {
+          // A line across the conversation, not a remark in it (`A3d 4d`):
+          // what is above was said under one use, what is below under another.
+          final rule = Expanded(child: Divider(height: 1, color: colorScheme.outlineVariant));
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpace.s4),
+            child: Row(
+              children: [
+                rule,
+                const SizedBox(width: AppSpace.s10),
+                Flexible(
+                  flex: 6,
+                  child: Text(
+                    entry.text == PromptOptimizerAgent.kbUseMaintainNoticeToken
+                        ? l10n.optKbUseMaintainNotice
+                        : l10n.optKbUseWriteNotice,
+                    textAlign: TextAlign.center,
+                    style: textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpace.s10),
+                rule,
+              ],
+            ),
+          );
+        }
         {
           // The notices that ask the user to do something wear the warning
           // container; the compaction note is information.
@@ -558,8 +588,6 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             PromptOptimizerAgent.imageMissingNoticeToken => l10n.optImageMissing,
             PromptOptimizerAgent.kbEntryTooLargeNoticeToken => l10n.optKbEntryTooLarge,
             PromptOptimizerAgent.roundLimitNoticeToken => l10n.optRoundLimitNotice,
-            PromptOptimizerAgent.kbUseMaintainNoticeToken => l10n.optKbUseMaintainNotice,
-            PromptOptimizerAgent.kbUseWriteNoticeToken => l10n.optKbUseWriteNotice,
             _ => entry.text,
           };
           return _besideAvatar(

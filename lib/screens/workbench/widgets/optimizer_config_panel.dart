@@ -61,7 +61,8 @@ class OptimizerConfigPanel extends StatefulWidget {
   final bool running;
 
   /// Knowledge edits the agent has staged and the user has not yet answered,
-  /// oldest first. Only ever non-empty in [AssistantMode.knowledgeEdit].
+  /// oldest first. Usually a maintenance session's; also what a distill
+  /// request staged, or what was left waiting by a switch back to prompts.
   final List<OptimizerChatEntry> pendingKbEdits;
 
   /// What the agent is currently allowed to do to the knowledge base.
@@ -273,12 +274,12 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       else ...[
         _buildKnowledgeStatus(l10n, colorScheme, textTheme),
         // Directly under the base they govern (`A3b 1a`): which folder, and
-        // what may happen to it, are asked together or not at all. The
-        // pending list follows the switches that decide whether it exists.
-        if (mode == AssistantMode.knowledgeEdit) ...[
-          _buildWritePolicy(l10n, colorScheme, textTheme),
-          if (widget.pendingKbEdits.isNotEmpty) _buildPendingKbEdits(l10n, colorScheme, textTheme),
-        ],
+        // what may happen to it, are asked together or not at all.
+        if (mode == AssistantMode.knowledgeEdit) _buildWritePolicy(l10n, colorScheme, textTheme),
+        // Wherever edits wait, not only in maintenance: a switch back to
+        // writing prompts leaves staged edits to answer (`A3d 4d`), and a
+        // distill request stages them from there in the first place.
+        if (widget.pendingKbEdits.isNotEmpty) _buildPendingKbEdits(l10n, colorScheme, textTheme),
         _buildCitedThisRound(l10n, colorScheme, textTheme),
       ],
       ?_buildIterationTimeline(l10n, colorScheme, textTheme),

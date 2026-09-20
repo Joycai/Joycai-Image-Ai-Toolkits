@@ -84,3 +84,4 @@
 - mode 落库两处：`upsertSession` 更新分支补写 `mode`；`setSessionMode` 切换当时就写（没有行就什么都不做）。无迁移——列一直都在。
 - 不变量写进 `architecture/assistant-context.md`「What about a session may change」。
 - 片 1 留下的那条（出词⇄维护走跨依据确认框）在这里消掉：同会话切换不弹框。
+- review（2 条，全修）：待确认改动卡在有待确认项时就显示，不再只属于维护（切回出词后、或出词里总结经验暂存的改动都能在右栏看到）；切换提示画成横贯对话的分隔线，而不是一条 info 备注。

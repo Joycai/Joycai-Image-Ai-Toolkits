@@ -1,7 +1,13 @@
 // `A3d 4d`: a knowledge session moves between writing prompts and
 // maintaining the base without becoming another conversation — and nothing
 // else about a session's mode may move.
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/optimizer_config_panel.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/prompt_optimizer_view.dart';
+import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:provider/provider.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_migrations.dart';
@@ -53,6 +59,83 @@ void main() {
       ui.setAssistantMode(AssistantMode.systemPrompt);
       expect(identical(ui.optimizerSession, session), isFalse);
       expect(ui.assistantMode, AssistantMode.systemPrompt);
+    });
+  });
+
+  group('on screen', () {
+    testWidgets('the switch is a line across the chat and fits a phone', (tester) async {
+      tester.view.physicalSize = const Size(390, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeBase)
+        ..addUserTurn('x')
+        ..switchKnowledgeUse(AssistantMode.knowledgeEdit);
+      final ui = WorkbenchUIState()..optimizerSession = session;
+
+      await tester.pumpWidget(ChangeNotifierProvider<WorkbenchUIState>.value(
+        value: ui,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: PromptOptimizerChatView(
+              inputCtrl: TextEditingController(),
+              onSend: () {},
+              onRetry: () {},
+              onApplyPrompt: (_) {},
+              onApplyKbEdit: (_) {},
+              onRejectKbEdit: (_) {},
+              onAnswerAskUser: (_, _) {},
+              isBusy: false,
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+      expect(find.text(l10n.optKbUseMaintainNotice), findsOneWidget);
+      expect(find.byType(Divider), findsNWidgets(2));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('edits left waiting by a switch stay listed in the panel', (tester) async {
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit)
+        ..addUserTurn('x');
+      session.stageKbEditForTest(relPath: 'rules/a.md', newContent: 'a', oldContent: 'A');
+      session.switchKnowledgeUse(AssistantMode.knowledgeBase);
+
+      await tester.pumpWidget(ChangeNotifierProvider<AppState>.value(
+        value: AppState(),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: OptimizerConfigPanel(
+              selectedModelDbId: null,
+              selectedSysPrompt: null,
+              sysPromptTemplateId: null,
+              mode: session.mode,
+              kbStatus: KbStatus.ok,
+              kbPath: '/tmp/kb',
+              sysPrompts: const [],
+              pendingKbEdits: PromptOptimizerAgent.pendingKbEdits(session),
+              onModelChanged: (_) {},
+              onSysPromptChanged: (_) {},
+              onSysPromptTemplateChanged: (_, _) {},
+              onSaveTemplate: (_, _) async {},
+              onModeChanged: (_) {},
+              onScaffoldKb: () async {},
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+      expect(find.textContaining('a.md'), findsOneWidget);
+      // The switches that govern *new* writes are maintenance's alone.
+      expect(find.text(l10n.kbWritePolicyTitle), findsNothing);
     });
   });
 
