@@ -12,7 +12,7 @@ import '../../../state/file_staging_state.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/dashed_border.dart';
 import '../../../widgets/glass/glass_controls.dart';
-import 'transfer_dialog_parts.dart';
+import '../../../widgets/files/transfer_dialog_parts.dart';
 
 /// Width the staging column takes when its parent does not bound it (`B1b`:
 /// 320, the same as the narrow-window slide-out panel).

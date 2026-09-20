@@ -10,13 +10,13 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/constants.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
+import '../../../models/browser_file.dart';
 import '../../../models/task_item.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../models/llm_model.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
-import '../../../widgets/ui/app_button.dart';
-import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/files/file_delete_dialog.dart';
 import '../../../widgets/ui/app_snackbar.dart';
 import 'result_feedback_dialog.dart';
 
@@ -92,75 +92,46 @@ Future<void> shareImageFiles(
   }
 }
 
-/// Confirm then delete a file (recycle bin on Windows, hard delete elsewhere).
-Future<void> confirmAndDeleteImageFile(
+/// Confirm then delete one or more gallery files, through the same flow and
+/// the same dialog the file browser uses.
+///
+/// This used to be a second implementation: a one-line confirmation, the
+/// recycle bin on Windows via PowerShell, and `File.delete()` — a permanent
+/// delete — on macOS and Linux. Same app, same files, two different fates
+/// depending on which screen you happened to be looking at. The shared run
+/// sends everything to the trash wherever the platform has one, says which it
+/// is going to do *before* the user decides, refuses to delete a registered
+/// source folder, and reports a partial failure instead of hiding it.
+Future<void> confirmAndDeleteImageFiles(
   BuildContext context,
-  AppImage imageFile,
-  AppLocalizations l10n,
+  List<AppImage> images,
 ) async {
-  final filename = imageFile.name;
-  final isWindows = Platform.isWindows;
+  if (images.isEmpty) return;
+  final galleryState =
+      Provider.of<AppState>(context, listen: false).galleryState;
 
-  final confirmed = await AppDialog.show<bool>(
+  // `BrowserFile` is "a file on disk with its stat", which is what the dialog
+  // lists; the gallery's `AppImage` carries only path and name, so the stat
+  // is taken here. A file that has gone missing since the scan is dropped —
+  // the run would only report it as a failure.
+  final files = <BrowserFile>[];
+  for (final image in images) {
+    final file = File(image.path);
+    if (file.existsSync()) files.add(BrowserFile.fromFile(file));
+  }
+  if (files.isEmpty || !context.mounted) return;
+
+  await runFileDelete(
     context,
-    title: l10n.deleteFileConfirmTitle,
-    content: Text(l10n.deleteFileConfirmMessage(filename)),
-    actions: [
-      AppButton(
-        label: l10n.cancel,
-        variant: AppButtonVariant.text,
-        onPressed: () => Navigator.pop(context, false),
-      ),
-      AppButton(
-        label: isWindows ? l10n.moveToTrash : l10n.permanentlyDelete,
-        variant: AppButtonVariant.destructive,
-        onPressed: () => Navigator.pop(context, true),
-      ),
-    ],
+    files,
+    protectedRoots: galleryState.sourceDirectories,
+    onDeleted: () async {
+      // The gallery holds its own selection and its own list; both are
+      // rebuilt from disk.
+      galleryState.clearImageSelection();
+      await galleryState.refreshImages();
+    },
   );
-
-  if (confirmed == true && context.mounted) {
-    await _deleteImageFile(context, imageFile, l10n);
-  }
-}
-
-Future<void> _deleteImageFile(
-  BuildContext context,
-  AppImage imageFile,
-  AppLocalizations l10n,
-) async {
-  final appState = Provider.of<AppState>(context, listen: false);
-
-  try {
-    if (Platform.isWindows) {
-      final path = imageFile.path
-          .replaceAll("'", "''")
-          .replaceAll('`', '``')
-          .replaceAll(r'$', r'`$');
-      final result = await Process.run(
-        'powershell',
-        [
-          '-Command',
-          "Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('$path', 'OnlyErrorDialogs', 'SendToRecycleBin')"
-        ],
-      );
-
-      if (result.exitCode != 0) {
-        throw Exception('PowerShell Error: ${result.stderr}');
-      }
-    } else {
-      await File(imageFile.path).delete();
-    }
-
-    if (context.mounted) {
-      AppSnackBar.success(context, l10n.deleteSuccess);
-      appState.galleryState.refreshImages();
-    }
-  } catch (e) {
-    if (context.mounted) {
-      AppSnackBar.error(context, l10n.deleteFailed(e.toString()));
-    }
-  }
 }
 
 /// Whether [path] can be fed back to the assistant right now (`A1 · 3a`).

@@ -19,7 +19,7 @@ import '../../state/file_staging_state.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_snackbar.dart';
-import 'widgets/transfer_dialog_parts.dart';
+import '../../widgets/files/transfer_dialog_parts.dart';
 
 /// Runs a staging-area paste end to end: plan, resolve conflicts, execute with
 /// progress, then reconcile the staging list and the browser listing.

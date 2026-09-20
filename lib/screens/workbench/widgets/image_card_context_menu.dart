@@ -252,13 +252,14 @@ Future<void> showImageCardContextMenu(
       ),
     AppGlassMenuItem(
       icon: Icons.delete_outline,
-      // The row says what the confirm will do: Windows sends the file to the
-      // recycle bin, the others delete it outright.
-      label: Platform.isWindows ? l10n.moveToTrash : l10n.delete,
+      // The dialog says which it will be — trash where the platform has one,
+      // a permanent delete only where it does not — so the row no longer has
+      // to guess per platform.
+      label: l10n.delete,
       danger: true,
       onSelected: () {
         if (!context.mounted) return;
-        confirmAndDeleteImageFile(context, imageFile, l10n);
+        confirmAndDeleteImageFiles(context, [imageFile]);
       },
     ),
   ];

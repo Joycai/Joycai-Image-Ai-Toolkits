@@ -15,7 +15,7 @@ import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
-import 'file_delete_dialog.dart';
+import '../../../widgets/files/file_delete_dialog.dart';
 
 /// The file context menu — `B1a · 1b`, `B1c · 1a`: G2 glass, 230 wide, five
 /// groups.
@@ -163,7 +163,15 @@ void showFileContextMenu({
         danger: true,
         onSelected: () {
           if (!context.mounted) return;
-          runFileDelete(context, targets);
+          runFileDelete(
+            context,
+            targets,
+            protectedRoots: browser.sourceDirectories,
+            onDeleted: () async {
+              await staging.revalidate();
+              await browser.refresh();
+            },
+          );
         },
       ),
     ],

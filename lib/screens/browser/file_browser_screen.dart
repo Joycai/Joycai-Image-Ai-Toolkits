@@ -44,7 +44,7 @@ import 'widgets/browser_selection_bar.dart';
 import 'widgets/browser_staging_panel.dart';
 import 'widgets/file_card.dart';
 import 'widgets/file_context_menu.dart';
-import 'widgets/file_delete_dialog.dart';
+import '../../widgets/files/file_delete_dialog.dart';
 
 /// The file browser — `B1a` (layout and selection) with `B1b`'s staging
 /// column on the right.
@@ -622,7 +622,20 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   /// same set — `B1c · 1c`. The selection is copied here because the run
   /// refreshes the browser at the end, which rewrites it.
   void _deleteSelection(BuildContext context, FileBrowserState state) {
-    runFileDelete(context, state.selectedFiles.toList());
+    final staging = Provider.of<FileStagingState>(context, listen: false);
+    runFileDelete(
+      context,
+      state.selectedFiles.toList(),
+      protectedRoots: state.sourceDirectories,
+      // The staging marks on those paths are now genuinely missing — what
+      // `revalidate` exists to report. The selection is not cleared here:
+      // pruning it against what is still on disk is already `refresh`'s job,
+      // and doing it twice would get a half-failed run wrong.
+      onDeleted: () async {
+        await staging.revalidate();
+        await state.refresh();
+      },
+    );
   }
 
   /// Single click toggles one file; Shift+click extends the selection from the

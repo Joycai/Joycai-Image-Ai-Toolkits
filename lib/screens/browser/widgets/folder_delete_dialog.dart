@@ -15,7 +15,7 @@ import '../../../state/file_staging_state.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/ui/app_snackbar.dart';
-import 'transfer_dialog_parts.dart';
+import '../../../widgets/files/transfer_dialog_parts.dart';
 
 /// Confirms and performs the deletion of a folder in the browser's tree —
 /// `B1b 1d`'s two delete dialogs, then the tidy-up the tree needs afterwards.

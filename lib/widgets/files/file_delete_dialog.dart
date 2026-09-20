@@ -3,26 +3,30 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
-import 'package:provider/provider.dart';
 
-import '../../../core/app_theme.dart';
-import '../../../core/constants.dart';
-import '../../../core/design_tokens.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../models/browser_file.dart';
-import '../../../services/files/file_delete_service.dart';
-import '../../../state/app_state.dart';
-import '../../../state/file_staging_state.dart';
-import '../../../widgets/ui/app_button.dart';
-import '../../../widgets/ui/app_dialog.dart';
-import '../../../widgets/ui/app_snackbar.dart';
+import '../../core/app_theme.dart';
+import '../../core/constants.dart';
+import '../../core/design_tokens.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/browser_file.dart';
+import '../../services/files/file_delete_service.dart';
+import '../ui/app_button.dart';
+import '../ui/app_dialog.dart';
+import '../ui/app_snackbar.dart';
 import 'transfer_dialog_parts.dart';
 
 /// How many files the dialog names before it starts counting them instead.
 const int _kNamedFiles = 4;
 
-/// Confirms and performs the deletion of files in the browser — `B1c · 1d/1e`
-/// — then the tidy-up the grid and the staging area need afterwards.
+/// Confirms and performs the deletion of files — `B1c · 1d/1e` — for every
+/// screen that deletes one.
+///
+/// It lives here, under `widgets/`, because the workbench gallery deletes
+/// files too and used to do it with a second implementation: a one-line
+/// confirmation, and on macOS and Linux `File.delete()` — a permanent delete
+/// where the browser sent the same file to the trash. One key on two screens
+/// is only worth having if it means one thing, so the two deletes had to
+/// become one first.
 ///
 /// The folder side of this is [runFolderDelete] and the two say the same
 /// thing the same way: the system trash wherever the platform has one, and
@@ -33,13 +37,20 @@ const int _kNamedFiles = 4;
 /// Unlike the folder dialog there is nothing to count — a [BrowserFile]
 /// carries its size from the scan — so the confirm button is live from the
 /// first frame.
-Future<void> runFileDelete(BuildContext context, List<BrowserFile> files) async {
+/// [protectedRoots] are folders the run must refuse to delete — a registered
+/// source folder is not a file the user can throw away from a grid.
+/// [onDeleted] is the caller's tidy-up: what each screen has to re-read once
+/// something is actually gone. It runs only when at least one file was
+/// deleted, and only while the caller is still mounted.
+Future<void> runFileDelete(
+  BuildContext context,
+  List<BrowserFile> files, {
+  Iterable<String> protectedRoots = const <String>[],
+  Future<void> Function()? onDeleted,
+}) async {
   if (files.isEmpty) return;
 
   final l10n = AppLocalizations.of(context)!;
-  final appState = Provider.of<AppState>(context, listen: false);
-  final staging = Provider.of<FileStagingState>(context, listen: false);
-  final browser = appState.fileBrowserState;
 
   final bool toTrash = await FileDeleteService.trashSupported;
   if (!context.mounted) return;
@@ -56,7 +67,7 @@ Future<void> runFileDelete(BuildContext context, List<BrowserFile> files) async 
     outcome = await FileDeleteService.delete(
       files.map((BrowserFile f) => f.path),
       toTrash: toTrash,
-      protectedRoots: browser.sourceDirectories,
+      protectedRoots: protectedRoots,
     );
   } on FileSystemException catch (e) {
     if (context.mounted) AppSnackBar.error(context, l10n.folderOpFailed(e.message));
@@ -90,13 +101,7 @@ Future<void> runFileDelete(BuildContext context, List<BrowserFile> files) async 
   }
 
   if (outcome.deleted.isEmpty) return;
-
-  // The staging marks on those paths are now genuinely missing — the state
-  // `revalidate` exists to report. The selection is not cleared here: pruning
-  // it against what is still on disk is already `refresh`'s job, and doing it
-  // twice would get a half-failed run wrong.
-  await staging.revalidate();
-  await browser.refresh();
+  await onDeleted?.call();
 }
 
 class _FileDeleteDialog extends StatelessWidget {
