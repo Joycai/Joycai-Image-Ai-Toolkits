@@ -8424,7 +8424,7 @@ abstract class AppLocalizations {
   /// No description provided for @optModeSystemPrompt.
   ///
   /// In en, this message translates to:
-  /// **'System Prompt'**
+  /// **'Task preset'**
   String get optModeSystemPrompt;
 
   /// No description provided for @optModeKnowledge.
@@ -8444,12 +8444,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Knowledge base is not configured or invalid — choose its folder in Settings first.'**
   String get optKbNotConfigured;
-
-  /// No description provided for @optModeSwitchConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Switching the mode starts a new conversation. Continue?'**
-  String get optModeSwitchConfirm;
 
   /// No description provided for @optToolListKnowledge.
   ///
@@ -8730,7 +8724,7 @@ abstract class AppLocalizations {
   /// No description provided for @optModeKnowledgeEdit.
   ///
   /// In en, this message translates to:
-  /// **'Edit KB'**
+  /// **'Maintain'**
   String get optModeKnowledgeEdit;
 
   /// No description provided for @optToolWriteKnowledge.
@@ -9033,12 +9027,6 @@ abstract class AppLocalizations {
   /// **'Enter to send · Shift+Enter for a new line'**
   String get optSendHint;
 
-  /// No description provided for @optModeBadgeAgent.
-  ///
-  /// In en, this message translates to:
-  /// **'{mode} · Agent'**
-  String optModeBadgeAgent(String mode);
-
   /// No description provided for @optRefNumberingHint.
   ///
   /// In en, this message translates to:
@@ -9062,12 +9050,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The assistant is replying — reorder once it finishes.'**
   String get optRefReorderLocked;
-
-  /// No description provided for @optModeKnowledgeEditShort.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit KB'**
-  String get optModeKnowledgeEditShort;
 
   /// No description provided for @optRunning.
   ///
@@ -9904,6 +9886,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'custom · accepted'**
   String get imageSizeRatioAccepted;
+
+  /// No description provided for @optModeKnowledgeWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Write prompts'**
+  String get optModeKnowledgeWrite;
+
+  /// No description provided for @optModeUseFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Use it to'**
+  String get optModeUseFor;
+
+  /// No description provided for @optModeBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'{basis} · {detail}'**
+  String optModeBadge(String basis, String detail);
+
+  /// No description provided for @optPresetBuiltinName.
+  ///
+  /// In en, this message translates to:
+  /// **'General refine'**
+  String get optPresetBuiltinName;
+
+  /// No description provided for @optModeLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant is replying · mode locked'**
+  String get optModeLocked;
+
+  /// No description provided for @optModeSwitchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to “{mode}”?'**
+  String optModeSwitchTitle(String mode);
+
+  /// No description provided for @optModeSwitchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Task-preset and knowledge-base conversations can’t continue one another, so switching starts a new conversation. The current one is saved — come back to it any time from Conversation History.'**
+  String get optModeSwitchBody;
+
+  /// No description provided for @optModeSwitchStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start new conversation'**
+  String get optModeSwitchStart;
 }
 
 class _AppLocalizationsDelegate

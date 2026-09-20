@@ -2484,11 +2484,10 @@
   "safetyThresholdBlockOnlyHigh": "封鎖少部分",
   "safetyThresholdBlockNone": "全部不封鎖",
   "safetyThresholdOff": "關閉過濾",
-  "optModeSystemPrompt": "系統提示詞",
+  "optModeSystemPrompt": "任務預設",
   "optModeKnowledge": "知識庫",
   "knowledgeBase": "知識庫",
   "optKbNotConfigured": "知識庫未設定或無效，請先在設定中選擇知識庫資料夾。",
-  "optModeSwitchConfirm": "切換模式將開始新的對話，是否繼續？",
   "optToolListKnowledge": "瀏覽了知識庫檔案列表",
   "optToolReadKnowledge": "閱讀知識庫：{name}",
   "@optToolReadKnowledge": {
@@ -2573,7 +2572,7 @@
   "optPromptVersionLabel": "提示詞",
   "optImageMissing": "該對話的部分參考圖已不存在，可重新加入後繼續使用。",
   "optRetry": "重試",
-  "optModeKnowledgeEdit": "知識庫編輯",
+  "optModeKnowledgeEdit": "維護",
   "optToolWriteKnowledge": "建議更新知識庫：{name}",
   "@optToolWriteKnowledge": {
     "placeholders": {
@@ -2756,19 +2755,10 @@
     }
   },
   "optSendHint": "Enter 傳送 · Shift+Enter 換行",
-  "optModeBadgeAgent": "{mode} · Agent",
-  "@optModeBadgeAgent": {
-    "placeholders": {
-      "mode": {
-        "type": "String"
-      }
-    }
-  },
   "optRefNumberingHint": "序號與提示詞中引用的檔名對應，agent 可檢視這些圖片。",
   "optRefReorderHint": "拖動卡片調整順序。序號就是傳給助手的順序，也是提示詞裡引用的編號。",
   "optRefReorderHintTouch": "長按卡片後拖動調整順序。序號就是傳給助手的順序。",
   "optRefReorderLocked": "助手回覆中，結束後可調整順序。",
-  "optModeKnowledgeEditShort": "庫編輯",
   "optRunning": "執行中",
   "optRunningStep": "執行中 · 步驟 {count}",
   "@optRunningStep": {
@@ -3144,5 +3134,30 @@
   "imageSizeFooterTyping": "Enter 結算",
   "imageSizeDone": "完成",
   "imageSizeRatioDerived": "派生 · 跟著寬高走",
-  "imageSizeRatioAccepted": "自訂 · 已接受"
+  "imageSizeRatioAccepted": "自訂 · 已接受",
+  "optModeKnowledgeWrite": "出詞",
+  "optModeUseFor": "用它來",
+  "optModeBadge": "{basis} · {detail}",
+  "@optModeBadge": {
+    "placeholders": {
+      "basis": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetBuiltinName": "通用優化",
+  "optModeLocked": "助手回覆中 · 模式已鎖定",
+  "optModeSwitchTitle": "切換到「{mode}」？",
+  "@optModeSwitchTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "optModeSwitchBody": "任務預設和知識庫的對話不能接在一起，切換會開始一個新對話。目前的對話已儲存，可以隨時從「歷史對話」回來。",
+  "optModeSwitchStart": "開始新對話"
 }

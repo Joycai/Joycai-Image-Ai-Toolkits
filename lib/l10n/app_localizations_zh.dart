@@ -4664,7 +4664,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get safetyThresholdOff => '关闭过滤';
 
   @override
-  String get optModeSystemPrompt => '系统提示词';
+  String get optModeSystemPrompt => '任务预设';
 
   @override
   String get optModeKnowledge => '知识库';
@@ -4674,9 +4674,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optKbNotConfigured => '知识库未配置或无效，请先在设置中选择知识库文件夹。';
-
-  @override
-  String get optModeSwitchConfirm => '切换模式将开始新会话，是否继续？';
 
   @override
   String get optToolListKnowledge => '浏览了知识库文件列表';
@@ -4830,7 +4827,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optRetry => '重试';
 
   @override
-  String get optModeKnowledgeEdit => '知识库编辑';
+  String get optModeKnowledgeEdit => '维护';
 
   @override
   String optToolWriteKnowledge(String name) {
@@ -5019,11 +5016,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optSendHint => 'Enter 发送 · Shift+Enter 换行';
 
   @override
-  String optModeBadgeAgent(String mode) {
-    return '$mode · Agent';
-  }
-
-  @override
   String get optRefNumberingHint => '序号与提示词中引用的文件名对应，agent 可查看这些图片。';
 
   @override
@@ -5034,9 +5026,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optRefReorderLocked => '助手回复中，结束后可调整顺序。';
-
-  @override
-  String get optModeKnowledgeEditShort => '库编辑';
 
   @override
   String get optRunning => '执行中';
@@ -5542,6 +5531,35 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get imageSizeRatioAccepted => '自定义 · 已接受';
+
+  @override
+  String get optModeKnowledgeWrite => '出词';
+
+  @override
+  String get optModeUseFor => '用它来';
+
+  @override
+  String optModeBadge(String basis, String detail) {
+    return '$basis · $detail';
+  }
+
+  @override
+  String get optPresetBuiltinName => '通用优化';
+
+  @override
+  String get optModeLocked => '助手回复中 · 模式已锁定';
+
+  @override
+  String optModeSwitchTitle(String mode) {
+    return '切换到「$mode」？';
+  }
+
+  @override
+  String get optModeSwitchBody =>
+      '任务预设和知识库的对话不能接在一起，切换会开始一个新会话。当前会话已保存，可以随时从「历史会话」回来。';
+
+  @override
+  String get optModeSwitchStart => '开始新会话';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -10205,7 +10223,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get safetyThresholdOff => '關閉過濾';
 
   @override
-  String get optModeSystemPrompt => '系統提示詞';
+  String get optModeSystemPrompt => '任務預設';
 
   @override
   String get optModeKnowledge => '知識庫';
@@ -10215,9 +10233,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optKbNotConfigured => '知識庫未設定或無效，請先在設定中選擇知識庫資料夾。';
-
-  @override
-  String get optModeSwitchConfirm => '切換模式將開始新的對話，是否繼續？';
 
   @override
   String get optToolListKnowledge => '瀏覽了知識庫檔案列表';
@@ -10371,7 +10386,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optRetry => '重試';
 
   @override
-  String get optModeKnowledgeEdit => '知識庫編輯';
+  String get optModeKnowledgeEdit => '維護';
 
   @override
   String optToolWriteKnowledge(String name) {
@@ -10560,11 +10575,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optSendHint => 'Enter 傳送 · Shift+Enter 換行';
 
   @override
-  String optModeBadgeAgent(String mode) {
-    return '$mode · Agent';
-  }
-
-  @override
   String get optRefNumberingHint => '序號與提示詞中引用的檔名對應，agent 可檢視這些圖片。';
 
   @override
@@ -10575,9 +10585,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optRefReorderLocked => '助手回覆中，結束後可調整順序。';
-
-  @override
-  String get optModeKnowledgeEditShort => '庫編輯';
 
   @override
   String get optRunning => '執行中';
@@ -11083,4 +11090,33 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get imageSizeRatioAccepted => '自訂 · 已接受';
+
+  @override
+  String get optModeKnowledgeWrite => '出詞';
+
+  @override
+  String get optModeUseFor => '用它來';
+
+  @override
+  String optModeBadge(String basis, String detail) {
+    return '$basis · $detail';
+  }
+
+  @override
+  String get optPresetBuiltinName => '通用優化';
+
+  @override
+  String get optModeLocked => '助手回覆中 · 模式已鎖定';
+
+  @override
+  String optModeSwitchTitle(String mode) {
+    return '切換到「$mode」？';
+  }
+
+  @override
+  String get optModeSwitchBody =>
+      '任務預設和知識庫的對話不能接在一起，切換會開始一個新對話。目前的對話已儲存，可以隨時從「歷史對話」回來。';
+
+  @override
+  String get optModeSwitchStart => '開始新對話';
 }

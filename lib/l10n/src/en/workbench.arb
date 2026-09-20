@@ -465,11 +465,10 @@
   "safetyThresholdBlockOnlyHigh": "Block few",
   "safetyThresholdBlockNone": "Block none",
   "safetyThresholdOff": "Filter off",
-  "optModeSystemPrompt": "System Prompt",
+  "optModeSystemPrompt": "Task preset",
   "optModeKnowledge": "Knowledge Base",
   "knowledgeBase": "Knowledge Base",
   "optKbNotConfigured": "Knowledge base is not configured or invalid — choose its folder in Settings first.",
-  "optModeSwitchConfirm": "Switching the mode starts a new conversation. Continue?",
   "optToolListKnowledge": "Browsed knowledge base files",
   "optToolReadKnowledge": "Read knowledge: {name}",
   "@optToolReadKnowledge": {
@@ -554,7 +553,7 @@
   "optPromptVersionLabel": "Prompt",
   "optImageMissing": "Some reference images of this conversation no longer exist — re-add them to continue using them.",
   "optRetry": "Retry",
-  "optModeKnowledgeEdit": "Edit KB",
+  "optModeKnowledgeEdit": "Maintain",
   "optToolWriteKnowledge": "Proposed knowledge update: {name}",
   "@optToolWriteKnowledge": {
     "placeholders": {
@@ -739,19 +738,10 @@
     }
   },
   "optSendHint": "Enter to send · Shift+Enter for a new line",
-  "optModeBadgeAgent": "{mode} · Agent",
-  "@optModeBadgeAgent": {
-    "placeholders": {
-      "mode": {
-        "type": "String"
-      }
-    }
-  },
   "optRefNumberingHint": "Numbers match the filenames cited in the prompt; the agent can view these images.",
   "optRefReorderHint": "Drag a card to reorder. The numbers are the order the assistant receives, and the ones the prompt cites.",
   "optRefReorderHintTouch": "Long-press a card, then drag to reorder. The numbers are the order the assistant receives.",
   "optRefReorderLocked": "The assistant is replying — reorder once it finishes.",
-  "optModeKnowledgeEditShort": "Edit KB",
   "optRunning": "Running",
   "optRunningStep": "Running · step {count}",
   "@optRunningStep": {
@@ -1243,5 +1233,30 @@
   "imageSizeFooterTyping": "Enter settles",
   "imageSizeDone": "Done",
   "imageSizeRatioDerived": "derived · follows width and height",
-  "imageSizeRatioAccepted": "custom · accepted"
+  "imageSizeRatioAccepted": "custom · accepted",
+  "optModeKnowledgeWrite": "Write prompts",
+  "optModeUseFor": "Use it to",
+  "optModeBadge": "{basis} · {detail}",
+  "@optModeBadge": {
+    "placeholders": {
+      "basis": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetBuiltinName": "General refine",
+  "optModeLocked": "Assistant is replying · mode locked",
+  "optModeSwitchTitle": "Switch to “{mode}”?",
+  "@optModeSwitchTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "optModeSwitchBody": "Task-preset and knowledge-base conversations can’t continue one another, so switching starts a new conversation. The current one is saved — come back to it any time from Conversation History.",
+  "optModeSwitchStart": "Start new conversation"
 }

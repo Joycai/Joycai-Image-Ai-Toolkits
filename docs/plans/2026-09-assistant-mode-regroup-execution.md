@@ -26,7 +26,7 @@
 | # | 内容 | 主要文件 | 验收 | 状态 |
 |---|---|---|---|---|
 | 0 | 脚注文案纠正（`optSysPromptNoKb`） | `sys_prompt_card.dart`、四语 arb | 已在 `5913b2f` | ✅ |
-| 1 | 两级开关 + 改名 + 徽标。开关移到列顶（模型卡之上）；第一级 tinted·expand·compact，第二级 plain + 11px「用它来」；知识库未配置时「知识库」段仍可点，落到未配置状态卡，第二级置灰；工具头徽标 =「任务预设 ·〈预设名〉」/「知识库 · 出词」/「知识库 · 维护」，去掉「· Agent」；切换确认改为带标题的对话框（取消｜开始新会话）。l10n：改 `optModeSystemPrompt`→任务预设、`optModeKnowledgeEdit`→维护；删 `optModeKnowledgeEditShort`、`optModeBadgeAgent`、`optModeSwitchConfirm` | `optimizer_config_panel.dart`、`prompt_optimizer_toolbar.dart`、`assistant_tab.dart`、`workbench_screen.dart`、`assistant_actions.dart` | 三态右栏与稿 4a 一致；250px 列宽不溢出；现有测试按新文案更新 | ⬜ |
+| 1 | 两级开关 + 改名 + 徽标。开关移到列顶（模型卡之上）；第一级 tinted·expand·compact，第二级 plain + 11px「用它来」；知识库未配置时「知识库」段仍可点，落到未配置状态卡，第二级置灰；工具头徽标 =「任务预设 ·〈预设名〉」/「知识库 · 出词」/「知识库 · 维护」，去掉「· Agent」；切换确认改为带标题的对话框（取消｜开始新会话）。l10n：改 `optModeSystemPrompt`→任务预设、`optModeKnowledgeEdit`→维护；删 `optModeKnowledgeEditShort`、`optModeBadgeAgent`、`optModeSwitchConfirm` | `optimizer_config_panel.dart`、`prompt_optimizer_toolbar.dart`、`assistant_tab.dart`、`workbench_screen.dart`、`assistant_actions.dart` | 三态右栏与稿 4a 一致；250px 列宽不溢出；现有测试按新文案更新 | ✅ |
 | 2 | 任务预设卡：折叠 + 内置项。选择器首项恒为内置「通用优化」（灰「内置」徽标）；说明行 = 预设正文首段去 markdown（不加库列）；披露行「查看 / 编辑指令」+ 右侧 mono「约 N tokens」，默认折叠，展开态按会话记（不持久化）；「未保存」徽标折叠时保留在标题行；内置项：锁 +「内置指令不可编辑」+「另存为预设…」；页脚「在提示词库中管理预设」；未保存时换预设先确认一次。删 `optSysPromptNone` | `optimizer_config/sys_prompt_card.dart`、`assistant_system_prompts.dart`（内置文案出口）、`assistant_actions.dart` | 稿 4b 五态；1440 下折叠态时间线与上下文卡进首屏 | ⬜ |
 | 3 | 分模式空状态。任务预设：标题 + 副标 + 2×2 预设砖（<600 单列；0 预设 → 内置 + 去新建）+「全部 N 个预设…」，点砖 = 选中不发送；出词 / 维护：标题 + 副标 + 三条示例，点示例 = 填入输入框不发送。删 `optEmptyChat` | `prompt_optimizer_view.dart`（+ part）、`assistant_tab.dart` | 稿 4c 三态 | ⬜ |
 | 4 | 维护左栏分段「文档 · N｜参考图 · N」（plain·28 高，默认文档）；其余模式无分段 | `optimizer_left_panel.dart` | 稿 4e；维护模式下参考图可见可管 | ⬜ |
@@ -43,3 +43,9 @@
 ## 施工记录
 
 （每片落地时补：与稿的出入、review 的发现与处置。）
+
+### 片 1
+
+- 运行中锁定提前到这一片：两级都锁（第一级切换会换掉正在跑的会话，与工具头「新会话」运行中禁用同理），并显示「助手回复中 · 模式已锁定」。`_handleAssistantModeChange` 自己也拦一次。
+- 第二级「plain」落为 `AppSegmentStyle.raised`（设计系统里没有叫 plain 的样式；强调色已花在第一级）。
+- 徽标文案由调用方拼好传入（`_assistantBadgeLabel`），工具头不再包一层；屏幕用 `context.select` 取它，换预设会重新量槽宽。

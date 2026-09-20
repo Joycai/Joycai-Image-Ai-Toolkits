@@ -4889,7 +4889,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get safetyThresholdOff => 'Filter off';
 
   @override
-  String get optModeSystemPrompt => 'System Prompt';
+  String get optModeSystemPrompt => 'Task preset';
 
   @override
   String get optModeKnowledge => 'Knowledge Base';
@@ -4900,10 +4900,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get optKbNotConfigured =>
       'Knowledge base is not configured or invalid — choose its folder in Settings first.';
-
-  @override
-  String get optModeSwitchConfirm =>
-      'Switching the mode starts a new conversation. Continue?';
 
   @override
   String get optToolListKnowledge => 'Browsed knowledge base files';
@@ -5065,7 +5061,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optRetry => 'Retry';
 
   @override
-  String get optModeKnowledgeEdit => 'Edit KB';
+  String get optModeKnowledgeEdit => 'Maintain';
 
   @override
   String optToolWriteKnowledge(String name) {
@@ -5255,11 +5251,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optSendHint => 'Enter to send · Shift+Enter for a new line';
 
   @override
-  String optModeBadgeAgent(String mode) {
-    return '$mode · Agent';
-  }
-
-  @override
   String get optRefNumberingHint =>
       'Numbers match the filenames cited in the prompt; the agent can view these images.';
 
@@ -5274,9 +5265,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get optRefReorderLocked =>
       'The assistant is replying — reorder once it finishes.';
-
-  @override
-  String get optModeKnowledgeEditShort => 'Edit KB';
 
   @override
   String get optRunning => 'Running';
@@ -5810,4 +5798,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get imageSizeRatioAccepted => 'custom · accepted';
+
+  @override
+  String get optModeKnowledgeWrite => 'Write prompts';
+
+  @override
+  String get optModeUseFor => 'Use it to';
+
+  @override
+  String optModeBadge(String basis, String detail) {
+    return '$basis · $detail';
+  }
+
+  @override
+  String get optPresetBuiltinName => 'General refine';
+
+  @override
+  String get optModeLocked => 'Assistant is replying · mode locked';
+
+  @override
+  String optModeSwitchTitle(String mode) {
+    return 'Switch to “$mode”?';
+  }
+
+  @override
+  String get optModeSwitchBody =>
+      'Task-preset and knowledge-base conversations can’t continue one another, so switching starts a new conversation. The current one is saved — come back to it any time from Conversation History.';
+
+  @override
+  String get optModeSwitchStart => 'Start new conversation';
 }

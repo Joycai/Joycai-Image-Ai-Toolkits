@@ -465,11 +465,10 @@
   "safetyThresholdBlockOnlyHigh": "少しブロック",
   "safetyThresholdBlockNone": "ブロックしない",
   "safetyThresholdOff": "フィルタ無効",
-  "optModeSystemPrompt": "システムプロンプト",
+  "optModeSystemPrompt": "タスクプリセット",
   "optModeKnowledge": "ナレッジベース",
   "knowledgeBase": "ナレッジベース",
   "optKbNotConfigured": "ナレッジベースが未設定または無効です。設定でフォルダを選択してください。",
-  "optModeSwitchConfirm": "モードを切り替えると新しい会話が開始されます。続行しますか？",
   "optToolListKnowledge": "ナレッジベースのファイル一覧を確認",
   "optToolReadKnowledge": "ナレッジを読み込み: {name}",
   "@optToolReadKnowledge": {
@@ -554,7 +553,7 @@
   "optPromptVersionLabel": "プロンプト",
   "optImageMissing": "この会話の一部の参照画像が見つかりません。再追加すると引き続き使用できます。",
   "optRetry": "再試行",
-  "optModeKnowledgeEdit": "ナレッジ編集",
+  "optModeKnowledgeEdit": "メンテナンス",
   "optToolWriteKnowledge": "ナレッジ更新の提案：{name}",
   "@optToolWriteKnowledge": {
     "placeholders": {
@@ -737,19 +736,10 @@
     }
   },
   "optSendHint": "Enter で送信 · Shift+Enter で改行",
-  "optModeBadgeAgent": "{mode} · エージェント",
-  "@optModeBadgeAgent": {
-    "placeholders": {
-      "mode": {
-        "type": "String"
-      }
-    }
-  },
   "optRefNumberingHint": "番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。",
   "optRefReorderHint": "カードをドラッグして並べ替えます。番号はアシスタントに渡す順序で、プロンプトが引用する番号でもあります。",
   "optRefReorderHintTouch": "カードを長押ししてからドラッグで並べ替えます。番号はアシスタントに渡す順序です。",
   "optRefReorderLocked": "アシスタントが応答中です。終了後に並べ替えられます。",
-  "optModeKnowledgeEditShort": "ナレッジ編集",
   "optRunning": "実行中",
   "optRunningStep": "実行中 · ステップ {count}",
   "@optRunningStep": {
@@ -1125,5 +1115,30 @@
   "imageSizeFooterTyping": "Enter で確定",
   "imageSizeDone": "完了",
   "imageSizeRatioDerived": "派生 · 幅と高さに追従",
-  "imageSizeRatioAccepted": "カスタム · 受理"
+  "imageSizeRatioAccepted": "カスタム · 受理",
+  "optModeKnowledgeWrite": "プロンプト作成",
+  "optModeUseFor": "用途",
+  "optModeBadge": "{basis} · {detail}",
+  "@optModeBadge": {
+    "placeholders": {
+      "basis": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetBuiltinName": "汎用最適化",
+  "optModeLocked": "アシスタントが応答中 · モードはロックされています",
+  "optModeSwitchTitle": "「{mode}」に切り替えますか？",
+  "@optModeSwitchTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "optModeSwitchBody": "タスクプリセットとナレッジベースの会話はつなげられないため、切り替えると新しい会話が始まります。現在の会話は保存済みで、「会話履歴」からいつでも戻れます。",
+  "optModeSwitchStart": "新しい会話を始める"
 }

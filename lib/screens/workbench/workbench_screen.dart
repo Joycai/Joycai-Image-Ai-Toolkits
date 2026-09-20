@@ -500,11 +500,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           final l10nNow = AppLocalizations.of(context)!;
           toolControlsWidth = PromptOptimizerToolbar.preferredWidth(
             context,
-            modeLabel: switch (wuiNow.assistantMode) {
-              AssistantMode.systemPrompt => l10nNow.optModeSystemPrompt,
-              AssistantMode.knowledgeBase => l10nNow.optModeKnowledge,
-              AssistantMode.knowledgeEdit => l10nNow.optModeKnowledgeEdit,
-            },
+            // Selected, not read: the label names the preset, and picking
+            // another one has to re-measure the slot it is drawn in.
+            modeLabel: context.select<WorkbenchUIState, String>(
+              (w) => _assistantBadgeLabel(l10nNow, w),
+            ),
             pendingKbEdits: PromptOptimizerAgent.pendingKbEdits(wuiNow.optimizerSession).length,
           );
         }

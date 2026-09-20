@@ -465,11 +465,10 @@
   "safetyThresholdBlockOnlyHigh": "屏蔽少部分",
   "safetyThresholdBlockNone": "全部不屏蔽",
   "safetyThresholdOff": "关闭过滤",
-  "optModeSystemPrompt": "系统提示词",
+  "optModeSystemPrompt": "任务预设",
   "optModeKnowledge": "知识库",
   "knowledgeBase": "知识库",
   "optKbNotConfigured": "知识库未配置或无效，请先在设置中选择知识库文件夹。",
-  "optModeSwitchConfirm": "切换模式将开始新会话，是否继续？",
   "optToolListKnowledge": "浏览了知识库文件列表",
   "optToolReadKnowledge": "阅读知识库：{name}",
   "@optToolReadKnowledge": {
@@ -554,7 +553,7 @@
   "optPromptVersionLabel": "提示词",
   "optImageMissing": "该会话的部分参考图已不存在，可重新添加后继续使用。",
   "optRetry": "重试",
-  "optModeKnowledgeEdit": "知识库编辑",
+  "optModeKnowledgeEdit": "维护",
   "optToolWriteKnowledge": "建议更新知识库：{name}",
   "@optToolWriteKnowledge": {
     "placeholders": {
@@ -737,19 +736,10 @@
     }
   },
   "optSendHint": "Enter 发送 · Shift+Enter 换行",
-  "optModeBadgeAgent": "{mode} · Agent",
-  "@optModeBadgeAgent": {
-    "placeholders": {
-      "mode": {
-        "type": "String"
-      }
-    }
-  },
   "optRefNumberingHint": "序号与提示词中引用的文件名对应，agent 可查看这些图片。",
   "optRefReorderHint": "拖动卡片调整顺序。序号就是发给助手的顺序，也是提示词里引用的编号。",
   "optRefReorderHintTouch": "长按卡片后拖动调整顺序。序号就是发给助手的顺序。",
   "optRefReorderLocked": "助手回复中，结束后可调整顺序。",
-  "optModeKnowledgeEditShort": "库编辑",
   "optRunning": "执行中",
   "optRunningStep": "执行中 · 步骤 {count}",
   "@optRunningStep": {
@@ -1125,5 +1115,30 @@
   "imageSizeFooterTyping": "Enter 结算",
   "imageSizeDone": "完成",
   "imageSizeRatioDerived": "派生 · 跟着宽高走",
-  "imageSizeRatioAccepted": "自定义 · 已接受"
+  "imageSizeRatioAccepted": "自定义 · 已接受",
+  "optModeKnowledgeWrite": "出词",
+  "optModeUseFor": "用它来",
+  "optModeBadge": "{basis} · {detail}",
+  "@optModeBadge": {
+    "placeholders": {
+      "basis": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetBuiltinName": "通用优化",
+  "optModeLocked": "助手回复中 · 模式已锁定",
+  "optModeSwitchTitle": "切换到「{mode}」？",
+  "@optModeSwitchTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "optModeSwitchBody": "任务预设和知识库的对话不能接在一起，切换会开始一个新会话。当前会话已保存，可以随时从「历史会话」回来。",
+  "optModeSwitchStart": "开始新会话"
 }

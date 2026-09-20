@@ -4713,7 +4713,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get safetyThresholdOff => 'フィルタ無効';
 
   @override
-  String get optModeSystemPrompt => 'システムプロンプト';
+  String get optModeSystemPrompt => 'タスクプリセット';
 
   @override
   String get optModeKnowledge => 'ナレッジベース';
@@ -4723,9 +4723,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optKbNotConfigured => 'ナレッジベースが未設定または無効です。設定でフォルダを選択してください。';
-
-  @override
-  String get optModeSwitchConfirm => 'モードを切り替えると新しい会話が開始されます。続行しますか？';
 
   @override
   String get optToolListKnowledge => 'ナレッジベースのファイル一覧を確認';
@@ -4881,7 +4878,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optRetry => '再試行';
 
   @override
-  String get optModeKnowledgeEdit => 'ナレッジ編集';
+  String get optModeKnowledgeEdit => 'メンテナンス';
 
   @override
   String optToolWriteKnowledge(String name) {
@@ -5070,11 +5067,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optSendHint => 'Enter で送信 · Shift+Enter で改行';
 
   @override
-  String optModeBadgeAgent(String mode) {
-    return '$mode · エージェント';
-  }
-
-  @override
   String get optRefNumberingHint =>
       '番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。';
 
@@ -5088,9 +5080,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optRefReorderLocked => 'アシスタントが応答中です。終了後に並べ替えられます。';
-
-  @override
-  String get optModeKnowledgeEditShort => 'ナレッジ編集';
 
   @override
   String get optRunning => '実行中';
@@ -5599,4 +5588,33 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get imageSizeRatioAccepted => 'カスタム · 受理';
+
+  @override
+  String get optModeKnowledgeWrite => 'プロンプト作成';
+
+  @override
+  String get optModeUseFor => '用途';
+
+  @override
+  String optModeBadge(String basis, String detail) {
+    return '$basis · $detail';
+  }
+
+  @override
+  String get optPresetBuiltinName => '汎用最適化';
+
+  @override
+  String get optModeLocked => 'アシスタントが応答中 · モードはロックされています';
+
+  @override
+  String optModeSwitchTitle(String mode) {
+    return '「$mode」に切り替えますか？';
+  }
+
+  @override
+  String get optModeSwitchBody =>
+      'タスクプリセットとナレッジベースの会話はつなげられないため、切り替えると新しい会話が始まります。現在の会話は保存済みで、「会話履歴」からいつでも戻れます。';
+
+  @override
+  String get optModeSwitchStart => '新しい会話を始める';
 }

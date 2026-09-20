@@ -1,22 +1,54 @@
 part of '../workbench_screen.dart';
 
 extension _AssistantActions on _WorkbenchScreenState {
+  /// The toolbar badge's text (`A3d 4a`): what the session works from, then
+  /// which preset or which use. One place, because the toolbar is measured
+  /// with this label before it is built with it.
+  String _assistantBadgeLabel(AppLocalizations l10n, WorkbenchUIState wui) {
+    switch (wui.assistantMode) {
+      case AssistantMode.knowledgeBase:
+        return l10n.optModeBadge(l10n.optModeKnowledge, l10n.optModeKnowledgeWrite);
+      case AssistantMode.knowledgeEdit:
+        return l10n.optModeBadge(l10n.optModeKnowledge, l10n.optModeKnowledgeEdit);
+      case AssistantMode.systemPrompt:
+        final id = wui.optSysPromptTemplateId;
+        final preset = _optSysPrompts.cast<SystemPrompt?>().firstWhere(
+              (p) => p?.id == id,
+              orElse: () => null,
+            );
+        return l10n.optModeBadge(
+          l10n.optModeSystemPrompt,
+          preset?.title ?? l10n.optPresetBuiltinName,
+        );
+    }
+  }
+
+  /// Task preset ⇄ knowledge base is a different conversation, not a setting
+  /// of this one: the histories cannot continue each other. So the switch
+  /// starts a new session, and says where the old one went (`A3d 4d`).
   Future<void> _handleAssistantModeChange(AssistantMode next) async {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final session = workbenchUIState.optimizerSession;
     if (session.mode == next) return;
+    // The panel greys the switch during a turn; this is the gate that holds
+    // if something else asks.
+    if (_optRunningForSession(session)) return;
     if (session.transcript.isNotEmpty) {
       final l10n = AppLocalizations.of(context)!;
+      final target = next == AssistantMode.systemPrompt
+          ? l10n.optModeSystemPrompt
+          : l10n.optModeKnowledge;
       final confirmed = await AppDialog.show<bool>(
         context,
-        content: Text(l10n.optModeSwitchConfirm),
+        title: l10n.optModeSwitchTitle(target),
+        content: Text(l10n.optModeSwitchBody),
         actions: [
           AppButton(
             label: l10n.cancel,
             variant: AppButtonVariant.text,
             onPressed: () => Navigator.pop(context, false),
           ),
-          AppButton(label: l10n.confirm, onPressed: () => Navigator.pop(context, true)),
+          AppButton(label: l10n.optModeSwitchStart, onPressed: () => Navigator.pop(context, true)),
         ],
       );
       if (confirmed != true) return;

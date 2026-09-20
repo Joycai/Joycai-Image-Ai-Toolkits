@@ -31,10 +31,11 @@ part 'optimizer_config/timeline_card.dart';
 
 /// The Prompt Assistant's right column (`A3a 1a`, `A3b 1a`/`1b`/`1d`).
 ///
-/// Top to bottom: the refiner model, the three-mode switch, then the mode's
-/// own cards — the system prompt; or the knowledge base's status, its write
-/// permissions and pending changes (edit mode only), and what this round
-/// cited — then the iteration timeline and the context usage in every mode.
+/// Top to bottom (`A3d 4a`): the two-level mode switch, the refiner model,
+/// then the mode's own cards — the task preset; or the knowledge base's
+/// status, its write permissions and pending changes (maintenance only), and
+/// what this round cited — then the iteration timeline and the context usage
+/// in every mode.
 class OptimizerConfigPanel extends StatefulWidget {
   final int? selectedModelDbId;
 
@@ -243,8 +244,8 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     final mode = widget.mode;
 
     final cards = <Widget>[
+      _buildModeSelector(l10n, colorScheme, textTheme),
       _buildModelCard(l10n, colorScheme, appState),
-      _buildModeSelector(l10n),
       if (mode == AssistantMode.systemPrompt)
         _buildSysPromptSection(l10n, colorScheme, textTheme)
       else ...[
@@ -342,35 +343,72 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     );
   }
 
-  /// The three assistant modes, as the column's top-level navigation.
+  /// The assistant's mode, as two questions rather than three answers
+  /// (`A3d 4a`): what it works *from* — a task preset or the knowledge base —
+  /// and, for the knowledge base only, what it is used *for*. The three
+  /// [AssistantMode] values are unchanged underneath; this is their drawing.
   ///
-  /// No icons and the short edit label on purpose: three segments share the
-  /// width of a column that narrows to 250px. The selection wears the accent
-  /// wash under the deep ink, as `A3b` draws it.
-  Widget _buildModeSelector(AppLocalizations l10n) {
-    final kbSelectable = widget.kbStatus == KbStatus.ok;
-    return AppSegmentedControl<AssistantMode>(
+  /// First in the column: every card below it is decided by it.
+  Widget _buildModeSelector(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+    final onKnowledge = widget.mode != AssistantMode.systemPrompt;
+    // A turn in flight owns the session a switch would replace — the same
+    // reason the toolbar takes New session away while one runs.
+    final locked = widget.running;
+    final basis = AppSegmentedControl<bool>(
       segments: [
-        AppSegment(
-          value: AssistantMode.systemPrompt,
-          label: l10n.optModeSystemPrompt,
-        ),
-        AppSegment(
-          value: AssistantMode.knowledgeBase,
-          label: l10n.optModeKnowledge,
-          enabled: kbSelectable || widget.mode == AssistantMode.knowledgeBase,
-        ),
-        AppSegment(
-          value: AssistantMode.knowledgeEdit,
-          label: l10n.optModeKnowledgeEditShort,
-          enabled: kbSelectable || widget.mode == AssistantMode.knowledgeEdit,
-        ),
+        AppSegment(value: false, label: l10n.optModeSystemPrompt, enabled: !locked || !onKnowledge),
+        // Open even with no base configured: the segment is how the user
+        // finds the card that says what is missing and offers the way out. A
+        // greyed segment explained nothing.
+        AppSegment(value: true, label: l10n.optModeKnowledge, enabled: !locked || onKnowledge),
       ],
-      value: widget.mode,
-      onChanged: widget.onModeChanged,
+      value: onKnowledge,
+      onChanged: (knowledge) => widget.onModeChanged(
+        knowledge ? AssistantMode.knowledgeBase : AssistantMode.systemPrompt,
+      ),
       expand: true,
       compact: true,
       style: AppSegmentStyle.tinted,
+    );
+    if (!onKnowledge) return basis;
+
+    // Nothing to use until the base is there; the status card below says so.
+    final usable = widget.kbStatus == KbStatus.ok && !locked;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        basis,
+        const SizedBox(height: AppSpace.s6),
+        Row(
+          children: [
+            Text(l10n.optModeUseFor, style: _noteStyle(colorScheme, textTheme)),
+            const SizedBox(width: AppSpace.s10),
+            Expanded(
+              child: AppSegmentedControl<AssistantMode>(
+                segments: [
+                  for (final (mode, label) in [
+                    (AssistantMode.knowledgeBase, l10n.optModeKnowledgeWrite),
+                    (AssistantMode.knowledgeEdit, l10n.optModeKnowledgeEdit),
+                  ])
+                    AppSegment(value: mode, label: label, enabled: usable || widget.mode == mode),
+                ],
+                value: widget.mode,
+                onChanged: widget.onModeChanged,
+                expand: true,
+                compact: true,
+                // Raised, not tinted: the accent is spent one level up, and
+                // two tinted tracks stacked read as one control with four ends.
+                style: AppSegmentStyle.raised,
+              ),
+            ),
+          ],
+        ),
+        if (locked) ...[
+          const SizedBox(height: AppSpace.s4),
+          Text(l10n.optModeLocked, style: _noteStyle(colorScheme, textTheme)),
+        ],
+      ],
     );
   }
 

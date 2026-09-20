@@ -111,14 +111,7 @@ extension _AssistantTab on _WorkbenchScreenState {
                       onDiscardAllKbEdits: isBusy
                           ? null
                           : () => _handleKbEditRejectAll(session),
-                      modeLabel: switch (session.mode) {
-                        AssistantMode.systemPrompt =>
-                          AppLocalizations.of(context)!.optModeSystemPrompt,
-                        AssistantMode.knowledgeBase =>
-                          AppLocalizations.of(context)!.optModeKnowledge,
-                        AssistantMode.knowledgeEdit =>
-                          AppLocalizations.of(context)!.optModeKnowledgeEdit,
-                      },
+                      modeLabel: _assistantBadgeLabel(AppLocalizations.of(context)!, wui),
                       modeIcon: switch (session.mode) {
                         AssistantMode.systemPrompt => Icons.notes_outlined,
                         AssistantMode.knowledgeBase => Icons.menu_book_outlined,
