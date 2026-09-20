@@ -49,7 +49,13 @@ void toggleShortcutPanel(
     context: context,
     barrierColor: Theme.of(context).colorScheme.scrim,
     routeSettings: const RouteSettings(name: _routeName),
-    builder: (_) => ShortcutPanel(screen: screen),
+    // Read *now*, not inside the panel: opening it takes the keyboard, so
+    // by the time the panel builds every region has honestly let go of its
+    // claim. What the user is asking about is the region that was live when
+    // they pressed the key, and while the panel is up nothing underneath can
+    // change it.
+    builder: (_) =>
+        ShortcutPanel(screen: screen, activePane: FocusPane.active.value),
   );
 }
 
@@ -57,11 +63,14 @@ void toggleShortcutPanel(
 const String _routeName = 'shortcut-panel';
 
 class ShortcutPanel extends StatefulWidget {
-  const ShortcutPanel({super.key, required this.screen});
+  const ShortcutPanel({super.key, required this.screen, this.activePane});
 
   /// The screen the keys of which to show, or null on a screen that claims
   /// none — the panel then lists only what works anywhere.
   final ShortcutScreen? screen;
+
+  /// The region that held the keyboard when the panel was asked for.
+  final ShortcutPane? activePane;
 
   @override
   State<ShortcutPanel> createState() => _ShortcutPanelState();
@@ -80,8 +89,6 @@ class _ShortcutPanelState extends State<ShortcutPanel> {
     super.dispose();
   }
 
-  ShortcutScreen? get screen => widget.screen;
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -89,9 +96,9 @@ class _ShortcutPanelState extends State<ShortcutPanel> {
     final bool narrow = Responsive.isNarrow(context);
     final double width = narrow ? _kPanelNarrowWidth : _kPanelWideWidth;
 
-    final screenRows = screen == null
+    final screenRows = widget.screen == null
         ? const <AppShortcut>[]
-        : AppShortcuts.forScreen(screen!).toList();
+        : AppShortcuts.forScreen(widget.screen!).toList();
 
     return Center(
       child: ConstrainedBox(
@@ -128,7 +135,7 @@ class _ShortcutPanelState extends State<ShortcutPanel> {
                         )
                       : Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                          children: <Widget>[
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -170,10 +177,10 @@ class _ShortcutPanelState extends State<ShortcutPanel> {
   /// The panel is teaching the rule by obeying it: the region that owns the
   /// keyboard is named, and the keys of the others are visibly out of reach.
   List<Widget> _fileGroups(BuildContext context, AppLocalizations l10n) {
-    final s = screen;
+    final s = widget.screen;
     if (s == null) return const <Widget>[];
 
-    final active = FocusPane.active.value;
+    final active = widget.activePane;
     final panes = <ShortcutPane>[
       for (final pane in ShortcutPane.values)
         if (AppShortcuts.forPane(s, pane).isNotEmpty) pane,
@@ -398,3 +405,4 @@ class _Keys extends StatelessWidget {
     return AppKeyBadges(pieces: collapsed);
   }
 }
+

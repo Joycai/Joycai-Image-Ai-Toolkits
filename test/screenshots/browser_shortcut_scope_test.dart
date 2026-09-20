@@ -120,10 +120,11 @@ void main() {
   final LogicalKeyboardKey primary =
       Platform.isMacOS ? LogicalKeyboardKey.metaLeft : LogicalKeyboardKey.controlLeft;
 
-  /// [real] sends the chord through `runAsync`, for the handlers whose effect
-  /// only lands after a real await — `AppState.setSidebarExpanded` writes the
-  /// setting to the database *before* it notifies, and a fake-async pump
-  /// cannot complete that write.
+  /// [real] sends the chord through `runAsync`, for the handlers that persist
+  /// a setting: `saveSetting` starts sqflite's ten-second lock watchdog, and
+  /// under fake async that write never finishes, so the timer is still
+  /// pending when the test ends — which fails the test on something other
+  /// than its subject.
   Future<void> pressChord(
     WidgetTester tester,
     LogicalKeyboardKey key, {

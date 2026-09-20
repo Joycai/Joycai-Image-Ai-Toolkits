@@ -75,6 +75,15 @@ class FocusPane extends StatefulWidget {
   static final ValueNotifier<ShortcutPane?> active =
       ValueNotifier<ShortcutPane?>(null);
 
+  /// *Which* pane made the current claim, as an object rather than a name.
+  ///
+  /// Both screens call their middle region [ShortcutPane.grid], so a claim
+  /// cannot be released by matching the name: switching from the browser to
+  /// the workbench mounts the gallery's pane (which takes focus and claims
+  /// `grid`) before the browser's pane is disposed, and a release keyed on
+  /// the name would then drop the *gallery's* live claim on the way out.
+  static Object? _owner;
+
   /// Whether the enclosing pane owns the keyboard, from inside it.
   ///
   /// Ask only while actually drawing a selection. The dependency this
@@ -113,24 +122,29 @@ class _FocusPaneState extends State<FocusPane> {
   @override
   void dispose() {
     widget.node.removeListener(_publish);
-    // Not owned here, so it may already be gone; only the claim is dropped.
-    if (FocusPane.active.value == widget.pane) {
-      FocusPane.active.value = null;
-    }
+    _release();
     super.dispose();
   }
 
-  /// Keeps [FocusPane.active] in step. The clear is conditional so the order
-  /// two panes report a handover in cannot matter: whoever gained focus has
-  /// already written its own name, and the one losing it leaves that alone.
+  /// Keeps [FocusPane.active] in step. The release is conditional on *this*
+  /// pane still being the claimant, so the order two panes report a handover
+  /// in cannot matter: whoever gained focus has already taken ownership, and
+  /// the one losing it leaves that alone.
   void _publish() {
     final pane = widget.pane;
     if (pane == null) return;
     if (widget.node.hasFocus) {
+      FocusPane._owner = this;
       FocusPane.active.value = pane;
-    } else if (FocusPane.active.value == pane) {
-      FocusPane.active.value = null;
+    } else {
+      _release();
     }
+  }
+
+  void _release() {
+    if (!identical(FocusPane._owner, this)) return;
+    FocusPane._owner = null;
+    FocusPane.active.value = null;
   }
 
   @override
