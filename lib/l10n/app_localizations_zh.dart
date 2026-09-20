@@ -5698,6 +5698,17 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optResultCopied => '已复制';
+
+  @override
+  String get optImagesNotOfferedTitle => '这个模型看不到图片';
+
+  @override
+  String optImagesNotOfferedBody(int count) {
+    return '$count 张参考图没有交给它，回答只依据你写的文字。在右侧换一个能看图的模型，或到模型设置里确认它的图片输入能力。';
+  }
+
+  @override
+  String get optImagesNotOfferedAction => '打开模型设置';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -11395,4 +11406,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optResultCopied => '已複製';
+
+  @override
+  String get optImagesNotOfferedTitle => '這個模型看不到圖片';
+
+  @override
+  String optImagesNotOfferedBody(int count) {
+    return '$count 張參考圖沒有交給它，回答只依據你寫的文字。在右側換一個能看圖的模型，或到模型設定裡確認它的圖片輸入能力。';
+  }
+
+  @override
+  String get optImagesNotOfferedAction => '開啟模型設定';
 }

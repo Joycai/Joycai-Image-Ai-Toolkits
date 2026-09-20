@@ -86,6 +86,11 @@ class PromptOptimizerAgent {
   static const String compactedNoticeToken = '__compacted__';
   static const String imageMissingNoticeToken = '__image_missing__';
   static const String kbEntryTooLargeNoticeToken = '__kb_entry_too_large__';
+
+  /// The turn's model does not accept images, and the session has some
+  /// (`A3e 5f`). The entry's `note` is how many were held back, its
+  /// `modelDbId` the model that could not take them.
+  static const String imagesNotOfferedNoticeToken = '__images_not_offered__';
   static const String kbDistillNoticeToken = '__kb_distill__';
 
   /// The divider a knowledge session leaves when its use is switched —
@@ -461,6 +466,8 @@ class PromptOptimizerAgent {
     if (!acceptsImageInput && referenceImages.isNotEmpty) {
       onLog?.call('This model does not accept image input — '
           '${referenceImages.length} reference image(s) will not be offered to it.');
+      _noteImagesNotOffered(session, referenceImages.length,
+          modelIdentifier is int ? modelIdentifier : null);
     }
     final effectiveRefs =
         acceptsImageInput ? referenceImages : const <Map<String, String>>[];
@@ -1019,6 +1026,27 @@ class PromptOptimizerAgent {
   /// This is also the number [ContextBudget.calibrate] divides into the
   /// provider's reported token count, so it has to measure the same request the
   /// provider billed — hence system prompt included, not history alone.
+  /// Says in the conversation what the log alone used to say: the model
+  /// answers without having seen the images. Under a preset that asks it to
+  /// read them, that is the difference between an answer and an invention.
+  ///
+  /// Once per model, not per turn: the latest such notice naming the same
+  /// model (and the same count) has already said it. A different model that
+  /// is blind too, or more images, says it again.
+  static void _noteImagesNotOffered(PromptOptimizerSession session, int count, int? modelDbId) {
+    for (final e in session.transcript.reversed) {
+      if (e.kind != OptimizerEntryKind.notice || e.text != imagesNotOfferedNoticeToken) continue;
+      if (e.modelDbId == modelDbId && e.note == '$count') return;
+      break;
+    }
+    session._addEntry(OptimizerChatEntry(
+      kind: OptimizerEntryKind.notice,
+      text: imagesNotOfferedNoticeToken,
+      note: '$count',
+      modelDbId: modelDbId,
+    ));
+  }
+
   /// Whether the tool results [messages] ends on belong to a batch that called
   /// submit_prompt — after which the model has nothing left it must say.
   static bool _lastBatchSubmittedPrompt(List<LLMMessage> messages) {

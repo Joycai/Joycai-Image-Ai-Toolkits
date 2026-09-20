@@ -10192,6 +10192,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copied'**
   String get optResultCopied;
+
+  /// No description provided for @optImagesNotOfferedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This model cannot see images'**
+  String get optImagesNotOfferedTitle;
+
+  /// No description provided for @optImagesNotOfferedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} reference image(s) were not given to it; its answers rest on your text alone. Pick a model that accepts images, or check this one\'s image input in its settings.'**
+  String optImagesNotOfferedBody(int count);
+
+  /// No description provided for @optImagesNotOfferedAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open model settings'**
+  String get optImagesNotOfferedAction;
 }
 
 class _AppLocalizationsDelegate

@@ -3230,5 +3230,15 @@
       }
     }
   },
-  "optResultCopied": "コピーしました"
+  "optResultCopied": "コピーしました",
+  "optImagesNotOfferedTitle": "このモデルは画像を見られません",
+  "optImagesNotOfferedBody": "{count} 枚の参考画像はこのモデルに渡されておらず、回答は入力した文章だけに基づきます。右側で画像を扱えるモデルに切り替えるか、モデル設定で画像入力の可否を確認してください。",
+  "@optImagesNotOfferedBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optImagesNotOfferedAction": "モデル設定を開く"
 }

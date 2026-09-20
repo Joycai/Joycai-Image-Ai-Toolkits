@@ -55,7 +55,11 @@
 6. **看不到图要在对话里说**（两种类型都生效，但这一轮是因为识别场景才变致命）：
    模型不接受图片输入且本轮带了参考图时，除了现有的任务日志，再往对话里放一张
    notice（`imagesNotOfferedNoticeToken`）。同一会话、同一模型只说一次——判据是
-   transcript 里上一张同 token 的 notice 的 `modelDbId` 与本轮相同就不再放。
+   transcript 里上一张同 token 的 notice 的 `modelDbId` 与张数都和本轮相同就不再放。
+   与稿 5f 的两处出入：正文不写模型名（对话视图手里没有模型表，右栏就写着）；出口是
+   「打开模型设置」而不是「换一个模型」——模型字段是 `ChatModelSelector`，没有从外面打开它的口，
+   而「图片输入」这项能力本身就在模型设置里，标错了也是去那里改。notice 不进 history，
+   恢复的会话里不重现，下一轮再说一次。
 7. **导入导出**：`prompts_io` 的 `toMap` 带上 `output_kind`；旧文件没有该键 → `prompt`。
    整库备份按表走，随 v47 自动带上。
 
@@ -99,7 +103,7 @@
 - [x] **片 5 · 助手界面**（5c、5d、5e、5g）：预设卡产出行、选择器与磁贴标记、示例句与
       占位、结果「复制」行；l10n 四语。
       测：`deliverable` 才有复制行；复制内容是 Markdown 原文；`rebuild_scope_test` 不回退。
-- [ ] **片 6 · 看不到图的 notice**（5f）：token、去重判据、渲染、l10n 四语。
+- [x] **片 6 · 看不到图的 notice**（5f）：token、去重判据、渲染、l10n 四语。
       测：文本模型 + 有图 → 一张；同模型第二轮不再放；换模型后再放；无图不放。
 - [ ] **片 7 · 收尾**：截图 harness 给 `analysis` 会话加一组 seed；`/code-review high` 并修；
       `architecture/assistant-context.md` 若提到框架文本则补一句；本文件删除，

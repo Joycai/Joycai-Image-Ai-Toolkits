@@ -5761,4 +5761,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optResultCopied => 'コピーしました';
+
+  @override
+  String get optImagesNotOfferedTitle => 'このモデルは画像を見られません';
+
+  @override
+  String optImagesNotOfferedBody(int count) {
+    return '$count 枚の参考画像はこのモデルに渡されておらず、回答は入力した文章だけに基づきます。右側で画像を扱えるモデルに切り替えるか、モデル設定で画像入力の可否を確認してください。';
+  }
+
+  @override
+  String get optImagesNotOfferedAction => 'モデル設定を開く';
 }

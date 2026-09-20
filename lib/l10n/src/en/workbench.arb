@@ -1321,5 +1321,13 @@
       "count": { "type": "int" }
     }
   },
-  "optResultCopied": "Copied"
+  "optResultCopied": "Copied",
+  "optImagesNotOfferedTitle": "This model cannot see images",
+  "optImagesNotOfferedBody": "{count} reference image(s) were not given to it; its answers rest on your text alone. Pick a model that accepts images, or check this one's image input in its settings.",
+  "@optImagesNotOfferedBody": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "optImagesNotOfferedAction": "Open model settings"
 }

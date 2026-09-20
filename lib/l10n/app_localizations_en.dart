@@ -5982,4 +5982,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optResultCopied => 'Copied';
+
+  @override
+  String get optImagesNotOfferedTitle => 'This model cannot see images';
+
+  @override
+  String optImagesNotOfferedBody(int count) {
+    return '$count reference image(s) were not given to it; its answers rest on your text alone. Pick a model that accepts images, or check this one\'s image input in its settings.';
+  }
+
+  @override
+  String get optImagesNotOfferedAction => 'Open model settings';
 }

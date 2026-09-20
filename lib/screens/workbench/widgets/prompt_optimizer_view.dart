@@ -582,6 +582,9 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             ),
           );
         }
+        if (entry.text == PromptOptimizerAgent.imagesNotOfferedNoticeToken) {
+          return _buildImagesNotOfferedCard(entry, l10n, colorScheme, textTheme);
+        }
         {
           // The notices that ask the user to do something wear the warning
           // container; the compaction note is information.
