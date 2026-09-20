@@ -17,7 +17,7 @@
   "editorCopied": "Copied",
   "editorReadOnly": "Read-only",
   "editorDone": "Done",
-  "editorCount": "{chars} chars · {lines} lines",
+  "editorCount": "{chars, plural, =1{1 char} other{{chars} chars}} · {lines, plural, =1{1 line} other{{lines} lines}}",
   "@editorCount": {
     "placeholders": {
       "chars": {

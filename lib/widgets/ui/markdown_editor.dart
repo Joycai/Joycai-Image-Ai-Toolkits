@@ -178,13 +178,17 @@ class SmartMarkdownFormatter extends TextInputFormatter {
 }
 
 /// Tab in a prompt is two spaces over the selection, not a focus move.
-void _insertMarkdownTab(TextEditingController controller) {
+///
+/// A write to the controller is not an edit as far as the field is concerned,
+/// so [onChanged] is called by hand — callers save from it.
+void _insertMarkdownTab(TextEditingController controller, ValueChanged<String>? onChanged) {
   final TextSelection selection = controller.selection;
   if (!selection.isValid) return;
   controller.value = TextEditingValue(
     text: controller.text.replaceRange(selection.start, selection.end, '  '),
     selection: TextSelection.collapsed(offset: selection.start + 2),
   );
+  onChanged?.call(controller.text);
 }
 
 class MarkdownEditor extends StatefulWidget {
@@ -397,12 +401,17 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   /// dialog on narrow screens, a large centered dialog elsewhere. Text stays
   /// in sync automatically because the controller is shared.
   void _openLargeEditor() {
-    final isCompact = MediaQuery.sizeOf(context).width < 600;
+    // Outlives the switch between the two dialog forms below, so resizing the
+    // window across the breakpoint keeps the editor's state.
+    final editorKey = GlobalKey();
 
     showDialog(
       context: context,
       builder: (dialogContext) {
+        // Read here, not once at open: the window can be resized under it.
+        final isCompact = MediaQuery.sizeOf(dialogContext).width < 600;
         final body = _LargeEditor(
+          key: editorKey,
           controller: widget.controller,
           label: widget.label,
           hint: widget.hint,
@@ -497,7 +506,8 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     } else {
       inner = CallbackShortcuts(
         bindings: {
-          const SingleActivator(LogicalKeyboardKey.tab): () => _insertMarkdownTab(widget.controller),
+          if (!widget.isRefined)
+            const SingleActivator(LogicalKeyboardKey.tab): () => _insertMarkdownTab(widget.controller, widget.onChanged),
         },
         child: TextField(
           controller: widget.controller,

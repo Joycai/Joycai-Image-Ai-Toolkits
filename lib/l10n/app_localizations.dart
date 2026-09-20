@@ -1514,7 +1514,7 @@ abstract class AppLocalizations {
   /// No description provided for @editorCount.
   ///
   /// In en, this message translates to:
-  /// **'{chars} chars · {lines} lines'**
+  /// **'{chars, plural, =1{1 char} other{{chars} chars}} · {lines, plural, =1{1 line} other{{lines} lines}}'**
   String editorCount(int chars, int lines);
 
   /// No description provided for @editorKeyHint.

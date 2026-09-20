@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_switch.dart';
@@ -13,6 +14,7 @@ void main() {
     bool isMarkdown = true,
     bool isRefined = false,
     String text = '## Subject\n- one\n- two',
+    ValueChanged<String>? onChanged,
   }) async {
     tester.view.physicalSize = screen;
     tester.view.devicePixelRatio = 1;
@@ -34,6 +36,7 @@ void main() {
                 isMarkdown: markdown,
                 onMarkdownChanged: (v) => setState(() => markdown = v),
                 isRefined: isRefined,
+                onChanged: onChanged,
               ),
             ),
           ),
@@ -64,7 +67,7 @@ void main() {
 
     controller.text = 'abc';
     await tester.pump();
-    expect(inDialog(find.text('3 chars · 1 lines')), findsOneWidget);
+    expect(inDialog(find.text('3 chars · 1 line')), findsOneWidget);
 
     // Split shows the source and the rendering side by side.
     await tester.tap(inDialog(find.text('Split')));
@@ -128,5 +131,80 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Copy all'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the field survives every change of view', (tester) async {
+    await open(tester, const Size(1440, 900));
+    final before = tester.state(inDialog(find.byType(EditableText)));
+
+    for (final label in ['Split', 'Preview', 'Edit']) {
+      await tester.tap(inDialog(find.text(label)).first);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
+    expect(tester.state(inDialog(find.byType(EditableText))), same(before));
+  });
+
+  testWidgets('Tab indents and tells the caller; read-only it does nothing', (tester) async {
+    final changes = <String>[];
+    final controller = await open(tester, const Size(1440, 900), text: 'ab', onChanged: changes.add);
+    await tester.tap(inDialog(find.byType(TextField)));
+    controller.selection = const TextSelection.collapsed(offset: 0);
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    expect(controller.text, '  ab');
+    expect(changes, ['  ab']);
+  });
+
+  testWidgets('read-only: Tab leaves the text alone, and the preview follows the controller', (tester) async {
+    final controller = await open(tester, const Size(1440, 900), isRefined: true, text: 'first');
+    expect(inDialog(find.text('first')), findsOneWidget);
+    controller.text = 'second';
+    await tester.pump();
+    expect(inDialog(find.text('second')), findsOneWidget);
+
+    await tester.tap(inDialog(find.text('Source')));
+    await tester.pumpAndSettle();
+    await tester.tap(inDialog(find.byType(TextField)));
+    controller.selection = const TextSelection.collapsed(offset: 0);
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    expect(controller.text, 'second');
+  });
+
+  testWidgets('resizing across the phone breakpoint switches form and keeps the editor', (tester) async {
+    await open(tester, const Size(1440, 900));
+    final before = tester.state(inDialog(find.byType(EditableText)));
+    tester.view.physicalSize = const Size(500, 900);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(inDialog(find.byIcon(Icons.arrow_back)), findsOneWidget);
+    expect(tester.state(inDialog(find.byType(EditableText))), same(before));
+  });
+
+  testWidgets('phone: copying is confirmed on the menu button', (tester) async {
+    await open(tester, const Size(390, 844));
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (_) async => null);
+    await tester.tap(inDialog(find.byIcon(Icons.more_vert)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Copy all'));
+    await tester.pumpAndSettle();
+    expect(inDialog(find.byIcon(Icons.check)), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+    expect(inDialog(find.byIcon(Icons.more_vert)), findsOneWidget);
+  });
+
+  testWidgets('in preview the hidden field holds no focus; back in edit it has it', (tester) async {
+    await open(tester, const Size(1440, 900));
+    final editable = inDialog(find.byType(EditableText));
+    expect(tester.widget<EditableText>(editable).focusNode.hasFocus, isTrue);
+
+    await tester.tap(inDialog(find.text('Preview')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<EditableText>(find.byType(EditableText, skipOffstage: false).last).focusNode.hasFocus, isFalse);
+
+    await tester.tap(inDialog(find.text('Edit')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<EditableText>(editable).focusNode.hasFocus, isTrue);
   });
 }

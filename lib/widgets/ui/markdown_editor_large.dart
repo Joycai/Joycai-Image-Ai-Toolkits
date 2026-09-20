@@ -16,6 +16,7 @@ enum _LargeView { edit, split, preview }
 /// back; there is nothing to cancel, and every way out means the same thing.
 class _LargeEditor extends StatefulWidget {
   const _LargeEditor({
+    super.key,
     required this.controller,
     required this.label,
     required this.hint,
@@ -67,15 +68,42 @@ class _LargeEditorState extends State<_LargeEditor> {
   Timer? _copiedTimer;
   final FocusNode _focusNode = FocusNode();
 
+  /// Carries the field's state — undo history, scroll offset — across the
+  /// views, which put it at different places in the tree.
+  final GlobalKey _fieldKey = GlobalKey();
+
+  /// The text the previews were last built from. The controller also notifies
+  /// for every caret and selection move, and re-parsing the Markdown for those
+  /// is wasted work.
+  late String _renderedText;
+
+  void _onControllerChanged() {
+    if (widget.controller.text == _renderedText) return;
+    setState(() => _renderedText = widget.controller.text);
+  }
+
+  @override
+  void didUpdateWidget(_LargeEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+      _renderedText = widget.controller.text;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _renderedText = widget.controller.text;
+    widget.controller.addListener(_onControllerChanged);
     _markdown = widget.isMarkdown;
     _view = (widget.readOnly || (widget.initiallyPreview && _markdown)) ? _LargeView.preview : _LargeView.edit;
   }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
     _copiedTimer?.cancel();
     _focusNode.dispose();
     super.dispose();
@@ -84,7 +112,18 @@ class _LargeEditorState extends State<_LargeEditor> {
   bool get _rendersMarkdown => _markdown || widget.readOnly;
 
   void _setView(_LargeView view) {
+    final bool backToSource = _view == _LargeView.preview && view != _LargeView.preview;
+    // A focused node carried under [ExcludeFocus] by its key keeps the focus
+    // it came with, so it is let go by hand.
+    if (view == _LargeView.preview) _focusNode.unfocus();
     setState(() => _view = view);
+    // `autofocus` only speaks at first mount, and the field was mounted
+    // (offstage) all along.
+    if (backToSource && !widget.readOnly) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focusNode.requestFocus();
+      });
+    }
     widget.onPreviewChanged(view == _LargeView.preview);
   }
 
@@ -206,7 +245,13 @@ class _LargeEditorState extends State<_LargeEditor> {
         title,
         if (_rendersMarkdown) _buildViewToggle(l10n, view, false),
         PopupMenuButton<VoidCallback>(
-          icon: const Icon(Icons.more_vert, size: 20),
+          // The menu that held 「复制全文」 is closed by the time the copy
+          // lands, so its button carries the confirmation.
+          icon: Icon(
+            _copied ? Icons.check : Icons.more_vert,
+            size: 20,
+            color: _copied ? scheme.primary : null,
+          ),
           onSelected: (action) => action(),
           itemBuilder: (context) => [
             if (!widget.readOnly)
@@ -259,34 +304,37 @@ class _LargeEditorState extends State<_LargeEditor> {
   }
 
   Widget _buildBody(BuildContext context, _LargeView view) {
+    final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
-    switch (view) {
-      case _LargeView.edit:
-        return _buildSource(context, _measure);
-      case _LargeView.preview:
-        return _buildPreview(context, _measure);
-      case _LargeView.split:
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: _buildSource(context, _splitMeasure, tag: AppLocalizations.of(context)!.editorSourceText)),
-            VerticalDivider(width: 1, thickness: 1, color: scheme.outlineVariant.withValues(alpha: AppAlpha.edge)),
-            Expanded(
-              // Rebuilt per keystroke, and only this pane: the preview is the
-              // one thing on screen that reads the text.
-              child: ListenableBuilder(
-                listenable: widget.controller,
-                builder: (context, _) => _buildPreview(context, _splitMeasure, tag: AppLocalizations.of(context)!.preview),
-              ),
+    final bool split = view == _LargeView.split;
+    final double measure = split ? _splitMeasure : _measure;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (view == _LargeView.preview)
+          // Kept alive while the preview has the floor, so coming back to the
+          // source finds its undo history and scroll offset where they were.
+          // Out of the focus tree as well as out of sight — a field that kept
+          // the keyboard here would take typing nobody can see.
+          ExcludeFocus(
+            child: Offstage(
+              child: SizedBox(width: _measure, height: 200, child: _buildSource(context, view, _measure)),
             ),
-          ],
-        );
-    }
+          )
+        else
+          Expanded(child: _buildSource(context, view, measure, tag: split ? l10n.editorSourceText : null)),
+        if (split) VerticalDivider(width: 1, thickness: 1, color: scheme.outlineVariant.withValues(alpha: AppAlpha.edge)),
+        if (view != _LargeView.edit)
+          Expanded(child: _buildPreview(context, view, measure, tag: split ? l10n.preview : null)),
+      ],
+    );
   }
 
-  EdgeInsets get _textPadding {
+  /// Takes the view being drawn, not [_view]: a split that fell back to edit
+  /// for lack of width is laid out as edit.
+  EdgeInsets _textPadding(_LargeView view) {
     if (widget.compact) return const EdgeInsets.all(16);
-    return _view == _LargeView.split ? const EdgeInsets.all(28) : const EdgeInsets.symmetric(horizontal: 32, vertical: 28);
+    return view == _LargeView.split ? const EdgeInsets.all(28) : const EdgeInsets.symmetric(horizontal: 32, vertical: 28);
   }
 
   TextStyle? _textStyle(BuildContext context) =>
@@ -306,9 +354,10 @@ class _LargeEditorState extends State<_LargeEditor> {
     );
   }
 
-  Widget _buildSource(BuildContext context, double measure, {String? tag}) {
+  Widget _buildSource(BuildContext context, _LargeView view, double measure, {String? tag}) {
     final style = _textStyle(context);
     final field = TextField(
+      key: _fieldKey,
       controller: widget.controller,
       focusNode: _focusNode,
       autofocus: !widget.readOnly,
@@ -324,7 +373,7 @@ class _LargeEditorState extends State<_LargeEditor> {
         enabledBorder: InputBorder.none,
         focusedBorder: InputBorder.none,
         filled: false,
-        contentPadding: _textPadding,
+        contentPadding: _textPadding(view),
       ),
       style: style,
       strutStyle: StrutStyle(fontSize: style?.fontSize, height: 1.7, forceStrutHeight: true),
@@ -342,7 +391,11 @@ class _LargeEditorState extends State<_LargeEditor> {
               constraints: BoxConstraints(maxWidth: measure),
               child: CallbackShortcuts(
                 bindings: {
-                  const SingleActivator(LogicalKeyboardKey.tab): () => _insertMarkdownTab(widget.controller),
+                  // Not when read-only: `readOnly` stops the keyboard, not a
+                  // write to the controller.
+                  if (!widget.readOnly)
+                    const SingleActivator(LogicalKeyboardKey.tab): () =>
+                        _insertMarkdownTab(widget.controller, widget.onChanged),
                 },
                 child: field,
               ),
@@ -354,16 +407,16 @@ class _LargeEditorState extends State<_LargeEditor> {
     );
   }
 
-  Widget _buildPreview(BuildContext context, double measure, {String? tag}) {
+  Widget _buildPreview(BuildContext context, _LargeView view, double measure, {String? tag}) {
     final scheme = Theme.of(context).colorScheme;
     final style = _textStyle(context);
     Widget text = _rendersMarkdown
         ? MarkdownBody(
-            data: widget.controller.text,
+            data: _renderedText,
             selectable: false, // Handled by SelectionArea
             styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(p: style),
           )
-        : Text(widget.controller.text, style: style);
+        : Text(_renderedText, style: style);
     if (widget.selectable) text = SelectionArea(child: text);
 
     return ColoredBox(
@@ -376,7 +429,7 @@ class _LargeEditorState extends State<_LargeEditor> {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: measure),
                   child: Padding(
-                    padding: _textPadding,
+                    padding: _textPadding(view),
                     child: Align(alignment: Alignment.topLeft, child: text),
                   ),
                 ),

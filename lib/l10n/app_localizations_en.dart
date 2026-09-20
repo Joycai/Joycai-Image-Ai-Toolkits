@@ -870,7 +870,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String editorCount(int chars, int lines) {
-    return '$chars chars · $lines lines';
+    String _temp0 = intl.Intl.pluralLogic(
+      chars,
+      locale: localeName,
+      other: '$chars chars',
+      one: '1 char',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      lines,
+      locale: localeName,
+      other: '$lines lines',
+      one: '1 line',
+    );
+    return '$_temp0 · $_temp1';
   }
 
   @override
