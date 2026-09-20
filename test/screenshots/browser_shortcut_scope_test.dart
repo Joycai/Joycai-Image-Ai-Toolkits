@@ -20,7 +20,9 @@ import 'package:path/path.dart' as p;
 import 'package:joycai_image_ai_toolkits/core/text_editing_focus.dart';
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
 import 'package:joycai_image_ai_toolkits/screens/browser/widgets/file_card.dart';
+import 'package:joycai_image_ai_toolkits/screens/browser/widgets/browser_staging_panel.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/directory_tree_item.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/unified_sidebar.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dialogs/file_rename_dialog.dart';
@@ -112,6 +114,40 @@ void main() {
     expect(browser.selectedFiles, hasLength(3),
         reason: 'the editor consumed Escape, so the selection survives it too');
   });
+
+  /// The primary modifier this host spells: the shortcut table resolves it
+  /// from `Platform.isMacOS`, so a test must ask the same question.
+  final LogicalKeyboardKey primary =
+      Platform.isMacOS ? LogicalKeyboardKey.metaLeft : LogicalKeyboardKey.controlLeft;
+
+  /// [real] sends the chord through `runAsync`, for the handlers whose effect
+  /// only lands after a real await — `AppState.setSidebarExpanded` writes the
+  /// setting to the database *before* it notifies, and a fake-async pump
+  /// cannot complete that write.
+  Future<void> pressChord(
+    WidgetTester tester,
+    LogicalKeyboardKey key, {
+    bool shift = false,
+    bool real = false,
+  }) async {
+    Future<void> send() async {
+      await tester.sendKeyDownEvent(primary);
+      if (shift) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(key);
+      if (shift) await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(primary);
+    }
+
+    if (real) {
+      await tester.runAsync(() async {
+        await send();
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+    } else {
+      await send();
+    }
+    await settle(tester);
+  }
 
   /// Click a folder in the tree, then a file in the grid — the sequence the
   /// audit caught. See [_clickFolderThenFile].
@@ -253,5 +289,87 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(tester);
     expect(field, findsNothing);
+  });
+
+  testWidgets('Cmd+\\ hides and shows the folder column', (WidgetTester tester) async {
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: const Size(1440, 900),
+      label: 'browser-toggle-folders',
+    );
+    addTearDown(() => AppState().setSidebarExpanded(true));
+
+    expect(find.byType(UnifiedSidebar), findsOneWidget);
+
+    await pressChord(tester, LogicalKeyboardKey.backslash, real: true);
+    expect(find.byType(UnifiedSidebar), findsNothing,
+        reason: 'the column is gone');
+    // And there is a way back that is not the keyboard: a column you can only
+    // restore with a shortcut you have to already know is a trap.
+    expect(find.byIcon(Icons.menu), findsOneWidget);
+
+    await pressChord(tester, LogicalKeyboardKey.backslash, real: true);
+    expect(find.byType(UnifiedSidebar), findsOneWidget);
+    expect(find.byIcon(Icons.menu_open), findsOneWidget);
+  });
+
+  testWidgets('Shift+Cmd+\\ opens and closes the staging column',
+      (WidgetTester tester) async {
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: const Size(1440, 900),
+      label: 'browser-toggle-staging',
+    );
+
+    final bool openAtStart = find.byType(BrowserStagingPanel).evaluate().isNotEmpty;
+
+    await pressChord(tester, LogicalKeyboardKey.backslash, shift: true);
+    expect(find.byType(BrowserStagingPanel),
+        openAtStart ? findsNothing : findsOneWidget);
+
+    await pressChord(tester, LogicalKeyboardKey.backslash, shift: true);
+    expect(find.byType(BrowserStagingPanel),
+        openAtStart ? findsOneWidget : findsNothing,
+        reason: 'the same chord puts it back');
+  });
+
+  testWidgets('Shift+Cmd+C copies every selected name, one per line',
+      (WidgetTester tester) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (MethodCall call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null));
+
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: const Size(1440, 900),
+      label: 'browser-copy-names',
+    );
+
+    final browser = AppState().fileBrowserState;
+    browser.clearSelection();
+    for (final BrowserFile f in browser.filteredFiles.take(2)) {
+      browser.toggleSelection(f);
+    }
+    await settle(tester);
+    // The grid pane is autofocused, so the keys work without a click.
+    await pressChord(tester, LogicalKeyboardKey.keyC, shift: true);
+
+    expect(copied, browser.selectedFiles.map((f) => f.name).join('\n'));
+    expect(copied, contains('\n'), reason: 'two files, two lines');
   });
 }

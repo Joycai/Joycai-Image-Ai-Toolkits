@@ -240,7 +240,43 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       _refresh(state);
       return KeyEventResult.handled;
     }
+    if (bound(AppShortcutIds.toggleLeftPanel)) {
+      _toggleFolderPanel();
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.toggleStaging)) {
+      _toggleStagingPanel();
+      return KeyEventResult.handled;
+    }
     return KeyEventResult.ignored;
+  }
+
+  /// `⌘\` — the folder column. On a narrow window it is the drawer, so the
+  /// key opens and closes that instead.
+  ///
+  /// Both screens toggle the same `AppState.isSidebarExpanded`: it is one
+  /// list of folders shown in two places, so hiding it is one preference and
+  /// the key means one thing app-wide.
+  void _toggleFolderPanel() {
+    if (Responsive.isNarrow(context)) {
+      final scaffold = _scaffoldKey.currentState;
+      if (scaffold == null) return;
+      scaffold.isDrawerOpen ? Navigator.of(context).pop() : scaffold.openDrawer();
+      return;
+    }
+    final appState = Provider.of<AppState>(context, listen: false);
+    appState.setSidebarExpanded(!appState.isSidebarExpanded);
+  }
+
+  /// `⇧⌘\` — the staging column, the same toggle the header button drives.
+  void _toggleStagingPanel() {
+    if (Responsive.isNarrow(context)) {
+      final scaffold = _scaffoldKey.currentState;
+      if (scaffold == null) return;
+      scaffold.isEndDrawerOpen ? Navigator.of(context).pop() : scaffold.openEndDrawer();
+      return;
+    }
+    setState(() => _stagingOpen = !_stagingOpen);
   }
 
   /// The file grid's keys (L2). They arrive here only while the grid is the
@@ -275,6 +311,28 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         filePath: state.selectedFiles.first.path,
         onSuccess: () => state.refresh(),
       );
+      return KeyEventResult.handled;
+    }
+    // The three the context menu already offers. Each acts on the selection
+    // the same way its menu row does, except where "the selection" would make
+    // it hostile: revealing N folders at once is noise, and opening a dozen
+    // files in their default apps is a trap, so those take the first and the
+    // only one respectively.
+    if (bound(AppShortcutIds.copyFileName) && state.selectedFiles.isNotEmpty) {
+      Clipboard.setData(ClipboardData(
+        text: state.selectedFiles.map((f) => f.name).join('\n'),
+      ));
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.revealInFileManager) &&
+        state.selectedFiles.isNotEmpty) {
+      FileUtils.openFolder(state.selectedFiles.first.path);
+      return KeyEventResult.handled;
+    }
+    if (bound(AppShortcutIds.openWithSystem) &&
+        state.selectedFiles.length == 1 &&
+        state.selectedFiles.first.category != FileCategory.other) {
+      FileUtils.openPath(state.selectedFiles.first.path);
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -366,6 +424,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     final staging = context.select<FileStagingState, _StagingInputs>(_stagingInputs);
     final scheme = Theme.of(context).colorScheme;
     final isNarrow = Responsive.isNarrow(context);
+    // `⌘\` and the header's button drive the same app-level preference the
+    // workbench's sidebar button does — one list of folders, one answer to
+    // "is it showing".
+    final showFolderColumn = context.select<AppState, bool>((s) => s.isSidebarExpanded);
 
     // The column earns its width the moment there is something in it, and
     // only the first time — reopening it after the user closed it would be
@@ -435,7 +497,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         bottomNavigationBar: const AppRunConsole(onExpand: showTaskQueueSheet),
         body: Row(
           children: [
-            if (!isNarrow) ...[
+            if (!isNarrow && showFolderColumn) ...[
               PanelCard(
                 width: _sidebarWidth,
                 shape: PanelShape.column,
@@ -484,6 +546,8 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                       onSearchChanged: browser.setSearchQuery,
                       onRefresh: () => _refresh(browser),
                       onOpenDrawer: isNarrow ? () => _scaffoldKey.currentState?.openDrawer() : null,
+                      folderPanelOpen: showFolderColumn,
+                      onToggleFolderPanel: isNarrow ? null : _toggleFolderPanel,
                     ),
                     BrowserFilterBar(state: browser),
                     _BrowserOutline(
