@@ -3213,5 +3213,22 @@
     }
   },
   "optKbUseMaintainNotice": "已切到「維護」· 助手現在可以提議知識庫變更",
-  "optKbUseWriteNotice": "已切到「出詞」· 助手不再提議知識庫變更"
+  "optKbUseWriteNotice": "已切到「出詞」· 助手不再提議知識庫變更",
+  "optPresetOutputPromptValue": "提示詞 · 以提示詞卡交付",
+  "optPresetOutputAnalysisValue": "分析文字 · 直接在對話裡回答",
+  "optEmptyAnalysisTitle": "這次要看什麼？",
+  "optEmptyAnalysisSub": "說清要看哪幾張參考圖、要擷取什麼。助手按這條預設規定的結構直接回答。",
+  "optEmptyAnalysisExample1": "幫我辨識一下參考圖 1 的內容",
+  "optEmptyAnalysisExample2": "結合參考圖 1 和 2，描述服裝的設計結構",
+  "optEmptyAnalysisExample3": "除圖片外，我補充以下資訊：",
+  "optChatHintAnalysis": "說說要看哪張圖、要擷取什麼…",
+  "optResultMeta": "{count} 字 · Markdown",
+  "@optResultMeta": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optResultCopied": "已複製"
 }

@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import 'app_dialog.dart';
 import 'app_empty_state.dart';
 import 'app_field_size.dart';
+import 'app_neutral_marker.dart';
 import 'app_search_field.dart';
 import 'tag_avatar.dart';
 import 'model_tag_chip.dart';
@@ -24,6 +25,8 @@ class PickerOption<T> {
     this.secondary,
     this.badge,
     this.badgeColor,
+    this.marker,
+    this.markerIcon,
   });
 
   final T value;
@@ -39,9 +42,15 @@ class PickerOption<T> {
   final String? badge;
   final Color? badgeColor;
 
+  /// A neutral marker after [label], with [markerIcon]: a fact about the
+  /// option that only the minority carry (`A3e`'s 「分析」). Searchable, like
+  /// the badge — typing it is how one filters by it.
+  final String? marker;
+  final IconData? markerIcon;
+
   /// Everything this option can be matched on, folded once.
   late final String searchText =
-      '$label ${secondary ?? ''} ${badge ?? ''}'.toLowerCase();
+      '$label ${secondary ?? ''} ${badge ?? ''} ${marker ?? ''}'.toLowerCase();
 }
 
 /// A field that opens a searchable list instead of a dropdown menu.
@@ -398,7 +407,9 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
     super.initState();
     _filtered = widget.options;
     _hasSecondary = widget.options.any((o) => o.secondary != null && o.secondary!.isNotEmpty);
-    _hasBadge = widget.options.any((o) => o.badge != null && o.badge!.isNotEmpty);
+    // A marker is a chip of the badge's height, so it sizes the row the same.
+    _hasBadge = widget.options.any((o) =>
+        (o.badge != null && o.badge!.isNotEmpty) || (o.marker != null && o.marker!.isNotEmpty));
     _searchCtrl.addListener(_onQueryChanged);
   }
 
@@ -646,6 +657,10 @@ class _PickerRow<T> extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (option.marker != null && option.marker!.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    AppNeutralMarker(icon: option.markerIcon ?? Icons.label_outline, label: option.marker!),
+                  ],
                   if (selected) ...[
                     const SizedBox(width: 8),
                     Icon(Icons.check, size: AppSize.iconSm, color: colorScheme.onAccentTint),

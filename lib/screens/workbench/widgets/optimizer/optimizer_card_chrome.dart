@@ -19,6 +19,44 @@ extension _CardChrome on _PromptOptimizerChatViewState {
   }
 
   /// An avatar with its content beside it, capped at the body width.
+  /// `A3e 5e`: the one action an analysis result has. Copies the Markdown as
+  /// written — what gets pasted elsewhere is the source, not its rendering.
+  Widget _buildResultActions(
+    String text,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpace.s6),
+      child: Transform.translate(
+        // The button's own inset, given back, so its label starts on the
+        // reply's left edge rather than a button-padding in from it.
+        offset: const Offset(-AppSpace.s10, 0),
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: AppSpace.s4,
+          children: [
+            AppButton(
+              label: l10n.copy,
+              icon: Icons.content_copy,
+              variant: AppButtonVariant.text,
+              size: AppButtonSize.compact,
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: text));
+                AppSnackBar.success(context, l10n.optResultCopied);
+              },
+            ),
+            Text(
+              l10n.optResultMeta(text.characters.length),
+              style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _besideAvatar(Widget avatar, Widget content) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

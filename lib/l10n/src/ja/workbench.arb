@@ -1188,5 +1188,20 @@
     }
   },
   "optKbUseMaintainNotice": "「メンテナンス」に切り替えました · アシスタントはナレッジベースの変更を提案できます",
-  "optKbUseWriteNotice": "「プロンプト作成」に切り替えました · アシスタントはナレッジベースの変更を提案しなくなります"
+  "optKbUseWriteNotice": "「プロンプト作成」に切り替えました · アシスタントはナレッジベースの変更を提案しなくなります",
+  "optPresetOutputPromptValue": "プロンプト · カードで渡す",
+  "optPresetOutputAnalysisValue": "分析テキスト · 会話の中で回答",
+  "optEmptyAnalysisTitle": "今回は何を見ますか？",
+  "optEmptyAnalysisSub": "どの参考画像を見て、何を取り出すのかを伝えてください。アシスタントはこのプリセットが定める構成でそのまま回答します。",
+  "optEmptyAnalysisExample1": "参考画像 1 の内容を読み取ってください",
+  "optEmptyAnalysisExample2": "参考画像 1 と 2 を合わせて、服のデザイン構造を説明してください",
+  "optEmptyAnalysisExample3": "画像のほかに、次の情報を補足します：",
+  "optChatHintAnalysis": "どの画像を見て、何を取り出すかを入力…",
+  "optResultMeta": "{count} 文字 · Markdown",
+  "@optResultMeta": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "optResultCopied": "コピーしました"
 }

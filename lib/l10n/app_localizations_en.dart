@@ -5945,4 +5945,41 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get optKbUseWriteNotice =>
       'Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits';
+
+  @override
+  String get optPresetOutputPromptValue => 'Prompt · delivered as a card';
+
+  @override
+  String get optPresetOutputAnalysisValue =>
+      'Analysis text · answered in the chat';
+
+  @override
+  String get optEmptyAnalysisTitle => 'What should it look at?';
+
+  @override
+  String get optEmptyAnalysisSub =>
+      'Say which reference images to look at and what to pull out. The assistant answers directly, in the structure this preset lays down.';
+
+  @override
+  String get optEmptyAnalysisExample1 => 'Tell me what is in reference image 1';
+
+  @override
+  String get optEmptyAnalysisExample2 =>
+      'Using reference images 1 and 2, describe how the garment is constructed';
+
+  @override
+  String get optEmptyAnalysisExample3 =>
+      'Beyond the images, here is what else you should know: ';
+
+  @override
+  String get optChatHintAnalysis =>
+      'Say which image to look at and what to pull out…';
+
+  @override
+  String optResultMeta(int count) {
+    return '$count chars · Markdown';
+  }
+
+  @override
+  String get optResultCopied => 'Copied';
 }

@@ -52,6 +52,10 @@ List<PickerOption<int>> presetPickerOptions(
             label: p.title,
             badge: p.tags.isEmpty ? null : p.tags.first.name,
             badgeColor: p.tags.isEmpty ? null : Color(p.tags.first.color),
+            // Only the minority says so (`A3e 5c`): a prompt preset — and the
+            // built-in, always one — carries nothing.
+            marker: p.outputKind == PresetOutputKind.analysis ? l10n.presetOutputAnalysisShort : null,
+            markerIcon: Icons.subject,
           ),
     ];
 
@@ -96,6 +100,7 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
             overflow: TextOverflow.ellipsis,
             style: _noteStyle(colorScheme, textTheme),
           ),
+        _buildOutputKindRow(l10n, colorScheme, textTheme),
         _buildPresetDisclosure(l10n, colorScheme, textTheme, shown, builtin: builtin),
         if (_presetExpanded) ...[
           if (builtin)
@@ -122,6 +127,33 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
                 _TextLink(label: l10n.optPresetManage, onTap: widget.onManagePresets),
               ],
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// `A3e 5c`: what this preset hands back. Shown for both kinds — a row that
+  /// came and went would move the disclosure under it — and read-only: the
+  /// kind belongs to the preset, and is changed where presets are kept.
+  Widget _buildOutputKindRow(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+    final analysis = widget.presetOutputKind == PresetOutputKind.analysis;
+    return Row(
+      children: [
+        Text(l10n.presetOutput, style: _noteStyle(colorScheme, textTheme)),
+        const SizedBox(width: AppSpace.s10),
+        Icon(
+          analysis ? Icons.subject : Icons.description_outlined,
+          size: 14,
+          color: colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: AppSpace.s4),
+        Expanded(
+          child: Text(
+            analysis ? l10n.optPresetOutputAnalysisValue : l10n.optPresetOutputPromptValue,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurface),
           ),
         ),
       ],

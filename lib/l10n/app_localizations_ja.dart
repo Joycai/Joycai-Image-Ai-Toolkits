@@ -5728,4 +5728,37 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get optKbUseWriteNotice =>
       '「プロンプト作成」に切り替えました · アシスタントはナレッジベースの変更を提案しなくなります';
+
+  @override
+  String get optPresetOutputPromptValue => 'プロンプト · カードで渡す';
+
+  @override
+  String get optPresetOutputAnalysisValue => '分析テキスト · 会話の中で回答';
+
+  @override
+  String get optEmptyAnalysisTitle => '今回は何を見ますか？';
+
+  @override
+  String get optEmptyAnalysisSub =>
+      'どの参考画像を見て、何を取り出すのかを伝えてください。アシスタントはこのプリセットが定める構成でそのまま回答します。';
+
+  @override
+  String get optEmptyAnalysisExample1 => '参考画像 1 の内容を読み取ってください';
+
+  @override
+  String get optEmptyAnalysisExample2 => '参考画像 1 と 2 を合わせて、服のデザイン構造を説明してください';
+
+  @override
+  String get optEmptyAnalysisExample3 => '画像のほかに、次の情報を補足します：';
+
+  @override
+  String get optChatHintAnalysis => 'どの画像を見て、何を取り出すかを入力…';
+
+  @override
+  String optResultMeta(int count) {
+    return '$count 文字 · Markdown';
+  }
+
+  @override
+  String get optResultCopied => 'コピーしました';
 }

@@ -3994,5 +3994,22 @@
     }
   },
   "optKbUseMaintainNotice": "Switched to “Maintain” · the assistant can now propose knowledge-base edits",
-  "optKbUseWriteNotice": "Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits"
+  "optKbUseWriteNotice": "Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits",
+  "optPresetOutputPromptValue": "Prompt · delivered as a card",
+  "optPresetOutputAnalysisValue": "Analysis text · answered in the chat",
+  "optEmptyAnalysisTitle": "What should it look at?",
+  "optEmptyAnalysisSub": "Say which reference images to look at and what to pull out. The assistant answers directly, in the structure this preset lays down.",
+  "optEmptyAnalysisExample1": "Tell me what is in reference image 1",
+  "optEmptyAnalysisExample2": "Using reference images 1 and 2, describe how the garment is constructed",
+  "optEmptyAnalysisExample3": "Beyond the images, here is what else you should know: ",
+  "optChatHintAnalysis": "Say which image to look at and what to pull out…",
+  "optResultMeta": "{count} chars · Markdown",
+  "@optResultMeta": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optResultCopied": "Copied"
 }
