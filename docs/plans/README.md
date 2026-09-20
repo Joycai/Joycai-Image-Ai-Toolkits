@@ -61,6 +61,20 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 
 ## 还欠的（2026-09-12 对照 main 逐条复核过；2026-09-16 欠账清扫后更新）
 
+### 提示词编辑器 · 放大态（A1d，2026-09-20）
+
+放大框从「标题条 + 原样嵌进去的小编辑器」改成自己的布局：一层头、限宽无框正文、状态脚，外加分栏视图
+（`lib/widgets/ui/markdown_editor_large.dart`，`markdown_editor.dart` 的 `part`；`test/markdown_editor_large_test.dart`、
+截图 `test/screenshots/large_editor_shots_test.dart`）。与稿的出入：
+
+| 条 | 为什么没做 |
+|---|---|
+| Markdown 关掉后语法高亮还在 | 高亮来自调用方传进来的 `MarkdownTextEditingController`，编辑器只拿到一个 `TextEditingController`；要关得给那个 controller 加开关并由四个调用方各自接线。列表续行已随开关停用（`SmartMarkdownFormatter.continueLists`），换行归一不受影响 |
+| 视图分段没有定宽 56 | `AppSegmentedControl` 没有定宽段，按文字自然宽；为一处改原语不值得 |
+| ⌘/Ctrl+Enter、⌘/Ctrl+Shift+P 没有登记进 `00f 键盘快捷键` | 两个键已实现，稿那边的总表还没补这一行 |
+| 手机的 ⋮ 菜单是 Material `PopupMenuButton` | 设计系统层没有菜单原语（玻璃菜单在 `widgets/glass`，其 checked 行画成复选框，见 D2b 一节） |
+| 小编辑器的头部没有跟着改 | 不在本轮范围：维持 PR #320 的排布（分段贴右、Markdown 仍是勾选框），与 A1·1a 的出入照旧 |
+
 ### 任务预设 · 产出类型（A3e，2026-09-20）
 
 | 条 | 为什么没做 |

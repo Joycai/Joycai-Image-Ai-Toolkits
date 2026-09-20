@@ -834,6 +834,38 @@ class AppLocalizationsJa extends AppLocalizations {
   String get expandEditor => '拡大編集';
 
   @override
+  String get collapseEditor => '縮小';
+
+  @override
+  String get editorSplitView => '分割';
+
+  @override
+  String get editorSourceText => 'ソース';
+
+  @override
+  String get editorOriginal => '原文';
+
+  @override
+  String get editorCopyAll => 'すべてコピー';
+
+  @override
+  String get editorCopied => 'コピーしました';
+
+  @override
+  String get editorReadOnly => '読み取り専用';
+
+  @override
+  String get editorDone => '完了';
+
+  @override
+  String editorCount(int chars, int lines) {
+    return '$chars 文字 · $lines 行';
+  }
+
+  @override
+  String get editorKeyHint => 'Esc で縮小 · Tab でインデント';
+
+  @override
   String get back => '戻る';
 
   @override

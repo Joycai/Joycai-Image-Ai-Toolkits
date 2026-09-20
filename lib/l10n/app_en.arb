@@ -762,6 +762,26 @@
   "restoreWindow": "Restore",
   "closeWindow": "Close",
   "expandEditor": "Expand editor",
+  "collapseEditor": "Collapse editor",
+  "editorSplitView": "Split",
+  "editorSourceText": "Source",
+  "editorOriginal": "Source",
+  "editorCopyAll": "Copy all",
+  "editorCopied": "Copied",
+  "editorReadOnly": "Read-only",
+  "editorDone": "Done",
+  "editorCount": "{chars, plural, =1{1 char} other{{chars} chars}} · {lines, plural, =1{1 line} other{{lines} lines}}",
+  "@editorCount": {
+    "placeholders": {
+      "chars": {
+        "type": "int"
+      },
+      "lines": {
+        "type": "int"
+      }
+    }
+  },
+  "editorKeyHint": "Esc to collapse · Tab to indent",
   "back": "Back",
   "next": "Next",
   "finish": "Finish",
