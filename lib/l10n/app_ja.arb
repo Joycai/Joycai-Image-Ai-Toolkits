@@ -2432,7 +2432,6 @@
   "optPromptTitle": "最適化プロンプト",
   "optCopy": "コピー",
   "optPromptCopied": "プロンプトをコピーしました",
-  "optEmptyChat": "ラフなプロンプトやアイデアを送信して開始します。AIは必要に応じて参照画像を確認し、複数ターンで結果を調整できます。",
   "optViewed": "AI が閲覧済み",
   "optRemoveImage": "画像を削除",
   "optEmptyImagesHint": "ギャラリーで画像を右クリックし、「プロンプトアシスタントに送信」を選択すると追加できます。",
@@ -2484,11 +2483,10 @@
   "safetyThresholdBlockOnlyHigh": "少しブロック",
   "safetyThresholdBlockNone": "ブロックしない",
   "safetyThresholdOff": "フィルタ無効",
-  "optModeSystemPrompt": "システムプロンプト",
+  "optModeSystemPrompt": "タスクプリセット",
   "optModeKnowledge": "ナレッジベース",
   "knowledgeBase": "ナレッジベース",
   "optKbNotConfigured": "ナレッジベースが未設定または無効です。設定でフォルダを選択してください。",
-  "optModeSwitchConfirm": "モードを切り替えると新しい会話が開始されます。続行しますか？",
   "optToolListKnowledge": "ナレッジベースのファイル一覧を確認",
   "optToolReadKnowledge": "ナレッジを読み込み: {name}",
   "@optToolReadKnowledge": {
@@ -2573,7 +2571,7 @@
   "optPromptVersionLabel": "プロンプト",
   "optImageMissing": "この会話の一部の参照画像が見つかりません。再追加すると引き続き使用できます。",
   "optRetry": "再試行",
-  "optModeKnowledgeEdit": "ナレッジ編集",
+  "optModeKnowledgeEdit": "メンテナンス",
   "optToolWriteKnowledge": "ナレッジ更新の提案：{name}",
   "@optToolWriteKnowledge": {
     "placeholders": {
@@ -2756,19 +2754,10 @@
     }
   },
   "optSendHint": "Enter で送信 · Shift+Enter で改行",
-  "optModeBadgeAgent": "{mode} · エージェント",
-  "@optModeBadgeAgent": {
-    "placeholders": {
-      "mode": {
-        "type": "String"
-      }
-    }
-  },
   "optRefNumberingHint": "番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。",
   "optRefReorderHint": "カードをドラッグして並べ替えます。番号はアシスタントに渡す順序で、プロンプトが引用する番号でもあります。",
   "optRefReorderHintTouch": "カードを長押ししてからドラッグで並べ替えます。番号はアシスタントに渡す順序です。",
   "optRefReorderLocked": "アシスタントが応答中です。終了後に並べ替えられます。",
-  "optModeKnowledgeEditShort": "ナレッジ編集",
   "optRunning": "実行中",
   "optRunningStep": "実行中 · ステップ {count}",
   "@optRunningStep": {
@@ -2812,13 +2801,12 @@
   "optAbortHint": "Esc で中断",
   "optKbSearching": "検索中",
   "optKbCitedRunning": "実行中",
-  "optSysPromptPick": "テンプレートを選択",
-  "optSysPromptSearch": "テンプレートを検索…",
-  "optSysPromptNone": "テンプレート未選択",
+  "optSysPromptPick": "タスクプリセットを選択",
+  "optSysPromptSearch": "プリセットを検索…",
   "optSysPromptUnsaved": "未保存",
   "optSysPromptSave": "保存",
   "optSysPromptReset": "リセット",
-  "optSysPromptSaved": "テンプレートを保存しました",
+  "optSysPromptSaved": "プリセットを保存しました",
   "optSysPromptHint": "アシスタントに従わせたい指示を書いてください…",
   "optSysPromptChars": "{count} 文字",
   "@optSysPromptChars": {
@@ -2836,7 +2824,7 @@
       }
     }
   },
-  "optSysPromptNoTools": "このモードではナレッジツールを読み込まないため、agent はツールを呼び出しません。",
+  "optSysPromptNoKb": "このモードではナレッジベースを参照しません。アシスタントは参考画像の確認や質問は行います。",
   "kbEditNoChange": "この提案はファイルの内容を変更しません。",
   "kbEditPendingTitle": "未確認の変更",
   "kbEditWriteAll": "すべて書き込む",
@@ -3144,5 +3132,80 @@
   "imageSizeFooterTyping": "Enter で確定",
   "imageSizeDone": "完了",
   "imageSizeRatioDerived": "派生 · 幅と高さに追従",
-  "imageSizeRatioAccepted": "カスタム · 受理"
+  "imageSizeRatioAccepted": "カスタム · 受理",
+  "optModeKnowledgeWrite": "プロンプト作成",
+  "optModeUseFor": "用途",
+  "optModeBadge": "{basis} · {detail}",
+  "@optModeBadge": {
+    "placeholders": {
+      "basis": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetBuiltinName": "汎用最適化",
+  "optModeLocked": "アシスタントが応答中 · モードはロックされています",
+  "optModeSwitchTitle": "「{mode}」に切り替えますか？",
+  "@optModeSwitchTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "optModeSwitchBody": "タスクプリセットとナレッジベースの会話はつなげられないため、切り替えると新しい会話が始まります。現在の会話は保存済みで、「会話履歴」からいつでも戻れます。",
+  "optModeSwitchStart": "新しい会話を始める",
+  "optPresetCustom": "カスタム指示",
+  "optPresetBuiltinBadge": "組み込み",
+  "optPresetBuiltinDesc": "専用の指示なし：ラフなアイデアを、そのまま使える画像・動画プロンプトに整えます。",
+  "optPresetBuiltinLocked": "組み込みの指示は編集できません",
+  "optPresetSaveAs": "プリセットとして保存…",
+  "optPresetEditInstructions": "指示を表示 / 編集",
+  "optPresetViewInstructions": "指示を表示",
+  "optPresetManage": "プロンプトライブラリでプリセットを管理",
+  "optPresetDiscardTitle": "未保存の変更を破棄しますか？",
+  "optPresetDiscardBody": "「{name}」の指示には未保存の変更があります。プリセットを切り替えると失われます。",
+  "@optPresetDiscardBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetDiscardAction": "変更を破棄",
+  "optEmptyPresetTitle": "今回は何をしますか？",
+  "optEmptyPresetSub": "タスクプリセットを選んで、アイデアをアシスタントに送ってください。必要に応じて参考画像を確認し、何度でもやり取りできます。",
+  "optEmptyPresetAll": "すべてのプリセット（{count}）…",
+  "@optEmptyPresetAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optEmptyPresetCreate": "プロンプトライブラリでプリセットを作成",
+  "optEmptyKbTitle": "ナレッジベースに沿ってプロンプトを書く",
+  "optEmptyKbSub": "アシスタントはまずナレッジベースのファイルマップを読み、今回必要なルール文書だけを開きます。",
+  "optEmptyKbExample1": "ナレッジベースのルールに沿って、プロンプトを書いてください：",
+  "optEmptyKbExample2": "ナレッジベースと照らして、このプロンプトの問題点を確認してください：",
+  "optEmptyKbExample3": "参考画像の人物を見て、ナレッジベースのテンプレートで完全なプロンプトにしてください。",
+  "optEmptyKbEditTitle": "ナレッジベースをメンテナンスする",
+  "optEmptyKbEditSub": "追加・修正したい内容を伝えてください。変更はすべて diff で確認してから書き込まれます。",
+  "optEmptyKbEditExample1": "この種の画の書き方を記録する文書を追加してください：",
+  "optEmptyKbEditExample2": "ナレッジベース内に矛盾するルールがないか確認してください。",
+  "optEmptyKbEditExample3": "エントリファイルのファイルマップを実際のディレクトリに合わせて更新してください。",
+  "optLeftDocs": "文書",
+  "optLeftRefs": "参考画像 · {count}",
+  "@optLeftRefs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbUseMaintainNotice": "「メンテナンス」に切り替えました · アシスタントはナレッジベースの変更を提案できます",
+  "optKbUseWriteNotice": "「プロンプト作成」に切り替えました · アシスタントはナレッジベースの変更を提案しなくなります"
 }

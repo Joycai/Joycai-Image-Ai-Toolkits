@@ -4571,10 +4571,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optPromptCopied => 'プロンプトをコピーしました';
 
   @override
-  String get optEmptyChat =>
-      'ラフなプロンプトやアイデアを送信して開始します。AIは必要に応じて参照画像を確認し、複数ターンで結果を調整できます。';
-
-  @override
   String get optViewed => 'AI が閲覧済み';
 
   @override
@@ -4713,7 +4709,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get safetyThresholdOff => 'フィルタ無効';
 
   @override
-  String get optModeSystemPrompt => 'システムプロンプト';
+  String get optModeSystemPrompt => 'タスクプリセット';
 
   @override
   String get optModeKnowledge => 'ナレッジベース';
@@ -4723,9 +4719,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optKbNotConfigured => 'ナレッジベースが未設定または無効です。設定でフォルダを選択してください。';
-
-  @override
-  String get optModeSwitchConfirm => 'モードを切り替えると新しい会話が開始されます。続行しますか？';
 
   @override
   String get optToolListKnowledge => 'ナレッジベースのファイル一覧を確認';
@@ -4881,7 +4874,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optRetry => '再試行';
 
   @override
-  String get optModeKnowledgeEdit => 'ナレッジ編集';
+  String get optModeKnowledgeEdit => 'メンテナンス';
 
   @override
   String optToolWriteKnowledge(String name) {
@@ -5070,11 +5063,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optSendHint => 'Enter で送信 · Shift+Enter で改行';
 
   @override
-  String optModeBadgeAgent(String mode) {
-    return '$mode · エージェント';
-  }
-
-  @override
   String get optRefNumberingHint =>
       '番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。';
 
@@ -5088,9 +5076,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optRefReorderLocked => 'アシスタントが応答中です。終了後に並べ替えられます。';
-
-  @override
-  String get optModeKnowledgeEditShort => 'ナレッジ編集';
 
   @override
   String get optRunning => '実行中';
@@ -5137,13 +5122,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optKbCitedRunning => '実行中';
 
   @override
-  String get optSysPromptPick => 'テンプレートを選択';
+  String get optSysPromptPick => 'タスクプリセットを選択';
 
   @override
-  String get optSysPromptSearch => 'テンプレートを検索…';
-
-  @override
-  String get optSysPromptNone => 'テンプレート未選択';
+  String get optSysPromptSearch => 'プリセットを検索…';
 
   @override
   String get optSysPromptUnsaved => '未保存';
@@ -5155,7 +5137,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optSysPromptReset => 'リセット';
 
   @override
-  String get optSysPromptSaved => 'テンプレートを保存しました';
+  String get optSysPromptSaved => 'プリセットを保存しました';
 
   @override
   String get optSysPromptHint => 'アシスタントに従わせたい指示を書いてください…';
@@ -5171,8 +5153,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get optSysPromptNoTools =>
-      'このモードではナレッジツールを読み込まないため、agent はツールを呼び出しません。';
+  String get optSysPromptNoKb =>
+      'このモードではナレッジベースを参照しません。アシスタントは参考画像の確認や質問は行います。';
 
   @override
   String get kbEditNoChange => 'この提案はファイルの内容を変更しません。';
@@ -5599,4 +5581,131 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get imageSizeRatioAccepted => 'カスタム · 受理';
+
+  @override
+  String get optModeKnowledgeWrite => 'プロンプト作成';
+
+  @override
+  String get optModeUseFor => '用途';
+
+  @override
+  String optModeBadge(String basis, String detail) {
+    return '$basis · $detail';
+  }
+
+  @override
+  String get optPresetBuiltinName => '汎用最適化';
+
+  @override
+  String get optModeLocked => 'アシスタントが応答中 · モードはロックされています';
+
+  @override
+  String optModeSwitchTitle(String mode) {
+    return '「$mode」に切り替えますか？';
+  }
+
+  @override
+  String get optModeSwitchBody =>
+      'タスクプリセットとナレッジベースの会話はつなげられないため、切り替えると新しい会話が始まります。現在の会話は保存済みで、「会話履歴」からいつでも戻れます。';
+
+  @override
+  String get optModeSwitchStart => '新しい会話を始める';
+
+  @override
+  String get optPresetCustom => 'カスタム指示';
+
+  @override
+  String get optPresetBuiltinBadge => '組み込み';
+
+  @override
+  String get optPresetBuiltinDesc => '専用の指示なし：ラフなアイデアを、そのまま使える画像・動画プロンプトに整えます。';
+
+  @override
+  String get optPresetBuiltinLocked => '組み込みの指示は編集できません';
+
+  @override
+  String get optPresetSaveAs => 'プリセットとして保存…';
+
+  @override
+  String get optPresetEditInstructions => '指示を表示 / 編集';
+
+  @override
+  String get optPresetViewInstructions => '指示を表示';
+
+  @override
+  String get optPresetManage => 'プロンプトライブラリでプリセットを管理';
+
+  @override
+  String get optPresetDiscardTitle => '未保存の変更を破棄しますか？';
+
+  @override
+  String optPresetDiscardBody(String name) {
+    return '「$name」の指示には未保存の変更があります。プリセットを切り替えると失われます。';
+  }
+
+  @override
+  String get optPresetDiscardAction => '変更を破棄';
+
+  @override
+  String get optEmptyPresetTitle => '今回は何をしますか？';
+
+  @override
+  String get optEmptyPresetSub =>
+      'タスクプリセットを選んで、アイデアをアシスタントに送ってください。必要に応じて参考画像を確認し、何度でもやり取りできます。';
+
+  @override
+  String optEmptyPresetAll(int count) {
+    return 'すべてのプリセット（$count）…';
+  }
+
+  @override
+  String get optEmptyPresetCreate => 'プロンプトライブラリでプリセットを作成';
+
+  @override
+  String get optEmptyKbTitle => 'ナレッジベースに沿ってプロンプトを書く';
+
+  @override
+  String get optEmptyKbSub => 'アシスタントはまずナレッジベースのファイルマップを読み、今回必要なルール文書だけを開きます。';
+
+  @override
+  String get optEmptyKbExample1 => 'ナレッジベースのルールに沿って、プロンプトを書いてください：';
+
+  @override
+  String get optEmptyKbExample2 => 'ナレッジベースと照らして、このプロンプトの問題点を確認してください：';
+
+  @override
+  String get optEmptyKbExample3 => '参考画像の人物を見て、ナレッジベースのテンプレートで完全なプロンプトにしてください。';
+
+  @override
+  String get optEmptyKbEditTitle => 'ナレッジベースをメンテナンスする';
+
+  @override
+  String get optEmptyKbEditSub =>
+      '追加・修正したい内容を伝えてください。変更はすべて diff で確認してから書き込まれます。';
+
+  @override
+  String get optEmptyKbEditExample1 => 'この種の画の書き方を記録する文書を追加してください：';
+
+  @override
+  String get optEmptyKbEditExample2 => 'ナレッジベース内に矛盾するルールがないか確認してください。';
+
+  @override
+  String get optEmptyKbEditExample3 =>
+      'エントリファイルのファイルマップを実際のディレクトリに合わせて更新してください。';
+
+  @override
+  String get optLeftDocs => '文書';
+
+  @override
+  String optLeftRefs(int count) {
+    return '参考画像 · $count';
+  }
+
+  @override
+  String get optKbUseMaintainNotice =>
+      '「メンテナンス」に切り替えました · アシスタントはナレッジベースの変更を提案できます';
+
+  @override
+  String get optKbUseWriteNotice =>
+      '「プロンプト作成」に切り替えました · アシスタントはナレッジベースの変更を提案しなくなります';
 }

@@ -4745,10 +4745,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optPromptCopied => 'Prompt copied to clipboard';
 
   @override
-  String get optEmptyChat =>
-      'Send a rough prompt or idea to start. The AI inspects reference images on demand, and you can refine the result over multiple turns.';
-
-  @override
   String get optViewed => 'Viewed by AI';
 
   @override
@@ -4889,7 +4885,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get safetyThresholdOff => 'Filter off';
 
   @override
-  String get optModeSystemPrompt => 'System Prompt';
+  String get optModeSystemPrompt => 'Task preset';
 
   @override
   String get optModeKnowledge => 'Knowledge Base';
@@ -4900,10 +4896,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get optKbNotConfigured =>
       'Knowledge base is not configured or invalid — choose its folder in Settings first.';
-
-  @override
-  String get optModeSwitchConfirm =>
-      'Switching the mode starts a new conversation. Continue?';
 
   @override
   String get optToolListKnowledge => 'Browsed knowledge base files';
@@ -5065,7 +5057,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optRetry => 'Retry';
 
   @override
-  String get optModeKnowledgeEdit => 'Edit KB';
+  String get optModeKnowledgeEdit => 'Maintain';
 
   @override
   String optToolWriteKnowledge(String name) {
@@ -5255,11 +5247,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optSendHint => 'Enter to send · Shift+Enter for a new line';
 
   @override
-  String optModeBadgeAgent(String mode) {
-    return '$mode · Agent';
-  }
-
-  @override
   String get optRefNumberingHint =>
       'Numbers match the filenames cited in the prompt; the agent can view these images.';
 
@@ -5274,9 +5261,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get optRefReorderLocked =>
       'The assistant is replying — reorder once it finishes.';
-
-  @override
-  String get optModeKnowledgeEditShort => 'Edit KB';
 
   @override
   String get optRunning => 'Running';
@@ -5324,13 +5308,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optKbCitedRunning => 'in progress';
 
   @override
-  String get optSysPromptPick => 'Choose a template';
+  String get optSysPromptPick => 'Choose a task preset';
 
   @override
-  String get optSysPromptSearch => 'Search templates...';
-
-  @override
-  String get optSysPromptNone => 'No template';
+  String get optSysPromptSearch => 'Search presets…';
 
   @override
   String get optSysPromptUnsaved => 'Unsaved';
@@ -5342,7 +5323,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optSysPromptReset => 'Reset';
 
   @override
-  String get optSysPromptSaved => 'Template saved';
+  String get optSysPromptSaved => 'Preset saved';
 
   @override
   String get optSysPromptHint =>
@@ -5359,8 +5340,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get optSysPromptNoTools =>
-      'This mode mounts no knowledge tools — the agent makes no tool calls.';
+  String get optSysPromptNoKb =>
+      'This mode does not read the knowledge base. The assistant still views reference images and may ask you questions.';
 
   @override
   String get kbEditNoChange => 'This proposal changes nothing in the file.';
@@ -5810,4 +5791,138 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get imageSizeRatioAccepted => 'custom · accepted';
+
+  @override
+  String get optModeKnowledgeWrite => 'Write prompts';
+
+  @override
+  String get optModeUseFor => 'Use it to';
+
+  @override
+  String optModeBadge(String basis, String detail) {
+    return '$basis · $detail';
+  }
+
+  @override
+  String get optPresetBuiltinName => 'General refine';
+
+  @override
+  String get optModeLocked => 'Assistant is replying · mode locked';
+
+  @override
+  String optModeSwitchTitle(String mode) {
+    return 'Switch to “$mode”?';
+  }
+
+  @override
+  String get optModeSwitchBody =>
+      'Task-preset and knowledge-base conversations can’t continue one another, so switching starts a new conversation. The current one is saved — come back to it any time from Conversation History.';
+
+  @override
+  String get optModeSwitchStart => 'Start new conversation';
+
+  @override
+  String get optPresetCustom => 'Custom instructions';
+
+  @override
+  String get optPresetBuiltinBadge => 'Built-in';
+
+  @override
+  String get optPresetBuiltinDesc =>
+      'No special instructions: turns a rough idea into a ready-to-use image or video prompt.';
+
+  @override
+  String get optPresetBuiltinLocked => 'Built-in instructions can’t be edited';
+
+  @override
+  String get optPresetSaveAs => 'Save as preset…';
+
+  @override
+  String get optPresetEditInstructions => 'View / edit instructions';
+
+  @override
+  String get optPresetViewInstructions => 'View instructions';
+
+  @override
+  String get optPresetManage => 'Manage presets in the prompt library';
+
+  @override
+  String get optPresetDiscardTitle => 'Discard unsaved changes?';
+
+  @override
+  String optPresetDiscardBody(String name) {
+    return 'The instructions of “$name” have unsaved edits. Switching presets will lose them.';
+  }
+
+  @override
+  String get optPresetDiscardAction => 'Discard changes';
+
+  @override
+  String get optEmptyPresetTitle => 'What are we doing this time?';
+
+  @override
+  String get optEmptyPresetSub =>
+      'Pick a task preset, then send the assistant your idea. It looks at reference images when it needs to, and you can keep refining over several turns.';
+
+  @override
+  String optEmptyPresetAll(int count) {
+    return 'All $count presets…';
+  }
+
+  @override
+  String get optEmptyPresetCreate => 'Create a preset in the prompt library';
+
+  @override
+  String get optEmptyKbTitle => 'Prompts written by your knowledge base';
+
+  @override
+  String get optEmptyKbSub =>
+      'The assistant reads the knowledge base’s file map first, then opens only the rule documents this request needs.';
+
+  @override
+  String get optEmptyKbExample1 =>
+      'Following the knowledge base’s rules, write me a prompt for: ';
+
+  @override
+  String get optEmptyKbExample2 =>
+      'Check this prompt against the knowledge base and tell me what breaks the rules: ';
+
+  @override
+  String get optEmptyKbExample3 =>
+      'Look at the person in the reference images and write a complete prompt using the knowledge base’s template.';
+
+  @override
+  String get optEmptyKbEditTitle => 'Maintain your knowledge base';
+
+  @override
+  String get optEmptyKbEditSub =>
+      'Tell the assistant what to add or change. Every edit is shown to you as a diff first and written only after you confirm.';
+
+  @override
+  String get optEmptyKbEditExample1 =>
+      'Add a document that records how to write this kind of shot: ';
+
+  @override
+  String get optEmptyKbEditExample2 =>
+      'Check the knowledge base for rules that contradict each other.';
+
+  @override
+  String get optEmptyKbEditExample3 =>
+      'Bring the file map in the entry file in line with the actual folders.';
+
+  @override
+  String get optLeftDocs => 'Documents';
+
+  @override
+  String optLeftRefs(int count) {
+    return 'References · $count';
+  }
+
+  @override
+  String get optKbUseMaintainNotice =>
+      'Switched to “Maintain” · the assistant can now propose knowledge-base edits';
+
+  @override
+  String get optKbUseWriteNotice =>
+      'Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits';
 }

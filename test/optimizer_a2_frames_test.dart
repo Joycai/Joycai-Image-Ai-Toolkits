@@ -230,6 +230,7 @@ void main() {
       required int? templateId,
       double width = 250,
       void Function(int?, String?)? onTemplateChanged,
+      bool expand = true,
     }) async {
       final appState = AppState();
       final templates = <SystemPrompt>[
@@ -266,7 +267,72 @@ void main() {
         ),
       ));
       await tester.pump();
+      if (expand) {
+        final l10n = await en();
+        final fold = find.text(l10n.optPresetEditInstructions);
+        if (fold.evaluate().isNotEmpty) {
+          await tester.tap(fold);
+          await tester.pump();
+        }
+      }
     }
+
+    // `A3d 4b`: task first, text second.
+    testWidgets('the instructions start folded, and the unsaved badge outlives the fold',
+        (tester) async {
+      await pumpPanel(tester, text: 'BASE and then some', templateId: 1, expand: false);
+      final l10n = await en();
+
+      expect(find.byType(TextField), findsNothing);
+      expect(find.widgetWithText(AppButton, l10n.optSysPromptSave), findsNothing);
+      expect(find.text(l10n.optSysPromptUnsaved), findsOneWidget);
+      // What the preset is for, read off its own first paragraph.
+      expect(find.text('BASE and then some'), findsOneWidget);
+    });
+
+    testWidgets('no preset and no text is the built-in: named, shown, not editable',
+        (tester) async {
+      await pumpPanel(tester, text: '', templateId: null, expand: false);
+      final l10n = await en();
+
+      expect(find.text(l10n.optPresetBuiltinName), findsOneWidget);
+      expect(find.text(l10n.optPresetBuiltinDesc), findsOneWidget);
+      await tester.tap(find.text(l10n.optPresetViewInstructions));
+      await tester.pump();
+      expect(find.byType(TextField), findsNothing);
+      expect(find.text(PromptOptimizerAgent.builtinPresetInstructions), findsOneWidget);
+      expect(find.text(l10n.optPresetBuiltinLocked), findsOneWidget);
+    });
+
+    testWidgets('switching presets over an unsaved edit asks first', (tester) async {
+      final loaded = <int?>[];
+      await pumpPanel(
+        tester,
+        text: 'BASE edited',
+        templateId: 1,
+        width: 400,
+        expand: false,
+        onTemplateChanged: (id, _) => loaded.add(id),
+      );
+      final l10n = await en();
+
+      await tester.tap(find.text('Photo v3'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Product').last);
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.optPresetDiscardTitle), findsOneWidget);
+      await tester.tap(find.text(l10n.cancel));
+      await tester.pumpAndSettle();
+      expect(loaded, isEmpty);
+    });
+
+    testWidgets('text whose preset is gone is called custom, not built-in', (tester) async {
+      await pumpPanel(tester, text: 'ORPHAN', templateId: 99, expand: false);
+      final l10n = await en();
+
+      expect(find.text(l10n.optPresetCustom), findsOneWidget);
+      expect(find.text(l10n.optPresetBuiltinName), findsNothing);
+    });
 
     testWidgets('an untouched template offers neither save nor reset', (tester) async {
       await pumpPanel(tester, text: 'BASE', templateId: 1);

@@ -8151,12 +8151,6 @@ abstract class AppLocalizations {
   /// **'Prompt copied to clipboard'**
   String get optPromptCopied;
 
-  /// No description provided for @optEmptyChat.
-  ///
-  /// In en, this message translates to:
-  /// **'Send a rough prompt or idea to start. The AI inspects reference images on demand, and you can refine the result over multiple turns.'**
-  String get optEmptyChat;
-
   /// No description provided for @optViewed.
   ///
   /// In en, this message translates to:
@@ -8424,7 +8418,7 @@ abstract class AppLocalizations {
   /// No description provided for @optModeSystemPrompt.
   ///
   /// In en, this message translates to:
-  /// **'System Prompt'**
+  /// **'Task preset'**
   String get optModeSystemPrompt;
 
   /// No description provided for @optModeKnowledge.
@@ -8444,12 +8438,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Knowledge base is not configured or invalid — choose its folder in Settings first.'**
   String get optKbNotConfigured;
-
-  /// No description provided for @optModeSwitchConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Switching the mode starts a new conversation. Continue?'**
-  String get optModeSwitchConfirm;
 
   /// No description provided for @optToolListKnowledge.
   ///
@@ -8730,7 +8718,7 @@ abstract class AppLocalizations {
   /// No description provided for @optModeKnowledgeEdit.
   ///
   /// In en, this message translates to:
-  /// **'Edit KB'**
+  /// **'Maintain'**
   String get optModeKnowledgeEdit;
 
   /// No description provided for @optToolWriteKnowledge.
@@ -9033,12 +9021,6 @@ abstract class AppLocalizations {
   /// **'Enter to send · Shift+Enter for a new line'**
   String get optSendHint;
 
-  /// No description provided for @optModeBadgeAgent.
-  ///
-  /// In en, this message translates to:
-  /// **'{mode} · Agent'**
-  String optModeBadgeAgent(String mode);
-
   /// No description provided for @optRefNumberingHint.
   ///
   /// In en, this message translates to:
@@ -9062,12 +9044,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The assistant is replying — reorder once it finishes.'**
   String get optRefReorderLocked;
-
-  /// No description provided for @optModeKnowledgeEditShort.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit KB'**
-  String get optModeKnowledgeEditShort;
 
   /// No description provided for @optRunning.
   ///
@@ -9144,20 +9120,14 @@ abstract class AppLocalizations {
   /// No description provided for @optSysPromptPick.
   ///
   /// In en, this message translates to:
-  /// **'Choose a template'**
+  /// **'Choose a task preset'**
   String get optSysPromptPick;
 
   /// No description provided for @optSysPromptSearch.
   ///
   /// In en, this message translates to:
-  /// **'Search templates...'**
+  /// **'Search presets…'**
   String get optSysPromptSearch;
-
-  /// No description provided for @optSysPromptNone.
-  ///
-  /// In en, this message translates to:
-  /// **'No template'**
-  String get optSysPromptNone;
 
   /// No description provided for @optSysPromptUnsaved.
   ///
@@ -9180,7 +9150,7 @@ abstract class AppLocalizations {
   /// No description provided for @optSysPromptSaved.
   ///
   /// In en, this message translates to:
-  /// **'Template saved'**
+  /// **'Preset saved'**
   String get optSysPromptSaved;
 
   /// No description provided for @optSysPromptHint.
@@ -9201,11 +9171,11 @@ abstract class AppLocalizations {
   /// **'~{tokens} tokens'**
   String optSysPromptTokens(String tokens);
 
-  /// No description provided for @optSysPromptNoTools.
+  /// No description provided for @optSysPromptNoKb.
   ///
   /// In en, this message translates to:
-  /// **'This mode mounts no knowledge tools — the agent makes no tool calls.'**
-  String get optSysPromptNoTools;
+  /// **'This mode does not read the knowledge base. The assistant still views reference images and may ask you questions.'**
+  String get optSysPromptNoKb;
 
   /// No description provided for @kbEditNoChange.
   ///
@@ -9904,6 +9874,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'custom · accepted'**
   String get imageSizeRatioAccepted;
+
+  /// No description provided for @optModeKnowledgeWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Write prompts'**
+  String get optModeKnowledgeWrite;
+
+  /// No description provided for @optModeUseFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Use it to'**
+  String get optModeUseFor;
+
+  /// No description provided for @optModeBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'{basis} · {detail}'**
+  String optModeBadge(String basis, String detail);
+
+  /// No description provided for @optPresetBuiltinName.
+  ///
+  /// In en, this message translates to:
+  /// **'General refine'**
+  String get optPresetBuiltinName;
+
+  /// No description provided for @optModeLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant is replying · mode locked'**
+  String get optModeLocked;
+
+  /// No description provided for @optModeSwitchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to “{mode}”?'**
+  String optModeSwitchTitle(String mode);
+
+  /// No description provided for @optModeSwitchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Task-preset and knowledge-base conversations can’t continue one another, so switching starts a new conversation. The current one is saved — come back to it any time from Conversation History.'**
+  String get optModeSwitchBody;
+
+  /// No description provided for @optModeSwitchStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start new conversation'**
+  String get optModeSwitchStart;
+
+  /// No description provided for @optPresetCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom instructions'**
+  String get optPresetCustom;
+
+  /// No description provided for @optPresetBuiltinBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in'**
+  String get optPresetBuiltinBadge;
+
+  /// No description provided for @optPresetBuiltinDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'No special instructions: turns a rough idea into a ready-to-use image or video prompt.'**
+  String get optPresetBuiltinDesc;
+
+  /// No description provided for @optPresetBuiltinLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in instructions can’t be edited'**
+  String get optPresetBuiltinLocked;
+
+  /// No description provided for @optPresetSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as preset…'**
+  String get optPresetSaveAs;
+
+  /// No description provided for @optPresetEditInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'View / edit instructions'**
+  String get optPresetEditInstructions;
+
+  /// No description provided for @optPresetViewInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'View instructions'**
+  String get optPresetViewInstructions;
+
+  /// No description provided for @optPresetManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage presets in the prompt library'**
+  String get optPresetManage;
+
+  /// No description provided for @optPresetDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard unsaved changes?'**
+  String get optPresetDiscardTitle;
+
+  /// No description provided for @optPresetDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The instructions of “{name}” have unsaved edits. Switching presets will lose them.'**
+  String optPresetDiscardBody(String name);
+
+  /// No description provided for @optPresetDiscardAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes'**
+  String get optPresetDiscardAction;
+
+  /// No description provided for @optEmptyPresetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What are we doing this time?'**
+  String get optEmptyPresetTitle;
+
+  /// No description provided for @optEmptyPresetSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a task preset, then send the assistant your idea. It looks at reference images when it needs to, and you can keep refining over several turns.'**
+  String get optEmptyPresetSub;
+
+  /// No description provided for @optEmptyPresetAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All {count} presets…'**
+  String optEmptyPresetAll(int count);
+
+  /// No description provided for @optEmptyPresetCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a preset in the prompt library'**
+  String get optEmptyPresetCreate;
+
+  /// No description provided for @optEmptyKbTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompts written by your knowledge base'**
+  String get optEmptyKbTitle;
+
+  /// No description provided for @optEmptyKbSub.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant reads the knowledge base’s file map first, then opens only the rule documents this request needs.'**
+  String get optEmptyKbSub;
+
+  /// No description provided for @optEmptyKbExample1.
+  ///
+  /// In en, this message translates to:
+  /// **'Following the knowledge base’s rules, write me a prompt for: '**
+  String get optEmptyKbExample1;
+
+  /// No description provided for @optEmptyKbExample2.
+  ///
+  /// In en, this message translates to:
+  /// **'Check this prompt against the knowledge base and tell me what breaks the rules: '**
+  String get optEmptyKbExample2;
+
+  /// No description provided for @optEmptyKbExample3.
+  ///
+  /// In en, this message translates to:
+  /// **'Look at the person in the reference images and write a complete prompt using the knowledge base’s template.'**
+  String get optEmptyKbExample3;
+
+  /// No description provided for @optEmptyKbEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain your knowledge base'**
+  String get optEmptyKbEditTitle;
+
+  /// No description provided for @optEmptyKbEditSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell the assistant what to add or change. Every edit is shown to you as a diff first and written only after you confirm.'**
+  String get optEmptyKbEditSub;
+
+  /// No description provided for @optEmptyKbEditExample1.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a document that records how to write this kind of shot: '**
+  String get optEmptyKbEditExample1;
+
+  /// No description provided for @optEmptyKbEditExample2.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the knowledge base for rules that contradict each other.'**
+  String get optEmptyKbEditExample2;
+
+  /// No description provided for @optEmptyKbEditExample3.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring the file map in the entry file in line with the actual folders.'**
+  String get optEmptyKbEditExample3;
+
+  /// No description provided for @optLeftDocs.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get optLeftDocs;
+
+  /// No description provided for @optLeftRefs.
+  ///
+  /// In en, this message translates to:
+  /// **'References · {count}'**
+  String optLeftRefs(int count);
+
+  /// No description provided for @optKbUseMaintainNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to “Maintain” · the assistant can now propose knowledge-base edits'**
+  String get optKbUseMaintainNotice;
+
+  /// No description provided for @optKbUseWriteNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to “Write prompts” · the assistant no longer proposes knowledge-base edits'**
+  String get optKbUseWriteNotice;
 }
 
 class _AppLocalizationsDelegate

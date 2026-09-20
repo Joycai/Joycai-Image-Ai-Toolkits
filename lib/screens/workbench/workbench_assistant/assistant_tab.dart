@@ -54,6 +54,17 @@ extension _AssistantTab on _WorkbenchScreenState {
                               onSaveFinalPrompt: _handleSaveFinalPrompt,
                               onOpenModelSettings: _handleOpenOptimizerModelSettings,
                               isBusy: isBusy,
+                              presetChoices: OptimizerPresetChoices(
+                                presets: _optSysPrompts,
+                                selectedId: _loadedPreset(wui)?.id,
+                                builtinSelected: _loadedPreset(wui) == null &&
+                                    (wui.optSelectedSysPrompt ?? '').trim().isEmpty,
+                                onPick: _handlePickPreset,
+                                onShowAll: _handleShowAllPresets,
+                                onManage: () => context
+                                    .read<AppState>()
+                                    .navigateToScreen(AppDestination.prompts.index),
+                              ),
                               // Only while there is a task to stop. A
                               // session whose `isRunning` outlived its
                               // task — the failure mode a crashed turn
@@ -111,14 +122,7 @@ extension _AssistantTab on _WorkbenchScreenState {
                       onDiscardAllKbEdits: isBusy
                           ? null
                           : () => _handleKbEditRejectAll(session),
-                      modeLabel: switch (session.mode) {
-                        AssistantMode.systemPrompt =>
-                          AppLocalizations.of(context)!.optModeSystemPrompt,
-                        AssistantMode.knowledgeBase =>
-                          AppLocalizations.of(context)!.optModeKnowledge,
-                        AssistantMode.knowledgeEdit =>
-                          AppLocalizations.of(context)!.optModeKnowledgeEdit,
-                      },
+                      modeLabel: _assistantBadgeLabel(AppLocalizations.of(context)!, wui),
                       modeIcon: switch (session.mode) {
                         AssistantMode.systemPrompt => Icons.notes_outlined,
                         AssistantMode.knowledgeBase => Icons.menu_book_outlined,
@@ -187,6 +191,8 @@ extension _AssistantTab on _WorkbenchScreenState {
           onSysPromptTemplateChanged: (id, content) =>
               wui.setOptimizerSysPromptTemplate(id, content),
           onSaveTemplate: _handleSaveSysPromptTemplate,
+          onSaveAsPreset: _handleSaveAsPreset,
+          onManagePresets: () => appState.navigateToScreen(AppDestination.prompts.index),
         ),
       ),
     );

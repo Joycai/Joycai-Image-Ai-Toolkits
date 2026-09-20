@@ -29,12 +29,14 @@ import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
+import '../../widgets/shell/app_destinations.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_field_size.dart';
 import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/ui/listenable_selector.dart';
+import '../../widgets/ui/searchable_picker.dart';
 import '../../widgets/models/model_edit_dialog.dart';
 import 'widgets/drawing_canvas.dart';
 import '../batch/task_queue_screen.dart';
@@ -266,6 +268,39 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
   }
 
+  /// Files [content] as a new refiner preset through the library's own
+  /// dialog (`A3d 4b`), then loads whichever preset that created — so "save
+  /// as" ends on the thing that was saved, not on the text it was copied from.
+  Future<void> _handleSaveAsPreset(String content) async {
+    final appState = _appState;
+    if (appState == null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final all = await appState.getSystemPrompts();
+    final tags = await appState.getPromptTags();
+    if (!mounted) return;
+    final saved = await showSystemPromptEditDialog(
+      context,
+      l10n,
+      systemPrompts: all,
+      tags: tags,
+      defaultType: 'refiner',
+      initialContent: content,
+    );
+    if (!saved || !mounted) return;
+    final known = {for (final p in _optSysPrompts) p.id};
+    final refreshed = await appState.getSystemPrompts(type: 'refiner');
+    if (!mounted) return;
+    setState(() => _optSysPrompts = refreshed);
+    // Nothing new in the refiner list means it was filed under another type.
+    final created = refreshed.where((p) => !known.contains(p.id)).toList();
+    if (created.length == 1) {
+      context.read<WorkbenchUIState>().setOptimizerSysPromptTemplate(
+            created.single.id,
+            created.single.content,
+          );
+    }
+  }
+
   void _onAppStateChanged() {
     if (!mounted || _appState == null) return;
     
@@ -489,9 +524,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         showLeftPanel = false;
       case 4: // Prompt Optimizer
         centerContent = _buildAssistantChat();
-        // `10h` swaps this column for the knowledge tree in library-edit
-        // mode; [OptimizerLeftPanel] owns that choice so the screen still
-        // hands the layout one widget rather than rebuilding the decision.
+        // `10h` gives this column to the knowledge tree in maintenance mode
+        // (`A3d 4e`: beside the references, not instead of them);
+        // [OptimizerLeftPanel] owns that choice so the screen still hands the
+        // layout one widget rather than rebuilding the decision.
         // The assistant's header lives in the floating glass toolbar
         // (`A3a 1a`), fed by the same session and queue the chat reads.
         toolControls = _buildAssistantToolControls();
@@ -500,11 +536,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           final l10nNow = AppLocalizations.of(context)!;
           toolControlsWidth = PromptOptimizerToolbar.preferredWidth(
             context,
-            modeLabel: switch (wuiNow.assistantMode) {
-              AssistantMode.systemPrompt => l10nNow.optModeSystemPrompt,
-              AssistantMode.knowledgeBase => l10nNow.optModeKnowledge,
-              AssistantMode.knowledgeEdit => l10nNow.optModeKnowledgeEdit,
-            },
+            // Selected, not read: the label names the preset, and picking
+            // another one has to re-measure the slot it is drawn in.
+            modeLabel: context.select<WorkbenchUIState, String>(
+              (w) => _assistantBadgeLabel(l10nNow, w),
+            ),
             pendingKbEdits: PromptOptimizerAgent.pendingKbEdits(wuiNow.optimizerSession).length,
           );
         }

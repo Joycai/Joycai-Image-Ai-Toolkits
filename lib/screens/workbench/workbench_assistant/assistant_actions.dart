@@ -1,25 +1,110 @@
 part of '../workbench_screen.dart';
 
 extension _AssistantActions on _WorkbenchScreenState {
+  /// The toolbar badge's text (`A3d 4a`): what the session works from, then
+  /// which preset or which use. One place, because the toolbar is measured
+  /// with this label before it is built with it.
+  String _assistantBadgeLabel(AppLocalizations l10n, WorkbenchUIState wui) {
+    switch (wui.assistantMode) {
+      case AssistantMode.knowledgeBase:
+        return l10n.optModeBadge(l10n.optModeKnowledge, l10n.optModeKnowledgeWrite);
+      case AssistantMode.knowledgeEdit:
+        return l10n.optModeBadge(l10n.optModeKnowledge, l10n.optModeKnowledgeEdit);
+      case AssistantMode.systemPrompt:
+        final preset = _loadedPreset(wui);
+        // No preset and no text is the built-in; text with no preset behind
+        // it (its library row was deleted) is the user's own, and the badge
+        // must not name a preset that is not what will be sent.
+        final custom = (wui.optSelectedSysPrompt ?? '').trim().isNotEmpty;
+        return l10n.optModeBadge(
+          l10n.optModeSystemPrompt,
+          preset?.title ?? (custom ? l10n.optPresetCustom : l10n.optPresetBuiltinName),
+        );
+    }
+  }
+
+  /// The preset [wui] has loaded, if it is still in the library.
+  SystemPrompt? _loadedPreset(WorkbenchUIState wui) => _optSysPrompts
+      .cast<SystemPrompt?>()
+      .firstWhere((p) => p?.id == wui.optSysPromptTemplateId, orElse: () => null);
+
+  /// Loads [preset] — null for the built-in — from outside the right panel:
+  /// the empty chat's tiles and its "all presets" list (`A3d 4c`). Passes the
+  /// same unsaved-edit question the panel's own picker asks.
+  Future<void> _handlePickPreset(SystemPrompt? preset) async {
+    final wui = Provider.of<WorkbenchUIState>(context, listen: false);
+    final loaded = _loadedPreset(wui);
+    final text = wui.optSelectedSysPrompt ?? '';
+    if (preset?.id == loaded?.id && (preset != null || text.trim().isEmpty)) return;
+    final unsaved = loaded != null ? text != loaded.content : text.trim().isNotEmpty;
+    if (unsaved) {
+      final name = loaded?.title ?? AppLocalizations.of(context)!.optPresetCustom;
+      if (!await confirmDiscardPresetEdit(context, name) || !mounted) return;
+    }
+    // Empty, not null, for the built-in: null reads as "never chosen".
+    wui.setOptimizerSysPromptTemplate(preset?.id, preset?.content ?? '');
+  }
+
+  Future<void> _handleShowAllPresets() async {
+    final l10n = AppLocalizations.of(context)!;
+    final wui = Provider.of<WorkbenchUIState>(context, listen: false);
+    final picked = await showSearchablePicker<int>(
+      context: context,
+      title: l10n.optSysPromptPick,
+      searchHint: l10n.optSysPromptSearch,
+      icon: Icons.notes_outlined,
+      selected: _loadedPreset(wui)?.id ??
+          ((wui.optSelectedSysPrompt ?? '').trim().isEmpty ? builtinPresetPickerId : null),
+      options: presetPickerOptions(l10n, Theme.of(context).colorScheme, _optSysPrompts),
+    );
+    if (picked == null || !mounted) return;
+    await _handlePickPreset(
+      _optSysPrompts.cast<SystemPrompt?>().firstWhere(
+            (p) => p?.id == picked.value,
+            orElse: () => null,
+          ),
+    );
+  }
+
+  /// Task preset ⇄ knowledge base is a different conversation, not a setting
+  /// of this one: the histories cannot continue each other. So the switch
+  /// starts a new session, and says where the old one went (`A3d 4d`).
   Future<void> _handleAssistantModeChange(AssistantMode next) async {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final session = workbenchUIState.optimizerSession;
     if (session.mode == next) return;
-    if (session.transcript.isNotEmpty) {
+    // The panel greys the switch during a turn; this is the gate that holds
+    // if something else asks.
+    if (_optRunningForSession(session)) return;
+    // 出词 ⇄ 维护 keeps the conversation, so there is nothing to confirm.
+    final sameSession =
+        session.usesKnowledgeBase && PromptOptimizerSession.isKnowledgeMode(next);
+    if (!sameSession && session.transcript.isNotEmpty) {
       final l10n = AppLocalizations.of(context)!;
+      final target = next == AssistantMode.systemPrompt
+          ? l10n.optModeSystemPrompt
+          : l10n.optModeKnowledge;
       final confirmed = await AppDialog.show<bool>(
         context,
-        content: Text(l10n.optModeSwitchConfirm),
+        title: l10n.optModeSwitchTitle(target),
+        content: Text(l10n.optModeSwitchBody),
         actions: [
           AppButton(
             label: l10n.cancel,
             variant: AppButtonVariant.text,
             onPressed: () => Navigator.pop(context, false),
           ),
-          AppButton(label: l10n.confirm, onPressed: () => Navigator.pop(context, true)),
+          AppButton(label: l10n.optModeSwitchStart, onPressed: () => Navigator.pop(context, true)),
         ],
       );
       if (confirmed != true) return;
+      // Asked again: the dialog was open long enough for a staged turn to
+      // have started, or for another session to have been restored.
+      if (!mounted ||
+          !identical(workbenchUIState.optimizerSession, session) ||
+          _optRunningForSession(session)) {
+        return;
+      }
     }
     workbenchUIState.setAssistantMode(next);
   }

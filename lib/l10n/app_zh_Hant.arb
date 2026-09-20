@@ -2432,7 +2432,6 @@
   "optPromptTitle": "優化提示詞",
   "optCopy": "複製",
   "optPromptCopied": "提示詞已複製到剪貼簿",
-  "optEmptyChat": "傳送粗略提示詞或想法開始優化。AI 會按需查看參考圖，你可以多輪追問持續調整結果。",
   "optViewed": "AI 已查看",
   "optRemoveImage": "移除圖片",
   "optEmptyImagesHint": "在圖庫中右鍵圖片，選擇「發送到提示詞助手」即可加入此處。",
@@ -2484,11 +2483,10 @@
   "safetyThresholdBlockOnlyHigh": "封鎖少部分",
   "safetyThresholdBlockNone": "全部不封鎖",
   "safetyThresholdOff": "關閉過濾",
-  "optModeSystemPrompt": "系統提示詞",
+  "optModeSystemPrompt": "任務預設",
   "optModeKnowledge": "知識庫",
   "knowledgeBase": "知識庫",
   "optKbNotConfigured": "知識庫未設定或無效，請先在設定中選擇知識庫資料夾。",
-  "optModeSwitchConfirm": "切換模式將開始新的對話，是否繼續？",
   "optToolListKnowledge": "瀏覽了知識庫檔案列表",
   "optToolReadKnowledge": "閱讀知識庫：{name}",
   "@optToolReadKnowledge": {
@@ -2573,7 +2571,7 @@
   "optPromptVersionLabel": "提示詞",
   "optImageMissing": "該對話的部分參考圖已不存在，可重新加入後繼續使用。",
   "optRetry": "重試",
-  "optModeKnowledgeEdit": "知識庫編輯",
+  "optModeKnowledgeEdit": "維護",
   "optToolWriteKnowledge": "建議更新知識庫：{name}",
   "@optToolWriteKnowledge": {
     "placeholders": {
@@ -2756,19 +2754,10 @@
     }
   },
   "optSendHint": "Enter 傳送 · Shift+Enter 換行",
-  "optModeBadgeAgent": "{mode} · Agent",
-  "@optModeBadgeAgent": {
-    "placeholders": {
-      "mode": {
-        "type": "String"
-      }
-    }
-  },
   "optRefNumberingHint": "序號與提示詞中引用的檔名對應，agent 可檢視這些圖片。",
   "optRefReorderHint": "拖動卡片調整順序。序號就是傳給助手的順序，也是提示詞裡引用的編號。",
   "optRefReorderHintTouch": "長按卡片後拖動調整順序。序號就是傳給助手的順序。",
   "optRefReorderLocked": "助手回覆中，結束後可調整順序。",
-  "optModeKnowledgeEditShort": "庫編輯",
   "optRunning": "執行中",
   "optRunningStep": "執行中 · 步驟 {count}",
   "@optRunningStep": {
@@ -2812,13 +2801,12 @@
   "optAbortHint": "Esc 中斷",
   "optKbSearching": "檢索中",
   "optKbCitedRunning": "進行中",
-  "optSysPromptPick": "選擇範本",
-  "optSysPromptSearch": "搜尋範本…",
-  "optSysPromptNone": "未選擇範本",
+  "optSysPromptPick": "選擇任務預設",
+  "optSysPromptSearch": "搜尋預設…",
   "optSysPromptUnsaved": "未儲存",
   "optSysPromptSave": "儲存",
   "optSysPromptReset": "重設",
-  "optSysPromptSaved": "範本已儲存",
+  "optSysPromptSaved": "預設已儲存",
   "optSysPromptHint": "寫下希望助手遵循的指令…",
   "optSysPromptChars": "{count} 字",
   "@optSysPromptChars": {
@@ -2836,7 +2824,7 @@
       }
     }
   },
-  "optSysPromptNoTools": "此模式不掛載知識庫工具，agent 不產生工具呼叫。",
+  "optSysPromptNoKb": "此模式不讀取知識庫；助手仍會查看參考圖，並可能向你提問。",
   "kbEditNoChange": "此提議未變更檔案內容。",
   "kbEditPendingTitle": "待確認變更",
   "kbEditWriteAll": "全部寫入",
@@ -3144,5 +3132,80 @@
   "imageSizeFooterTyping": "Enter 結算",
   "imageSizeDone": "完成",
   "imageSizeRatioDerived": "派生 · 跟著寬高走",
-  "imageSizeRatioAccepted": "自訂 · 已接受"
+  "imageSizeRatioAccepted": "自訂 · 已接受",
+  "optModeKnowledgeWrite": "出詞",
+  "optModeUseFor": "用它來",
+  "optModeBadge": "{basis} · {detail}",
+  "@optModeBadge": {
+    "placeholders": {
+      "basis": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetBuiltinName": "通用優化",
+  "optModeLocked": "助手回覆中 · 模式已鎖定",
+  "optModeSwitchTitle": "切換到「{mode}」？",
+  "@optModeSwitchTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "optModeSwitchBody": "任務預設和知識庫的對話不能接在一起，切換會開始一個新對話。目前的對話已儲存，可以隨時從「歷史對話」回來。",
+  "optModeSwitchStart": "開始新對話",
+  "optPresetCustom": "自訂指令",
+  "optPresetBuiltinBadge": "內建",
+  "optPresetBuiltinDesc": "不帶專門指令：把粗略想法整理成可直接使用的圖像 / 影片提示詞。",
+  "optPresetBuiltinLocked": "內建指令無法編輯",
+  "optPresetSaveAs": "另存為預設…",
+  "optPresetEditInstructions": "檢視 / 編輯指令",
+  "optPresetViewInstructions": "檢視指令",
+  "optPresetManage": "在提示詞庫中管理預設",
+  "optPresetDiscardTitle": "捨棄未儲存的變更？",
+  "optPresetDiscardBody": "「{name}」的指令改過還沒儲存，換預設會捨棄這些變更。",
+  "@optPresetDiscardBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optPresetDiscardAction": "捨棄變更",
+  "optEmptyPresetTitle": "這次要做什麼？",
+  "optEmptyPresetSub": "選一個任務預設，然後把想法傳給助手。它會視需要查看參考圖，你可以多輪追問。",
+  "optEmptyPresetAll": "全部 {count} 個預設…",
+  "@optEmptyPresetAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optEmptyPresetCreate": "到提示詞庫新增預設",
+  "optEmptyKbTitle": "依你的知識庫寫提示詞",
+  "optEmptyKbSub": "助手先讀知識庫的檔案地圖，只翻這次用得上的規則文件。",
+  "optEmptyKbExample1": "依知識庫的規則，幫我寫一條提示詞：",
+  "optEmptyKbExample2": "對照知識庫，檢查這條提示詞哪裡不合規：",
+  "optEmptyKbExample3": "看一下參考圖裡的人物，依知識庫的範本寫成一條完整提示詞。",
+  "optEmptyKbEditTitle": "維護你的知識庫",
+  "optEmptyKbEditSub": "告訴助手要補什麼、改什麼。每處變更都會先給你看 diff，確認後才寫入。",
+  "optEmptyKbEditExample1": "新增一篇文件，記錄這類畫面的寫法：",
+  "optEmptyKbEditExample2": "檢查知識庫裡有沒有互相矛盾的規則。",
+  "optEmptyKbEditExample3": "把入口檔案裡的檔案地圖更新到和實際目錄一致。",
+  "optLeftDocs": "文件",
+  "optLeftRefs": "參考圖 · {count}",
+  "@optLeftRefs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbUseMaintainNotice": "已切到「維護」· 助手現在可以提議知識庫變更",
+  "optKbUseWriteNotice": "已切到「出詞」· 助手不再提議知識庫變更"
 }

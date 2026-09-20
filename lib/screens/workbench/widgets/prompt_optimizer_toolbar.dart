@@ -24,8 +24,9 @@ class PromptOptimizerToolbar extends StatelessWidget {
   final bool isRefining;
   final bool canApply;
 
-  /// Localised name of the session's mode, shown in the leading badge.
-  /// Null hides the badge.
+  /// What the session works from, as the leading badge spells it (`A3d 4a`):
+  /// 「任务预设 · 〈preset〉」 or 「知识库 · 出词 / 维护」 — composed by the
+  /// caller, which is what knows the preset's name. Null hides the badge.
   final String? modeLabel;
 
   /// Kept for callers; the badge is text on glass and carries no glyph now.
@@ -77,7 +78,7 @@ class PromptOptimizerToolbar extends StatelessWidget {
     int pendingKbEdits = 0,
   }) {
     final l10n = AppLocalizations.of(context)!;
-    final badge = modeLabel == null ? 0.0 : _chipWidth(context, l10n.optModeBadgeAgent(modeLabel));
+    final badge = modeLabel == null ? 0.0 : _chipWidth(context, modeLabel);
     final session = GlassIconButton.widthFor(context, label: l10n.optHistory) +
         _gap +
         GlassIconButton.widthFor(context, label: l10n.optNewSession);
@@ -116,7 +117,7 @@ class PromptOptimizerToolbar extends StatelessWidget {
 
     double measure() {
       double w = _leading;
-      if (showBadge) w += _chipWidth(context, l10n.optModeBadgeAgent(modeLabel!));
+      if (showBadge) w += _chipWidth(context, modeLabel!);
       if (running) w += (showBadge ? 8 : 0) + (runningLabel ? _chipWidth(context, runningText, dot: true) : 22);
       w += AppSpace.s16;
       if (sessionInMenu) {
@@ -155,7 +156,7 @@ class PromptOptimizerToolbar extends StatelessWidget {
             if (showBadge)
               Flexible(
                 child: _Chip(
-                  label: l10n.optModeBadgeAgent(modeLabel!),
+                  label: modeLabel!,
                   background: ink.withValues(alpha: 0.10),
                   foreground: ink,
                   mono: true,

@@ -75,11 +75,22 @@ class PromptOptimizerAgent {
   /// (invariant 11). Like [viewResultMarker] it is not a real user turn.
   static const String kbEditOutcomesMarker = '[kb_edit_outcomes]';
 
+  /// What a task-preset session runs on when no preset is chosen — the
+  /// built-in one. Public because the panel shows it (`A3d 4b`): a default
+  /// the user cannot see is a default they cannot judge, or copy from.
+  static const String builtinPresetInstructions =
+      'You are an expert prompt engineer for AI image and video generation.';
+
   /// Transcript-notice tokens, mapped to localized strings at render time.
   static const String compactedNoticeToken = '__compacted__';
   static const String imageMissingNoticeToken = '__image_missing__';
   static const String kbEntryTooLargeNoticeToken = '__kb_entry_too_large__';
   static const String kbDistillNoticeToken = '__kb_distill__';
+
+  /// The divider a knowledge session leaves when its use is switched —
+  /// see [PromptOptimizerSession.switchKnowledgeUse].
+  static const String kbUseMaintainNoticeToken = '__kb_use_maintain__';
+  static const String kbUseWriteNoticeToken = '__kb_use_write__';
 
   /// A turn used every round and the final, tools-free one still produced no
   /// answer (standard 07 §3.8).

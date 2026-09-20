@@ -4525,9 +4525,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optPromptCopied => '提示词已复制到剪贴板';
 
   @override
-  String get optEmptyChat => '发送粗略提示词或想法开始优化。AI 会按需查看参考图，你可以多轮追问持续调整结果。';
-
-  @override
   String get optViewed => 'AI 已查看';
 
   @override
@@ -4664,7 +4661,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get safetyThresholdOff => '关闭过滤';
 
   @override
-  String get optModeSystemPrompt => '系统提示词';
+  String get optModeSystemPrompt => '任务预设';
 
   @override
   String get optModeKnowledge => '知识库';
@@ -4674,9 +4671,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optKbNotConfigured => '知识库未配置或无效，请先在设置中选择知识库文件夹。';
-
-  @override
-  String get optModeSwitchConfirm => '切换模式将开始新会话，是否继续？';
 
   @override
   String get optToolListKnowledge => '浏览了知识库文件列表';
@@ -4830,7 +4824,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optRetry => '重试';
 
   @override
-  String get optModeKnowledgeEdit => '知识库编辑';
+  String get optModeKnowledgeEdit => '维护';
 
   @override
   String optToolWriteKnowledge(String name) {
@@ -5019,11 +5013,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optSendHint => 'Enter 发送 · Shift+Enter 换行';
 
   @override
-  String optModeBadgeAgent(String mode) {
-    return '$mode · Agent';
-  }
-
-  @override
   String get optRefNumberingHint => '序号与提示词中引用的文件名对应，agent 可查看这些图片。';
 
   @override
@@ -5034,9 +5023,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optRefReorderLocked => '助手回复中，结束后可调整顺序。';
-
-  @override
-  String get optModeKnowledgeEditShort => '库编辑';
 
   @override
   String get optRunning => '执行中';
@@ -5083,13 +5069,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optKbCitedRunning => '进行中';
 
   @override
-  String get optSysPromptPick => '选择模板';
+  String get optSysPromptPick => '选择任务预设';
 
   @override
-  String get optSysPromptSearch => '搜索模板…';
-
-  @override
-  String get optSysPromptNone => '未选择模板';
+  String get optSysPromptSearch => '搜索预设…';
 
   @override
   String get optSysPromptUnsaved => '未保存';
@@ -5101,7 +5084,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optSysPromptReset => '重置';
 
   @override
-  String get optSysPromptSaved => '模板已保存';
+  String get optSysPromptSaved => '预设已保存';
 
   @override
   String get optSysPromptHint => '写下希望助手遵循的指令…';
@@ -5117,7 +5100,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get optSysPromptNoTools => '此模式不挂载知识库工具，agent 不产生工具调用。';
+  String get optSysPromptNoKb => '此模式不读取知识库；助手仍会查看参考图，并可能向你提问。';
 
   @override
   String get kbEditNoChange => '此提议未改动文件内容。';
@@ -5542,6 +5525,128 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get imageSizeRatioAccepted => '自定义 · 已接受';
+
+  @override
+  String get optModeKnowledgeWrite => '出词';
+
+  @override
+  String get optModeUseFor => '用它来';
+
+  @override
+  String optModeBadge(String basis, String detail) {
+    return '$basis · $detail';
+  }
+
+  @override
+  String get optPresetBuiltinName => '通用优化';
+
+  @override
+  String get optModeLocked => '助手回复中 · 模式已锁定';
+
+  @override
+  String optModeSwitchTitle(String mode) {
+    return '切换到「$mode」？';
+  }
+
+  @override
+  String get optModeSwitchBody =>
+      '任务预设和知识库的对话不能接在一起，切换会开始一个新会话。当前会话已保存，可以随时从「历史会话」回来。';
+
+  @override
+  String get optModeSwitchStart => '开始新会话';
+
+  @override
+  String get optPresetCustom => '自定义指令';
+
+  @override
+  String get optPresetBuiltinBadge => '内置';
+
+  @override
+  String get optPresetBuiltinDesc => '不带专门指令：把粗略想法整理成可直接使用的图像 / 视频提示词。';
+
+  @override
+  String get optPresetBuiltinLocked => '内置指令不可编辑';
+
+  @override
+  String get optPresetSaveAs => '另存为预设…';
+
+  @override
+  String get optPresetEditInstructions => '查看 / 编辑指令';
+
+  @override
+  String get optPresetViewInstructions => '查看指令';
+
+  @override
+  String get optPresetManage => '在提示词库中管理预设';
+
+  @override
+  String get optPresetDiscardTitle => '丢弃未保存的改动？';
+
+  @override
+  String optPresetDiscardBody(String name) {
+    return '「$name」的指令改过还没保存，换预设会丢掉这些改动。';
+  }
+
+  @override
+  String get optPresetDiscardAction => '丢弃改动';
+
+  @override
+  String get optEmptyPresetTitle => '这次要做什么？';
+
+  @override
+  String get optEmptyPresetSub => '选一个任务预设，然后把想法发给助手。它会按需查看参考图，你可以多轮追问。';
+
+  @override
+  String optEmptyPresetAll(int count) {
+    return '全部 $count 个预设…';
+  }
+
+  @override
+  String get optEmptyPresetCreate => '去提示词库新建预设';
+
+  @override
+  String get optEmptyKbTitle => '按你的知识库写提示词';
+
+  @override
+  String get optEmptyKbSub => '助手先读知识库的文件地图，只翻这次用得上的规则文档。';
+
+  @override
+  String get optEmptyKbExample1 => '按知识库的规则，帮我写一条提示词：';
+
+  @override
+  String get optEmptyKbExample2 => '对照知识库，检查这条提示词哪里不合规：';
+
+  @override
+  String get optEmptyKbExample3 => '看一下参考图里的人物，按知识库的模板写成一条完整提示词。';
+
+  @override
+  String get optEmptyKbEditTitle => '维护你的知识库';
+
+  @override
+  String get optEmptyKbEditSub => '告诉助手要补什么、改什么。每处改动都会先给你看 diff，确认后才写入。';
+
+  @override
+  String get optEmptyKbEditExample1 => '新增一篇文档，记录这类画面的写法：';
+
+  @override
+  String get optEmptyKbEditExample2 => '检查知识库里有没有互相矛盾的规则。';
+
+  @override
+  String get optEmptyKbEditExample3 => '把入口文件里的文件地图更新到和实际目录一致。';
+
+  @override
+  String get optLeftDocs => '文档';
+
+  @override
+  String optLeftRefs(int count) {
+    return '参考图 · $count';
+  }
+
+  @override
+  String get optKbUseMaintainNotice => '已切到「维护」· 助手现在可以提议知识库改动';
+
+  @override
+  String get optKbUseWriteNotice => '已切到「出词」· 助手不再提议知识库改动';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -10066,9 +10171,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optPromptCopied => '提示詞已複製到剪貼簿';
 
   @override
-  String get optEmptyChat => '傳送粗略提示詞或想法開始優化。AI 會按需查看參考圖，你可以多輪追問持續調整結果。';
-
-  @override
   String get optViewed => 'AI 已查看';
 
   @override
@@ -10205,7 +10307,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get safetyThresholdOff => '關閉過濾';
 
   @override
-  String get optModeSystemPrompt => '系統提示詞';
+  String get optModeSystemPrompt => '任務預設';
 
   @override
   String get optModeKnowledge => '知識庫';
@@ -10215,9 +10317,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optKbNotConfigured => '知識庫未設定或無效，請先在設定中選擇知識庫資料夾。';
-
-  @override
-  String get optModeSwitchConfirm => '切換模式將開始新的對話，是否繼續？';
 
   @override
   String get optToolListKnowledge => '瀏覽了知識庫檔案列表';
@@ -10371,7 +10470,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optRetry => '重試';
 
   @override
-  String get optModeKnowledgeEdit => '知識庫編輯';
+  String get optModeKnowledgeEdit => '維護';
 
   @override
   String optToolWriteKnowledge(String name) {
@@ -10560,11 +10659,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optSendHint => 'Enter 傳送 · Shift+Enter 換行';
 
   @override
-  String optModeBadgeAgent(String mode) {
-    return '$mode · Agent';
-  }
-
-  @override
   String get optRefNumberingHint => '序號與提示詞中引用的檔名對應，agent 可檢視這些圖片。';
 
   @override
@@ -10575,9 +10669,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optRefReorderLocked => '助手回覆中，結束後可調整順序。';
-
-  @override
-  String get optModeKnowledgeEditShort => '庫編輯';
 
   @override
   String get optRunning => '執行中';
@@ -10624,13 +10715,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optKbCitedRunning => '進行中';
 
   @override
-  String get optSysPromptPick => '選擇範本';
+  String get optSysPromptPick => '選擇任務預設';
 
   @override
-  String get optSysPromptSearch => '搜尋範本…';
-
-  @override
-  String get optSysPromptNone => '未選擇範本';
+  String get optSysPromptSearch => '搜尋預設…';
 
   @override
   String get optSysPromptUnsaved => '未儲存';
@@ -10642,7 +10730,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optSysPromptReset => '重設';
 
   @override
-  String get optSysPromptSaved => '範本已儲存';
+  String get optSysPromptSaved => '預設已儲存';
 
   @override
   String get optSysPromptHint => '寫下希望助手遵循的指令…';
@@ -10658,7 +10746,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get optSysPromptNoTools => '此模式不掛載知識庫工具，agent 不產生工具呼叫。';
+  String get optSysPromptNoKb => '此模式不讀取知識庫；助手仍會查看參考圖，並可能向你提問。';
 
   @override
   String get kbEditNoChange => '此提議未變更檔案內容。';
@@ -11083,4 +11171,126 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get imageSizeRatioAccepted => '自訂 · 已接受';
+
+  @override
+  String get optModeKnowledgeWrite => '出詞';
+
+  @override
+  String get optModeUseFor => '用它來';
+
+  @override
+  String optModeBadge(String basis, String detail) {
+    return '$basis · $detail';
+  }
+
+  @override
+  String get optPresetBuiltinName => '通用優化';
+
+  @override
+  String get optModeLocked => '助手回覆中 · 模式已鎖定';
+
+  @override
+  String optModeSwitchTitle(String mode) {
+    return '切換到「$mode」？';
+  }
+
+  @override
+  String get optModeSwitchBody =>
+      '任務預設和知識庫的對話不能接在一起，切換會開始一個新對話。目前的對話已儲存，可以隨時從「歷史對話」回來。';
+
+  @override
+  String get optModeSwitchStart => '開始新對話';
+
+  @override
+  String get optPresetCustom => '自訂指令';
+
+  @override
+  String get optPresetBuiltinBadge => '內建';
+
+  @override
+  String get optPresetBuiltinDesc => '不帶專門指令：把粗略想法整理成可直接使用的圖像 / 影片提示詞。';
+
+  @override
+  String get optPresetBuiltinLocked => '內建指令無法編輯';
+
+  @override
+  String get optPresetSaveAs => '另存為預設…';
+
+  @override
+  String get optPresetEditInstructions => '檢視 / 編輯指令';
+
+  @override
+  String get optPresetViewInstructions => '檢視指令';
+
+  @override
+  String get optPresetManage => '在提示詞庫中管理預設';
+
+  @override
+  String get optPresetDiscardTitle => '捨棄未儲存的變更？';
+
+  @override
+  String optPresetDiscardBody(String name) {
+    return '「$name」的指令改過還沒儲存，換預設會捨棄這些變更。';
+  }
+
+  @override
+  String get optPresetDiscardAction => '捨棄變更';
+
+  @override
+  String get optEmptyPresetTitle => '這次要做什麼？';
+
+  @override
+  String get optEmptyPresetSub => '選一個任務預設，然後把想法傳給助手。它會視需要查看參考圖，你可以多輪追問。';
+
+  @override
+  String optEmptyPresetAll(int count) {
+    return '全部 $count 個預設…';
+  }
+
+  @override
+  String get optEmptyPresetCreate => '到提示詞庫新增預設';
+
+  @override
+  String get optEmptyKbTitle => '依你的知識庫寫提示詞';
+
+  @override
+  String get optEmptyKbSub => '助手先讀知識庫的檔案地圖，只翻這次用得上的規則文件。';
+
+  @override
+  String get optEmptyKbExample1 => '依知識庫的規則，幫我寫一條提示詞：';
+
+  @override
+  String get optEmptyKbExample2 => '對照知識庫，檢查這條提示詞哪裡不合規：';
+
+  @override
+  String get optEmptyKbExample3 => '看一下參考圖裡的人物，依知識庫的範本寫成一條完整提示詞。';
+
+  @override
+  String get optEmptyKbEditTitle => '維護你的知識庫';
+
+  @override
+  String get optEmptyKbEditSub => '告訴助手要補什麼、改什麼。每處變更都會先給你看 diff，確認後才寫入。';
+
+  @override
+  String get optEmptyKbEditExample1 => '新增一篇文件，記錄這類畫面的寫法：';
+
+  @override
+  String get optEmptyKbEditExample2 => '檢查知識庫裡有沒有互相矛盾的規則。';
+
+  @override
+  String get optEmptyKbEditExample3 => '把入口檔案裡的檔案地圖更新到和實際目錄一致。';
+
+  @override
+  String get optLeftDocs => '文件';
+
+  @override
+  String optLeftRefs(int count) {
+    return '參考圖 · $count';
+  }
+
+  @override
+  String get optKbUseMaintainNotice => '已切到「維護」· 助手現在可以提議知識庫變更';
+
+  @override
+  String get optKbUseWriteNotice => '已切到「出詞」· 助手不再提議知識庫變更';
 }

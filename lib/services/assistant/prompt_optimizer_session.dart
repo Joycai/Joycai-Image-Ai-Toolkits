@@ -9,8 +9,9 @@ part of 'prompt_optimizer_agent.dart';
 class PromptOptimizerSession extends ChangeNotifier {
   static int _counter = 0;
 
-  PromptOptimizerSession({this.mode = AssistantMode.systemPrompt, String? id})
-      : id = id ?? 'opt_${DateTime.now().millisecondsSinceEpoch}_${_counter++}';
+  PromptOptimizerSession({AssistantMode mode = AssistantMode.systemPrompt, String? id})
+      : _mode = mode,
+        id = id ?? 'opt_${DateTime.now().millisecondsSinceEpoch}_${_counter++}';
 
   final String id;
 
@@ -20,15 +21,72 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// How many [history] messages are already persisted to the database.
   int persistedCount = 0;
 
-  /// Fixed for the session's lifetime — switching modes starts a new
-  /// conversation so the history semantics stay coherent.
-  final AssistantMode mode;
+  /// What the session works from is fixed for its lifetime: a task-preset
+  /// history and a knowledge-base history cannot continue each other, so that
+  /// switch starts a new conversation. What a knowledge session is *used for*
+  /// is not — see [switchKnowledgeUse].
+  AssistantMode get mode => _mode;
+  AssistantMode _mode;
+
+  /// True for the two modes that work from the knowledge base.
+  static bool isKnowledgeMode(AssistantMode mode) =>
+      mode == AssistantMode.knowledgeBase || mode == AssistantMode.knowledgeEdit;
+
+  /// Moves a knowledge session between writing prompts and maintaining the
+  /// base (`A3d 4d`), keeping the conversation. Returns whether it switched.
+  ///
+  /// Safe where the cross-basis switch is not, because nothing in the history
+  /// depends on which of the two it was: both read the same files through the
+  /// same tools, and the write tools already come and go inside one session —
+  /// a distill request attaches them for a turn ([hasPendingKbDistill]). The
+  /// system prompt and the tool list are rebuilt per turn from [mode], so the
+  /// switch takes effect on the next question. Edits already staged stay
+  /// answerable: applying one is the user's act, gated on the card's state,
+  /// not on the mode, and its outcome is still reported (invariant 11).
+  ///
+  /// Refused while a turn runs — the turn read [mode] when it started, and a
+  /// mode that disagreed with the tools in flight would make the write gate
+  /// in the tool handler answer for a different turn than the one asking —
+  /// and refused across the basis, which is a new session's job. Both are
+  /// also held off by the UI; this is the gate that holds if the UI is wrong.
+  ///
+  /// The divider it leaves in the transcript is a fact about the interface,
+  /// not something said to the model, so it is not written to [history]: a
+  /// restored session does not replay it.
+  bool switchKnowledgeUse(AssistantMode next) {
+    if (_isRunning || next == _mode) return false;
+    if (!isKnowledgeMode(_mode) || !isKnowledgeMode(next)) return false;
+    _mode = next;
+    final notice = OptimizerChatEntry(
+      kind: OptimizerEntryKind.notice,
+      text: next == AssistantMode.knowledgeEdit
+          ? PromptOptimizerAgent.kbUseMaintainNoticeToken
+          : PromptOptimizerAgent.kbUseWriteNoticeToken,
+    );
+    if (_transcript.isEmpty) {
+      // Nothing to divide yet; the panel and the empty state already say it.
+      notifyListeners();
+    } else if (_isKbUseNotice(_transcript.last)) {
+      // Toggled again with nothing said in between: one divider, the latest.
+      // Replaced, not removed — the transcript only ever grows, and the chat
+      // keys its rows by index.
+      _transcript = [..._transcript.sublist(0, _transcript.length - 1), notice];
+      notifyListeners();
+    } else {
+      _addEntry(notice);
+    }
+    return true;
+  }
+
+  static bool _isKbUseNotice(OptimizerChatEntry e) =>
+      e.kind == OptimizerEntryKind.notice &&
+      (e.text == PromptOptimizerAgent.kbUseMaintainNoticeToken ||
+          e.text == PromptOptimizerAgent.kbUseWriteNoticeToken);
 
   /// True when the session needs a validated knowledge base to run at all.
   /// Prefer this over comparing [mode] directly — the checks live in several
   /// files and an omitted one leaves the mode silently inert.
-  bool get usesKnowledgeBase =>
-      mode == AssistantMode.knowledgeBase || mode == AssistantMode.knowledgeEdit;
+  bool get usesKnowledgeBase => isKnowledgeMode(mode);
 
   /// What the agent may do to the knowledge base this turn.
   ///

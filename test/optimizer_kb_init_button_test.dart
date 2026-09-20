@@ -31,6 +31,9 @@ void main() {
     KbStatus status, {
     Size size = const Size(1400, 1000),
     Future<void> Function()? onScaffold,
+    bool running = false,
+    ValueChanged<AssistantMode>? onModeChanged,
+    Locale? locale,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -45,6 +48,7 @@ void main() {
     await tester.pumpWidget(ChangeNotifierProvider<AppState>.value(
       value: appState!,
       child: MaterialApp(
+        locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
@@ -56,17 +60,19 @@ void main() {
             kbStatus: status,
             kbPath: '/tmp/kb',
             sysPrompts: const [],
+            running: running,
             onModelChanged: (_) {},
             onSysPromptChanged: (_) {},
             onSysPromptTemplateChanged: (_, _) {},
             onSaveTemplate: (_, _) async {},
-            onModeChanged: (_) {},
+            onModeChanged: onModeChanged ?? (_) {},
             onScaffoldKb: onScaffold ?? () async {},
           ),
         ),
       ),
     ));
-    await tester.pumpAndSettle();
+    // The running badge breathes forever; settling would never return.
+    running ? await tester.pump(const Duration(milliseconds: 400)) : await tester.pumpAndSettle();
   }
 
   Future<AppLocalizations> en() => AppLocalizations.delegate.load(const Locale('en'));
@@ -137,24 +143,60 @@ void main() {
     expect(calls, 1);
   });
 
-  testWidgets('all three modes are offered and fit on Mobile', (tester) async {
+  // `A3d 4a`: what the assistant works from, then — for the knowledge base —
+  // what it is used for.
+  testWidgets('both levels are offered and fit on Mobile', (tester) async {
     await pumpPanel(tester, KbStatus.ok, size: const Size(360, 800));
     final l10n = await en();
 
-    // Scoped to the control: "Knowledge Base" is also the status block's
+    // Scoped to the controls: "Knowledge Base" is also the status block's
     // header, so a bare text finder matches twice.
-    final selector = find.byType(AppSegmentedControl<AssistantMode>);
-    for (final label in [
-      l10n.optModeSystemPrompt,
-      l10n.optModeKnowledge,
-      l10n.optModeKnowledgeEdit,
-    ]) {
-      expect(
-        find.descendant(of: selector, matching: find.text(label)),
-        findsOneWidget,
-      );
+    final basis = find.byType(AppSegmentedControl<bool>);
+    for (final label in [l10n.optModeSystemPrompt, l10n.optModeKnowledge]) {
+      expect(find.descendant(of: basis, matching: find.text(label)), findsOneWidget);
     }
-    // Three segments are narrow at 360px; they must ellipsize, never overflow.
+    final use = find.byType(AppSegmentedControl<AssistantMode>);
+    for (final label in [l10n.optModeKnowledgeWrite, l10n.optModeKnowledgeEdit]) {
+      expect(find.descendant(of: use, matching: find.text(label)), findsOneWidget);
+    }
     expect(tester.takeException(), isNull);
+  });
+
+  // The longest labels are not the Chinese ones the design was drawn with.
+  for (final locale in AppLocalizations.supportedLocales) {
+    testWidgets('both levels fit the 250px column in $locale', (tester) async {
+      await pumpPanel(tester, KbStatus.ok, size: const Size(250, 900), locale: locale);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('an unconfigured base keeps the basis open and the use closed', (tester) async {
+    final asked = <AssistantMode>[];
+    await pumpPanel(tester, KbStatus.notSet, onModeChanged: asked.add);
+    final l10n = await en();
+
+    final use = tester.widget<AppSegmentedControl<AssistantMode>>(
+      find.byType(AppSegmentedControl<AssistantMode>),
+    );
+    expect(
+      use.segments.firstWhere((s) => s.value == AssistantMode.knowledgeEdit).enabled,
+      isFalse,
+    );
+    // The way back out stays open.
+    await tester.tap(find.text(l10n.optModeSystemPrompt));
+    await tester.pumpAndSettle();
+    expect(asked, [AssistantMode.systemPrompt]);
+  });
+
+  testWidgets('a running turn locks both levels and says so', (tester) async {
+    final asked = <AssistantMode>[];
+    await pumpPanel(tester, KbStatus.ok, running: true, onModeChanged: asked.add);
+    final l10n = await en();
+
+    expect(find.text(l10n.optModeLocked), findsOneWidget);
+    await tester.tap(find.text(l10n.optModeSystemPrompt));
+    await tester.tap(find.text(l10n.optModeKnowledgeEdit));
+    await tester.pump();
+    expect(asked, isEmpty);
   });
 }

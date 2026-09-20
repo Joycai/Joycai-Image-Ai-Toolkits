@@ -210,11 +210,22 @@ class WorkbenchUIState extends ChangeNotifier {
     refreshResultProvenance();
   }
 
-  /// Switching modes always starts a fresh conversation (mode is fixed per
-  /// session). Callers should confirm with the user first when the current
-  /// session already has content.
+  /// Task preset ⇄ knowledge base starts a fresh conversation — callers
+  /// should confirm first when the current one has content. Between the two
+  /// knowledge uses the session is kept ([PromptOptimizerSession
+  /// .switchKnowledgeUse]), and a switch it refuses — a turn is running — is
+  /// dropped here rather than falling through to a new session.
   void setAssistantMode(AssistantMode mode) {
-    if (optimizerSession.mode == mode) return;
+    final session = optimizerSession;
+    if (session.mode == mode) return;
+    if (session.usesKnowledgeBase && PromptOptimizerSession.isKnowledgeMode(mode)) {
+      if (!session.switchKnowledgeUse(mode)) return;
+      _assistantRepo.setSessionMode(session.id, mode).catchError((Object _) {
+        // The next turn's sync writes the mode again; nothing to surface.
+      });
+      notifyListeners();
+      return;
+    }
     newOptimizerSession(mode: mode);
   }
 

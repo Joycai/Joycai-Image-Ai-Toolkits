@@ -12,6 +12,7 @@ import '../../../core/responsive.dart';
 import '../../../core/text_diff.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
+import '../../../models/prompt.dart';
 import '../../../services/assistant/knowledge_base_service.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
@@ -19,6 +20,7 @@ import '../../../widgets/ui/app_breathing_dot.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/ui/dashed_border.dart';
+import 'optimizer_config/preset_summary.dart';
 import 'result_feedback_labels.dart';
 
 part 'optimizer/optimizer_agent_timeline.dart';
@@ -26,6 +28,7 @@ part 'optimizer/optimizer_ask_user_card.dart';
 part 'optimizer/optimizer_card_chrome.dart';
 part 'optimizer/optimizer_composer.dart';
 part 'optimizer/optimizer_distill_cards.dart';
+part 'optimizer/optimizer_empty_state.dart';
 part 'optimizer/optimizer_feedback_card.dart';
 part 'optimizer/optimizer_kb_edit_card.dart';
 part 'optimizer/optimizer_prompt_card.dart';
@@ -91,6 +94,9 @@ class PromptOptimizerChatView extends StatefulWidget {
   /// jump.
   final void Function(int? modelDbId)? onOpenModelSettings;
 
+  /// The presets the empty chat offers in task-preset mode; null offers none.
+  final OptimizerPresetChoices? presetChoices;
+
   const PromptOptimizerChatView({
     super.key,
     required this.inputCtrl,
@@ -105,6 +111,7 @@ class PromptOptimizerChatView extends StatefulWidget {
     this.onDistill,
     this.onSaveFinalPrompt,
     this.onOpenModelSettings,
+    this.presetChoices,
   });
 
   @override
@@ -220,6 +227,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         s.promptVersions,
         s.refinedPrompt,
         s.usesKnowledgeBase,
+        s.mode,
       );
 
   /// [TextDiff] for a staged edit, computed once per edit content.
@@ -290,59 +298,13 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             children: [
               Expanded(
                 child: session.transcript.isEmpty
-                    ? _buildEmptyState(l10n, colorScheme)
+                    ? _buildEmptyState(session, l10n, colorScheme)
                     : _buildTranscript(session, l10n, colorScheme),
               ),
               _buildInputBar(session, l10n, colorScheme, composerLines),
             ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(AppLocalizations l10n, ColorScheme colorScheme) {
-    final textTheme = Theme.of(context).textTheme;
-    // Scrollable, not just centred: the input bar grows to six lines as the
-    // user types, and the console below can be dragged up, so the space left
-    // for this can fall below the artwork's own height. A bare Column cannot
-    // shrink past its children and would overflow instead.
-    return Center(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: _gutter, vertical: 12),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 460),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: colorScheme.accentTint,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                ),
-                child: Icon(Icons.auto_awesome, size: 24, color: colorScheme.primary),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                l10n.promptOptimizer,
-                textAlign: TextAlign.center,
-                style: textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                l10n.optEmptyChat,
-                textAlign: TextAlign.center,
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: AppType.looseHeight,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -585,6 +547,36 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         return _buildKbDistillRequestCard(l10n, colorScheme);
 
       case OptimizerEntryKind.notice:
+        if (entry.text == PromptOptimizerAgent.kbUseMaintainNoticeToken ||
+            entry.text == PromptOptimizerAgent.kbUseWriteNoticeToken) {
+          // A line across the conversation, not a remark in it (`A3d 4d`):
+          // what is above was said under one use, what is below under another.
+          final rule = Expanded(child: Divider(height: 1, color: colorScheme.outlineVariant));
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpace.s4),
+            child: Row(
+              children: [
+                rule,
+                const SizedBox(width: AppSpace.s10),
+                Flexible(
+                  flex: 6,
+                  child: Text(
+                    entry.text == PromptOptimizerAgent.kbUseMaintainNoticeToken
+                        ? l10n.optKbUseMaintainNotice
+                        : l10n.optKbUseWriteNotice,
+                    textAlign: TextAlign.center,
+                    style: textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpace.s10),
+                rule,
+              ],
+            ),
+          );
+        }
         {
           // The notices that ask the user to do something wear the warning
           // container; the compaction note is information.
