@@ -186,8 +186,7 @@ extension _AssistantTab on _WorkbenchScreenState {
           ),
           onModelChanged: (v) => wui.setOptimizerModel(v),
           onSysPromptChanged: (v) => wui.setOptimizerSysPrompt(v),
-          onSysPromptTemplateChanged: (id, content) =>
-              wui.setOptimizerSysPromptTemplate(id, content),
+          onPresetLoaded: wui.loadOptimizerPreset,
           onSaveTemplate: _handleSaveSysPromptTemplate,
           onSaveAsPreset: _handleSaveAsPreset,
           onManagePresets: _handleManagePresets,

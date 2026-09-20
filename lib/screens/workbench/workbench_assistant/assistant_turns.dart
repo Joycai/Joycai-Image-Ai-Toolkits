@@ -235,12 +235,7 @@ extension _AssistantTurns on _WorkbenchScreenState {
       await taskService.addTask(
         workbenchUIState.optimizerReferenceImages.map((f) => f.path).toList(),
         workbenchUIState.optSelectedModelDbId!,
-        {
-          'sessionId': session.id,
-          'mode': session.mode.name,
-          if (session.mode == AssistantMode.systemPrompt)
-            'systemPrompt': workbenchUIState.optSelectedSysPrompt,
-        },
+        workbenchUIState.optimizerTurnParameters(session),
         type: TaskType.promptRefine,
         useStream: false,
         id: const Uuid().v4(),

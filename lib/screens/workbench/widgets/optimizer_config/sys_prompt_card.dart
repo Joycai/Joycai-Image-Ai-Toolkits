@@ -161,16 +161,14 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
           return;
         }
         if (id == builtinPresetPickerId) {
-          // Empty, not null: null is "never chosen", which the first load
-          // answers by picking the library's first preset.
-          widget.onSysPromptTemplateChanged(null, '');
+          widget.onPresetLoaded(null);
           return;
         }
         // Looked up after the dialog, in the list as it is now: a save or a
         // delete elsewhere can have replaced it while the question was up.
         final picked = widget.sysPrompts.where((p) => p.id == id).firstOrNull;
         if (picked == null) return;
-        widget.onSysPromptTemplateChanged(picked.id, picked.content);
+        widget.onPresetLoaded(picked);
       },
       // Never shown — something is always selected — but the field requires one.
       hint: l10n.optModeSystemPrompt,
@@ -356,7 +354,7 @@ extension _SysPromptCard on _OptimizerConfigPanelState {
           variant: AppButtonVariant.text,
           size: size,
           onPressed: dirty
-              ? () => widget.onSysPromptTemplateChanged(template.id, template.content)
+              ? () => widget.onPresetLoaded(template)
               : null,
         ),
         const SizedBox(width: AppSpace.s6),

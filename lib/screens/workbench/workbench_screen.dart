@@ -225,8 +225,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             wuiState.setOptimizerModel(_appState!.multimodalModels.first.id);
           }
           if (wuiState.optSelectedSysPrompt == null && refinerPrompts.isNotEmpty) {
-            final first = refinerPrompts.first;
-            wuiState.setOptimizerSysPromptTemplate(first.id, first.content);
+            wuiState.loadOptimizerPreset(refinerPrompts.first);
+          } else {
+            wuiState.syncOptimizerPresetKind(refinerPrompts);
           }
           _optIsLoadingData = false;
         });
@@ -290,10 +291,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     // Nothing new in the refiner list means it was filed under another type.
     final created = refreshed.where((p) => !known.contains(p.id)).toList();
     if (created.length == 1) {
-      context.read<WorkbenchUIState>().setOptimizerSysPromptTemplate(
-            created.single.id,
-            created.single.content,
-          );
+      context.read<WorkbenchUIState>().loadOptimizerPreset(created.single);
     }
   }
 

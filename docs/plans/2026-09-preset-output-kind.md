@@ -91,7 +91,7 @@
       测：`prompt` 类型的 system prompt 与改动前逐字相同（golden 字符串）；`analysis` 不含
       `ONLY way`、`Keep chat text brief`，含预设正文在最前；`analysis` 轮的收尾正文
       `deliverable == true`，`prompt` 轮为 false；知识库两种用途的 prompt 不变。
-- [ ] **片 3 · 状态与入队**：`WorkbenchUIState.optPresetOutputKind`（新对象/新值后再
+- [x] **片 3 · 状态与入队**：`WorkbenchUIState.optPresetOutputKind`（新对象/新值后再
       `notifyListeners`）；`_handlePickPreset`、面板选择器、库行被删三条路径；入队参数。
       测：载入 / 换内置 / 改正文未存 / 库行删除 四种情形下入队的 `outputKind`。
 - [ ] **片 4 · 提示词库界面**（5a、5b、5g）：编辑框分段、列表标记；l10n 四语。

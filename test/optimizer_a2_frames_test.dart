@@ -229,7 +229,7 @@ void main() {
       required String? text,
       required int? templateId,
       double width = 250,
-      void Function(int?, String?)? onTemplateChanged,
+      void Function(SystemPrompt?)? onTemplateChanged,
       bool expand = true,
     }) async {
       final appState = AppState();
@@ -257,7 +257,7 @@ void main() {
                 sysPrompts: templates,
                 onModelChanged: (_) {},
                 onSysPromptChanged: (_) {},
-                onSysPromptTemplateChanged: onTemplateChanged ?? (_, _) {},
+                onPresetLoaded: onTemplateChanged ?? (_) {},
                 onSaveTemplate: (_, _) async {},
                 onModeChanged: (_) {},
                 onScaffoldKb: () async {},
@@ -312,7 +312,7 @@ void main() {
         templateId: 1,
         width: 400,
         expand: false,
-        onTemplateChanged: (id, _) => loaded.add(id),
+        onTemplateChanged: (preset) => loaded.add(preset?.id),
       );
       final l10n = await en();
 
@@ -365,9 +365,9 @@ void main() {
         tester,
         text: 'BASE edited',
         templateId: 1,
-        onTemplateChanged: (id, content) {
-          gotId = id;
-          gotContent = content;
+        onTemplateChanged: (preset) {
+          gotId = preset?.id;
+          gotContent = preset?.content;
         },
       );
       final l10n = await en();

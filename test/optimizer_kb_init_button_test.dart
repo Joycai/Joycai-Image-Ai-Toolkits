@@ -63,7 +63,7 @@ void main() {
             running: running,
             onModelChanged: (_) {},
             onSysPromptChanged: (_) {},
-            onSysPromptTemplateChanged: (_, _) {},
+            onPresetLoaded: (_) {},
             onSaveTemplate: (_, _) async {},
             onModeChanged: onModeChanged ?? (_) {},
             onScaffoldKb: onScaffold ?? () async {},
