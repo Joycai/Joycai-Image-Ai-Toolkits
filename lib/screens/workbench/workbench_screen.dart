@@ -247,13 +247,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     try {
       await _appState!.updateSystemPrompt(
         template.id!,
-        {
-          'title': template.title,
-          'content': content,
-          'type': template.type,
-          'is_markdown': template.isMarkdown ? 1 : 0,
-          'sort_order': template.sortOrder,
-        },
+        // The whole row with one field changed: a column listed by hand here
+        // is a column the next migration's value is lost from.
+        {...template.toMap(includeId: false), 'content': content},
         tagIds: [for (final t in template.tags) if (t.id != null) t.id!],
       );
       // Re-read rather than patch the local copy: the saved row is now what
