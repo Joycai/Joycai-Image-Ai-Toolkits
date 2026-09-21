@@ -57,7 +57,8 @@ services/          all business logic, in domain folders only:
                        prompt_optimizer_session), sub_agent_runner, knowledge_base_*, prompt_provenance
   catalogue/         what backs the models page (ordering, id uniqueness, context/output scales,
                        route_switching, channel_merge + its executor) — not llm/
-  files/ media/ system/ billing/   filesystem ops · image/video/scraping · host adapters · spec billing
+  files/ media/ system/ billing/   filesystem ops · image/video/scraping · host adapters +
+                       ui_prefs (the panel widths screens persist) · spec billing
 state/             ChangeNotifier singletons: AppState (app_state{,_data,_workbench}.dart), GalleryState,
                      FileBrowserState, FileStagingState, DownloaderState, ModelListState,
                      WorkbenchUIState, TaskListState, LogState

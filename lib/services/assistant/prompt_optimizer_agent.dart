@@ -426,6 +426,14 @@ class PromptOptimizerAgent {
   /// [forceViewAllImages] (per-model setting) makes viewing every reference
   /// image a hard requirement before submit_prompt — for small local models
   /// that otherwise look at one image and stop.
+  ///
+  /// [database] carries every row this turn touches — the session and its
+  /// messages, the retention setting, and the sub-agent notes `delegate`
+  /// writes and `read_note` pages back. It defaults to the app's; a caller
+  /// that already holds one (the task queue, a test) passes it. All of it or
+  /// none: a note carries a `session_id`, so a turn whose session went to one
+  /// database and whose notes went to another leaves `read_note` unable to
+  /// find what `delegate` just saved.
   static Future<void> runTurn({
     required PromptOptimizerSession session,
     required dynamic modelIdentifier,
@@ -445,6 +453,7 @@ class PromptOptimizerAgent {
     bool kbSubAgentAcceptsImages = true,
     void Function(String message)? onLog,
     bool Function()? isCancelled,
+    DatabaseService? database,
   }) async {
     session._setRunning(true);
     final knowledgeMode = session.usesKnowledgeBase;
@@ -490,7 +499,8 @@ class PromptOptimizerAgent {
     final baseTurns = editMode ? 24 : (knowledgeMode ? 20 : _maxTurns);
     final minTurns = effectiveRefs.length + (knowledgeMode ? 8 : 4);
     final maxTurns = baseTurns > minTurns ? baseTurns : minTurns;
-    final repo = AssistantSessionRepository();
+    final db = database ?? DatabaseService();
+    final repo = AssistantSessionRepository(db: db);
 
     /// Set once a read finds no room left, for the rest of this turn.
     bool contextExhausted = false;
@@ -521,6 +531,7 @@ class PromptOptimizerAgent {
         session,
         referenceImages,
         repo,
+        db,
         modelIdentifier: modelIdentifier,
         systemPromptText: systemPromptText,
         contextId: contextId,
@@ -840,6 +851,7 @@ class PromptOptimizerAgent {
               call,
               response.toolCalls,
               session,
+              db: db,
               offered: offered,
               modelIdentifier: modelIdentifier,
               kbSubAgentModelIdentifier: kbSubAgentModelIdentifier,
@@ -904,7 +916,7 @@ class PromptOptimizerAgent {
     } finally {
       // Persist whatever this turn produced, even on error/cancel.
       try {
-        await _syncPersistence(session, referenceImages, repo);
+        await _syncPersistence(session, referenceImages, repo, db);
       } catch (e) {
         onLog?.call('Session persistence failed: $e');
       }
@@ -919,6 +931,7 @@ class PromptOptimizerAgent {
     PromptOptimizerSession session,
     List<Map<String, String>> referenceImages,
     AssistantSessionRepository repo,
+    DatabaseService db,
   ) async {
     if (session.history.isEmpty) return;
     session.title ??= _deriveTitle(session.history);
@@ -934,7 +947,7 @@ class PromptOptimizerAgent {
           session.id, startSeq, session.history.sublist(session.persistedCount));
       session.persistedCount = session.history.length;
     }
-    final keepStr = await DatabaseService().getSetting(retentionSettingKey);
+    final keepStr = await db.getSetting(retentionSettingKey);
     await repo.enforceRetention(int.tryParse(keepStr ?? '') ?? defaultRetention);
   }
 

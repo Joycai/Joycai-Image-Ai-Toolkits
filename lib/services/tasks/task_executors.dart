@@ -372,7 +372,7 @@ extension TaskExecutors on TaskQueueService {
       String? knowledgeRoot;
       String? knowledgeEntry;
       if (session.usesKnowledgeBase) {
-        final kb = KnowledgeBaseService();
+        final kb = KnowledgeBaseService(database: _db);
         knowledgeRoot = await kb.getRoot();
         final status = await kb.validate(knowledgeRoot);
         if (status != KbStatus.ok) {
@@ -409,6 +409,7 @@ extension TaskExecutors on TaskQueueService {
           refreshQueue();
         },
         isCancelled: () => task.status == TaskStatus.cancelled,
+        database: _db,
       );
 
       if (session.refinedPrompt != null) {
@@ -539,6 +540,7 @@ extension TaskExecutors on TaskQueueService {
     final renamed = await AiRenameAgent.applyProposals(
       proposals,
       onLog: task.addLog,
+      database: _db,
     );
 
     task.addLog('AI Rename complete. $renamed file(s) renamed.');

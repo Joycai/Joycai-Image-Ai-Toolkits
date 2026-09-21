@@ -17,8 +17,8 @@ import '../../core/text_editing_focus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/browser_file.dart';
-import '../../services/db/database_service.dart';
 import '../../services/files/file_permission_service.dart';
+import '../../services/system/ui_prefs.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/file_staging_state.dart';
@@ -148,8 +148,9 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   }
 
   Future<void> _loadSidebarWidth() async {
-    final saved = await DatabaseService().getSetting('browser_sidebar_width');
-    final width = double.tryParse(saved ?? '');
+    // Read before the await: the context must not be touched after it.
+    final uiPrefs = context.read<AppState>().uiPrefs;
+    final width = await uiPrefs.panelWidth(UiPanel.browserSidebar);
     if (width != null && mounted) {
       setState(() => _sidebarWidth = width.clamp(_minSidebarWidth, _maxSidebarWidth));
     }
@@ -525,7 +526,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                 }),
                 onDragEnd: () {
                   _dragSidebarWidth = null;
-                  DatabaseService().saveSetting('browser_sidebar_width', _sidebarWidth.round().toString());
+                  context
+                      .read<AppState>()
+                      .uiPrefs
+                      .savePanelWidth(UiPanel.browserSidebar, _sidebarWidth);
                 },
               ),
             ],

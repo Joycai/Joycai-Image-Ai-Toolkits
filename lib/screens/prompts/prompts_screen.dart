@@ -6,7 +6,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../../services/db/database_service.dart';
+import '../../services/system/ui_prefs.dart';
 import '../../state/app_state.dart';
 import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_search_field.dart';
@@ -98,8 +98,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   Future<void> _loadSidebarWidth() async {
-    final saved = await DatabaseService().getSetting('prompts_sidebar_width');
-    final width = double.tryParse(saved ?? '');
+    // Read before the await: the context must not be touched after it.
+    final uiPrefs = context.read<AppState>().uiPrefs;
+    final width = await uiPrefs.panelWidth(UiPanel.promptsSidebar);
     if (width != null && mounted) {
       setState(() => _sidebarWidth = width.clamp(_minSidebarWidth, _maxSidebarWidth));
     }
@@ -509,8 +510,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           }),
           onDragEnd: () {
             _dragSidebarWidth = null;
-            DatabaseService()
-                .saveSetting('prompts_sidebar_width', _sidebarWidth.round().toString());
+            context
+                .read<AppState>()
+                .uiPrefs
+                .savePanelWidth(UiPanel.promptsSidebar, _sidebarWidth);
           },
         ),
 

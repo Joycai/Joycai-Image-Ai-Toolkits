@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
 
+import '../db/database_service.dart';
 import '../db/repositories/image_layer_repository.dart';
 import '../llm/llm_service.dart';
 import '../llm/llm_types.dart';
@@ -348,7 +349,12 @@ class AiRenameAgent {
   static Future<int> applyProposals(
     List<RenameProposal> proposals, {
     void Function(String message)? onLog,
+    DatabaseService? database,
   }) async {
+    // Built once per run rather than per rename, and over [database] when the
+    // caller has one: a rename carries the file's saved layer rows with it,
+    // and those must land in the same database the rest of the run reads.
+    final layers = ImageLayerRepository(db: database);
     int renamed = 0;
     final placedThisRun = <String>{};
     for (final proposal in proposals) {
@@ -377,7 +383,7 @@ class AiRenameAgent {
           onLog?.call('Overwrote: ${proposal.newName}');
         }
         await oldFile.rename(newPath);
-        await ImageLayerRepository().move(oldFile.path, newPath);
+        await layers.move(oldFile.path, newPath);
         placedThisRun.add(newPath.toLowerCase());
         renamed++;
         onLog?.call('Renamed: ${proposal.oldName} -> ${proposal.newName}');
