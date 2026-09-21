@@ -180,8 +180,10 @@ class TokenUsage {
   final double inputPrice;
   final double outputPrice;
 
-  /// Null on rows written before cache pricing existed, and on rows whose fee
-  /// group leaves the cache rate unset — read [effectiveCachePrice].
+  /// Null only on rows written before cache pricing existed (v30): the
+  /// recorder snapshots the *resolved* rate, so a fee group that leaves the
+  /// cache rate unset still writes its input rate here. Read
+  /// [effectiveCachePrice], which falls back the same way.
   final double? cachePrice;
 
   final int requestCount;

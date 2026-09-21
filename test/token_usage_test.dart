@@ -29,8 +29,8 @@ void main() {
     });
 
     test('falls back to the input rate when the cache rate is unset', () {
-      // A null cache price is what an unconfigured fee group writes, and what
-      // every row recorded before cache pricing existed carries.
+      // A null cache price is what every row recorded before cache pricing
+      // existed carries; rows since snapshot the resolved rate.
       final row = TokenUsage(modelId: 'm', timestamp: at, cacheTokens: 1000000, inputPrice: 2.0);
 
       expect(row.cost, closeTo(2.0, 1e-9));

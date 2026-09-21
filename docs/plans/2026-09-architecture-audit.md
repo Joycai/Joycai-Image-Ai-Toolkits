@@ -95,11 +95,13 @@ lib/services/db/database_service.dart:396  updateSystemPrompt(...)
 
 ## A5 · `TaskItem` 可变 + 队列交出内部列表
 
-**现状**：`TaskItem` 是 13 个模型里唯一可变的（`task_item.dart:46-79`：`status`、`startTime`、
+**现状**：`TaskItem` 是 15 个模型里唯一可变的（`task_item.dart:46-79`：`status`、`startTime`、
 `endTime`、`progress`、`operationSurface`、`operationName`）。
 `TaskQueueService` 把内部列表原样交出去（`task_queue_service.dart:90`
-`List<TaskItem> get queue => _queue;`），并原地改它（`:120` clear、`:124` addAll、`:243` add、
-`:353` removeAt），同时原地改元素（`:264`、`:323-326`、`:393-394`、`:418-440`、`:519`）。
+`List<TaskItem> get queue => _queue;`），并原地改它（`:125` clear、`:129` addAll、`:242` add、
+`:352` removeAt），同时原地改元素（`:263`、`:322-325`、`:392-393`、`:417-439`、`:516`）。
+行号按 A2 之后的现状写，会再漂——找齐用
+`grep -nE "_queue\.(clear|addAll|add|removeAt)\(|task\.(status|progress|startTime|endTime) =" lib/services/tasks/task_queue_service.dart`。
 
 **今天没有 bug**，这点要说清楚：所有消费方取的都是标量（`queue.where(...).length`）或
 `task.id`，标量比较照样灵——`nav_lens_group.dart:71`、`phone_dock.dart:30`、
@@ -180,7 +182,7 @@ lib/services/db/database_service.dart:396  updateSystemPrompt(...)
 - **偏好设置**（8 处）：侧栏宽度一类，`file_browser_screen.dart:151/528`、
   `models_screen.dart:84/198`、`prompts_screen.dart:101`、`workbench_layout.dart:278/452`。
 - **真数据操作**：`data_section.dart`（备份/还原/重置）、`wizard_import.dart`、
-  `usage_list.dart:336`（`clearTokenUsage`）。
+  `usage_list.dart:335`（`clearTokenUsage`）。
 
 **为什么要改**：第一类是在 `initState` / 手势回调里做持久化，属于业务逻辑落在了 widget 里；
 第二类量少且本来就是「设置页对着数据库干活」，可以接受。
