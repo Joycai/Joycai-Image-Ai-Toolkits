@@ -69,7 +69,7 @@
 挪动而掉了。
 
 **注意**：**这条排在最后**。它和 A6 一样是大 diff，而且比 A6 更容易和别人的分支撞车。
-在 A1–A5 落地之前不要开。
+前提是 A1–A5 先落地——现在都已落地。
 
 ---
 
@@ -109,7 +109,7 @@ UI 侧只见 `UiPrefs.sidebarWidth(...)`。**别为此发明新层**，这是一
 | `freezed` / `built_value` 生成模型 | 13 个手写模型共 1290 行，已经不可变、`==`/`hashCode` 齐全。引入 `build_runner` 要给 CI 和每次改模型都加一道生成步骤，换来的是已经有的东西 |
 | 声明式路由（`go_router`） | 全仓 `Navigator.push` 只有 6 处，导航是外壳 + 索引式目的地（`widgets/shell/app_destinations.dart`）。桌面工具这样是对的，换路由器等于为深链接重写外壳，而没有深链接的需求 |
 | 拆 `llm_dispatcher.dart`（1720 行） | `docs/architecture/llm-three-layer.md` 写明了它是**故意**做成唯一一张路由表；拆开就退回「分支到处散」的老问题。大文件拆分那一轮（`git show 59e392c:docs/plans/2026-09-large-file-split.md`）已经把它排除过一次 |
-| 引入 `get_it` 之类的容器 | 见 A1 的「注意」。要的是构造函数注入，不是再加一套查找规则 |
+| 引入 `get_it` 之类的容器 | A1 做的是构造函数注入（结论见 [`README.md`](README.md) 那行指针）；要的就是它，不是再加一套查找规则 |
 | 每个功能一套 ViewModel | 状态层是 11 个 `ChangeNotifier`，各自按屏幕/领域切，并且 `app_state.dart:70` 那段注释记录了「子状态各自当 provider」这个决定的由来（合并广播导致全app重建的回归）。手册的 per-feature VM 在这里只会把同一件事再切一刀 |
 
 ## 审计基线（复核时对表）
