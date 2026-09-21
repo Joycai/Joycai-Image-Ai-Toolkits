@@ -8,6 +8,7 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/browser_file.dart';
+import 'file_visuals.dart';
 
 /// Pieces shared by the file browser's transfer and folder dialogs — the
 /// staging paste, the folder move, the folder delete and the AI rename

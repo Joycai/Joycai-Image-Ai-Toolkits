@@ -4,6 +4,7 @@ import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
+import '../../../widgets/files/file_visuals.dart';
 import '../../../widgets/ui/focus_pane.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';

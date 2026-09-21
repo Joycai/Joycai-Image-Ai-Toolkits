@@ -14,6 +14,7 @@ import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';
+import '../../../widgets/files/file_visuals.dart';
 import '../../../widgets/files/thumbnail_fit_toggle.dart';
 import '../../../widgets/ui/listenable_selector.dart';
 import 'optimizer_context_card.dart';

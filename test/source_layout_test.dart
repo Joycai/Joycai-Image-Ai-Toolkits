@@ -178,6 +178,26 @@ void main() {
     );
   });
 
+  test('models import no Flutter', () {
+    final flutterImport = RegExp(r"^\s*import\s+'package:flutter/[^']+'", multiLine: true);
+    final leaked = <String>[];
+    for (final file in dartFiles.where((f) => moduleOf(f) == 'models')) {
+      final source = File(file).readAsStringSync();
+      for (final match in flutterImport.allMatches(source)) {
+        final line = source.substring(0, match.start).split('\n').length;
+        leaked.add('$file:$line  ${match.group(0)!.trim()}');
+      }
+    }
+    expect(
+      leaked,
+      isEmpty,
+      reason: 'a model reached for the framework:\n  ${leaked.join('\n  ')}\n\n'
+          'A model says what a thing is; how it looks is a widget-layer extension — '
+          '`BrowserFile.icon` and `AppImage.imageProvider` moved to '
+          'lib/widgets/files/file_visuals.dart for this reason.',
+    );
+  });
+
   test('no relative directive climbs past lib/', () {
     expect(
       overDeep,

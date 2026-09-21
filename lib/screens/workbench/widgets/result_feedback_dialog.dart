@@ -8,6 +8,7 @@ import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../models/result_feedback.dart';
+import '../../../widgets/files/file_visuals.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/glass/app_glass.dart';

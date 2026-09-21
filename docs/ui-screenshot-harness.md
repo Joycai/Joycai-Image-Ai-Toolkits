@@ -47,7 +47,7 @@ the run output for lines like:
 Web was the obvious idea and it does not pay off here. 70 files under `lib/`
 import `dart:io`, and the coupling is structural rather than incidental:
 `AppState` is a hard singleton behind `DatabaseService` → `sqflite_common_ffi`,
-and the models themselves are file-backed (`AppImage.imageProvider` returns
+and the models themselves are file-backed (an `AppImage` is a path, shown through a
 `FileImage`). Every top-level screen fails to compile transitively. Even after
 a port there is no SQLite and no local filesystem on web, so every screen would
 photograph as an empty state — and each new `dart:io` call site would break the

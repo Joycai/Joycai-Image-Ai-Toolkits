@@ -15,6 +15,7 @@ import '../../../models/prompt.dart';
 import '../../../services/assistant/knowledge_base_service.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/files/file_visuals.dart';
 import '../../../widgets/ui/app_breathing_dot.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_markdown.dart';

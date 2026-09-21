@@ -19,6 +19,7 @@ import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/drag/app_drag_follower.dart';
 import '../../../widgets/drag/app_drag_session.dart';
+import '../../../widgets/files/file_visuals.dart';
 import '../../../widgets/ui/focus_pane.dart';
 import '../../../widgets/glass/app_glass.dart';
 import 'gallery_file_actions.dart';

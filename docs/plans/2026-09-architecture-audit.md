@@ -5,8 +5,8 @@
 
 **结论**：分层本身比手册要求得更严，而且是 `test/source_layout_test.dart` 用八条规则钉死的；
 真正的偏离只有两个方向——**依赖注入**（用单例当服务定位器，A1）与**数据边界上的领域模型**
-（两个仓储在传裸 map，A2）。**两条都已做**，A3（门面绕 map 一圈）也已做，结论见
-[`README.md`](README.md) 那行指针。剩下五条是局部的。
+（两个仓储在传裸 map，A2）。**两条都已做**，A3（门面绕 map 一圈）、A4（模型带展示逻辑）也已做，结论见
+[`README.md`](README.md) 那行指针。剩下四条是局部的。
 
 **怎么用这份文件**：一条一条做，每条自带验收。做完一条就把它从本文件删掉，并在
 [`README.md`](README.md) 的「已执行」表里登记结论住在哪；条目清空后删掉本文件。
@@ -16,44 +16,10 @@
 
 | 编号 | 一句话 | 触及 | 状态 |
 |---|---|---|---|
-| A4 | `BrowserFile` 带展示逻辑，其中 `.color` 是死代码且用裸 Material 颜色 | `models/browser_file.dart` | 未开工 |
 | A5 | `TaskItem` 可变，队列把内部列表原样交出去并原地改 | `services/tasks/task_queue_service.dart` | 未开工 |
 | A6 | `test/` 269 个文件平铺在根下，而 `lib/` 的分组目录根下一个散文件都不许有 | `test/` | 未开工 |
 | A7 | workbench 一个目录占 lib 的 21%，提示词助手实质是独立功能 | `screens/workbench/` | 未开工 |
 | A8 | 16 个 UI 文件直连 `DatabaseService`，绝大多数只为存侧栏宽度 | `screens/`、`widgets/` | 未开工 |
-
----
-
-## A4 · `BrowserFile` 带展示逻辑，`.color` 是死代码
-
-**现状**：`lib/models/browser_file.dart`
-
-```
-:15  extension FileCategoryExtension on FileCategory
-:16    IconData get icon   → Icons.image / movie / audiotrack / description
-:26    Color   get color   → Colors.blue / red / green / orange / grey
-:52  BrowserFile.icon  => category.icon
-:53  BrowserFile.color => category.color
-```
-
-`.icon` 有人用（`browser_file_list_row.dart:135`、`file_card.dart:169`）。
-**`.color` 全仓零引用**——`file.color`、`category.color` 都搜不到调用方，两层 getter 都是死的。
-
-**为什么要改**：`models/`（第 1 层）不该知道 `Icons` 和 `Colors`；而且这几个裸 Material 颜色
-违反你自己的设计令牌规则（见 `docs/architecture/design-tokens.md`：状态色不跟种子走的名单里
-没有它们，该走 `AppSemanticColors`）。这是全仓仅有的两个导入 `package:flutter` 的模型之一
-（另一个是 `AppImage.imageProvider`，见下）。
-
-**改法**：
-1. 删掉 `FileCategoryExtension.color` 与 `BrowserFile.color`（死代码，零风险）。
-2. `icon` 挪到浏览器的 widget 层——两个调用点同一个文件夹，放
-   `screens/browser/widgets/` 下一个 `file_category_icon.dart` 的自由函数即可。
-3. 顺带判一下 `AppImage.imageProvider`（`models/app_image.dart:22`）：它让 `models/` 依赖
-   `material.dart` 只为一个 `FileImage(File(path))`。调用点不多，值得一并挪走；
-   **如果发现挪动要牵动画廊的缓存策略就停手**，单独记一条，不要在本条里扩大。
-
-**验收**：`browser_file_scanner_test.dart`、`file_browser_group_by_folder_test.dart` 全绿；
-`grep -rn "package:flutter" lib/models` 只剩下（或不剩）你有意保留的那一处。
 
 ---
 

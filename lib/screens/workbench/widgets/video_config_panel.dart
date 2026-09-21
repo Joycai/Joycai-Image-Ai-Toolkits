@@ -22,6 +22,7 @@ import '../../../models/tag.dart';
 import '../../../services/llm/model_capabilities.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/files/file_visuals.dart';
 import '../../../widgets/ui/app_dropdown.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_segmented_control.dart';

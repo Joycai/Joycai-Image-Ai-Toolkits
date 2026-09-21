@@ -15,6 +15,7 @@ import '../../models/tag.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
+import '../../widgets/files/file_visuals.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/ui/app_switch.dart';

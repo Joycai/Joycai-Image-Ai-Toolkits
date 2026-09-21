@@ -120,6 +120,7 @@ strictly **lower** rank — never sideways, never up:
   every routing branch lives in `llm_dispatcher.dart`.
 
 `test/source_layout_test.dart` enforces the import rules (ranks, no cycles, empty roots,
+Flutter-free models — how a model looks is a widget-layer extension, `widgets/files/file_visuals.dart` —
 the design-system boundary, no relative import climbing out of `lib/`) and prints the
 offending file and line. A genuinely new layer or folder means changing that test on purpose.
 
