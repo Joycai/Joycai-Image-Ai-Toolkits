@@ -599,8 +599,22 @@ class DatabaseService {
   }
 
   /// Body of [importPromptData], split out so it can run against any executor.
+  ///
+  /// Every row is filtered to the columns this database has before it is
+  /// inserted. A prompt-library file carries no `schema_version` — unlike a
+  /// full backup, which [_validateBackup] turns away when it is from a later
+  /// build — so a file written after a column was added arrives here with a key
+  /// this build has never heard of. `insert` names its columns, so that one key
+  /// fails the statement, and the failure is inside this transaction: the tags
+  /// and the prompts that came with it go down with it. Dropping the key gets
+  /// the rest of the library in. What the key said is lost, which is the honest
+  /// outcome when there is nowhere here to put it.
   @visibleForTesting
   Future<void> importPromptDataInto(DatabaseExecutor txn, Map<String, dynamic> data, {bool replace = false}) async {
+    final tagColumns = await _columnsOf(txn, 'prompt_tags');
+    final promptColumns = await _columnsOf(txn, 'prompts');
+    final systemPromptColumns = await _columnsOf(txn, 'system_prompts');
+
     if (replace) {
       // `prompts.tag_id` references `prompt_tags`, so prompts must go first.
       await txn.delete('prompts');
@@ -620,7 +634,7 @@ class DatabaseService {
         if (existing.isNotEmpty) {
           tagIdMap[oldId] = existing.first['id'] as int;
         } else {
-          final newId = await txn.insert('prompt_tags', row);
+          final newId = await txn.insert('prompt_tags', _knownColumnsOnly(row, tagColumns));
           tagIdMap[oldId] = newId;
         }
       }
@@ -640,7 +654,7 @@ class DatabaseService {
         // tags, dropping the link when the tag did not come across.
         row['tag_id'] = originalTagId == null ? null : tagIdMap[originalTagId];
 
-        final newPromptId = await txn.insert('prompts', row);
+        final newPromptId = await txn.insert('prompts', _knownColumnsOnly(row, promptColumns));
         if (tags != null) {
           for (var t in tags) {
             final oldTagId = t['id'] as int;
@@ -669,7 +683,8 @@ class DatabaseService {
           await txn.delete('system_prompts', where: 'id = ?', whereArgs: [existingId]);
         }
 
-        final newPromptId = await txn.insert('system_prompts', row);
+        final newPromptId =
+            await txn.insert('system_prompts', _knownColumnsOnly(row, systemPromptColumns));
         if (tags != null) {
           for (var t in tags) {
             final oldTagId = t['id'] as int;
@@ -767,6 +782,21 @@ class DatabaseService {
         }
       }
     }
+  }
+
+  /// The columns [table] actually has in this database.
+  static Future<Set<String>> _columnsOf(DatabaseExecutor txn, String table) async {
+    final info = await txn.rawQuery('PRAGMA table_info($table)');
+    return {for (final column in info) column['name'] as String};
+  }
+
+  /// [row] reduced to the keys [columns] names — see [importPromptDataInto].
+  static Map<String, dynamic> _knownColumnsOnly(
+      Map<String, dynamic> row, Set<String> columns) {
+    return {
+      for (final entry in row.entries)
+        if (columns.contains(entry.key)) entry.key: entry.value,
+    };
   }
 
   /// A `system_prompts` row out of an import file, ready to insert. A null

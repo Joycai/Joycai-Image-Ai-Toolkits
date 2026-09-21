@@ -4,6 +4,8 @@ import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
+import 'package:joycai_image_ai_toolkits/models/prompt.dart';
+import 'package:joycai_image_ai_toolkits/screens/prompts/prompts_io.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -350,6 +352,81 @@ void main() {
       expect((await db.query('prompts')).map((p) => p['title']), ['Imported']);
       expect(await db.query('llm_channels'), isEmpty,
           reason: 'prompt import must not touch channels');
+      await db.close();
+    });
+
+    test('a column this build has never heard of costs only that column', () async {
+      final db = await openTestDb();
+      // The file a later build writes: every row this one knows, plus a column
+      // added after it shipped. One such key used to fail its insert inside the
+      // import's transaction, so the tags and user prompts went down with it.
+      final file = promptsFile();
+      (file['system_prompts'] as List).first['delivery_style'] = 'terse';
+      (file['user_prompts'] as List).first['pinned_at'] = 1758400000;
+      (file['tags'] as List).first['icon'] = 'star';
+
+      await db.transaction((txn) async {
+        await DatabaseService().importPromptDataInto(txn, file);
+      });
+
+      // `onCreate` seeds a tag and the built-in presets, so these are
+      // containment checks: what matters is that the file's rows arrived.
+      expect((await db.query('prompts')).map((p) => p['title']), ['Imported']);
+      expect((await db.query('system_prompts')).map((p) => p['title']),
+          contains('Imported system'));
+      expect((await db.query('prompt_tags')).map((t) => t['name']), contains('Portrait'));
+      expect((await db.query('prompt_tag_refs')).length, 1,
+          reason: 'the links survive too — the row went in whole but for the unknown key');
+
+      final imported = (await db.query('prompts')).single;
+      expect(imported.containsKey('pinned_at'), isFalse,
+          reason: 'only the unknown key was dropped');
+      expect(imported['title'], 'Imported');
+      await db.close();
+    });
+  });
+
+  /// The other half of the same bug: what this build *writes* has to stay
+  /// readable by the build the user is importing into, which has already
+  /// shipped and cannot be taught anything.
+  group('prompt library export', () {
+    SystemPrompt preset(PresetOutputKind kind) => SystemPrompt(
+          title: 'Preset',
+          content: 'sys',
+          type: SystemPrompt.typeRefiner,
+          outputKind: kind,
+        );
+
+    test('a prompt-kind preset leaves output_kind out', () {
+      final row = exportedSystemPrompt(preset(PresetOutputKind.prompt));
+      expect(row.containsKey('output_kind'), isFalse,
+          reason: 'a build older than v47 inserts this row column by column');
+      expect(row['title'], 'Preset');
+    });
+
+    test('an analysis preset still carries it', () {
+      final row = exportedSystemPrompt(preset(PresetOutputKind.analysis));
+      expect(row['output_kind'], 'analysis',
+          reason: 'dropping it would quietly turn the preset into a prompt one');
+    });
+
+    test('what is left out reads back as the default', () {
+      final row = exportedSystemPrompt(preset(PresetOutputKind.prompt));
+      expect(SystemPrompt.fromMap({...row, 'id': 1}).outputKind, PresetOutputKind.prompt);
+    });
+
+    test('a row without output_kind still imports', () async {
+      final db = await openTestDb();
+      await db.transaction((txn) async {
+        await DatabaseService().importPromptDataInto(txn, {
+          'export_type': 'prompts_only',
+          'version': 1,
+          'system_prompts': [exportedSystemPrompt(preset(PresetOutputKind.prompt))],
+        });
+      });
+      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
+      expect(row['output_kind'], 'prompt',
+          reason: "the column's default stands in for the key the file left out");
       await db.close();
     });
   });

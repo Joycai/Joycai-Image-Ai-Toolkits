@@ -20,6 +20,31 @@ import '../../widgets/ui/app_snackbar.dart';
 /// screen widget. They show their own snackbars and dialogs via the given
 /// [context]; callers should reload their lists after [importPrompts] succeeds.
 
+/// A task preset as the file carries it.
+///
+/// `output_kind` is written only when it is not the default. The column arrived
+/// with `A3e` (schema v47), and a build older than that inserts these rows
+/// column by column: a key it has never heard of fails the statement and rolls
+/// the whole import back, so one preset would cost the user their tags and
+/// prompts too. Leaving the default out costs nothing on the way back in —
+/// [PresetOutputKind.parse] reads a missing value as [PresetOutputKind.prompt],
+/// which is what every preset was before the column existed — and keeps a
+/// library without an analysis preset readable by those builds.
+///
+/// A library that *has* one still carries the key. Dropping it would import
+/// cleanly and quietly change what the preset does, which is worse than a file
+/// an old build cannot read. [SystemPrompt.toMap] is left alone: it is also the
+/// database write path, where an update has to be able to set the kind back.
+@visibleForTesting
+Map<String, dynamic> exportedSystemPrompt(SystemPrompt p) {
+  final row = p.toMap();
+  if (p.outputKind == PresetOutputKind.prompt) row.remove('output_kind');
+  return {
+    ...row,
+    'tags': p.tags.map((t) => t.toMap()).toList(),
+  };
+}
+
 /// Export tags + user/system prompts to a user-chosen JSON file.
 Future<void> exportPrompts(
   BuildContext context,
@@ -34,10 +59,7 @@ Future<void> exportPrompts(
           ...p.toMap(),
           'tags': p.tags.map((t) => t.toMap()).toList(),
         }).toList(),
-    'system_prompts': systemPrompts.map((p) => {
-          ...p.toMap(),
-          'tags': p.tags.map((t) => t.toMap()).toList(),
-        }).toList(),
+    'system_prompts': systemPrompts.map(exportedSystemPrompt).toList(),
     'export_type': 'prompts_only',
     'version': 1,
   };
