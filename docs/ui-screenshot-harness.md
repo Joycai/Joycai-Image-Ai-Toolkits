@@ -126,7 +126,8 @@ touch `AppState()`.
 **`flutter_test_config.dart` must stay in `test/screenshots/`.** flutter_tools
 walks up from the test file's own directory and takes the first hit. At `test/`
 it would apply to all the other test files, changing their text metrics — and
-several of them assert on layout and overflow.
+several of them assert on layout and overflow. (`test/` has one of its own, which
+only installs the database rule below; this one shadows it, so it installs it too.)
 
 **Setup order is load-bearing.** `installFixtureEnv` must run before the first
 `AppState()` call: `AppState` is a singleton whose `GalleryState` /
@@ -168,7 +169,10 @@ body, put the action that reaches the database *and the frame it asks for* —
 the pump is what mounts a panel that loads on mount — inside real async:
 `actInRealAsync` here, `inRealAsync` / `inRealAsyncUntil` /
 `pumpWidgetInRealAsync` / `useRealAsyncAppState` in
-`test/support/real_async.dart`. Wait on a state, never on a number of pumps.
+`test/support/real_async.dart`. Wait on a state, or on `databaseIdle`, never on a
+number of pumps. A bare `tester.runAsync` swallows what its body throws — a
+finder that matched nothing becomes a line of log and a wrong picture — so use
+those helpers, or `runAsyncRethrowing`; `mountApp` runs `before` through it.
 
 **An image load must not outlive its test.** The image cache is process-wide,
 and a load started by a pump outside `runAsync` belongs to that test's

@@ -27,15 +27,6 @@ void main() {
     }
   }
 
-  /// Settles across real I/O: the merge review reads its reference count
-  /// from the database before its dialog opens.
-  Future<void> settleIo(WidgetTester tester) async {
-    for (int i = 0; i < 6; i++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-      await tester.pump(const Duration(milliseconds: 150));
-    }
-  }
-
   Future<void> tapText(WidgetTester tester, String text) async {
     final Finder f = find.text(text);
     if (f.evaluate().isEmpty) return;
@@ -136,7 +127,6 @@ void main() {
           if (review.evaluate().isEmpty) return;
           // Real async: the review counts references in the database first.
           await actInRealAsync(tester, () => tester.tap(review.first, warnIfMissed: false));
-          await settleIo(tester);
         },
       );
     });

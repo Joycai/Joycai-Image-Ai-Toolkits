@@ -10,6 +10,7 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:provider/provider.dart';
 
+import '../../support/real_async.dart';
 import 'fixture_env.dart';
 import 'fixture_seed.dart';
 
@@ -145,23 +146,17 @@ Future<void> mountApp(
   // (`setWorkbenchTab`), and a write begun under the fake clock is never
   // finished by it.
   //
-  // [stalled] carries a failed warm-up out by hand. What a `runAsync` body
-  // throws is parked where `takeException` finds it, and that slot holds one:
-  // an overflow from the first pump would already be in it, and the drain at
-  // the bottom of this function prints whatever it finds and moves on.
-  WarmUpStalled? stalled;
-  await tester.runAsync(() async {
+  // `runAsyncRethrowing`, because what a bare `runAsync` body throws — a
+  // stalled warm-up, a [before] whose finder matched nothing — is parked where
+  // `takeException` finds it, and the drain at the bottom of this function
+  // prints whatever it finds and moves on.
+  await runAsyncRethrowing(tester, () async {
     appState.navigateToScreen(screen.index);
     await before?.call(tester);
     await tester.pumpWidget(_appTree(appState));
     await Future<void>.delayed(const Duration(milliseconds: 700));
     await tester.pump();
-    try {
-      await _warmImageCache(tester, env);
-    } on WarmUpStalled catch (e) {
-      stalled = e;
-      return;
-    }
+    await _warmImageCache(tester, env);
     await tester.pump();
     // A second settle, for the loads that only *start* once the first round's
     // results are on screen. The assistant's knowledge tree is the case that
@@ -175,7 +170,6 @@ Future<void> mountApp(
     await Future<void>.delayed(const Duration(milliseconds: 200));
     await tester.pump();
   });
-  if (stalled case final WarmUpStalled e) throw e;
 
   // 800ms covers every AppMotion duration used across the screens (the
   // ladder tops out at AppMotion.panel, 300ms).

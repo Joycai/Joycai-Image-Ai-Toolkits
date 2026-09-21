@@ -23,20 +23,30 @@
 // an action that reaches the database — *and the frame it asks for*, which is
 // what mounts a panel that loads on mount — inside `tester.runAsync`. The
 // helpers for all of it are in `real_async.dart`, beside this file. The check
-// below turns
-// a violation into a failure on every machine, every run, with the stack of
-// the call that made it.
+// below turns a violation into a failure on every machine, every run, with
+// the stack of the call that made it.
+//
+// What it sees is a read of `DatabaseService.database`, which is how every
+// repository and state class here gets to the database. A `Database` fetched
+// out in real async and then *used* under the fake clock goes past it.
 
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 
+/// Every read of `DatabaseService.database` so far, on either clock — what
+/// `databaseIdle` (`real_async.dart`) watches to learn whether a reply went on
+/// to start another query.
+int get databaseAccesses => _databaseAccesses;
+int _databaseAccesses = 0;
+
 /// Call from a `testExecutable`, before `testMain`.
 void installFakeAsyncDatabaseRule() {
   final List<String> underFakeAsync = <String>[];
 
   DatabaseService.debugOnDatabaseAccess = () {
+    _databaseAccesses++;
     if (!_clockIsFake()) return;
     final String frames = StackTrace.current
         .toString()
@@ -48,15 +58,19 @@ void installFakeAsyncDatabaseRule() {
     underFakeAsync.add(frames.isEmpty ? '(no app frame — called straight from the test)' : frames);
   };
 
-  setUp(underFakeAsync.clear);
-  tearDown(() {
+  void check(String when) {
     if (underFakeAsync.isEmpty) return;
     final String report = underFakeAsync.toSet().join('\n  -   ');
     underFakeAsync.clear();
-    fail('A database call started under fake async — see test/support/fake_async_database_rule.dart.\n'
+    fail('A database call started under fake async$when — see test/support/fake_async_database_rule.dart.\n'
         'Make it in real async: AppState() in setUpAll, the action and its frame in tester.runAsync.\n'
         '  -   $report');
-  });
+  }
+
+  // One recorded since the last test's check belongs to that test, not to the
+  // one about to start — said here rather than dropped, or pinned on the next.
+  setUp(() => check(', after the test before this one had been checked'));
+  tearDown(() => check(''));
 }
 
 /// Whether a timer made here would belong to `testWidgets`' fake clock.

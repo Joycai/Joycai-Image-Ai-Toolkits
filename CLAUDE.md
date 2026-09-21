@@ -123,7 +123,8 @@ strictly **lower** rank — never sideways, never up:
 `test/source_layout_test.dart` enforces the import rules (ranks, no cycles, empty roots,
 Flutter-free models — how a model looks is a widget-layer extension, `widgets/files/file_visuals.dart` —
 the design-system boundary, no relative import climbing out of `lib/`, and that `test/`
-mirrors this layout with nothing loose in its own root or in `test/services/`,
+mirrors this layout with nothing loose in its own root — bar this test and
+`flutter_test_config.dart`, which flutter_test only finds there — or in `test/services/`,
 `test/widgets/` or `test/screens/`) and prints the offending file and line. A genuinely
 new layer or folder means changing that test on purpose.
 
@@ -147,11 +148,14 @@ file name. `test/app/` takes whole-app/navigation tests with no single screen;
   queue. Keep new ones that way, and in tests inject `openTestDatabase()`
   (`test/support/in_memory_database.dart`) instead of reaching for the real
   file through `usePrivateDataDir`.
-- **No database call under `testWidgets`' fake clock** — enforced for every test by
-  `test/support/fake_async_database_rule.dart` (it fails the test, with the call's stack).
+- **No database call under `testWidgets`' fake clock** — `test/support/fake_async_database_rule.dart`
+  fails any test that reads `DatabaseService.database` under it, with the call's stack
+  (a `Database` fetched earlier and *used* under it gets past — don't hold one).
   Build `AppState()` in `setUpAll`, and put an action that reaches the database *together
   with the frame it asks for* in real async; the helpers are in `test/support/real_async.dart`.
-  Wait on a state, never on a number of pumps.
+  Wait on a state (`inRealAsyncUntil`) or on the database (`databaseIdle`), never on a
+  number of pumps or a sleep. A bare `tester.runAsync` swallows what its body throws —
+  use `runAsyncRethrowing`.
 - **A column with a writer of its own is never written by a whole-row `update…`.**
   `sort_order` (`update…Order`) and a model's ETA trio (`updateModelEstimation`) are
   stripped in the repository, so an editor saving the row it opened cannot undo a

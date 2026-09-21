@@ -69,10 +69,13 @@ void shootMatrix(FixtureEnv Function() env, List<AppScreen> screens) {
 /// has to go along with the action), then [settle].
 Future<void> actInRealAsync(
   WidgetTester tester,
-  Future<void> Function() action, [
+  Future<void> Function() action, {
   int frames = 6,
-]) async {
-  await inRealAsync(tester, action);
+  Duration wait = const Duration(milliseconds: 300),
+}) async {
+  // [wait] is for the picture: what a shot's action loads is as often a
+  // folder scan or a decode as a query, and nothing here asserts either.
+  await inRealAsync(tester, action, wait: wait);
   await settle(tester, frames);
 }
 

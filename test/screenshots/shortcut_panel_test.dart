@@ -145,7 +145,7 @@ void main() {
       await tester.sendKeyDownEvent(primary);
       await tester.sendKeyEvent(LogicalKeyboardKey.comma);
       await tester.sendKeyUpEvent(primary);
-    }, 12);
+    }, frames: 12);
 
     expect(AppState().activeScreenIndex, AppScreen.settings.index,
         reason: 'the macOS habit, and the same destination as ⌘8');

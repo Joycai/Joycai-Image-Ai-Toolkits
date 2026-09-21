@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'fake_async_database_rule.dart';
+
 // The ways a widget test keeps its database calls out of `testWidgets`' fake
 // clock — the rule `test/support/fake_async_database_rule.dart` enforces, and explains.
 
@@ -23,11 +25,54 @@ void useRealAsyncAppState() {
     await appState.galleryState.settingsLoaded;
     await appState.fileStagingState.ready;
     // The file browser's and the task queue's reads have no future to await.
-    // Out here a late one is only late: it owns no fake timer and finishes on
-    // its own, so this wait is for a quiet start, not for correctness.
-    await Future<void>.delayed(const Duration(milliseconds: 200));
+    await databaseIdle();
   });
 }
+
+/// [WidgetTester.runAsync], except that what [body] throws is thrown here.
+///
+/// `runAsync` itself catches it, hands it to `FlutterError.reportError` and
+/// returns null: the test carries on past a failed tap or a wait that gave up,
+/// and fails — if nothing drains `takeException` first — somewhere else, about
+/// something else.
+Future<void> runAsyncRethrowing(WidgetTester tester, Future<void> Function() body) async {
+  Object? error;
+  StackTrace? stack;
+  await tester.runAsync(() async {
+    try {
+      await body();
+    } catch (e, s) {
+      error = e;
+      stack = s;
+    }
+  });
+  if (error case final Object e) Error.throwWithStackTrace(e, stack!);
+}
+
+/// Completes once the database work already started has finished, along with
+/// whatever further queries its results went on to start. Real async only.
+///
+/// sqflite's ffi worker answers every database's calls in the order they were
+/// sent, so the reply to a query sent now arrives after the replies to all the
+/// earlier ones; and a reply's continuation runs before the next reply is
+/// delivered, so a query *it* starts has been counted by the time this one's
+/// comes back. Round again until a round starts nothing.
+///
+/// It sees the database only. A chain with some other wait in the middle — a
+/// file read, a `compute` — is over as far as this can tell once it gets there.
+Future<void> databaseIdle() async {
+  final Database barrier = await (_barrier ??= databaseFactoryFfi.openDatabase(
+    'file:joycai_test_barrier?mode=memory&cache=shared',
+  ));
+  int seen;
+  do {
+    seen = databaseAccesses;
+    await barrier.rawQuery('SELECT 1');
+    await Future<void>.delayed(Duration.zero);
+  } while (databaseAccesses != seen);
+}
+
+Future<Database>? _barrier;
 
 /// Runs [action] in real async *together with the frame it asks for*, then
 /// leaves the caller to settle animations under the fake clock as usual.
@@ -38,34 +83,36 @@ void useRealAsyncAppState() {
 /// it is the next pump that mounts the new panel and runs the post-frame
 /// callback that starts its query.
 ///
-/// [wait] is for what the loads draw, not for safety: started out here a
-/// query finishes on its own however late it is.
+/// The second frame draws what [databaseIdle] waited for. [wait] is extra, for
+/// loads that are not the database's (a folder scan, an image decode), and for
+/// what they draw, not for safety: started out here, work finishes on its own
+/// however late it is.
 Future<void> inRealAsync(
   WidgetTester tester,
   FutureOr<void> Function() action, {
-  Duration wait = const Duration(milliseconds: 300),
-}) async {
-  await tester.runAsync(() async {
-    await action();
-    await tester.pump();
-    await Future<void>.delayed(wait);
-    await tester.pump();
-  });
-}
+  Duration wait = Duration.zero,
+}) =>
+    runAsyncRethrowing(tester, () async {
+      await action();
+      await tester.pump();
+      await databaseIdle();
+      if (wait > Duration.zero) await Future<void>.delayed(wait);
+      await tester.pump();
+    });
 
 /// [WidgetTester.pumpWidget] for a tree whose `initState`s read the database:
 /// the first frame, and the loads it starts, happen in real async.
 Future<void> pumpWidgetInRealAsync(
   WidgetTester tester,
   Widget widget, {
-  Duration wait = const Duration(milliseconds: 300),
+  Duration wait = Duration.zero,
 }) =>
     inRealAsync(tester, () => tester.pumpWidget(widget), wait: wait);
 
 /// [inRealAsync], but waiting for [until] — what the database work [action]
-/// started ends in — instead of for a length of time. For a chain the test
-/// goes on to assert the outcome of: several round trips, then a dialog, a
-/// removed row, a changed list.
+/// started ends in — instead of for the database to go quiet. For a chain the
+/// test goes on to assert the outcome of: several round trips, then a dialog,
+/// a removed row, a changed list.
 ///
 /// Frames are pumped while waiting, so [until] may be a finder. They carry no
 /// duration, so animations still belong to the fake clock: settle afterwards.
@@ -74,15 +121,16 @@ Future<void> inRealAsyncUntil(
   FutureOr<void> Function() action, {
   required bool Function() until,
   Duration giveUpAfter = const Duration(seconds: 30),
-}) async {
-  await tester.runAsync(() async {
-    await action();
-    final DateTime giveUp = DateTime.now().add(giveUpAfter);
-    while (true) {
-      await tester.pump();
-      if (until()) return;
-      if (DateTime.now().isAfter(giveUp)) fail('the work the action started never reached the state waited for');
-      await Future<void>.delayed(const Duration(milliseconds: 5));
-    }
-  });
-}
+}) =>
+    runAsyncRethrowing(tester, () async {
+      await action();
+      final DateTime giveUp = DateTime.now().add(giveUpAfter);
+      while (true) {
+        await tester.pump();
+        if (until()) return;
+        if (DateTime.now().isAfter(giveUp)) {
+          fail('the work the action started never reached the state waited for');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+    });

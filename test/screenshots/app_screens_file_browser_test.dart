@@ -173,14 +173,11 @@ void main() {
           browser.clearSelection();
         },
         after: (WidgetTester tester) async {
-          await tester.runAsync(() async {
-            await tester.tap(find.text('移动到此'));
-            await tester.pump();
-            await Future<void>.delayed(const Duration(milliseconds: 500));
-          });
-          for (int i = 0; i < 6; i++) {
-            await tester.pump(const Duration(milliseconds: 120));
-          }
+          await actInRealAsync(
+            tester,
+            () => tester.tap(find.text('移动到此')),
+            wait: const Duration(milliseconds: 500),
+          );
         },
       );
     });
@@ -259,12 +256,11 @@ void main() {
         await tester.tap(treeRow('browser').first, buttons: kSecondaryButton);
         await settle(tester);
         // The subfolder listing behind the editor is real dart:io.
-        await tester.runAsync(() async {
-          await tester.tap(menuItem('新建子文件夹'));
-          await tester.pump();
-          await Future<void>.delayed(const Duration(milliseconds: 400));
-        });
-        await settle(tester);
+        await actInRealAsync(
+          tester,
+          () => tester.tap(menuItem('新建子文件夹')),
+          wait: const Duration(milliseconds: 400),
+        );
       },
     );
   });
@@ -278,25 +274,23 @@ void main() {
       suffix: 'folderDelete',
       before: ensureArchive,
       after: (WidgetTester tester) async {
-        await tester.runAsync(() async {
-          await tester.tap(find.descendant(
+        await actInRealAsync(
+          tester,
+          () => tester.tap(find.descendant(
             of: find.byType(DirectoryTreeItem),
             matching: find.byIcon(Icons.chevron_right),
-          ));
-          await tester.pump();
-          await Future<void>.delayed(const Duration(milliseconds: 400));
-        });
-        await settle(tester);
+          )),
+          wait: const Duration(milliseconds: 400),
+        );
         await tester.tap(treeRow('archive').first, buttons: kSecondaryButton);
         await settle(tester);
         // The inventory runs in a compute isolate; the dialog opens first and
         // fills its counts when that lands.
-        await tester.runAsync(() async {
-          await tester.tap(menuItem('删除'));
-          await tester.pump();
-          await Future<void>.delayed(const Duration(milliseconds: 800));
-        });
-        await settle(tester);
+        await actInRealAsync(
+          tester,
+          () => tester.tap(menuItem('删除')),
+          wait: const Duration(milliseconds: 800),
+        );
       },
     );
   });
@@ -330,14 +324,11 @@ void main() {
           // its last-used model out of the database on mount, and that real
           // I/O never completes in the fake-async zone. Without it the shot
           // photographs an empty config column and calls it the design.
-          await tester.runAsync(() async {
-            await tester.tap(find.text('AI 批量重命名').last);
-            await tester.pump();
-            await Future<void>.delayed(const Duration(milliseconds: 600));
-          });
-          for (int i = 0; i < 6; i++) {
-            await tester.pump(const Duration(milliseconds: 120));
-          }
+          await actInRealAsync(
+            tester,
+            () => tester.tap(find.text('AI 批量重命名').last),
+            wait: const Duration(milliseconds: 600),
+          );
         },
       );
     });
@@ -382,12 +373,11 @@ void main() {
           // `runAsync`: the run asks the platform about the trash before it
           // opens anything, and that future never completes in the
           // fake-async zone.
-          await tester.runAsync(() async {
-            await tester.tap(menuItem('删除 3 个文件'));
-            await tester.pump();
-            await Future<void>.delayed(const Duration(milliseconds: 400));
-          });
-          await settle(tester);
+          await actInRealAsync(
+            tester,
+            () => tester.tap(menuItem('删除 3 个文件')),
+            wait: const Duration(milliseconds: 400),
+          );
         },
       );
     });

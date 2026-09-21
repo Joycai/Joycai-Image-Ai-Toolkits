@@ -101,13 +101,15 @@ void main() {
         brightness: Brightness.light,
         suffix: 'sorted',
         after: (WidgetTester tester) async {
+          // No resting button means 'ungrouped' above already left the list
+          // sorted by 类型, which is the picture. Run on its own this picks
+          // the key itself, and that is a write: real async from the opening
+          // tap, as there.
           if (sortButton().evaluate().isEmpty) return;
-          await tester.tap(sortButton());
-          await settle(tester);
+          await actInRealAsync(tester, () => tester.tap(sortButton()));
           final Finder kind = find.text('类型').last;
           if (kind.evaluate().isEmpty) return;
-          await tester.tap(kind, warnIfMissed: false);
-          await settle(tester);
+          await actInRealAsync(tester, () => tester.tap(kind, warnIfMissed: false));
         },
       );
     });
