@@ -1,5 +1,6 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../../../models/task_item.dart';
 import '../database_service.dart';
 import 'cookie_repository.dart';
 
@@ -13,12 +14,21 @@ class TaskRepository {
   /// Stores [task] — never with the cookies a download was queued with
   /// (S3): those are session credentials, and task rows outlive every
   /// retention setting and survive a data reset.
-  Future<void> saveTask(Map<String, dynamic> task) async {
+  ///
+  /// The row is taken synchronously, on purpose — this is not an `async`
+  /// function. A [TaskItem] is mutable and the queue saves without waiting: a
+  /// snapshot taken after the database resolved would store whatever the task
+  /// had become by then, and two saves in flight would both write the later
+  /// state. It also keeps a task that cannot be encoded throwing at the call,
+  /// where it always has, rather than into a future nobody awaits.
+  Future<void> saveTask(TaskItem task) {
+    final row = task.toMap();
+    row['parameters'] = CookieRepository.withoutCookies(row['parameters'] as String);
+    return _insertTask(row);
+  }
+
+  Future<void> _insertTask(Map<String, dynamic> row) async {
     final db = await _db;
-    final params = task['parameters'];
-    final row = params is String
-        ? (Map<String, dynamic>.from(task)..['parameters'] = CookieRepository.withoutCookies(params))
-        : task;
     await db.insert(
       'tasks',
       row,
@@ -49,7 +59,7 @@ class TaskRepository {
   /// the tasks still waiting were the first ones the cap dropped. The
   /// COALESCE covers rows a restored pre-v39 backup lands without the column
   /// filled, the same fallback `TaskItem.fromMap` applies.
-  Future<List<Map<String, dynamic>>> getRecentTasks(int limit) async {
+  Future<List<TaskItem>> getRecentTasks(int limit) async {
     final db = await _db;
     final recent = await db.query(
       'tasks',
@@ -75,7 +85,7 @@ class TaskRepository {
                 as String;
         return stamp(b).compareTo(stamp(a));
       });
-    return merged;
+    return merged.map(TaskItem.fromMap).toList();
   }
 
   /// Tasks whose parameters carry the given assistant session id — the
@@ -91,7 +101,7 @@ class TaskRepository {
   /// long-lived session passed the cap. DESC keeps the newest within the cap;
   /// the reversal restores the ascending order the caller relies on, so later
   /// tasks still win map collisions in `resultVersionsFromTasks`.
-  Future<List<Map<String, dynamic>>> getTasksForAssistantSession(
+  Future<List<TaskItem>> getTasksForAssistantSession(
     String sessionId, {
     int limit = 500,
   }) async {
@@ -103,7 +113,7 @@ class TaskRepository {
       orderBy: 'start_time DESC',
       limit: limit,
     );
-    return rows.reversed.toList();
+    return rows.reversed.map(TaskItem.fromMap).toList();
   }
 
   Future<void> deleteTask(String id) async {

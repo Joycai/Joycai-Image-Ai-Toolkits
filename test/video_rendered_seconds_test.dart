@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
+import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/services/billing/spec_billing.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
@@ -31,7 +30,7 @@ void main() {
   });
 
   group('settleVideoUsage', () {
-    late List<(String, Map<String, dynamic>)> updates;
+    late List<(String, UsageSpecBilling)> updates;
 
     LLMModelConfig config(String billingMode) => LLMModelConfig(
           modelId: 'wan3.0-video',
@@ -48,8 +47,8 @@ void main() {
 
     setUp(() {
       updates = [];
-      LLMService.usageUpdateOverride = (id, values) async {
-        updates.add((id, values));
+      LLMService.usageUpdateOverride = (id, billing) async {
+        updates.add((id, billing));
         return 1;
       };
     });
@@ -67,12 +66,12 @@ void main() {
         renderedSeconds: 10,
         options: const {'resolution': '1080P', 'seconds': -1},
       );
-      final (id, values) = updates.single;
+      final (id, billing) = updates.single;
       expect(id, LLMService.videoUsageRowId('task-1'));
-      expect(values['output_units'], 10);
+      expect(billing.units, 10);
       // The duration-keyed tier matches now that the length is known.
-      expect(values['output_unit_price'], 0.15);
-      expect(jsonDecode(values['output_spec'] as String)['seconds'], 10);
+      expect(billing.unitPrice, 0.15);
+      expect(billing.snapshot!.seconds, 10);
     });
 
     test('other billing modes are left as recorded', () async {

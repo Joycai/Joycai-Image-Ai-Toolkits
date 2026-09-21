@@ -699,7 +699,7 @@ extension TaskExecutors on TaskQueueService {
         'resumed.');
     task.operationName = null;
     task.operationSurface = null;
-    await _db.saveTask(task.toMap());
+    await _db.saveTask(task);
   }
 
   /// Builds the request, submits the job, and persists its id and surface
@@ -779,7 +779,7 @@ extension TaskExecutors on TaskQueueService {
     // channel is re-pointed at another vendor while the job runs.
     task.operationName = ticket.name;
     task.operationSurface = ticket.surfaceId;
-    await _db.saveTask(task.toMap());
+    await _db.saveTask(task);
 
     task.addLog('LRO started: ${ticket.name}');
     return ticket.name;

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 
@@ -33,9 +34,9 @@ void main() {
   });
 
   test('the row still reaches a working sink', () async {
-    final rows = <Map<String, dynamic>>[];
+    final rows = <TokenUsage>[];
     LLMService.usageSinkOverride = (row) async => rows.add(row);
     await LLMService().recordUsageForTest(config(), const {'prompt_tokens': 3});
-    expect(rows.single['input_tokens'], 3);
+    expect(rows.single.inputTokens, 3);
   });
 }

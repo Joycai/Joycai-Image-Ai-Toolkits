@@ -33,7 +33,7 @@ void main() {
         modelDbId: modelDbId,
         parameters: const <String, dynamic>{},
         status: TaskStatus.completed,
-      ).toMap());
+      ));
 
   /// A service that has finished loading [holding]'s row, and runs nothing:
   /// the queue is what is under test, not the executors.

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../../models/spec_rate.dart';
+import '../../models/token_usage.dart';
 import '../llm/output_spec.dart';
 
 /// The `billing_mode` value of a fee group priced by output spec.
@@ -106,9 +107,20 @@ class SpecUsage {
 
   double get cost => units * unitPrice;
 
-  /// The `output_spec` column: the spec plus whether a row priced it, so the
-  /// usage page can count the requests a rate table failed to cover.
-  Map<String, dynamic> toJson() => {...spec.toJson(), 'matched': matched};
+  /// What this leaves on the usage row. The snapshot keeps the spec plus
+  /// whether a row priced it, so the usage page can count the requests a rate
+  /// table failed to cover.
+  UsageSpecBilling toBilling() => UsageSpecBilling(
+        unit: unit,
+        units: units,
+        unitPrice: unitPrice,
+        snapshot: UsageSpecSnapshot(
+          size: spec.size,
+          quality: spec.quality,
+          seconds: spec.seconds,
+          matched: matched,
+        ),
+      );
 
   /// Prices one request against a group's table. [imageCount] is what the
   /// response actually carried; seconds come from the spec (the request),

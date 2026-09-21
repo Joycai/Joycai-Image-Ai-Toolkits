@@ -405,9 +405,8 @@ class WorkbenchUIState extends ChangeNotifier {
     final sessionId = optimizerSession.id;
     Map<String, int> versions;
     try {
-      final rows = await _tasks.getTasksForAssistantSession(sessionId);
       versions = PromptProvenance.resultVersionsFromTasks(
-        rows.map(TaskItem.fromMap),
+        await _tasks.getTasksForAssistantSession(sessionId),
         sessionId,
       );
     } catch (_) {
@@ -433,10 +432,9 @@ class WorkbenchUIState extends ChangeNotifier {
     if (!resultVersionByPath.containsKey(path)) return null;
     final sessionId = optimizerSession.id;
     try {
-      final rows = await _tasks.getTasksForAssistantSession(sessionId);
+      final tasks = await _tasks.getTasksForAssistantSession(sessionId);
       TaskItem? found;
-      for (final row in rows) {
-        final task = TaskItem.fromMap(row);
+      for (final task in tasks) {
         if (task.parameters[PromptProvenance.sessionParamKey] != sessionId) continue;
         // Later rows win, as they do in resultVersionsFromTasks.
         if (task.resultPaths.contains(path)) found = task;

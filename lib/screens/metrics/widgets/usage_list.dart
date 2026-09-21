@@ -5,12 +5,13 @@ import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/spec_rate.dart';
+import '../../../models/token_usage.dart';
 import '../../../services/db/database_service.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
 import 'usage_chrome.dart';
 import 'usage_palette.dart';
-import 'usage_stats.dart';
 
 /// Which of the three row shapes the table draws (`D2` 1a / 1b / 1c).
 enum _TableForm { phone, tablet, desktop }
@@ -24,7 +25,7 @@ enum _TableForm { phone, tablet, desktop }
 /// four facts in fixed columns can be compared down the page. A row expands in
 /// place to its exact counts and the action that clears its model's data.
 class UsageList extends StatelessWidget {
-  final List<Map<String, dynamic>> usageData;
+  final List<TokenUsage> usageData;
   final VoidCallback onRefresh;
   final bool hasMore;
   final bool isLoadingMore;
@@ -95,13 +96,13 @@ class UsageList extends StatelessWidget {
           ),
           for (final row in days[i].rows)
             _UsageRow(
-              // The map itself: a page appended by Load More keeps every
+              // The record itself: a page appended by Load More keeps every
               // expanded row expanded, and a reset starts them all closed.
               key: ObjectKey(row),
               row: row,
               form: form,
-              kind: modelTags[row['model_pk']],
-              onDelete: () => _confirmDeleteModelData(context, row['model_id'] as String),
+              kind: modelTags[row.modelDbId],
+              onDelete: () => _confirmDeleteModelData(context, row.modelId),
             ),
         ],
         if (hasMore) _buildLoadMore(context, l10n),
@@ -181,13 +182,13 @@ class UsageList extends StatelessWidget {
     AppLocalizations l10n,
     _TableForm form, {
     required DateTime day,
-    required List<Map<String, dynamic>> rows,
+    required List<TokenUsage> rows,
     required bool partial,
     required bool first,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final total = rows.fold<double>(0, (sum, row) => sum + calculateRowCost(row));
+    final total = rows.fold<double>(0, (sum, row) => sum + row.cost);
     final name = _dayName(l10n, day);
     final readout = textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant);
 
@@ -284,13 +285,11 @@ class UsageList extends StatelessWidget {
 
   /// Records bucketed by calendar day, newest first — the order the query
   /// already returns them in, so a day never appears twice.
-  List<({DateTime day, List<Map<String, dynamic>> rows})> _groupByDay(
-    List<Map<String, dynamic>> rows,
-  ) {
-    final days = <({DateTime day, List<Map<String, dynamic>> rows})>[];
+  List<({DateTime day, List<TokenUsage> rows})> _groupByDay(List<TokenUsage> rows) {
+    final days = <({DateTime day, List<TokenUsage> rows})>[];
 
     for (final row in rows) {
-      final time = DateTime.parse(row['timestamp'] as String);
+      final time = row.timestamp;
       final day = DateTime(time.year, time.month, time.day);
 
       if (days.isEmpty || days.last.day != day) {
@@ -348,7 +347,7 @@ class UsageList extends StatelessWidget {
 /// One record: a collapsed row, and in place under it once expanded, the exact
 /// counts and the action that clears the model's data.
 class _UsageRow extends StatefulWidget {
-  final Map<String, dynamic> row;
+  final TokenUsage row;
   final _TableForm form;
   final String? kind;
   final VoidCallback onDelete;
@@ -373,12 +372,12 @@ class _UsageRow extends StatefulWidget {
 class _UsageRowState extends State<_UsageRow> {
   bool _expanded = false;
 
-  Map<String, dynamic> get _row => widget.row;
-  bool get _isTokenRow => (_row['billing_mode'] as String? ?? 'token') == 'token';
-  bool get _isSpecRow => (_row['billing_mode'] as String? ?? 'token') == 'spec';
+  TokenUsage get _row => widget.row;
+  bool get _isTokenRow => _row.billing == UsageBilling.token;
+  bool get _isSpecRow => _row.billing == UsageBilling.spec;
 
   /// The 「规格」 cell's text: null for a row of another mode.
-  String? get _specLabel => usageRowSpecLabel(_row);
+  String? get _specLabel => _row.specLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -575,7 +574,7 @@ class _UsageRowState extends State<_UsageRow> {
   Widget _modelName(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final modelId = _row['model_id'] as String;
+    final modelId = _row.modelId;
     final match = RegExp(r'^\[([^\]]+)\]\s*').firstMatch(modelId);
     final name = match == null ? modelId : modelId.substring(match.end);
 
@@ -624,31 +623,31 @@ class _UsageRowState extends State<_UsageRow> {
 
     if (_isSpecRow) {
       // What the row counted, in its unit: 「2 张」 / 「8 秒」 / 「1 条」.
-      final units = NumberFormat.decimalPattern().format(((_row['output_units'] as num?) ?? 0).round());
-      final text = switch (_row['output_unit'] as String?) {
-        'second' => l10n.usageUnitsSecond(units),
-        'clip' => l10n.usageUnitsClip(units),
-        _ => l10n.usageUnitsImage(units),
+      final units = NumberFormat.decimalPattern().format((_row.spec?.units ?? 0).round());
+      final text = switch (_row.spec?.unit) {
+        OutputUnit.second => l10n.usageUnitsSecond(units),
+        OutputUnit.clip => l10n.usageUnitsClip(units),
+        OutputUnit.image || null => l10n.usageUnitsImage(units),
       };
       return Text(text, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
     }
 
     if (!_isTokenRow) {
       return Text(
-        l10n.usageItemCount(_row['request_count'] as int? ?? 1),
+        l10n.usageItemCount(_row.requestCount),
         style: style,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       );
     }
 
-    final cacheTokens = _row['cache_tokens'] as int? ?? 0;
+    final cacheTokens = _row.cacheTokens;
 
     return Tooltip(
       message: [
-        '${l10n.inputTokens}: ${_exact(_row['input_tokens'])}',
+        '${l10n.inputTokens}: ${_exact(_row.inputTokens)}',
         if (cacheTokens > 0) '${l10n.cachedInputTokens}: ${_exact(cacheTokens)}',
-        '${l10n.outputTokens}: ${_exact(_row['output_tokens'])}',
+        '${l10n.outputTokens}: ${_exact(_row.outputTokens)}',
       ].join('\n'),
       // The column holds a user-chosen font at whatever width the window
       // leaves; scaling the chips down beats letting them overflow.
@@ -658,7 +657,7 @@ class _UsageRowState extends State<_UsageRow> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _tokenChip(context, UsageToken.input, _row['input_tokens'], style),
+            _tokenChip(context, UsageToken.input, _row.inputTokens, style),
             // Only rows that actually hit the cache carry the extra chip,
             // keeping the common no-cache row as compact as before.
             if (cacheTokens > 0) ...[
@@ -666,20 +665,20 @@ class _UsageRowState extends State<_UsageRow> {
               _tokenChip(context, UsageToken.cache, cacheTokens, style),
             ],
             const SizedBox(width: AppSpace.s10),
-            _tokenChip(context, UsageToken.output, _row['output_tokens'], style),
+            _tokenChip(context, UsageToken.output, _row.outputTokens, style),
           ],
         ),
       ),
     );
   }
 
-  Widget _tokenChip(BuildContext context, UsageToken token, Object? tokens, TextStyle? style) {
+  Widget _tokenChip(BuildContext context, UsageToken token, int tokens, TextStyle? style) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         UsageDot(token.colorOf(context), size: 6),
         const SizedBox(width: AppSpace.s4),
-        Text(_abbreviate((tokens as int?) ?? 0), style: style?.mono),
+        Text(_abbreviate(tokens), style: style?.mono),
       ],
     );
   }
@@ -709,7 +708,7 @@ class _UsageRowState extends State<_UsageRow> {
 
   Widget _time(BuildContext context) {
     return Text(
-      DateFormat('HH:mm').format(DateTime.parse(_row['timestamp'] as String)),
+      DateFormat('HH:mm').format(_row.timestamp),
       maxLines: 1,
       style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -721,7 +720,7 @@ class _UsageRowState extends State<_UsageRow> {
   /// full contrast a column of `$0.0000` drowns out the ones that cost money.
   Widget _cost(BuildContext context, TextStyle? base) {
     final colorScheme = Theme.of(context).colorScheme;
-    final cost = calculateRowCost(_row);
+    final cost = _row.cost;
 
     return Text(
       '\$${cost.toStringAsFixed(4)}',
@@ -757,17 +756,17 @@ class _UsageRowState extends State<_UsageRow> {
     final valueStyle = textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurface);
 
     final pairs = <(String, String)>[
-      (l10n.requests, _exact(_row['request_count'] ?? 1)),
+      (l10n.requests, _exact(_row.requestCount)),
       if (_isTokenRow) ...[
-        (l10n.inputTokens, _exact(_row['input_tokens'])),
-        (l10n.cachedInputTokens, _exact(_row['cache_tokens'])),
-        (l10n.outputTokens, _exact(_row['output_tokens'])),
+        (l10n.inputTokens, _exact(_row.inputTokens)),
+        (l10n.cachedInputTokens, _exact(_row.cacheTokens)),
+        (l10n.outputTokens, _exact(_row.outputTokens)),
       ],
       if (_isSpecRow) ...[
         (l10n.usageSpecColumn, _specLabel?.isNotEmpty == true ? _specLabel! : '—'),
         (
           l10n.usageUnitPrice,
-          '\$${((_row['output_unit_price'] as num?) ?? 0).toDouble().toStringAsFixed(4)}',
+          '\$${(_row.spec?.unitPrice ?? 0).toStringAsFixed(4)}',
         ),
       ],
     ];
@@ -855,5 +854,5 @@ class _UsageRowState extends State<_UsageRow> {
     return '${(value / 1000000).toStringAsFixed(2)}M';
   }
 
-  String _exact(Object? value) => NumberFormat.decimalPattern().format((value as int?) ?? 0);
+  String _exact(int value) => NumberFormat.decimalPattern().format(value);
 }

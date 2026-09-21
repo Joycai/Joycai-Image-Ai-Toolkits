@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
+import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/services/billing/spec_billing.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
@@ -163,7 +166,12 @@ void main() {
         spec: const OutputSpec(size: '4K'),
         imageCount: 1,
       );
-      expect(u.toJson(), {'size': '4K', 'matched': false});
+      final snapshot = u.toBilling().snapshot!;
+      expect(snapshot.size, '4K');
+      expect(snapshot.matched, isFalse);
+      // What lands in the `output_spec` column, and what reads back out of it.
+      expect(jsonDecode(snapshot.encode()), {'size': '4K', 'matched': false});
+      expect(UsageSpecSnapshot.tryDecode(snapshot.encode())!.matched, isFalse);
     });
   });
 

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/task_item.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/db/repositories/cookie_repository.dart';
 import 'package:joycai_image_ai_toolkits/services/db/repositories/task_repository.dart';
@@ -77,14 +78,14 @@ void main() {
   });
 
   group('task rows', () {
-    Map<String, dynamic> row(String id, Map<String, dynamic> params) => {
-          'id': id,
-          'type': 'imageDownload',
-          'status': 'pending',
-          'image_path': '[]',
-          'parameters': jsonEncode(params),
-          'created_at': now.toIso8601String(),
-        };
+    TaskItem download(String id, Map<String, dynamic> params) => TaskItem(
+          id: id,
+          type: TaskType.imageDownload,
+          imagePaths: const [],
+          modelId: 'm',
+          parameters: params,
+          createdAt: now,
+        );
 
     Future<Map<String, dynamic>> storedParams(String id) async {
       final rows = await (await db.database)
@@ -93,7 +94,7 @@ void main() {
     }
 
     test('a saved download keeps everything but its cookies', () async {
-      await tasks.saveTask(row('t1', {'url': 'https://a.example/p', 'cookies': 'sid=1', 'prefix': 'x'}));
+      await tasks.saveTask(download('t1', {'url': 'https://a.example/p', 'cookies': 'sid=1', 'prefix': 'x'}));
       final params = await storedParams('t1');
       expect(params.containsKey('cookies'), isFalse);
       expect(params['url'], 'https://a.example/p');
@@ -102,14 +103,14 @@ void main() {
 
     test('rows written before the rule are scrubbed', () async {
       await (await db.database).insert(
-          'tasks', row('t2', {'url': 'u', 'cookies': 'sid=2'}),
+          'tasks', download('t2', {'url': 'u', 'cookies': 'sid=2'}).toMap(),
           conflictAlgorithm: ConflictAlgorithm.replace);
       await tasks.scrubStoredCookies();
       expect((await storedParams('t2')).containsKey('cookies'), isFalse);
     });
 
     test('a download queued without cookies keeps saying so', () async {
-      await tasks.saveTask(row('t3', {'url': 'https://a.example/p', 'cookies': ''}));
+      await tasks.saveTask(download('t3', {'url': 'https://a.example/p', 'cookies': ''}));
       expect((await storedParams('t3'))['cookies'], '',
           reason: 'a missing key would make a restored task borrow the saved cookies');
       await tasks.scrubStoredCookies();

@@ -26,7 +26,7 @@ void main() {
       );
 
   Future<Set<String>> storedIds() async =>
-      (await DatabaseService().getRecentTasks(50)).map((row) => row['id'] as String).toSet();
+      (await DatabaseService().getRecentTasks(50)).map((task) => task.id).toSet();
 
   /// A service whose queue holds [tasks], loaded the way the app loads them:
   /// rows first, then the service reads them back on construction.
@@ -35,7 +35,7 @@ void main() {
   /// statuses under test are set on the loaded items afterwards.
   Future<TaskQueueService> serviceWith(Map<String, TaskStatus> tasks) async {
     for (final id in tasks.keys) {
-      await DatabaseService().saveTask(task(id, TaskStatus.completed).toMap());
+      await DatabaseService().saveTask(task(id, TaskStatus.completed));
     }
     final service = TaskQueueService();
     for (var i = 0; i < 100 && !tasks.keys.every((id) => service.queue.any((t) => t.id == id)); i++) {

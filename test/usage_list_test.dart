@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
+import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_list.dart';
 
 /// Renders the usage record table.
@@ -11,74 +13,73 @@ import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_list.dart
 void main() {
   /// A token-billed row. Prices are per million, so the defaults below cost
   /// 1000 * 3.0/1e6 + 500 * 12.0/1e6 = $0.009.
-  Map<String, dynamic> tokenRow({
-    required String timestamp,
+  TokenUsage tokenRow({
+    required DateTime timestamp,
     String modelId = 'claude-sonnet-5',
     int input = 1000,
     int cache = 0,
     int output = 500,
   }) =>
-      {
-        'model_id': modelId,
-        'timestamp': timestamp,
-        'billing_mode': 'token',
-        'input_tokens': input,
-        'cache_tokens': cache,
-        'output_tokens': output,
-        'input_price': 3.0,
-        'cache_price': 0.3,
-        'output_price': 12.0,
-        'request_count': 1,
-      };
+      TokenUsage(
+        modelId: modelId,
+        timestamp: timestamp,
+        inputTokens: input,
+        cacheTokens: cache,
+        outputTokens: output,
+        inputPrice: 3.0,
+        cachePrice: 0.3,
+        outputPrice: 12.0,
+      );
 
-  Map<String, dynamic> requestRow({
-    required String timestamp,
+  TokenUsage requestRow({
+    required DateTime timestamp,
     String modelId = 'gpt-image-2',
     int count = 2,
     double price = 0.04,
   }) =>
-      {
-        'model_id': modelId,
-        'timestamp': timestamp,
-        'billing_mode': 'request',
-        'request_count': count,
-        'request_price': price,
-      };
+      TokenUsage(
+        modelId: modelId,
+        timestamp: timestamp,
+        billingMode: 'request',
+        requestCount: count,
+        requestPrice: price,
+      );
 
   /// A spec-billed video row: 8 seconds of 1080p at $0.30 a second.
-  Map<String, dynamic> specRow({
-    required String timestamp,
+  TokenUsage specRow({
+    required DateTime timestamp,
     String modelId = 'veo-3.0-generate-preview',
-    String spec = '{"size":"1080p","quality":"high","seconds":8,"matched":true}',
+    UsageSpecSnapshot spec = const UsageSpecSnapshot(size: '1080p', quality: 'high', seconds: 8),
     double units = 8,
     double price = 0.3,
   }) =>
-      {
-        'model_id': modelId,
-        'timestamp': timestamp,
-        'billing_mode': 'spec',
-        'request_count': 1,
-        'output_units': units,
-        'output_unit_price': price,
-        'output_unit': 'second',
-        'output_spec': spec,
-      };
+      TokenUsage(
+        modelId: modelId,
+        timestamp: timestamp,
+        billingMode: 'spec',
+        spec: UsageSpecBilling(
+          unit: OutputUnit.second,
+          units: units,
+          unitPrice: price,
+          snapshot: spec,
+        ),
+      );
 
   /// Today's date at [hour], so "Today" is a fact about the test run rather
   /// than a date baked into it.
-  String todayAt(int hour, {int minute = 0}) {
+  DateTime todayAt(int hour, {int minute = 0}) {
     final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day, hour, minute).toIso8601String();
+    return DateTime(now.year, now.month, now.day, hour, minute);
   }
 
-  String daysAgoAt(int days, int hour) {
+  DateTime daysAgoAt(int days, int hour) {
     final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day - days, hour).toIso8601String();
+    return DateTime(now.year, now.month, now.day - days, hour);
   }
 
   Future<void> pumpList(
     WidgetTester tester,
-    List<Map<String, dynamic>> rows,
+    List<TokenUsage> rows,
     Size size, {
     bool hasMore = false,
   }) async {
@@ -232,7 +233,7 @@ void main() {
       [
         specRow(
           timestamp: todayAt(14),
-          spec: '{"size":"1440p","seconds":8,"matched":false}',
+          spec: const UsageSpecSnapshot(size: '1440p', seconds: 8, matched: false),
           price: 0,
         ),
       ],

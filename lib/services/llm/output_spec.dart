@@ -85,12 +85,6 @@ class OutputSpec {
 
   bool get isEmpty => size == null && quality == null && seconds == null;
 
-  Map<String, dynamic> toJson() => {
-        if (size != null) 'size': size,
-        if (quality != null) 'quality': quality,
-        if (seconds != null) 'seconds': seconds,
-      };
-
   /// Compact human label: `1080p · high · 8s`, or empty for no spec.
   String get label => [
         ?size,
