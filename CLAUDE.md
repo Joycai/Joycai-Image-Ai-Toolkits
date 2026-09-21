@@ -135,6 +135,12 @@ offending file and line. A genuinely new layer or folder means changing that tes
   queue. Keep new ones that way, and in tests inject `openTestDatabase()`
   (`test/support/in_memory_database.dart`) instead of reaching for the real
   file through `usePrivateDataDir`.
+- **A column with a writer of its own is never written by a whole-row `update…`.**
+  `sort_order` (`update…Order`) and a model's ETA trio (`updateModelEstimation`) are
+  stripped in the repository, so an editor saving the row it opened cannot undo a
+  reorder or an estimate that landed since. A column with no such writer
+  (`prompt_tags.is_system`) is the editor's to carry over from that row.
+  `test/edit_keeps_unedited_columns_test.dart` pins both halves.
 - All user data goes through `DatabaseService` and the repositories. Never persist a column
   derivable from another table (the deleted `llm_models.type` — see the v32 migration).
   Every schema change needs an `onUpgrade` step **and** the matching `onCreate` call.

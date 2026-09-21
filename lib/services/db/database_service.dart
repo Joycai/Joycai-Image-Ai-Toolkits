@@ -297,6 +297,8 @@ class DatabaseService {
 
   // Prompts Methods
   Future<int> addPrompt(Prompt prompt, {List<int>? tagIds}) => _prompts.addPrompt(prompt, tagIds: tagIds);
+  /// Writes [prompt] over row [id] — except its place in the list, which
+  /// belongs to [updatePromptOrder].
   Future<void> updatePrompt(int id, Prompt prompt, {List<int>? tagIds}) => _prompts.updatePrompt(id, prompt, tagIds: tagIds);
   Future<void> deletePrompt(int id) => _prompts.deletePrompt(id);     
   Future<void> deletePrompts(List<int> ids) => _prompts.deletePrompts(ids);
@@ -388,6 +390,8 @@ class DatabaseService {
 
   // Prompt Tags Methods
   Future<int> addPromptTag(PromptTag tag) => _prompts.addPromptTag(tag);
+  /// Writes [tag] over row [id] — except its place in the list, which
+  /// belongs to [updateTagOrder].
   Future<void> updatePromptTag(int id, PromptTag tag) => _prompts.updatePromptTag(id, tag);
   Future<void> deletePromptTag(int id) => _prompts.deletePromptTag(id);
   Future<List<PromptTag>> getPromptTags() => _prompts.getPromptTags();
@@ -395,6 +399,8 @@ class DatabaseService {
 
   // System Prompts Methods
   Future<int> addSystemPrompt(SystemPrompt prompt, {List<int>? tagIds}) => _prompts.addSystemPrompt(prompt, tagIds: tagIds);
+  /// Writes [prompt] over row [id] — except its place in the list, which
+  /// belongs to [updateSystemPromptOrder].
   Future<void> updateSystemPrompt(int id, SystemPrompt prompt, {List<int>? tagIds}) => _prompts.updateSystemPrompt(id, prompt, tagIds: tagIds);
   Future<void> deleteSystemPrompt(int id) => _prompts.deleteSystemPrompt(id);
   Future<void> deleteSystemPrompts(List<int> ids) => _prompts.deleteSystemPrompts(ids);

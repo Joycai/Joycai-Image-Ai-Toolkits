@@ -141,6 +141,7 @@ Future<bool> showPromptEditDialog(
                 title: titleCtrl.text,
                 content: contentCtrl.text,
                 isMarkdown: isMarkdown,
+                // Read by the add path only: an update never writes the position.
                 sortOrder: prompt?.sortOrder ?? (userPrompts.isEmpty ? 0 : userPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
               );
               if (prompt == null) {
@@ -281,6 +282,7 @@ Future<bool> showSystemPromptEditDialog(
                   // The model drops it for a type that has none.
                   outputKind: outputKind,
                   isMarkdown: isMarkdown,
+                  // Read by the add path only: an update never writes the position.
                   sortOrder: prompt?.sortOrder ?? (systemPrompts.isEmpty ? 0 : systemPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
                 );
                 if (prompt == null) {
@@ -362,6 +364,7 @@ Future<bool> showTagEditDialog(
                   // Not on the form; without it a rename made a built-in
                   // category an ordinary, deletable one.
                   isSystem: tag?.isSystem ?? false,
+                  // Read by the add path only: an update never writes the position.
                   sortOrder: tag?.sortOrder ?? (tags.isEmpty ? 0 : tags.map((t) => t.sortOrder).reduce(math.max) + 1),
                 );
                 if (tag == null) {
