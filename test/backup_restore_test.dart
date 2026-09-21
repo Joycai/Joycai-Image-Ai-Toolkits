@@ -396,13 +396,19 @@ void main() {
   /// readable by the build the user is importing into, which has already
   /// shipped and cannot be taught anything.
   group('prompt library export', () {
-    final portrait = PromptTag(id: 41, name: 'Portrait', color: 100);
+    // Every field carries a value the column's own default would not produce,
+    // so a row that loses one is visible both in the map and after an import.
+    final portrait = PromptTag(id: 41, name: 'Portrait', color: 100, isSystem: true, sortOrder: 3);
+
+    /// A tag as an export file carries it.
+    final tagRow = {'name': 'Portrait', 'color': 100, 'is_system': 1, 'sort_order': 3, 'id': 41};
 
     SystemPrompt preset(PresetOutputKind kind) => SystemPrompt(
           title: 'Preset',
           content: 'sys',
           type: SystemPrompt.typeRefiner,
           outputKind: kind,
+          sortOrder: 9,
           tags: [portrait],
         );
 
@@ -455,22 +461,77 @@ void main() {
       // reason there are no separate rows to get wrong is structural, not
       // tested. That structure is the point: when `toExportMap` arrived, the
       // two writers each built their own rows and only one was taught about it.
+      //
+      // Whole rows rather than a key or two: merging two hand-written row
+      // builders into one is exactly where a field goes missing, and a missing
+      // field is silent. `prompts.is_markdown` is `INTEGER DEFAULT 0` while the
+      // model's default is true, so a row that stops carrying the key imports
+      // as not-markdown and the user's prompts come back as plain text; a
+      // dropped `sort_order` collapses the library's order to 0. Spelling the
+      // rows out means a new column has to be added here too — which is the
+      // moment to ask whether an older build can still read it, the question
+      // this whole group exists for.
       final data = promptLibraryExport(
         tags: [portrait],
-        userPrompts: [Prompt(id: 7, title: 'Mine', content: 'hello', tags: [portrait])],
+        userPrompts: [
+          Prompt(id: 7, title: 'Mine', content: 'hello', sortOrder: 5, tags: [portrait]),
+        ],
         systemPrompts: [preset(PresetOutputKind.prompt), preset(PresetOutputKind.analysis)],
       );
 
-      expect((data['tags'] as List).single['name'], 'Portrait');
+      expect((data['tags'] as List).single, tagRow);
 
-      final user = (data['user_prompts'] as List).single;
-      expect(user['content'], 'hello');
-      expect((user['tags'] as List).single['name'], 'Portrait');
+      expect((data['user_prompts'] as List).single, {
+        'title': 'Mine',
+        'content': 'hello',
+        'sort_order': 5,
+        'is_markdown': 1,
+        'id': 7,
+        'tags': [tagRow],
+      });
 
       final presets = (data['system_prompts'] as List).cast<Map<String, dynamic>>();
-      expect(presets.first.containsKey('output_kind'), isFalse);
-      expect(presets.last['output_kind'], 'analysis');
-      expect((presets.first['tags'] as List).single['name'], 'Portrait');
+      final presetRow = {
+        'title': 'Preset',
+        'content': 'sys',
+        'type': SystemPrompt.typeRefiner,
+        'is_markdown': 1,
+        'sort_order': 9,
+        'id': null,
+        'tags': [tagRow],
+      };
+      expect(presets.first, presetRow,
+          reason: 'the default kind is the one key that is left out');
+      expect(presets.last, {...presetRow, 'output_kind': 'analysis'});
+    });
+
+    test('a prompt keeps its rendering and its place through a round trip', () async {
+      // The same fields once more, this time through the database: the two
+      // that would come back wrong rather than missing. `is_markdown` defaults
+      // to 0 in the column and to true in the model, and `sort_order` defaults
+      // to 0, so an export that drops either one imports without complaint and
+      // the user finds plain text in the wrong order.
+      final db = await openTestDb();
+      final file = promptLibraryExport(
+        tags: [portrait],
+        userPrompts: [
+          Prompt(id: 7, title: 'Mine', content: 'hello', sortOrder: 5, tags: [portrait]),
+        ],
+        systemPrompts: const [],
+      );
+
+      await db.transaction((txn) async {
+        await DatabaseService().importPromptDataInto(txn, file);
+      });
+
+      final row = (await db.query('prompts', where: 'title = ?', whereArgs: ['Mine'])).single;
+      expect(Prompt.fromMap(row).isMarkdown, isTrue,
+          reason: 'the column defaults to 0, so a dropped key reads back as plain text');
+      expect(row['sort_order'], 5);
+
+      final tag = (await db.query('prompt_tags', where: 'name = ?', whereArgs: ['Portrait'])).single;
+      expect(tag['color'], 100);
+      await db.close();
     });
 
     test('an analysis preset keeps its kind through export and import', () async {
