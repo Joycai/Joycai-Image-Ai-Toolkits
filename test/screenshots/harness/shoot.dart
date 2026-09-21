@@ -140,10 +140,11 @@ Future<void> mountApp(
 
   // Real async: the screens' initState sqflite queries and the compute()
   // isolates behind the gallery/browser scans only make progress out here.
-  // Carried out by hand. What a `runAsync` body throws is parked where
-  // `takeException` finds it, and that slot holds one: an overflow from the
-  // first pump would already be in it, and the drain at the bottom of this
-  // function prints whatever it finds and moves on.
+  //
+  // [stalled] carries a failed warm-up out by hand. What a `runAsync` body
+  // throws is parked where `takeException` finds it, and that slot holds one:
+  // an overflow from the first pump would already be in it, and the drain at
+  // the bottom of this function prints whatever it finds and moves on.
   WarmUpStalled? stalled;
   await tester.runAsync(() async {
     await tester.pumpWidget(_appTree(appState));
