@@ -221,6 +221,103 @@ class AppType {
   static const double displayHeight = 1.1;
 }
 
+/// Rendered markdown's two densities (`A1e`).
+///
+/// Heading sizes are **deltas on the caller's body size**, not sizes: the five
+/// places that render markdown set their body at 14, 13 and 12, and a heading
+/// has to stay a heading in each. Lists are indexed H1, H2, H3, H4–H6.
+///
+/// The hierarchy is carried by the *asymmetry* of [headingAbove] and
+/// [headingBelow] first — a heading sits far from what came before and close
+/// to the text it owns — and by size only second.
+class AppMarkdownMetrics {
+  const AppMarkdownMetrics._({
+    required this.headingDelta,
+    required this.headingAbove,
+    required this.headingBelow,
+    required this.blockGap,
+    required this.itemGap,
+    required this.ruleGap,
+    required this.headingMarks,
+    required this.quotePadding,
+    required this.codePadding,
+    required this.cellPadding,
+    required this.copiesCode,
+  });
+
+  final List<double> headingDelta;
+  final List<double> headingAbove;
+  final List<double> headingBelow;
+
+  /// Between two blocks that are not a heading: paragraphs, a list, a quote.
+  final double blockGap;
+
+  /// Between the items of one list. Smaller than [blockGap]: a list is one
+  /// group, not a run of paragraphs.
+  final double itemGap;
+
+  /// Above and below a horizontal rule.
+  final double ruleGap;
+
+  /// Whether H1 draws its hairline and H2 its accent bar. Off in [compact]:
+  /// in a card's worth of space the marks outnumber the text.
+  final bool headingMarks;
+
+  final EdgeInsets quotePadding;
+  final EdgeInsets codePadding;
+  final EdgeInsets cellPadding;
+
+  /// Whether a code block offers its copy button.
+  final bool copiesCode;
+
+  /// The width of the bullet slot, and of one level of nesting.
+  static const double listIndent = 16;
+
+  /// The least an ordered list's number slot is: `9.` and `10.` both fit, so
+  /// the text column does not step sideways between them.
+  static const double numberSlot = 22;
+
+  /// The read-only task box.
+  static const double taskBox = 14;
+
+  /// H2's accent bar.
+  static const double headingBarWidth = 3;
+  static const double headingBarGap = 9;
+
+  /// Every heading's line height.
+  static const double headingHeight = 1.3;
+
+  /// Editor previews and the assistant's replies.
+  static const AppMarkdownMetrics prose = AppMarkdownMetrics._(
+    headingDelta: [6, 3, 1, -2],
+    headingAbove: [24, 22, 16, 14],
+    headingBelow: [10, 8, 6, 4],
+    blockGap: 10,
+    itemGap: 4,
+    ruleGap: 16,
+    headingMarks: true,
+    quotePadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    codePadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    cellPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+    copiesCode: true,
+  );
+
+  /// Prompt cards.
+  static const AppMarkdownMetrics compact = AppMarkdownMetrics._(
+    headingDelta: [3, 1, 0, -1],
+    headingAbove: [12, 12, 10, 8],
+    headingBelow: [6, 4, 4, 2],
+    blockGap: 6,
+    itemGap: 2,
+    ruleGap: 10,
+    headingMarks: false,
+    quotePadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    codePadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    cellPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    copiesCode: false,
+  );
+}
+
 /// The accent, in the three forms `00` allows and no fourth.
 ///
 /// 1. **Solid** — `primary` under `onPrimary`: the main button. On a glass

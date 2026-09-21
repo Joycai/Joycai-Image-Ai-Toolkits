@@ -1,7 +1,7 @@
 name: joycai_image_ai_toolkits
 description: "A powerful cross-platform AI image toolkit for batch processing, prompt optimization, and LLM-powered image analysis."
 publish_to: 'none'
-version: 4.22.0+0
+version: 4.23.0+0
 
 environment:
   sdk: ^3.11.0
@@ -25,6 +25,7 @@ dependencies:
   intl: ^0.20.2
   package_info_plus: ^10.2.0
   flutter_markdown_plus: ^1.0.11
+  markdown: ^7.3.0
   flutter_local_notifications: ^22.0.0
   desktop_drop: ^0.8.2
   html: ^0.15.6
@@ -83,4 +84,4 @@ msix_config:
   install_certificate: false
   sign_msix: true
   languages: en-US,zh-CN
-  msix_version: 4.22.0.0
+  msix_version: 4.23.0.0

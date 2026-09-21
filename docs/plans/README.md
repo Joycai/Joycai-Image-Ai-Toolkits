@@ -90,6 +90,26 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 长标签撑宽而不截断；手机 ⋮ 菜单换成 `AppGlassMenu`；小编辑器头部的勾选框换成 `AppSwitch`，
 「开关在左、分段与放大贴右」作为裁定写进了 `A1d` 规格末尾，取代 `A1·1a` 的排布。
 
+### Markdown 渲染 · 层级（A1e，2026-09-21）
+
+五处各配半张样式表的 `MarkdownBody` 收进一个原语 `AppMarkdown`（`lib/widgets/ui/app_markdown.dart`，数值在
+`core/design_tokens.dart` 的 `AppMarkdownMetrics`；`test/app_markdown_test.dart`；样张 `component_gallery_test.dart` 的
+`markdown_<种子>_<明暗>.png`）。执行清单：`git show 8aad2e6:docs/plans/2026-09-app-markdown.md`。
+
+**为什么不是一张 `MarkdownStyleSheet`**：`flutter_markdown_plus` 只有一个 `blockSpacing`，标题、段落、列表项之间全用它，
+拧不出「标题离上文远、贴自己的正文」。`AppMarkdown` 自己解析、自己排块，只把一段行内文字（段落、标题、表格单元）交给库。
+要加元素时顺着这条线走，不要回去调样式表。
+
+与稿的出入：
+
+| 条 | 为什么 |
+|---|---|
+| 表格不横向滚动：等宽列铺满限宽、单元格折行 | 「窄则铺满、宽则自己横滚」要一个 `LayoutBuilder`，而工作台配置栏用 `IntrinsicHeight` 问小编辑器要高度，预览里出现一张表就会抛。有测试钉住「全部元素放进 `IntrinsicHeight` 不抛」——**这个文件里不要出现 `LayoutBuilder`** |
+| 行内代码没有圆角与内距 | 库把一段行内文字合成一个 `RichText`，行内代码只能是 `TextStyle.backgroundColor`；换成 widget 会把段落劈成两个 `RichText`，断行就乱了 |
+| 链接里的粗体 / 斜体不保留 | `a` 的 builder 以 `textContent` 重建一个无 recognizer 的 span；库自带的路径必带 recognizer，于是必带手形光标 |
+| 引用 / 代码块 / 表格 / 图片占位的圆角是 6 不是 8 | 8 不在 4·6·10·16 的梯子上 |
+| 助手回复的选区从逐块 `SelectableText` 变成整段 `SelectionArea` | `selectable` 只有一种实现；顺带可以跨块选 |
+
 ### 任务预设 · 产出类型（A3e，2026-09-20）
 
 | 条 | 为什么没做 |

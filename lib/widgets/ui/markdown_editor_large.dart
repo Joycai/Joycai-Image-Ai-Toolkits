@@ -443,11 +443,7 @@ class _LargeEditorState extends State<_LargeEditor> {
     final scheme = Theme.of(context).colorScheme;
     final style = _textStyle(context);
     Widget text = _rendersMarkdown
-        ? MarkdownBody(
-            data: widget.controller.text,
-            selectable: false, // Handled by SelectionArea
-            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(p: style),
-          )
+        ? AppMarkdown(data: widget.controller.text, style: style)
         : Text(widget.controller.text, style: style);
     if (widget.selectable) text = SelectionArea(child: text);
 
