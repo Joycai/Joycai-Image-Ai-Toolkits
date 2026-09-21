@@ -311,6 +311,8 @@ class DatabaseService {
 
   // LLM Models Methods
   Future<int> addModel(LLMModel model) => _models.addModel(model);
+  /// Writes [model] over row [id] — except its place in the list and its ETA
+  /// estimate, which belong to [updateModelOrder] and [updateModelEstimation].
   Future<void> updateModel(int id, LLMModel model) => _models.updateModel(id, model);
   Future<void> updateModelOrder(List<int> ids) => _models.updateModelOrder(ids);
   Future<void> deleteModel(int id) => _models.deleteModel(id);        
