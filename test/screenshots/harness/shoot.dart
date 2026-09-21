@@ -1,6 +1,5 @@
 // The screenshot helper: mounts the real app at a given size and writes a PNG.
 
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -141,11 +140,21 @@ Future<void> mountApp(
 
   // Real async: the screens' initState sqflite queries and the compute()
   // isolates behind the gallery/browser scans only make progress out here.
+  // Carried out by hand. What a `runAsync` body throws is parked where
+  // `takeException` finds it, and that slot holds one: an overflow from the
+  // first pump would already be in it, and the drain at the bottom of this
+  // function prints whatever it finds and moves on.
+  WarmUpStalled? stalled;
   await tester.runAsync(() async {
     await tester.pumpWidget(_appTree(appState));
     await Future<void>.delayed(const Duration(milliseconds: 700));
     await tester.pump();
-    await _warmImageCache(tester, env);
+    try {
+      await _warmImageCache(tester, env);
+    } on WarmUpStalled catch (e) {
+      stalled = e;
+      return;
+    }
     await tester.pump();
     // A second settle, for the loads that only *start* once the first round's
     // results are on screen. The assistant's knowledge tree is the case that
@@ -159,6 +168,7 @@ Future<void> mountApp(
     await Future<void>.delayed(const Duration(milliseconds: 200));
     await tester.pump();
   });
+  if (stalled case final WarmUpStalled e) throw e;
 
   // 800ms covers every AppMotion duration used across the screens (the
   // ladder tops out at AppMotion.panel, 300ms).
@@ -176,10 +186,7 @@ Future<void> mountApp(
   // Drain, never assert. An overflow is the bug we are hunting, and
   // expect(takeException(), isNull) would abort before writing the PNG —
   // losing exactly the picture worth looking at.
-  // With one exception: `runAsync` parks what its body throws here too, and a
-  // stalled warm-up is the harness failing, not the screen.
   for (Object? e = tester.takeException(); e != null; e = tester.takeException()) {
-    if (e is WarmUpStalled) throw e;
     debugPrint('[$name] exception during pump: $e');
   }
 
@@ -223,11 +230,6 @@ Widget _appTree(AppState appState) {
   );
 }
 
-/// Decoding a [FileImage] is asynchronous, so without this every thumbnail
-/// captures as an empty box — the classic golden-test failure.
-///
-/// Must run after the gallery scan: `GalleryState._evictImages` clears the
-/// image cache on every scan, which would undo the warm-up.
 /// [_warmImageCache] gave up on [path].
 class WarmUpStalled implements Exception {
   WarmUpStalled(this.path)
@@ -246,6 +248,24 @@ class WarmUpStalled implements Exception {
 /// Real time: the warm-up runs inside `runAsync`, where timers are real.
 const Duration _kWarmLimit = Duration(seconds: 10);
 
+/// One image into the cache, or [WarmUpStalled].
+///
+/// A timeout here is not a slow decode — these are fixture PNGs. It is a load
+/// the cache handed back that can no longer finish (see
+/// [dropUnfinishedImageLoads]). Left unbounded it does not fail a test, it
+/// hangs the process: nothing after it runs, and CI sits until the job's own
+/// timeout with no name and no path to show for it.
+Future<void> _warm(ImageProvider image, BuildContext context, String path) =>
+    precacheImage(image, context).timeout(
+      _kWarmLimit,
+      onTimeout: () => throw WarmUpStalled(path),
+    );
+
+/// Decoding a [FileImage] is asynchronous, so without this every thumbnail
+/// captures as an empty box — the classic golden-test failure.
+///
+/// Must run after the gallery scan: `GalleryState._evictImages` clears the
+/// image cache on every scan, which would undo the warm-up.
 Future<void> _warmImageCache(WidgetTester tester, FixtureEnv env) async {
   final Finder app = find.byType(MyApp);
   if (app.evaluate().isEmpty) return;
@@ -253,21 +273,18 @@ Future<void> _warmImageCache(WidgetTester tester, FixtureEnv env) async {
 
   for (final String path in env.fixtureImagePaths) {
     try {
-      await precacheImage(FileImage(File(path)), context).timeout(_kWarmLimit);
-    } on TimeoutException {
-      // Not a slow decode — these are fixture PNGs. It is a load the cache
-      // handed back that can no longer finish (see [dropUnfinishedImageLoads]).
-      // Left unbounded it does not fail a test, it hangs the process: nothing
-      // after it runs, and CI sits until the job's own timeout with no name
-      // and no path to show for it.
-      throw WarmUpStalled(path);
+      await _warm(FileImage(File(path)), context, path);
+    } on WarmUpStalled {
+      rethrow;
     } catch (_) {
       // A format the decoder does not handle (the .mp4/.mp3 stubs); the widget
       // shows its own error placeholder, which is what the real app does too.
     }
   }
   try {
-    await precacheImage(const AssetImage('assets/icon/icon.png'), context);
+    await _warm(const AssetImage('assets/icon/icon.png'), context, 'assets/icon/icon.png');
+  } on WarmUpStalled {
+    rethrow;
   } catch (_) {
     // Only the About block's logo; not worth failing a shot over.
   }
