@@ -19,9 +19,23 @@ class ModelRepository {
     return db.insert('llm_models', model.toMap(includeId: false));
   }
 
+  /// Columns an edit never writes, because each has a writer of its own:
+  /// the list's arrangement ([updateModelOrder]) and the ETA estimate
+  /// ([updateModelEstimation]). An editor holds the row as it was when it
+  /// opened; writing these back would undo a reorder or an estimate that
+  /// landed since — or, from a form that never carried them, reset them.
+  static const _ownedElsewhere = [
+    'sort_order',
+    'est_mean_ms',
+    'est_sd_ms',
+    'tasks_since_update',
+  ];
+
   Future<void> updateModel(int id, LLMModel model) async {
     final db = await _db;
-    await db.update('llm_models', model.toMap(includeId: false), where: 'id = ?', whereArgs: [id]);
+    final row = model.toMap(includeId: false);
+    _ownedElsewhere.forEach(row.remove);
+    await db.update('llm_models', row, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> updateModelOrder(List<int> ids) async {

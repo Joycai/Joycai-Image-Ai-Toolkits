@@ -1,4 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
+import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_config_resolver.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
@@ -21,28 +24,27 @@ void main() {
 
     test('should resolve config from database', () async {
       // Setup mock data in the in-memory DB
-      final channelId = await db.addChannel({
-        'display_name': 'Test Channel',
-        'type': 'openai-api',
-        'endpoint': 'https://test.com',
-        'api_key': 'key-123',
-      });
+      final channelId = await db.addChannel(LLMChannel(
+        displayName: 'Test Channel',
+        type: 'openai-api',
+        endpoint: 'https://test.com',
+        apiKey: 'key-123',
+      ));
 
-      final pricingGroupId = await db.addPricingGroup({
-        'name': 'Test Pricing',
-        'billing_mode': 'token',
-        'input_price': 0.5,
-        'output_price': 1.0,
-      });
+      final pricingGroupId = await db.addPricingGroup(PricingGroup(
+        name: 'Test Pricing',
+        billingMode: 'token',
+        inputPrice: 0.5,
+        outputPrice: 1.0,
+      ));
 
-      final modelPk = await db.addModel({
-        'model_id': 'test-model-1',
-        'model_name': 'Test Model',
-        'type': 'chat',
-        'tag': 'chat',
-        'channel_id': channelId,
-        'fee_group_id': pricingGroupId,
-      });
+      final modelPk = await db.addModel(LLMModel(
+        modelId: 'test-model-1',
+        modelName: 'Test Model',
+        tag: 'chat',
+        channelId: channelId,
+        feeGroupId: pricingGroupId,
+      ));
 
       final resolver = LLMConfigResolver(database: db);
       final config = await resolver.resolveConfig(modelPk);
@@ -57,37 +59,36 @@ void main() {
     });
 
     test('resolves a configured cache rate, keeping 0.0 distinct from unset', () async {
-      final channelId = await db.addChannel({
-        'display_name': 'Cache Channel',
-        'type': 'openai-api',
-        'endpoint': 'https://cache.test',
-        'api_key': 'key-cache',
-      });
+      final channelId = await db.addChannel(LLMChannel(
+        displayName: 'Cache Channel',
+        type: 'openai-api',
+        endpoint: 'https://cache.test',
+        apiKey: 'key-cache',
+      ));
 
-      final freeCacheGroup = await db.addPricingGroup({
-        'name': 'Free Cache',
-        'billing_mode': 'token',
-        'input_price': 2.0,
-        'cache_input_price': 0.0,
-        'output_price': 8.0,
-      });
-      final discountGroup = await db.addPricingGroup({
-        'name': 'Discounted Cache',
-        'billing_mode': 'token',
-        'input_price': 2.0,
-        'cache_input_price': 0.25,
-        'output_price': 8.0,
-      });
+      final freeCacheGroup = await db.addPricingGroup(PricingGroup(
+        name: 'Free Cache',
+        billingMode: 'token',
+        inputPrice: 2.0,
+        cacheInputPrice: 0.0,
+        outputPrice: 8.0,
+      ));
+      final discountGroup = await db.addPricingGroup(PricingGroup(
+        name: 'Discounted Cache',
+        billingMode: 'token',
+        inputPrice: 2.0,
+        cacheInputPrice: 0.25,
+        outputPrice: 8.0,
+      ));
 
       Future<void> expectCacheFee(int groupId, String modelId, double expected) async {
-        final modelPk = await db.addModel({
-          'model_id': modelId,
-          'model_name': modelId,
-          'type': 'chat',
-          'tag': 'chat',
-          'channel_id': channelId,
-          'fee_group_id': groupId,
-        });
+        final modelPk = await db.addModel(LLMModel(
+          modelId: modelId,
+          modelName: modelId,
+          tag: 'chat',
+          channelId: channelId,
+          feeGroupId: groupId,
+        ));
         final config = await LLMConfigResolver(database: db).resolveConfig(modelPk);
         expect(config.effectiveCacheInputFee, expected);
       }
@@ -99,19 +100,18 @@ void main() {
     });
 
     test('deleting a channel deletes its models without leaving orphans', () async {
-      final channelId = await db.addChannel({
-        'display_name': 'Disposable Channel',
-        'type': 'openai-api-rest',
-        'endpoint': 'https://disposable.com/v1',
-        'api_key': 'key-xyz',
-      });
-      await db.addModel({
-        'model_id': 'doomed-model',
-        'model_name': 'Doomed',
-        'type': 'openai-api',
-        'tag': 'image',
-        'channel_id': channelId,
-      });
+      final channelId = await db.addChannel(LLMChannel(
+        displayName: 'Disposable Channel',
+        type: 'openai-api-rest',
+        endpoint: 'https://disposable.com/v1',
+        apiKey: 'key-xyz',
+      ));
+      await db.addModel(LLMModel(
+        modelId: 'doomed-model',
+        modelName: 'Doomed',
+        tag: 'image',
+        channelId: channelId,
+      ));
 
       expect((await db.getModels()).where((m) => m.channelId == channelId), isNotEmpty);
 
@@ -135,18 +135,18 @@ void main() {
 
     test('a keyed channel saved without a key fails before any request',
         () async {
-      final channelId = await db.addChannel({
-        'display_name': 'Keyless Relay',
-        'type': 'openai-api-rest',
-        'endpoint': 'https://keyless.test/v1',
-        'api_key': '',
-      });
-      final modelPk = await db.addModel({
-        'model_id': 'keyless-model',
-        'model_name': 'Keyless',
-        'tag': 'chat',
-        'channel_id': channelId,
-      });
+      final channelId = await db.addChannel(LLMChannel(
+        displayName: 'Keyless Relay',
+        type: 'openai-api-rest',
+        endpoint: 'https://keyless.test/v1',
+        apiKey: '',
+      ));
+      final modelPk = await db.addModel(LLMModel(
+        modelId: 'keyless-model',
+        modelName: 'Keyless',
+        tag: 'chat',
+        channelId: channelId,
+      ));
       await expectLater(
         LLMConfigResolver(database: db).resolveConfig(modelPk),
         throwsA(isA<LLMConfigException>()

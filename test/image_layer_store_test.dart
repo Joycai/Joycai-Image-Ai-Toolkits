@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/image_layer.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/db/repositories/image_layer_repository.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
@@ -152,18 +154,18 @@ void main() {
     final outDir = Directory(p.join(dataDir.path, 'out'))..createSync();
     final db = DatabaseService();
     await db.saveSetting('output_directory', outDir.path);
-    final channelId = await db.addChannel({
-      'display_name': 'Ark',
-      'endpoint': 'http://127.0.0.1:${server.port}/api/plan/v3',
-      'api_key': 'k',
-      'type': Vendors.volcengineArk,
-    });
-    final modelId = await db.addModel({
-      'model_id': 'doubao-seedream-5-0-pro-260628',
-      'model_name': 'Seedream pro',
-      'tag': 'image',
-      'channel_id': channelId,
-    });
+    final channelId = await db.addChannel(LLMChannel(
+      displayName: 'Ark',
+      endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
+      apiKey: 'k',
+      type: Vendors.volcengineArk,
+    ));
+    final modelId = await db.addModel(LLMModel(
+      modelId: 'doubao-seedream-5-0-pro-260628',
+      modelName: 'Seedream pro',
+      tag: 'image',
+      channelId: channelId,
+    ));
 
     final queue = TaskQueueService();
     addTearDown(queue.dispose);

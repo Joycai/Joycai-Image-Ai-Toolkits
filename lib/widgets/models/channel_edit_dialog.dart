@@ -233,19 +233,19 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
 
   Future<void> _save() async {
     final routeMode = _routeMode;
-    final data = {
-      'display_name': nameCtrl.text.trim(),
-      'endpoint': routeMode ? _routes.primaryAddress : epCtrl.text.trim(),
-      'api_key': keyCtrl.text.trim(),
-      'type': routeMode ? _routes.primaryVendorId : type,
+    final data = LLMChannel(
+      displayName: nameCtrl.text.trim(),
+      endpoint: routeMode ? _routes.primaryAddress : epCtrl.text.trim(),
+      apiKey: keyCtrl.text.trim(),
+      type: routeMode ? _routes.primaryVendorId : type,
       // The single-address form carries no document: the stored one is kept
       // and its write mark folds the edited address back in.
-      if (routeMode) 'routes': _routes.encode(),
-      'enable_discovery': discovery ? 1 : 0,
-      'tag': tagCtrl.text.trim(),
-      'tag_color': tagColor,
-      'default_fee_group_id': defaultFeeGroupId,
-    };
+      routes: routeMode ? _routes.encode() : null,
+      enableDiscovery: discovery,
+      tag: tagCtrl.text.trim(),
+      tagColor: tagColor,
+      defaultFeeGroupId: defaultFeeGroupId,
+    );
 
     if (widget.channel == null) {
       await widget.appState.addChannel(data);
@@ -293,7 +293,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       after,
     );
     for (final m in [...pinned, ...moved]) {
-      await widget.appState.updateModel(m.id!, m.toMap(includeId: false));
+      await widget.appState.updateModel(m.id!, m);
     }
     return (pinned: pinned.length, moved: moved.length);
   }

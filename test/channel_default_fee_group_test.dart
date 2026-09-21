@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
+import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -13,17 +15,17 @@ void main() {
 
   usePrivateDataDir('joycai_default_fee_group_test');
 
-  Map<String, dynamic> channel(String name, {int? group}) => {
-        'display_name': name,
-        'endpoint': 'https://example.com/v1',
-        'api_key': 'k',
-        'type': 'openai-api-rest',
-        'default_fee_group_id': group,
-      };
+  LLMChannel channel(String name, {int? group}) => LLMChannel(
+        displayName: name,
+        endpoint: 'https://example.com/v1',
+        apiKey: 'k',
+        type: 'openai-api-rest',
+        defaultFeeGroupId: group,
+      );
 
   test('a channel keeps its default group through an edit, and an edit can clear it', () async {
     final db = DatabaseService();
-    final group = await db.addPricingGroup({'name': 'Pro'});
+    final group = await db.addPricingGroup(PricingGroup(name: 'Pro'));
     final id = await db.addChannel(channel('With default', group: group));
     expect((await db.getChannel(id))!.defaultFeeGroupId, group);
 
@@ -36,8 +38,8 @@ void main() {
 
   test('deleting a fee group clears it as a channel default, and only that group', () async {
     final db = DatabaseService();
-    final doomed = await db.addPricingGroup({'name': 'Doomed'});
-    final kept = await db.addPricingGroup({'name': 'Kept'});
+    final doomed = await db.addPricingGroup(PricingGroup(name: 'Doomed'));
+    final kept = await db.addPricingGroup(PricingGroup(name: 'Kept'));
     final a = await db.addChannel(channel('A', group: doomed));
     final b = await db.addChannel(channel('B', group: kept));
 

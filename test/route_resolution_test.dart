@@ -373,27 +373,27 @@ void main() {
           'https://relay.example.com',
           [RouteKind.chat, RouteKind.gemini],
         );
-        final channelId = await db.addChannel({
-          'display_name': 'relay',
-          'type': routes.primaryVendorId,
-          'endpoint': routes.primaryAddress,
-          'api_key': 'k',
-          'routes': routes.encode(),
-        });
-        final onGemini = await db.addModel({
-          'model_id': 'gemini-2.5-flash',
-          'model_name': 'g',
-          'tag': 'chat',
-          'channel_id': channelId,
-          'active_route': 'gemini',
-        });
-        final onAnthropic = await db.addModel({
-          'model_id': 'claude-sonnet-5',
-          'model_name': 'c',
-          'tag': 'chat',
-          'channel_id': channelId,
-          'active_route': 'anthropic',
-        });
+        final channelId = await db.addChannel(LLMChannel(
+          displayName: 'relay',
+          type: routes.primaryVendorId,
+          endpoint: routes.primaryAddress,
+          apiKey: 'k',
+          routes: routes.encode(),
+        ));
+        final onGemini = await db.addModel(LLMModel(
+          modelId: 'gemini-2.5-flash',
+          modelName: 'g',
+          tag: 'chat',
+          channelId: channelId,
+          activeRoute: 'gemini',
+        ));
+        final onAnthropic = await db.addModel(LLMModel(
+          modelId: 'claude-sonnet-5',
+          modelName: 'c',
+          tag: 'chat',
+          channelId: channelId,
+          activeRoute: 'anthropic',
+        ));
 
         final config = await LLMConfigResolver().resolveConfig(onGemini);
         expect(config.channelType, Vendors.newApiGemini);

@@ -137,12 +137,13 @@ Future<bool> showPromptEditDialog(
               if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
 
               final appState = Provider.of<AppState>(context, listen: false);
-              final Map<String, dynamic> data = {
-                'title': titleCtrl.text,
-                'content': contentCtrl.text,
-                'is_markdown': isMarkdown ? 1 : 0,
-                'sort_order': prompt?.sortOrder ?? (userPrompts.isEmpty ? 0 : userPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
-              };
+              final data = Prompt(
+                title: titleCtrl.text,
+                content: contentCtrl.text,
+                isMarkdown: isMarkdown,
+                // Read by the add path only: an update never writes the position.
+                sortOrder: prompt?.sortOrder ?? (userPrompts.isEmpty ? 0 : userPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
+              );
               if (prompt == null) {
                 await appState.addPrompt(data, tagIds: selectedTagIds.toList());
               } else {
@@ -274,15 +275,16 @@ Future<bool> showSystemPromptEditDialog(
               onPressed: () async {
                 if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
                 final appState = Provider.of<AppState>(context, listen: false);
-                final data = {
-                  'title': titleCtrl.text,
-                  'content': contentCtrl.text,
-                  'type': selectedType,
+                final data = SystemPrompt(
+                  title: titleCtrl.text,
+                  content: contentCtrl.text,
+                  type: selectedType,
                   // The model drops it for a type that has none.
-                  'output_kind': outputKind.name,
-                  'is_markdown': isMarkdown ? 1 : 0,
-                  'sort_order': prompt?.sortOrder ?? (systemPrompts.isEmpty ? 0 : systemPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
-                };
+                  outputKind: outputKind,
+                  isMarkdown: isMarkdown,
+                  // Read by the add path only: an update never writes the position.
+                  sortOrder: prompt?.sortOrder ?? (systemPrompts.isEmpty ? 0 : systemPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
+                );
                 if (prompt == null) {
                   await appState.addSystemPrompt(data, tagIds: selectedTagIds.toList());
                 } else {
@@ -356,11 +358,15 @@ Future<bool> showTagEditDialog(
               label: l10n.save,
               onPressed: () async {
                 final appState = Provider.of<AppState>(context, listen: false);
-                final data = {
-                  'name': nameCtrl.text,
-                  'color': selectedColor,
-                  'sort_order': tag?.sortOrder ?? (tags.isEmpty ? 0 : tags.map((t) => t.sortOrder).reduce(math.max) + 1),
-                };
+                final data = PromptTag(
+                  name: nameCtrl.text,
+                  color: selectedColor,
+                  // Not on the form; without it a rename made a built-in
+                  // category an ordinary, deletable one.
+                  isSystem: tag?.isSystem ?? false,
+                  // Read by the add path only: an update never writes the position.
+                  sortOrder: tag?.sortOrder ?? (tags.isEmpty ? 0 : tags.map((t) => t.sortOrder).reduce(math.max) + 1),
+                );
                 if (tag == null) {
                   await appState.addPromptTag(data);
                 } else {

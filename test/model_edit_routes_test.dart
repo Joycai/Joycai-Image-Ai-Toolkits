@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
@@ -35,21 +36,21 @@ void main() {
       for (final c in [...state.allChannels]) {
         await state.deleteChannel(c.id!);
       }
-      final channelId = await state.addChannel({
-        'display_name': 'Relay',
-        'type': Vendors.newApiOpenAI,
-        'endpoint': 'https://relay.example.com/v1',
-        'api_key': 'k',
-      });
-      final modelId = await state.addModel({
-        'model_id': 'gpt-5.2',
-        'model_name': 'GPT-5.2',
-        'tag': 'chat',
-        'channel_id': channelId,
-        'max_output_tokens': 65536,
-        'reasoning_effort': 'high',
-        'enable_thinking': 1,
-      });
+      final channelId = await state.addChannel(LLMChannel(
+        displayName: 'Relay',
+        type: Vendors.newApiOpenAI,
+        endpoint: 'https://relay.example.com/v1',
+        apiKey: 'k',
+      ));
+      final modelId = await state.addModel(LLMModel(
+        modelId: 'gpt-5.2',
+        modelName: 'GPT-5.2',
+        tag: 'chat',
+        channelId: channelId,
+        maxOutputTokens: 65536,
+        reasoningEffort: 'high',
+        enableThinking: true,
+      ));
       return (state, state.allModels.firstWhere((m) => m.id == modelId));
     }))!;
   }
@@ -169,20 +170,20 @@ void main() {
         'https://relay.example.com/v1',
         null,
       ).withRoute(RouteKind.chat);
-      final channelId = await state.addChannel({
-        'display_name': 'Relay',
-        'type': routes.primaryVendorId,
-        'endpoint': routes.primaryAddress,
-        'routes': routes.encode(),
-        'api_key': 'k',
-      });
-      final modelId = await state.addModel({
-        'model_id': 'claude-sonnet-4-5',
-        'model_name': 'Sonnet',
-        'tag': 'chat',
-        'channel_id': channelId,
-        'enable_web_search': 1,
-      });
+      final channelId = await state.addChannel(LLMChannel(
+        displayName: 'Relay',
+        type: routes.primaryVendorId,
+        endpoint: routes.primaryAddress,
+        routes: routes.encode(),
+        apiKey: 'k',
+      ));
+      final modelId = await state.addModel(LLMModel(
+        modelId: 'claude-sonnet-4-5',
+        modelName: 'Sonnet',
+        tag: 'chat',
+        channelId: channelId,
+        enableWebSearch: true,
+      ));
       return (state, state.allModels.firstWhere((m) => m.id == modelId));
     }))!;
     await pump(tester, state, model);

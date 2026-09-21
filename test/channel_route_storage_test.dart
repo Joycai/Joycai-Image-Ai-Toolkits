@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_migrations.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
@@ -95,12 +96,12 @@ void main() {
 
     test('a legacy row reads with its derived routes', () async {
       final db = DatabaseService();
-      final id = await db.addChannel({
-        'display_name': 'Bailian',
-        'type': Vendors.dashscopeNative,
-        'endpoint': 'https://dashscope.aliyuncs.com/api/v1',
-        'api_key': 'k',
-      });
+      final id = await db.addChannel(LLMChannel(
+        displayName: 'Bailian',
+        type: Vendors.dashscopeNative,
+        endpoint: 'https://dashscope.aliyuncs.com/api/v1',
+        apiKey: 'k',
+      ));
       final channel = (await db.getChannel(id))!;
       expect(channel.routes, isNotNull);
       final routes = ChannelRoutes.resolve(
@@ -123,20 +124,20 @@ void main() {
         'https://r.example',
         [RouteKind.chat, RouteKind.gemini],
       );
-      final id = await db.addChannel({
-        'display_name': 'Relay',
-        'type': routes.primaryVendorId,
-        'endpoint': routes.primaryAddress,
-        'api_key': 'k',
-        'routes': routes.encode(),
-      });
+      final id = await db.addChannel(LLMChannel(
+        displayName: 'Relay',
+        type: routes.primaryVendorId,
+        endpoint: routes.primaryAddress,
+        apiKey: 'k',
+        routes: routes.encode(),
+      ));
       // The pre-route channel editor writes a map without `routes`.
-      await db.updateChannel(id, {
-        'display_name': 'Relay',
-        'type': Vendors.newApiOpenAI,
-        'endpoint': 'https://moved.example/v1',
-        'api_key': 'k',
-      });
+      await db.updateChannel(id, LLMChannel(
+        displayName: 'Relay',
+        type: Vendors.newApiOpenAI,
+        endpoint: 'https://moved.example/v1',
+        apiKey: 'k',
+      ));
       final channel = (await db.getChannel(id))!;
       final after = ChannelRoutes.resolve(
         channel.type,
@@ -149,20 +150,20 @@ void main() {
 
     test('model route columns round-trip', () async {
       final db = DatabaseService();
-      final channelId = await db.addChannel({
-        'display_name': 'c',
-        'type': Vendors.newApiOpenAI,
-        'endpoint': 'https://r.example/v1',
-        'api_key': 'k',
-      });
-      final pk = await db.addModel({
-        'model_id': 'gpt-5.2',
-        'model_name': 'GPT',
-        'tag': 'chat',
-        'channel_id': channelId,
-        'active_route': 'responses',
-        'route_params': '{"chat":{"max_output_tokens":4096}}',
-      });
+      final channelId = await db.addChannel(LLMChannel(
+        displayName: 'c',
+        type: Vendors.newApiOpenAI,
+        endpoint: 'https://r.example/v1',
+        apiKey: 'k',
+      ));
+      final pk = await db.addModel(LLMModel(
+        modelId: 'gpt-5.2',
+        modelName: 'GPT',
+        tag: 'chat',
+        channelId: channelId,
+        activeRoute: 'responses',
+        routeParams: '{"chat":{"max_output_tokens":4096}}',
+      ));
       final model = (await db.getModels()).firstWhere((m) => m.id == pk);
       expect(model.activeRoute, 'responses');
       expect(ModelRoutes.parked(model), {

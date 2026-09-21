@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -19,11 +20,11 @@ void main() {
   usePrivateDataDir('joycai_task_label_test');
 
   Future<int> addModel({required String modelId, required String modelName}) =>
-      DatabaseService().addModel({
-        'model_id': modelId,
-        'model_name': modelName,
-        'tag': 'chat',
-      });
+      DatabaseService().addModel(LLMModel(
+        modelId: modelId,
+        modelName: modelName,
+        tag: 'chat',
+      ));
 
   Future<void> storeTask(String id, {required String modelId, int? modelDbId}) =>
       DatabaseService().saveTask(TaskItem(

@@ -35,11 +35,19 @@ class PromptRepository {
     });
   }
 
+  /// What an edit writes: the row minus `sort_order`. The arrangement has a
+  /// writer of its own in each of the three tables ([updatePromptOrder],
+  /// [updateSystemPromptOrder], [updateTagOrder]), and an editor holds the row
+  /// as it was when it opened — the workbench keeps a preset for a whole
+  /// session — so writing the position back would undo a reorder made since.
+  static Map<String, dynamic> _editedRow(Map<String, dynamic> row) =>
+      row..remove('sort_order');
+
   Future<void> updatePrompt(int id, Prompt prompt, {List<int>? tagIds}) async { 
     final db = await _db;
     await db.transaction((txn) async {
       // CRITICAL: Use includeId: false to avoid updating the Primary Key to NULL
-      await txn.update('prompts', prompt.toMap(includeId: false), where: 'id = ?', whereArgs: [id]);
+      await txn.update('prompts', _editedRow(prompt.toMap(includeId: false)), where: 'id = ?', whereArgs: [id]);
 
       if (tagIds != null) {
         await txn.delete('prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
@@ -211,7 +219,7 @@ class PromptRepository {
 
   Future<void> updatePromptTag(int id, PromptTag tag) async {
     final db = await _db;
-    await db.update('prompt_tags', tag.toMap(includeId: false), where: 'id = ?', whereArgs: [id]);
+    await db.update('prompt_tags', _editedRow(tag.toMap(includeId: false)), where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> deletePromptTag(int id) async {
@@ -254,7 +262,7 @@ class PromptRepository {
   Future<void> updateSystemPrompt(int id, SystemPrompt prompt, {List<int>? tagIds}) async {
     final db = await _db;
     await db.transaction((txn) async {
-      await txn.update('system_prompts', prompt.toMap(includeId: false), where: 'id = ?', whereArgs: [id]);
+      await txn.update('system_prompts', _editedRow(prompt.toMap(includeId: false)), where: 'id = ?', whereArgs: [id]);
       if (tagIds != null) {
         await txn.delete('system_prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
         for (var tagId in tagIds) {

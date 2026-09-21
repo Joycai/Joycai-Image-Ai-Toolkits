@@ -8,6 +8,8 @@ import '../../core/app_theme.dart';
 import '../../core/app_paths.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/llm_channel.dart';
+import '../../models/llm_model.dart';
 import '../../services/db/database_service.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
@@ -197,15 +199,14 @@ class _SetupWizardState extends State<SetupWizard> {
     // A local runtime has no key to give; skipping the channel because the
     // key box is empty would silently drop the one the user just configured.
     if (apiKey.isNotEmpty || Vendors.byId(_channelType).keyOptional) {
-      final id = await _db.addChannel({
-        'display_name': _channelNameController.text.trim(),
-        'endpoint': _endpointController.text.trim(),
-        'api_key': apiKey,
-        'type': _channelType,
-        'enable_discovery': 1,
-        'tag': _channelNameController.text.trim().split(' ').first,
-        'tag_color': Colors.blue.toARGB32(),
-      });
+      final id = await _db.addChannel(LLMChannel(
+        displayName: _channelNameController.text.trim(),
+        endpoint: _endpointController.text.trim(),
+        apiKey: apiKey,
+        type: _channelType,
+        tag: _channelNameController.text.trim().split(' ').first,
+        tagColor: Colors.blue.toARGB32(),
+      ));
       setState(() {
         _createdChannelId = id;
         _currentStep++;
@@ -223,14 +224,12 @@ class _SetupWizardState extends State<SetupWizard> {
   Future<void> _saveModelAndContinue() async {
     final pageTurn = AppMotion.durationOf(context, AppMotion.panel);
     if (_modelIdController.text.isNotEmpty && _createdChannelId != null) {
-      await _db.addModel({
-        'model_id': _modelIdController.text,
-        'model_name': _modelNameController.text.isEmpty ? _modelIdController.text : _modelNameController.text,
-        'tag': _modelTag,
-        'is_paid': 1,
-        'sort_order': 0,
-        'channel_id': _createdChannelId,
-      });
+      await _db.addModel(LLMModel(
+        modelId: _modelIdController.text,
+        modelName: _modelNameController.text.isEmpty ? _modelIdController.text : _modelNameController.text,
+        tag: _modelTag,
+        channelId: _createdChannelId,
+      ));
     }
     
     setState(() => _currentStep++);

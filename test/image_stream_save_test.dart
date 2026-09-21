@@ -4,6 +4,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
@@ -69,18 +71,18 @@ void main() {
     final outDir = Directory('${dataDir.path}/out')..createSync();
     final db = DatabaseService();
     await db.saveSetting('output_directory', outDir.path);
-    final channelId = await db.addChannel({
-      'display_name': 'Ark',
-      'endpoint': 'http://127.0.0.1:${server.port}/api/plan/v3',
-      'api_key': 'k',
-      'type': Vendors.volcengineArk,
-    });
-    final modelId = await db.addModel({
-      'model_id': 'doubao-seedream-5.0-lite',
-      'model_name': 'Seedream lite',
-      'tag': 'image',
-      'channel_id': channelId,
-    });
+    final channelId = await db.addChannel(LLMChannel(
+      displayName: 'Ark',
+      endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
+      apiKey: 'k',
+      type: Vendors.volcengineArk,
+    ));
+    final modelId = await db.addModel(LLMModel(
+      modelId: 'doubao-seedream-5.0-lite',
+      modelName: 'Seedream lite',
+      tag: 'image',
+      channelId: channelId,
+    ));
 
     final queue = TaskQueueService();
     addTearDown(queue.dispose);
@@ -151,18 +153,18 @@ void main() {
     final db = DatabaseService();
     final outDir = Directory('${dataDir.path}/out2')..createSync();
     await db.saveSetting('output_directory', outDir.path);
-    final channelId = await db.addChannel({
-      'display_name': 'Ark 2',
-      'endpoint': 'http://127.0.0.1:${server.port}/api/plan/v3',
-      'api_key': 'k',
-      'type': Vendors.volcengineArk,
-    });
-    final modelId = await db.addModel({
-      'model_id': 'doubao-seedream-5.0-lite',
-      'model_name': 'Seedream lite 2',
-      'tag': 'image',
-      'channel_id': channelId,
-    });
+    final channelId = await db.addChannel(LLMChannel(
+      displayName: 'Ark 2',
+      endpoint: 'http://127.0.0.1:${server.port}/api/plan/v3',
+      apiKey: 'k',
+      type: Vendors.volcengineArk,
+    ));
+    final modelId = await db.addModel(LLMModel(
+      modelId: 'doubao-seedream-5.0-lite',
+      modelName: 'Seedream lite 2',
+      tag: 'image',
+      channelId: channelId,
+    ));
 
     final queue = TaskQueueService();
     addTearDown(queue.dispose);
