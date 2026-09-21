@@ -93,8 +93,8 @@
 | 3 | 计价：`LLMModelConfig` 两字段、resolver、`SpecUsage.price`、`specUsageFor` 读 `input_image_count` | `billing/spec_billing.dart`、`llm/llm_model_config.dart`、`llm/llm_config_resolver.dart`、`llm/llm_service.dart` | 免费张数扣减、零出图不计、聊天面读作 0 | ✅ |
 | 4 | 共用截断函数；六协议写实际发出张数；方舟优先 `usage.input_images` | `llm/protocols/*_images*_protocol.dart` | 每协议一条「附件读不到 → 张数减少」；方舟回报优先 | ✅ |
 | 5 | UI：编辑器、摘要、用量页；四语 | `widgets/models/*`、`screens/metrics/widgets/*`、`l10n/src/*` | widget 测试；截图三档宽度无溢出 | ✅ |
-| 6 | 文档：`docs/api/` 定价与 `input_images` 实测、核实清单、台账行、本文件退役、设计稿回写出入 | `docs/` | — | ☐ |
-| 7 | 独立 review（opus）→ 修 → 再 review，直到无新问题；bump version；PR | — | 两道门全绿 | ☐ |
+| 6 | 文档：`docs/api/` 定价与 `input_images` 实测、核实清单、台账行、本文件退役、设计稿回写出入 | `docs/` | — | ✅ |
+| 7 | 独立 review（opus）→ 修 → 再 review，直到无新问题；bump version；PR | — | 两道门全绿 | ✅ |
 
 ## 4. 设计 brief（交给 Claude Design 项目的原文）
 
@@ -152,6 +152,7 @@
   `IntrinsicHeight` / `IntrinsicWidth` / `Table` / `Wrap` / `AlertDialog`，收起和展开七种情形都不抛——菜单行只在菜单路由里建，
   按钮里画的是 `selectedItemBuilder` 的纯文字。四条低级别的都修了：被截的摘要恢复 `textAlign: end`（否则「…」比贴右的短一截）；
   没有 trailing 的行不再包 `LayoutBuilder`；补一条「收起时不建菜单行」的测试钉住那条不变量；`richRow` 缩进。
+- **Review 第六轮（opus）** 只查第五轮那一个 commit：无新问题。六轮都没有 BLOCKER / MAJOR。实施出入已回写进设计稿 `D2c` 稿末。
 - **第 5 片 · 设计稿 `D2c` 的裁决**（设计子代理拿不到 DesignSync，稿子由主会话对照真实 `D2b` 校验后推送）：
   - 输入图一行放在档位表与优先级说明**之后**，不是 §1.5 写的「之上」——它和「其他规格」是同一种钉住的标量行，
     D2b 的块一个像素不动。
