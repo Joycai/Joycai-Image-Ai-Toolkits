@@ -473,6 +473,46 @@ void main() {
       expect((presets.first['tags'] as List).single['name'], 'Portrait');
     });
 
+    test('an analysis preset keeps its kind through export and import', () async {
+      // The whole reason the key is written conditionally rather than never:
+      // a preset that loses it comes back as a prompt one and runs the user's
+      // instructions under the wrong framing. Without this, an importer that
+      // dropped `output_kind` outright passed every test in this file.
+      final db = await openTestDb();
+      await db.transaction((txn) async {
+        await DatabaseService().importPromptDataInto(txn, {
+          'export_type': 'prompts_only',
+          'version': 1,
+          'system_prompts': [preset(PresetOutputKind.analysis).toExportMap()],
+        });
+      });
+
+      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
+      expect(row['output_kind'], 'analysis');
+      expect(SystemPrompt.fromMap(row).outputKind, PresetOutputKind.analysis);
+      await db.close();
+    });
+
+    test('a full backup keeps an analysis preset too', () async {
+      // Same guarantee down the other import path: `_importSystemPrompts`,
+      // not `importPromptDataInto`.
+      final db = await openTestDb();
+      final backup = backupFile()
+        ..addAll({
+          'tags': [],
+          'user_prompts': [],
+          'system_prompts': [preset(PresetOutputKind.analysis).toExportMap()],
+        });
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, backup);
+      });
+
+      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
+      expect(row['output_kind'], 'analysis');
+      await db.close();
+    });
+
     test('a full backup restores a row that left output_kind out', () async {
       // The second door: a backup is importable through the Prompt Library too,
       // which has no `schema_version` gate, so `getPromptDataRaw` has to strip
