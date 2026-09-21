@@ -29,15 +29,11 @@ Future<void> exportPrompts(
   required List<SystemPrompt> systemPrompts,
 }) async {
   final data = {
-    'tags': tags.map((t) => t.toMap()).toList(),
-    'user_prompts': userPrompts.map((p) => {
-          ...p.toMap(),
-          'tags': p.tags.map((t) => t.toMap()).toList(),
-        }).toList(),
-    'system_prompts': systemPrompts.map((p) => {
-          ...p.toMap(),
-          'tags': p.tags.map((t) => t.toMap()).toList(),
-        }).toList(),
+    ...promptLibraryExport(
+      tags: tags,
+      userPrompts: userPrompts,
+      systemPrompts: systemPrompts,
+    ),
     'export_type': 'prompts_only',
     'version': 1,
   };

@@ -4,6 +4,8 @@ import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
+import 'package:joycai_image_ai_toolkits/models/prompt.dart';
+import 'package:joycai_image_ai_toolkits/models/tag.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -271,7 +273,10 @@ void main() {
   });
 
   group('prompt library import', () {
-    /// A prompts-only export as `exportPrompts` writes it.
+    /// A prompts-only file, hand-written rather than taken from
+    /// `promptLibraryExport`: it carries the legacy `tag` / `tag_id` columns on
+    /// a user prompt, which `Prompt.toMap` stopped writing, so these keep the
+    /// importer's remapping of an older file's `tag_id` covered.
     Map<String, dynamic> promptsFile() => {
           'export_type': 'prompts_only',
           'version': 1,
@@ -350,6 +355,243 @@ void main() {
       expect((await db.query('prompts')).map((p) => p['title']), ['Imported']);
       expect(await db.query('llm_channels'), isEmpty,
           reason: 'prompt import must not touch channels');
+      await db.close();
+    });
+
+    test('a column this build has never heard of costs only that column', () async {
+      final db = await openTestDb();
+      // The file a later build writes: every row this one knows, plus a column
+      // added after it shipped. One such key used to fail its insert inside the
+      // import's transaction, so the tags and user prompts went down with it.
+      final file = promptsFile();
+      (file['system_prompts'] as List).first['delivery_style'] = 'terse';
+      (file['user_prompts'] as List).first['pinned_at'] = 1758400000;
+      (file['tags'] as List).first['icon'] = 'star';
+
+      await db.transaction((txn) async {
+        await DatabaseService().importPromptDataInto(txn, file);
+      });
+
+      // `onCreate` seeds a tag and the built-in presets, so these are
+      // containment checks: what matters is that the file's rows arrived.
+      expect((await db.query('prompts')).map((p) => p['title']), ['Imported']);
+      expect((await db.query('system_prompts')).map((p) => p['title']),
+          contains('Imported system'));
+      expect((await db.query('prompt_tags')).map((t) => t['name']), contains('Portrait'));
+      expect((await db.query('prompt_tag_refs')).length, 1,
+          reason: 'the links survive too — the row went in whole but for the unknown key');
+
+      // Asserting on a *known* column: `containsKey('pinned_at')` would be
+      // vacuous, since a query only ever returns the table's real columns and
+      // would pass just as well if the filter had thrown everything away.
+      final imported = (await db.query('prompts')).single;
+      expect(imported['content'], 'hello',
+          reason: 'the row went in whole but for the one key with nowhere to go');
+      expect(imported['tag'], 'Portrait');
+      await db.close();
+    });
+  });
+
+  /// The other half of the same bug: what this build *writes* has to stay
+  /// readable by the build the user is importing into, which has already
+  /// shipped and cannot be taught anything.
+  group('prompt library export', () {
+    // Every field carries a value the column's own default would not produce,
+    // so a row that loses one is visible both in the map and after an import.
+    final portrait = PromptTag(id: 41, name: 'Portrait', color: 100, isSystem: true, sortOrder: 3);
+
+    /// A tag as an export file carries it.
+    final tagRow = {'name': 'Portrait', 'color': 100, 'is_system': 1, 'sort_order': 3, 'id': 41};
+
+    SystemPrompt preset(PresetOutputKind kind) => SystemPrompt(
+          title: 'Preset',
+          content: 'sys',
+          type: SystemPrompt.typeRefiner,
+          outputKind: kind,
+          sortOrder: 9,
+          tags: [portrait],
+        );
+
+    test('a prompt-kind preset leaves output_kind out', () {
+      final row = preset(PresetOutputKind.prompt).toExportMap();
+      expect(row.containsKey('output_kind'), isFalse,
+          reason: 'a build older than v47 inserts this row column by column');
+      expect(row['title'], 'Preset');
+    });
+
+    test('the preset carries its tags', () {
+      // With an empty tag list this would pass whether the tags are serialized
+      // or thrown away, so the preset here has one and it has to come through.
+      final row = preset(PresetOutputKind.prompt).toExportMap();
+      expect((row['tags'] as List).single['name'], 'Portrait');
+      expect((row['tags'] as List).single['id'], 41);
+    });
+
+    test('an analysis preset still carries it', () {
+      final row = preset(PresetOutputKind.analysis).toExportMap();
+      expect(row['output_kind'], 'analysis',
+          reason: 'dropping it would quietly turn the preset into a prompt one');
+    });
+
+    test('what is left out reads back as the default', () {
+      final row = preset(PresetOutputKind.prompt).toExportMap();
+      expect(SystemPrompt.fromMap({...row, 'id': 1}).outputKind, PresetOutputKind.prompt);
+    });
+
+    test('a row without output_kind still imports', () async {
+      final db = await openTestDb();
+      await db.transaction((txn) async {
+        await DatabaseService().importPromptDataInto(txn, {
+          'export_type': 'prompts_only',
+          'version': 1,
+          'system_prompts': [preset(PresetOutputKind.prompt).toExportMap()],
+        });
+      });
+      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
+      expect(row['output_kind'], 'prompt',
+          reason: "the column's default stands in for the key the file left out");
+      await db.close();
+    });
+
+    test('the shared builder shapes all three tables', () {
+      // This is `promptLibraryExport` itself, not the two writers that call it:
+      // `exportPrompts` needs a file picker and `getPromptDataRaw` needs the
+      // `DatabaseService` singleton, and neither is reachable from here — so a
+      // writer that stopped calling this function would not be caught, and the
+      // reason there are no separate rows to get wrong is structural, not
+      // tested. That structure is the point: when `toExportMap` arrived, the
+      // two writers each built their own rows and only one was taught about it.
+      //
+      // Whole rows rather than a key or two: merging two hand-written row
+      // builders into one is exactly where a field goes missing, and a missing
+      // field is silent. `prompts.is_markdown` is `INTEGER DEFAULT 0` while the
+      // model's default is true, so a row that stops carrying the key imports
+      // as not-markdown and the user's prompts come back as plain text; a
+      // dropped `sort_order` collapses the library's order to 0. Spelling the
+      // rows out means a new column has to be added here too — which is the
+      // moment to ask whether an older build can still read it, the question
+      // this whole group exists for.
+      final data = promptLibraryExport(
+        tags: [portrait],
+        userPrompts: [
+          Prompt(id: 7, title: 'Mine', content: 'hello', sortOrder: 5, tags: [portrait]),
+        ],
+        systemPrompts: [preset(PresetOutputKind.prompt), preset(PresetOutputKind.analysis)],
+      );
+
+      expect((data['tags'] as List).single, tagRow);
+
+      expect((data['user_prompts'] as List).single, {
+        'title': 'Mine',
+        'content': 'hello',
+        'sort_order': 5,
+        'is_markdown': 1,
+        'id': 7,
+        'tags': [tagRow],
+      });
+
+      final presets = (data['system_prompts'] as List).cast<Map<String, dynamic>>();
+      final presetRow = {
+        'title': 'Preset',
+        'content': 'sys',
+        'type': SystemPrompt.typeRefiner,
+        'is_markdown': 1,
+        'sort_order': 9,
+        'id': null,
+        'tags': [tagRow],
+      };
+      expect(presets.first, presetRow,
+          reason: 'the default kind is the one key that is left out');
+      expect(presets.last, {...presetRow, 'output_kind': 'analysis'});
+    });
+
+    test('a prompt keeps its rendering and its place through a round trip', () async {
+      // The same fields once more, this time through the database: the two
+      // that would come back wrong rather than missing. `is_markdown` defaults
+      // to 0 in the column and to true in the model, and `sort_order` defaults
+      // to 0, so an export that drops either one imports without complaint and
+      // the user finds plain text in the wrong order.
+      final db = await openTestDb();
+      final file = promptLibraryExport(
+        tags: [portrait],
+        userPrompts: [
+          Prompt(id: 7, title: 'Mine', content: 'hello', sortOrder: 5, tags: [portrait]),
+        ],
+        systemPrompts: const [],
+      );
+
+      await db.transaction((txn) async {
+        await DatabaseService().importPromptDataInto(txn, file);
+      });
+
+      final row = (await db.query('prompts', where: 'title = ?', whereArgs: ['Mine'])).single;
+      expect(Prompt.fromMap(row).isMarkdown, isTrue,
+          reason: 'the column defaults to 0, so a dropped key reads back as plain text');
+      expect(row['sort_order'], 5);
+
+      final tag = (await db.query('prompt_tags', where: 'name = ?', whereArgs: ['Portrait'])).single;
+      expect(tag['color'], 100);
+      await db.close();
+    });
+
+    test('an analysis preset keeps its kind through export and import', () async {
+      // The whole reason the key is written conditionally rather than never:
+      // a preset that loses it comes back as a prompt one and runs the user's
+      // instructions under the wrong framing. Without this, an importer that
+      // dropped `output_kind` outright passed every test in this file.
+      final db = await openTestDb();
+      await db.transaction((txn) async {
+        await DatabaseService().importPromptDataInto(txn, {
+          'export_type': 'prompts_only',
+          'version': 1,
+          'system_prompts': [preset(PresetOutputKind.analysis).toExportMap()],
+        });
+      });
+
+      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
+      expect(row['output_kind'], 'analysis');
+      expect(SystemPrompt.fromMap(row).outputKind, PresetOutputKind.analysis);
+      await db.close();
+    });
+
+    test('a full backup keeps an analysis preset too', () async {
+      // Same guarantee down the other import path: `_importSystemPrompts`,
+      // not `importPromptDataInto`.
+      final db = await openTestDb();
+      final backup = backupFile()
+        ..addAll({
+          'tags': [],
+          'user_prompts': [],
+          'system_prompts': [preset(PresetOutputKind.analysis).toExportMap()],
+        });
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, backup);
+      });
+
+      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
+      expect(row['output_kind'], 'analysis');
+      await db.close();
+    });
+
+    test('a full backup restores a row that left output_kind out', () async {
+      // The second door: a backup is importable through the Prompt Library too,
+      // which has no `schema_version` gate, so `getPromptDataRaw` has to strip
+      // the default exactly as the prompt-library export does.
+      final db = await openTestDb();
+      final backup = backupFile()
+        ..addAll({
+          'tags': [],
+          'user_prompts': [],
+          'system_prompts': [preset(PresetOutputKind.prompt).toExportMap()],
+        });
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, backup);
+      });
+
+      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
+      expect(row['output_kind'], 'prompt');
       await db.close();
     });
   });

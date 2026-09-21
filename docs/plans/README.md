@@ -118,8 +118,32 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | 「看不到图片」卡不写模型名，出口是「打开模型设置」 | 稿 5f 写的是模型名 + 「换一个模型」。对话视图手里没有模型表；模型字段是 `ChatModelSelector`，没有从外面打开它的口，而图片输入能力本身就在模型设置里 |
 | 「看不到图片」卡不进 history | 与切换分隔线同一取舍：恢复的会话里不重现，下一轮再说一次 |
 | `AppNeutralMarker` 与 `OptimizerTagBadge` 没有合并 | 整体 review 指出两者形状相近、内边距不同；后者在 screens 层，合并要先把它下沉成设计系统原语 |
-| 本版导出的提示词 JSON 旧版导不进 | 行里多了 `output_kind`，而 prompts-only 导出没有 schema 闸（整库备份有）。要修得给导出加版本闸，或导入时按表的实际列过滤 |
 | 截图 harness 只加了一帧 | `assistant_analysis`（结果 + 复制行 + 同会话的提示词卡）与画廊里的标记标本；编辑框的产出分段、分析类空对话、看不到图的卡只有 widget 测试 |
+
+「本版导出的提示词 JSON 旧版导不进」已清（2026-09-21）。两头各修一处：
+
+- **导出**：`SystemPrompt.toExportMap()`，`output_kind` 为默认值时不写这个键。`PresetOutputKind.parse`
+  本来就把缺失读成 `prompt`，所以是零信息损失；于是一个没有分析类预设的库，4.20.0 之前的构建照样导得进。
+  有分析类预设的仍然写——去掉它会导进去但悄悄换掉预设的行为，比读不进更糟。`toMap` 不动：它同时是入库的
+  写路径，改类型时要写得回去。
+- **两个写出方合并成一个** `promptLibraryExport`（`models/prompt.dart`）。提示词库文件（`exportPrompts`）
+  与整库备份（`getPromptDataRaw`）原本各自拼这三张表的行，`toExportMap` 加进来时**只教会了其中一个**——
+  备份那一头漏了，而备份文件同样能从提示词库的「导入」进来（那条路不看 `export_type`，也没有 schema 闸，
+  `_validateBackup` 只守 设置 → 恢复）。现在两边都只是这个函数，后者再加两个键，没有各自的份可漏。
+  这一条是 review 第二轮找出来的：第一版只修到一半。
+- **导入**：`importPromptDataInto` 把每一行先滤成这个库真有的列再 `insert`（`_knownColumnsOnly`）。
+  治的是以后：prompts-only 文件没有 `schema_version`（整库备份有，`_validateBackup` 直接拒），新版加一列，
+  旧版的 `insert` 就在那一个键上失败，而失败发生在事务里——标签和用户提示词跟着一起回滚。现在只丢那一个键。
+
+**仍然做不到的**，两条，冲着不同的构建去：
+
+- **4.19.x 及更早**没有 `output_kind` 这个列（v47 落在 `98fd6d3`，那时 pubspec 还写着 4.19.1，头一个带它的发布
+  是 4.20.0），所以**带分析类预设**的文件它们还是读不进，整库回滚。这条治不了：那些构建已经发出去了，而
+  去掉这个键会让预设悄悄换一种行为。没有分析类预设的库现在导得进了，这是导出那一头救回来的部分。
+- **4.20.0–4.22.0** 有这个列，今天的文件它们读得好好的；缺的是**滤列**。所以下一个新列对它们仍然是整库归零，
+  滤列的好处要从本版之后的发布才开始兑现。
+
+测试在 `backup_restore_test.dart` 的「prompt library import / export」两组。
 
 ### 提示词助手 · 模式重组（A3d，2026-09-20）
 
