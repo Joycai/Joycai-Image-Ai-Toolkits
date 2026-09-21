@@ -107,6 +107,17 @@ JSON 解析失败，看起来像"模型不听话"。
   「输入图」一侧覆盖：单价 + 每次请求的免费张数，张数取协议**实际放进请求体**的条数
   （`metadata['input_image_count']`，见 `llm-three-layer.md`）。xAI 的 `usage` 不回报张数；方舟 5.0 pro
   回报 `usage.input_images`。
+- **xAI 把这次请求的实扣金额写在回包里**（2026-09-21 实测，`grok-imagine-image-2.0`，`POST /v1/images/edits`，
+  不带 `resolution` / 质量参数）：`usage` 只有一个字段 `cost_in_usd_ticks`，**1 tick = $10⁻¹⁰**。
+
+  | 请求 | `cost_in_usd_ticks` | 折合 |
+  |---|---|---|
+  | `images[]` 5 张参考图，出 1 张 | 1 100 000 000 | $0.11 = $0.06 + 5 × $0.01 |
+  | `image` 1 张参考图，出 1 张 | 700 000 000 | $0.07 = $0.06 + 1 × $0.01 |
+
+  由此：输入图 **$0.01/张、线性、没有免费张数**（计费组填 `0.01 / 0`）；5 张参考图被接受（HTTP 200）；
+  不带质量参数时输出按 **1K · Medium（$0.06）** 计，不是标价表第一格的 Low $0.04。回包里**没有**输入张数，
+  所以张数只能由协议自己数。应用现在不读 `cost_in_usd_ticks`（见台账「还欠的」）。
 - **③ 的多模态**在 `prompt_tokens_details` 下还有 `image_tokens` / `audio_tokens`
   等明细（部分兼容层也提供），且图片 token 用量随分辨率档位变化很大——同一张图
   在 low / default / high 三档下可能相差一个数量级。
