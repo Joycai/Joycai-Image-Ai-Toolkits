@@ -273,7 +273,10 @@ void main() {
   });
 
   group('prompt library import', () {
-    /// A prompts-only export as `exportPrompts` writes it.
+    /// A prompts-only file, hand-written rather than taken from
+    /// `promptLibraryExport`: it carries the legacy `tag` / `tag_id` columns on
+    /// a user prompt, which `Prompt.toMap` stopped writing, so these keep the
+    /// importer's remapping of an older file's `tag_id` covered.
     Map<String, dynamic> promptsFile() => {
           'export_type': 'prompts_only',
           'version': 1,
@@ -444,12 +447,14 @@ void main() {
       await db.close();
     });
 
-    test('both export writers hand out the same rows', () {
-      // `getPromptDataRaw` (the full backup) and `exportPrompts` (the
-      // prompt-library file) are this function plus, in one case, two extra
-      // keys. Testing it is testing both — which is the point of it existing:
-      // when `toExportMap` arrived, only one of the two writers was taught
-      // about it, and the bug this branch fixes survived in the other.
+    test('the shared builder shapes all three tables', () {
+      // This is `promptLibraryExport` itself, not the two writers that call it:
+      // `exportPrompts` needs a file picker and `getPromptDataRaw` needs the
+      // `DatabaseService` singleton, and neither is reachable from here — so a
+      // writer that stopped calling this function would not be caught, and the
+      // reason there are no separate rows to get wrong is structural, not
+      // tested. That structure is the point: when `toExportMap` arrived, the
+      // two writers each built their own rows and only one was taught about it.
       final data = promptLibraryExport(
         tags: [portrait],
         userPrompts: [Prompt(id: 7, title: 'Mine', content: 'hello', tags: [portrait])],
