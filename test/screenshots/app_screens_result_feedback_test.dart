@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
-import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/result_feedback_dialog.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/result_feedback_dialog.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/shoot.dart';

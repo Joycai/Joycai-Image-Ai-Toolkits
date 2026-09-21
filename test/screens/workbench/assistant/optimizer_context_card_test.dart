@@ -1,0 +1,279 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/optimizer_context_card.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/assistant_context_usage.dart';
+
+/// The card has to render four states of one number, three of which carry no
+/// window: nothing measured yet, an unlimited model, a model with no window
+/// configured, and a real measurement. The two obvious ways to draw a stacked
+/// bar — `Expanded(flex:)` and `used / window` — blow up on the first three.
+///
+/// Most cases use a ratio of 1 so the figures read the same in characters and
+/// tokens; the unit conversion has its own test.
+void main() {
+  Future<void> pump(
+    WidgetTester tester,
+    ContextUsageSnapshot usage, {
+    Size size = const Size(300, 900),
+  }) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: size.width,
+            child: OptimizerContextCard(usage: usage),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+  }
+
+  Future<AppLocalizations> en() => AppLocalizations.delegate.load(const Locale('en'));
+
+  testWidgets('the placeholder renders an empty window rather than throwing', (tester) async {
+    await pump(tester, ContextUsageSnapshot.placeholder);
+    final l10n = await en();
+
+    expect(find.text(l10n.optCtxWindowUnknown), findsOneWidget);
+    // Every figure reads as "no number", not as a confident zero.
+    expect(find.text('—'), findsNWidgets(4));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('all four legend rows are named', (tester) async {
+    await pump(tester, ContextUsageSnapshot.placeholder);
+    final l10n = await en();
+
+    for (final label in [
+      l10n.optCtxSystemPrompt,
+      l10n.optCtxTools,
+      l10n.optCtxHistory,
+      l10n.optCtxRemaining,
+    ]) {
+      expect(find.text(label), findsOneWidget);
+    }
+  });
+
+  testWidgets('real figures give a readout and a remainder', (tester) async {
+    await pump(
+      tester,
+      const ContextUsageSnapshot(
+        windowChars: 200000,
+        charsPerToken: 1,
+        slices: {
+          ContextUsageSlice.systemPrompt: 18200,
+          ContextUsageSlice.tools: 9600,
+          ContextUsageSlice.history: 74400,
+        },
+      ),
+    );
+
+    // 18.2K + 9.6K + 74.4K = 102.2K, against a 200K window.
+    expect(find.textContaining('102.2K'), findsOneWidget);
+    expect(find.text('97.8K'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  /// The bar's filled slices, left to right: every [ColoredBox] under the
+  /// track except the track itself.
+  List<Rect> barSlices(WidgetTester tester) {
+    final track = find.byWidgetPredicate((w) => w is ClipRRect).first;
+    final boxes = find.descendant(of: track, matching: find.byType(ColoredBox));
+    return boxes.evaluate().skip(1).map((e) {
+      final box = e.renderObject! as RenderBox;
+      return box.localToGlobal(Offset.zero) & box.size;
+    }).toList();
+  }
+
+  testWidgets('the bar paints its slices at full height and to scale', (tester) async {
+    // The reported bug: a Row hands its children a loose height, and a
+    // childless ColoredBox sizes to the smallest it may — zero — so the text
+    // said 102.2K while the bar stayed an empty track.
+    await pump(
+      tester,
+      const ContextUsageSnapshot(
+        windowChars: 200000,
+        charsPerToken: 1,
+        slices: {
+          ContextUsageSlice.systemPrompt: 18200,
+          ContextUsageSlice.tools: 9600,
+          ContextUsageSlice.history: 74400,
+        },
+      ),
+    );
+
+    final slices = barSlices(tester);
+    expect(slices, hasLength(3));
+    for (final slice in slices) {
+      expect(slice.height, 8, reason: 'a slice must be as tall as the track');
+    }
+    final track = tester.getSize(find.byWidgetPredicate((w) => w is ClipRRect).first);
+    expect(slices[2].width, closeTo(track.width * 74400 / 200000, 0.01));
+  });
+
+  testWidgets('a sliver of a huge window still shows on the bar', (tester) async {
+    // A 1.5M window with a fresh session: a few thousand tokens is well under
+    // a pixel at the right panel's width, and a bar that shows nothing reads
+    // as "not measured" next to a readout that says otherwise.
+    await pump(
+      tester,
+      const ContextUsageSnapshot(
+        windowChars: 1500000,
+        charsPerToken: 1,
+        slices: {
+          ContextUsageSlice.systemPrompt: 700,
+          ContextUsageSlice.tools: 0,
+          ContextUsageSlice.history: 400,
+        },
+      ),
+      size: const Size(250, 900),
+    );
+
+    final slices = barSlices(tester);
+    expect(slices[0].width, greaterThanOrEqualTo(2));
+    expect(slices[1].width, 0, reason: 'a slice that costs nothing draws nothing');
+    expect(slices[2].width, greaterThanOrEqualTo(2));
+  });
+
+  testWidgets('figures are printed in tokens, so a 1M window reads 1M', (tester) async {
+    // The reported bug: a 1,048,576-token window calibrated to 1.7 chars/token
+    // is 1,782,579 chars, and the card printed that as `1.8M`.
+    const perToken = 1.7;
+    await pump(
+      tester,
+      ContextUsageSnapshot(
+        windowChars: (1048576 * perToken).round(),
+        charsPerToken: perToken,
+        slices: const {
+          ContextUsageSlice.systemPrompt: 12070, // 7.1K tokens
+          ContextUsageSlice.tools: 5610, // 3.3K tokens
+          ContextUsageSlice.history: 7140, // 4.2K tokens
+        },
+      ),
+    );
+
+    expect(find.textContaining('14.6K / 1.0M'), findsOneWidget);
+    expect(find.text('7.1K'), findsOneWidget);
+    expect(find.text('3.3K'), findsOneWidget);
+    expect(find.text('4.2K'), findsOneWidget);
+    expect(find.textContaining('1.8M'), findsNothing);
+  });
+
+  testWidgets('a session over its window clamps rather than going negative', (tester) async {
+    await pump(
+      tester,
+      const ContextUsageSnapshot(
+        windowChars: 1000,
+        charsPerToken: 1,
+        slices: {
+          ContextUsageSlice.systemPrompt: 0,
+          ContextUsageSlice.tools: 0,
+          ContextUsageSlice.history: 4000,
+        },
+      ),
+    );
+
+    // The two unspent slices and the remainder all read 0 — never "-3.0K".
+    expect(find.text('0'), findsNWidgets(3), reason: 'remaining floors at zero');
+    expect(find.text('4.0K'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an unlimited model shows the spend and no remainder', (tester) async {
+    await pump(
+      tester,
+      const ContextUsageSnapshot(
+        windowChars: 0,
+        charsPerToken: 1,
+        basis: ContextWindowBasis.unlimited,
+        slices: {
+          ContextUsageSlice.systemPrompt: 18200,
+          ContextUsageSlice.tools: 1200,
+          ContextUsageSlice.history: 74400,
+        },
+      ),
+    );
+    final l10n = await en();
+
+    expect(find.textContaining('93.8K'), findsOneWidget);
+    expect(find.textContaining(l10n.optCtxWindowUnlimited), findsOneWidget);
+    // The slices are still real; only "remaining" is unanswerable — and a bare
+    // 0 there would read as "full", the opposite of the truth.
+    expect(find.text('18.2K'), findsOneWidget);
+    expect(find.text('—'), findsOneWidget);
+    expect(find.text(l10n.optCtxWindowAssumed), findsNothing);
+  });
+
+  testWidgets('a slice nobody has measured yet reads as unknown, not as free', (tester) async {
+    // What a session restored from the database looks like: the history is
+    // known exactly, the system prompt the next turn will build is not.
+    await pump(
+      tester,
+      const ContextUsageSnapshot(
+        windowChars: 200000,
+        charsPerToken: 1,
+        slices: {ContextUsageSlice.history: 74400},
+      ),
+    );
+
+    expect(find.text('74.4K'), findsOneWidget);
+    expect(find.text('—'), findsNWidgets(2), reason: 'system prompt and tools');
+    expect(find.text('0'), findsNothing);
+  });
+
+  testWidgets('an unset window says so rather than passing the default off as measured',
+      (tester) async {
+    const slices = {ContextUsageSlice.systemPrompt: 18200};
+    await pump(
+      tester,
+      // What measureContext produces for a model with no window: the default
+      // assumption, drawn, and labelled as an assumption.
+      const ContextUsageSnapshot(
+        windowChars: 49152,
+        charsPerToken: 1.5,
+        basis: ContextWindowBasis.assumed,
+        slices: slices,
+      ),
+    );
+    final l10n = await en();
+    expect(find.text(l10n.optCtxWindowAssumed), findsOneWidget);
+
+    await pump(
+      tester,
+      const ContextUsageSnapshot(windowChars: 49152, charsPerToken: 1.5, slices: slices),
+    );
+    expect(find.text(l10n.optCtxWindowAssumed), findsNothing,
+        reason: 'a configured window carries no caveat');
+  });
+
+  for (final width in [250.0, 600.0]) {
+    testWidgets('it fits the right panel at ${width.toInt()}px', (tester) async {
+      await pump(
+        tester,
+        const ContextUsageSnapshot(
+          windowChars: 200000,
+          charsPerToken: 1,
+          slices: {
+            ContextUsageSlice.systemPrompt: 18200,
+            ContextUsageSlice.tools: 9600,
+            ContextUsageSlice.history: 74400,
+          },
+        ),
+        size: Size(width, 900),
+      );
+
+      // The panel resizes between these two; a legend label must ellipsize,
+      // never overflow.
+      expect(tester.takeException(), isNull);
+    });
+  }
+}

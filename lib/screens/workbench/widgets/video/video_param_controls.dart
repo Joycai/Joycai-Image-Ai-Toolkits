@@ -1,4 +1,4 @@
-part of '../video_config_panel.dart';
+part of 'video_config_panel.dart';
 
 /// Pairs cells into rows of two, in order. A cell that spans the row, or a
 /// half left without a partner, takes the full width.

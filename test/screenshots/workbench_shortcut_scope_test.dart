@@ -20,7 +20,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
-import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/image_card.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/gallery/image_card.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/workbench_glass_toolbar.dart';
 import 'package:joycai_image_ai_toolkits/services/files/trash_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';

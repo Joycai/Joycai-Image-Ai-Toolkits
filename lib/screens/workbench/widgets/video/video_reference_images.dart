@@ -1,4 +1,4 @@
-part of '../video_config_panel.dart';
+part of 'video_config_panel.dart';
 
 /// A reference cell (`00d` 尺寸 「参考图格 72」), and the gap between cells.
 const double _kReferenceCell = 72;

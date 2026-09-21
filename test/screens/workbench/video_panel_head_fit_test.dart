@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/video_config_panel.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/video/video_config_panel.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 
 import '../../screenshots/harness/fixture_env.dart';

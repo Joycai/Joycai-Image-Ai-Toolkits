@@ -1,4 +1,4 @@
-part of '../crop_resize_toolbar.dart';
+part of 'crop_resize_toolbar.dart';
 
 /// The fixed set of ratio presets shown as segments, plus a `custom` mode
 /// whose X:Y fields only appear once it's selected — folding them into the

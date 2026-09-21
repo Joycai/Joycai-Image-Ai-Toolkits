@@ -1,4 +1,4 @@
-part of '../video_config_panel.dart';
+part of 'video_config_panel.dart';
 
 /// A card in the right column (`A2 · 1a`): the panel's ground, a hairline,
 /// r16, inset 10 — the image column's card, restated.

@@ -1,4 +1,4 @@
-part of '../video_config_panel.dart';
+part of 'video_config_panel.dart';
 
 /// A first- or last-frame slot (`A2 · 1a`; drop states `00d · 1c`): the
 /// caption, a 92px place (96 on a tablet, 104 on a phone), and the file's
