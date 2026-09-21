@@ -1,4 +1,4 @@
-part of '../crop_resize_toolbar.dart';
+part of 'crop_resize_toolbar.dart';
 
 extension _StepFlow on _CropResizeToolbarState {
   /// The narrow step flow (`A4 · 1b`): what the slot shows when even the most

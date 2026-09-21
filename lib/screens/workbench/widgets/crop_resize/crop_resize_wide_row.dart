@@ -1,4 +1,4 @@
-part of '../crop_resize_toolbar.dart';
+part of 'crop_resize_toolbar.dart';
 
 extension _WideRow on _CropResizeToolbarState {
   /// Steps [f] down until the row fits [width], and reports whether it does.

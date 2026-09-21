@@ -20,7 +20,7 @@ import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/files/thumbnail_fit_toggle.dart';
 import '../workbench_layout.dart';
-import 'gallery_selection_bar.dart';
+import 'gallery/gallery_selection_bar.dart';
 
 /// The workbench's tab indices, named.
 abstract final class WorkbenchTab {

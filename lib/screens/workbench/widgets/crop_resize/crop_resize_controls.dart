@@ -1,4 +1,4 @@
-part of '../crop_resize_toolbar.dart';
+part of 'crop_resize_toolbar.dart';
 
 /// A number field with no chrome of its own — the value, in mono, in the
 /// glass ink.
