@@ -411,7 +411,7 @@ What keeps it safe:
   well as insert, and `setSessionMode` records a switch at once so that
   quitting before the next turn does not restore into the mode that was left.
 
-Pinned by `test/screens/workbench/assistant_kb_use_switch_test.dart`.
+Pinned by `test/screens/workbench/assistant/assistant_kb_use_switch_test.dart`.
 
 ## Accepted limits
 
@@ -548,7 +548,7 @@ Pure functions are pinned directly; prefer adding to these over end-to-end runs.
 | `test/services/assistant/optimizer_compaction_boundary_test.dart` | fold to the retention target, the two-turn floor, the summary-plus-one skip, no re-compaction the next turn, the `compaction` usage tag |
 | `test/services/assistant/optimizer_compaction_test.dart` | a failed or empty summary leaves the history untouched; the next turn retries |
 | `test/services/assistant/optimizer_context_usage_test.dart` | the readout: role split, trimmed-not-raw history, window tri-state, unmeasured slices |
-| `test/screens/workbench/optimizer_context_card_test.dart` | the card's four states (unmeasured / configured / assumed / unlimited) at both panel widths |
+| `test/screens/workbench/assistant/optimizer_context_card_test.dart` | the card's four states (unmeasured / configured / assumed / unlimited) at both panel widths |
 | `test/services/assistant/optimizer_kb_liveness_test.dart` | the three deadlock scenarios (elided / compacted / in-flight) |
 | `test/services/assistant/optimizer_history_repair_test.dart` | invariant 10: stubs, orphan/duplicate drops, empty ids, the trailing ask_user exemption, idempotence, restore |
 | `test/services/assistant/knowledge_base_paging_test.dart` | boundary snapping, determinism, degenerate input |

@@ -1,4 +1,4 @@
-part of '../video_config_panel.dart';
+part of 'video_config_panel.dart';
 
 /// How long a drop's confirmation note stays (`00d` 确认 「一条 ok 说明条」).
 /// Not a motion token: nothing moves for this long, it is read.

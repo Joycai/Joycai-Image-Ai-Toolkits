@@ -1,4 +1,4 @@
-part of '../video_config_panel.dart';
+part of 'video_config_panel.dart';
 
 /// The model card: the picker and, expanded, the model's declared settings.
 extension _ModelSection on _VideoConfigPanelState {

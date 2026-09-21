@@ -1,4 +1,4 @@
-part of '../crop_resize_toolbar.dart';
+part of 'crop_resize_toolbar.dart';
 
 extension _OverwriteConfirm on _CropResizeToolbarState {
   /// The last stop before an original is replaced.

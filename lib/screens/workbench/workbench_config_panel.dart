@@ -27,8 +27,8 @@ import '../../widgets/drag/app_reorder_gap.dart';
 import '../../widgets/ui/markdown_editor.dart';
 import '../../widgets/ui/scroll_edge_fade.dart';
 import 'model_selection_section.dart';
-import 'widgets/config_action_bar.dart';
-import 'widgets/queue_settings_dialog.dart';
+import 'widgets/config/config_action_bar.dart';
+import 'widgets/config/queue_settings_dialog.dart';
 
 part 'config_panel/config_panel_chrome.dart';
 part 'config_panel/config_selection_card.dart';
