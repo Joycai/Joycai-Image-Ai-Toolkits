@@ -137,7 +137,8 @@ void main() {
           endpoint: target.endpoint,
           apiKey: target.apiKey,
           type: target.type,
-        ),);
+        ),
+      );
 
       final after = await names();
       expect(after.indexOf('A (renamed)'), before.indexOf('A'));
