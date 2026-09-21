@@ -28,9 +28,11 @@ void main() {
   tearDownAll(() => env.dispose());
 
   // A tap starts the database work inside fake time: its continuations run
-  // only as frames are pumped, and its IO only completes in real time.
-  Future<void> settleDb(WidgetTester tester) async {
-    for (var i = 0; i < 20; i++) {
+  // only as frames are pumped, and its IO only completes in real time. Waits
+  // for [done] rather than a fixed span: the chain is several queries long and
+  // a loaded CI runner has taken more than 400ms over it.
+  Future<void> settleDb(WidgetTester tester, bool Function() done) async {
+    for (var i = 0; i < 250 && !done(); i++) {
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
       await tester.pump();
     }
@@ -98,14 +100,14 @@ void main() {
       await tester.ensureVisible(removeA);
       await tester.pumpAndSettle();
       await tester.tap(removeA);
-      await settleDb(tester);
+      await settleDb(tester, () => find.text('a.example').evaluate().isEmpty);
       expect(find.text('a.example'), findsNothing);
       expect(find.text('b.example'), findsOneWidget);
 
       await tester.ensureVisible(find.text(l10n.cookieRetentionOff));
       await tester.pumpAndSettle();
       await tester.tap(find.text(l10n.cookieRetentionOff));
-      await settleDb(tester);
+      await settleDb(tester, () => find.text('b.example').evaluate().isEmpty);
       expect(find.text('b.example'), findsNothing);
       expect(state.cookieRetention, CookieRetention.off);
       expect(tester.takeException(), isNull);
