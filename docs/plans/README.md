@@ -24,6 +24,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | 文件 | 为什么留着 |
 |---|---|
 | [`2026-08-assistant-timeout.md`](2026-08-assistant-timeout.md) | 不是施工说明书，是**一次真实故障的取证记录**（`api_logs/` 里七条日志的耗时还原）。`architecture/assistant-context.md` 直接引它作为「为什么要早elide」的证据。 |
+| [`2026-09-architecture-audit.md`](2026-09-architecture-audit.md) | **尚未开工**的施工说明书：对照 Flutter 架构手册在 `73aaa68` 上做的全仓审计，八条（A1–A8）一条一条做。做完一条从那份文件里删一条，八条清空后删掉它，结论登记到下面的「已执行」。文件末尾那张「不要重复立项」的表是本轮明确判定**不做**的手册条目。 |
 
 ## 已执行（不要重复立项）
 
