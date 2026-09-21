@@ -100,7 +100,7 @@ void main() {
           endpoint: 'https://example.com/v1',
           apiKey: 'k',
           type: 'openai-api-rest',
-        ).toMap(includeId: false));
+        ));
 
     Future<List<String>> names() async =>
         [for (final c in await db.getChannels()) c.displayName];
@@ -137,8 +137,7 @@ void main() {
           endpoint: target.endpoint,
           apiKey: target.apiKey,
           type: target.type,
-        ).toMap(includeId: false),
-      );
+        ),);
 
       final after = await names();
       expect(after.indexOf('A (renamed)'), before.indexOf('A'));

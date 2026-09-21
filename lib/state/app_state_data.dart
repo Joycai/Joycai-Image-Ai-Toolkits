@@ -8,12 +8,12 @@ part of 'app_state.dart';
 extension AppStateData on AppState {
   // Prompt Tags Methods
   Future<List<PromptTag>> getPromptTags() => _db.getPromptTags();
-  Future<int> addPromptTag(Map<String, dynamic> tag) async {
+  Future<int> addPromptTag(PromptTag tag) async {
     final id = await _db.addPromptTag(tag);
     notify();
     return id;
   }
-  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) async {
+  Future<void> updatePromptTag(int id, PromptTag tag) async {
     await _db.updatePromptTag(id, tag);
     notify();
   }
@@ -25,12 +25,12 @@ extension AppStateData on AppState {
 
   // Prompts Methods
   Future<List<Prompt>> getPrompts() => _db.getPrompts();
-  Future<int> addPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) async {
+  Future<int> addPrompt(Prompt prompt, {List<int>? tagIds}) async {
     final id = await _db.addPrompt(prompt, tagIds: tagIds);
     notify();
     return id;
   }
-  Future<void> updatePrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) async {
+  Future<void> updatePrompt(int id, Prompt prompt, {List<int>? tagIds}) async {
     await _db.updatePrompt(id, prompt, tagIds: tagIds);
     notify();
   }
@@ -71,12 +71,12 @@ extension AppStateData on AppState {
 
   // System Prompts Methods
   Future<List<SystemPrompt>> getSystemPrompts({String? type}) => _db.getSystemPrompts(type: type);
-  Future<int> addSystemPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) async {
+  Future<int> addSystemPrompt(SystemPrompt prompt, {List<int>? tagIds}) async {
     final id = await _db.addSystemPrompt(prompt, tagIds: tagIds);
     notify();
     return id;
   }
-  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) async {
+  Future<void> updateSystemPrompt(int id, SystemPrompt prompt, {List<int>? tagIds}) async {
     await _db.updateSystemPrompt(id, prompt, tagIds: tagIds);
     notify();
   }
@@ -115,13 +115,13 @@ extension AppStateData on AppState {
     notify();
   }
 
-  Future<int> addChannel(Map<String, dynamic> channel) async {
+  Future<int> addChannel(LLMChannel channel) async {
     final id = await _db.addChannel(channel);
     await refreshDataCache();
     return id;
   }
 
-  Future<void> updateChannel(int id, Map<String, dynamic> channel) async {
+  Future<void> updateChannel(int id, LLMChannel channel) async {
     await _db.updateChannel(id, channel);
     await refreshDataCache();
   }
@@ -193,13 +193,13 @@ extension AppStateData on AppState {
     }
   }
 
-  Future<int> addModel(Map<String, dynamic> model) async {
+  Future<int> addModel(LLMModel model) async {
     final id = await _db.addModel(model);
     await refreshDataCache();
     return id;
   }
 
-  Future<void> updateModel(int id, Map<String, dynamic> model) async {
+  Future<void> updateModel(int id, LLMModel model) async {
     await _db.updateModel(id, model);
     await refreshDataCache();
   }
@@ -215,13 +215,13 @@ extension AppStateData on AppState {
   }
 
   // Pricing Group Management
-  Future<int> addPricingGroup(Map<String, dynamic> group) async {
+  Future<int> addPricingGroup(PricingGroup group) async {
     final id = await _db.addPricingGroup(group);
     await refreshDataCache();
     return id;
   }
 
-  Future<void> updatePricingGroup(int id, Map<String, dynamic> group) async {
+  Future<void> updatePricingGroup(int id, PricingGroup group) async {
     await _db.updatePricingGroup(id, group);
     await refreshDataCache();
   }

@@ -16,18 +16,18 @@ import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
-import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt_history_entry.dart';
+import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/models/tag.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
 import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
-import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:path/path.dart' as p;
 
@@ -119,7 +119,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     type: Vendors.googleRest,
     tag: '官方',
     tagColor: 0xFF4285F4,
-  ).toMap(includeId: false));
+  ));
 
   final int openaiId = await db.addChannel(LLMChannel(
     displayName: '中转 · OpenAI 兼容',
@@ -128,7 +128,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     type: Vendors.openAIRest,
     tag: '中转',
     tagColor: 0xFF00897B,
-  ).toMap(includeId: false));
+  ));
 
   // The one multi-face vendor (D2 17/18): its models exercise the protocol
   // menu, the pinned-protocol chip and the channel capability subline —
@@ -140,7 +140,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     type: Vendors.dashscope,
     tag: '官方',
     tagColor: 0xFFFF6A00,
-  ).toMap(includeId: false));
+  ));
 
   // A Claude-format relay (D2a 20e): the one fixture channel with no generic
   // media surface, so a video-kind model on it opens the editor on the
@@ -152,7 +152,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     type: Vendors.newApiAnthropic,
     tag: '中转',
     tagColor: 0xFF6D4C41,
-  ).toMap(includeId: false));
+  ));
 
   // Volcengine Ark on its subscription-plan base (D1e): the channel the
   // Seedream parameter cards are photographed on.
@@ -163,7 +163,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     type: Vendors.volcengineArk,
     tag: '官方',
     tagColor: 0xFF2196F3,
-  ).toMap(includeId: false));
+  ));
 
   // D1f 4a / 4f: one New API relay split the way it had to be before routes
   // — OpenAI format and Gemini format, one host, one key — so the rail offers
@@ -175,7 +175,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     type: Vendors.newApiOpenAI,
     tag: '中转',
     tagColor: 0xFF009688,
-  ).toMap(includeId: false));
+  ));
 
   final int newApiGeminiId = await db.addChannel(LLMChannel(
     displayName: 'NewAPI · Gemini 格式',
@@ -184,27 +184,27 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     type: Vendors.newApiGemini,
     tag: '中转',
     tagColor: 0xFF795548,
-  ).toMap(includeId: false));
+  ));
 
   final int flashFee = await db.addPricingGroup(PricingGroup(
     name: 'Gemini Flash',
     inputPrice: 0.075,
     cacheInputPrice: 0.01875,
     outputPrice: 0.30,
-  ).toMap(includeId: false));
+  ));
 
   final int proFee = await db.addPricingGroup(PricingGroup(
     name: 'Gemini Pro',
     inputPrice: 1.25,
     outputPrice: 10.0,
-  ).toMap(includeId: false));
+  ));
 
   final int perImageFee = await db.addPricingGroup(PricingGroup(
     // Bracketed on purpose: the fee-group row shows 「中转」 as a badge.
     name: '[中转] 按次计费 · 图片',
     billingMode: 'request',
     requestPrice: 0.04,
-  ).toMap(includeId: false));
+  ));
 
   // D2b: a spec-billed video group — per second, three tiers and a catch-all.
   final int veoFee = await db.addPricingGroup(PricingGroup(
@@ -217,7 +217,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
       SpecRate(size: '720p', price: 0.15),
       SpecRate(price: 0.1),
     ],
-  ).toMap(includeId: false));
+  ));
 
   final List<LLMModel> models = <LLMModel>[
     LLMModel(
@@ -394,7 +394,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
 
   final List<int> pks = <int>[];
   for (final LLMModel model in models) {
-    pks.add(await db.addModel(model.toMap(includeId: false)));
+    pks.add(await db.addModel(model));
   }
   return _Catalog(models.map((LLMModel m) => m.modelId).toList(), pks);
 }
@@ -405,11 +405,11 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
 
 Future<void> _seedPrompts(DatabaseService db) async {
   final int portraitTag = await db.addPromptTag(
-      PromptTag(name: '人像', color: 0xFF8E24AA, sortOrder: 0).toMap(includeId: false));
+      PromptTag(name: '人像', color: 0xFF8E24AA, sortOrder: 0));
   final int productTag = await db.addPromptTag(
-      PromptTag(name: '电商', color: 0xFF1E88E5, sortOrder: 1).toMap(includeId: false));
+      PromptTag(name: '电商', color: 0xFF1E88E5, sortOrder: 1));
   final int styleTag = await db.addPromptTag(
-      PromptTag(name: '风格化', color: 0xFFF4511E, sortOrder: 2).toMap(includeId: false));
+      PromptTag(name: '风格化', color: 0xFFF4511E, sortOrder: 2));
 
   final List<(String, String, List<int>)> prompts = <(String, String, List<int>)>[
     (
@@ -447,7 +447,7 @@ Future<void> _seedPrompts(DatabaseService db) async {
   for (int i = 0; i < prompts.length; i++) {
     final (String title, String content, List<int> tags) = prompts[i];
     await db.addPrompt(
-      Prompt(title: title, content: content, sortOrder: i).toMap(includeId: false),
+      Prompt(title: title, content: content, sortOrder: i),
       tagIds: tags,
     );
   }
@@ -506,7 +506,7 @@ Future<void> _seedPrompts(DatabaseService db) async {
         outputKind: title == fixtureAnalysisPresetTitle
             ? PresetOutputKind.analysis
             : PresetOutputKind.prompt,
-      ).toMap(includeId: false),
+      ),
       tagIds: tags,
     );
   }

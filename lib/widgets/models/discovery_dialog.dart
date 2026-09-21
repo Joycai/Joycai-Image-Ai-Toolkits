@@ -5,6 +5,7 @@ import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
+import '../../models/llm_model.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../services/llm/model_family.dart';
@@ -447,18 +448,15 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
       // absent stays unset (the editor's "not set"), never a guess. The
       // output cap is deliberately not seeded — see `discoveredLimitsOf`.
       final limits = discoveredLimitsOf(m);
-      await widget.appState.addModel({
-        'model_id': m.modelId,
-        'model_name': m.displayName,
-        'tag': _inferTag(m),
-        'is_paid': 1,
-        'supports_stream': 1,
-        'supports_standard': 1,
-        'sort_order': widget.appState.allModels.length,
-        'channel_id': widget.channel.id,
-        'fee_group_id': feeGroupId,
-        if (limits.contextWindow != null) 'context_window': limits.contextWindow,
-      });
+      await widget.appState.addModel(LLMModel(
+        modelId: m.modelId,
+        modelName: m.displayName,
+        tag: _inferTag(m),
+        sortOrder: widget.appState.allModels.length,
+        channelId: widget.channel.id,
+        feeGroupId: feeGroupId,
+        contextWindow: limits.contextWindow,
+      ));
     }
     if (mounted) Navigator.pop(context);
   }

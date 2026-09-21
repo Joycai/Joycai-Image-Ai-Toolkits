@@ -296,8 +296,8 @@ class DatabaseService {
   // --- MODEL BASED METHODS ---
 
   // Prompts Methods
-  Future<int> addPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => _prompts.addPrompt(Prompt.fromMap(prompt), tagIds: tagIds);
-  Future<void> updatePrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => _prompts.updatePrompt(id, Prompt.fromMap(prompt), tagIds: tagIds);
+  Future<int> addPrompt(Prompt prompt, {List<int>? tagIds}) => _prompts.addPrompt(prompt, tagIds: tagIds);
+  Future<void> updatePrompt(int id, Prompt prompt, {List<int>? tagIds}) => _prompts.updatePrompt(id, prompt, tagIds: tagIds);
   Future<void> deletePrompt(int id) => _prompts.deletePrompt(id);     
   Future<void> deletePrompts(List<int> ids) => _prompts.deletePrompts(ids);
   Future<void> updatePromptsTags(List<int> promptIds, List<int> tagIds) => _prompts.updatePromptsTags(promptIds, tagIds);
@@ -310,8 +310,8 @@ class DatabaseService {
   Future<void> clearPromptHistory(PromptHistoryType type) => _prompts.clearPromptHistory(type);
 
   // LLM Models Methods
-  Future<int> addModel(Map<String, dynamic> model) => _models.addModel(LLMModel.fromMap(model));
-  Future<void> updateModel(int id, Map<String, dynamic> model) => _models.updateModel(id, LLMModel.fromMap(model));
+  Future<int> addModel(LLMModel model) => _models.addModel(model);
+  Future<void> updateModel(int id, LLMModel model) => _models.updateModel(id, model);
   Future<void> updateModelOrder(List<int> ids) => _models.updateModelOrder(ids);
   Future<void> deleteModel(int id) => _models.deleteModel(id);        
   Future<List<LLMModel>> getModels() => _models.getModels();
@@ -370,30 +370,30 @@ class DatabaseService {
   }
 
   // Pricing Groups Methods
-  Future<int> addPricingGroup(Map<String, dynamic> group) => _models.addPricingGroup(PricingGroup.fromMap(group));
-  Future<void> updatePricingGroup(int id, Map<String, dynamic> group) => _models.updatePricingGroup(id, PricingGroup.fromMap(group));
+  Future<int> addPricingGroup(PricingGroup group) => _models.addPricingGroup(group);
+  Future<void> updatePricingGroup(int id, PricingGroup group) => _models.updatePricingGroup(id, group);
   Future<void> deletePricingGroup(int id) => _models.deletePricingGroup(id);
   Future<List<PricingGroup>> getPricingGroups() => _models.getPricingGroups();
   Future<void> updatePricingGroupOrder(List<int> orderedIds) => _models.updatePricingGroupOrder(orderedIds);
 
   // LLM Channels Methods
-  Future<int> addChannel(Map<String, dynamic> channel) => _models.addChannel(LLMChannel.fromMap(channel));
-  Future<void> updateChannel(int id, Map<String, dynamic> channel) => _models.updateChannel(id, LLMChannel.fromMap(channel));
+  Future<int> addChannel(LLMChannel channel) => _models.addChannel(channel);
+  Future<void> updateChannel(int id, LLMChannel channel) => _models.updateChannel(id, channel);
   Future<void> deleteChannel(int id) => _models.deleteChannel(id);    
   Future<List<LLMChannel>> getChannels() => _models.getChannels();    
   Future<LLMChannel?> getChannel(int id) => _models.getChannel(id);   
   Future<void> updateChannelOrder(List<int> orderedIds) => _models.updateChannelOrder(orderedIds);
 
   // Prompt Tags Methods
-  Future<int> addPromptTag(Map<String, dynamic> tag) => _prompts.addPromptTag(PromptTag.fromMap(tag));
-  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) => _prompts.updatePromptTag(id, PromptTag.fromMap(tag));
+  Future<int> addPromptTag(PromptTag tag) => _prompts.addPromptTag(tag);
+  Future<void> updatePromptTag(int id, PromptTag tag) => _prompts.updatePromptTag(id, tag);
   Future<void> deletePromptTag(int id) => _prompts.deletePromptTag(id);
   Future<List<PromptTag>> getPromptTags() => _prompts.getPromptTags();
   Future<void> updateTagOrder(List<int> ids) => _prompts.updateTagOrder(ids);
 
   // System Prompts Methods
-  Future<int> addSystemPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => _prompts.addSystemPrompt(SystemPrompt.fromMap(prompt), tagIds: tagIds);
-  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => _prompts.updateSystemPrompt(id, SystemPrompt.fromMap(prompt), tagIds: tagIds);
+  Future<int> addSystemPrompt(SystemPrompt prompt, {List<int>? tagIds}) => _prompts.addSystemPrompt(prompt, tagIds: tagIds);
+  Future<void> updateSystemPrompt(int id, SystemPrompt prompt, {List<int>? tagIds}) => _prompts.updateSystemPrompt(id, prompt, tagIds: tagIds);
   Future<void> deleteSystemPrompt(int id) => _prompts.deleteSystemPrompt(id);
   Future<void> deleteSystemPrompts(List<int> ids) => _prompts.deleteSystemPrompts(ids);
   Future<void> updateSystemPromptsTags(List<int> promptIds, List<int> tagIds) => _prompts.updateSystemPromptsTags(promptIds, tagIds);

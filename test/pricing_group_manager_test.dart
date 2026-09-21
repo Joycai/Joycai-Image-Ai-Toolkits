@@ -3,6 +3,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
+import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/fee_group_row.dart';
@@ -52,50 +55,49 @@ void main() {
       for (final existing in [...state.allPricingGroups]) {
         await state.deletePricingGroup(existing.id!);
       }
-      final tokenGroupId = await state.addPricingGroup({
-        'name': 'Gemini 2.5 Pro Long Context Tier With A Deliberately Wordy Name',
-        'billing_mode': 'token',
-        'input_price': 1.25,
-        'cache_input_price': cachePrice,
-        'output_price': 10.0,
-      });
+      final tokenGroupId = await state.addPricingGroup(PricingGroup(
+        name: 'Gemini 2.5 Pro Long Context Tier With A Deliberately Wordy Name',
+        billingMode: 'token',
+        inputPrice: 1.25,
+        cacheInputPrice: cachePrice,
+        outputPrice: 10.0,
+      ));
       // Bracketed: the row shows 「MJ」 as a badge beside the name.
-      await state.addPricingGroup({
-        'name': 'Midjourney Relax [MJ]',
-        'billing_mode': 'request',
-        'request_price': 0.04,
-      });
+      await state.addPricingGroup(PricingGroup(
+        name: 'Midjourney Relax [MJ]',
+        billingMode: 'request',
+        requestPrice: 0.04,
+      ));
       // A spec-billed video group (`D2b`): per second, three rows and a
       // catch-all — the shape the summary chip and the editor's table are
       // pinned against below.
-      await state.addPricingGroup({
-        'name': 'Veo 3 Video',
-        'billing_mode': 'spec',
-        'output_unit': 'second',
-        'output_rates': SpecRate.encodeList(const [
+      await state.addPricingGroup(PricingGroup(
+        name: 'Veo 3 Video',
+        billingMode: 'spec',
+        outputUnit: OutputUnit.second,
+        outputRates: const [
           SpecRate(size: '1080p', quality: 'high', price: 0.5),
           SpecRate(size: '1080p', price: 0.3),
           SpecRate(size: '720p', price: 0.15),
           SpecRate(price: 0.1),
-        ]),
-      });
+        ],
+      ));
       // Attached to a real channel: a model with a null channel is not a state
       // the app can produce.
-      final channelId = await state.addChannel({
-        'display_name': 'Fee Group Test Channel',
-        'type': 'openai-api-rest',
-        'endpoint': 'https://example.invalid/v1',
-        'api_key': 'key-test',
-      });
+      final channelId = await state.addChannel(LLMChannel(
+        displayName: 'Fee Group Test Channel',
+        type: 'openai-api-rest',
+        endpoint: 'https://example.invalid/v1',
+        apiKey: 'key-test',
+      ));
       for (final name in ['claude-sonnet-5', 'claude-opus-4-6']) {
-        await state.addModel({
-          'model_id': name,
-          'model_name': name,
-          'type': 'openai-api',
-          'tag': 'chat',
-          'channel_id': channelId,
-          'fee_group_id': tokenGroupId,
-        });
+        await state.addModel(LLMModel(
+          modelId: name,
+          modelName: name,
+          tag: 'chat',
+          channelId: channelId,
+          feeGroupId: tokenGroupId,
+        ));
       }
       return state;
     });
@@ -477,11 +479,11 @@ void main() {
     final ids = await tester.runAsync(() async {
       final ids = <int>[];
       for (var i = 0; i < 30; i++) {
-        ids.add(await appState.addPricingGroup({
-          'name': 'Extra Group $i',
-          'billing_mode': 'request',
-          'request_price': 0.01 * (i + 1),
-        }));
+        ids.add(await appState.addPricingGroup(PricingGroup(
+          name: 'Extra Group $i',
+          billingMode: 'request',
+          requestPrice: 0.01 * (i + 1),
+        )));
       }
       return ids;
     });

@@ -340,32 +340,31 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         ? RouteSwitching.normalizedForSave(_draftModel, routes)
         : null;
 
-    final data = {
-      'model_id': id,
+    final data = LLMModel(
+      modelId: id,
       // A blank name is the ID.
-      'model_name': name.isEmpty ? id : name,
-      'tag': tag,
-      'is_paid': 1,
-      'supports_stream': supportsStream ? 1 : 0,
-      'supports_standard': supportsStandard ? 1 : 0,
-      'force_view_all_images': forceViewAllImages ? 1 : 0,
+      modelName: name.isEmpty ? id : name,
+      tag: tag,
+      supportsStream: supportsStream,
+      supportsStandard: supportsStandard,
+      forceViewAllImages: forceViewAllImages,
       // The legacy flag is kept in sync so a backup restored into an older
       // build (which only reads the boolean) preserves thinking behavior.
-      'enable_thinking': saved != null
-          ? (saved.enableThinking ? 1 : 0)
-          : (reasoningEffort != null && reasoningEffort != 'off') ? 1 : 0,
-      'reasoning_effort': saved != null ? saved.reasoningEffort : reasoningEffort,
-      'enable_web_search': enableWebSearch ? 1 : 0,
+      enableThinking: saved != null
+          ? saved.enableThinking
+          : (reasoningEffort != null && reasoningEffort != 'off'),
+      reasoningEffort: saved != null ? saved.reasoningEffort : reasoningEffort,
+      enableWebSearch: enableWebSearch,
       // Auto stores null; a stale value is silently cleared *here* — on the
       // user's own save, never behind their back.
-      'wire_protocol': saved != null ? saved.wireProtocol : _activePin?.id,
-      'active_route': saved?.activeRoute,
-      'route_params': saved?.routeParams,
-      'fee_group_id': feeGroupId,
-      'channel_id': channelId,
-      'context_window': ContextBudget.store(contextMode, _contextTokens ?? 0),
-      'max_output_tokens': saved != null ? saved.maxOutputTokens : _storedOutputCap,
-    };
+      wireProtocol: saved != null ? saved.wireProtocol : _activePin?.id,
+      activeRoute: saved?.activeRoute,
+      routeParams: saved?.routeParams,
+      feeGroupId: feeGroupId,
+      channelId: channelId,
+      contextWindow: ContextBudget.store(contextMode, _contextTokens ?? 0),
+      maxOutputTokens: saved != null ? saved.maxOutputTokens : _storedOutputCap,
+    );
 
     if (widget.model == null) {
       await widget.appState.addModel(data);

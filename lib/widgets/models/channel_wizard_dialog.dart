@@ -5,6 +5,7 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/llm_channel.dart';
 import '../../services/llm/channel_probe_service.dart';
 import '../../services/llm/channel_routes.dart';
 import '../../services/llm/llm_dispatcher.dart';
@@ -338,16 +339,16 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     setState(() => _submitting = true);
     try {
       final routes = _plannedRoutes;
-      await widget.appState.addChannel({
-        'display_name': _resolvedName(),
-        'endpoint': routes.primaryAddress,
-        'api_key': _apiKeyCtrl.text.trim(),
-        'type': routes.primaryVendorId,
-        'routes': routes.encode(),
-        'enable_discovery': _enableDiscovery ? 1 : 0,
-        'tag': _resolvedTag(),
-        'tag_color': _tagColor,
-      });
+      await widget.appState.addChannel(LLMChannel(
+        displayName: _resolvedName(),
+        endpoint: routes.primaryAddress,
+        apiKey: _apiKeyCtrl.text.trim(),
+        type: routes.primaryVendorId,
+        routes: routes.encode(),
+        enableDiscovery: _enableDiscovery,
+        tag: _resolvedTag(),
+        tagColor: _tagColor,
+      ));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

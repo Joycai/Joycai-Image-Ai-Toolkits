@@ -1,8 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/catalogue/channel_merge.dart';
 import 'package:joycai_image_ai_toolkits/services/catalogue/channel_merge_executor.dart';
-import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/db/repositories/assistant_session_repository.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
@@ -88,37 +89,37 @@ void main() {
 
     test('merges, moves, deletes and rewrites every reference', () async {
       final db = DatabaseService();
-      final keepId = await db.addChannel({
-        'display_name': 'Relay',
-        'type': Vendors.newApiOpenAI,
-        'endpoint': 'https://relay.example.com/v1',
-        'api_key': 'sk-shared',
-      });
-      final absorbId = await db.addChannel({
-        'display_name': 'Relay (Claude)',
-        'type': Vendors.newApiAnthropic,
-        'endpoint': 'https://relay.example.com/v1',
-        'api_key': 'sk-shared',
-      });
-      final keptModel = await db.addModel({
-        'model_id': 'claude-sonnet-4-5',
-        'model_name': 'Sonnet',
-        'tag': 'chat',
-        'channel_id': keepId,
-      });
-      final twin = await db.addModel({
-        'model_id': 'claude-sonnet-4-5',
-        'model_name': 'Sonnet (Claude)',
-        'tag': 'chat',
-        'channel_id': absorbId,
-        'max_output_tokens': 64000,
-      });
-      final lone = await db.addModel({
-        'model_id': 'claude-opus-4-1',
-        'model_name': 'Opus',
-        'tag': 'chat',
-        'channel_id': absorbId,
-      });
+      final keepId = await db.addChannel(LLMChannel(
+        displayName: 'Relay',
+        type: Vendors.newApiOpenAI,
+        endpoint: 'https://relay.example.com/v1',
+        apiKey: 'sk-shared',
+      ));
+      final absorbId = await db.addChannel(LLMChannel(
+        displayName: 'Relay (Claude)',
+        type: Vendors.newApiAnthropic,
+        endpoint: 'https://relay.example.com/v1',
+        apiKey: 'sk-shared',
+      ));
+      final keptModel = await db.addModel(LLMModel(
+        modelId: 'claude-sonnet-4-5',
+        modelName: 'Sonnet',
+        tag: 'chat',
+        channelId: keepId,
+      ));
+      final twin = await db.addModel(LLMModel(
+        modelId: 'claude-sonnet-4-5',
+        modelName: 'Sonnet (Claude)',
+        tag: 'chat',
+        channelId: absorbId,
+        maxOutputTokens: 64000,
+      ));
+      final lone = await db.addModel(LLMModel(
+        modelId: 'claude-opus-4-1',
+        modelName: 'Opus',
+        tag: 'chat',
+        channelId: absorbId,
+      ));
       await db.saveSetting('last_model_id', '$twin');
       await db.saveSetting('last_video_model_id', '$lone');
       final raw = await db.database;

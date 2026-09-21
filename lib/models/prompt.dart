@@ -91,6 +91,21 @@ class SystemPrompt {
     this.tags = const [],
   }) : outputKind = type == typeRefiner ? outputKind : PresetOutputKind.prompt;
 
+  /// This preset with its wording replaced and everything else kept — what
+  /// the workbench writes when an edited preset is saved back over itself.
+  /// Copied here rather than field by field at the call site: a field listed
+  /// by hand there is a field the next one added to this class is lost from.
+  SystemPrompt withContent(String content) => SystemPrompt(
+        id: id,
+        title: title,
+        content: content,
+        type: type,
+        outputKind: outputKind,
+        isMarkdown: isMarkdown,
+        sortOrder: sortOrder,
+        tags: tags,
+      );
+
   factory SystemPrompt.fromMap(Map<String, dynamic> map) {
     return SystemPrompt(
       id: map['id'] as int?,

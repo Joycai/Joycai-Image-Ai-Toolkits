@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/screens/models/widgets/channel_merge_review.dart';
 import 'package:joycai_image_ai_toolkits/services/catalogue/channel_merge_executor.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
@@ -32,36 +34,36 @@ void main() {
       for (final c in [...state.allChannels]) {
         await state.deleteChannel(c.id!);
       }
-      final openai = await state.addChannel({
-        'display_name': 'Relay',
-        'type': Vendors.newApiOpenAI,
-        'endpoint': 'https://relay.example.com/v1',
-        'api_key': 'sk-shared',
-      });
-      final claude = await state.addChannel({
-        'display_name': 'Relay (Claude)',
-        'type': Vendors.newApiAnthropic,
-        'endpoint': 'https://relay.example.com/v1',
-        'api_key': 'sk-shared',
-      });
-      await state.addModel({
-        'model_id': 'claude-sonnet-4-5',
-        'model_name': 'Sonnet',
-        'tag': 'chat',
-        'channel_id': openai,
-      });
-      await state.addModel({
-        'model_id': 'claude-sonnet-4-5',
-        'model_name': 'Sonnet (Claude)',
-        'tag': 'chat',
-        'channel_id': claude,
-      });
-      await state.addModel({
-        'model_id': 'claude-opus-4-1',
-        'model_name': 'Opus',
-        'tag': 'chat',
-        'channel_id': claude,
-      });
+      final openai = await state.addChannel(LLMChannel(
+        displayName: 'Relay',
+        type: Vendors.newApiOpenAI,
+        endpoint: 'https://relay.example.com/v1',
+        apiKey: 'sk-shared',
+      ));
+      final claude = await state.addChannel(LLMChannel(
+        displayName: 'Relay (Claude)',
+        type: Vendors.newApiAnthropic,
+        endpoint: 'https://relay.example.com/v1',
+        apiKey: 'sk-shared',
+      ));
+      await state.addModel(LLMModel(
+        modelId: 'claude-sonnet-4-5',
+        modelName: 'Sonnet',
+        tag: 'chat',
+        channelId: openai,
+      ));
+      await state.addModel(LLMModel(
+        modelId: 'claude-sonnet-4-5',
+        modelName: 'Sonnet (Claude)',
+        tag: 'chat',
+        channelId: claude,
+      ));
+      await state.addModel(LLMModel(
+        modelId: 'claude-opus-4-1',
+        modelName: 'Opus',
+        tag: 'chat',
+        channelId: claude,
+      ));
       return state;
     }))!;
   }
