@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../models/token_usage.dart';
 import '../billing/spec_billing.dart';
 import '../db/database_service.dart';
 import 'context_budget.dart';
@@ -1102,7 +1103,7 @@ class LLMService {
   /// Where usage rows are written. Null means the real database; tests swap
   /// in a sink that throws to pin that recording is best-effort.
   @visibleForTesting
-  static Future<void> Function(Map<String, dynamic> row)? usageSinkOverride;
+  static Future<void> Function(TokenUsage row)? usageSinkOverride;
 
   /// Test door in front of [LLMConfigResolver]: when set, every entry point
   /// takes its config from here instead of the model database.
@@ -1282,7 +1283,7 @@ class LLMService {
 
   /// Test door in front of the usage-row update [settleVideoUsage] makes.
   @visibleForTesting
-  static Future<int> Function(String taskId, Map<String, dynamic> values)?
+  static Future<int> Function(String taskId, UsageSpecBilling billing)?
       usageUpdateOverride;
 
   /// Re-prices a finished video job's submit row by the seconds the provider
@@ -1312,13 +1313,8 @@ class LLMService {
         {'output_seconds': renderedSeconds},
         imageCount: 0,
       )!;
-      final update = usageUpdateOverride ?? DatabaseService().updateTokenUsage;
-      final rows = await update(videoUsageRowId(operationName), {
-        'output_units': spec.units,
-        'output_unit_price': spec.unitPrice,
-        'output_unit': spec.unit.name,
-        'output_spec': jsonEncode(spec.toJson()),
-      });
+      final update = usageUpdateOverride ?? DatabaseService().updateSpecBilling;
+      final rows = await update(videoUsageRowId(operationName), spec.toBilling());
       if (rows > 0) {
         log('Video $operationName: billed by the ${spec.spec.seconds}s the '
             'provider reports it rendered.');

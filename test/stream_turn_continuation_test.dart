@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
@@ -19,7 +20,7 @@ void main() {
   final home = Directory.systemTemp.createTempSync('joycai_stream_turn');
 
   late HttpServer server;
-  late List<Map<String, dynamic>> rows;
+  late List<TokenUsage> rows;
 
   setUp(() async {
     binding.defaultBinaryMessenger.setMockMethodCallHandler(

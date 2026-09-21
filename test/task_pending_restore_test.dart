@@ -23,7 +23,7 @@ void main() {
           parameters: const {},
           status: TaskStatus.completed,
           createdAt: DateTime(2026, 1, 2, 0, i),
-        ).toMap(),
+        ),
       );
     }
     await DatabaseService().saveTask(
@@ -34,12 +34,12 @@ void main() {
         parameters: const {},
         status: TaskStatus.pending,
         createdAt: DateTime(2025, 1, 1),
-      ).toMap(),
+      ),
     );
 
     final rows = await TaskRepository().getRecentTasks(200);
 
-    expect(rows.any((row) => row['id'] == 'pending-old'), isTrue);
+    expect(rows.any((task) => task.id == 'pending-old'), isTrue);
     await DatabaseService().deleteTask('pending-old');
   });
 
@@ -57,7 +57,7 @@ void main() {
         modelId: 'm',
         parameters: const {'prefix': 'download'},
         status: TaskStatus.pending,
-      ).toMap(),
+      ),
     );
 
     final queue = TaskQueueService();

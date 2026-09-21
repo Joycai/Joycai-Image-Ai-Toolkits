@@ -1,8 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import '../../../models/llm_model.dart';
+import '../../../models/token_usage.dart';
+import '../../../models/usage_checkpoint.dart';
 import '../../../services/db/database_service.dart';
 import 'usage_range.dart';
 import 'usage_stats.dart';
@@ -32,7 +32,7 @@ class UsageController extends ChangeNotifier {
   /// Whether a large range (> 500 records) writes a daily usage checkpoint.
   final bool createCheckpoints;
 
-  List<Map<String, dynamic>> _rows = const [];
+  List<TokenUsage> _rows = const [];
   UsageStats _stats = UsageStats.empty();
   bool _isLoading = true;
   bool _isLoadingMore = false;
@@ -47,7 +47,7 @@ class UsageController extends ChangeNotifier {
   int _generation = 0;
   bool _disposed = false;
 
-  List<Map<String, dynamic>> get rows => _rows;
+  List<TokenUsage> get rows => _rows;
   UsageStats get stats => _stats;
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
@@ -132,19 +132,16 @@ class UsageController extends ChangeNotifier {
     try {
       final last = await _db.getLatestUsageCheckpoint();
       if (last == null ||
-          DateTime.now().difference(DateTime.parse(last['timestamp'])).inDays >= 1) {
-        await _db.saveUsageCheckpoint({
-          'timestamp': DateTime.now().toIso8601String(),
-          'total_input_tokens': currentStats.totalInput,
-          'total_cache_tokens': currentStats.totalCache,
-          'total_output_tokens': currentStats.totalOutput,
-          'total_request_count': currentStats.totalRequestCount,
-          'total_cost': currentStats.totalCost,
-          // groupCosts is keyed by int group id; jsonEncode throws
-          // JsonUnsupportedObjectError on any non-String map key, so the keys
-          // must be stringified first.
-          'metadata': jsonEncode(currentStats.groupCosts.map((k, v) => MapEntry(k.toString(), v))),
-        });
+          DateTime.now().difference(last.timestamp).inDays >= 1) {
+        await _db.saveUsageCheckpoint(UsageCheckpoint(
+          timestamp: DateTime.now(),
+          totalInputTokens: currentStats.totalInput,
+          totalCacheTokens: currentStats.totalCache,
+          totalOutputTokens: currentStats.totalOutput,
+          totalRequestCount: currentStats.totalRequestCount,
+          totalCost: currentStats.totalCost,
+          groupCosts: currentStats.groupCosts,
+        ));
       }
     } catch (_) {
       // Checkpoint persistence is best-effort; it must never break the view.

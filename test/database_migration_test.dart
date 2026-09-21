@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
-import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_stats.dart';
+import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_migrations.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -154,7 +154,7 @@ void main() {
     final row = (await db.query('token_usage')).single;
     expect(row['cache_tokens'], 0);
     expect(row['cache_price'], isNull);
-    expect(calculateRowCost(row), closeTo(12.0, 1e-9));
+    expect(TokenUsage.fromMap(row).cost, closeTo(12.0, 1e-9));
   });
 
   test('a fresh database is created with the cache columns', () async {
@@ -500,7 +500,7 @@ void main() {
 
       expect(await columnsOf(db, 'token_usage'), containsAll(usageColumns));
       final row = (await db.query('token_usage')).single;
-      expect(calculateRowCost(row), closeTo(0.10, 1e-9));
+      expect(TokenUsage.fromMap(row).cost, closeTo(0.10, 1e-9));
       expect(row['output_units'], 0.0);
     });
 
@@ -534,7 +534,7 @@ void main() {
         'output_spec': '{"size":"1080p","seconds":8,"matched":true}',
       });
       final row = (await db.query('token_usage')).single;
-      expect(calculateRowCost(row), closeTo(2.40, 1e-9));
+      expect(TokenUsage.fromMap(row).cost, closeTo(2.40, 1e-9));
     });
 
     test('the step is idempotent', () async {

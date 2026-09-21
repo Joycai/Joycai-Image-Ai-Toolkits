@@ -4,9 +4,9 @@
 整体过了一遍，在 `73aaa68`（v4.24.0，`flutter analyze` 干净）上逐条核实。
 
 **结论**：分层本身比手册要求得更严，而且是 `test/source_layout_test.dart` 用八条规则钉死的；
-真正的偏离只有两个方向——**依赖注入**（用单例当服务定位器，A1，**已做**，见
-[`README.md`](README.md) 那行指针）与**数据边界上的领域模型**（还有两个仓储在传裸 map，A2）。
-其余六条是局部的。
+真正的偏离只有两个方向——**依赖注入**（用单例当服务定位器，A1）与**数据边界上的领域模型**
+（两个仓储在传裸 map，A2）。**两条都已做**，结论见 [`README.md`](README.md) 那行指针。
+剩下六条是局部的。
 
 **怎么用这份文件**：一条一条做，每条自带验收。做完一条就把它从本文件删掉，并在
 [`README.md`](README.md) 的「已执行」表里登记结论住在哪；条目清空后删掉本文件。
@@ -16,7 +16,6 @@
 
 | 编号 | 一句话 | 触及 | 状态 |
 |---|---|---|---|
-| A2 | `UsageRepository` / `TaskRepository` 是仅有的两个不返回领域模型的仓储，裸行一路穿到 UI | `models/`、`db/repositories/`、`screens/metrics/` | 未开工 |
 | A3 | `DatabaseService` 门面把模型摊成 map 再让仓储拼回去 | `db/database_service.dart` | 未开工 |
 | A4 | `BrowserFile` 带展示逻辑，其中 `.color` 是死代码且用裸 Material 颜色 | `models/browser_file.dart` | 未开工 |
 | A5 | `TaskItem` 可变，队列把内部列表原样交出去并原地改 | `services/tasks/task_queue_service.dart` | 未开工 |
@@ -26,57 +25,17 @@
 
 ---
 
-## A2 · 用量与任务两个仓储传裸 map
-
-**现状**：其余仓储一律返回领域模型（`Prompt` / `LLMModel` / `LLMChannel` / `PricingGroup` /
-`AssistantNote` / `AssistantSessionMeta` / `ImageLayerSet` / `CookieRetention`）。只有两个例外：
-
-- `UsageRepository`：`getTokenUsage` 返回 `List<Map<String, dynamic>>`，`recordTokenUsage` /
-  `updateTokenUsage` 收 map。**`models/` 里根本没有 `TokenUsage`。**
-- `TaskRepository`：`saveTask(Map)` / `getRecentTasks` 返回 map，尽管 `TaskItem` 就在
-  `models/task_item.dart`，队列拿到手第一件事是 `TaskItem.fromMap(t)`
-  （`task_queue_service.dart:124`）。
-
-后果是裸行穿过三层到 UI：`usage_controller.dart` 里 `List<Map<String, dynamic>> _rows`，
-`usage_list.dart` 与 `usage_stats.dart` 按字符串键取值，连 `output_spec` 那一列的 JSON 快照
-都是在 screens 层现解的（`usage_stats.dart:167` 的 `usageRowSpec`）。数据层的表结构就这样
-漏到了最上面。
-
-**为什么要改**：这是全仓唯一一处「换一个列名要改 UI」的地方。计费口径本身还分 token /
-request / spec 三种模式，今天靠 `row['billing_mode'] as String? ?? 'token'` 这种写法在 UI 里
-分叉——该由类型来分。
-
-**改法**：
-1. 新建 `lib/models/token_usage.dart`，对着 `token_usage` 表的列
-   （`database_migrations.dart:664` 的 onCreate 加后续 ALTER：`model_pk`、`cache_tokens`、
-   `cache_price`、`cache_input_price`、`output_spec` 等）写一个不可变模型 + `fromMap`/`toMap`，
-   并把 `output_spec` 的 JSON 快照在模型里解成类型（`matched` 与各维度），
-   而不是留给 `usageRowSpec`。
-2. `UsageRepository` 改成收发 `TokenUsage`；`DatabaseService` 的对应门面方法跟着改签名。
-3. `usage_controller` 的 `_rows` 换成 `List<TokenUsage>`；`usage_stats.dart` 里
-   `usageRowCostParts` / `usageRowUnmatched` / `calculateRowCost` 这组自由函数变成
-   `TokenUsage` 上的方法或扩展。
-4. `TaskRepository` 同法改成收发 `TaskItem`，删掉队列侧的 `fromMap` 转手。
-
-**验收**：`usage_stats_test.dart`、`usage_group_costs_test.dart`、`usage_summary_test.dart`、
-`usage_list_test.dart`、`spec_billing_test.dart`、`task_pending_restore_test.dart`、
-`task_queue_remove_task_test.dart` 全绿，且这些测试里不再出现手搓的 `{'billing_mode': ...}`
-字面量——改完它们应该构造 `TokenUsage` / `TaskItem`。
-
-**注意**：整库备份与导入（`database_service.dart` 的 `getAllDataRaw` / `restoreBackupInto`）
-**继续用 map**，那一头要的就是按表按列的原样搬运，套模型只会在加列时丢数据。本条不碰它。
-
----
-
 ## A3 · 门面把模型绕着 map 转一圈
 
 **现状**：
 
 ```
-lib/services/db/database_service.dart:261  addPrompt(Map) => PromptRepository().addPrompt(Prompt.fromMap(prompt), ...)
-lib/services/db/database_service.dart:262  updatePrompt(...)
-lib/services/db/database_service.dart:275  addModel(Map) => ModelRepository().addModel(LLMModel.fromMap(model))
-lib/services/db/database_service.dart:276  updateModel(...)
+lib/services/db/database_service.dart:299  addPrompt(Map) => _prompts.addPrompt(Prompt.fromMap(prompt), ...)
+lib/services/db/database_service.dart:300  updatePrompt(...)
+lib/services/db/database_service.dart:313  addModel(Map) => _models.addModel(LLMModel.fromMap(model))
+lib/services/db/database_service.dart:314  updateModel(...)
+lib/services/db/database_service.dart:388  addPromptTag(Map) => _prompts.addPromptTag(PromptTag.fromMap(tag))
+lib/services/db/database_service.dart:389  updatePromptTag(...)
 ```
 
 调用方手里本来就是 `Prompt` / `LLMModel`，先 `toMap()` 摊平，门面再 `fromMap` 拼回来。
@@ -88,7 +47,7 @@ lib/services/db/database_service.dart:276  updateModel(...)
 
 **验收**：`flutter analyze` 干净；`prompt_history_test.dart`、`model_id_uniqueness_test.dart`、
 `channel_ordering_test.dart` 全绿。做完这条，`database_service.dart` 里 `Map<String, dynamic>`
-的出现次数应当从 49 明显下降——剩下的该只有备份/导入那一族。
+的出现次数应当从 42 明显下降（A2 之前是 49）——剩下的该只有备份/导入那一族。
 
 ---
 

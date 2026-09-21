@@ -54,7 +54,7 @@ void main() {
 
   Future<(TaskQueueService, TaskItem)> queued(String id) async {
     await DatabaseService()
-        .saveTask(video(id, operation: 'op/$id', status: TaskStatus.completed).toMap());
+        .saveTask(video(id, operation: 'op/$id', status: TaskStatus.completed));
     final service = TaskQueueService()..updateConcurrency(0);
     for (var i = 0; i < 100 && !service.queue.any((t) => t.id == id); i++) {
       await Future<void>.delayed(const Duration(milliseconds: 10));

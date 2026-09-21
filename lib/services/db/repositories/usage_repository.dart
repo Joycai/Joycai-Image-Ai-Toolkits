@@ -1,5 +1,7 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../../../models/token_usage.dart';
+import '../../../models/usage_checkpoint.dart';
 import '../database_service.dart';
 
 class UsageRepository {
@@ -9,16 +11,16 @@ class UsageRepository {
 
   Future<Database> get _db async => _dbService.database;
 
-  Future<void> recordTokenUsage(Map<String, dynamic> usage) async {
+  Future<void> recordTokenUsage(TokenUsage usage) async {
     final db = await _db;
-    await db.insert('token_usage', usage);
+    await db.insert('token_usage', usage.toMap());
   }
 
-  /// Overwrites [values] on the usage row recorded under [taskId]; returns
+  /// Re-prices the usage row recorded under [taskId] at [billing]; returns
   /// how many rows matched (0 for a row written before ids were durable).
-  Future<int> updateTokenUsage(String taskId, Map<String, dynamic> values) async {
+  Future<int> updateSpecBilling(String taskId, UsageSpecBilling billing) async {
     final db = await _db;
-    return db.update('token_usage', values,
+    return db.update('token_usage', billing.toMap(),
         where: 'task_id = ?', whereArgs: [taskId]);
   }
 
@@ -62,7 +64,7 @@ class UsageRepository {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getTokenUsage({
+  Future<List<TokenUsage>> getTokenUsage({
     List<String>? modelIds,
     DateTime? start,
     DateTime? end,
@@ -88,25 +90,26 @@ class UsageRepository {
       args.add(end.toIso8601String());
     }
 
-    return db.query(
-      'token_usage', 
-      where: where, 
-      whereArgs: args, 
+    final rows = await db.query(
+      'token_usage',
+      where: where,
+      whereArgs: args,
       orderBy: 'timestamp DESC',
       limit: limit,
       offset: offset,
     );
+    return rows.map(TokenUsage.fromMap).toList();
   }
 
-  Future<void> saveUsageCheckpoint(Map<String, dynamic> checkpoint) async {
+  Future<void> saveUsageCheckpoint(UsageCheckpoint checkpoint) async {
     final db = await _db;
-    await db.insert('usage_checkpoints', checkpoint);
+    await db.insert('usage_checkpoints', checkpoint.toMap());
   }
 
-  Future<Map<String, dynamic>?> getLatestUsageCheckpoint() async {
+  Future<UsageCheckpoint?> getLatestUsageCheckpoint() async {
     final db = await _db;
     final results = await db.query('usage_checkpoints', orderBy: 'timestamp DESC', limit: 1);
     if (results.isEmpty) return null;
-    return results.first;
+    return UsageCheckpoint.fromMap(results.first);
   }
 }

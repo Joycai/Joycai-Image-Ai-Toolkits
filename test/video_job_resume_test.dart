@@ -42,15 +42,14 @@ void main() {
   test('an interrupted video task with a job id is requeued, not failed',
       () async {
     final db = DatabaseService();
-    await db.saveTask(task('video-resume', operationName: 'video_abc').toMap());
-    await db.saveTask(task('video-unsubmitted').toMap());
-    await db.saveTask(task('image-running', type: TaskType.imageProcess).toMap());
+    await db.saveTask(task('video-resume', operationName: 'video_abc'));
+    await db.saveTask(task('video-unsubmitted'));
+    await db.saveTask(task('image-running', type: TaskType.imageProcess));
 
     await TaskRepository().cleanupStuckTasks();
 
     final rows = {
-      for (final row in await TaskRepository().getRecentTasks(200))
-        row['id'] as String: TaskItem.fromMap(row),
+      for (final task in await TaskRepository().getRecentTasks(200)) task.id: task,
     };
     expect(rows['video-resume']!.status, TaskStatus.pending);
     expect(rows['video-resume']!.operationName, 'video_abc');
@@ -68,7 +67,7 @@ void main() {
       'video-retry',
       status: TaskStatus.failed,
       operationName: 'video_old',
-    ).toMap());
+    ));
 
     final queue = TaskQueueService();
     addTearDown(queue.dispose);

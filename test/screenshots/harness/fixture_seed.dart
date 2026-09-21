@@ -23,6 +23,7 @@ import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt_history_entry.dart';
 import 'package:joycai_image_ai_toolkits/models/tag.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
+import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
@@ -635,7 +636,7 @@ Future<void> _seedTasks(DatabaseService db, _Catalog catalog, _Images images) as
   ];
 
   for (final TaskItem task in tasks) {
-    await db.saveTask(task.toMap());
+    await db.saveTask(task);
   }
 }
 
@@ -1171,40 +1172,40 @@ Future<void> _seedUsage(DatabaseService db, _Catalog catalog) async {
         final String size = tier == 3 ? '1440p' : (tier == 2 ? '720p' : '1080p');
         final String? quality = tier == 0 ? 'high' : null;
         final double price = tier == 0 ? 0.5 : (tier == 1 ? 0.3 : (tier == 2 ? 0.15 : 0.0));
-        await db.recordTokenUsage(<String, dynamic>{
-          'task_id': 'fixture-usage-$day-$r',
-          'model_id': catalog.modelIds[m],
-          'model_pk': catalog.modelPks[m],
-          'timestamp': ts.toIso8601String(),
-          'request_count': 1,
-          'billing_mode': 'spec',
-          'output_units': 8.0,
-          'output_unit_price': price,
-          'output_unit': 'second',
-          'output_spec': jsonEncode(<String, dynamic>{
-            'size': size,
-            'quality': ?quality,
-            'seconds': 8,
-            'matched': tier != 3,
-          }),
-        });
+        await db.recordTokenUsage(TokenUsage(
+          taskId: 'fixture-usage-$day-$r',
+          modelId: catalog.modelIds[m],
+          modelDbId: catalog.modelPks[m],
+          timestamp: ts,
+          billingMode: 'spec',
+          spec: UsageSpecBilling(
+            unit: OutputUnit.second,
+            units: 8.0,
+            unitPrice: price,
+            snapshot: UsageSpecSnapshot(
+              size: size,
+              quality: quality,
+              seconds: 8,
+              matched: tier != 3,
+            ),
+          ),
+        ));
         continue;
       }
-      await db.recordTokenUsage(<String, dynamic>{
-        'task_id': 'fixture-usage-$day-$r',
-        'model_id': catalog.modelIds[m],
-        'model_pk': catalog.modelPks[m],
-        'timestamp': ts.toIso8601String(),
-        'input_tokens': inputTokens,
-        'cache_tokens': cacheTokens,
-        'output_tokens': outputTokens,
-        'input_price': 0.075,
-        'cache_price': 0.01875,
-        'output_price': 0.30,
-        'request_count': 1,
-        'request_price': 0.04,
-        'billing_mode': m == 0 || m == 3 ? 'request' : 'token',
-      });
+      await db.recordTokenUsage(TokenUsage(
+        taskId: 'fixture-usage-$day-$r',
+        modelId: catalog.modelIds[m],
+        modelDbId: catalog.modelPks[m],
+        timestamp: ts,
+        inputTokens: inputTokens,
+        cacheTokens: cacheTokens,
+        outputTokens: outputTokens,
+        inputPrice: 0.075,
+        cachePrice: 0.01875,
+        outputPrice: 0.30,
+        requestPrice: 0.04,
+        billingMode: m == 0 || m == 3 ? 'request' : 'token',
+      ));
     }
   }
 }

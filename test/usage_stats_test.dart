@@ -1,12 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
+import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
+import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_stats.dart';
 
-/// Pins down how usage rows turn into money. Input, cache hits and output are
-/// billed at three separate rates, and a fee group that leaves the cache rate
-/// unset must fall back to the input rate rather than billing the cache free.
+/// Pins down how a range of usage rows adds up: totals, the per-group
+/// breakdown and the cache hit rate. What one row costs is `TokenUsage`'s own
+/// business — see `token_usage_test.dart`.
 void main() {
-  Map<String, dynamic> tokenRow({
+  final at = DateTime(2026, 9, 1, 12);
+
+  TokenUsage tokenRow({
     int input = 0,
     int cache = 0,
     int output = 0,
@@ -15,17 +19,17 @@ void main() {
     double outputPrice = 0.0,
     int? modelPk,
   }) =>
-      {
-        'billing_mode': 'token',
-        'input_tokens': input,
-        'cache_tokens': cache,
-        'output_tokens': output,
-        'input_price': inputPrice,
-        'cache_price': cachePrice,
-        'output_price': outputPrice,
-        'request_count': 1,
-        'model_pk': modelPk,
-      };
+      TokenUsage(
+        modelId: 'm',
+        modelDbId: modelPk,
+        timestamp: at,
+        inputTokens: input,
+        cacheTokens: cache,
+        outputTokens: output,
+        inputPrice: inputPrice,
+        cachePrice: cachePrice,
+        outputPrice: outputPrice,
+      );
 
   LLMModel model(int id, int? feeGroupId) => LLMModel(
         id: id,
@@ -35,113 +39,32 @@ void main() {
         feeGroupId: feeGroupId,
       );
 
-  group('calculateRowCost', () {
-    test('bills input, cache and output at their own rates', () {
-      final cost = calculateRowCost(tokenRow(
-        input: 1000000,
-        cache: 1000000,
-        output: 1000000,
-        inputPrice: 2.0,
-        cachePrice: 0.5,
-        outputPrice: 10.0,
-      ));
-
-      expect(cost, closeTo(12.5, 1e-9));
-    });
-
-    test('falls back to the input rate when the cache rate is unset', () {
-      // cache_price null is what an unconfigured fee group writes, and what
-      // every row recorded before cache pricing existed carries.
-      final cost = calculateRowCost(tokenRow(
-        cache: 1000000,
-        inputPrice: 2.0,
-        cachePrice: null,
-      ));
-
-      expect(cost, closeTo(2.0, 1e-9));
-    });
-
-    test('honours an explicit free cache rate instead of inheriting input', () {
-      final cost = calculateRowCost(tokenRow(
-        cache: 1000000,
-        inputPrice: 2.0,
-        cachePrice: 0.0,
-      ));
-
-      expect(cost, 0.0);
-    });
-
-    test('request-billed rows ignore token prices entirely', () {
-      final cost = calculateRowCost({
-        'billing_mode': 'request',
-        'input_tokens': 5000,
-        'cache_tokens': 5000,
-        'output_tokens': 5000,
-        'input_price': 99.0,
-        'request_count': 3,
-        'request_price': 0.02,
-      });
-
-      expect(cost, closeTo(0.06, 1e-9));
-    });
-
-    test('legacy rows written before cache columns existed still price', () {
-      // Rows read back from a pre-v30 database have no cache keys at all.
-      final cost = calculateRowCost({
-        'billing_mode': 'token',
-        'input_tokens': 1000000,
-        'output_tokens': 1000000,
-        'input_price': 3.0,
-        'output_price': 6.0,
-        'request_count': 1,
-      });
-
-      expect(cost, closeTo(9.0, 1e-9));
-    });
-
-    test('spec-billed rows price units × unit price and nothing else', () {
-      final cost = calculateRowCost({
-        'billing_mode': 'spec',
-        'input_tokens': 5000,
-        'input_price': 99.0,
-        'request_count': 1,
-        'request_price': 0.02,
-        'output_units': 8.0,
-        'output_unit_price': 0.30,
-        'output_unit': 'second',
-      });
-
-      expect(cost, closeTo(2.40, 1e-9));
-    });
-
-    test('a spec-billed row missing its columns prices zero, not a crash', () {
-      expect(calculateRowCost({'billing_mode': 'spec'}), 0.0);
-    });
-  });
-
   group('spec-billed rows in calculateStats', () {
-    Map<String, dynamic> specRow({
-      required String unit,
+    TokenUsage specRow({
+      required OutputUnit unit,
       required double units,
       required double price,
       bool matched = true,
       int? modelPk,
     }) =>
-        {
-          'billing_mode': 'spec',
-          'request_count': 1,
-          'output_units': units,
-          'output_unit_price': price,
-          'output_unit': unit,
-          'output_spec': '{"size":"1080p","matched":${matched ? 'true' : 'false'}}',
-          'model_pk': modelPk,
-        };
+        TokenUsage(
+          modelId: 'm',
+          modelDbId: modelPk,
+          timestamp: at,
+          billingMode: 'spec',
+          spec: UsageSpecBilling(
+            unit: unit,
+            units: units,
+            unitPrice: price,
+            snapshot: UsageSpecSnapshot(size: '1080p', matched: matched),
+          ),
+        );
 
     test('cost lands in the group\'s spec bucket with its unit count', () {
       final stats = calculateStats([
-        specRow(unit: 'second', units: 8, price: 0.30, modelPk: 1),
-        specRow(unit: 'second', units: 5, price: 0.30, modelPk: 1),
-        specRow(unit: 'image', units: 2, price: 0.03, modelPk: 1),
+        specRow(unit: OutputUnit.second, units: 8, price: 0.30, modelPk: 1),
+        specRow(unit: OutputUnit.second, units: 5, price: 0.30, modelPk: 1),
+        specRow(unit: OutputUnit.image, units: 2, price: 0.03, modelPk: 1),
       ], [
         model(1, 42)
       ]);
@@ -158,15 +81,13 @@ void main() {
 
     test('requests no rate row covered are counted, not hidden in a zero', () {
       final stats = calculateStats([
-        specRow(unit: 'image', units: 1, price: 0.0, matched: false, modelPk: 1),
-        specRow(unit: 'image', units: 1, price: 0.03, modelPk: 1),
+        specRow(unit: OutputUnit.image, units: 1, price: 0.0, matched: false, modelPk: 1),
+        specRow(unit: OutputUnit.image, units: 1, price: 0.03, modelPk: 1),
       ], [
         model(1, 42)
       ]);
 
       expect(stats.groupUsage[42]!.unmatchedCount, 1);
-      expect(usageRowUnmatched({'billing_mode': 'request'}), isFalse);
-      expect(usageRowUnmatched({'billing_mode': 'spec', 'output_spec': 'junk'}), isFalse);
     });
   });
 
@@ -226,7 +147,13 @@ void main() {
       // Request-billed image jobs never ask the cache for anything; reporting
       // 0% would read as a cache that always misses.
       final stats = calculateStats([
-        {'billing_mode': 'request', 'request_count': 3, 'request_price': 0.02},
+        TokenUsage(
+          modelId: 'm',
+          timestamp: at,
+          billingMode: 'request',
+          requestCount: 3,
+          requestPrice: 0.02,
+        ),
       ], []);
 
       expect(stats.cacheHitRate, isNull);

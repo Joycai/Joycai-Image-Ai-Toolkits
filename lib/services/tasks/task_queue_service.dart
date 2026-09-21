@@ -126,7 +126,7 @@ class TaskQueueService extends ChangeNotifier {
     // Newest-first from the query, reversed so the queue itself runs oldest
     // to newest — the order `_attemptNextExecution` walks it in, which is
     // what makes a task submitted earlier run earlier.
-    _queue.addAll(tasks.map((t) => TaskItem.fromMap(t)).toList().reversed);
+    _queue.addAll(tasks.reversed);
     _notify();
   }
 
@@ -147,15 +147,11 @@ class TaskQueueService extends ChangeNotifier {
   /// `model_pk` — so the history is relabelled as it loads rather than
   /// migrated, and a task whose model has since been deleted keeps the id it
   /// was stored with.
-  Future<List<Map<String, dynamic>>> _relabelled(
-    List<Map<String, dynamic>> rows,
-  ) async {
-    bool needsName(Map<String, dynamic> row) {
-      final pk = row['model_pk'];
-      return pk is int && row['model_id'] == pk.toString();
-    }
+  Future<List<TaskItem>> _relabelled(List<TaskItem> tasks) async {
+    bool needsName(TaskItem task) =>
+        task.modelDbId != null && task.modelId == task.modelDbId.toString();
 
-    if (!rows.any(needsName)) return rows;
+    if (!tasks.any(needsName)) return tasks;
     final models = await _db.getModels();
     final names = {
       for (final m in models)
@@ -163,12 +159,11 @@ class TaskQueueService extends ChangeNotifier {
           m.id!: m.modelName.isNotEmpty ? m.modelName : m.modelId,
     };
     return [
-      for (final row in rows)
-        if (needsName(row) && names[row['model_pk']] != null)
-          // sqflite hands back read-only maps.
-          Map<String, dynamic>.from(row)..['model_id'] = names[row['model_pk']]
+      for (final task in tasks)
+        if (needsName(task) && names[task.modelDbId] != null)
+          task.withModelId(names[task.modelDbId]!)
         else
-          row,
+          task,
     ];
   }
 
@@ -247,7 +242,7 @@ class TaskQueueService extends ChangeNotifier {
     _queue.add(task);
 
     // Persist task immediately
-    await _db.saveTask(task.toMap());
+    await _db.saveTask(task);
 
     _notify();
     _attemptNextExecution();
@@ -268,7 +263,7 @@ class TaskQueueService extends ChangeNotifier {
         task.status = TaskStatus.cancelled;
         task.addLog('Task cancelled by user.');
         _emit(task.id, TaskEventType.statusChanged, task.status);
-        await _db.saveTask(task.toMap());
+        await _db.saveTask(task);
         _notify();
       }
     }
@@ -329,7 +324,7 @@ class TaskQueueService extends ChangeNotifier {
     task.startTime = null;
     task.endTime = null;
     task.addLog('Task re-queued by user.');
-    await _db.saveTask(task.toMap());
+    await _db.saveTask(task);
     _notify();
     _attemptNextExecution();
   }
@@ -402,7 +397,7 @@ class TaskQueueService extends ChangeNotifier {
       level: 'RUNNING',
       taskId: task.id,
     );
-    _db.saveTask(task.toMap());
+    _db.saveTask(task);
     _notify();
 
     try {
@@ -449,7 +444,7 @@ class TaskQueueService extends ChangeNotifier {
       }
 
       _runningCount--;
-      _db.saveTask(task.toMap());
+      _db.saveTask(task);
       onTaskFinished?.call(task);
       _notify();
       _attemptNextExecution();

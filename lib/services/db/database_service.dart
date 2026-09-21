@@ -14,6 +14,9 @@ import '../../models/pricing_group.dart';
 import '../../models/prompt.dart';
 import '../../models/prompt_history_entry.dart';
 import '../../models/tag.dart';
+import '../../models/task_item.dart';
+import '../../models/token_usage.dart';
+import '../../models/usage_checkpoint.dart';
 import '../llm/channel_routes.dart';
 import 'database_migrations.dart';
 import 'repositories/cookie_repository.dart';
@@ -273,22 +276,22 @@ class DatabaseService {
   }
 
   // Task History Methods
-  Future<void> saveTask(Map<String, dynamic> task) => _tasks.saveTask(task);
-  Future<List<Map<String, dynamic>>> getRecentTasks(int limit) => _tasks.getRecentTasks(limit);
+  Future<void> saveTask(TaskItem task) => _tasks.saveTask(task);
+  Future<List<TaskItem>> getRecentTasks(int limit) => _tasks.getRecentTasks(limit);
   Future<void> deleteTask(String id) => _tasks.deleteTask(id);        
   Future<void> cleanupStuckTasks() => _tasks.cleanupStuckTasks();     
   Future<List<double>> getTaskDurations(int modelDbId, int limit) => _tasks.getTaskDurations(modelDbId, limit);
 
   // Token Usage Methods
-  Future<void> recordTokenUsage(Map<String, dynamic> usage) => _usage.recordTokenUsage(usage);
-  Future<int> updateTokenUsage(String taskId, Map<String, dynamic> values) =>
-      _usage.updateTokenUsage(taskId, values);
+  Future<void> recordTokenUsage(TokenUsage usage) => _usage.recordTokenUsage(usage);
+  Future<int> updateSpecBilling(String taskId, UsageSpecBilling billing) =>
+      _usage.updateSpecBilling(taskId, billing);
   Future<void> clearTokenUsage({String? modelId}) => _usage.clearTokenUsage(modelId: modelId);
-  Future<List<Map<String, dynamic>>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end, int? limit, int? offset})
+  Future<List<TokenUsage>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end, int? limit, int? offset})
       => _usage.getTokenUsage(modelIds: modelIds, start: start, end: end, limit: limit, offset: offset);
 
-  Future<void> saveUsageCheckpoint(Map<String, dynamic> checkpoint) => _usage.saveUsageCheckpoint(checkpoint);
-  Future<Map<String, dynamic>?> getLatestUsageCheckpoint() => _usage.getLatestUsageCheckpoint();
+  Future<void> saveUsageCheckpoint(UsageCheckpoint checkpoint) => _usage.saveUsageCheckpoint(checkpoint);
+  Future<UsageCheckpoint?> getLatestUsageCheckpoint() => _usage.getLatestUsageCheckpoint();
 
   // --- MODEL BASED METHODS ---
 

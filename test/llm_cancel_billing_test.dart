@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
@@ -27,7 +28,7 @@ void main() {
   final home = Directory.systemTemp.createTempSync('joycai_cancel_billing');
 
   late HttpServer server;
-  late List<Map<String, dynamic>> rows;
+  late List<TokenUsage> rows;
   final held = <HttpRequest>[];
 
   LLMModelConfig configFor(String modelId) => LLMModelConfig(
@@ -92,7 +93,7 @@ void main() {
     await expectLater(consumed, throwsA(isA<LLMCancelled>()));
     expect(rows, hasLength(1),
         reason: 'the finished stream was billed and must be recorded');
-    expect(rows.single['input_tokens'], 3);
+    expect(rows.single.inputTokens, 3);
   });
 
   test('a cancel after the submit body is sent keeps the job ticket',

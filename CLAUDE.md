@@ -36,7 +36,8 @@ core/              Responsive breakpoints, AppConstants/enums, AppPaths, file ut
                      (incl. AppDock, the phone dock's size), app_theme, app_semantic_colors, theme_accent
 l10n/              generated — never edit; sources are l10n/src/<lang>/<module>.arb
 models/            LLMModel, LLMChannel, PricingGroup, Prompt/SystemPrompt (+ PresetOutputKind), PromptTag, PromptHistoryEntry,
-                     TaskItem (+ TaskType, TaskEvent), AppImage, BrowserFile, LogEntry,
+                     TaskItem (+ TaskType, TaskEvent), TokenUsage (one billed request; owns its
+                     cost arithmetic) + UsageCheckpoint, AppImage, BrowserFile, LogEntry,
                      ImageLayer (a saved Seedream layer decomposition)
 services/          all business logic, in domain folders only:
   llm/               the API stack — llm_service (facade) · llm_dispatcher (the ONLY routing table) ·

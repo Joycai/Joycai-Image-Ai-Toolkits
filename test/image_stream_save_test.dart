@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
@@ -143,7 +144,7 @@ void main() {
       await request.response.close();
     });
 
-    final rows = <Map<String, dynamic>>[];
+    final rows = <TokenUsage>[];
     LLMService.usageSinkOverride = (row) async => rows.add(row);
     addTearDown(() => LLMService.usageSinkOverride = null);
 

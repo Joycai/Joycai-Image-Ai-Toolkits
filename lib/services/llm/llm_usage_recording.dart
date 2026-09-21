@@ -66,34 +66,30 @@ extension _UsageRecording on LLMService {
     final cacheTokens = _extractCacheTokens(metadata, promptTokens);
 
     final sink = LLMService.usageSinkOverride ?? DatabaseService().recordTokenUsage;
-    await sink({
+    await sink(TokenUsage(
       // The tag makes delegated work distinguishable in the usage table
       // (e.g. `task_id LIKE 'subagent:%'`) — a sub-agent's spend should be
       // attributable to delegation, not blended into ordinary requests.
-      'task_id': rowId ??
+      taskId: rowId ??
           '${taskTag ?? 'req'}_${DateTime.now().millisecondsSinceEpoch}',
-      'model_id': modelId,
-      'model_pk': modelDbId,
-      'timestamp': DateTime.now().toIso8601String(),
+      modelId: modelId,
+      modelDbId: modelDbId,
+      timestamp: DateTime.now(),
       // Both providers count cached tokens inside their prompt total, so the
       // cached part is subtracted out here — input_tokens and cache_tokens are
       // stored disjoint and sum back to the full input.
-      'input_tokens': promptTokens - cacheTokens,
-      'cache_tokens': cacheTokens,
-      'output_tokens': outputTokens,
-      'input_price': config.inputFee,
-      'cache_price': config.effectiveCacheInputFee,
-      'output_price': config.outputFee,
-      'request_count': 1,
-      'request_price': config.requestFee,
-      'billing_mode': config.billingMode,
-      // Null on the other two modes: the columns then carry their defaults
-      // and the row prices exactly as it did before spec billing existed.
-      'output_units': spec?.units,
-      'output_unit_price': spec?.unitPrice,
-      'output_unit': spec?.unit.name,
-      'output_spec': spec == null ? null : jsonEncode(spec.toJson()),
-    });
+      inputTokens: promptTokens - cacheTokens,
+      cacheTokens: cacheTokens,
+      outputTokens: outputTokens,
+      inputPrice: config.inputFee,
+      cachePrice: config.effectiveCacheInputFee,
+      outputPrice: config.outputFee,
+      requestPrice: config.requestFee,
+      billingMode: config.billingMode,
+      // Null on the other two modes: the row then prices exactly as it did
+      // before spec billing existed.
+      spec: spec?.toBilling(),
+    ));
   }
 
   /// Cache-hit tokens from a usage payload: `cachedContentTokenCount` (Google),

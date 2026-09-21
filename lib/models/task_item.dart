@@ -101,6 +101,30 @@ class TaskItem {
        resultPaths = resultPaths ?? [],
        createdAt = createdAt ?? DateTime.now();
 
+  /// This task under another display label. [modelId] is display-only — the
+  /// executors route by [modelDbId] — and final, so relabelling a stored task
+  /// takes a copy.
+  TaskItem withModelId(String modelId) => TaskItem(
+        id: id,
+        type: type,
+        imagePaths: imagePaths,
+        modelId: modelId,
+        modelDbId: modelDbId,
+        channelTag: channelTag,
+        channelColor: channelColor,
+        parameters: parameters,
+        useStream: useStream,
+        status: status,
+        logs: logs,
+        resultPaths: resultPaths,
+        startTime: startTime,
+        endTime: endTime,
+        progress: progress,
+        operationSurface: operationSurface,
+        operationName: operationName,
+        createdAt: createdAt,
+      );
+
   /// Marks where [addLog] dropped the head of an over-long log.
   static const String logTruncationMarker =
       '[…] earlier lines dropped (log capped at $maxLogLines lines)';
