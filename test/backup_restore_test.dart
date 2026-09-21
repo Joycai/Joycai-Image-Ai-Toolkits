@@ -5,7 +5,6 @@ import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
-import 'package:joycai_image_ai_toolkits/screens/prompts/prompts_io.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -378,10 +377,13 @@ void main() {
       expect((await db.query('prompt_tag_refs')).length, 1,
           reason: 'the links survive too — the row went in whole but for the unknown key');
 
+      // Asserting on a *known* column: `containsKey('pinned_at')` would be
+      // vacuous, since a query only ever returns the table's real columns and
+      // would pass just as well if the filter had thrown everything away.
       final imported = (await db.query('prompts')).single;
-      expect(imported.containsKey('pinned_at'), isFalse,
-          reason: 'only the unknown key was dropped');
-      expect(imported['title'], 'Imported');
+      expect(imported['content'], 'hello',
+          reason: 'the row went in whole but for the one key with nowhere to go');
+      expect(imported['tag'], 'Portrait');
       await db.close();
     });
   });
@@ -398,20 +400,22 @@ void main() {
         );
 
     test('a prompt-kind preset leaves output_kind out', () {
-      final row = exportedSystemPrompt(preset(PresetOutputKind.prompt));
+      final row = preset(PresetOutputKind.prompt).toExportMap();
       expect(row.containsKey('output_kind'), isFalse,
           reason: 'a build older than v47 inserts this row column by column');
       expect(row['title'], 'Preset');
+      expect(row['tags'], isEmpty,
+          reason: 'the tags are part of the exported row, not appended by each writer');
     });
 
     test('an analysis preset still carries it', () {
-      final row = exportedSystemPrompt(preset(PresetOutputKind.analysis));
+      final row = preset(PresetOutputKind.analysis).toExportMap();
       expect(row['output_kind'], 'analysis',
           reason: 'dropping it would quietly turn the preset into a prompt one');
     });
 
     test('what is left out reads back as the default', () {
-      final row = exportedSystemPrompt(preset(PresetOutputKind.prompt));
+      final row = preset(PresetOutputKind.prompt).toExportMap();
       expect(SystemPrompt.fromMap({...row, 'id': 1}).outputKind, PresetOutputKind.prompt);
     });
 
@@ -421,12 +425,33 @@ void main() {
         await DatabaseService().importPromptDataInto(txn, {
           'export_type': 'prompts_only',
           'version': 1,
-          'system_prompts': [exportedSystemPrompt(preset(PresetOutputKind.prompt))],
+          'system_prompts': [preset(PresetOutputKind.prompt).toExportMap()],
         });
       });
       final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
       expect(row['output_kind'], 'prompt',
           reason: "the column's default stands in for the key the file left out");
+      await db.close();
+    });
+
+    test('a full backup restores a row that left output_kind out', () async {
+      // The second door: a backup is importable through the Prompt Library too,
+      // which has no `schema_version` gate, so `getPromptDataRaw` has to strip
+      // the default exactly as the prompt-library export does.
+      final db = await openTestDb();
+      final backup = backupFile()
+        ..addAll({
+          'tags': [],
+          'user_prompts': [],
+          'system_prompts': [preset(PresetOutputKind.prompt).toExportMap()],
+        });
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, backup);
+      });
+
+      final row = (await db.query('system_prompts', where: 'title = ?', whereArgs: ['Preset'])).single;
+      expect(row['output_kind'], 'prompt');
       await db.close();
     });
   });

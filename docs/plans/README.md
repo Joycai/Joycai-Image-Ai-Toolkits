@@ -100,14 +100,20 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | `AppNeutralMarker` 与 `OptimizerTagBadge` 没有合并 | 整体 review 指出两者形状相近、内边距不同；后者在 screens 层，合并要先把它下沉成设计系统原语 |
 | 截图 harness 只加了一帧 | `assistant_analysis`（结果 + 复制行 + 同会话的提示词卡）与画廊里的标记标本；编辑框的产出分段、分析类空对话、看不到图的卡只有 widget 测试 |
 
-「本版导出的提示词 JSON 旧版导不进」已清（2026-09-21）。两头各修一处：**导出**在 `output_kind`
-为默认值时不写这个键（`exportedSystemPrompt`，`SystemPrompt.toMap` 不动——它同时是入库的写路径，
-改类型时要写得回去），于是一个没有分析类预设的库，4.20.0 之前的构建照样导得进；**导入**把每一行
-先滤成这个库真有的列再 `insert`（`importPromptDataInto` 的 `_knownColumnsOnly`）。滤列这一头治的是
-以后：prompts-only 文件没有 `schema_version`（整库备份有，`_validateBackup` 直接拒），新版加一列，
-旧版的 `insert` 就在那一个键上失败，而失败发生在事务里——标签和用户提示词跟着一起回滚。现在只丢
-那一个键。**仍然做不到的**：4.20.0–4.22.0 这几版的导入器没有滤列，带分析类预设的文件它们还是读不进，
-那些构建已经发出去了。测试在 `backup_restore_test.dart` 的「prompt library import / export」两组。
+「本版导出的提示词 JSON 旧版导不进」已清（2026-09-21）。两头各修一处：
+
+- **导出**：`SystemPrompt.toExportMap()`，`output_kind` 为默认值时不写这个键。`PresetOutputKind.parse`
+  本来就把缺失读成 `prompt`，所以是零信息损失；于是一个没有分析类预设的库，4.20.0 之前的构建照样导得进。
+  有分析类预设的仍然写——去掉它会导进去但悄悄换掉预设的行为，比读不进更糟。`toMap` 不动：它同时是入库的
+  写路径，改类型时要写得回去。**标签也收进了这个方法**：两个写出方（`exportPrompts` 与 `getPromptDataRaw`）
+  原本各自 `...toMap()` 再手工补 `tags`，同一条规矩摊在两处，而第一版修的时候确实只修到了一处——
+  整库备份那一头漏了，而整库备份文件同样能从提示词库的「导入」进来（那条路没有 schema 闸）。
+- **导入**：`importPromptDataInto` 把每一行先滤成这个库真有的列再 `insert`（`_knownColumnsOnly`）。
+  治的是以后：prompts-only 文件没有 `schema_version`（整库备份有，`_validateBackup` 直接拒），新版加一列，
+  旧版的 `insert` 就在那一个键上失败，而失败发生在事务里——标签和用户提示词跟着一起回滚。现在只丢那一个键。
+
+**仍然做不到的**：4.20.0–4.22.0 这几版的导入器没有滤列，带分析类预设的文件它们还是读不进，那些构建已经
+发出去了。测试在 `backup_restore_test.dart` 的「prompt library import / export」两组。
 
 ### 提示词助手 · 模式重组（A3d，2026-09-20）
 

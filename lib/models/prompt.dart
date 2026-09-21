@@ -118,4 +118,37 @@ class SystemPrompt {
     }
     return data;
   }
+
+  /// This preset as an export file carries it.
+  ///
+  /// `output_kind` is written only when it is not the default. The column
+  /// arrived with `A3e` (schema v47), and a build older than that inserts these
+  /// rows column by column: a key it has never heard of fails the statement,
+  /// inside the import's transaction, so one preset costs the user the tags and
+  /// prompts that came with it. Leaving the default out costs nothing on the way
+  /// back in — [PresetOutputKind.parse] reads a missing value as
+  /// [PresetOutputKind.prompt], which is what every preset was before the column
+  /// existed — and keeps a library without an analysis preset readable by those
+  /// builds.
+  ///
+  /// A preset that *is* [PresetOutputKind.analysis] still carries the key.
+  /// Dropping it would import cleanly and quietly change what the preset does,
+  /// which is worse than a file an old build refuses.
+  ///
+  /// [toMap] is left alone: it is also the database write path, where an update
+  /// has to be able to set the kind back to the default.
+  ///
+  /// **Every writer of an export file goes through here** — the prompt-library
+  /// file (`exportPrompts`) and the full backup (`getPromptDataRaw`) alike. The
+  /// backup's own `schema_version` gate only guards Settings → restore; the
+  /// Prompt Library's import accepts a full backup too, and has no gate. The
+  /// tags come along for the same reason: both writers used to spread [toMap]
+  /// and append them by hand, which is two places to keep a rule, and the rule
+  /// was in fact only kept in one.
+  Map<String, dynamic> toExportMap() {
+    final data = toMap();
+    if (outputKind == PresetOutputKind.prompt) data.remove('output_kind');
+    data['tags'] = tags.map((t) => t.toMap()).toList();
+    return data;
+  }
 }

@@ -370,10 +370,10 @@ class DatabaseService {
         ...p.toMap(),
         'tags': p.tags.map((t) => t.toMap()).toList()
       }).toList(),
-      'system_prompts': (await getSystemPrompts()).map((p) => {
-        ...p.toMap(),
-        'tags': p.tags.map((t) => t.toMap()).toList()
-      }).toList(),
+      // `toExportMap`, not `toMap` + tags by hand: a full backup is also
+      // importable through the Prompt Library, which has no `schema_version`
+      // gate, so it owes the same compatibility as the prompt-library export.
+      'system_prompts': (await getSystemPrompts()).map((p) => p.toExportMap()).toList(),
     };
   }
 
