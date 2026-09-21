@@ -1,5 +1,6 @@
 // The screenshot helper: mounts the real app at a given size and writes a PNG.
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -175,7 +176,10 @@ Future<void> mountApp(
   // Drain, never assert. An overflow is the bug we are hunting, and
   // expect(takeException(), isNull) would abort before writing the PNG —
   // losing exactly the picture worth looking at.
+  // With one exception: `runAsync` parks what its body throws here too, and a
+  // stalled warm-up is the harness failing, not the screen.
   for (Object? e = tester.takeException(); e != null; e = tester.takeException()) {
+    if (e is WarmUpStalled) throw e;
     debugPrint('[$name] exception during pump: $e');
   }
 
@@ -224,6 +228,24 @@ Widget _appTree(AppState appState) {
 ///
 /// Must run after the gallery scan: `GalleryState._evictImages` clears the
 /// image cache on every scan, which would undo the warm-up.
+/// [_warmImageCache] gave up on [path].
+class WarmUpStalled implements Exception {
+  WarmUpStalled(this.path)
+      : pending = imageCache.pendingImageCount,
+        live = imageCache.liveImageCount;
+
+  final String path;
+  final int pending;
+  final int live;
+
+  @override
+  String toString() => 'warm-up never finished for $path — an image load left '
+      'over from an earlier test? pending=$pending live=$live';
+}
+
+/// Real time: the warm-up runs inside `runAsync`, where timers are real.
+const Duration _kWarmLimit = Duration(seconds: 10);
+
 Future<void> _warmImageCache(WidgetTester tester, FixtureEnv env) async {
   final Finder app = find.byType(MyApp);
   if (app.evaluate().isEmpty) return;
@@ -231,7 +253,14 @@ Future<void> _warmImageCache(WidgetTester tester, FixtureEnv env) async {
 
   for (final String path in env.fixtureImagePaths) {
     try {
-      await precacheImage(FileImage(File(path)), context);
+      await precacheImage(FileImage(File(path)), context).timeout(_kWarmLimit);
+    } on TimeoutException {
+      // Not a slow decode — these are fixture PNGs. It is a load the cache
+      // handed back that can no longer finish (see [dropUnfinishedImageLoads]).
+      // Left unbounded it does not fail a test, it hangs the process: nothing
+      // after it runs, and CI sits until the job's own timeout with no name
+      // and no path to show for it.
+      throw WarmUpStalled(path);
     } catch (_) {
       // A format the decoder does not handle (the .mp4/.mp3 stubs); the widget
       // shows its own error placeholder, which is what the real app does too.

@@ -20,7 +20,10 @@ import 'screenshots/harness/shoot.dart';
 ///
 /// The tests run in pairs and the order is the point: the first of each pair
 /// leaves the mess, the second has to survive it. A regression shows up as the
-/// second one timing out, which is why those carry a short timeout.
+/// second one failing in the harness's warm-up, which bounds each decode and
+/// names the path; the timeout on those tests is only the backstop for a hang
+/// somewhere the warm-up does not cover. Each half of a pair means nothing run
+/// on its own.
 void main() {
   final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
   late FixtureEnv env;
@@ -63,7 +66,7 @@ void main() {
     startLoad(env.fixtureImagePaths.first);
   });
 
-  testWidgets('…and the next mount still finishes', timeout: hangs, (WidgetTester tester) async {
+  testWidgets('…and the next mount drops it on the way in', timeout: hangs, (WidgetTester tester) async {
     await mount(tester);
   });
 
@@ -76,11 +79,11 @@ void main() {
     expect(imageCache.statusForKey(image).live, isTrue);
   });
 
-  testWidgets('…and the next mount still finishes', timeout: hangs, (WidgetTester tester) async {
+  testWidgets('…and the next mount drops the live entry too', timeout: hangs, (WidgetTester tester) async {
     await mount(tester);
   });
 
-  late FileImage left;
+  FileImage? left;
 
   testWidgets('a mounted test leaves a load pending', (WidgetTester tester) async {
     await mount(tester);
@@ -90,6 +93,8 @@ void main() {
   // Without a mount of its own: what cleans up here is the first test's
   // teardown, which is all a test calling `precacheImage` itself can rely on.
   testWidgets('…and the next test inherits none of it', (WidgetTester tester) async {
-    expect(imageCache.statusForKey(left).untracked, isTrue);
+    final FileImage? image = left;
+    if (image == null) return markTestSkipped('needs the test before it to have run');
+    expect(imageCache.statusForKey(image).untracked, isTrue);
   });
 }
