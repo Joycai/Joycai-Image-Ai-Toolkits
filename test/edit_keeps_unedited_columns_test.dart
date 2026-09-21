@@ -1,0 +1,126 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
+import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
+import 'package:joycai_image_ai_toolkits/models/tag.dart';
+import 'package:joycai_image_ai_toolkits/screens/prompts/widgets/prompt_dialogs.dart';
+import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
+import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/model_edit_dialog.dart';
+import 'package:provider/provider.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'support/private_data_dir.dart';
+
+/// An editor writes the whole row back, so every column its form does not show
+/// has to be carried over from the row it opened — otherwise saving an edit
+/// quietly resets it. Both cases here were real: the editors used to hand the
+/// database a map of just the form's fields, and the columns left out fell
+/// back to their defaults on the way through `fromMap`.
+void main() {
+  usePrivateDataDir('joycai_edit_keeps_unedited_columns_test');
+
+  setUpAll(() {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  });
+
+  testWidgets('saving a model keeps its place in the list and its ETA estimate',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1100);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final (state, model) = (await tester.runAsync(() async {
+      final state = AppState();
+      final channelId = await state.addChannel(LLMChannel(
+        displayName: 'Relay',
+        type: 'openai-api-rest',
+        endpoint: 'https://relay.example.com/v1',
+        apiKey: 'k',
+      ));
+      final id = await state.addModel(LLMModel(
+        modelId: 'gpt-image-1',
+        modelName: 'GPT Image',
+        tag: 'image',
+        channelId: channelId,
+        sortOrder: 7,
+      ));
+      await DatabaseService().updateModelEstimation(id, 4200.0, 650.0, 3);
+      await state.refreshDataCache();
+      return (state, state.allModels.firstWhere((m) => m.id == id));
+    }))!;
+    expect(model.estMeanMs, 4200.0);
+
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: ModelEditDialog(
+            l10n: AppLocalizations.of(context)!,
+            appState: state,
+            model: model,
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+    await tester.tap(find.text('Save').last);
+    await tester.pumpAndSettle();
+
+    final saved = (await tester.runAsync(() async {
+      await state.refreshDataCache();
+      return state.allModels.firstWhere((m) => m.id == model.id);
+    }))!;
+    expect(saved.sortOrder, 7);
+    expect(saved.estMeanMs, 4200.0);
+    expect(saved.estSdMs, 650.0);
+    expect(saved.tasksSinceUpdate, 3);
+  });
+
+  testWidgets('recolouring a built-in tag leaves it built-in', (tester) async {
+    final (state, tag) = (await tester.runAsync(() async {
+      final state = AppState();
+      final id = await state.addPromptTag(
+          PromptTag(name: 'Built in', isSystem: true, sortOrder: 4));
+      final tags = await state.getPromptTags();
+      return (state, tags.firstWhere((t) => t.id == id));
+    }))!;
+    expect(tag.isSystem, isTrue);
+
+    late BuildContext host;
+    await tester.pumpWidget(ChangeNotifierProvider<AppState>.value(
+      value: state,
+      child: MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(builder: (context) {
+          host = context;
+          return const Scaffold();
+        }),
+      ),
+    ));
+    final tags = (await tester.runAsync(state.getPromptTags))!;
+    showTagEditDialog(
+      host,
+      AppLocalizations.of(host)!,
+      tag: tag,
+      tags: tags,
+    ).ignore();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save').last);
+    // The write is real I/O: let it land before reading back.
+    final saved = (await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      return state.getPromptTags();
+    }))!
+        .firstWhere((t) => t.id == tag.id);
+    await tester.pumpAndSettle();
+    expect(saved.isSystem, isTrue);
+    expect(saved.sortOrder, 4);
+  });
+}

@@ -5,8 +5,8 @@
 
 **结论**：分层本身比手册要求得更严，而且是 `test/source_layout_test.dart` 用八条规则钉死的；
 真正的偏离只有两个方向——**依赖注入**（用单例当服务定位器，A1）与**数据边界上的领域模型**
-（两个仓储在传裸 map，A2）。**两条都已做**，结论见 [`README.md`](README.md) 那行指针。
-剩下六条是局部的。
+（两个仓储在传裸 map，A2）。**两条都已做**，A3（门面绕 map 一圈）也已做，结论见
+[`README.md`](README.md) 那行指针。剩下五条是局部的。
 
 **怎么用这份文件**：一条一条做，每条自带验收。做完一条就把它从本文件删掉，并在
 [`README.md`](README.md) 的「已执行」表里登记结论住在哪；条目清空后删掉本文件。
@@ -16,47 +16,11 @@
 
 | 编号 | 一句话 | 触及 | 状态 |
 |---|---|---|---|
-| A3 | `DatabaseService` 门面把模型摊成 map 再让仓储拼回去 | `db/database_service.dart` | 未开工 |
 | A4 | `BrowserFile` 带展示逻辑，其中 `.color` 是死代码且用裸 Material 颜色 | `models/browser_file.dart` | 未开工 |
 | A5 | `TaskItem` 可变，队列把内部列表原样交出去并原地改 | `services/tasks/task_queue_service.dart` | 未开工 |
-| A6 | `test/` 266 个文件平铺在根下，而 `lib/` 的分组目录根下一个散文件都不许有 | `test/` | 未开工 |
+| A6 | `test/` 269 个文件平铺在根下，而 `lib/` 的分组目录根下一个散文件都不许有 | `test/` | 未开工 |
 | A7 | workbench 一个目录占 lib 的 21%，提示词助手实质是独立功能 | `screens/workbench/` | 未开工 |
 | A8 | 16 个 UI 文件直连 `DatabaseService`，绝大多数只为存侧栏宽度 | `screens/`、`widgets/` | 未开工 |
-
----
-
-## A3 · 门面把模型绕着 map 转一圈
-
-**现状**：
-
-```
-lib/services/db/database_service.dart:299  addPrompt(Map) => _prompts.addPrompt(Prompt.fromMap(prompt), ...)
-lib/services/db/database_service.dart:300  updatePrompt(...)
-lib/services/db/database_service.dart:313  addModel(Map) => _models.addModel(LLMModel.fromMap(model))
-lib/services/db/database_service.dart:314  updateModel(...)
-lib/services/db/database_service.dart:373  addPricingGroup(Map) => _models.addPricingGroup(PricingGroup.fromMap(group))
-lib/services/db/database_service.dart:374  updatePricingGroup(...)
-lib/services/db/database_service.dart:380  addChannel(Map) => _models.addChannel(LLMChannel.fromMap(channel))
-lib/services/db/database_service.dart:381  updateChannel(...)
-lib/services/db/database_service.dart:388  addPromptTag(Map) => _prompts.addPromptTag(PromptTag.fromMap(tag))
-lib/services/db/database_service.dart:389  updatePromptTag(...)
-lib/services/db/database_service.dart:395  addSystemPrompt(Map) => _prompts.addSystemPrompt(SystemPrompt.fromMap(prompt), ...)
-lib/services/db/database_service.dart:396  updateSystemPrompt(...)
-```
-
-共十二个方法（六对）。找齐的办法是 `grep -n "fromMap" lib/services/db/database_service.dart`，
-别照这张表数——它按行号写，行号会漂。
-
-调用方手里本来就是 `Prompt` / `LLMModel`，先 `toMap()` 摊平，门面再 `fromMap` 拼回来。
-
-**为什么要改**：既丢类型又没换来任何东西；一个拼错的键在编译期无人拦截，运行时变成静默的
-「这一列没存上」。
-
-**改法**：门面签名直接收模型，把 `fromMap` 从门面里删掉。改调用方（数量很少，逐个跟着编译错误走）。
-
-**验收**：`flutter analyze` 干净；`prompt_history_test.dart`、`model_id_uniqueness_test.dart`、
-`channel_ordering_test.dart` 全绿。做完这条，`database_service.dart` 里 `Map<String, dynamic>`
-的出现次数应当从 42 明显下降（A2 之前是 49）——剩下的该只有备份/导入那一族。
 
 ---
 
@@ -126,7 +90,7 @@ lib/services/db/database_service.dart:396  updateSystemPrompt(...)
 
 ## A6 · `test/` 平铺
 
-**现状**：266 个测试文件全部平铺在 `test/` 根下（另有 `test/screenshots/` 与 `test/support/`）。
+**现状**：269 个测试文件全部平铺在 `test/` 根下（另有 `test/screenshots/` 与 `test/support/`）。
 而 `lib/services` 与 `lib/widgets` 的根下一个散文件都不许有——`source_layout_test.dart` 的
 「分组目录根下没有散文件」那条规则只管 `lib/`。
 

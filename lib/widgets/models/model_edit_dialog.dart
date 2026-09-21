@@ -364,6 +364,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       channelId: channelId,
       contextWindow: ContextBudget.store(contextMode, _contextTokens ?? 0),
       maxOutputTokens: saved != null ? saved.maxOutputTokens : _storedOutputCap,
+      // Not on the form, and the save writes the whole row: left out, an edit
+      // sent the model to the top of its list and threw away its ETA history.
+      sortOrder: widget.model?.sortOrder ?? 0,
+      estMeanMs: widget.model?.estMeanMs,
+      estSdMs: widget.model?.estSdMs,
+      tasksSinceUpdate: widget.model?.tasksSinceUpdate ?? 0,
     );
 
     if (widget.model == null) {

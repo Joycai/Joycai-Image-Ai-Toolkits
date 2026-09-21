@@ -359,6 +359,9 @@ Future<bool> showTagEditDialog(
                 final data = PromptTag(
                   name: nameCtrl.text,
                   color: selectedColor,
+                  // Not on the form; without it a rename made a built-in
+                  // category an ordinary, deletable one.
+                  isSystem: tag?.isSystem ?? false,
                   sortOrder: tag?.sortOrder ?? (tags.isEmpty ? 0 : tags.map((t) => t.sortOrder).reduce(math.max) + 1),
                 );
                 if (tag == null) {
