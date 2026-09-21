@@ -97,15 +97,25 @@ class SpecUsage {
   final OutputSpec spec;
   final bool matched;
 
+  /// Reference images the request sent, how many of them are charged once
+  /// the group's free ones are off, and the price of each.
+  final int inputImages;
+  final double inputUnits;
+  final double inputUnitPrice;
+
   const SpecUsage({
     required this.unit,
     required this.units,
     required this.unitPrice,
     required this.spec,
     required this.matched,
+    this.inputImages = 0,
+    this.inputUnits = 0.0,
+    this.inputUnitPrice = 0.0,
   });
 
-  double get cost => units * unitPrice;
+  /// Output and input together.
+  double get cost => units * unitPrice + inputUnits * inputUnitPrice;
 
   /// What this leaves on the usage row. The snapshot keeps the spec plus
   /// whether a row priced it, so the usage page can count the requests a rate
@@ -120,16 +130,33 @@ class SpecUsage {
           seconds: spec.seconds,
           matched: matched,
         ),
+        inputImages: inputImages,
+        inputUnits: inputUnits,
+        inputUnitPrice: inputUnitPrice,
       );
 
   /// Prices one request against a group's table. [imageCount] is what the
   /// response actually carried; seconds come from the spec (the request),
   /// since no provider reports the length it rendered.
+  ///
+  /// The input side: [inputImageCount] reference images went out, the first
+  /// [inputFreeUnits] of them are free (per request — Seedream 5.0 pro's
+  /// 「首张免费」), the rest cost [inputUnitPrice] each. A request that
+  /// delivered nothing — zero units — is not charged for what it sent
+  /// either: Ark says outright that a failed generation is free, and a
+  /// picture-less reply on any other route is the same non-event. A group
+  /// that does not charge inputs bills zero of them at a price of zero, so
+  /// its rows stay as quiet as they were. The count sent and the group's
+  /// price are kept regardless — a request whose only image was the free
+  /// one still says so on the usage page.
   static SpecUsage price({
     required OutputUnit unit,
     required List<SpecRate> rates,
     required OutputSpec spec,
     required int imageCount,
+    int inputImageCount = 0,
+    double inputUnitPrice = 0.0,
+    int inputFreeUnits = 0,
   }) {
     final match = matchSpecRate(rates, spec);
     final double units = switch (unit) {
@@ -137,12 +164,19 @@ class SpecUsage {
       OutputUnit.second => (spec.seconds ?? 0).toDouble(),
       OutputUnit.clip => 1.0,
     };
+    final sent = math.max(0, inputImageCount);
+    final charged = inputUnitPrice > 0 && units > 0
+        ? math.max(0, sent - math.max(0, inputFreeUnits))
+        : 0;
     return SpecUsage(
       unit: unit,
       units: units,
       unitPrice: match.price,
       spec: spec,
       matched: match.matched,
+      inputImages: sent,
+      inputUnits: charged.toDouble(),
+      inputUnitPrice: math.max(0.0, inputUnitPrice),
     );
   }
 }

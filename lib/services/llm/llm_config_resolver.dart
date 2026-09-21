@@ -106,6 +106,8 @@ class LLMConfigResolver {
     double requestFee = 0.0;
     OutputUnit outputUnit = OutputUnit.image;
     List<SpecRate> outputRates = const [];
+    double inputUnitFee = 0.0;
+    int inputFreeUnits = 0;
 
     if (pricingGroupId != null) {
       final pricingGroups = await _db.getPricingGroups();
@@ -118,6 +120,8 @@ class LLMConfigResolver {
         requestFee = group.requestPrice;
         outputUnit = group.outputUnit;
         outputRates = group.outputRates;
+        inputUnitFee = group.inputUnitPrice;
+        inputFreeUnits = group.inputFreeUnits;
       }
     }
 
@@ -185,6 +189,8 @@ class LLMConfigResolver {
       requestFee: requestFee,
       outputUnit: outputUnit,
       outputRates: outputRates,
+      inputUnitFee: inputUnitFee,
+      inputFreeUnits: inputFreeUnits,
       proxyEnabled: proxyEnabled,
       proxyUrl: proxyUrl,
       proxyUsername: proxyUsername,

@@ -1161,6 +1161,9 @@ class LLMService {
       rates: config.outputRates,
       spec: OutputSpec.from(options, metadata: metadata),
       imageCount: imageCount,
+      inputImageCount: inputImageCountOf(metadata),
+      inputUnitPrice: config.inputUnitFee,
+      inputFreeUnits: config.inputFreeUnits,
     );
   }
 

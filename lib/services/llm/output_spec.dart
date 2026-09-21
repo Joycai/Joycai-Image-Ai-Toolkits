@@ -28,6 +28,23 @@
 /// quality it settled on when the request said `auto`) republishes it in the
 /// response metadata as `output_size` / `output_quality` / `output_seconds`,
 /// and that echo wins over what was asked for.
+/// The metadata key an images protocol publishes the number of reference
+/// images it actually put in the request under — after the model's cap and
+/// after dropping the ones that could not be read — or the provider's own
+/// count where it reports one (Ark's `usage.input_images`). Spec billing
+/// charges inputs by it; a surface that does not publish it reads as zero.
+const String inputImageCountKey = 'input_image_count';
+
+/// [inputImageCountKey] off a response's metadata; absent, negative or not a
+/// number reads as zero.
+int inputImageCountOf(Map<String, dynamic>? metadata) {
+  final raw = metadata?[inputImageCountKey];
+  final count = raw is num && raw.isFinite
+      ? raw.toInt()
+      : (raw is String ? int.tryParse(raw) : null);
+  return (count == null || count < 0) ? 0 : count;
+}
+
 class OutputSpec {
   final String? size;
   final String? quality;
