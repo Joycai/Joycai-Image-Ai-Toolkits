@@ -69,10 +69,11 @@ void main() {
     await settle(tester);
   }
 
-  /// [real] runs the chord through `runAsync`, which the keys that persist a
-  /// setting need: each `saveSetting` starts sqflite's ten-second
-  /// lock watchdog, and under fake async that write never finishes, so the
-  /// timer is still pending when the test ends — and a pending timer fails a
+  /// [real] runs the chord through [actInRealAsync], which the keys that
+  /// reach the database need — the ones that persist a setting, and the ones
+  /// that bring a panel on screen which loads its prompts on mount. Either
+  /// starts sqflite's ten-second lock watchdog, and under fake async that is
+  /// a timer still pending when the test ends — and a pending timer fails a
   /// `testWidgets` on something other than its subject.
   Future<void> pressChord(
     WidgetTester tester,
@@ -92,14 +93,11 @@ void main() {
     }
 
     if (real) {
-      await tester.runAsync(() async {
-        await send();
-        await Future<void>.delayed(const Duration(milliseconds: 300));
-      });
+      await actInRealAsync(tester, send);
     } else {
       await send();
+      await settle(tester);
     }
-    await settle(tester);
   }
 
   /// A workbench with a clean gallery selection, on the source view.
@@ -143,11 +141,7 @@ void main() {
     expect(find.byIcon(Icons.tune), findsOneWidget,
         reason: 'the toolbar offers the column back');
 
-    await tester.runAsync(() async {
-      await tester.tap(find.byIcon(Icons.tune));
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-    });
-    await settle(tester);
+    await actInRealAsync(tester, () => tester.tap(find.byIcon(Icons.tune)));
     expect(appState.isConfigPanelExpanded, isTrue);
 
     // `⌘⌥1…4` — the tools, in `WorkbenchTab` order. The fifth (the
@@ -166,11 +160,7 @@ void main() {
           reason: 'Cmd+Alt+${index + 1} is tool $index');
     }
 
-    await tester.runAsync(() async {
-      appState.setWorkbenchTab(0);
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-    });
-    await settle(tester);
+    await actInRealAsync(tester, () async => appState.setWorkbenchTab(0));
   });
 
   testWidgets('the way back to the parameter column is offered only where '
@@ -475,11 +465,7 @@ void main() {
     expect(find.byType(Drawer), findsNothing,
         reason: 'a dismissed drawer builds no content');
 
-    await tester.runAsync(() async {
-      await tester.tap(find.byIcon(Icons.tune));
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-    });
-    await settle(tester);
+    await actInRealAsync(tester, () => tester.tap(find.byIcon(Icons.tune)));
 
     expect(find.byType(Drawer), findsOneWidget,
         reason: 'one press, one panel — not a silent preference and a second '
@@ -499,11 +485,7 @@ void main() {
     // `image` outright dropped a video session into image mode — the mode
     // segment flipped and the video parameters went with it — for pressing
     // "go to the gallery".
-    await tester.runAsync(() async {
-      appState.setWorkbenchTab(WorkbenchTab.video);
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-    });
-    await settle(tester);
+    await actInRealAsync(tester, () async => appState.setWorkbenchTab(WorkbenchTab.video));
     expect(appState.workbenchTabIndex, WorkbenchTab.video);
 
     await pressChord(tester, LogicalKeyboardKey.digit2, alt: true, real: true);

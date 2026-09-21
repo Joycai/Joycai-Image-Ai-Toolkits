@@ -62,6 +62,33 @@ void shootMatrix(FixtureEnv Function() env, List<AppScreen> screens) {
   }
 }
 
+/// Runs [action] in real async, *together with the frame it asks for*, then
+/// settles.
+///
+/// For an action that reaches the database — a key that persists a setting, a
+/// tab switch that mounts a panel which loads on mount. The frame is the part
+/// that is easy to leave outside: the action only marks the tree dirty, and
+/// it is the next pump that mounts the new panel and runs the post-frame
+/// callback that starts its query. Pumped under fake async, that query's
+/// sqflite lock watchdog is a ten-second *fake* timer which only a later pump
+/// can cancel, and only once the real reply is in — so whether the test ends
+/// with "A Timer is still pending" is down to how fast the runner's disk
+/// answered. Started out here the query owns a real timer and finishes on its
+/// own, however late; the wait below is for what it draws, not for safety.
+Future<void> actInRealAsync(
+  WidgetTester tester,
+  Future<void> Function() action, [
+  int frames = 6,
+]) async {
+  await tester.runAsync(() async {
+    await action();
+    await tester.pump();
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    await tester.pump();
+  });
+  await settle(tester, frames);
+}
+
 /// Pumps [frames] 120ms frames — enough for a menu or a page push to land.
 Future<void> settle(WidgetTester tester, [int frames = 6]) async {
   for (int i = 0; i < frames; i++) {
