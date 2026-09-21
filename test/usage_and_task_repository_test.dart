@@ -178,6 +178,21 @@ void main() {
       parameters: {'not json': Object()},
     );
 
-    expect(() => TaskRepository(db: db).saveTask(task), throwsA(isA<JsonUnsupportedObjectError>()));
+    // Not `expect(() => saveTask(task), throwsA(…))`: handed a closure that
+    // returns a future, `throwsA` matches the future's error too, so that
+    // spelling stays green when the throw moves into the future.
+    Future<void>? returned;
+    Object? thrown;
+    try {
+      returned = TaskRepository(db: db).saveTask(task);
+    } catch (e) {
+      thrown = e;
+    }
+    // Only reached with a future when the throw went async; keep its error
+    // from escaping the test as an unhandled one.
+    returned?.ignore();
+
+    expect(thrown, isA<JsonUnsupportedObjectError>());
+    expect(returned, isNull);
   });
 }

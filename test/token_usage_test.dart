@@ -300,6 +300,27 @@ void main() {
       expect(back.groupCosts, {42: 1.0, 7: 0.25});
     });
 
+    test('a cell of the wrong type reads as absent', () {
+      final back = UsageCheckpoint.fromMap({
+        'id': 'x',
+        'timestamp': 20260901,
+        'total_input_tokens': 'abc',
+        'total_cache_tokens': 1.5,
+        'total_output_tokens': 5,
+        'total_request_count': null,
+        'total_cost': 'abc',
+        'metadata': 7,
+      });
+
+      expect(back.id, isNull);
+      expect(back.timestamp, DateTime.fromMillisecondsSinceEpoch(0));
+      expect(back.totalInputTokens, 0);
+      expect(back.totalCacheTokens, 0);
+      expect(back.totalOutputTokens, 5);
+      expect(back.totalCost, 0.0);
+      expect(back.groupCosts, isEmpty);
+    });
+
     test('unreadable metadata is no breakdown, not an error', () {
       for (final raw in ['junk', '[]', 7, null]) {
         final back = UsageCheckpoint.fromMap(
