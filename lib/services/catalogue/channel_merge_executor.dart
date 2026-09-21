@@ -84,10 +84,8 @@ class DatabaseMergeStore implements MergeStore {
 
   final DatabaseService _db;
 
-  /// Takes a provider rather than a service: [AssistantSessionRepository] is
-  /// one of the two repositories built around a raw [Database].
   late final AssistantSessionRepository _sessions =
-      AssistantSessionRepository(dbProvider: () => _db.database);
+      AssistantSessionRepository(db: _db);
 
   @override
   Future<void> write(MergePlan plan) => ModelRepository(db: _db).mergeChannels(

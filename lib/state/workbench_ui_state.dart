@@ -157,7 +157,7 @@ class WorkbenchUIState extends ChangeNotifier {
   // --- Persisted assistant sessions -------------------------------------
 
   late final AssistantSessionRepository _assistantRepo =
-      AssistantSessionRepository(dbProvider: () => _db.database);
+      AssistantSessionRepository(db: _db);
 
   Future<List<AssistantSessionMeta>> listAssistantSessions() =>
       _assistantRepo.listSessions();

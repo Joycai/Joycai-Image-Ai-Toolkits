@@ -10,12 +10,12 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:provider/provider.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
-import 'package:joycai_image_ai_toolkits/services/db/database_migrations.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/db/repositories/assistant_session_repository.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'support/in_memory_database.dart';
 import 'support/private_data_dir.dart';
 
 void main() {
@@ -230,21 +230,15 @@ void main() {
   });
 
   group('the stored mode follows the session', () {
-    late Database db;
+    late DatabaseService db;
     late AssistantSessionRepository repo;
 
     setUp(() async {
-      db = await databaseFactoryFfi.openDatabase(
-        inMemoryDatabasePath,
-        options: OpenDatabaseOptions(
-          version: DatabaseService.dbVersion,
-          onCreate: (db, version) => DatabaseMigration.onCreate(db),
-        ),
-      );
-      repo = AssistantSessionRepository(dbProvider: () async => db);
+      db = await openTestDatabase();
+      repo = AssistantSessionRepository(db: db);
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async => closeTestDatabase(db));
 
     test('a later sync writes the mode the session has by then', () async {
       await repo.upsertSession(id: 's', mode: AssistantMode.knowledgeBase, refImages: const []);
