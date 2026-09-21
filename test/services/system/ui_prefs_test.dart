@@ -11,10 +11,7 @@ import '../../support/in_memory_database.dart';
 /// the keys are an on-disk contract — a renamed one does not migrate a user's
 /// layout, it silently forgets it.
 void main() {
-  setUpAll(() {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  });
+  sqfliteFfiInit();
 
   late DatabaseService db;
   setUp(() async => db = await openTestDatabase());

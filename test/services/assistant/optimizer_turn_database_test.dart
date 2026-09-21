@@ -22,8 +22,9 @@ import '../../support/in_memory_database.dart';
 ///
 /// These tests deliberately do **not** call `usePrivateDataDir`: with no
 /// path_provider behind it the default [DatabaseService] cannot open at all,
-/// so any row that escapes to the singleton fails loudly instead of quietly
-/// landing in the app's real file.
+/// so a row that escapes to the singleton cannot land in the app's real file.
+/// It does not fail loudly either — the turn swallows persistence errors — so
+/// what catches an escape is the positive assertion on the injected database.
 void main() {
   sqfliteFfiInit();
 

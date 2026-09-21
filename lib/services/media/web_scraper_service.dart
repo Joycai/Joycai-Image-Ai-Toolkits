@@ -8,6 +8,7 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:path/path.dart' as p;
 
 import '../../core/app_paths.dart';
+import '../db/database_service.dart';
 import '../llm/context_budget.dart';
 import '../llm/llm_service.dart';
 import '../llm/llm_types.dart';
@@ -115,6 +116,7 @@ class WebScraperService {
     String? cookies,
     String? manualHtml, // Added manualHtml support
     Function(String)? onLog,
+    DatabaseService? database,
   }) async {
     final formattedCookies = parseCookies(cookies ?? '');
     String html;
@@ -139,7 +141,7 @@ class WebScraperService {
 
     onLog?.call('Found ${imagesMetadata.length} candidate images. Analyzing with LLM...');
 
-    final contextWindow = await _resolveContextWindow(modelIdentifier);
+    final contextWindow = await _resolveContextWindow(modelIdentifier, database);
     final matchedUrlStrings = await _selectImagesWithLLM(
       modelIdentifier: modelIdentifier,
       requirement: requirement,
@@ -199,8 +201,8 @@ class WebScraperService {
 
   /// Reads the configured context window for [modelIdentifier], or null when it
   /// isn't a stored model or the field is unset.
-  Future<int?> _resolveContextWindow(dynamic modelIdentifier) =>
-      ContextBudget.resolveWindow(modelIdentifier);
+  Future<int?> _resolveContextWindow(dynamic modelIdentifier, DatabaseService? database) =>
+      ContextBudget.resolveWindow(modelIdentifier, database: database);
 
   /// Derives how many candidate images to show per request from the model's
   /// context window. Roughly one image per 512 tokens, leaving the rest of the

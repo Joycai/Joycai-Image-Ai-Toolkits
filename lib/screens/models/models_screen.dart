@@ -196,10 +196,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
             _dragSidebarWidth = null;
             final saved = _sidebarWidth;
             if (saved != null) {
-              context
-                  .read<AppState>()
-                  .uiPrefs
-                  .savePanelWidth(UiPanel.modelsSidebar, saved);
+              appState.uiPrefs.savePanelWidth(UiPanel.modelsSidebar, saved);
             }
           },
         ),
