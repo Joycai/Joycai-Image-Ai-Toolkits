@@ -49,27 +49,28 @@
 
 ### 1.3 用量行：快照进 `UsageSpecBilling`
 
-`token_usage.input_units REAL DEFAULT 0.0`（**扣掉免费后的计费张数**）、`input_unit_price REAL DEFAULT 0.0`。
-原始张数写进 `output_spec` 这个 JSON 列（`UsageSpecSnapshot.inputImages`），供明细页显示。
+`token_usage.input_images INTEGER DEFAULT 0`（**实际发出的张数**，明细页显示用）、
+`input_units REAL DEFAULT 0.0`（**扣掉免费后的计费张数**）、`input_unit_price REAL DEFAULT 0.0`。
+（初稿把原始张数放进 `output_spec` JSON；视频结算会整列改写它，改成单独一列——见 §5。）
 
 - `UsageSpecBilling` 加 `inputUnits` / `inputUnitPrice` / `inputCost`；`cost` 仍只是输出部分。
 - `UsageCostParts` 加 `specInput`；`TokenUsage.costParts` 的 spec 分支填它，`TokenUsage.cost` 把它加进去。
-- `UsageSpecBilling.fromMap` 的「全空 → null」判断把两个新列算进去。
-- **`toMap()` 拆成输出四列与输入两列**：`UsageRepository.updateSpecBilling`（视频结算改写）只写输出四列，
-  提交时记下的输入列不会被清零；新建行仍写全六列。不用「先读再写回」——那会引入读写竞争，
+- `UsageSpecBilling.fromMap` 的「全空 → null」判断把三个新列算进去。
+- **`toMap()` 拆成输出四列与输入三列**：`UsageRepository.updateSpecBilling`（视频结算改写）只写输出四列，
+  提交时记下的输入列不会被清零；新建行仍写全七列。不用「先读再写回」——那会引入读写竞争，
   而且 `settleVideoUsage` 是尽力而为的，读失败就整个跳过。
-- 旧行两列为默认值 0，金额不变。
+- 旧行三列为默认值 0，金额不变。
 
 ### 1.4 计价规则
 
 - `SpecUsage.price` 增加 `inputImageCount` / `inputUnitPrice` / `inputFreeUnits`。
 - **响应里没有图片就不计输入费**（Seedream 明文写失败不计费；xAI 没说，同一条规则）。单位为「秒 / 条」
-  （视频）时同样按 metadata 里的张数算——目前没有视频协议写这个键，所以实际为 0。
+  （视频）的组不收输入费（§5 的裁决，判据写在 `SpecUsage.price` 一处，`PricingGroup.chargesInputImages` 是它在界面侧的同一句话）。
 - 「首张免费」**按每条用量记录扣一次**。批量任务一张图一个请求、失败重试是新请求，都各自扣一次。
 
 ### 1.5 界面（设计稿 `D2c`）
 
-- 计费组编辑器，按规格模式：档位表之上一行「输入图 · 单价 + 免费张数」。
+- 计费组编辑器，按规格模式：档位表与优先级说明**之后**一行「输入图 · 免费张数 + 单价」，只在单位为「张」时出现（§5）。
 - 计费组摘要（`feeGroupSummary` / 价格标签 / 悬浮表）：带上「输入 $0.01/张 · 首 1 张免费」。
 - 用量页：分组行的金额包含输入费；明细的规格列带出输入张数；明细展开处分列输入 / 输出。
 - 四语一起改。
@@ -88,7 +89,7 @@
 |---|---|---|---|---|
 | 0 | 实测 `usage.input_images` 口径 | — | 见 §1.2 | ✅ 原始张数 |
 | 1 | 本文件 | `docs/plans/` | — | ✅ |
-| 2 | 模型 + v48 迁移：`PricingGroup`、`UsageSpecBilling`（含 `toMap` 拆分）、`UsageSpecSnapshot.inputImages`、`UsageCostParts.specInput`、`updateSpecBilling` 只写输出列 | `models/pricing_group.dart`、`models/token_usage.dart`、`db/database_migrations.dart`、`db/repositories/usage_repository.dart` | 迁移测试（v47→v48、幂等、旧行金额不变）；`token_usage_test`；结算后输入列不变 | ✅ |
+| 2 | 模型 + v48 迁移：`PricingGroup`、`UsageSpecBilling`（含 `toMap` 拆分与 `inputImages`）、`UsageCostParts.specInput`、`updateSpecBilling` 只写输出列 | `models/pricing_group.dart`、`models/token_usage.dart`、`db/database_migrations.dart`、`db/repositories/usage_repository.dart` | 迁移测试（v47→v48、幂等、旧行金额不变）；`token_usage_test`；结算后输入列不变 | ✅ |
 | 3 | 计价：`LLMModelConfig` 两字段、resolver、`SpecUsage.price`、`specUsageFor` 读 `input_image_count` | `billing/spec_billing.dart`、`llm/llm_model_config.dart`、`llm/llm_config_resolver.dart`、`llm/llm_service.dart` | 免费张数扣减、零出图不计、聊天面读作 0 | ✅ |
 | 4 | 共用截断函数；六协议写实际发出张数；方舟优先 `usage.input_images` | `llm/protocols/*_images*_protocol.dart` | 每协议一条「附件读不到 → 张数减少」；方舟回报优先 | ✅ |
 | 5 | UI：编辑器、摘要、用量页；四语 | `widgets/models/*`、`screens/metrics/widgets/*`、`l10n/src/*` | widget 测试；截图三档宽度无溢出 | ✅ |
@@ -126,6 +127,12 @@
 - **第 4 片** 共用函数只管截断（`capReferenceImages`）；张数走另一个 `sentInputImages(sent, reported:)`，
   方舟的上游回报优先级写在这一个函数里。百炼异步协议没有走线测试（轮询间隔 3 秒），由共用的
   `dashscopeImageMetadata` 单测覆盖。
+- **Review 第一轮（opus）** 无 BLOCKER / MAJOR；修了：① 流在出图之后、收尾块之前被放弃时输入费记 0
+  ——每个图片块现在都带张数（`inputImageCountEntry`；`_asChunks` 与方舟 SSE）；② Midjourney 也往请求体里放
+  参考图（`base64Array`）却不发布张数——补上，成为第七个；③「只有按张的组收输入费」原先只在 resolver 一处
+  把关，`SpecUsage.price` 自己会给按条 / 按秒的组收费——判据搬进 `SpecUsage.price`；④ 英文「3 in」像英寸，
+  改「input ×3」；⑤ 免费张数框限长 2 → 3（字段从库里的值打开，能显示却不能重打是陷阱）；⑥ 补了备份往返、
+  提前退出计费两条测试，给「其他规格」价格框加 key 让对齐测试不会自己比自己。
 - **第 5 片 · 设计稿 `D2c` 的裁决**（设计子代理拿不到 DesignSync，稿子由主会话对照真实 `D2b` 校验后推送）：
   - 输入图一行放在档位表与优先级说明**之后**，不是 §1.5 写的「之上」——它和「其他规格」是同一种钉住的标量行，
     D2b 的块一个像素不动。

@@ -1202,7 +1202,7 @@
     }
   },
   "usageSpecColumn": "Spec",
-  "usageSpecInputImages": "{n} in",
+  "usageSpecInputImages": "input ×{n}",
   "@usageSpecInputImages": {
     "placeholders": {
       "n": {

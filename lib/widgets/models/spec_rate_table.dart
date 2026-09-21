@@ -569,7 +569,12 @@ class SpecRateTableEditor extends StatelessWidget {
         const SizedBox(width: _gap),
         SizedBox(
           width: _priceWidth,
-          child: _PriceField(controller: otherPriceCtrl, placeholder: '0.0000', onChanged: onChanged),
+          child: _PriceField(
+            key: const ValueKey('spec-other-price'),
+            controller: otherPriceCtrl,
+            placeholder: '0.0000',
+            onChanged: onChanged,
+          ),
         ),
         const SizedBox(width: _gap + _deleteWidth),
       ],
@@ -842,7 +847,9 @@ class _PriceField extends StatelessWidget {
   final VoidCallback onChanged;
   final String? suffix;
 
-  /// A count rather than a price: digits only, two of them (`D2c`).
+  /// A count rather than a price: digits only. Three of them, not the two
+  /// `D2c` drew: the field opens on a stored value, and one it can show but
+  /// not retype would be a trap.
   final bool integer;
 
   /// The figure in the outline ink — typed, kept, and doing nothing.
@@ -861,7 +868,7 @@ class _PriceField extends StatelessWidget {
         controller: controller,
         keyboardType: integer ? TextInputType.number : const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: integer
-            ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)]
+            ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)]
             : null,
         style: textTheme.bodySmall?.mono.copyWith(color: muted ? scheme.outline : null),
         onChanged: (_) => onChanged(),

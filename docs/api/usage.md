@@ -94,6 +94,19 @@ JSON 解析失败，看起来像"模型不听话"。
 
 - **按张计价的图像端点**（Imagen、xAI 等）用"每张图"计费，而 OpenAI 的图像模型
   把生成计为 token。同一个模型可能两种都有，所以**两者相加**比二选一更安全。
+- **输入图也可能按张计费**，与输出分开标价（2026-09-21 查证）：
+
+  | 模型 | 输入图 | 输出 |
+  |---|---|---|
+  | xAI `grok-imagine-image-2.0` | $0.01/张 | 分辨率 × 质量：1K·Low $0.04 / 1.5K·Low $0.05 / 2K·Low $0.06 / 1K·Medium $0.06 / 1.5K·Medium $0.07 / 2K·Medium $0.08（`-quality` $0.05、初代 $0.02 起） |
+  | 火山方舟 Seedream 5.0 pro | 0.02 元/张，**首张免费** | 0.3 元/张（≤261 万像素） |
+  | GPT-Image-2 | token：图像输入 $8/M（文本 $5/M、缓存图像 $2/M） | 图像输出 $30/M |
+  | Gemini 3 Pro Image / 3.1 Flash Image | token，文本与图像同价（$2/M / $0.50/M，约 $0.0011/张） | token，折合 1K/2K $0.134、4K $0.24 |
+
+  后两家的输入图已在 `input_tokens` 里，按 token 的计费组照常覆盖。前两家由按规格计费组的
+  「输入图」一侧覆盖：单价 + 每次请求的免费张数，张数取协议**实际放进请求体**的条数
+  （`metadata['input_image_count']`，见 `llm-three-layer.md`）。xAI 的 `usage` 不回报张数；方舟 5.0 pro
+  回报 `usage.input_images`。
 - **③ 的多模态**在 `prompt_tokens_details` 下还有 `image_tokens` / `audio_tokens`
   等明细（部分兼容层也提供），且图片 token 用量随分辨率档位变化很大——同一张图
   在 low / default / high 三档下可能相差一个数量级。

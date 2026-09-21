@@ -144,7 +144,11 @@ class SpecUsage {
   /// 「首张免费」), the rest cost [inputUnitPrice] each. A request that
   /// delivered nothing — zero units — is not charged for what it sent
   /// either: Ark says outright that a failed generation is free, and a
-  /// picture-less reply on any other route is the same non-event. A group
+  /// picture-less reply on any other route is the same non-event. Only a
+  /// per-image group charges them at all (`D2c`, the rule
+  /// `PricingGroup.chargesInputImages` states for the UI): no video surface
+  /// reports what it was sent, and a rate that could only ever bill by
+  /// accident is worse than none. A group
   /// that does not charge inputs bills zero of them at a price of zero, so
   /// its rows stay as quiet as they were. The count sent and the group's
   /// price are kept regardless — a request whose only image was the free
@@ -165,7 +169,8 @@ class SpecUsage {
       OutputUnit.clip => 1.0,
     };
     final sent = math.max(0, inputImageCount);
-    final charged = inputUnitPrice > 0 && units > 0
+    final charges = unit == OutputUnit.image && inputUnitPrice > 0;
+    final charged = charges && units > 0
         ? math.max(0, sent - math.max(0, inputFreeUnits))
         : 0;
     return SpecUsage(
@@ -176,7 +181,7 @@ class SpecUsage {
       matched: match.matched,
       inputImages: sent,
       inputUnits: charged.toDouble(),
-      inputUnitPrice: math.max(0.0, inputUnitPrice),
+      inputUnitPrice: charges ? inputUnitPrice : 0.0,
     );
   }
 }

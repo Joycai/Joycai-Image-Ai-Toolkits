@@ -246,6 +246,9 @@ class MidjourneyProtocol implements ChatProtocol {
                 'mj_task_id': taskId,
                 'mj_status': status,
                 'image_url': imageUrl,
+                // What went into `base64Array` — blend's sources, imagine's
+                // image prompts — for a fee group that charges per input.
+                ...sentInputImages(base64Images.length),
               },
             );
           }

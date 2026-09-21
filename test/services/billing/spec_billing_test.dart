@@ -232,8 +232,14 @@ void main() {
       expect(u.cost, 0);
     });
 
-    test('a per-clip job is delivered by being accepted, so its inputs are charged', () {
-      expect(price(sent: 1, unit: OutputUnit.clip, imageCount: 0).inputUnits, 1);
+    test('only a per-image group charges inputs, whatever rate the config carries', () {
+      for (final unit in [OutputUnit.clip, OutputUnit.second]) {
+        final u = price(sent: 2, unit: unit, spec: const OutputSpec(seconds: 8));
+        expect(u.units, greaterThan(0), reason: unit.name);
+        expect(u.inputUnits, 0, reason: unit.name);
+        expect(u.inputUnitPrice, 0, reason: 'a quiet row: the usage page reads this price');
+        expect(u.inputImages, 2, reason: 'the count sent is a fact either way');
+      }
     });
 
     test('nonsense from a hand-edited group never bills a negative amount', () {

@@ -111,8 +111,14 @@ body 是它的超集：`model` / `prompt` / `size` / `response_format` 同名同
   不通过会继续画下一张；内部错误（500）则停止后续。
 - 顶层 `error{code, message}`：整个请求一张都没画出来时返回。
 - `usage.generated_images` 是**成功**张数，**计费按它**（按张，不按 token）；
-  `output_tokens` = Σ(宽×高)/256，仅供参考；`input_images`（5.0 pro）；
+  `output_tokens` = Σ(宽×高)/256，仅供参考；`input_images`（5.0 pro，见下）；
   `tool_usage.web_search` = 实际搜索次数（0 = 没搜）。
+- **输入图也计费（5.0 pro）**：控制台定价页（2026-09-21）写「输入图（首张免费）0.02 元/张 · 输出图
+  0.3 元/张（输出图 ≤261 万像素）」；5.0 lite 是 0.22 元/张、不收输入费。`usage.input_images` 是
+  **原始张数，免费的首张也算在内**——2026-09-21 实测：pro 带两张参考图 →
+  `{"input_images": 2, "generated_images": 1, "output_tokens": 4096}`；lite 同样的请求不回报这个字段。
+  应用把它发布为 `metadata['input_image_count']`（优先于本地数出的张数），免费张数由计费组扣
+  （`fee_groups.input_free_units`）。5.0 pro 不收 `sequential_image_generation`（400 `InvalidParameter`）。
 - 错误码见方舟《错误码》页；内容审核类为 `InputTextSensitiveContentDetected` /
   `InputImageSensitiveContentDetected` / `OutputImageSensitiveContentDetected`。
 

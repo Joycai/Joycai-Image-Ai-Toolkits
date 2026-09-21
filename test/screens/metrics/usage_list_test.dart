@@ -267,13 +267,13 @@ void main() {
     testWidgets('says how many it sent beside its spec, and costs output plus input', (tester) async {
       await pumpList(tester, [seedreamRow(timestamp: todayAt(14))], const Size(1920, 1080));
 
-      expect(find.text('2K · 3 in'), findsOneWidget);
+      expect(find.text('2K · input ×3'), findsOneWidget);
       expect(find.text('\$0.3400'), findsWidgets);
     });
 
     testWidgets('expanded, the amount splits in two and the input side is written out', (tester) async {
       await pumpList(tester, [seedreamRow(timestamp: todayAt(14))], const Size(1920, 1080));
-      await tester.tap(find.text('2K · 3 in'));
+      await tester.tap(find.text('2K · input ×3'));
       await tester.pumpAndSettle();
 
       expect(find.text('Output cost'), findsOneWidget);
@@ -284,9 +284,9 @@ void main() {
 
     testWidgets('a request whose only image was the free one says so, at zero', (tester) async {
       await pumpList(tester, [seedreamRow(timestamp: todayAt(14), sent: 1, billed: 0)], const Size(1920, 1080));
-      expect(find.text('2K · 1 in'), findsOneWidget);
+      expect(find.text('2K · input ×1'), findsOneWidget);
 
-      await tester.tap(find.text('2K · 1 in'));
+      await tester.tap(find.text('2K · input ×1'));
       await tester.pumpAndSettle();
       expect(find.text('1 images · 1 free'), findsOneWidget);
       expect(find.text('0 × \$0.0200 = \$0.0000'), findsOneWidget);
@@ -296,7 +296,7 @@ void main() {
       await pumpList(tester, [seedreamRow(timestamp: todayAt(14), billed: 0, inputPrice: 0)], const Size(1920, 1080));
 
       expect(find.text('2K'), findsOneWidget);
-      expect(find.textContaining(' in'), findsNothing);
+      expect(find.textContaining('input ×'), findsNothing);
       await tester.tap(find.text('2K'));
       await tester.pumpAndSettle();
       expect(find.text('Output cost'), findsNothing);
@@ -310,9 +310,9 @@ void main() {
       testWidgets('the count rides the second line without overflow on ${entry.key}', (tester) async {
         await pumpList(tester, [seedreamRow(timestamp: todayAt(14))], entry.value);
         expect(tester.takeException(), isNull, reason: 'Overflow on ${entry.key}');
-        expect(find.text('2K · 3 in'), findsOneWidget);
+        expect(find.text('2K · input ×3'), findsOneWidget);
 
-        await tester.tap(find.text('2K · 3 in'));
+        await tester.tap(find.text('2K · input ×3'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: 'Expanded overflow on ${entry.key}');
         expect(find.text('2 × \$0.0200 = \$0.0400'), findsOneWidget);

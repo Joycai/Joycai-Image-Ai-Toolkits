@@ -1519,7 +1519,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String usageSpecInputImages(int n) {
-    return '$n in';
+    return 'input ×$n';
   }
 
   @override

@@ -76,7 +76,7 @@ void main() {
 
   testWidgets('the wide price field sits on the same vertical as the catch-all\'s', (tester) async {
     await pump(tester);
-    final other = find.widgetWithText(TextField, '0.0000').first;
+    final other = find.byKey(const ValueKey('spec-other-price'));
     expect(tester.getTopLeft(find.byKey(price)).dx, tester.getTopLeft(other).dx);
     expect(tester.getSize(find.byKey(price)).width, tester.getSize(other).width);
   });
@@ -89,11 +89,11 @@ void main() {
     }
   });
 
-  testWidgets('the free count takes digits only, two of them', (tester) async {
+  testWidgets('the free count takes digits only, three of them', (tester) async {
     await pump(tester);
-    await tester.enterText(find.byKey(free), '1.5x27');
+    await tester.enterText(find.byKey(free), '1.5x279');
     expect(tester.widget<TextField>(find.descendant(of: find.byKey(free), matching: find.byType(TextField)))
-        .controller!.text, '15');
+        .controller!.text, '152');
   });
 
   testWidgets('a free count with no price is explained; a bad price is an error', (tester) async {

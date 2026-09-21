@@ -23,7 +23,7 @@ void main() {
   setUp(() async {
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
-      if (request.method == 'GET') {
+      if (request.method == 'GET' && !request.uri.path.contains('/mj/')) {
         request.response.headers.contentType = ContentType('image', 'png');
         request.response.add(_png);
         await request.response.close();
@@ -106,6 +106,19 @@ void main() {
     // The cap keeps the first, and the first cannot be read: nothing went.
     final lost = await generate(minimax, [unreadable(), readable()]);
     expect(lost.metadata.containsKey(inputImageCountKey), isFalse);
+  });
+
+  test('Midjourney: the sources a blend put in base64Array', () async {
+    // The seventh: not an Images API, but it sends the user's pictures all
+    // the same. One real poll interval (3 s) — the loop sleeps before its
+    // first fetch.
+    answer = (request) => request.uri.path.contains('/submit/')
+        ? {'code': 1, 'result': 'task-1'}
+        : {'status': 'SUCCESS', 'progress': '100%', 'imageUrl': '${base()}/img/1.png'};
+    // The poll is a GET to `/mj/task/…/fetch`; pictures are GETs too.
+    final response = await generate(
+        config(Vendors.midjourneyProxy, 'midjourney'), [readable(), unreadable(), readable()]);
+    expect(response.metadata[inputImageCountKey], 2);
   });
 
   test('DashScope (synchronous): the image parts sent', () async {

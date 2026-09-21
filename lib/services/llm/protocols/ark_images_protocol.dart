@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
+import '../output_spec.dart' show inputImageCountEntry;
 import 'ark_payload.dart';
 import 'protocol.dart';
 
@@ -152,7 +153,12 @@ class ArkImagesProtocol implements ImageGenProtocol {
             delivered++;
             logger?.call('Ark stream: image $delivered received.',
                 level: 'DEBUG');
-            yield LLMResponseChunk(imagePart: bytes, imageLayer: item.layer);
+            // With what the body carried: the closing chunk — and Ark's own
+            // count, which outranks this one — may never arrive.
+            yield LLMResponseChunk(
+                imagePart: bytes,
+                imageLayer: item.layer,
+                metadata: inputImageCountEntry(sentInputImages(req.refCount)));
           case ArkStreamFailure(:final failure):
             failures.add(failure);
             logger?.call('Ark: one image of the group failed — $failure',
@@ -205,9 +211,11 @@ class ArkImagesProtocol implements ImageGenProtocol {
   ) async* {
     await _logWholeBody(debugFile, whole);
     final result = await _fromWholeBody(whole, client, options, logger, refCount);
+    final inputs = inputImageCountEntry(result.metadata);
     for (final (i, image) in result.generatedImages.indexed) {
       yield LLMResponseChunk(
           imagePart: image,
+          metadata: inputs,
           imageLayer: i < result.imageLayers.length
               ? result.imageLayers[i]
               : null);

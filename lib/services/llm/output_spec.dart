@@ -45,6 +45,17 @@ int inputImageCountOf(Map<String, dynamic>? metadata) {
   return (count == null || count < 0) ? 0 : count;
 }
 
+/// The [inputImageCountKey] entry of [metadata] alone, or null without one —
+/// what an image chunk carries ahead of the closing chunk. A stream that is
+/// abandoned after a picture arrived is still billed for it
+/// (`LLMService.requestStream`'s early exit), and the references that
+/// picture was made from were sent all the same; the closing chunk, which
+/// holds the full metadata, may never come.
+Map<String, dynamic>? inputImageCountEntry(Map<String, dynamic>? metadata) {
+  final count = inputImageCountOf(metadata);
+  return count > 0 ? {inputImageCountKey: count} : null;
+}
+
 class OutputSpec {
   final String? size;
   final String? quality;

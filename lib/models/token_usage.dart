@@ -153,7 +153,7 @@ class UsageSpecBilling {
       };
 
   /// Null when [map] says nothing in any of the seven columns — every row of
-  /// the other two billing modes. "Nothing" is NULL *or zero* for the two
+  /// the other two billing modes. "Nothing" is NULL *or zero* for the five
   /// numbers: a row that predates v42 was given `DEFAULT 0.0` by the ALTER,
   /// while one written since carries NULL, and both mean the same.
   static UsageSpecBilling? fromMap(Map<String, dynamic> map) {

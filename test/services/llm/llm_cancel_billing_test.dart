@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/models/token_usage.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
@@ -94,6 +95,54 @@ void main() {
     expect(rows, hasLength(1),
         reason: 'the finished stream was billed and must be recorded');
     expect(rows.single.inputTokens, 3);
+  });
+
+  test('a consumer that leaves after the first picture is billed for the references too',
+      () async {
+    // `D2c`: the closing chunk holds the full metadata and may never come,
+    // so each picture carries the count of references it was made from.
+    final png = base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+    server.listen((request) async {
+      await request.drain<void>();
+      request.response.headers.contentType = ContentType.json;
+      request.response.write(jsonEncode({
+        'data': [
+          {'b64_json': base64Encode(png)},
+        ],
+      }));
+      await request.response.close();
+    });
+    LLMService.configResolverOverride = (_) => LLMModelConfig(
+          modelId: 'grok-imagine-image',
+          channelType: Vendors.xaiApi,
+          endpoint: 'http://127.0.0.1:${server.port}/v1',
+          apiKey: 'k',
+          billingMode: 'spec',
+          outputRates: const [SpecRate(price: 0.04)],
+          inputUnitFee: 0.01,
+        );
+
+    await for (final chunk in LLMService().requestStream(
+      modelIdentifier: 'grok-imagine-image',
+      messages: [
+        LLMMessage(role: LLMRole.user, content: 'merge', attachments: [
+          LLMAttachment.fromBytes(png, 'image/png'),
+          LLMAttachment.fromBytes(png, 'image/png'),
+        ]),
+      ],
+    )) {
+      if (chunk.imagePart != null) break; // Saved the picture; stopped listening.
+    }
+    // The early-exit recorder runs in the generator's `finally`.
+    for (var i = 0; i < 50 && rows.isEmpty; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+
+    expect(rows, hasLength(1));
+    expect(rows.single.spec!.units, 1);
+    expect(rows.single.spec!.inputImages, 2);
+    expect(rows.single.cost, closeTo(0.04 + 0.02, 1e-9));
   });
 
   test('a cancel after the submit body is sent keeps the job ticket',

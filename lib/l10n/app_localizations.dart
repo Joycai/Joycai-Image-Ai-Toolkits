@@ -2594,7 +2594,7 @@ abstract class AppLocalizations {
   /// No description provided for @usageSpecInputImages.
   ///
   /// In en, this message translates to:
-  /// **'{n} in'**
+  /// **'input ×{n}'**
   String usageSpecInputImages(int n);
 
   /// No description provided for @usageInputFreeCount.
