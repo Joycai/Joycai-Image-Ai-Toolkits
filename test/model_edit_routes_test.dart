@@ -13,6 +13,7 @@ import 'package:joycai_image_ai_toolkits/widgets/models/model_edit_dialog.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'support/private_data_dir.dart';
+import 'support/real_async.dart';
 
 /// `D1f · 4d`: the model editor's route strip and switching.
 void main() {
@@ -114,8 +115,13 @@ void main() {
       RouteBadgeState.current,
     );
 
-    // Saved: on Responses with nothing set, the Chat values parked.
-    await tester.tap(find.text('Save').last);
+    // Saved: on Responses with nothing set, the Chat values parked. A
+    // database write: made in real async, waited for by the cache it refreshes.
+    await inRealAsyncUntil(
+      tester,
+      () => tester.tap(find.text('Save').last),
+      until: () => state.allModels.any((m) => m.id == model.id && m.activeRoute == 'responses'),
+    );
     await tester.pumpAndSettle();
     final saved = (await tester.runAsync(() async {
       await state.refreshDataCache();

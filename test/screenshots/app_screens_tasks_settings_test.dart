@@ -126,12 +126,10 @@ void main() {
         brightness: Brightness.light,
         suffix: suffix,
         after: (WidgetTester tester) async {
-          await tester.tap(find.text(category).first);
-          await settle(tester);
-          // Both pages read the disk on mount (the GPU name, the temp-folder
-          // size); give the real loop a moment so the rows show values.
-          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-          await settle(tester);
+          // Real async, frame included: both pages read on mount — settings
+          // from the database, the GPU name and the temp-folder size from the
+          // disk — and the rows only show values if those reads can finish.
+          await actInRealAsync(tester, () => tester.tap(find.text(category).first));
         },
       );
     });
@@ -229,7 +227,8 @@ void main() {
         brightness: brightness,
         suffix: 'capsule',
         after: (WidgetTester tester) async {
-          await tester.tap(find.byType(TaskCapsuleMonitor));
+          // Real async: opening the console is a persisted setting.
+          await inRealAsync(tester, () => tester.tap(find.byType(TaskCapsuleMonitor)));
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 100));
           }

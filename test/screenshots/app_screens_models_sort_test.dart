@@ -71,18 +71,19 @@ void main() {
       suffix: 'ungrouped',
       after: (WidgetTester tester) async {
         if (sortButton().evaluate().isEmpty) return;
-        await tester.tap(sortButton());
-        await settle(tester);
+        // Real async from the button on: a choice in this menu is persisted,
+        // and it is the *opening* tap that owns the future the choice comes
+        // back through — so that is the tap that decides which clock the
+        // write runs on.
+        await actInRealAsync(tester, () => tester.tap(sortButton()));
         final Finder group = find.text('按渠道分组');
         if (group.evaluate().isEmpty) return;
-        await tester.tap(group, warnIfMissed: false);
-        await settle(tester);
-        await tester.tap(sortButton().evaluate().isEmpty ? find.byIcon(Icons.arrow_upward) : sortButton());
-        await settle(tester);
+        await actInRealAsync(tester, () => tester.tap(group, warnIfMissed: false));
+        await actInRealAsync(
+            tester, () => tester.tap(sortButton().evaluate().isEmpty ? find.byIcon(Icons.arrow_upward) : sortButton()));
         final Finder kind = find.text('类型').last;
         if (kind.evaluate().isEmpty) return;
-        await tester.tap(kind, warnIfMissed: false);
-        await settle(tester);
+        await actInRealAsync(tester, () => tester.tap(kind, warnIfMissed: false));
       },
     );
   });

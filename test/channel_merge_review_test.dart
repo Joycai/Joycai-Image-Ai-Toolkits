@@ -12,6 +12,7 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'support/private_data_dir.dart';
+import 'support/real_async.dart';
 
 /// `D1f · 4f`: the merge prompt and its one-group-at-a-time review.
 void main() {
@@ -87,16 +88,17 @@ void main() {
     ));
   }
 
-  /// Taps through a review whose steps do real database I/O.
-  Future<void> tapAndSettle(WidgetTester tester, Finder f) async {
-    await tester.tap(f);
-    // Real I/O and frames in turn: each database step resolves outside the
-    // fake clock, and the dialog it leads to needs frames to appear.
+  /// Taps through a review whose steps do real database I/O: the tap and the
+  /// work it starts in real async, waited for by what it ends in ([until]),
+  /// then the frames the dialog it leads to needs to appear.
+  Future<void> tapAndSettle(WidgetTester tester, Finder f, {required bool Function() until}) async {
+    await inRealAsyncUntil(tester, () => tester.tap(f), until: until);
     for (var i = 0; i < 6; i++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
       await tester.pump(const Duration(milliseconds: 300));
     }
   }
+
+  bool reviewOpen() => find.text('Merge channels').evaluate().isNotEmpty;
 
   group('the reference note says each kind on its own', () {
     final en = lookupAppLocalizations(const Locale('en'));
@@ -135,7 +137,7 @@ void main() {
   testWidgets('the preview says what merges and what moves', (tester) async {
     final state = await seed(tester);
     await pump(tester, state);
-    await tapAndSettle(tester, find.text('Review'));
+    await tapAndSettle(tester, find.text('Review'), until: reviewOpen);
 
     expect(find.text('Merge channels'), findsOneWidget);
     expect(find.text('Relay'), findsOneWidget);
@@ -151,14 +153,13 @@ void main() {
     final state = await seed(tester);
     await pump(tester, state);
 
-    await tapAndSettle(tester, find.text('Review'));
-    await tapAndSettle(tester, find.text('Skip this group'));
+    await tapAndSettle(tester, find.text('Review'), until: reviewOpen);
+    await tapAndSettle(tester, find.text('Skip this group'), until: () => true);
     expect(find.text('Merge channels'), findsNothing);
     expect(state.allChannels, hasLength(2));
 
-    await tapAndSettle(tester, find.text('Review'));
-    await tapAndSettle(tester, find.text('Merge'));
-    await tester.runAsync(state.refreshDataCache);
+    await tapAndSettle(tester, find.text('Review'), until: reviewOpen);
+    await tapAndSettle(tester, find.text('Merge'), until: () => state.allChannels.length == 1);
     expect(state.allChannels, hasLength(1));
     expect(
       RoutedChannel.routesOf(state.allChannels.single).has(RouteKind.anthropic),

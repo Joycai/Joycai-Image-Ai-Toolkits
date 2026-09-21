@@ -29,8 +29,10 @@ void main() {
   late ImageLayerSet set;
 
   /// Writes the decomposition beside the gallery's fixtures and records it.
+  /// A `before` hook, so already in real async — the files and the repository
+  /// need that, and `runAsync` does not nest.
   Future<void> seed(WidgetTester tester) async {
-    await tester.runAsync(() async {
+    await () async {
       final dir = p.dirname(env.fixtureImagePaths.first);
       String write(String name, img.Image image) {
         final path = p.join(dir, name);
@@ -83,7 +85,7 @@ void main() {
         await repo.save(l);
       }
       set = ImageLayerSet('shot', layers);
-    });
+    }();
   }
 
   Future<void> openCanvas(WidgetTester tester) async {

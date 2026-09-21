@@ -162,7 +162,8 @@ void main() {
         );
         measure(tester, 'video desktop', platform);
       } finally {
-        AppState().setWorkbenchTab(0);
+        // Real async: the tab is a persisted setting.
+        await tester.runAsync(() async => AppState().setWorkbenchTab(0));
         debugDefaultTargetPlatformOverride = null;
       }
     });

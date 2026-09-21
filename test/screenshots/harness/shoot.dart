@@ -53,8 +53,11 @@ const List<ShotSize> kShotSizes = <ShotSize>[
 /// into `build/ui-screenshots/`.
 ///
 /// [before] runs after the singleton is configured but before the first pump —
-/// use it to set state the screen reads on mount. [after] runs on the settled
-/// tree, for taps that open a dialog or switch a tab.
+/// use it to set state the screen reads on mount. It runs in real async, so it
+/// may write a file or a setting, and must not call `runAsync` itself. [after]
+/// runs on the settled tree, under the fake clock, for taps that open a dialog
+/// or switch a tab — anything in it that reaches the database goes through
+/// `inRealAsync` (`test/support/real_async.dart`).
 Future<void> shoot(
   WidgetTester tester, {
   required FixtureEnv env,
@@ -129,12 +132,15 @@ Future<void> mountApp(
   // to run for reasons that have nothing to do with layout.
   appState.logState.clear();
   seedLogs(appState);
-  appState.navigateToScreen(screen.index);
-  await before?.call(tester);
 
   // Real async: the screens' initState sqflite queries and the compute()
   // isolates behind the gallery/browser scans only make progress out here.
+  // [before] too — most of what it sets is a persisted setting
+  // (`setWorkbenchTab`), and a write begun under the fake clock is never
+  // finished by it.
   await tester.runAsync(() async {
+    appState.navigateToScreen(screen.index);
+    await before?.call(tester);
     await tester.pumpWidget(_appTree(appState));
     await Future<void>.delayed(const Duration(milliseconds: 700));
     await tester.pump();
@@ -204,6 +210,16 @@ Future<void> _warmImageCache(WidgetTester tester, FixtureEnv env) async {
   final Finder app = find.byType(MyApp);
   if (app.evaluate().isEmpty) return;
   final BuildContext context = tester.element(app);
+
+  // Drop what an earlier test left loading. A decode a widget started under
+  // that test's fake clock — a card scrolled into view, a thumbnail resized —
+  // and that had not finished when the test ended never will: its completer
+  // belongs to a zone nothing pumps any more. It stays in the cache as
+  // *pending*, and a `precacheImage` for the same file joins it and waits
+  // forever (the render probe's second test, behind a first that drags the
+  // thumbnail size).
+  imageCache.clear();
+  imageCache.clearLiveImages();
 
   for (final String path in env.fixtureImagePaths) {
     try {

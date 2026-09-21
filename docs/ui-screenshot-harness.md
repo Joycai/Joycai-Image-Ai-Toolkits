@@ -80,7 +80,9 @@ survives a seed change.
 **A variant** (a tab, an open dialog, a different view mode) — add a
 `testWidgets` with `suffix:` plus one of the hooks. `before` runs after the
 singleton is configured but before the first pump, for state a screen reads on
-mount; `after` runs on the settled tree, for taps.
+mount; `after` runs on the settled tree, for taps. `before` runs in real async
+(so it may write a file or a persisted setting, and must not call `runAsync`
+itself); `after` runs under the fake clock.
 
 ```dart
 testWidgets('workbench @ desktop, comparator tab', (WidgetTester tester) async {
@@ -154,6 +156,19 @@ happens in `setUpAll` (real async); inside a test everything async goes through
 `tester.runAsync`. `FileImage` decoding is asynchronous too, which is why
 `shoot` precaches every fixture image before the final pump — skip that and
 every thumbnail captures blank.
+
+**No database call under the fake clock — enforced.** Both
+`flutter_test_config.dart` files install
+`test/support/fake_async_database_rule.dart`, which fails any test in which
+`DatabaseService.database` was read under `testWidgets`' fake clock, with the
+stack of the call. Such a call is a race with the runner's disk (it read as
+Linux-only CI flakes for a while), and one still in flight when the test ends
+holds sqflite's lock for every test after it. In an `after` hook or a test
+body, put the action that reaches the database *and the frame it asks for* —
+the pump is what mounts a panel that loads on mount — inside real async:
+`actInRealAsync` here, `inRealAsync` / `inRealAsyncUntil` /
+`pumpWidgetInRealAsync` / `useRealAsyncAppState` in
+`test/support/real_async.dart`. Wait on a state, never on a number of pumps.
 
 **Mobile size is not mobile platform.** `main.dart:248` reads
 `Platform.isAndroid || Platform.isIOS` to decide which nav destinations exist,

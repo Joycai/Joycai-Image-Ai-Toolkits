@@ -7,6 +7,7 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:provider/provider.dart';
 
 import 'screenshots/harness/fixture_env.dart';
+import 'support/real_async.dart';
 
 /// The cookie history panel (S3): a retention choice above the list, a remove
 /// on each row, and a clear-all — and all of it fits a phone.
@@ -27,22 +28,15 @@ void main() {
   }
   tearDownAll(() => env.dispose());
 
-  // The tap goes through `runAsync` so the database work it starts belongs to
-  // the real event loop, where sqflite's replies arrive — and the wait is for
-  // [until], the state that work ends in, not for a length of time. Started
-  // under fake time instead, every one of the chain's round trips needs a real
-  // reply *and then* a pump to run its continuation, so a fixed number of
-  // pumps is a bet on the disk: a loaded CI runner lost it, and the row being
-  // asserted gone was still on screen.
+  // The tap goes through real async so the database work it starts belongs
+  // to the real event loop, where sqflite's replies arrive — and the wait is
+  // for [until], the state that work ends in, not for a length of time.
+  // Started under fake time instead, every one of the chain's round trips
+  // needs a real reply *and then* a pump to run its continuation, so a fixed
+  // number of pumps is a bet on the disk: a loaded CI runner lost it, and the
+  // row being asserted gone was still on screen.
   Future<void> tapAndAwaitDb(WidgetTester tester, Finder target, {required bool Function() until}) async {
-    await tester.runAsync(() async {
-      await tester.tap(target);
-      final giveUp = DateTime.now().add(const Duration(seconds: 30));
-      while (!until()) {
-        if (DateTime.now().isAfter(giveUp)) fail('the database work the tap started never finished');
-        await Future<void>.delayed(const Duration(milliseconds: 5));
-      }
-    });
+    await inRealAsyncUntil(tester, () => tester.tap(target), until: until);
     await tester.pumpAndSettle();
   }
 

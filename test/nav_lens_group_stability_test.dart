@@ -8,6 +8,7 @@ import 'package:joycai_image_ai_toolkits/widgets/shell/nav_lens_group.dart';
 import 'screenshots/harness/fixture_env.dart';
 import 'screenshots/harness/fixture_seed.dart';
 import 'screenshots/harness/shoot.dart';
+import 'support/real_async.dart';
 
 /// The title bar's destinations must not move when the screen changes (`01b`).
 ///
@@ -66,7 +67,8 @@ void main() {
 
     try {
       for (final screen in [AppScreen.fileBrowser, AppScreen.prompts, AppScreen.settings, AppScreen.tasks]) {
-        AppState().navigateToScreen(screen.index);
+        // Real async: each screen reads the database as it mounts.
+        await inRealAsync(tester, () => AppState().navigateToScreen(screen.index));
         await settle(tester);
 
         expect(tester.getRect(find.byType(NavLensGroup)), group, reason: 'the group moved on ${screen.name}');
@@ -89,7 +91,7 @@ void main() {
         );
       }
     } finally {
-      AppState().navigateToScreen(AppScreen.workbench.index);
+      await inRealAsync(tester, () => AppState().navigateToScreen(AppScreen.workbench.index));
       await settle(tester);
       // The screens visited start debounces and scans of their own; let
       // them run out before the binding checks for pending timers.

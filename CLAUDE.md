@@ -139,6 +139,11 @@ offending file and line. A genuinely new layer or folder means changing that tes
   queue. Keep new ones that way, and in tests inject `openTestDatabase()`
   (`test/support/in_memory_database.dart`) instead of reaching for the real
   file through `usePrivateDataDir`.
+- **No database call under `testWidgets`' fake clock** — enforced for every test by
+  `test/support/fake_async_database_rule.dart` (it fails the test, with the call's stack).
+  Build `AppState()` in `setUpAll`, and put an action that reaches the database *together
+  with the frame it asks for* in real async; the helpers are in `test/support/real_async.dart`.
+  Wait on a state, never on a number of pumps.
 - **A column with a writer of its own is never written by a whole-row `update…`.**
   `sort_order` (`update…Order`) and a model's ETA trio (`updateModelEstimation`) are
   stripped in the repository, so an editor saving the row it opened cannot undo a

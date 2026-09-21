@@ -139,16 +139,18 @@ void main() {
     );
     expect(AppState().activeScreenIndex, AppScreen.fileBrowser.index);
 
-    await tester.sendKeyDownEvent(primary);
-    await tester.sendKeyEvent(LogicalKeyboardKey.comma);
-    await tester.sendKeyUpEvent(primary);
-    await settle(tester, 12);
+    // Real async, here and on the way back: a screen reads the database as
+    // it mounts.
+    await actInRealAsync(tester, () async {
+      await tester.sendKeyDownEvent(primary);
+      await tester.sendKeyEvent(LogicalKeyboardKey.comma);
+      await tester.sendKeyUpEvent(primary);
+    }, 12);
 
     expect(AppState().activeScreenIndex, AppScreen.settings.index,
         reason: 'the macOS habit, and the same destination as ⌘8');
 
-    AppState().navigateToScreen(AppScreen.fileBrowser.index);
-    await settle(tester);
+    await actInRealAsync(tester, () async => AppState().navigateToScreen(AppScreen.fileBrowser.index));
   });
 
   testWidgets('the panel names the region that owns the keyboard',

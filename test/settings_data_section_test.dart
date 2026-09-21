@@ -8,32 +8,39 @@ import 'package:joycai_image_ai_toolkits/screens/settings/widgets/data_section.d
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'support/private_data_dir.dart';
+import 'support/real_async.dart';
 
 /// Covers the data pane's action grid, and the scratch-file control in it.
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
 
-  sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
+  // The database lives in a directory of the whole file's, opened once, in
+  // real async. It used to follow the per-test sandbox below — so the
+  // singleton's database was opened from inside the first test, under the
+  // fake clock, in a directory that test's tearDown then deleted under it.
+  final Directory dataDir = usePrivateDataDir('joycai_data_section_test');
+  useRealAsyncAppState();
 
   late Directory sandbox;
 
   setUp(() {
-    // Its own directory: the button measures what it finds there and can
-    // delete it, and `getTemporaryDirectory` on a dev machine can resolve to
-    // the same place the installed app uses.
+    // The scratch directory is each test's own: the button measures what it
+    // finds there and can delete it, and `getTemporaryDirectory` on a dev
+    // machine can resolve to the same place the installed app uses.
     sandbox = Directory.systemTemp.createTempSync('data_section_test');
     binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
-      (MethodCall methodCall) async => sandbox.path,
+      (MethodCall call) async =>
+          call.method == 'getTemporaryDirectory' ? sandbox.path : dataDir.path,
     );
   });
 
   tearDown(() {
     binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
-      null,
+      (MethodCall call) async => dataDir.path,
     );
     if (sandbox.existsSync()) sandbox.deleteSync(recursive: true);
   });

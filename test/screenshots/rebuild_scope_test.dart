@@ -144,8 +144,11 @@ void main() {
     final grown = await rebuiltBy(tester, () => session.addUserTurn('one more'));
     expect(grown, rebuilt('PromptOptimizerChatView'));
     expect(grown, rebuilt('OptimizerConfigPanel'));
-    AppState().workbenchUIState.newOptimizerSession();
-    AppState().setWorkbenchTab(0);
+    // Real async: the tab is a persisted setting.
+    await tester.runAsync(() async {
+      AppState().workbenchUIState.newOptimizerSession();
+      AppState().setWorkbenchTab(0);
+    });
     // The tree's walk and the chat's scroll leave timers; let them run out.
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 5));

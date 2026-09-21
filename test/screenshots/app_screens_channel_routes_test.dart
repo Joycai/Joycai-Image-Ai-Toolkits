@@ -134,7 +134,8 @@ void main() {
           if (size == 'mobile') await tapText(tester, '渠道管理');
           final Finder review = find.text('查看');
           if (review.evaluate().isEmpty) return;
-          await tester.tap(review.first, warnIfMissed: false);
+          // Real async: the review counts references in the database first.
+          await actInRealAsync(tester, () => tester.tap(review.first, warnIfMissed: false));
           await settleIo(tester);
         },
       );

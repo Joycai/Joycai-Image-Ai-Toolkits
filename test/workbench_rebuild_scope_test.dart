@@ -6,6 +6,7 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'screenshots/harness/fixture_env.dart';
 import 'screenshots/harness/fixture_seed.dart';
 import 'screenshots/harness/shoot.dart';
+import 'support/real_async.dart';
 
 /// Covers the one thing that decides how often the workbench's right panel
 /// rebuilds: whether its parent hands it the *same* widget.
@@ -95,11 +96,10 @@ void main() {
     );
 
     const typed = 'a prompt that came from somewhere else';
-    // Deliberately not awaited: the returned future is a real SQLite write,
-    // which never progresses inside `testWidgets`' fake-async zone. It does
-    // not need to — `updateWorkbenchConfig` moves the field and notifies
-    // *before* it writes, which is the whole shape of that method.
-    AppState().updateWorkbenchConfig(prompt: typed);
+    // In real async: the call ends in a SQLite write, and one started under
+    // `testWidgets`' fake clock never finishes — it would sit on sqflite's
+    // lock for every test after this one.
+    await inRealAsync(tester, () => AppState().updateWorkbenchConfig(prompt: typed));
     await settle(tester);
 
     expect(

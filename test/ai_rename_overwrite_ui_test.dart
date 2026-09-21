@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 
 import 'screenshots/harness/fixture_env.dart';
 import 'screenshots/harness/fixture_seed.dart';
+import 'support/real_async.dart';
 
 /// The review list's 「覆盖」 on a clash. Two rows proposing one name have no
 /// file to overwrite — only each other's result — so the action is drawn but
@@ -57,7 +58,9 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     final appState = AppState();
-    await tester.pumpWidget(
+    // Real async: the dialog reads its last-used settings on mount.
+    await pumpWidgetInRealAsync(
+      tester,
       MultiProvider(
         providers: [
           ChangeNotifierProvider<AppState>.value(value: appState),

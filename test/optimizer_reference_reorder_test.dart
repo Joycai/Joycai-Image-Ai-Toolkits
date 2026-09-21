@@ -15,12 +15,17 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/optimizer_ref
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:provider/provider.dart';
+import 'support/private_data_dir.dart';
+import 'support/real_async.dart';
 
 AppImage _img(String name) => AppImage(path: '/nowhere/$name', name: name);
 
 List<String> _names(WorkbenchUIState s) => [for (final i in s.optimizerReferenceImages) i.name];
 
 void main() {
+  usePrivateDataDir('joycai_optimizer_reference_reorder_test');
+  useRealAsyncAppState();
+
   Future<AppLocalizations> en() => AppLocalizations.delegate.load(const Locale('en'));
 
   group('reorderAssistantReferences', () {

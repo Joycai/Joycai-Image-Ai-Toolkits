@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'support/private_data_dir.dart';
+import 'support/real_async.dart';
 
 void main() {
   // A data directory of this file's own. The mock used to answer '.', which
@@ -15,6 +16,7 @@ void main() {
   // `flutter test` runs files concurrently, so they raced for one database's
   // lock.
   usePrivateDataDir('joycai_responsive_test');
+  useRealAsyncAppState();
 
   setUpAll(() {
     sqfliteFfiInit();
@@ -27,7 +29,9 @@ void main() {
 
     final appState = AppState();
 
-    await tester.pumpWidget(
+    // Real async: every screen's initState reads the database.
+    await pumpWidgetInRealAsync(
+      tester,
       MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: appState),

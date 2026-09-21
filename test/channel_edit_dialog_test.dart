@@ -7,6 +7,8 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/channel_edit_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/channel_provider_presets.dart';
+import 'support/private_data_dir.dart';
+import 'support/real_async.dart';
 
 LLMChannel _sampleChannel({String type = 'google-genai-rest'}) => LLMChannel(
       id: 1,
@@ -47,6 +49,9 @@ Future<void> _pumpDialog(WidgetTester tester, {String type = 'google-genai-rest'
 }
 
 void main() {
+  usePrivateDataDir('joycai_channel_edit_dialog_test');
+  useRealAsyncAppState();
+
   // Regression: editing an existing channel used to crash with
   // "LayoutBuilder does not support returning intrinsic dimensions" because
   // AlertDialog's IntrinsicWidth recursed into a LayoutBuilder. The dialog must

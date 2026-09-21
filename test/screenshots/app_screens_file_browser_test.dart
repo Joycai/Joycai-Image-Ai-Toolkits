@@ -101,10 +101,9 @@ void main() {
               modified: DateTime(2026, 8, 1),
             ),
           ]);
-          // `runAsync`, not a bare await: `before` runs inside the test's
-          // fake-async zone, where a real `File.stat()` never completes and the
-          // await hangs the shot forever.
-          await tester.runAsync(() => staging.revalidate());
+          // A bare await is fine: `before` runs in real async, where the
+          // `File.stat()` behind this completes.
+          await staging.revalidate();
           staging.setDestination(env.browserDir.path);
 
           browser.clearSelection();
@@ -162,14 +161,11 @@ void main() {
 
           final Directory dest =
               Directory(p.join(env.browserDir.path, 'archive'));
-          // Real files, written through runAsync: `before` runs in the
-          // fake-async zone where dart:io never completes.
-          await tester.runAsync(() async {
-            if (!await dest.exists()) await dest.create();
-            for (final BrowserFile f in browser.filteredFiles.take(3)) {
-              await File(p.join(dest.path, f.name)).writeAsString('older copy');
-            }
-          });
+          // Real files: `before` runs in real async, where dart:io completes.
+          if (!await dest.exists()) await dest.create();
+          for (final BrowserFile f in browser.filteredFiles.take(3)) {
+            await File(p.join(dest.path, f.name)).writeAsString('older copy');
+          }
 
           staging.clear();
           staging.addAll(browser.filteredFiles.take(3));
@@ -194,11 +190,12 @@ void main() {
   // context menu (with its "remove from list" / disabled "move to…" rules),
   // the in-row name field for a new subfolder, and the delete confirmation
   // for a subfolder that has something in it.
-  Future<void> ensureArchive(WidgetTester tester) => tester.runAsync(() async {
-        final Directory dest = Directory(p.join(env.browserDir.path, 'archive'));
-        if (!await dest.exists()) await dest.create();
-        await File(p.join(dest.path, 'kept.txt')).writeAsString('kept');
-      });
+  // A `before` hook: already in real async, and `runAsync` does not nest.
+  Future<void> ensureArchive(WidgetTester tester) async {
+    final Directory dest = Directory(p.join(env.browserDir.path, 'archive'));
+    if (!await dest.exists()) await dest.create();
+    await File(p.join(dest.path, 'kept.txt')).writeAsString('kept');
+  }
 
   // The folder name also appears in the staging panel's group header when
   // an earlier shot left marks behind, so the row is found through the tree.

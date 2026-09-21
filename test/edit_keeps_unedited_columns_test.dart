@@ -14,6 +14,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'support/in_memory_database.dart';
 import 'support/private_data_dir.dart';
+import 'support/real_async.dart';
 
 /// An edit must not reset what its form does not show. Both cases here were
 /// real: the editors used to hand the database a map of just the form's
@@ -145,7 +146,13 @@ void main() {
       );
       await tester.pump();
       await tester.enterText(fieldHolding('GPT Image'), 'Renamed');
-      await tester.tap(find.text('Save').last);
+      // The save is a database write: made in real async, and waited for by
+      // the cache it refreshes rather than by a number of frames.
+      await inRealAsyncUntil(
+        tester,
+        () => tester.tap(find.text('Save').last),
+        until: () => state.allModels.any((m) => m.id == model.id && m.modelName == 'Renamed'),
+      );
       await tester.pumpAndSettle();
 
       final saved = (await tester.runAsync(() async {
@@ -197,8 +204,9 @@ void main() {
     ).ignore();
     await tester.pumpAndSettle();
     await tester.enterText(fieldHolding('Built in'), 'Renamed');
-    await tester.tap(find.text('Save').last);
-    // The write is real I/O: wait until it has landed, however long that is.
+    // The write is real I/O: start it in real async, and wait until it has
+    // landed, however long that is.
+    await tester.runAsync(() => tester.tap(find.text('Save').last));
     final saved = await tester.runAsync(() async {
       for (var i = 0; i < 100; i++) {
         final now = (await state.getPromptTags()).firstWhere(

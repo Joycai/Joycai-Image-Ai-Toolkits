@@ -9,6 +9,7 @@ import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
 import 'package:provider/provider.dart';
 
 import 'screenshots/harness/fixture_env.dart';
+import 'support/real_async.dart';
 
 /// A selection bar's slide and fade leave on one clock (`plans/README.md`):
 /// the slide ran the full M3 on the way out while the fade ran the shortened
@@ -17,6 +18,7 @@ void main() {
   final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
   late FixtureEnv env;
   setUpAll(() => env = installFixtureEnv(binding));
+  useRealAsyncAppState();
   tearDownAll(() => env.dispose());
 
   testWidgets('the gallery bar slides and fades on the same duration, both ways', (tester) async {

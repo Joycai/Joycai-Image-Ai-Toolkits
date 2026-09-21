@@ -4,8 +4,13 @@ import 'package:joycai_image_ai_toolkits/main.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'support/private_data_dir.dart';
+import 'support/real_async.dart';
 
 void main() {
+  usePrivateDataDir('joycai_widget_test');
+  useRealAsyncAppState();
+
   setUpAll(() {
     // Initialize FFI for desktop (windows/linux/macos) unit tests
     sqfliteFfiInit();
@@ -19,7 +24,9 @@ void main() {
 
     // Build our app and trigger a frame.
     final appState = AppState();
-    await tester.pumpWidget(
+    // Real async: every screen's initState reads the database.
+    await pumpWidgetInRealAsync(
+      tester,
       MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: appState),

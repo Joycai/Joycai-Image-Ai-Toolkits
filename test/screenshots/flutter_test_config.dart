@@ -11,6 +11,9 @@
 //      glyph as a filled box and the screenshots are worthless.
 //   2. Installs a golden comparator that always overwrites and never fails, so
 //      these are a debugging tool rather than a pixel-diff regression gate.
+//   3. Installs the suite-wide rule against database calls under fake async
+//      (`test/support/fake_async_database_rule.dart`) — this directory's
+//      config shadows `test/`'s, so it has to be installed here as well.
 
 import 'dart:async';
 import 'dart:io';
@@ -20,6 +23,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
+
+import '../support/fake_async_database_rule.dart';
 
 /// Where the PNGs land. `flutter test` runs with the package root as cwd, and
 /// `/build/` is already gitignored.
@@ -33,6 +38,8 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   WidgetsApp.debugAllowBannerOverride = false;
   await _loadFonts();
   goldenFileComparator = _ScreenshotWriter(Directory(kScreenshotDir));
+  // The one thing in this directory that *can* fail a shot: see the rule.
+  installFakeAsyncDatabaseRule();
   await testMain();
 }
 
