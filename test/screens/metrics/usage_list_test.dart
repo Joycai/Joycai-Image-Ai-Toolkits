@@ -288,7 +288,7 @@ void main() {
 
       await tester.tap(find.text('2K · input ×1'));
       await tester.pumpAndSettle();
-      expect(find.text('1 images · 1 free'), findsOneWidget);
+      expect(find.text('1 image · 1 free'), findsOneWidget);
       expect(find.text('0 × \$0.0200 = \$0.0000'), findsOneWidget);
     });
 

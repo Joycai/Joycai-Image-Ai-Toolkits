@@ -1523,6 +1523,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String usageInputSentCount(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n images',
+      one: '1 image',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String usageInputFreeCount(int n) {
     return '$n free';
   }

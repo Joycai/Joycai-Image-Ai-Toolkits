@@ -971,6 +971,7 @@
   },
   "usageSpecColumn": "規格",
   "usageSpecInputImages": "輸入 {n} 張",
+  "usageInputSentCount": "{n} 張",
   "usageInputFreeCount": "{n} 張免費",
   "usageOutputAmount": "輸出金額",
   "usageInputAmount": "輸入金額",

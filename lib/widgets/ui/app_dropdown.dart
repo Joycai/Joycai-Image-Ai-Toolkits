@@ -223,6 +223,9 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
                 const SizedBox(width: 8),
               ],
               Expanded(
+                // The label is what is being chosen: with a trailing beside
+                // it, it keeps three fifths of the row whatever that says.
+                flex: item.trailing != null ? 3 : 1,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,16 +251,21 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
               ),
               if (item.trailing != null) ...[
                 const SizedBox(width: 12),
-                // Capped and cut: a non-flex child is laid out first, so a long
-                // trailing (a fee group's one-line summary) would otherwise
-                // squeeze the label to nothing and then overflow the row.
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 200),
-                  child: Text(
-                    item.trailing!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+                // Flexible, capped and cut. As a non-flex child it was laid
+                // out first at its full width, so a long one (a fee group's
+                // one-line summary) took the row from the label — the name
+                // being chosen — and then overflowed it.
+                Flexible(
+                  flex: 2,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 200),
+                    child: Text(
+                      item.trailing!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                      style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+                    ),
                   ),
                 ),
               ],

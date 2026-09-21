@@ -1469,6 +1469,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String usageInputSentCount(int n) {
+    return '$n 张';
+  }
+
+  @override
   String usageInputFreeCount(int n) {
     return '$n 张免费';
   }
@@ -7345,6 +7350,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String usageSpecInputImages(int n) {
     return '輸入 $n 張';
+  }
+
+  @override
+  String usageInputSentCount(int n) {
+    return '$n 張';
   }
 
   @override

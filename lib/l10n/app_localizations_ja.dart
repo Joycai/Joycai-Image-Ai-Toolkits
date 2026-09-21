@@ -1474,6 +1474,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String usageInputSentCount(int n) {
+    return '$n 枚';
+  }
+
+  @override
   String usageInputFreeCount(int n) {
     return '$n 枚無料';
   }

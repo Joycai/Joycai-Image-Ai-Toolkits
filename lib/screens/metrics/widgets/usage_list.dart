@@ -792,7 +792,9 @@ class _UsageRowState extends State<_UsageRow> {
     final billed = spec.inputUnits.round();
     final sent = spec.inputImages > 0 ? spec.inputImages : billed;
     final free = spec.units > 0 ? sent - billed : 0;
-    final count = l10n.usageUnitsImage(_exact(sent));
+    // Its own plural-aware string: one reference, the first free, is the
+    // common Seedream row, and 「1 images」 would be its headline.
+    final count = l10n.usageInputSentCount(sent);
     return free > 0 ? '$count · ${l10n.usageInputFreeCount(free)}' : count;
   }
 

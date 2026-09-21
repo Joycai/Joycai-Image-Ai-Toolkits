@@ -1210,6 +1210,14 @@
       }
     }
   },
+  "usageInputSentCount": "{n, plural, =1{1 image} other{{n} images}}",
+  "@usageInputSentCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "usageInputFreeCount": "{n} free",
   "@usageInputFreeCount": {
     "placeholders": {

@@ -65,6 +65,7 @@
   },
   "usageSpecColumn": "仕様",
   "usageSpecInputImages": "入力 {n} 枚",
+  "usageInputSentCount": "{n} 枚",
   "usageInputFreeCount": "{n} 枚無料",
   "usageOutputAmount": "出力料金",
   "usageInputAmount": "入力料金",

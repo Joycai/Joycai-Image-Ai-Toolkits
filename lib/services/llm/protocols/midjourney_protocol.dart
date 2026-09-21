@@ -96,10 +96,11 @@ class MidjourneyProtocol implements ChatProtocol {
         for (final img in result.images) {
           if (controller.isClosed) return;
           // With the count of sources it was made from: an MJ task is billed
-        // at submit, and a consumer that leaves after this chunk never sees
-        // the closing one (same rule as `LLMDispatcher._asChunks`).
-        controller.add(LLMResponseChunk(
-            imagePart: img, metadata: inputImageCountEntry(result.metadata)));
+          // at submit, and a consumer that leaves after this chunk never sees
+          // the closing one (same rule as `LLMDispatcher._asChunks`).
+          controller.add(LLMResponseChunk(
+              imagePart: img,
+              metadata: inputImageCountEntry(result.metadata)));
         }
         if (!controller.isClosed) {
           controller.add(LLMResponseChunk(metadata: result.metadata, isDone: true));

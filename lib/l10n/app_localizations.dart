@@ -2597,6 +2597,12 @@ abstract class AppLocalizations {
   /// **'input ×{n}'**
   String usageSpecInputImages(int n);
 
+  /// No description provided for @usageInputSentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 image} other{{n} images}}'**
+  String usageInputSentCount(int n);
+
   /// No description provided for @usageInputFreeCount.
   ///
   /// In en, this message translates to:
