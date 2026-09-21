@@ -33,7 +33,7 @@ class XaiImagesProtocol implements ImageGenProtocol {
     );
     final prompt = userMsg.content;
 
-    // Cap the reference images to what the model accepts (3).
+    // Cap the reference images to what the model accepts (5).
     var inputImages = userMsg.attachments;
     final maxRef = target.model.capabilities.maxReferenceImages;
     if (maxRef != null && maxRef >= 0 && inputImages.length > maxRef) {

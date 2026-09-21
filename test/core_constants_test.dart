@@ -122,6 +122,11 @@ void main() {
       final openai = ModelCapabilities.forModel('gpt-image-1');
       expect(openai.supportsReferenceImages, true);
       expect(openai.maxReferenceImages, 16);
+
+      // xAI Grok Imagine: up to five source images per edit.
+      final grok = ModelCapabilities.forModel('grok-imagine-image-quality');
+      expect(grok.supportsReferenceImages, true);
+      expect(grok.maxReferenceImages, 5);
     });
 
     test('normalize falls back to default for invalid values', () {
