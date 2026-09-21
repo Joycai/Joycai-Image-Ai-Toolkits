@@ -85,9 +85,13 @@ Future<void> databaseIdle({Duration giveUpAfter = const Duration(seconds: 30)}) 
   final DateTime giveUp = DateTime.now().add(giveUpAfter);
   int seen;
   do {
-    if (DateTime.now().isAfter(giveUp)) fail('the database never went quiet — something is polling it');
+    final Duration left = giveUp.difference(DateTime.now());
+    if (left <= Duration.zero) fail('the database never went quiet — something is polling it');
     seen = databaseAccesses;
-    await barrier.rawQuery('SELECT 1');
+    await barrier.rawQuery('SELECT 1').timeout(
+          left,
+          onTimeout: () => fail('the database worker never answered — a call ahead of this one is stuck'),
+        );
     await Future<void>.delayed(Duration.zero);
   } while (databaseAccesses != seen);
 }

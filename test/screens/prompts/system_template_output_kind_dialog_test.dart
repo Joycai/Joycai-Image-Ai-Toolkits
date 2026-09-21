@@ -83,12 +83,14 @@ void main() {
 
   /// Saves, then reads the table back — in real time throughout, so the
   /// handler's database calls can finish; a pump per wait lets the dialog
-  /// close once they have.
+  /// close once they have. The pumps carry time, which `inRealAsyncUntil`'s do
+  /// not: what is waited for is the end of the route's exit animation.
   Future<List<SystemPrompt>> saveAndRead(WidgetTester tester) async {
     return runAsyncRethrowing(tester, () async {
       await tester.tap(find.text(l10n.save));
-      for (var i = 0; i < 100 && find.text(l10n.save).evaluate().isNotEmpty; i++) {
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+      final giveUp = DateTime.now().add(const Duration(seconds: 30));
+      while (find.text(l10n.save).evaluate().isNotEmpty && DateTime.now().isBefore(giveUp)) {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
         await tester.pump(const Duration(milliseconds: 50));
       }
       expect(find.text(l10n.save), findsNothing, reason: 'the dialog closes once saved');

@@ -206,20 +206,22 @@ void main() {
     await tester.enterText(fieldHolding('Built in'), 'Renamed');
     // The write is real I/O: start it in real async, and wait until it has
     // landed, however long that is.
-    await tester.runAsync(() => tester.tap(find.text('Save').last));
-    final saved = await tester.runAsync(() async {
-      for (var i = 0; i < 100; i++) {
+    // What it ends in is a row, which takes a query to see — hence a loop of
+    // its own rather than `inRealAsyncUntil`, whose condition cannot await.
+    final saved = await runAsyncRethrowing(tester, () async {
+      await tester.tap(find.text('Save').last);
+      final giveUp = DateTime.now().add(const Duration(seconds: 30));
+      while (true) {
         final now = (await state.getPromptTags()).firstWhere(
           (t) => t.id == tag.id,
         );
         if (now.name == 'Renamed') return now;
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        if (DateTime.now().isAfter(giveUp)) fail('the save never reached the database');
+        await Future<void>.delayed(const Duration(milliseconds: 5));
       }
-      return null;
     });
     await tester.pumpAndSettle();
-    expect(saved, isNotNull, reason: 'the save never reached the database');
-    expect(saved!.isSystem, isTrue);
+    expect(saved.isSystem, isTrue);
     expect(saved.sortOrder, 4);
   });
 }
