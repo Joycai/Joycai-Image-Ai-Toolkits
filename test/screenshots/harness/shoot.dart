@@ -132,6 +132,17 @@ Future<void> mountApp(
   appState.navigateToScreen(screen.index);
   await before?.call(tester);
 
+  // The image cache outlives a test, and so does a load that was still pending
+  // when the last one ended. One started by a pump outside `runAsync` lives in
+  // that test's fake-async zone, which is gone: it never completes, and
+  // `_warmImageCache` below would be handed the same completer for the same
+  // path and wait on it for good. `render_probe.dart`'s thumbnail-size drag
+  // leaves ~180 of them behind. Only then — decoded entries are worth keeping.
+  if (imageCache.pendingImageCount > 0) {
+    imageCache.clear();
+    imageCache.clearLiveImages();
+  }
+
   // Real async: the screens' initState sqflite queries and the compute()
   // isolates behind the gallery/browser scans only make progress out here.
   await tester.runAsync(() async {
