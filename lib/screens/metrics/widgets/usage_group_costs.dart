@@ -6,6 +6,7 @@ import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/pricing_group.dart';
+import '../../../models/spec_rate.dart';
 import '../../../widgets/ui/app_button.dart';
 import 'usage_chrome.dart';
 import 'usage_palette.dart';
@@ -185,12 +186,12 @@ class UsageGroupCosts extends StatelessWidget {
   /// The quantities column: what the spec-billed rows counted (「126 秒」,
   /// 「38 张」), then the request count.
   static String quantityText(AppLocalizations l10n, GroupUsage usage) {
-    String units(String unit, double n) {
+    String units(OutputUnit unit, double n) {
       final text = NumberFormat.decimalPattern().format(n.round());
       return switch (unit) {
-        'second' => l10n.usageUnitsSecond(text),
-        'clip' => l10n.usageUnitsClip(text),
-        _ => l10n.usageUnitsImage(text),
+        OutputUnit.second => l10n.usageUnitsSecond(text),
+        OutputUnit.clip => l10n.usageUnitsClip(text),
+        OutputUnit.image => l10n.usageUnitsImage(text),
       };
     }
 

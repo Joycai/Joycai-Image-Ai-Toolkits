@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
+import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_group_costs.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_stats.dart';
 
@@ -31,7 +32,7 @@ void main() {
   /// no rate row priced.
   const veoUsage = GroupUsage(
     specCost: 6.2,
-    specUnits: {'second': 126},
+    specUnits: {OutputUnit.second: 126},
     unmatchedCount: 3,
     requestCount: 18,
   );
@@ -172,7 +173,7 @@ void main() {
   testWidgets('a matched group carries no note and no button', (tester) async {
     await pumpCosts(
       tester,
-      stats({1: 6.2}, usage: {1: const GroupUsage(specCost: 6.2, specUnits: {'image': 38}, requestCount: 31)}),
+      stats({1: 6.2}, usage: {1: const GroupUsage(specCost: 6.2, specUnits: {OutputUnit.image: 38}, requestCount: 31)}),
       const Size(1920, 1080),
       onFixRates: (_) {},
     );

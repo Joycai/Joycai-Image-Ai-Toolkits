@@ -15,13 +15,19 @@ class TaskRepository {
   /// (S3): those are session credentials, and task rows outlive every
   /// retention setting and survive a data reset.
   ///
-  /// The row is taken before the first await, on purpose. A [TaskItem] is
-  /// mutable and the queue saves without waiting: a snapshot taken after the
-  /// database resolved would store whatever the task had become by then, and
-  /// two saves in flight would both write the later state.
-  Future<void> saveTask(TaskItem task) async {
+  /// The row is taken synchronously, on purpose — this is not an `async`
+  /// function. A [TaskItem] is mutable and the queue saves without waiting: a
+  /// snapshot taken after the database resolved would store whatever the task
+  /// had become by then, and two saves in flight would both write the later
+  /// state. It also keeps a task that cannot be encoded throwing at the call,
+  /// where it always has, rather than into a future nobody awaits.
+  Future<void> saveTask(TaskItem task) {
     final row = task.toMap();
     row['parameters'] = CookieRepository.withoutCookies(row['parameters'] as String);
+    return _insertTask(row);
+  }
+
+  Future<void> _insertTask(Map<String, dynamic> row) async {
     final db = await _db;
     await db.insert(
       'tasks',

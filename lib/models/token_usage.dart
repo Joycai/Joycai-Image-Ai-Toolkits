@@ -2,6 +2,14 @@ import 'dart:convert';
 
 import 'spec_rate.dart';
 
+// A cell of the wrong type reads as absent. SQLite keeps text in a REAL
+// column as text, and a row is decoded whole whatever its billing mode — so a
+// cast here would let one hand-edited cell fail the page it is on, including
+// a cell that row's own mode never reads.
+int? _int(Object? cell) => cell is int ? cell : null;
+double? _double(Object? cell) => cell is num ? cell.toDouble() : null;
+String? _text(Object? cell) => cell is String ? cell : null;
+
 /// How a usage row was billed — what its cost is a product of.
 enum UsageBilling {
   /// Input, cache-hit and output tokens, each at its own per-million rate.
@@ -88,7 +96,9 @@ class UsageSpecSnapshot {
 /// job re-prices the row its submit recorded by the seconds that were
 /// actually rendered (`UsageRepository.updateSpecBilling`).
 class UsageSpecBilling {
-  /// Null on a row whose `output_unit` is missing or names no [OutputUnit].
+  /// Null on a row without the column. A value that names no [OutputUnit]
+  /// reads as [OutputUnit.image] — what the usage page has always drawn for
+  /// one, and what [OutputUnit.parse] gives a fee group.
   final OutputUnit? unit;
   final double units;
   final double unitPrice;
@@ -115,17 +125,17 @@ class UsageSpecBilling {
   /// numbers: a row that predates v42 was given `DEFAULT 0.0` by the ALTER,
   /// while one written since carries NULL, and both mean the same.
   static UsageSpecBilling? fromMap(Map<String, dynamic> map) {
-    final units = map['output_units'] as num?;
-    final unitPrice = map['output_unit_price'] as num?;
-    final rawUnit = map['output_unit'] as String?;
+    final units = _double(map['output_units']) ?? 0.0;
+    final unitPrice = _double(map['output_unit_price']) ?? 0.0;
+    final rawUnit = _text(map['output_unit']);
     final snapshot = UsageSpecSnapshot.tryDecode(map['output_spec']);
-    if ((units ?? 0) == 0 && (unitPrice ?? 0) == 0 && rawUnit == null && snapshot == null) {
+    if (units == 0 && unitPrice == 0 && rawUnit == null && snapshot == null) {
       return null;
     }
     return UsageSpecBilling(
-      unit: OutputUnit.values.where((u) => u.name == rawUnit).firstOrNull,
-      units: (units ?? 0.0).toDouble(),
-      unitPrice: (unitPrice ?? 0.0).toDouble(),
+      unit: rawUnit == null ? null : OutputUnit.parse(rawUnit),
+      units: units,
+      unitPrice: unitPrice,
       snapshot: snapshot,
     );
   }
@@ -180,9 +190,11 @@ class TokenUsage {
   /// The fee group's `billing_mode` as stored. Read [billing].
   final String billingMode;
 
-  /// What a spec-billed request counted and at what price; null on the other
-  /// two modes. Whether the row *is* spec-billed is [billing]'s to say — a
-  /// spec row whose columns were lost reads null here too, and prices zero.
+  /// What a spec-billed request counted and at what price; null on every row
+  /// the app writes in the other two modes. Whether the row *is* spec-billed
+  /// is [billing]'s to say, not this field's: a spec row whose columns were
+  /// lost reads null here too (and prices zero), and a hand-edited token row
+  /// may carry one that nothing bills.
   final UsageSpecBilling? spec;
 
   const TokenUsage({
@@ -243,21 +255,21 @@ class TokenUsage {
       billing == UsageBilling.spec ? spec?.snapshot?.label : null;
 
   factory TokenUsage.fromMap(Map<String, dynamic> map) => TokenUsage(
-        id: map['id'] as int?,
-        taskId: map['task_id'] as String?,
-        modelId: map['model_id'] as String? ?? '',
-        modelDbId: map['model_pk'] as int?,
-        timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ??
+        id: _int(map['id']),
+        taskId: _text(map['task_id']),
+        modelId: _text(map['model_id']) ?? '',
+        modelDbId: _int(map['model_pk']),
+        timestamp: DateTime.tryParse(_text(map['timestamp']) ?? '') ??
             DateTime.fromMillisecondsSinceEpoch(0),
-        inputTokens: map['input_tokens'] as int? ?? 0,
-        cacheTokens: map['cache_tokens'] as int? ?? 0,
-        outputTokens: map['output_tokens'] as int? ?? 0,
-        inputPrice: (map['input_price'] as num? ?? 0.0).toDouble(),
-        outputPrice: (map['output_price'] as num? ?? 0.0).toDouble(),
-        cachePrice: (map['cache_price'] as num?)?.toDouble(),
-        requestCount: map['request_count'] as int? ?? 1,
-        requestPrice: (map['request_price'] as num? ?? 0.0).toDouble(),
-        billingMode: map['billing_mode'] as String? ?? 'token',
+        inputTokens: _int(map['input_tokens']) ?? 0,
+        cacheTokens: _int(map['cache_tokens']) ?? 0,
+        outputTokens: _int(map['output_tokens']) ?? 0,
+        inputPrice: _double(map['input_price']) ?? 0.0,
+        outputPrice: _double(map['output_price']) ?? 0.0,
+        cachePrice: _double(map['cache_price']),
+        requestCount: _int(map['request_count']) ?? 1,
+        requestPrice: _double(map['request_price']) ?? 0.0,
+        billingMode: _text(map['billing_mode']) ?? 'token',
         spec: UsageSpecBilling.fromMap(map),
       );
 

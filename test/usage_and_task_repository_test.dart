@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
@@ -164,5 +166,18 @@ void main() {
     await saved;
 
     expect((await tasks.getRecentTasks(10)).single.status, TaskStatus.processing);
+  });
+
+  test('a task that cannot be encoded throws at the call, not into the future', () {
+    // Two of the queue's saves are never awaited; an error that only showed
+    // up in the returned future would go unhandled there.
+    final task = TaskItem(
+      id: 't3',
+      imagePaths: const [],
+      modelId: 'm',
+      parameters: {'not json': Object()},
+    );
+
+    expect(() => TaskRepository(db: db).saveTask(task), throwsA(isA<JsonUnsupportedObjectError>()));
   });
 }

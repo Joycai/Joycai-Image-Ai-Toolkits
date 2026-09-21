@@ -199,7 +199,7 @@ void main() {
       expect(migrated.spec, isNull);
     });
 
-    test('an output_unit that names no unit is dropped, the money is kept', () {
+    test('an output_unit that names no unit counts as pictures, as it always drew', () {
       final row = TokenUsage.fromMap({
         'model_id': 'm',
         'billing_mode': 'spec',
@@ -208,8 +208,36 @@ void main() {
         'output_unit': 'frame',
       });
 
-      expect(row.spec!.unit, isNull);
+      expect(row.spec!.unit, OutputUnit.image);
       expect(row.cost, 1.0);
+    });
+
+    test('a cell of the wrong type reads as absent, whatever the row bills by', () {
+      // SQLite keeps 'abc' in a REAL column as text. A token row never prices
+      // its spec or request columns, so text there must not cost it the page.
+      final row = TokenUsage.fromMap({
+        'id': 'x',
+        'model_id': 'm',
+        'model_pk': 'seven',
+        'timestamp': 20260901,
+        'billing_mode': 'token',
+        'input_tokens': 1000000,
+        'input_price': 2.0,
+        'cache_price': 'abc',
+        'output_price': 'abc',
+        'request_count': 1.5,
+        'request_price': 'abc',
+        'output_units': 'abc',
+        'output_unit_price': 'abc',
+        'output_unit': 3,
+        'output_spec': 8,
+      });
+
+      expect(row.cost, closeTo(2.0, 1e-9));
+      expect(row.requestCount, 1);
+      expect(row.modelDbId, isNull);
+      expect(row.spec, isNull);
+      expect(row.timestamp, DateTime.fromMillisecondsSinceEpoch(0));
     });
 
     test('survives the trip out and back', () {
@@ -273,7 +301,7 @@ void main() {
     });
 
     test('unreadable metadata is no breakdown, not an error', () {
-      for (final raw in ['junk', '[]', null]) {
+      for (final raw in ['junk', '[]', 7, null]) {
         final back = UsageCheckpoint.fromMap(
             {'timestamp': at.toIso8601String(), 'metadata': raw});
         expect(back.groupCosts, isEmpty, reason: '$raw');

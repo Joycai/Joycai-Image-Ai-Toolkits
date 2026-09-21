@@ -1,4 +1,5 @@
 import '../../../models/llm_model.dart';
+import '../../../models/spec_rate.dart';
 import '../../../models/token_usage.dart';
 
 /// What one fee group's money went on over a range, and how many requests
@@ -21,9 +22,9 @@ class GroupUsage {
   /// that bought output rather than tokens — and told apart in text.
   final double specCost;
 
-  /// Units the spec-billed rows used, by unit (`image` / `second` / `clip`),
-  /// for the "38 images · 126 s" line.
-  final Map<String, double> specUnits;
+  /// Units the spec-billed rows used, by unit, for the "38 images · 126 s"
+  /// line.
+  final Map<OutputUnit, double> specUnits;
 
   /// Spec-billed requests whose rate table had no row for their spec. They
   /// cost zero, which is a configuration gap, not a free lunch.
@@ -153,7 +154,7 @@ UsageStats calculateStats(List<TokenUsage> usageData, List<LLMModel> allModels, 
             outputCost: parts.output,
             requestCost: parts.request,
             specCost: parts.spec,
-            specUnits: spec == null || specUnit == null ? const {} : {specUnit.name: spec.units},
+            specUnits: spec == null || specUnit == null ? const {} : {specUnit: spec.units},
             unmatchedCount: row.unmatched ? 1 : 0,
             requestCount: requests,
           );

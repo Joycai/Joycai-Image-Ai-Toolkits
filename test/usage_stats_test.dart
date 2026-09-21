@@ -73,7 +73,7 @@ void main() {
       expect(usage.specCost, closeTo(3.96, 1e-9));
       expect(usage.requestCost, 0.0);
       expect(usage.totalCost, closeTo(3.96, 1e-9));
-      expect(usage.specUnits, {'second': 13.0, 'image': 2.0});
+      expect(usage.specUnits, {OutputUnit.second: 13.0, OutputUnit.image: 2.0});
       expect(usage.unmatchedCount, 0);
       expect(stats.groupCosts[42], closeTo(3.96, 1e-9));
       expect(stats.totalRequestCount, 3);

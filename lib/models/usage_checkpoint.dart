@@ -25,17 +25,24 @@ class UsageCheckpoint {
     this.groupCosts = const {},
   });
 
-  factory UsageCheckpoint.fromMap(Map<String, dynamic> map) => UsageCheckpoint(
-        id: map['id'] as int?,
-        timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ??
-            DateTime.fromMillisecondsSinceEpoch(0),
-        totalInputTokens: map['total_input_tokens'] as int? ?? 0,
-        totalCacheTokens: map['total_cache_tokens'] as int? ?? 0,
-        totalOutputTokens: map['total_output_tokens'] as int? ?? 0,
-        totalRequestCount: map['total_request_count'] as int? ?? 0,
-        totalCost: (map['total_cost'] as num? ?? 0.0).toDouble(),
-        groupCosts: _decodeGroupCosts(map['metadata']),
-      );
+  /// A cell of the wrong type reads as absent, as in `TokenUsage.fromMap`.
+  factory UsageCheckpoint.fromMap(Map<String, dynamic> map) {
+    final timestamp = map['timestamp'];
+    final totalCost = map['total_cost'];
+    return UsageCheckpoint(
+      id: _int(map['id']),
+      timestamp: DateTime.tryParse(timestamp is String ? timestamp : '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      totalInputTokens: _int(map['total_input_tokens']) ?? 0,
+      totalCacheTokens: _int(map['total_cache_tokens']) ?? 0,
+      totalOutputTokens: _int(map['total_output_tokens']) ?? 0,
+      totalRequestCount: _int(map['total_request_count']) ?? 0,
+      totalCost: totalCost is num ? totalCost.toDouble() : 0.0,
+      groupCosts: _decodeGroupCosts(map['metadata']),
+    );
+  }
+
+  static int? _int(Object? cell) => cell is int ? cell : null;
 
   Map<String, dynamic> toMap() => {
         if (id != null) 'id': id,
