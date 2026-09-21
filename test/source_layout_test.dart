@@ -326,8 +326,7 @@ void main() {
     // `test/services/foo/` with no `lib/services/foo/` passes the check above
     // but mirrors nothing. `app` and `architecture` are the two extras that
     // have no `lib/` counterpart by design; `support` and `screenshots` are
-    // fixtures and the screenshot harness, not mirrored and skipped
-    // here.
+    // fixtures and the screenshot harness, not mirrored and skipped here.
     const extraTestDirs = {'app', 'architecture', 'support', 'screenshots'};
 
     // Every directory at every depth, so `test/core/foo/` and
