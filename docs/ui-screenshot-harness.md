@@ -155,6 +155,18 @@ happens in `setUpAll` (real async); inside a test everything async goes through
 `shoot` precaches every fixture image before the final pump — skip that and
 every thumbnail captures blank.
 
+**An image load must not outlive its test.** The image cache is process-wide,
+and a load started by a pump outside `runAsync` belongs to that test's
+fake-async zone. When the test ends nothing flushes that zone again, so the
+load stays pending for good — and the next `precacheImage` of the same path is
+handed the same completer and never returns. That hung `render_probe.dart` from
+its second test on. `mountApp` calls `dropUnfinishedImageLoads()` on the way in
+and registers it as a teardown; a harness file that precaches without going
+through `mountApp` relies on the teardown of the test before it. The warm-up
+also bounds each image at 10 real seconds and throws `WarmUpStalled` with the
+path, because an unbounded wait does not fail a test, it hangs the process until
+CI's job timeout. `test/mount_app_unfinished_image_load_test.dart` pins all of it.
+
 **Mobile size is not mobile platform.** `main.dart:248` reads
 `Platform.isAndroid || Platform.isIOS` to decide which nav destinations exist,
 and that is a `dart:io` check the harness cannot override on a macOS host. So
