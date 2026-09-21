@@ -3,6 +3,7 @@ import 'llm_types.dart';
 import 'model_capabilities.dart';
 import 'model_descriptor.dart';
 import 'model_family.dart';
+import 'output_spec.dart' show inputImageCountEntry;
 import 'protocols/anthropic_chat_protocol.dart';
 import 'protocols/ark_images_protocol.dart';
 import 'protocols/anthropic_thinking.dart';
@@ -1227,9 +1228,13 @@ class LLMDispatcher {
     if (response.text.isNotEmpty) {
       yield LLMResponseChunk(textPart: response.text);
     }
+    // Each picture says how many references it was made from, so a consumer
+    // that stops before the closing chunk still bills them.
+    final inputs = inputImageCountEntry(response.metadata);
     for (final (i, img) in response.generatedImages.indexed) {
       yield LLMResponseChunk(
           imagePart: img,
+          metadata: inputs,
           imageLayer: i < response.imageLayers.length
               ? response.imageLayers[i]
               : null);

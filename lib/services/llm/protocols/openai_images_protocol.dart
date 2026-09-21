@@ -39,15 +39,11 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     final prompt = userMsg.content;
 
     // Cap the reference images to what the model accepts (gpt-image-1: 16).
-    var inputImages = userMsg.attachments;
-    final maxRef = target.model.capabilities.maxReferenceImages;
-    if (maxRef != null && maxRef >= 0 && inputImages.length > maxRef) {
-      logger?.call(
-        'Model accepts at most $maxRef reference image(s); using the first $maxRef of ${inputImages.length}.',
-        level: 'WARN',
-      );
-      inputImages = inputImages.sublist(0, maxRef);
-    }
+    final inputImages = capReferenceImages(
+      userMsg.attachments,
+      target.model.capabilities.maxReferenceImages,
+      logger,
+    );
 
     final baseUrl = trimBaseUrl(config.endpoint);
 
@@ -60,6 +56,8 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         optionsWithCheckedSize(target, options, logger: logger));
     final quality = _resolveQuality(options);
     final client = config.createClient();
+    // Files actually attached to the edit — an unreadable attachment is not.
+    var sentImages = 0;
     try {
       LLMDebugLog? debugFile;
       http.Response response;
@@ -95,6 +93,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
             declaredMime: att.mimeType,
             baseName: 'image_$i',
           ));
+          sentImages++;
         }
 
         if (LLMDebugLogger.enabled) {
@@ -191,6 +190,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           // these echoes over what was asked for. Facts only: no price here.
           if (data['size'] is String) 'output_size': data['size'],
           if (data['quality'] is String) 'output_quality': data['quality'],
+          ...sentInputImages(sentImages),
         },
       );
     } finally {

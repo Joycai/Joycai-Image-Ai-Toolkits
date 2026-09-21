@@ -320,9 +320,15 @@ List<Widget> feeGroupPriceTags(BuildContext context, AppLocalizations l10n, Pric
       ];
     case 'spec':
       return [
-        FeePriceTag(value: feeGroupSummary(l10n, group), tooltip: feeGroupRateTable(l10n, group)),
+        FeePriceTag(
+          value: feeGroupSummary(l10n, group, withInput: false),
+          tooltip: feeGroupRateTable(l10n, group),
+        ),
         if (feeGroupOtherSpecsAtZero(group))
           Text(l10n.specOtherZero, style: textTheme.labelSmall?.mono.copyWith(color: scheme.outline)),
+        // `D2c · 22e`: a tag of its own, and only on a group that charges.
+        if (feeGroupInputRate(l10n, group) case final input?)
+          FeePriceTag(label: l10n.specInputTitle, value: input),
       ];
     default:
       return [FeePriceTag(label: l10n.priceLabelRequest, value: rate(group.requestPrice, 'Req'))];

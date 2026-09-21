@@ -1469,6 +1469,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get usageSpecColumn => '仕様';
 
   @override
+  String usageSpecInputImages(int n) {
+    return '入力 $n 枚';
+  }
+
+  @override
+  String usageInputSentCount(int n) {
+    return '$n 枚';
+  }
+
+  @override
+  String usageInputFreeCount(int n) {
+    return '$n 枚無料';
+  }
+
+  @override
+  String get usageOutputAmount => '出力料金';
+
+  @override
+  String get usageInputAmount => '入力料金';
+
+  @override
   String usageUnmatched(int n) {
     return '$n 件のリクエストがどの料金にも一致せず、0 として計算';
   }
@@ -2675,6 +2696,35 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get specOtherRatesSub => '未掲載のサイズ · 品質 · 長さ';
+
+  @override
+  String get specInputTitle => '入力画像';
+
+  @override
+  String get specInputSub => 'リクエストごとに送信する参照画像';
+
+  @override
+  String get specInputFreeHint => '無料枚数';
+
+  @override
+  String get specInputFreeSuffix => '枚無料';
+
+  @override
+  String get specInputFreeOnlyHint =>
+      '無料枚数だけが入力されています。単価がなければ入力画像は課金されず、この設定は無効です。';
+
+  @override
+  String get specInputPriceInvalid => '入力画像の単価が有効な非負の数値ではありません。保存前に修正してください。';
+
+  @override
+  String feeGroupInputSummary(String price) {
+    return '入力 $price/枚';
+  }
+
+  @override
+  String feeGroupInputFree(int n) {
+    return '最初の $n 枚無料';
+  }
 
   @override
   String get specAddRate => '料金を追加';

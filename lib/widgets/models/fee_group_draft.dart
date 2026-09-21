@@ -36,6 +36,12 @@ class FeeGroupDraft extends ChangeNotifier {
     final other = rates.where((r) => r.isCatchAll).firstOrNull;
     otherPriceCtrl = TextEditingController(text: other == null ? '' : other.price.toStringAsFixed(4));
     specRows.addAll(rates.where((r) => !r.isCatchAll).map(SpecRateDraft.of));
+    // Blank when zero: most groups charge nothing for inputs, and an empty
+    // row is what keeps that quiet (`D2c · 22a`).
+    final inputPrice = g?.inputUnitPrice ?? 0.0;
+    final inputFree = g?.inputFreeUnits ?? 0;
+    inputImagePriceCtrl = TextEditingController(text: inputPrice > 0 ? inputPrice.toStringAsFixed(4) : '');
+    inputFreeCtrl = TextEditingController(text: inputFree > 0 ? '$inputFree' : '');
 
     for (final ctrl in _controllers) {
       ctrl.addListener(notifyListeners);
@@ -52,6 +58,12 @@ class FeeGroupDraft extends ChangeNotifier {
   late final TextEditingController outputPriceCtrl;
   late final TextEditingController requestPriceCtrl;
   late final TextEditingController otherPriceCtrl;
+
+  /// Spec mode's input side (`D2c`): the price of one reference image and
+  /// how many of each request's are free. Named for the image — the token
+  /// mode already has an [inputPriceCtrl].
+  late final TextEditingController inputImagePriceCtrl;
+  late final TextEditingController inputFreeCtrl;
   late String billingMode;
   late OutputUnit outputUnit;
   final List<SpecRateDraft> specRows = [];
@@ -60,7 +72,16 @@ class FeeGroupDraft extends ChangeNotifier {
   bool _disposed = false;
 
   List<TextEditingController> get _controllers =>
-      [nameCtrl, inputPriceCtrl, cacheInputPriceCtrl, outputPriceCtrl, requestPriceCtrl, otherPriceCtrl];
+      [
+        nameCtrl,
+        inputPriceCtrl,
+        cacheInputPriceCtrl,
+        outputPriceCtrl,
+        requestPriceCtrl,
+        otherPriceCtrl,
+        inputImagePriceCtrl,
+        inputFreeCtrl,
+      ];
 
   bool get isNew => group == null;
   bool get isToken => billingMode == 'token';
@@ -85,8 +106,26 @@ class FeeGroupDraft extends ChangeNotifier {
   /// anything typed there must parse.
   bool get otherPriceInvalid => otherPriceCtrl.text.trim().isNotEmpty && _parsePrice(otherPriceCtrl.text) == null;
 
-  bool get ratesValid =>
-      isSpec ? !SpecTableIssues.of(specRows).blocksSave && !otherPriceInvalid : !_activeFields.any(invalid);
+  /// Blank is "inputs are free"; anything typed must parse. Checked only
+  /// while the row is on screen — a per-image spec group — so a value parked
+  /// behind another unit can never block a save the user cannot see why.
+  bool get inputImagePriceInvalid =>
+      showsInputImages &&
+      inputImagePriceCtrl.text.trim().isNotEmpty &&
+      _parsePrice(inputImagePriceCtrl.text) == null;
+
+  /// Whether the editor shows the input-image row: spec mode, per image.
+  bool get showsInputImages => isSpec && outputUnit == OutputUnit.image;
+
+  int get inputFreeUnits => int.tryParse(inputFreeCtrl.text.trim()) ?? 0;
+
+  /// `22c`: a free count with no price does nothing, and the editor says so.
+  bool get inputFreeWithoutPrice =>
+      inputFreeUnits > 0 && (_parsePrice(inputImagePriceCtrl.text) ?? 0) <= 0;
+
+  bool get ratesValid => isSpec
+      ? !SpecTableIssues.of(specRows).blocksSave && !otherPriceInvalid && !inputImagePriceInvalid
+      : !_activeFields.any(invalid);
 
   /// `1f`: Save lights up once the group has a name and its rates parse.
   bool get canSave => name.isNotEmpty && ratesValid;
@@ -151,6 +190,13 @@ class FeeGroupDraft extends ChangeNotifier {
       requestPrice: _parsePrice(requestPriceCtrl.text) ?? 0.0,
       outputUnit: outputUnit,
       outputRates: specRates(),
+      // Kept whatever the mode and unit, like the table: parked, not lost.
+      // An unparseable price cannot get here while its row shows (it blocks
+      // the save); behind another unit it falls back to what was stored.
+      inputUnitPrice: inputImagePriceCtrl.text.trim().isEmpty
+          ? 0.0
+          : _parsePrice(inputImagePriceCtrl.text) ?? group?.inputUnitPrice ?? 0.0,
+      inputFreeUnits: inputFreeUnits,
     );
   }
 
@@ -163,6 +209,8 @@ class FeeGroupDraft extends ChangeNotifier {
         requestPriceCtrl.text,
         outputUnit.name,
         otherPriceCtrl.text,
+        inputImagePriceCtrl.text,
+        inputFreeCtrl.text,
         for (final r in specRows) '${r.size}|${r.quality}|${r.seconds}|${r.priceCtrl.text}',
       ].join('\x00');
 

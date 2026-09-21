@@ -63,7 +63,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 47;
+  static const int dbVersion = 48;
 
   /// Settings holding absolute paths from the machine that made the backup.
   /// Excluded when the user opts out of directories.

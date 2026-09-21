@@ -300,6 +300,11 @@ final List<_FeeGroupShot> _feeGroupShots = <_FeeGroupShot>[
   _FeeGroupShot('editSpec', (_, tapText) async {
     await tapText('Veo 3 视频');
   }),
+  // D2c 22a / 22d: a per-image group that charges for reference images —
+  // the 「输入图」 row under the table, on all three widths.
+  _FeeGroupShot('editSpecInput', (_, tapText) async {
+    await tapText('Seedream 5.0 pro');
+  }, sizes: const <String>['desktop', 'tablet', 'mobile']),
   // D2 1g: reorder mode — every grip on show, the placeholder explaining.
   _FeeGroupShot('reorder', (tester, _) async {
     await tester.tap(find.byTooltip('排序'), warnIfMissed: false);

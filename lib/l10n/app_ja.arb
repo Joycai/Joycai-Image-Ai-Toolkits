@@ -970,6 +970,11 @@
     }
   },
   "usageSpecColumn": "仕様",
+  "usageSpecInputImages": "入力 {n} 枚",
+  "usageInputSentCount": "{n} 枚",
+  "usageInputFreeCount": "{n} 枚無料",
+  "usageOutputAmount": "出力料金",
+  "usageInputAmount": "入力料金",
   "usageUnmatched": "{n} 件のリクエストがどの料金にも一致せず、0 として計算",
   "@usageUnmatched": {
     "placeholders": {
@@ -1428,6 +1433,14 @@
   "specGroupVideoRes": "動画解像度",
   "specOtherRates": "その他の仕様",
   "specOtherRatesSub": "未掲載のサイズ · 品質 · 長さ",
+  "specInputTitle": "入力画像",
+  "specInputSub": "リクエストごとに送信する参照画像",
+  "specInputFreeHint": "無料枚数",
+  "specInputFreeSuffix": "枚無料",
+  "specInputFreeOnlyHint": "無料枚数だけが入力されています。単価がなければ入力画像は課金されず、この設定は無効です。",
+  "specInputPriceInvalid": "入力画像の単価が有効な非負の数値ではありません。保存前に修正してください。",
+  "feeGroupInputSummary": "入力 {price}/枚",
+  "feeGroupInputFree": "最初の {n} 枚無料",
   "specAddRate": "料金を追加",
   "specCustomValue": "カスタム…",
   "specCustomHint": "大文字小文字は正規化されます（2k → 2K）",

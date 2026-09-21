@@ -13,6 +13,10 @@ void main() {
   Future<void> pump(WidgetTester tester, OutputUnit unit) async {
     final other = TextEditingController(text: '0.1');
     addTearDown(other.dispose);
+    final inputPrice = TextEditingController();
+    final inputFree = TextEditingController();
+    addTearDown(inputPrice.dispose);
+    addTearDown(inputFree.dispose);
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -24,6 +28,10 @@ void main() {
             onUnitChanged: (_) {},
             rows: const [],
             otherPriceCtrl: other,
+            inputPriceCtrl: inputPrice,
+            inputFreeCtrl: inputFree,
+            inputPriceInvalid: false,
+            inputFreeWithoutPrice: false,
             onAddRow: () {},
             onRemoveRow: (_) {},
             onChanged: () {},

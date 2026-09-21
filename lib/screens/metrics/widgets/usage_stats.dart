@@ -22,6 +22,11 @@ class GroupUsage {
   /// that bought output rather than tokens — and told apart in text.
   final double specCost;
 
+  /// What spec-billed rows were charged for the reference images they sent
+  /// (`D2c`) — apart from [specCost], which is their output alone. The same
+  /// neutral on the bar; its own line in the tooltip.
+  final double specInputCost;
+
   /// Units the spec-billed rows used, by unit, for the "38 images · 126 s"
   /// line.
   final Map<OutputUnit, double> specUnits;
@@ -38,12 +43,14 @@ class GroupUsage {
     this.outputCost = 0,
     this.requestCost = 0,
     this.specCost = 0,
+    this.specInputCost = 0,
     this.specUnits = const {},
     this.unmatchedCount = 0,
     this.requestCount = 0,
   });
 
-  double get totalCost => inputCost + cacheCost + outputCost + requestCost + specCost;
+  double get totalCost =>
+      inputCost + cacheCost + outputCost + requestCost + specCost + specInputCost;
 
   GroupUsage operator +(GroupUsage other) => GroupUsage(
         inputCost: inputCost + other.inputCost,
@@ -51,6 +58,7 @@ class GroupUsage {
         outputCost: outputCost + other.outputCost,
         requestCost: requestCost + other.requestCost,
         specCost: specCost + other.specCost,
+        specInputCost: specInputCost + other.specInputCost,
         specUnits: {
           ...specUnits,
           for (final e in other.specUnits.entries)
@@ -154,6 +162,7 @@ UsageStats calculateStats(List<TokenUsage> usageData, List<LLMModel> allModels, 
             outputCost: parts.output,
             requestCost: parts.request,
             specCost: parts.spec,
+            specInputCost: parts.specInput,
             specUnits: spec == null || specUnit == null ? const {} : {specUnit: spec.units},
             unmatchedCount: row.unmatched ? 1 : 0,
             requestCount: requests,

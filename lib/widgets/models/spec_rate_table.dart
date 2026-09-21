@@ -88,7 +88,9 @@ class SpecTableIssues {
 
 /// The spec branch of the fee-group editor (`D2b · 21a–21d`): the unit chips
 /// and the rate table — a header, the ordinary rows, 「添加档位」, and under a
-/// hairline the pinned 「其他规格」 row that only has a price.
+/// hairline the pinned 「其他规格」 row that only has a price. Last of all,
+/// for a per-image group, the 「输入图」 row (`D2c · 22a–22d`): what one
+/// reference image costs and how many of a request's are free.
 ///
 /// The drafts are the caller's: this widget mutates them in place and calls
 /// [onChanged] so the caller can rebuild and revalidate.
@@ -99,6 +101,10 @@ class SpecRateTableEditor extends StatelessWidget {
     required this.onUnitChanged,
     required this.rows,
     required this.otherPriceCtrl,
+    required this.inputPriceCtrl,
+    required this.inputFreeCtrl,
+    required this.inputPriceInvalid,
+    required this.inputFreeWithoutPrice,
     required this.onAddRow,
     required this.onRemoveRow,
     required this.onChanged,
@@ -110,6 +116,14 @@ class SpecRateTableEditor extends StatelessWidget {
   final ValueChanged<OutputUnit> onUnitChanged;
   final List<SpecRateDraft> rows;
   final TextEditingController otherPriceCtrl;
+
+  /// The input-image row's two fields, and what the draft makes of them:
+  /// a price that does not parse (blocks the save), and a free count with
+  /// no price behind it (does nothing, and is said to).
+  final TextEditingController inputPriceCtrl;
+  final TextEditingController inputFreeCtrl;
+  final bool inputPriceInvalid;
+  final bool inputFreeWithoutPrice;
   final VoidCallback onAddRow;
   final ValueChanged<int> onRemoveRow;
   final VoidCallback onChanged;
@@ -205,6 +219,127 @@ class SpecRateTableEditor extends StatelessWidget {
         ],
         const SizedBox(height: _gap),
         Text(l10n.specPriorityRule, style: helpStyle),
+        // Per image only: no video surface reports the images it was sent,
+        // and a field that can never bill would mislead. Collapsed rather
+        // than cleared — the draft keeps what was typed.
+        AnimatedSize(
+          duration: AppMotion.state,
+          curve: AppMotion.enter,
+          alignment: Alignment.topCenter,
+          child: unit == OutputUnit.image
+              ? _buildInputBlock(context, l10n)
+              : const SizedBox(width: double.infinity),
+        ),
+      ],
+    );
+  }
+
+  // --- Input images ---------------------------------------------------------
+
+  Widget _buildInputBlock(BuildContext context, AppLocalizations l10n) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpace.s10),
+      child: Container(
+        padding: const EdgeInsets.only(top: _gap),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: scheme.outlineVariant)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            narrow ? _buildNarrowInputRow(context, l10n) : _buildWideInputRow(context, l10n),
+            if (inputPriceInvalid) ...[
+              const SizedBox(height: _gap),
+              _Hint(icon: Icons.error_outline, text: l10n.specInputPriceInvalid, error: true),
+            ] else if (inputFreeWithoutPrice) ...[
+              const SizedBox(height: _gap),
+              _Hint(icon: Icons.info_outline, text: l10n.specInputFreeOnlyHint),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _inputTitle(BuildContext context, AppLocalizations l10n) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        Text(l10n.specInputTitle, style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500)),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            l10n.specInputSub,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _inputFreeField(AppLocalizations l10n) => _PriceField(
+        key: const ValueKey('spec-input-free'),
+        controller: inputFreeCtrl,
+        placeholder: l10n.specInputFreeHint,
+        suffix: l10n.specInputFreeSuffix,
+        onChanged: onChanged,
+        integer: true,
+        muted: inputFreeWithoutPrice,
+      );
+
+  Widget _inputPriceField(AppLocalizations l10n, String suffix) => _PriceField(
+        key: const ValueKey('spec-input-price'),
+        controller: inputPriceCtrl,
+        placeholder: '0.0000',
+        suffix: suffix,
+        onChanged: onChanged,
+        error: inputPriceInvalid,
+      );
+
+  Widget _buildWideInputRow(BuildContext context, AppLocalizations l10n) {
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: AppSize.control,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Align(alignment: AlignmentDirectional.centerStart, child: _inputTitle(context, l10n)),
+            ),
+          ),
+        ),
+        const SizedBox(width: _gap),
+        SizedBox(width: _priceWidth, child: _inputFreeField(l10n)),
+        const SizedBox(width: _gap),
+        // The same vertical as every rate's price and the catch-all's.
+        SizedBox(width: _priceWidth, child: _inputPriceField(l10n, l10n.specUnitSuffixImage)),
+        const SizedBox(width: _gap + _deleteWidth),
+      ],
+    );
+  }
+
+  Widget _buildNarrowInputRow(BuildContext context, AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(height: 24, child: _inputTitle(context, l10n)),
+        const SizedBox(height: _gap),
+        Padding(
+          padding: const EdgeInsets.only(right: AppSize.touch + _gap),
+          child: Row(
+            children: [
+              Expanded(child: _inputFreeField(l10n)),
+              const SizedBox(width: _gap),
+              Expanded(child: _inputPriceField(l10n, '\$${l10n.specUnitSuffixImage}')),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -434,7 +569,12 @@ class SpecRateTableEditor extends StatelessWidget {
         const SizedBox(width: _gap),
         SizedBox(
           width: _priceWidth,
-          child: _PriceField(controller: otherPriceCtrl, placeholder: '0.0000', onChanged: onChanged),
+          child: _PriceField(
+            key: const ValueKey('spec-other-price'),
+            controller: otherPriceCtrl,
+            placeholder: '0.0000',
+            onChanged: onChanged,
+          ),
         ),
         const SizedBox(width: _gap + _deleteWidth),
       ],
@@ -691,12 +831,30 @@ class _SpecConditionFieldState extends State<SpecConditionField> {
 /// colour when empty. Never outlined red — a bad price is said under the
 /// table, and the row's conditions are what a duplicate outlines.
 class _PriceField extends StatelessWidget {
-  const _PriceField({required this.controller, required this.placeholder, required this.onChanged, this.suffix});
+  const _PriceField({
+    super.key,
+    required this.controller,
+    required this.placeholder,
+    required this.onChanged,
+    this.suffix,
+    this.integer = false,
+    this.muted = false,
+    this.error = false,
+  });
 
   final TextEditingController controller;
   final String placeholder;
   final VoidCallback onChanged;
   final String? suffix;
+
+  /// A count rather than a price: digits only. Three of them, not the two
+  /// `D2c` drew: the field opens on a stored value, and one it can show but
+  /// not retype would be a trap.
+  final bool integer;
+
+  /// The figure in the outline ink — typed, kept, and doing nothing.
+  final bool muted;
+  final bool error;
 
   @override
   Widget build(BuildContext context) {
@@ -708,8 +866,11 @@ class _PriceField extends StatelessWidget {
       height: AppSize.control,
       child: TextField(
         controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        style: textTheme.bodySmall?.mono,
+        keyboardType: integer ? TextInputType.number : const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: integer
+            ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)]
+            : null,
+        style: textTheme.bodySmall?.mono.copyWith(color: muted ? scheme.outline : null),
         onChanged: (_) => onChanged(),
         decoration: InputDecoration(
           isDense: true,
@@ -721,8 +882,14 @@ class _PriceField extends StatelessWidget {
           suffixStyle: textTheme.labelSmall?.copyWith(color: scheme.outline),
           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.outlineVariant)),
-          enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.outlineVariant)),
-          focusedBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.primary)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: radius,
+            borderSide: BorderSide(color: error ? scheme.error : scheme.outlineVariant),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: radius,
+            borderSide: BorderSide(color: error ? scheme.error : scheme.primary),
+          ),
         ),
       ),
     );

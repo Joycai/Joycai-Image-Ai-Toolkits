@@ -4,7 +4,9 @@ import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
+import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
+import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/models/tag.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -730,8 +732,44 @@ void main() {
       await db.close();
     });
 
-    test('this build writes schema 47, which a v46 build rejects', () {
-      expect(DatabaseService.dbVersion, 47);
+    test('a fee group\'s input-image rate round-trips; an older backup restores without one',
+        () async {
+      // v48: a different path from a direct insert — `_importPricingGroups`
+      // re-ids the groups and rewrites every model's reference.
+      final db = await openTestDb();
+      final file = backupFile();
+      file['fee_groups'] = [
+        PricingGroup(
+          id: 9,
+          name: 'Seedream pro',
+          billingMode: 'spec',
+          outputRates: const [SpecRate(price: 0.3)],
+          inputUnitPrice: 0.02,
+          inputFreeUnits: 1,
+        ).toMap(),
+        // As a v47 build wrote it: no input columns at all.
+        {'id': 10, 'name': 'Old spec', 'billing_mode': 'spec', 'output_unit': 'image', 'output_rates': '[{"price":0.1}]'},
+      ];
+      (file['llm_models'] as List).first['fee_group_id'] = 9;
+
+      await db.transaction((txn) async {
+        await DatabaseService().restoreBackupInto(txn, file);
+      });
+
+      final groups = {
+        for (final row in await db.query('fee_groups')) row['name']: PricingGroup.fromMap(row),
+      };
+      expect(groups['Seedream pro']!.inputUnitPrice, 0.02);
+      expect(groups['Seedream pro']!.inputFreeUnits, 1);
+      expect(groups['Old spec']!.chargesInputImages, isFalse);
+      expect(groups['Old spec']!.outputRates.single.price, 0.1);
+      final model = (await db.query('llm_models')).single;
+      expect(model['fee_group_id'], groups['Seedream pro']!.id);
+      await db.close();
+    });
+
+    test('this build writes schema 48, which a v47 build rejects', () {
+      expect(DatabaseService.dbVersion, 48);
     });
   });
 }

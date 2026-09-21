@@ -859,6 +859,17 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
   （`maxImages`，拆图层按 17）每多一张 +40 s，封顶 15 分钟。计费按张：`image_count`；方舟的
   `output_tokens`（像素/256）不进 token 键，放在 `ark_usage` 下，免得按 token 的费用组算出假钱；
   不发布 `output_size`，按规格的档位行写的是 `2K`。
+- **输入图张数（`input_image_count`，2026-09-21）**：七个 images 协议（OpenAI / xAI / 方舟 / 百炼同步 ·
+  异步 / MiniMax / Midjourney）都在响应 metadata 里发布这次请求**实际放进请求体**的参考图张数，按规格计费组据此收
+  输入费（`SpecUsage.price` 的输入一侧）。两条不变量：① 张数在组完请求体之后数——
+  `capReferenceImages` 只管按 `maxReferenceImages` 截断，读不到的附件是在那之后才被丢掉的，拿截断后的
+  长度计费会为没发出去的图收钱；② 上游自己回报的张数优先（方舟 5.0 pro 的 `usage.input_images`，
+  原始张数），与 `output_size` 回显压过请求值同理，优先级写在 `sentInputImages(sent, reported:)` 一处。
+  **每个图片块也必须带这个键**（`_asChunks`、方舟 SSE、Midjourney 自己的 controller——凡是自己造
+  `imagePart` 块的地方）：流在出图之后、收尾块之前被放弃时，提前退出的记账靠它。上游回报的 0 要明发
+  （`{input_image_count: 0}`）：合并后的 metadata 不会丢掉后一块只是没写的键，只有显式的值能把图片块
+  带的本地张数压下去。文生图不发布这个键（除非上游自己回报了 0）；聊天面（①③④）也不发布，读作 0——按 token 计费的出图模型本该如此。
+  **新增一个带参考图的 images 协议时必须发布它**，否则该协议上的输入费静默记 0。
 - **流式出图（2026-09-18 补）**：只在方舟自家渠道、且表上 `streamsImages` 为真（5.0 lite ·
   4.5 · 4.0）时，`generateStream` 走 `ArkImagesProtocol.generateImageStream`——发
   `stream: true`，每个 `partial_succeeded` 下载后作为一个 `imagePart` 推出，`partial_failed`

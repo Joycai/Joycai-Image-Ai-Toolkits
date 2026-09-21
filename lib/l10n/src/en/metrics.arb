@@ -105,6 +105,32 @@
     }
   },
   "usageSpecColumn": "Spec",
+  "usageSpecInputImages": "input ×{n}",
+  "@usageSpecInputImages": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "usageInputSentCount": "{n, plural, =1{1 image} other{{n} images}}",
+  "@usageInputSentCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "usageInputFreeCount": "{n} free",
+  "@usageInputFreeCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "usageOutputAmount": "Output cost",
+  "usageInputAmount": "Input cost",
   "usageUnmatched": "{n} requests matched no rate and were billed at 0",
   "@usageUnmatched": {
     "placeholders": {

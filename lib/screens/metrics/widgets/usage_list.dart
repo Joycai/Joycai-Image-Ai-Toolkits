@@ -379,6 +379,17 @@ class _UsageRowState extends State<_UsageRow> {
   /// The 「规格」 cell's text: null for a row of another mode.
   String? get _specLabel => _row.specLabel;
 
+  /// Reference images this row sent, when its fee group charged for them
+  /// (`D2c · 22f`) — by the price snapshotted on the row, so a group that
+  /// never charged inputs shows nothing even though the count is kept.
+  int? get _chargedInputImages {
+    final spec = _row.spec;
+    if (!_isSpecRow || spec == null) return null;
+    return spec.inputUnitPrice > 0 && spec.inputImages > 0 ? spec.inputImages : null;
+  }
+
+  bool get _hasSpecCell => (_specLabel?.isNotEmpty ?? false) || _chargedInputImages != null;
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -475,7 +486,7 @@ class _UsageRowState extends State<_UsageRow> {
               Row(
                 children: [
                   Flexible(child: _detail(context, textTheme.labelSmall)),
-                  if (_specLabel case final spec? when spec.isNotEmpty) ...[
+                  if (_hasSpecCell) ...[
                     Text(
                       ' · ',
                       style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
@@ -517,7 +528,7 @@ class _UsageRowState extends State<_UsageRow> {
               // `21i`: the phone's second line is 「规格 · 时间」.
               Row(
                 children: [
-                  if (_specLabel case final spec? when spec.isNotEmpty) ...[
+                  if (_hasSpecCell) ...[
                     Flexible(child: _spec(context)),
                     Text(
                       ' · ',
@@ -688,17 +699,28 @@ class _UsageRowState extends State<_UsageRow> {
   /// another mode. An unmatched row's spec is stated in full — it is exactly
   /// what the user needs to copy into the rate table.
   Widget _spec(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final mono = Theme.of(context).textTheme.labelSmall?.mono;
-    final spec = _specLabel;
-    if (spec == null || spec.isEmpty) {
+    final spec = _specLabel ?? '';
+    final inputs = _chargedInputImages;
+    if (spec.isEmpty && inputs == null) {
       return Text('—', maxLines: 1, style: mono?.copyWith(color: colorScheme.outline));
     }
+    // `D2c · 22f`: 「2K · 输入 3 张」 — the count sent, in the secondary ink.
+    final input = inputs == null ? '' : l10n.usageSpecInputImages(inputs);
+    final joiner = spec.isNotEmpty && input.isNotEmpty ? ' · ' : '';
     return Tooltip(
-      message: spec,
+      message: '$spec$joiner$input',
       waitDuration: const Duration(milliseconds: 600),
-      child: Text(
-        spec,
+      child: Text.rich(
+        TextSpan(
+          text: spec,
+          children: [
+            if (input.isNotEmpty)
+              TextSpan(text: '$joiner$input', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+          ],
+        ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: mono?.copyWith(color: colorScheme.onSurface),
@@ -744,6 +766,38 @@ class _UsageRowState extends State<_UsageRow> {
     );
   }
 
+  /// The detail pairs two to a row, except a `wide` one, which has a row to
+  /// itself: the input side's sum (「2 × $0.0200 = $0.0400」) does not fit
+  /// half of a tablet's grid.
+  static List<List<(String, String, {bool muted, bool wide})>> _gridRows(
+    List<(String, String, {bool muted, bool wide})> pairs,
+  ) {
+    final rows = <List<(String, String, {bool muted, bool wide})>>[];
+    for (final entry in pairs) {
+      if (entry.wide || rows.isEmpty || rows.last.length == 2 || rows.last.single.wide) {
+        rows.add([entry]);
+      } else {
+        rows.last.add(entry);
+      }
+    }
+    return rows;
+  }
+
+  /// 「3 张 · 1 张免费」: the images sent, and how many of them the group's
+  /// free count covered — sent less billed, the row keeping no free count of
+  /// its own. A row without the count sent (none reached the column) states
+  /// the billed ones alone; so does one that delivered nothing — its images
+  /// went unbilled because the request failed, not because they were free.
+  String _inputImagesText(AppLocalizations l10n, UsageSpecBilling spec) {
+    final billed = spec.inputUnits.round();
+    final sent = spec.inputImages > 0 ? spec.inputImages : billed;
+    final free = spec.units > 0 ? sent - billed : 0;
+    // Its own plural-aware string: one reference, the first free, is the
+    // common Seedream row, and 「1 images」 would be its headline.
+    final count = l10n.usageInputSentCount(sent);
+    return free > 0 ? '$count · ${l10n.usageInputFreeCount(free)}' : count;
+  }
+
   // --- Expanded -----------------------------------------------------------
 
   /// The exact counts in a mono grid, set under the model name, and the action
@@ -755,29 +809,44 @@ class _UsageRowState extends State<_UsageRow> {
     final labelStyle = textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant);
     final valueStyle = textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurface);
 
-    final pairs = <(String, String)>[
-      (l10n.requests, _exact(_row.requestCount)),
+    final spec = _row.spec;
+    final chargesInput = _isSpecRow && spec != null && spec.inputUnitPrice > 0;
+    String money(double v) => '\$${v.toStringAsFixed(4)}';
+
+    final pairs = <(String, String, {bool muted, bool wide})>[
+      (l10n.requests, _exact(_row.requestCount), muted: false, wide: false),
       if (_isTokenRow) ...[
-        (l10n.inputTokens, _exact(_row.inputTokens)),
-        (l10n.cachedInputTokens, _exact(_row.cacheTokens)),
-        (l10n.outputTokens, _exact(_row.outputTokens)),
+        (l10n.inputTokens, _exact(_row.inputTokens), muted: false, wide: false),
+        (l10n.cachedInputTokens, _exact(_row.cacheTokens), muted: false, wide: false),
+        (l10n.outputTokens, _exact(_row.outputTokens), muted: false, wide: false),
       ],
       if (_isSpecRow) ...[
-        (l10n.usageSpecColumn, _specLabel?.isNotEmpty == true ? _specLabel! : '—'),
+        (l10n.usageSpecColumn, _specLabel?.isNotEmpty == true ? _specLabel! : '—', muted: false, wide: false),
+        (l10n.usageUnitPrice, money(spec?.unitPrice ?? 0), muted: false, wide: false),
+      ],
+      // `D2c · 22g`: a row whose group charges for reference images splits
+      // its amount in two and writes the input side out — what was sent, how
+      // many of those were free, and the sum. Other rows are as they were.
+      if (chargesInput) ...[
+        (l10n.usageOutputAmount, money(spec.cost), muted: false, wide: false),
+        (l10n.specInputTitle, _inputImagesText(l10n, spec), muted: false, wide: true),
         (
-          l10n.usageUnitPrice,
-          '\$${(_row.spec?.unitPrice ?? 0).toStringAsFixed(4)}',
+          l10n.usageInputAmount,
+          '${_exact(spec.inputUnits.round())} × ${money(spec.inputUnitPrice)} = ${money(spec.inputCost)}',
+          // Fully free (one image sent, the first free): stated, not shouted.
+          muted: spec.inputCost == 0,
+          wide: true,
         ),
       ],
     ];
 
-    Widget pair((String, String) entry) => Row(
+    Widget pair((String, String, {bool muted, bool wide}) entry) => Row(
           children: [
             Expanded(
               child: Text(entry.$1, style: labelStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
             const SizedBox(width: 8),
-            Text(entry.$2, style: valueStyle),
+            Text(entry.$2, style: entry.muted ? valueStyle?.copyWith(color: colorScheme.outline) : valueStyle),
           ],
         );
 
@@ -794,15 +863,18 @@ class _UsageRowState extends State<_UsageRow> {
               pair(entry),
             ]
           else
-            for (var i = 0; i < pairs.length; i += 2) ...[
-              if (i > 0) const SizedBox(height: AppSpace.s4),
-              Row(
-                children: [
-                  Expanded(child: pair(pairs[i])),
-                  const SizedBox(width: 24),
-                  Expanded(child: i + 1 < pairs.length ? pair(pairs[i + 1]) : const SizedBox.shrink()),
-                ],
-              ),
+            for (final (index, row) in _gridRows(pairs).indexed) ...[
+              if (index > 0) const SizedBox(height: AppSpace.s4),
+              if (row.length == 1 && row.single.wide)
+                pair(row.single)
+              else
+                Row(
+                  children: [
+                    Expanded(child: pair(row[0])),
+                    const SizedBox(width: 24),
+                    Expanded(child: row.length > 1 ? pair(row[1]) : const SizedBox.shrink()),
+                  ],
+                ),
             ],
         ],
       ),

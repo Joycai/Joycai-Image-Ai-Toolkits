@@ -92,6 +92,64 @@ void main() {
       expect(row.cost, closeTo(2.40, 1e-9));
     });
 
+    test('a spec-billed row adds what its input images cost to its output', () {
+      final row = TokenUsage(
+        modelId: 'seedream',
+        timestamp: at,
+        billingMode: 'spec',
+        spec: const UsageSpecBilling(
+          unit: OutputUnit.image,
+          units: 1,
+          unitPrice: 0.30,
+          inputImages: 3,
+          inputUnits: 2,
+          inputUnitPrice: 0.02,
+        ),
+      );
+
+      expect(row.costParts.spec, closeTo(0.30, 1e-9));
+      expect(row.costParts.specInput, closeTo(0.04, 1e-9));
+      expect(row.cost, closeTo(0.34, 1e-9));
+    });
+
+    test('input columns on a row of another mode bill nothing', () {
+      final row = TokenUsage.fromMap({
+        'billing_mode': 'request',
+        'model_id': 'm',
+        'request_price': 0.02,
+        'input_units': 4.0,
+        'input_unit_price': 0.5,
+      });
+
+      expect(row.costParts.specInput, 0.0);
+      expect(row.cost, closeTo(0.02, 1e-9));
+    });
+
+    test('the input columns survive the map, and a settle map leaves them out', () {
+      const billing = UsageSpecBilling(
+        unit: OutputUnit.image,
+        units: 1,
+        unitPrice: 0.04,
+        inputImages: 2,
+        inputUnits: 2,
+        inputUnitPrice: 0.01,
+      );
+
+      final back = UsageSpecBilling.fromMap(billing.toMap())!;
+      expect(back.inputImages, 2);
+      expect(back.inputCost, closeTo(0.02, 1e-9));
+      expect(billing.toOutputMap().keys,
+          unorderedEquals(['output_units', 'output_unit_price', 'output_unit', 'output_spec']));
+    });
+
+    test('a row that says something only in its input columns still has a spec', () {
+      // Free output (an unmatched spec) with a charged input is a real row.
+      final spec = UsageSpecBilling.fromMap({'input_images': 1, 'input_units': 1.0, 'input_unit_price': 0.01});
+
+      expect(spec, isNotNull);
+      expect(spec!.inputCost, closeTo(0.01, 1e-9));
+    });
+
     test('a spec-billed row missing its columns prices zero, not a crash', () {
       final row = TokenUsage.fromMap({'billing_mode': 'spec', 'model_id': 'm'});
 

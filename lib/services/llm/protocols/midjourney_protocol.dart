@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
+import '../output_spec.dart' show inputImageCountEntry;
 import 'protocol.dart';
 
 /// The open-source `midjourney-proxy` REST wire format (also exposed by
@@ -94,7 +95,12 @@ class MidjourneyProtocol implements ChatProtocol {
 
         for (final img in result.images) {
           if (controller.isClosed) return;
-          controller.add(LLMResponseChunk(imagePart: img));
+          // With the count of sources it was made from: an MJ task is billed
+          // at submit, and a consumer that leaves after this chunk never sees
+          // the closing one (same rule as `LLMDispatcher._asChunks`).
+          controller.add(LLMResponseChunk(
+              imagePart: img,
+              metadata: inputImageCountEntry(result.metadata)));
         }
         if (!controller.isClosed) {
           controller.add(LLMResponseChunk(metadata: result.metadata, isDone: true));
@@ -246,6 +252,9 @@ class MidjourneyProtocol implements ChatProtocol {
                 'mj_task_id': taskId,
                 'mj_status': status,
                 'image_url': imageUrl,
+                // What went into `base64Array` — blend's sources, imagine's
+                // image prompts — for a fee group that charges per input.
+                ...sentInputImages(base64Images.length),
               },
             );
           }

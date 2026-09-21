@@ -89,12 +89,14 @@ class UsageSpecSnapshot {
       ].join(' · ');
 }
 
-/// The four columns a spec-billed request leaves on its usage row
-/// (`output_units`, `output_unit_price`, `output_unit`, `output_spec`).
+/// The columns a spec-billed request leaves on its usage row: the output
+/// four (`output_units`, `output_unit_price`, `output_unit`, `output_spec`)
+/// and the input three (`input_images`, `input_units`, `input_unit_price`, v48).
 ///
-/// Its own type because they are also written on their own: a finished video
-/// job re-prices the row its submit recorded by the seconds that were
-/// actually rendered (`UsageRepository.updateSpecBilling`).
+/// Its own type because the output four are also written on their own: a
+/// finished video job re-prices the row its submit recorded by the seconds
+/// that were actually rendered (`UsageRepository.updateSpecBilling`) — see
+/// [toOutputMap] for why that write leaves the input three alone.
 class UsageSpecBilling {
   /// Null on a row without the column. A value that names no [OutputUnit]
   /// reads as [OutputUnit.image] — what the usage page has always drawn for
@@ -104,24 +106,54 @@ class UsageSpecBilling {
   final double unitPrice;
   final UsageSpecSnapshot? snapshot;
 
+  /// Reference images the request actually sent, before the fee group's free
+  /// ones came off — what the usage page shows. Its own column rather than a
+  /// key of the snapshot, which a video settle rewrites whole. Zero on every
+  /// row written before v48.
+  final int inputImages;
+
+  /// Reference images *billed* — [inputImages] less the free ones — and the
+  /// price of each. Both zero on a group that does not charge for inputs.
+  final double inputUnits;
+  final double inputUnitPrice;
+
   const UsageSpecBilling({
     this.unit,
     required this.units,
     required this.unitPrice,
     this.snapshot,
+    this.inputImages = 0,
+    this.inputUnits = 0.0,
+    this.inputUnitPrice = 0.0,
   });
 
+  /// What the output cost. The input side is [inputCost]; a row's total is
+  /// the two together ([TokenUsage.cost]).
   double get cost => units * unitPrice;
 
+  double get inputCost => inputUnits * inputUnitPrice;
+
+  /// The row as inserted: all seven columns.
   Map<String, dynamic> toMap() => {
+        ...toOutputMap(),
+        'input_images': inputImages,
+        'input_units': inputUnits,
+        'input_unit_price': inputUnitPrice,
+      };
+
+  /// The output four alone — what re-pricing a row writes. A video settle
+  /// knows the seconds that were rendered and nothing about the images the
+  /// submit sent, so writing the input three from it would zero what the
+  /// submit recorded.
+  Map<String, dynamic> toOutputMap() => {
         'output_units': units,
         'output_unit_price': unitPrice,
         'output_unit': unit?.name,
         'output_spec': snapshot?.encode(),
       };
 
-  /// Null when [map] says nothing in any of the four columns — every row of
-  /// the other two billing modes. "Nothing" is NULL *or zero* for the two
+  /// Null when [map] says nothing in any of the seven columns — every row of
+  /// the other two billing modes. "Nothing" is NULL *or zero* for the five
   /// numbers: a row that predates v42 was given `DEFAULT 0.0` by the ALTER,
   /// while one written since carries NULL, and both mean the same.
   static UsageSpecBilling? fromMap(Map<String, dynamic> map) {
@@ -129,7 +161,16 @@ class UsageSpecBilling {
     final unitPrice = _double(map['output_unit_price']) ?? 0.0;
     final rawUnit = _text(map['output_unit']);
     final snapshot = UsageSpecSnapshot.tryDecode(map['output_spec']);
-    if (units == 0 && unitPrice == 0 && rawUnit == null && snapshot == null) {
+    final inputImages = _int(map['input_images']) ?? 0;
+    final inputUnits = _double(map['input_units']) ?? 0.0;
+    final inputUnitPrice = _double(map['input_unit_price']) ?? 0.0;
+    if (units == 0 &&
+        unitPrice == 0 &&
+        rawUnit == null &&
+        snapshot == null &&
+        inputImages == 0 &&
+        inputUnits == 0 &&
+        inputUnitPrice == 0) {
       return null;
     }
     return UsageSpecBilling(
@@ -137,6 +178,9 @@ class UsageSpecBilling {
       units: units,
       unitPrice: unitPrice,
       snapshot: snapshot,
+      inputImages: inputImages,
+      inputUnits: inputUnits,
+      inputUnitPrice: inputUnitPrice,
     );
   }
 }
@@ -149,6 +193,10 @@ typedef UsageCostParts = ({
   double output,
   double request,
   double spec,
+
+  /// Reference images a spec-billed request was charged for — beside
+  /// [spec], which is its output alone.
+  double specInput,
 });
 
 /// One row of `token_usage`: what a single billed request used, with the
@@ -224,13 +272,21 @@ class TokenUsage {
   /// The cost split by what was billed, from the prices on the row itself.
   UsageCostParts get costParts => switch (billing) {
         UsageBilling.spec =>
-          (input: 0.0, cache: 0.0, output: 0.0, request: 0.0, spec: spec?.cost ?? 0.0),
+          (
+            input: 0.0,
+            cache: 0.0,
+            output: 0.0,
+            request: 0.0,
+            spec: spec?.cost ?? 0.0,
+            specInput: spec?.inputCost ?? 0.0,
+          ),
         UsageBilling.request => (
             input: 0.0,
             cache: 0.0,
             output: 0.0,
             request: requestCount * requestPrice,
             spec: 0.0,
+            specInput: 0.0,
           ),
         UsageBilling.token => (
             input: inputTokens * inputPrice / 1000000,
@@ -238,12 +294,18 @@ class TokenUsage {
             output: outputTokens * outputPrice / 1000000,
             request: 0.0,
             spec: 0.0,
+            specInput: 0.0,
           ),
       };
 
   double get cost {
     final parts = costParts;
-    return parts.input + parts.cache + parts.output + parts.request + parts.spec;
+    return parts.input +
+        parts.cache +
+        parts.output +
+        parts.request +
+        parts.spec +
+        parts.specInput;
   }
 
   /// Whether this spec-billed request found no rate row for its spec. Rows of
@@ -275,7 +337,7 @@ class TokenUsage {
         spec: UsageSpecBilling.fromMap(map),
       );
 
-  /// The row as inserted. A row without [spec] writes its four columns as
+  /// The row as inserted. A row without [spec] writes its seven columns as
   /// NULL, so it prices exactly as it did before spec billing existed.
   Map<String, dynamic> toMap() => {
         if (id != null) 'id': id,
@@ -298,6 +360,9 @@ class TokenUsage {
               'output_unit_price': null,
               'output_unit': null,
               'output_spec': null,
+              'input_images': null,
+              'input_units': null,
+              'input_unit_price': null,
             },
       };
 }

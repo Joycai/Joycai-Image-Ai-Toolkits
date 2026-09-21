@@ -99,6 +99,33 @@ void main() {
       await expectCacheFee(discountGroup, 'discount-cache-model', 0.25);
     });
 
+    test('a spec group\'s input-image rate reaches the config', () async {
+      final channelId = await db.addChannel(LLMChannel(
+        displayName: 'Ark',
+        type: 'openai-api',
+        endpoint: 'https://ark.test',
+        apiKey: 'key-ark',
+      ));
+      final groupId = await db.addPricingGroup(PricingGroup(
+        name: 'Seedream pro',
+        billingMode: 'spec',
+        inputUnitPrice: 0.02,
+        inputFreeUnits: 1,
+      ));
+      final modelPk = await db.addModel(LLMModel(
+        modelId: 'doubao-seedream-5-0-pro',
+        modelName: 'Seedream pro',
+        tag: 'image',
+        channelId: channelId,
+        feeGroupId: groupId,
+      ));
+
+      final config = await LLMConfigResolver(database: db).resolveConfig(modelPk);
+
+      expect(config.inputUnitFee, 0.02);
+      expect(config.inputFreeUnits, 1);
+    });
+
     test('deleting a channel deletes its models without leaving orphans', () async {
       final channelId = await db.addChannel(LLMChannel(
         displayName: 'Disposable Channel',

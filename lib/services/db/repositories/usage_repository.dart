@@ -20,7 +20,7 @@ class UsageRepository {
   /// how many rows matched (0 for a row written before ids were durable).
   Future<int> updateSpecBilling(String taskId, UsageSpecBilling billing) async {
     final db = await _db;
-    return db.update('token_usage', billing.toMap(),
+    return db.update('token_usage', billing.toOutputMap(),
         where: 'task_id = ?', whereArgs: [taskId]);
   }
 

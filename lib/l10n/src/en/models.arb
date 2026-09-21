@@ -655,6 +655,28 @@
   "specGroupVideoRes": "Video resolutions",
   "specOtherRates": "Other specs",
   "specOtherRatesSub": "Any size · quality · duration not listed",
+  "specInputTitle": "Input images",
+  "specInputSub": "Reference images sent with each request",
+  "specInputFreeHint": "Free",
+  "specInputFreeSuffix": "free",
+  "specInputFreeOnlyHint": "Only a free count is set. Without a price, input images are not charged and this has no effect.",
+  "specInputPriceInvalid": "The input image price is not a valid non-negative number. Fix it before saving.",
+  "feeGroupInputSummary": "input {price}/image",
+  "@feeGroupInputSummary": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "feeGroupInputFree": "first {n} free",
+  "@feeGroupInputFree": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "specAddRate": "Add rate",
   "specCustomValue": "Custom…",
   "specCustomHint": "Case is normalized (2k → 2K)",

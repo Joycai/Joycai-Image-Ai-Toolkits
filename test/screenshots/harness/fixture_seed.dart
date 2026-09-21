@@ -219,6 +219,17 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     ],
   ));
 
+  // D2c: a per-image group that also charges for reference images — the
+  // editor's 「输入图」 row, the row's input tag and the usage page's input
+  // count all hang off it.
+  final int seedreamFee = await db.addPricingGroup(PricingGroup(
+    name: 'Seedream 5.0 pro',
+    billingMode: 'spec',
+    outputRates: const <SpecRate>[SpecRate(size: '2K', price: 0.3), SpecRate(price: 0.3)],
+    inputUnitPrice: 0.02,
+    inputFreeUnits: 1,
+  ));
+
   final List<LLMModel> models = <LLMModel>[
     LLMModel(
       modelId: 'gemini-2.5-flash-image',
@@ -340,7 +351,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
       modelName: 'Seedream 5.0 pro',
       tag: ModelTag.image.value,
       channelId: arkId,
-      feeGroupId: perImageFee,
+      feeGroupId: seedreamFee,
       sortOrder: 12,
     ),
     LLMModel(
@@ -1205,6 +1216,31 @@ Future<void> _seedUsage(DatabaseService db, _Catalog catalog) async {
         outputPrice: 0.30,
         requestPrice: 0.04,
         billingMode: m == 0 || m == 3 ? 'request' : 'token',
+      ));
+    }
+  }
+
+  // D2c: Seedream edits that sent reference images — three with one free,
+  // and one whose only image was the free one. Appended after the loop so
+  // the rows above keep the sequence they always had.
+  final int seedream = catalog.modelIds.indexOf('doubao-seedream-5-0-pro-260628');
+  if (seedream >= 0) {
+    for (final (int i, int sent) in const <int>[3, 1, 5].indexed) {
+      await db.recordTokenUsage(TokenUsage(
+        taskId: 'fixture-usage-seedream-$i',
+        modelId: catalog.modelIds[seedream],
+        modelDbId: catalog.modelPks[seedream],
+        timestamp: kSeedNow.subtract(Duration(hours: 1 + i, minutes: 7 * i)),
+        billingMode: 'spec',
+        spec: UsageSpecBilling(
+          unit: OutputUnit.image,
+          units: 1,
+          unitPrice: 0.3,
+          snapshot: const UsageSpecSnapshot(size: '2K'),
+          inputImages: sent,
+          inputUnits: (sent - 1).toDouble(),
+          inputUnitPrice: 0.02,
+        ),
       ));
     }
   }

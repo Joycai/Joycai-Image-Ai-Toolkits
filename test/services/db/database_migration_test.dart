@@ -554,6 +554,98 @@ void main() {
     });
   });
 
+  group('v48 adds input-image billing', () {
+    const groupColumns = ['input_unit_price', 'input_free_units'];
+    const usageColumns = ['input_images', 'input_units', 'input_unit_price'];
+
+    test('existing groups charge nothing for inputs and keep their table', () async {
+      final db = await openV29Db();
+      addTearDown(db.close);
+      await DatabaseMigration.migrate(db, 29, 47);
+      await db.insert('fee_groups', {
+        'name': 'Seedream',
+        'billing_mode': 'spec',
+        'output_unit': 'image',
+        'output_rates': '[{"price":0.3}]',
+      });
+
+      await DatabaseMigration.migrate(db, 47, 48);
+      await DatabaseMigration.migrate(db, 47, 48);
+
+      expect(await columnsOf(db, 'fee_groups'), containsAll(groupColumns));
+      final g = PricingGroup.fromMap((await db.query('fee_groups')).single);
+      expect(g.inputUnitPrice, 0.0);
+      expect(g.inputFreeUnits, 0);
+      expect(g.chargesInputImages, isFalse);
+      expect(g.outputRates.single.price, 0.3);
+    });
+
+    test('spec rows recorded before the upgrade price as they did', () async {
+      final db = await openV29Db();
+      addTearDown(db.close);
+      await DatabaseMigration.migrate(db, 29, 47);
+      await db.insert('token_usage', {
+        'model_id': 'seedream',
+        'timestamp': '2026-01-01T00:00:00',
+        'billing_mode': 'spec',
+        'output_units': 2.0,
+        'output_unit_price': 0.3,
+        'output_unit': 'image',
+      });
+
+      await DatabaseMigration.migrate(db, 47, 48);
+
+      expect(await columnsOf(db, 'token_usage'), containsAll(usageColumns));
+      final row = TokenUsage.fromMap((await db.query('token_usage')).single);
+      expect(row.cost, closeTo(0.6, 1e-9));
+      expect(row.spec!.inputImages, 0);
+    });
+
+    test('a group that charges for inputs and its usage round-trip', () async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      addTearDown(db.close);
+      await DatabaseMigration.onCreate(db);
+      expect(await columnsOf(db, 'fee_groups'), containsAll(groupColumns));
+      expect(await columnsOf(db, 'token_usage'), containsAll(usageColumns));
+
+      await db.insert(
+        'fee_groups',
+        PricingGroup(
+          name: 'Seedream pro',
+          billingMode: 'spec',
+          outputRates: const [SpecRate(price: 0.3)],
+          inputUnitPrice: 0.02,
+          inputFreeUnits: 1,
+        ).toMap(includeId: false),
+      );
+      final g = PricingGroup.fromMap(
+          (await db.query('fee_groups', where: 'name = ?', whereArgs: ['Seedream pro'])).single);
+      expect(g.inputUnitPrice, 0.02);
+      expect(g.inputFreeUnits, 1);
+      expect(g.chargesInputImages, isTrue);
+
+      await db.insert(
+        'token_usage',
+        TokenUsage(
+          modelId: 'seedream',
+          timestamp: DateTime(2026, 9, 21),
+          billingMode: 'spec',
+          spec: const UsageSpecBilling(
+            unit: OutputUnit.image,
+            units: 1,
+            unitPrice: 0.3,
+            inputImages: 3,
+            inputUnits: 2,
+            inputUnitPrice: 0.02,
+          ),
+        ).toMap(),
+      );
+      final row = TokenUsage.fromMap((await db.query('token_usage')).single);
+      expect(row.spec!.inputImages, 3);
+      expect(row.cost, closeTo(0.34, 1e-9));
+    });
+  });
+
   group('v43 adds the fee-group order', () {
     test('existing groups keep their creation order', () async {
       final db = await openV29Db();

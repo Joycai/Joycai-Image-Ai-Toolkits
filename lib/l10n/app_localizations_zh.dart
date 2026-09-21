@@ -1464,6 +1464,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get usageSpecColumn => '规格';
 
   @override
+  String usageSpecInputImages(int n) {
+    return '输入 $n 张';
+  }
+
+  @override
+  String usageInputSentCount(int n) {
+    return '$n 张';
+  }
+
+  @override
+  String usageInputFreeCount(int n) {
+    return '$n 张免费';
+  }
+
+  @override
+  String get usageOutputAmount => '输出金额';
+
+  @override
+  String get usageInputAmount => '输入金额';
+
+  @override
   String usageUnmatched(int n) {
     return '$n 次请求未匹配任何档位，按 0 计';
   }
@@ -2646,6 +2667,34 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get specOtherRatesSub => '未列出的尺寸 · 质量 · 时长';
+
+  @override
+  String get specInputTitle => '输入图';
+
+  @override
+  String get specInputSub => '每次请求发出的参考图';
+
+  @override
+  String get specInputFreeHint => '免费张数';
+
+  @override
+  String get specInputFreeSuffix => '张免费';
+
+  @override
+  String get specInputFreeOnlyHint => '只填了免费张数——没有单价就不收输入费，这一项不起作用。';
+
+  @override
+  String get specInputPriceInvalid => '输入图单价不是有效的非负数字，保存前改正。';
+
+  @override
+  String feeGroupInputSummary(String price) {
+    return '输入 $price/张';
+  }
+
+  @override
+  String feeGroupInputFree(int n) {
+    return '首 $n 张免费';
+  }
 
   @override
   String get specAddRate => '添加档位';
@@ -7299,6 +7348,27 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get usageSpecColumn => '規格';
 
   @override
+  String usageSpecInputImages(int n) {
+    return '輸入 $n 張';
+  }
+
+  @override
+  String usageInputSentCount(int n) {
+    return '$n 張';
+  }
+
+  @override
+  String usageInputFreeCount(int n) {
+    return '$n 張免費';
+  }
+
+  @override
+  String get usageOutputAmount => '輸出金額';
+
+  @override
+  String get usageInputAmount => '輸入金額';
+
+  @override
   String usageUnmatched(int n) {
     return '$n 次請求未符合任何檔位，以 0 計';
   }
@@ -8481,6 +8551,34 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get specOtherRatesSub => '未列出的尺寸 · 品質 · 時長';
+
+  @override
+  String get specInputTitle => '輸入圖';
+
+  @override
+  String get specInputSub => '每次請求送出的參考圖';
+
+  @override
+  String get specInputFreeHint => '免費張數';
+
+  @override
+  String get specInputFreeSuffix => '張免費';
+
+  @override
+  String get specInputFreeOnlyHint => '只填了免費張數——沒有單價就不收輸入費，這一項不起作用。';
+
+  @override
+  String get specInputPriceInvalid => '輸入圖單價不是有效的非負數字，儲存前請修正。';
+
+  @override
+  String feeGroupInputSummary(String price) {
+    return '輸入 $price/張';
+  }
+
+  @override
+  String feeGroupInputFree(int n) {
+    return '首 $n 張免費';
+  }
 
   @override
   String get specAddRate => '新增檔位';

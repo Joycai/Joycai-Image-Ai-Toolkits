@@ -175,6 +175,81 @@ void main() {
     });
   });
 
+  group('SpecUsage.price, the input side', () {
+    SpecUsage price({
+      required int sent,
+      double inputPrice = 0.02,
+      int free = 0,
+      int imageCount = 1,
+      OutputUnit unit = OutputUnit.image,
+      OutputSpec spec = OutputSpec.none,
+    }) =>
+        SpecUsage.price(
+          unit: unit,
+          rates: const [SpecRate(price: 0.30)],
+          spec: spec,
+          imageCount: imageCount,
+          inputImageCount: sent,
+          inputUnitPrice: inputPrice,
+          inputFreeUnits: free,
+        );
+
+    test('every image sent is charged on top of the output', () {
+      final u = price(sent: 3);
+      expect(u.inputUnits, 3);
+      expect(u.cost, closeTo(0.30 + 0.06, 1e-9));
+    });
+
+    test('the free ones come off first, per request', () {
+      final u = price(sent: 3, free: 1);
+      expect(u.inputImages, 3);
+      expect(u.inputUnits, 2);
+      expect(u.toBilling().inputCost, closeTo(0.04, 1e-9));
+    });
+
+    test('a request whose only image was the free one bills none and still says so', () {
+      final b = price(sent: 1, free: 1).toBilling();
+      expect(b.inputImages, 1);
+      expect(b.inputUnits, 0);
+      expect(b.inputUnitPrice, 0.02, reason: 'the usage page tells "free" from "not charged" by it');
+      expect(b.inputCost, 0);
+    });
+
+    test('more free images than were sent is zero, not a refund', () {
+      expect(price(sent: 1, free: 4).inputUnits, 0);
+    });
+
+    test('a group that does not charge inputs keeps the count and bills none', () {
+      final u = price(sent: 4, inputPrice: 0, free: 0);
+      expect(u.inputImages, 4);
+      expect(u.inputUnits, 0);
+      expect(u.cost, closeTo(0.30, 1e-9));
+    });
+
+    test('a request that delivered no picture is not charged for what it sent', () {
+      final u = price(sent: 3, imageCount: 0);
+      expect(u.inputUnits, 0);
+      expect(u.cost, 0);
+    });
+
+    test('only a per-image group charges inputs, whatever rate the config carries', () {
+      for (final unit in [OutputUnit.clip, OutputUnit.second]) {
+        final u = price(sent: 2, unit: unit, spec: const OutputSpec(seconds: 8));
+        expect(u.units, greaterThan(0), reason: unit.name);
+        expect(u.inputUnits, 0, reason: unit.name);
+        expect(u.inputUnitPrice, 0, reason: 'a quiet row: the usage page reads this price');
+        expect(u.inputImages, 2, reason: 'the count sent is a fact either way');
+      }
+    });
+
+    test('nonsense from a hand-edited group never bills a negative amount', () {
+      final u = price(sent: -2, inputPrice: -1, free: -3);
+      expect(u.inputImages, 0);
+      expect(u.inputUnits, 0);
+      expect(u.inputUnitPrice, 0);
+    });
+  });
+
   group('LLMService.specUsageFor', () {
     LLMModelConfig config(String mode, {OutputUnit unit = OutputUnit.image}) =>
         LLMModelConfig(
@@ -196,6 +271,40 @@ void main() {
       final u = LLMService.specUsageFor(config('spec'), const {}, const {'prompt_tokens': 12}, imageCount: 0)!;
       expect(u.units, 0);
       expect(u.cost, 0);
+    });
+
+    test('the images a protocol says it sent are charged at the group\'s input rate', () {
+      final seedream = LLMModelConfig(
+        modelId: 'doubao-seedream-5-0-pro',
+        channelType: 'openai-api-rest',
+        endpoint: 'https://x',
+        apiKey: 'k',
+        billingMode: 'spec',
+        outputRates: const [SpecRate(price: 0.30)],
+        inputUnitFee: 0.02,
+        inputFreeUnits: 1,
+      );
+
+      final u = LLMService.specUsageFor(seedream, const {}, const {inputImageCountKey: 3}, imageCount: 1)!;
+      expect(u.inputImages, 3);
+      expect(u.inputUnits, 2);
+      expect(u.cost, closeTo(0.34, 1e-9));
+
+      // A surface that does not publish the count — every chat route — sent
+      // none as far as billing is concerned.
+      final chat = LLMService.specUsageFor(seedream, const {}, const {'prompt_tokens': 9}, imageCount: 1)!;
+      expect(chat.inputImages, 0);
+      expect(chat.cost, closeTo(0.30, 1e-9));
+    });
+
+    test('the count is read whatever type the transport left it in', () {
+      expect(inputImageCountOf(const {inputImageCountKey: 2}), 2);
+      expect(inputImageCountOf(const {inputImageCountKey: 2.0}), 2);
+      expect(inputImageCountOf(const {inputImageCountKey: '2'}), 2);
+      expect(inputImageCountOf(const {inputImageCountKey: -1}), 0);
+      expect(inputImageCountOf(const {inputImageCountKey: 'many'}), 0);
+      expect(inputImageCountOf(const {}), 0);
+      expect(inputImageCountOf(null), 0);
     });
 
     test('a video submission is priced by the resolution and seconds requested', () {

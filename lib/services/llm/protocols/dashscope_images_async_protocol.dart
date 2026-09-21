@@ -54,15 +54,11 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
 
     // Reference handling mirrors the synchronous protocol: cap to the
     // model's ceiling, inline as data URLs.
-    var inputImages = userMsg.attachments;
-    final maxRef = target.model.capabilities.maxReferenceImages;
-    if (maxRef != null && maxRef >= 0 && inputImages.length > maxRef) {
-      logger?.call(
-        'Model accepts at most $maxRef reference image(s); using the first $maxRef of ${inputImages.length}.',
-        level: 'WARN',
-      );
-      inputImages = inputImages.sublist(0, maxRef);
-    }
+    final inputImages = capReferenceImages(
+      userMsg.attachments,
+      target.model.capabilities.maxReferenceImages,
+      logger,
+    );
     final imageRefs = <String>[];
     ({int width, int height})? inputSize;
     for (final att in inputImages) {
@@ -185,6 +181,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
               }
               return _collectResult(data, taskId, client, logger,
                   sentSize: dashscopeSentSize(payload),
+                  inputImages: imageRefs.length,
                   abortTrigger: abortTriggerOf(options));
             case 'FAILED':
             case 'CANCELED':
@@ -212,6 +209,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
     http.Client client,
     LLMLogger? logger, {
     String? sentSize,
+    int inputImages = 0,
     Future<void>? abortTrigger,
   }) async {
     final images = await resolveImageRefs(
@@ -250,6 +248,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
           data: data,
           imageCount: images.length,
           sentSize: sentSize,
+          inputImages: inputImages,
         ),
         if (revised.isNotEmpty) 'revised_prompt': revised,
       },

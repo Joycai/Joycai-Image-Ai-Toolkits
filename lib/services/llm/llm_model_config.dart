@@ -147,6 +147,11 @@ class LLMModelConfig {
   final OutputUnit outputUnit;
   final List<SpecRate> outputRates;
 
+  /// Spec billing's input side: the price of one reference image and how
+  /// many of each request's are free. Zero unless the group charges inputs.
+  final double inputUnitFee;
+  final int inputFreeUnits;
+
   // Proxy settings
   final bool proxyEnabled;
   final String? proxyUrl;
@@ -174,6 +179,8 @@ class LLMModelConfig {
     this.requestFee = 0.0,
     this.outputUnit = OutputUnit.image,
     this.outputRates = const [],
+    this.inputUnitFee = 0.0,
+    this.inputFreeUnits = 0,
     this.proxyEnabled = false,
     this.proxyUrl,
     this.proxyUsername,
@@ -223,6 +230,8 @@ class LLMModelConfig {
         requestFee: requestFee,
         outputUnit: outputUnit,
         outputRates: outputRates,
+        inputUnitFee: inputUnitFee,
+        inputFreeUnits: inputFreeUnits,
         proxyEnabled: proxyEnabled,
         proxyUrl: proxyUrl,
         proxyUsername: proxyUsername,

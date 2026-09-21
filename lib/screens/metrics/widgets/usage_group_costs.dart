@@ -263,7 +263,7 @@ class _GroupBar extends StatelessWidget {
         (usage.outputCost, UsageToken.output.colorOf(context)),
         // Request- and spec-billed money share the neutral: both bought
         // output rather than tokens. The tooltip tells them apart.
-        (usage.requestCost + usage.specCost, neutral),
+        (usage.requestCost + usage.specCost + usage.specInputCost, neutral),
       ],
     ].where((s) => s.$1 > 0).toList();
 
@@ -276,6 +276,7 @@ class _GroupBar extends StatelessWidget {
         if (usage.outputCost > 0) '${l10n.outputTokens}: ${money(usage.outputCost)}',
         if (usage.requestCost > 0) '${l10n.requests}: ${money(usage.requestCost)}',
         if (usage.specCost > 0) '${l10n.specBilled}: ${money(usage.specCost)}',
+        if (usage.specInputCost > 0) '${l10n.specInputTitle}: ${money(usage.specInputCost)}',
       ],
     ].join('\n');
 

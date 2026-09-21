@@ -122,6 +122,11 @@ class AppDropdown<T> extends StatefulWidget {
 /// `max(scaled font size, max(icon size, this))` tall.
 const double _denseButtonHeight = 24;
 
+/// A rich item's trailing takes what it needs, up to 200 and never more than
+/// 40% of its row — the label beside it is what is being chosen.
+const double _trailingMaxWidth = 200;
+const double _trailingMaxShare = 0.4;
+
 class _AppDropdownState<T> extends State<AppDropdown<T>> {
   /// Handed to [InputDecorator], which draws the theme's `focusedBorder` and
   /// hover fill from them and otherwise assumes both are false. The same
@@ -214,47 +219,74 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
     final hasRichItems = widget.items.any((i) => i.description != null || i.trailing != null);
     final hasSelectedLabels = hasRichItems || widget.items.any((i) => i.selectedLabel != null);
 
-    Widget richItem(AppDropdownItem<T> item) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            children: [
-              if (item.icon != null) ...[
-                Icon(item.icon, size: AppSize.iconSm),
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: valueStyle?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: item.muted ? outline : null,
-                      ),
+    // The trailing's cap is a share of the row, hence the LayoutBuilder: a
+    // menu row is laid out at the menu's width, never measured intrinsically.
+    Widget richRow(AppDropdownItem<T> item, double trailingCap) => Row(
+          children: [
+            if (item.icon != null) ...[
+              Icon(item.icon, size: AppSize.iconSm),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: valueStyle?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: item.muted ? outline : null,
                     ),
-                    if (item.description != null)
-                      Text(
-                        item.description!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                      ),
-                  ],
-                ),
+                  ),
+                  if (item.description != null)
+                    Text(
+                      item.description!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
+                ],
               ),
-              if (item.trailing != null) ...[
-                const SizedBox(width: 12),
-                Text(
+            ),
+            if (item.trailing != null) ...[
+              const SizedBox(width: 12),
+              // As wide as it needs, up to a share of the row. A non-flex
+              // child is laid out first, so uncapped a long one (a fee
+              // group's one-line summary) took the whole row from the label
+              // — the name being chosen — and then overflowed it; and as a
+              // flex child it could not hand the label what it left over.
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: trailingCap),
+                child: Text(
                   item.trailing!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  // The box is the cap's width once the text is cut, the cut line a
+                  // little less: end-aligned, the 「…」 stays on the row's right
+                  // edge like a trailing that fits.
+                  textAlign: TextAlign.end,
                   style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
                 ),
-              ],
+              ),
             ],
-          ),
+          ],
+        );
+
+    Widget richItem(AppDropdownItem<T> item) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          // Only a row with a trailing needs its width; the others stay the
+          // plain row they were, measurable by whatever hosts them.
+          child: item.trailing == null
+              ? richRow(item, 0)
+              : LayoutBuilder(
+                  builder: (context, constraints) => richRow(
+                    item,
+                    math.min(_trailingMaxWidth, constraints.maxWidth * _trailingMaxShare),
+                  ),
+                ),
         );
 
     Widget menuRow(AppDropdownItem<T> item) => hasRichItems
