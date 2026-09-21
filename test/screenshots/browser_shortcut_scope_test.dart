@@ -143,14 +143,11 @@ void main() {
     }
 
     if (real) {
-      await tester.runAsync(() async {
-        await send();
-        await Future<void>.delayed(const Duration(milliseconds: 300));
-      });
+      await actInRealAsync(tester, send);
     } else {
       await send();
+      await settle(tester);
     }
-    await settle(tester);
   }
 
   /// Click a folder in the tree, then a file in the grid — the sequence the
@@ -161,9 +158,11 @@ void main() {
     AppState().fileBrowserState.clearSelection();
     await settle(tester);
 
-    await tester.tap(find.descendant(
-        of: find.byType(DirectoryTreeItem), matching: find.text('browser')));
-    await settle(tester);
+    // Real async: the row persists the folder it was pointed at.
+    await actInRealAsync(
+        tester,
+        () => tester.tap(find.descendant(
+            of: find.byType(DirectoryTreeItem), matching: find.text('browser'))));
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'directory-tree-row',
         reason: 'clicking a folder row does put the keyboard on it');
 

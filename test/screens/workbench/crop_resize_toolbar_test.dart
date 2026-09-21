@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/private_data_dir.dart';
+import '../../support/real_async.dart';
 
 /// The crop tool's controls — the content of the glass toolbar's tool slot
 /// (`A4 · 1a`) — as the width they are handed shrinks.
@@ -34,6 +35,7 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   usePrivateDataDir('joycai_crop_toolbar_test');
+  useRealAsyncAppState();
 
   const fileName = 'yaxin_cowboy_1.png';
   const samplerName = 'Lanczos';

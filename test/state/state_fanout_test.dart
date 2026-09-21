@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../support/private_data_dir.dart';
+import '../support/real_async.dart';
 
 /// Guards the wiring between [AppState] and the notifiers it owns.
 ///
@@ -100,11 +101,11 @@ void main() {
     /// zone waits forever. And awaited, not slept through — a 200ms stand-in
     /// was not enough for the first database open on a slow CI runner.
     Future<GalleryState> settledGalleryState(WidgetTester tester) async {
-      final GalleryState state = (await tester.runAsync(() async {
+      final GalleryState state = await runAsyncRethrowing(tester, () async {
         final GalleryState state = GalleryState();
         await state.settingsLoaded;
         return state;
-      }))!;
+      });
       return state;
     }
 

@@ -80,7 +80,9 @@ survives a seed change.
 **A variant** (a tab, an open dialog, a different view mode) — add a
 `testWidgets` with `suffix:` plus one of the hooks. `before` runs after the
 singleton is configured but before the first pump, for state a screen reads on
-mount; `after` runs on the settled tree, for taps.
+mount; `after` runs on the settled tree, for taps. `before` runs in real async
+(so it may write a file or a persisted setting, and must not call `runAsync`
+itself); `after` runs under the fake clock.
 
 ```dart
 testWidgets('workbench @ desktop, comparator tab', (WidgetTester tester) async {
@@ -124,7 +126,8 @@ touch `AppState()`.
 **`flutter_test_config.dart` must stay in `test/screenshots/`.** flutter_tools
 walks up from the test file's own directory and takes the first hit. At `test/`
 it would apply to all the other test files, changing their text metrics — and
-several of them assert on layout and overflow.
+several of them assert on layout and overflow. (`test/` has one of its own, which
+only installs the database rule below; this one shadows it, so it installs it too.)
 
 **Setup order is load-bearing.** `installFixtureEnv` must run before the first
 `AppState()` call: `AppState` is a singleton whose `GalleryState` /
@@ -151,9 +154,26 @@ use `setQueueForTest`: the list `queue` hands out is unmodifiable.
 **Async work needs `runAsync`.** The `compute()` isolates behind the gallery and
 browser scans make no progress inside the fake-async zone. The first scan
 happens in `setUpAll` (real async); inside a test everything async goes through
-`tester.runAsync`. `FileImage` decoding is asynchronous too, which is why
-`shoot` precaches every fixture image before the final pump — skip that and
-every thumbnail captures blank.
+`tester.runAsync` — by way of the helpers in the next paragraph, not bare.
+`FileImage` decoding is asynchronous too, which is why `shoot` precaches every
+fixture image before the final pump — skip that and every thumbnail captures
+blank.
+
+**No database call under the fake clock — enforced.** Both
+`flutter_test_config.dart` files install
+`test/support/fake_async_database_rule.dart`, which fails any test in which
+`DatabaseService.database` was read under `testWidgets`' fake clock, with the
+stack of the call. Such a call is a race with the runner's disk (it read as
+Linux-only CI flakes for a while), and one still in flight when the test ends
+holds sqflite's lock for every test after it. In an `after` hook or a test
+body, put the action that reaches the database *and the frame it asks for* —
+the pump is what mounts a panel that loads on mount — inside real async:
+`actInRealAsync` here, `inRealAsync` / `inRealAsyncUntil` /
+`pumpWidgetInRealAsync` / `useRealAsyncAppState` in
+`test/support/real_async.dart`. Wait on a state, or on `databaseIdle`, never on a
+number of pumps. A bare `tester.runAsync` swallows what its body throws — a
+finder that matched nothing becomes a line of log and a wrong picture — so use
+those helpers, or `runAsyncRethrowing`; `mountApp` runs `before` through it.
 
 **An image load must not outlive its test.** The image cache is process-wide,
 and a load started by a pump outside `runAsync` belongs to that test's

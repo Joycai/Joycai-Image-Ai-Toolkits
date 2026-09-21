@@ -10,6 +10,7 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:provider/provider.dart';
 
+import '../../support/real_async.dart';
 import 'fixture_env.dart';
 import 'fixture_seed.dart';
 
@@ -53,8 +54,11 @@ const List<ShotSize> kShotSizes = <ShotSize>[
 /// into `build/ui-screenshots/`.
 ///
 /// [before] runs after the singleton is configured but before the first pump —
-/// use it to set state the screen reads on mount. [after] runs on the settled
-/// tree, for taps that open a dialog or switch a tab.
+/// use it to set state the screen reads on mount. It runs in real async, so it
+/// may write a file or a setting, and must not call `runAsync` itself. [after]
+/// runs on the settled tree, under the fake clock, for taps that open a dialog
+/// or switch a tab — anything in it that reaches the database goes through
+/// `inRealAsync` (`test/support/real_async.dart`).
 Future<void> shoot(
   WidgetTester tester, {
   required FixtureEnv env,
@@ -129,8 +133,6 @@ Future<void> mountApp(
   // to run for reasons that have nothing to do with layout.
   appState.logState.clear();
   seedLogs(appState);
-  appState.navigateToScreen(screen.index);
-  await before?.call(tester);
 
   // Twice: on the way out, so a test that never mounts through here (one that
   // calls `precacheImage` itself) does not inherit this one's loads, and on the
@@ -140,22 +142,21 @@ Future<void> mountApp(
 
   // Real async: the screens' initState sqflite queries and the compute()
   // isolates behind the gallery/browser scans only make progress out here.
+  // [before] too — most of what it sets is a persisted setting
+  // (`setWorkbenchTab`), and a write begun under the fake clock is never
+  // finished by it.
   //
-  // [stalled] carries a failed warm-up out by hand. What a `runAsync` body
-  // throws is parked where `takeException` finds it, and that slot holds one:
-  // an overflow from the first pump would already be in it, and the drain at
-  // the bottom of this function prints whatever it finds and moves on.
-  WarmUpStalled? stalled;
-  await tester.runAsync(() async {
+  // `runAsyncRethrowing`, because what a bare `runAsync` body throws — a
+  // stalled warm-up, a [before] whose finder matched nothing — is parked where
+  // `takeException` finds it, and the drain at the bottom of this function
+  // prints whatever it finds and moves on.
+  await runAsyncRethrowing(tester, () async {
+    appState.navigateToScreen(screen.index);
+    await before?.call(tester);
     await tester.pumpWidget(_appTree(appState));
     await Future<void>.delayed(const Duration(milliseconds: 700));
     await tester.pump();
-    try {
-      await _warmImageCache(tester, env);
-    } on WarmUpStalled catch (e) {
-      stalled = e;
-      return;
-    }
+    await _warmImageCache(tester, env);
     await tester.pump();
     // A second settle, for the loads that only *start* once the first round's
     // results are on screen. The assistant's knowledge tree is the case that
@@ -169,7 +170,6 @@ Future<void> mountApp(
     await Future<void>.delayed(const Duration(milliseconds: 200));
     await tester.pump();
   });
-  if (stalled case final WarmUpStalled e) throw e;
 
   // 800ms covers every AppMotion duration used across the screens (the
   // ladder tops out at AppMotion.panel, 300ms).

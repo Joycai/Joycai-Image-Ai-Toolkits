@@ -17,9 +17,11 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../../support/in_memory_database.dart';
 import '../../../support/private_data_dir.dart';
+import '../../../support/real_async.dart';
 
 void main() {
   usePrivateDataDir('joycai_kb_use_switch_test');
+  useRealAsyncAppState();
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;

@@ -11,8 +11,13 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 import 'package:provider/provider.dart';
+import '../../../support/private_data_dir.dart';
+import '../../../support/real_async.dart';
 
 void main() {
+  usePrivateDataDir('joycai_optimizer_left_panel_test');
+  useRealAsyncAppState();
+
   Future<void> pump(WidgetTester tester, AssistantMode mode) async {
     final ui = WorkbenchUIState()..optimizerSession = PromptOptimizerSession(mode: mode);
     await tester.pumpWidget(MultiProvider(

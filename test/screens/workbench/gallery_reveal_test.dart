@@ -8,6 +8,7 @@ import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
 import 'package:provider/provider.dart';
 
 import '../../screenshots/harness/fixture_env.dart';
+import '../../support/real_async.dart';
 
 /// `plans/README.md`'s oldest open line: a scan swapped its placeholder for a
 /// screenful of tiles in one frame. The grid now fades in when it replaces a
@@ -16,6 +17,7 @@ void main() {
   final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
   late FixtureEnv env;
   setUpAll(() => env = installFixtureEnv(binding));
+  useRealAsyncAppState();
   tearDownAll(() => env.dispose());
 
   Future<GalleryState> pump(WidgetTester tester) async {

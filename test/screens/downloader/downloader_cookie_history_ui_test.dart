@@ -7,6 +7,7 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:provider/provider.dart';
 
 import '../../screenshots/harness/fixture_env.dart';
+import '../../support/real_async.dart';
 
 /// The cookie history panel (S3): a retention choice above the list, a remove
 /// on each row, and a clear-all — and all of it fits a phone.
@@ -27,15 +28,15 @@ void main() {
   }
   tearDownAll(() => env.dispose());
 
-  // A tap starts the database work inside fake time: its continuations run
-  // only as frames are pumped, and its IO only completes in real time. Waits
-  // for [done] rather than a fixed span: the chain is several queries long and
-  // a loaded CI runner has taken more than 400ms over it.
-  Future<void> settleDb(WidgetTester tester, bool Function() done) async {
-    for (var i = 0; i < 250 && !done(); i++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
-      await tester.pump();
-    }
+  // The tap goes through real async so the database work it starts belongs
+  // to the real event loop, where sqflite's replies arrive — and the wait is
+  // for [until], the state that work ends in, not for a length of time.
+  // Started under fake time instead, every one of the chain's round trips
+  // needs a real reply *and then* a pump to run its continuation, so a fixed
+  // number of pumps is a bet on the disk: a loaded CI runner lost it, and the
+  // row being asserted gone was still on screen.
+  Future<void> tapAndAwaitDb(WidgetTester tester, Finder target, {required bool Function() until}) async {
+    await inRealAsyncUntil(tester, () => tester.tap(target), until: until);
     await tester.pumpAndSettle();
   }
 
@@ -99,15 +100,14 @@ void main() {
       );
       await tester.ensureVisible(removeA);
       await tester.pumpAndSettle();
-      await tester.tap(removeA);
-      await settleDb(tester, () => find.text('a.example').evaluate().isEmpty);
+      await tapAndAwaitDb(tester, removeA,
+          until: () => state.cookieHistory.every((row) => row['host'] != 'a.example'));
       expect(find.text('a.example'), findsNothing);
       expect(find.text('b.example'), findsOneWidget);
 
       await tester.ensureVisible(find.text(l10n.cookieRetentionOff));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(l10n.cookieRetentionOff));
-      await settleDb(tester, () => find.text('b.example').evaluate().isEmpty);
+      await tapAndAwaitDb(tester, find.text(l10n.cookieRetentionOff), until: () => state.cookieHistory.isEmpty);
       expect(find.text('b.example'), findsNothing);
       expect(state.cookieRetention, CookieRetention.off);
       expect(tester.takeException(), isNull);

@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/private_data_dir.dart';
+import '../../support/real_async.dart';
 
 /// Covers the workbench's floating glass toolbar (`A1 · 1a`) as its own width
 /// shrinks.
@@ -37,6 +38,7 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   usePrivateDataDir('joycai_workbench_glass_toolbar_test');
+  useRealAsyncAppState();
 
   final barKey = GlobalKey();
   late TabController lastController;
@@ -257,7 +259,8 @@ void main() {
 
     expect(find.byType(AppDialog), findsOneWidget);
     final before = tester.widget<Slider>(find.byType(Slider)).value;
-    await tester.drag(find.byType(Slider), const Offset(60, 0));
+    // Real async: letting go of the handle persists the size.
+    await inRealAsync(tester, () => tester.drag(find.byType(Slider), const Offset(60, 0)));
     await tester.pumpAndSettle();
     final after = tester.widget<Slider>(find.byType(Slider)).value;
 

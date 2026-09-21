@@ -47,8 +47,9 @@ void main() {
           before: (WidgetTester tester) async {
             final AppState appState = AppState();
             appState.setWorkbenchTab(tab.index);
-            // In real time: a seed may read the fixture database.
-            if (!tab.seedOnSettled) await tester.runAsync(() async => tab.seed(appState));
+            // `before` is real time, which a seed that reads the fixture
+            // database needs.
+            if (!tab.seedOnSettled) await tab.seed(appState);
           },
           after: tab.seedOnSettled
               ? (WidgetTester tester) async {

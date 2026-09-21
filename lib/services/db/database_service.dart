@@ -125,7 +125,20 @@ class DatabaseService {
   late final CookieRepository _cookies = CookieRepository(db: this);
   late final ImageLayerRepository _layers = ImageLayerRepository(db: this);
 
+  /// Called on every read of [database], before anything is opened or awaited.
+  ///
+  /// The test suite's seam for one rule
+  /// (`test/support/fake_async_database_rule.dart`): no database call may
+  /// start under `testWidgets`' fake clock. Such a call only
+  /// moves when the test pumps, and one still in flight when the test ends
+  /// never runs its continuation at all — sqflite's lock is never released,
+  /// and the next test to touch the database waits on it forever. Null in the
+  /// app.
+  @visibleForTesting
+  static void Function()? debugOnDatabaseAccess;
+
   Future<Database> get database async {
+    debugOnDatabaseAccess?.call();
     if (_database != null) return _database!;
     _databaseFuture ??= () async {
       final db = await _initDatabase();

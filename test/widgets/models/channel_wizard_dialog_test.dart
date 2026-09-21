@@ -7,6 +7,8 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/channel_form_sections.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/channel_provider_presets.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/channel_wizard_dialog.dart';
+import '../../support/private_data_dir.dart';
+import '../../support/real_async.dart';
 
 /// Mount the wizard at a given window width.
 ///
@@ -81,6 +83,9 @@ Future<void> _toConnection(WidgetTester tester) async {
 }
 
 void main() {
+  usePrivateDataDir('joycai_channel_wizard_dialog_test');
+  useRealAsyncAppState();
+
   // Two regressions, both of which shipped: provider rows that existed in the
   // preset list but were never rendered, and an endpoint the user could not
   // edit once a preset supplied one.

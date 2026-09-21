@@ -308,7 +308,12 @@ void main() {
 
     final loose = testFiles.where((f) {
       final folder = testFolderOf(f);
-      if (folder == '<root>') return p.basename(f) != 'source_layout_test.dart';
+      // `flutter_test_config.dart` is found by name, walking up from a test
+      // file's own directory: the one that covers the whole suite can live
+      // nowhere but here.
+      if (folder == '<root>') {
+        return !const {'source_layout_test.dart', 'flutter_test_config.dart'}.contains(p.basename(f));
+      }
       return groupedTestDirs.contains(folder);
     }).toList()
       ..sort();
@@ -317,7 +322,8 @@ void main() {
       loose,
       isEmpty,
       reason: 'these sit loose instead of in the folder mirroring lib/:\n  ${loose.join('\n  ')}\n\n'
-          'test/ holds nothing in its own root but source_layout_test.dart, and '
+          'test/ holds nothing in its own root but source_layout_test.dart and '
+          'flutter_test_config.dart, and '
           'test/services/, test/widgets/ and test/screens/ hold nothing in their own '
           'root either — put the file under the domain folder for the lib/ file it is about.',
     );
