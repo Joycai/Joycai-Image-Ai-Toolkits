@@ -21,7 +21,12 @@ class TaskListState extends ChangeNotifier {
   static const String sortOrderKey = 'task_sort_order';
   static const String pinActiveKey = 'task_pin_active';
 
-  final DatabaseService _db = DatabaseService();
+  TaskListState({DatabaseService? database}) : _db = database ?? DatabaseService();
+
+  /// The database this state reads and writes. Defaults to the app's one
+  /// [DatabaseService]; a test hands in a [DatabaseService.forDatabase] over
+  /// an in-memory database and needs no private data directory.
+  final DatabaseService _db;
 
   TaskFilter filter = TaskFilter.all;
   TaskSortOrder sortOrder = TaskSortOrder.newestFirst;

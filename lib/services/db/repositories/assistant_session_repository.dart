@@ -66,15 +66,11 @@ class StoredAssistantMessage {
 /// compaction summary keep `compacted = 1` so the full history stays
 /// inspectable while replay skips them.
 class AssistantSessionRepository {
-  /// [dbProvider] exists for tests (an in-memory database); production code
-  /// uses the default [DatabaseService].
-  AssistantSessionRepository({Future<Database> Function()? dbProvider})
-      : _dbProvider = dbProvider;
+  AssistantSessionRepository({DatabaseService? db}) : _dbService = db ?? DatabaseService();
 
-  final Future<Database> Function()? _dbProvider;
+  final DatabaseService _dbService;
 
-  Future<Database> _getDb() async =>
-      _dbProvider != null ? await _dbProvider() : await DatabaseService().database;
+  Future<Database> _getDb() async => _dbService.database;
 
   Future<void> upsertSession({
     required String id,

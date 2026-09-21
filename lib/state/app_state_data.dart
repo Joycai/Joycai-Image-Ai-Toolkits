@@ -136,7 +136,7 @@ extension AppStateData on AppState {
   /// held in memory here follow the same map, so the workbench does not
   /// fall back to "no model" for a model that merely changed id.
   Future<void> mergeChannels(MergePlan plan, {ChannelMergeExecutor? executor}) async {
-    await (executor ?? ChannelMergeExecutor()).run(plan);
+    await (executor ?? ChannelMergeExecutor(DatabaseMergeStore(database: _db))).run(plan);
     String? remap(String? stored) {
       final to = plan.idMap[int.tryParse(stored ?? '')];
       return to == null ? stored : '$to';

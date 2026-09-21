@@ -127,6 +127,13 @@ offending file and line. A genuinely new layer or folder means changing that tes
 - Use the existing state classes; never a `StatefulWidget` for shared or persistent data.
 - **Hand out a new list/object before `notifyListeners()` — never mutate in place.**
   List identity is the only signal a `select` has; `rebuild_scope_test.dart` pins this.
+- **Take the database, don't fetch it.** Every state class, repository and
+  DB-reading service has an optional `DatabaseService` on its constructor
+  (`database:` on a state or service, `db:` on a repository) defaulting to the
+  singleton; `AppState` hands its own down to every sub-state and to the task
+  queue. Keep new ones that way, and in tests inject `openTestDatabase()`
+  (`test/support/in_memory_database.dart`) instead of reaching for the real
+  file through `usePrivateDataDir`.
 - All user data goes through `DatabaseService` and the repositories. Never persist a column
   derivable from another table (the deleted `llm_models.type` — see the v32 migration).
   Every schema change needs an `onUpgrade` step **and** the matching `onCreate` call.

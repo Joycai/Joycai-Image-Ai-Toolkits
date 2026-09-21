@@ -3,7 +3,9 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../database_service.dart';
 
 class UsageRepository {
-  final DatabaseService _dbService = DatabaseService();
+  UsageRepository({DatabaseService? db}) : _dbService = db ?? DatabaseService();
+
+  final DatabaseService _dbService;
 
   Future<Database> get _db async => _dbService.database;
 

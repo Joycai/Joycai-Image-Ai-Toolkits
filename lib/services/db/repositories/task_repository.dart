@@ -4,7 +4,9 @@ import '../database_service.dart';
 import 'cookie_repository.dart';
 
 class TaskRepository {
-  final DatabaseService _dbService = DatabaseService();
+  TaskRepository({DatabaseService? db}) : _dbService = db ?? DatabaseService();
+
+  final DatabaseService _dbService;
 
   Future<Database> get _db async => _dbService.database;
 

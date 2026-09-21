@@ -33,7 +33,10 @@ class FileStagingState extends ChangeNotifier {
   /// file picker.
   static const String settingsKey = 'browser_staging_paths';
 
-  final DatabaseService _db = DatabaseService();
+  /// The database this state reads and writes. Defaults to the app's one
+  /// [DatabaseService]; a test hands in a [DatabaseService.forDatabase] over
+  /// an in-memory database and needs no private data directory.
+  final DatabaseService _db;
 
   List<BrowserFile> _items = const [];
   Set<String> _paths = const {};
@@ -42,7 +45,7 @@ class FileStagingState extends ChangeNotifier {
 
   late final Future<void> _ready = _restore();
 
-  FileStagingState() {
+  FileStagingState({DatabaseService? database}) : _db = database ?? DatabaseService() {
     // Kicks off the restore; `_ready` is lazy, so without this nothing would
     // read the setting until someone awaited it.
     unawaited(_ready);

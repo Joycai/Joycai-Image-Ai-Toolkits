@@ -6,22 +6,29 @@ import 'package:joycai_image_ai_toolkits/services/db/repositories/cookie_reposit
 import 'package:joycai_image_ai_toolkits/services/db/repositories/task_repository.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import 'support/private_data_dir.dart';
+import 'support/in_memory_database.dart';
 
 /// S3: the downloader's cookies live as long as the user said, can be
 /// removed one by one or all at once, and never land in a task row.
 void main() {
   sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
-  usePrivateDataDir('joycai_cookie_retention_test');
 
-  final repo = CookieRepository();
   final now = DateTime(2026, 9, 16, 12);
 
+  // A database of this file's own, in memory: nothing here needs the app's
+  // file, and a test file that does not open it cannot contend with the other
+  // test files running beside it for its write lock.
+  late DatabaseService db;
+  late CookieRepository repo;
+  late TaskRepository tasks;
+
   setUp(() async {
-    await repo.clear();
-    await DatabaseService().saveSetting(CookieRepository.retentionKey, '');
+    db = await openTestDatabase();
+    repo = CookieRepository(db: db);
+    tasks = TaskRepository(db: db);
   });
+
+  tearDown(() async => closeTestDatabase(db));
 
   test('30 days by default: an older row is dropped when the history is read', () async {
     expect(await repo.retention(), CookieRetention.month);
@@ -80,13 +87,13 @@ void main() {
         };
 
     Future<Map<String, dynamic>> storedParams(String id) async {
-      final db = await DatabaseService().database;
-      final rows = await db.query('tasks', where: 'id = ?', whereArgs: [id]);
+      final rows = await (await db.database)
+          .query('tasks', where: 'id = ?', whereArgs: [id]);
       return jsonDecode(rows.single['parameters'] as String) as Map<String, dynamic>;
     }
 
     test('a saved download keeps everything but its cookies', () async {
-      await TaskRepository().saveTask(row('t1', {'url': 'https://a.example/p', 'cookies': 'sid=1', 'prefix': 'x'}));
+      await tasks.saveTask(row('t1', {'url': 'https://a.example/p', 'cookies': 'sid=1', 'prefix': 'x'}));
       final params = await storedParams('t1');
       expect(params.containsKey('cookies'), isFalse);
       expect(params['url'], 'https://a.example/p');
@@ -94,18 +101,18 @@ void main() {
     });
 
     test('rows written before the rule are scrubbed', () async {
-      final db = await DatabaseService().database;
-      await db.insert('tasks', row('t2', {'url': 'u', 'cookies': 'sid=2'}),
+      await (await db.database).insert(
+          'tasks', row('t2', {'url': 'u', 'cookies': 'sid=2'}),
           conflictAlgorithm: ConflictAlgorithm.replace);
-      await TaskRepository().scrubStoredCookies();
+      await tasks.scrubStoredCookies();
       expect((await storedParams('t2')).containsKey('cookies'), isFalse);
     });
 
     test('a download queued without cookies keeps saying so', () async {
-      await TaskRepository().saveTask(row('t3', {'url': 'https://a.example/p', 'cookies': ''}));
+      await tasks.saveTask(row('t3', {'url': 'https://a.example/p', 'cookies': ''}));
       expect((await storedParams('t3'))['cookies'], '',
           reason: 'a missing key would make a restored task borrow the saved cookies');
-      await TaskRepository().scrubStoredCookies();
+      await tasks.scrubStoredCookies();
       expect((await storedParams('t3'))['cookies'], '');
     });
 

@@ -41,15 +41,11 @@ class AssistantNote {
 /// workspace because there is no pause/resume to survive yet; the two designs
 /// are compatible if that ever changes.
 class AssistantNoteRepository {
-  /// [dbProvider] exists for tests (an in-memory database); production code
-  /// uses the default [DatabaseService].
-  AssistantNoteRepository({Future<Database> Function()? dbProvider})
-      : _dbProvider = dbProvider;
+  AssistantNoteRepository({DatabaseService? db}) : _dbService = db ?? DatabaseService();
 
-  final Future<Database> Function()? _dbProvider;
+  final DatabaseService _dbService;
 
-  Future<Database> _getDb() async =>
-      _dbProvider != null ? await _dbProvider() : await DatabaseService().database;
+  Future<Database> _getDb() async => _dbService.database;
 
   /// Hard cap on stored note content. Sub-agent digests are typically a few
   /// KB; anything beyond this is stored truncated **with a visible marker**

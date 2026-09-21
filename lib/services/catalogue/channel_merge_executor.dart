@@ -72,6 +72,9 @@ class ChannelMergeExecutor {
 }
 
 class DatabaseMergeStore implements MergeStore {
+  DatabaseMergeStore({DatabaseService? database})
+    : _db = database ?? DatabaseService();
+
   /// Settings that hold a model row id, as a stringified int.
   static const List<String> selectionKeys = [
     'last_model_id',
@@ -79,10 +82,13 @@ class DatabaseMergeStore implements MergeStore {
     'last_ai_rename_model_id',
   ];
 
-  final DatabaseService _db = DatabaseService();
+  final DatabaseService _db;
+
+  late final AssistantSessionRepository _sessions =
+      AssistantSessionRepository(db: _db);
 
   @override
-  Future<void> write(MergePlan plan) => ModelRepository().mergeChannels(
+  Future<void> write(MergePlan plan) => ModelRepository(db: _db).mergeChannels(
     channel: plan.channel,
     updates: plan.updates,
     deletes: plan.deletes,
@@ -99,11 +105,11 @@ class DatabaseMergeStore implements MergeStore {
 
   @override
   Future<void> remapHistory(Map<int, int> idMap) =>
-      UsageRepository().remapModels(idMap);
+      UsageRepository(db: _db).remapModels(idMap);
 
   @override
   Future<void> remapConversations(Map<int, int> idMap) async {
-    await AssistantSessionRepository().remapModelLinks(idMap);
+    await _sessions.remapModelLinks(idMap);
     // A conversation open right now holds its own copy: its links are those,
     // and a compaction would write its history back over the rows above.
     for (final session in PromptOptimizerAgent.sessions.values) {
@@ -122,8 +128,8 @@ class DatabaseMergeStore implements MergeStore {
     }
     return MergeReferences(
       selections: selections,
-      records: await UsageRepository().countModelRows(set),
-      links: await AssistantSessionRepository().countModelLinks(set),
+      records: await UsageRepository(db: _db).countModelRows(set),
+      links: await _sessions.countModelLinks(set),
     );
   }
 }

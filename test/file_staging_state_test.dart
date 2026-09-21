@@ -7,7 +7,7 @@ import 'package:joycai_image_ai_toolkits/state/file_staging_state.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import 'support/private_data_dir.dart';
+import 'support/in_memory_database.dart';
 
 /// Covers the file browser's staging area — the marks, not the transfer.
 ///
@@ -15,14 +15,13 @@ import 'support/private_data_dir.dart';
 /// browser prunes. The selection is dropped on every refresh, filter and sort,
 /// so if staging behaved like the selection the feature would not exist.
 void main() {
-  // Persistence is the point of half of these tests, so the real database is
-  // used rather than mocked away.
+  // Persistence is the point of half of these tests, so a real database is
+  // used rather than mocked away — one held in this isolate's memory, which
+  // the state takes on its constructor.
   sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
-
-  usePrivateDataDir('joycai_file_staging_test');
 
   late Directory root;
+  late DatabaseService db;
 
   BrowserFile fileAt(Directory dir, String name) => BrowserFile(
         path: p.join(dir.path, name),
@@ -34,18 +33,23 @@ void main() {
 
   setUp(() async {
     root = await Directory.systemTemp.createTemp('joycai_staging');
-    // Awaited, not fire-and-forget: the instance built below reads this key
-    // while constructing, and a leftover list from the previous test would
-    // race it.
-    await DatabaseService().saveSetting(FileStagingState.settingsKey, '');
+    db = await openTestDatabase();
   });
 
+  // The database is deliberately not closed: [FileStagingState] persists
+  // fire-and-forget, so a write can still be in flight when a test body
+  // returns, and there is no sync point a test could await instead of
+  // guessing at a delay. An in-memory database costs a few pages and dies
+  // with the isolate, which is the end of this file either way.
   tearDown(() async {
     if (await root.exists()) await root.delete(recursive: true);
   });
 
+  /// A state over this test's database. Calling it twice is what the
+  /// persistence tests mean by a restart: the second one restores what the
+  /// first wrote.
   Future<FileStagingState> freshState() async {
-    final state = FileStagingState();
+    final state = FileStagingState(database: db);
     await state.ready;
     return state;
   }
@@ -176,7 +180,7 @@ void main() {
 
     test('a restored mark whose file is gone comes back marked missing',
         () async {
-      await DatabaseService().saveSetting(
+      await db.saveSetting(
         FileStagingState.settingsKey,
         p.join(root.path, 'ghost.png'),
       );
@@ -204,7 +208,7 @@ void main() {
         () async {
       // The line says how the panel got its contents, not what is in it. After
       // an add it is no longer describing the list on screen.
-      await DatabaseService().saveSetting(
+      await db.saveSetting(
         FileStagingState.settingsKey,
         [p.join(root.path, 'a.png'), p.join(root.path, 'b.png')].join('\n'),
       );

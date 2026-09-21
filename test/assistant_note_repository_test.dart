@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/db/database_migrations.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
@@ -9,30 +8,23 @@ import 'package:joycai_image_ai_toolkits/services/db/repositories/assistant_note
 import 'package:joycai_image_ai_toolkits/services/db/repositories/assistant_session_repository.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'support/in_memory_database.dart';
+
 /// Pins the M3.2 note store (assistant_notes, v34): slug hygiene, session
 /// scoping, collision handling, the retention path, and the elide rule that
 /// keeps read_note results from re-flooding the context they exist to spare.
 void main() {
   sqfliteFfiInit();
-  final factory = databaseFactoryFfi;
 
-  late Database db;
+  late DatabaseService db;
   late AssistantNoteRepository notes;
 
-  Future<Database> provider() async => db;
-
   setUp(() async {
-    db = await factory.openDatabase(
-      inMemoryDatabasePath,
-      options: OpenDatabaseOptions(
-        version: DatabaseService.dbVersion,
-        onCreate: (db, version) => DatabaseMigration.onCreate(db),
-      ),
-    );
-    notes = AssistantNoteRepository(dbProvider: provider);
+    db = await openTestDatabase();
+    notes = AssistantNoteRepository(db: db);
   });
 
-  tearDown(() async => db.close());
+  tearDown(() async => closeTestDatabase(db));
 
   group('sanitizeSlug', () {
     test('keeps letters and digits of any script', () {
@@ -93,7 +85,7 @@ void main() {
 
   group('retention', () {
     test('deleteSession removes the session\'s notes with it', () async {
-      final sessions = AssistantSessionRepository(dbProvider: provider);
+      final sessions = AssistantSessionRepository(db: db);
       await sessions.upsertSession(
           id: 's1', mode: AssistantMode.knowledgeBase, refImages: const []);
       final note =

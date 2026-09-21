@@ -9,10 +9,12 @@ import '../../../models/tag.dart';
 import '../database_service.dart';
 
 class PromptRepository {
+  PromptRepository({DatabaseService? db}) : _dbService = db ?? DatabaseService();
+
   /// How many recent prompts are kept per [PromptHistoryType].
   static const int promptHistoryLimit = 10;
 
-  final DatabaseService _dbService = DatabaseService();
+  final DatabaseService _dbService;
 
   Future<Database> get _db async => _dbService.database;
 

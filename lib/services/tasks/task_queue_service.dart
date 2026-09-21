@@ -100,9 +100,15 @@ class TaskQueueService extends ChangeNotifier {
   int get concurrencyLimit => _concurrencyLimit;
   int get runningCount => _runningCount;
 
-  TaskQueueService() {
+  TaskQueueService({DatabaseService? database})
+    : _db = database ?? DatabaseService() {
     _loadFuture = _loadRecentTasks();
   }
+
+  /// The database this queue and its executors read and write. Defaults to
+  /// the app's one [DatabaseService]; [AppState] hands down its own, so the
+  /// state layer has a single point where the database enters.
+  final DatabaseService _db;
 
   /// How many tasks come back from the database on launch.
   ///
@@ -113,9 +119,8 @@ class TaskQueueService extends ChangeNotifier {
   static const int reloadLimit = 200;
 
   Future<void> _loadRecentTasks() async {
-    final db = DatabaseService();
-    await db.cleanupStuckTasks();
-    final tasks = await _relabelled(await db.getRecentTasks(reloadLimit));
+    await _db.cleanupStuckTasks();
+    final tasks = await _relabelled(await _db.getRecentTasks(reloadLimit));
     if (_disposed) return;
     _queue.clear();
     // Newest-first from the query, reversed so the queue itself runs oldest
@@ -151,7 +156,7 @@ class TaskQueueService extends ChangeNotifier {
     }
 
     if (!rows.any(needsName)) return rows;
-    final models = await DatabaseService().getModels();
+    final models = await _db.getModels();
     final names = {
       for (final m in models)
         if (m.id != null)
@@ -186,12 +191,11 @@ class TaskQueueService extends ChangeNotifier {
     String? channelTag;
     int? channelColor;
 
-    final db = DatabaseService();
 
     if (modelIdentifier is int) {
       modelDbId = modelIdentifier;
       // Fetch model and channel info for visual continuity in history
-      final models = await db.getModels();
+      final models = await _db.getModels();
       final model = models.cast<LLMModel?>().firstWhere(
         (m) => m?.id == modelDbId,
         orElse: () => null,
@@ -204,7 +208,7 @@ class TaskQueueService extends ChangeNotifier {
         }
         final channelId = model.channelId;
         if (channelId != null) {
-          final channel = await db.getChannel(channelId);
+          final channel = await _db.getChannel(channelId);
           if (channel != null) {
             channelTag = channel.tag;
             channelColor = channel.tagColor;
@@ -243,7 +247,7 @@ class TaskQueueService extends ChangeNotifier {
     _queue.add(task);
 
     // Persist task immediately
-    await db.saveTask(task.toMap());
+    await _db.saveTask(task.toMap());
 
     _notify();
     _attemptNextExecution();
@@ -264,7 +268,7 @@ class TaskQueueService extends ChangeNotifier {
         task.status = TaskStatus.cancelled;
         task.addLog('Task cancelled by user.');
         _emit(task.id, TaskEventType.statusChanged, task.status);
-        await DatabaseService().saveTask(task.toMap());
+        await _db.saveTask(task.toMap());
         _notify();
       }
     }
@@ -325,7 +329,7 @@ class TaskQueueService extends ChangeNotifier {
     task.startTime = null;
     task.endTime = null;
     task.addLog('Task re-queued by user.');
-    await DatabaseService().saveTask(task.toMap());
+    await _db.saveTask(task.toMap());
     _notify();
     _attemptNextExecution();
   }
@@ -352,7 +356,7 @@ class TaskQueueService extends ChangeNotifier {
       if (!finished) return;
       _queue.removeAt(index);
     }
-    await DatabaseService().deleteTask(taskId);
+    await _db.deleteTask(taskId);
     _notify();
   }
 
@@ -398,7 +402,7 @@ class TaskQueueService extends ChangeNotifier {
       level: 'RUNNING',
       taskId: task.id,
     );
-    DatabaseService().saveTask(task.toMap());
+    _db.saveTask(task.toMap());
     _notify();
 
     try {
@@ -445,7 +449,7 @@ class TaskQueueService extends ChangeNotifier {
       }
 
       _runningCount--;
-      DatabaseService().saveTask(task.toMap());
+      _db.saveTask(task.toMap());
       onTaskFinished?.call(task);
       _notify();
       _attemptNextExecution();
@@ -453,8 +457,7 @@ class TaskQueueService extends ChangeNotifier {
   }
 
   Future<void> _handleEstimationCheckpoint(int modelDbId) async {
-    final db = DatabaseService();
-    final models = await db.getModels();
+    final models = await _db.getModels();
     final model = models.cast<LLMModel?>().firstWhere(
       (m) => m?.id == modelDbId,
       orElse: () => null,
@@ -467,7 +470,7 @@ class TaskQueueService extends ChangeNotifier {
       if (count >= 10 || mean == 0) {
         await _updateModelCheckpoint(modelDbId);
       } else {
-        await db.updateModelEstimation(
+        await _db.updateModelEstimation(
           modelDbId,
           mean,
           model.estSdMs ?? 0.0,
@@ -494,8 +497,7 @@ class TaskQueueService extends ChangeNotifier {
 
   Future<void> _updateProgress() async {
     bool hasActive = false;
-    final db = DatabaseService();
-    _cachedModelsForProgress ??= await db.getModels();
+    _cachedModelsForProgress ??= await _db.getModels();
     final models = _cachedModelsForProgress!;
 
     for (var task in _queue) {
@@ -530,8 +532,7 @@ class TaskQueueService extends ChangeNotifier {
   }
 
   Future<void> _updateModelCheckpoint(int modelDbId) async {
-    final db = DatabaseService();
-    final durations = await db.getTaskDurations(modelDbId, 50);
+    final durations = await _db.getTaskDurations(modelDbId, 50);
 
     if (durations.length >= 3) {
       // Calculate Mean
@@ -542,7 +543,7 @@ class TaskQueueService extends ChangeNotifier {
           durations.length;
       final sd = math.sqrt(variance);
 
-      await db.updateModelEstimation(modelDbId, mean, sd, 0);
+      await _db.updateModelEstimation(modelDbId, mean, sd, 0);
     }
   }
 

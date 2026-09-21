@@ -9,6 +9,7 @@ import '../models/task_item.dart';
 import '../services/assistant/assistant_kb_distill.dart';
 import '../services/assistant/prompt_optimizer_agent.dart';
 import '../services/assistant/prompt_provenance.dart';
+import '../services/db/database_service.dart';
 import '../services/db/repositories/assistant_session_repository.dart';
 import '../services/db/repositories/task_repository.dart';
 
@@ -31,9 +32,16 @@ enum ComparatorLayout {
 }
 
 class WorkbenchUIState extends ChangeNotifier {
-  WorkbenchUIState() {
+  WorkbenchUIState({DatabaseService? database}) : _db = database ?? DatabaseService() {
     PromptOptimizerAgent.sessions[optimizerSession.id] = optimizerSession;
   }
+
+  /// The database this state reads. Defaults to the app's one
+  /// [DatabaseService]; a test hands in a [DatabaseService.forDatabase] over
+  /// an in-memory database and needs no private data directory.
+  final DatabaseService _db;
+
+  late final TaskRepository _tasks = TaskRepository(db: _db);
 
   // Preview State
   List<AppImage> previewImages = [];
@@ -148,7 +156,8 @@ class WorkbenchUIState extends ChangeNotifier {
 
   // --- Persisted assistant sessions -------------------------------------
 
-  final AssistantSessionRepository _assistantRepo = AssistantSessionRepository();
+  late final AssistantSessionRepository _assistantRepo =
+      AssistantSessionRepository(db: _db);
 
   Future<List<AssistantSessionMeta>> listAssistantSessions() =>
       _assistantRepo.listSessions();
@@ -396,7 +405,7 @@ class WorkbenchUIState extends ChangeNotifier {
     final sessionId = optimizerSession.id;
     Map<String, int> versions;
     try {
-      final rows = await TaskRepository().getTasksForAssistantSession(sessionId);
+      final rows = await _tasks.getTasksForAssistantSession(sessionId);
       versions = PromptProvenance.resultVersionsFromTasks(
         rows.map(TaskItem.fromMap),
         sessionId,
@@ -424,7 +433,7 @@ class WorkbenchUIState extends ChangeNotifier {
     if (!resultVersionByPath.containsKey(path)) return null;
     final sessionId = optimizerSession.id;
     try {
-      final rows = await TaskRepository().getTasksForAssistantSession(sessionId);
+      final rows = await _tasks.getTasksForAssistantSession(sessionId);
       TaskItem? found;
       for (final row in rows) {
         final task = TaskItem.fromMap(row);

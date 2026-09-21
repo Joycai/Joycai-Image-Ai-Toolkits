@@ -25,7 +25,10 @@ typedef FolderFlash = ({String? path, bool expanded});
 typedef FolderSection = ({String path, int start, int count});
 
 class FileBrowserState extends ChangeNotifier {
-  final DatabaseService _db = DatabaseService();
+  /// The database this state reads and writes. Defaults to the app's one
+  /// [DatabaseService]; a test hands in a [DatabaseService.forDatabase] over
+  /// an in-memory database and needs no private data directory.
+  final DatabaseService _db;
 
   List<BrowserFile> allFiles = [];
   List<BrowserFile> filteredFiles = [];
@@ -98,7 +101,7 @@ class FileBrowserState extends ChangeNotifier {
   final ValueNotifier<int> refreshTick = ValueNotifier<int>(0);
   int get refreshCounter => refreshTick.value;
 
-  FileBrowserState() {
+  FileBrowserState({DatabaseService? database}) : _db = database ?? DatabaseService() {
     reloadSettings();
   }
 

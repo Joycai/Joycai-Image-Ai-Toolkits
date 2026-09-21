@@ -46,7 +46,9 @@ class LLMConfigException implements Exception {
 }
 
 class LLMConfigResolver {
-  final DatabaseService _db = DatabaseService();
+  LLMConfigResolver({DatabaseService? database}) : _db = database ?? DatabaseService();
+
+  final DatabaseService _db;
 
   /// Refuses a channel with no API key unless its vendor declares that it
   /// works keyless ([VendorProfile.keyOptional] — the local runtimes).

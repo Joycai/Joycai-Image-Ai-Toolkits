@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../services/db/database_service.dart';
 import '../services/db/repositories/cookie_repository.dart';
 import '../services/media/web_scraper_service.dart';
 
 class DownloaderState extends ChangeNotifier {
+  DownloaderState({DatabaseService? database})
+    : _cookies = CookieRepository(db: database);
+
+  /// The downloader's remembered cookies. Built here rather than per call
+  /// so an injected database reaches every one of them.
+  final CookieRepository _cookies;
+
   String url = '';
   String requirement = '';
   String cookies = '';
@@ -71,30 +79,29 @@ class DownloaderState extends ChangeNotifier {
   }
 
   Future<void> loadCookieHistory() async {
-    final repo = CookieRepository();
-    cookieRetention = await repo.retention();
-    cookieHistory = await repo.list();
+    cookieRetention = await _cookies.retention();
+    cookieHistory = await _cookies.list();
     notifyListeners();
   }
 
   Future<void> saveCookie(String host, String cookieValue) async {
     if (host.isEmpty || cookieValue.isEmpty) return;
-    await CookieRepository().save(host, cookieValue);
+    await _cookies.save(host, cookieValue);
     await loadCookieHistory();
   }
 
   Future<void> setCookieRetention(CookieRetention retention) async {
-    await CookieRepository().setRetention(retention);
+    await _cookies.setRetention(retention);
     await loadCookieHistory();
   }
 
   Future<void> forgetCookie(String host) async {
-    await CookieRepository().delete(host);
+    await _cookies.delete(host);
     await loadCookieHistory();
   }
 
   Future<void> clearCookieHistory() async {
-    await CookieRepository().clear();
+    await _cookies.clear();
     await loadCookieHistory();
   }
 
