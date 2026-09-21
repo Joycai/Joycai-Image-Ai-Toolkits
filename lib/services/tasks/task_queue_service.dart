@@ -100,9 +100,15 @@ class TaskQueueService extends ChangeNotifier {
   int get concurrencyLimit => _concurrencyLimit;
   int get runningCount => _runningCount;
 
-  TaskQueueService() {
+  TaskQueueService({DatabaseService? database})
+    : _db = database ?? DatabaseService() {
     _loadFuture = _loadRecentTasks();
   }
+
+  /// The database this queue and its executors read and write. Defaults to
+  /// the app's one [DatabaseService]; [AppState] hands down its own, so the
+  /// state layer has a single point where the database enters.
+  final DatabaseService _db;
 
   /// How many tasks come back from the database on launch.
   ///
@@ -113,7 +119,7 @@ class TaskQueueService extends ChangeNotifier {
   static const int reloadLimit = 200;
 
   Future<void> _loadRecentTasks() async {
-    final db = DatabaseService();
+    final db = _db;
     await db.cleanupStuckTasks();
     final tasks = await _relabelled(await db.getRecentTasks(reloadLimit));
     if (_disposed) return;

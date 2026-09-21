@@ -59,7 +59,10 @@ Map<String, List<int>> _scanImagesIsolate(List<String> paths) {
 enum GalleryViewMode { all, processed, temp, folder }
 
 class GalleryState extends ChangeNotifier {
-  final DatabaseService _db = DatabaseService();
+  /// The database this state reads and writes. Defaults to the app's one
+  /// [DatabaseService]; a test hands in a [DatabaseService.forDatabase] over
+  /// an in-memory database and needs no private data directory.
+  final DatabaseService _db;
 
   List<String> sourceDirectories = [];
   List<String> activeSourceDirectories = [];
@@ -231,7 +234,7 @@ class GalleryState extends ChangeNotifier {
   int _folderScanGeneration = 0;
   bool _disposed = false;
 
-  GalleryState() {
+  GalleryState({DatabaseService? database}) : _db = database ?? DatabaseService() {
     settingsLoaded = reloadSettings();
   }
 

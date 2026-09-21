@@ -45,23 +45,32 @@ part 'app_state_data.dart';
 part 'app_state_workbench.dart';
 
 class AppState extends ChangeNotifier {
-  static final AppState _instance = AppState._internal();
+  static final AppState _instance = AppState._internal(DatabaseService());
   factory AppState() => _instance;
 
-  final DatabaseService _db = DatabaseService();
-  final TaskQueueService taskQueue = TaskQueueService();
-  final GalleryState galleryState = GalleryState();
-  final DownloaderState downloaderState = DownloaderState();
-  final FileBrowserState fileBrowserState = FileBrowserState();
+  /// The one place the database enters the state layer.
+  ///
+  /// Every sub-state and the task queue are handed *this* service rather than
+  /// reaching for `DatabaseService()` themselves, so the app root decides what
+  /// they read and a swap is one argument rather than ten. [AppState] itself
+  /// stays a singleton on purpose (it is the root, and the whole app watches
+  /// it); what a test needs to replace is the database under it, which every
+  /// sub-state now takes on its own constructor.
+  final DatabaseService _db;
+
+  final TaskQueueService taskQueue;
+  final GalleryState galleryState;
+  final DownloaderState downloaderState;
+  final FileBrowserState fileBrowserState;
 
   /// The file browser's staging area. Separate from [fileBrowserState]
   /// because it deliberately outlives everything that state prunes: the
   /// selection is dropped on every refresh, filter and sort, and a list that
   /// survives those is the entire feature.
-  final FileStagingState fileStagingState = FileStagingState();
-  final WorkbenchUIState workbenchUIState = WorkbenchUIState();
-  final TaskListState taskListState = TaskListState();
-  final ModelListState modelListState = ModelListState();
+  final FileStagingState fileStagingState;
+  final WorkbenchUIState workbenchUIState;
+  final TaskListState taskListState;
+  final ModelListState modelListState;
 
   /// Execution log. Pointedly absent from the listener wiring below: log lines
   /// arrive one per streamed chunk, and forwarding them here would rebuild
@@ -81,7 +90,16 @@ class AppState extends ChangeNotifier {
   // `selectedImages`, `outputDirectory`, …) are for one-shot reads and actions
   // with `listen: false`; anything that has to rebuild when the value changes
   // must watch the owning notifier.
-  AppState._internal() {
+  AppState._internal(DatabaseService database)
+    : _db = database,
+      taskQueue = TaskQueueService(database: database),
+      galleryState = GalleryState(database: database),
+      downloaderState = DownloaderState(database: database),
+      fileBrowserState = FileBrowserState(database: database),
+      fileStagingState = FileStagingState(database: database),
+      workbenchUIState = WorkbenchUIState(database: database),
+      taskListState = TaskListState(database: database),
+      modelListState = ModelListState(database: database) {
     // Wire up logs
     galleryState.onLog = (msg, {level = 'INFO'}) {
       addLog(msg, level: level);

@@ -19,7 +19,12 @@ class ModelListState extends ChangeNotifier {
   static const String sortDirectionSetting = 'model_sort_direction';
   static const String groupByChannelSetting = 'model_group_by_channel';
 
-  final DatabaseService _db = DatabaseService();
+  ModelListState({DatabaseService? database}) : _db = database ?? DatabaseService();
+
+  /// The database this state reads and writes. Defaults to the app's one
+  /// [DatabaseService]; a test hands in a [DatabaseService.forDatabase] over
+  /// an in-memory database and needs no private data directory.
+  final DatabaseService _db;
 
   ModelSortKey sortKey = ModelSortKey.manual;
   ModelSortDirection sortDirection = ModelSortDirection.ascending;

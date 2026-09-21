@@ -54,7 +54,7 @@ extension TaskExecutors on TaskQueueService {
     if (!task.useStream) return false;
     if (task.modelDbId == null) return true; // Fallback for legacy
 
-    final db = DatabaseService();
+    final db = _db;
     final models = await db.getModels();
     final model = models.cast<LLMModel?>().firstWhere(
       (m) => m?.id == task.modelDbId,
@@ -249,7 +249,7 @@ extension TaskExecutors on TaskQueueService {
   Future<void> _recordLayer(TaskItem task, String path, String setId,
       GeneratedImageLayer layer) async {
     try {
-      await ImageLayerRepository().save(ImageLayer(
+      await ImageLayerRepository(db: _db).save(ImageLayer(
         path: path,
         setId: setId,
         zIndex: layer.zIndex,
@@ -296,7 +296,7 @@ extension TaskExecutors on TaskQueueService {
       bool acceptsImageInput = true;
       int? contextWindow;
       if (task.modelDbId != null) {
-        final models = await DatabaseService().getModels();
+        final models = await _db.getModels();
         final model = models.cast<LLMModel?>().firstWhere(
           (m) => m?.id == task.modelDbId,
           orElse: () => null,
@@ -313,7 +313,7 @@ extension TaskExecutors on TaskQueueService {
 
       final contextRatio =
           double.tryParse(
-            await DatabaseService().getSetting(
+            await _db.getSetting(
                   PromptOptimizerAgent.contextRatioSettingKey,
                 ) ??
                 '',
@@ -323,7 +323,7 @@ extension TaskExecutors on TaskQueueService {
       // Knowledge sub-agent opt-in (Settings, default off). Read here and
       // passed down so the agent stays free of app-state coupling.
       var kbSubAgentEnabled =
-          (await DatabaseService().getSetting(
+          (await _db.getSetting(
                 PromptOptimizerAgent.kbSubAgentSettingKey,
               ) ??
               'false') ==
@@ -341,12 +341,12 @@ extension TaskExecutors on TaskQueueService {
       // the session model's answer.
       var kbSubAgentAcceptsImages = acceptsImageInput;
       if (kbSubAgentEnabled) {
-        final boundRaw = await DatabaseService().getSetting(
+        final boundRaw = await _db.getSetting(
           PromptOptimizerAgent.kbSubAgentModelSettingKey,
         );
         final boundId = int.tryParse(boundRaw ?? '');
         if (boundId != null) {
-          final all = await DatabaseService().getModels();
+          final all = await _db.getModels();
           final bound = all.cast<LLMModel?>().firstWhere(
             (m) => m?.id == boundId,
             orElse: () => null,
@@ -700,7 +700,7 @@ extension TaskExecutors on TaskQueueService {
         'resumed.');
     task.operationName = null;
     task.operationSurface = null;
-    await DatabaseService().saveTask(task.toMap());
+    await _db.saveTask(task.toMap());
   }
 
   /// Builds the request, submits the job, and persists its id and surface
@@ -780,7 +780,7 @@ extension TaskExecutors on TaskQueueService {
     // channel is re-pointed at another vendor while the job runs.
     task.operationName = ticket.name;
     task.operationSurface = ticket.surfaceId;
-    await DatabaseService().saveTask(task.toMap());
+    await _db.saveTask(task.toMap());
 
     task.addLog('LRO started: ${ticket.name}');
     return ticket.name;
@@ -934,7 +934,7 @@ extension TaskExecutors on TaskQueueService {
     var cookies = task.parameters['cookies'] as String?;
     if (cookies == null) {
       final host = Uri.tryParse('${task.parameters['url'] ?? ''}')?.host ?? '';
-      cookies = await CookieRepository().lookup(host);
+      cookies = await CookieRepository(db: _db).lookup(host);
     }
     final formattedCookies = WebScraperService().parseCookies(cookies ?? '');
     final prefix = FileUtils.safeFilenamePrefix(
@@ -1018,7 +1018,7 @@ extension TaskExecutors on TaskQueueService {
 
   /// Checks if primary output is writable, returns it or falls back to Result Cache.
   Future<String> _getEffectiveOutputDir(TaskItem task) async {
-    final db = DatabaseService();
+    final db = _db;
     final String? primary = await db.getSetting('output_directory');
 
     // Result Cache is always initialized in GalleryState for iOS/macOS

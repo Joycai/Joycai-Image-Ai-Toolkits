@@ -15,7 +15,6 @@
 
 | 编号 | 一句话 | 触及 | 状态 |
 |---|---|---|---|
-| A1 | 六个状态类与多个服务把 `DatabaseService()` 写死，没有构造函数注入 | `state/`、`services/`、45 个测试文件 | 未开工 |
 | A2 | `UsageRepository` / `TaskRepository` 是仅有的两个不返回领域模型的仓储，裸行一路穿到 UI | `models/`、`db/repositories/`、`screens/metrics/` | 未开工 |
 | A3 | `DatabaseService` 门面把模型摊成 map 再让仓储拼回去 | `db/database_service.dart` | 未开工 |
 | A4 | `BrowserFile` 带展示逻辑，其中 `.color` 是死代码且用裸 Material 颜色 | `models/browser_file.dart` | 未开工 |
@@ -23,56 +22,6 @@
 | A6 | `test/` 266 个文件平铺在根下，而 `lib/` 的分组目录根下一个散文件都不许有 | `test/` | 未开工 |
 | A7 | workbench 一个目录占 lib 的 21%，提示词助手实质是独立功能 | `screens/workbench/` | 未开工 |
 | A8 | 16 个 UI 文件直连 `DatabaseService`，绝大多数只为存侧栏宽度 | `screens/`、`widgets/` | 未开工 |
-
----
-
-## A1 · 状态类不接受注入
-
-**现状**：全仓 13 个单例。状态层六处把数据库写死：
-
-```
-lib/state/app_state.dart:51          final DatabaseService _db = DatabaseService();
-lib/state/file_browser_state.dart:28
-lib/state/file_staging_state.dart:36
-lib/state/gallery_state.dart:62
-lib/state/model_list_state.dart:22
-lib/state/task_list_state.dart:24
-```
-
-服务层同样（`catalogue/channel_merge_executor.dart:82`、`llm/llm_config_resolver.dart:49`、
-四个仓储的 `final DatabaseService _dbService = DatabaseService();`）。`AppState` 自己是
-`factory AppState() => _instance`（`app_state.dart:47`），测试里到处是 `AppState()`，拿到的
-是同一个进程级实例。
-
-**为什么要改**：代价已经摆在台面上——**45 个测试文件**导入
-[`test/support/private_data_dir.dart`](../../test/support/private_data_dir.dart)，这个辅助文件
-存在的唯一理由，就是绕开「单例压着一个真实文件、在并发的测试 isolate 之间抢写锁」。
-它的文件头自己写明了：这种竞争单跑一个文件看不见，只在全量跑时炸成 `database is locked`，
-读起来像 flake。注入之后这类测试可以拿一个内存库，连临时目录都不需要。
-
-**改法**：样板仓库里已经有——`UsageController`（`screens/metrics/widgets/usage_controller.dart:22`）
-收一个 `DatabaseService? database`，缺省回落到单例：
-
-```dart
-UsageController({..., DatabaseService? database}) : _db = database ?? DatabaseService();
-```
-
-照这个形状办，分两步：
-
-1. 六个状态类 + 两个服务 + 四个仓储加可选具名参数，缺省不变。**不改任何调用方**，
-   所以这一步是纯增量。
-2. `AppState` 单独处理，放最后。它的 `factory` 与注入天然打架，两条路二选一：
-   给 `AppState._internal` 加可选参数并补一个 `@visibleForTesting` 的重置入口；
-   或者干脆不动 `AppState`，只让它把自己的 `_db` 往下传给子状态。**倾向后者**——
-   `AppState` 是应用根，测试需要的是「换掉它底下的库」，不是「换掉它自己」。
-
-**验收**：
-- `flutter analyze` 干净、`flutter test -x screenshots` 全绿（这一步不该有任何测试改动）。
-- 挑三个今天带 `usePrivateDataDir` 的测试文件改成注入式，确认它们**不再需要**那个辅助函数
-  仍然通过——这是这条改动唯一的实证。
-
-**注意**：不要顺手引入 `get_it`。`provider` 已经在 `main.dart` 里担着根注入，再加一个容器
-只会多一套查找规则；手册要的是构造函数注入，不是某个包。
 
 ---
 

@@ -21,6 +21,13 @@ import 'package:flutter_test/flutter_test.dart';
 /// anything constructs `DatabaseService`, `AppState`, or a state class that
 /// loads its settings while constructing.
 ///
+/// Prefer [openTestDatabase] (`support/in_memory_database.dart`) where the
+/// test only needs *a* database: state classes, services and repositories all
+/// take one on their constructor now, and a test that injects its own touches
+/// no file, so it sidesteps the race below instead of working around it. This
+/// helper is still what a test needs when it exercises the default
+/// `DatabaseService`, `AppState`, or anything else that reads a real path.
+///
 /// One directory answers every path_provider method. Tests that need the data,
 /// temp and documents directories to stay distinct want the screenshot
 /// harness's `installFixtureEnv` instead.

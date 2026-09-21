@@ -5,17 +5,21 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import 'support/private_data_dir.dart';
+import 'support/in_memory_database.dart';
 
 void main() {
   sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
-
-  usePrivateDataDir('joycai_config_resolver_test');
 
   group('LLMConfigResolver (Integration-lite)', () {
+    // Injected rather than the default service: these tests only need a
+    // database of the right shape, and one they own outright cannot contend
+    // with a neighbouring test file for the shared file's write lock.
+    late DatabaseService db;
+
+    setUp(() async => db = await openTestDatabase());
+    tearDown(() async => closeTestDatabase(db));
+
     test('should resolve config from database', () async {
-      final db = DatabaseService();
       // Setup mock data in the in-memory DB
       final channelId = await db.addChannel({
         'display_name': 'Test Channel',
@@ -40,7 +44,7 @@ void main() {
         'fee_group_id': pricingGroupId,
       });
 
-      final resolver = LLMConfigResolver();
+      final resolver = LLMConfigResolver(database: db);
       final config = await resolver.resolveConfig(modelPk);
 
       expect(config.modelId, 'test-model-1');
@@ -53,7 +57,6 @@ void main() {
     });
 
     test('resolves a configured cache rate, keeping 0.0 distinct from unset', () async {
-      final db = DatabaseService();
       final channelId = await db.addChannel({
         'display_name': 'Cache Channel',
         'type': 'openai-api',
@@ -85,7 +88,7 @@ void main() {
           'channel_id': channelId,
           'fee_group_id': groupId,
         });
-        final config = await LLMConfigResolver().resolveConfig(modelPk);
+        final config = await LLMConfigResolver(database: db).resolveConfig(modelPk);
         expect(config.effectiveCacheInputFee, expected);
       }
 
@@ -96,7 +99,6 @@ void main() {
     });
 
     test('deleting a channel deletes its models without leaving orphans', () async {
-      final db = DatabaseService();
       final channelId = await db.addChannel({
         'display_name': 'Disposable Channel',
         'type': 'openai-api-rest',
@@ -125,7 +127,7 @@ void main() {
     test('a missing model is a typed config error, not a bare Exception',
         () async {
       await expectLater(
-        LLMConfigResolver().resolveConfig(987654),
+        LLMConfigResolver(database: db).resolveConfig(987654),
         throwsA(isA<LLMConfigException>().having(
             (e) => e.kind, 'kind', LLMConfigErrorKind.modelNotFound)),
       );
@@ -133,7 +135,6 @@ void main() {
 
     test('a keyed channel saved without a key fails before any request',
         () async {
-      final db = DatabaseService();
       final channelId = await db.addChannel({
         'display_name': 'Keyless Relay',
         'type': 'openai-api-rest',
@@ -147,7 +148,7 @@ void main() {
         'channel_id': channelId,
       });
       await expectLater(
-        LLMConfigResolver().resolveConfig(modelPk),
+        LLMConfigResolver(database: db).resolveConfig(modelPk),
         throwsA(isA<LLMConfigException>()
             .having((e) => e.kind, 'kind', LLMConfigErrorKind.missingApiKey)
             .having((e) => e.message, 'message', contains('Keyless Relay'))),

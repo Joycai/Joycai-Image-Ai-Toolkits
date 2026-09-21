@@ -51,8 +51,12 @@ class BackupFormatException implements Exception {
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
-  static Database? _database;
-  static Future<Database>? _databaseFuture;
+
+  /// Per-instance, not static: the default instance holds the app's one real
+  /// database, while a [DatabaseService.forDatabase] holds only what it was
+  /// handed. Static fields here would make that seam a no-op.
+  Database? _database;
+  Future<Database>? _databaseFuture;
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
@@ -87,14 +91,51 @@ class DatabaseService {
 
   DatabaseService._internal();
 
+  /// A service over a database the caller already opened — the seam every
+  /// injectable state class, service and repository ultimately reaches.
+  ///
+  /// The default instance is process-wide *and* sits on one real file, so two
+  /// test files running at once (`flutter test` gives each its own isolate,
+  /// all sharing the filesystem) contend for the same write lock; that race is
+  /// why [test/support/private_data_dir.dart] exists. A test that builds its
+  /// own in-memory database and hands it here touches no file at all:
+  ///
+  /// ```dart
+  /// final db = await databaseFactoryFfi.openDatabase(
+  ///   inMemoryDatabasePath,
+  ///   options: OpenDatabaseOptions(
+  ///     version: DatabaseService.dbVersion,
+  ///     onCreate: (db, _) => DatabaseMigration.onCreate(db),
+  ///   ),
+  /// );
+  /// final state = TaskListState(database: DatabaseService.forDatabase(db));
+  /// ```
+  ///
+  /// [database] is returned as-is and never opened, migrated or closed by this
+  /// object — the caller owns its lifetime.
+  @visibleForTesting
+  DatabaseService.forDatabase(Database database) : _database = database;
+
+  // Each repository is built over *this* service, not over the default one.
+  // A facade that reached for `_models` per call would send every
+  // delegated query to the app's real file however this service was built,
+  // which is exactly the seam [DatabaseService.forDatabase] exists to open.
+  // Lazy, so constructing a service opens nothing.
+  late final ModelRepository _models = ModelRepository(db: this);
+  late final PromptRepository _prompts = PromptRepository(db: this);
+  late final TaskRepository _tasks = TaskRepository(db: this);
+  late final UsageRepository _usage = UsageRepository(db: this);
+  late final CookieRepository _cookies = CookieRepository(db: this);
+  late final ImageLayerRepository _layers = ImageLayerRepository(db: this);
+
   Future<Database> get database async {
     if (_database != null) return _database!;
     _databaseFuture ??= () async {
       final db = await _initDatabase();
       _database = db;
       await syncPresets();
-      await TaskRepository().scrubStoredCookies();
-      await ImageLayerRepository(db: this).loadPaths();
+      await _tasks.scrubStoredCookies();
+      await _layers.loadPaths();
       return db;
     }();
     return _databaseFuture!;
@@ -238,47 +279,47 @@ class DatabaseService {
   }
 
   // Task History Methods
-  Future<void> saveTask(Map<String, dynamic> task) => TaskRepository().saveTask(task);
-  Future<List<Map<String, dynamic>>> getRecentTasks(int limit) => TaskRepository().getRecentTasks(limit);
-  Future<void> deleteTask(String id) => TaskRepository().deleteTask(id);        
-  Future<void> cleanupStuckTasks() => TaskRepository().cleanupStuckTasks();     
-  Future<List<double>> getTaskDurations(int modelDbId, int limit) => TaskRepository().getTaskDurations(modelDbId, limit);
+  Future<void> saveTask(Map<String, dynamic> task) => _tasks.saveTask(task);
+  Future<List<Map<String, dynamic>>> getRecentTasks(int limit) => _tasks.getRecentTasks(limit);
+  Future<void> deleteTask(String id) => _tasks.deleteTask(id);        
+  Future<void> cleanupStuckTasks() => _tasks.cleanupStuckTasks();     
+  Future<List<double>> getTaskDurations(int modelDbId, int limit) => _tasks.getTaskDurations(modelDbId, limit);
 
   // Token Usage Methods
-  Future<void> recordTokenUsage(Map<String, dynamic> usage) => UsageRepository().recordTokenUsage(usage);
+  Future<void> recordTokenUsage(Map<String, dynamic> usage) => _usage.recordTokenUsage(usage);
   Future<int> updateTokenUsage(String taskId, Map<String, dynamic> values) =>
-      UsageRepository().updateTokenUsage(taskId, values);
-  Future<void> clearTokenUsage({String? modelId}) => UsageRepository().clearTokenUsage(modelId: modelId);
+      _usage.updateTokenUsage(taskId, values);
+  Future<void> clearTokenUsage({String? modelId}) => _usage.clearTokenUsage(modelId: modelId);
   Future<List<Map<String, dynamic>>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end, int? limit, int? offset})
-      => UsageRepository().getTokenUsage(modelIds: modelIds, start: start, end: end, limit: limit, offset: offset);
+      => _usage.getTokenUsage(modelIds: modelIds, start: start, end: end, limit: limit, offset: offset);
 
-  Future<void> saveUsageCheckpoint(Map<String, dynamic> checkpoint) => UsageRepository().saveUsageCheckpoint(checkpoint);
-  Future<Map<String, dynamic>?> getLatestUsageCheckpoint() => UsageRepository().getLatestUsageCheckpoint();
+  Future<void> saveUsageCheckpoint(Map<String, dynamic> checkpoint) => _usage.saveUsageCheckpoint(checkpoint);
+  Future<Map<String, dynamic>?> getLatestUsageCheckpoint() => _usage.getLatestUsageCheckpoint();
 
   // --- MODEL BASED METHODS ---
 
   // Prompts Methods
-  Future<int> addPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().addPrompt(Prompt.fromMap(prompt), tagIds: tagIds);
-  Future<void> updatePrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().updatePrompt(id, Prompt.fromMap(prompt), tagIds: tagIds);
-  Future<void> deletePrompt(int id) => PromptRepository().deletePrompt(id);     
-  Future<void> deletePrompts(List<int> ids) => PromptRepository().deletePrompts(ids);
-  Future<void> updatePromptsTags(List<int> promptIds, List<int> tagIds) => PromptRepository().updatePromptsTags(promptIds, tagIds);
-  Future<List<Prompt>> getPrompts() => PromptRepository().getPrompts();
-  Future<void> updatePromptOrder(List<int> ids) => PromptRepository().updatePromptOrder(ids);
+  Future<int> addPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => _prompts.addPrompt(Prompt.fromMap(prompt), tagIds: tagIds);
+  Future<void> updatePrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => _prompts.updatePrompt(id, Prompt.fromMap(prompt), tagIds: tagIds);
+  Future<void> deletePrompt(int id) => _prompts.deletePrompt(id);     
+  Future<void> deletePrompts(List<int> ids) => _prompts.deletePrompts(ids);
+  Future<void> updatePromptsTags(List<int> promptIds, List<int> tagIds) => _prompts.updatePromptsTags(promptIds, tagIds);
+  Future<List<Prompt>> getPrompts() => _prompts.getPrompts();
+  Future<void> updatePromptOrder(List<int> ids) => _prompts.updatePromptOrder(ids);
 
   // Prompt History Methods
-  Future<List<PromptHistoryEntry>> getPromptHistory(PromptHistoryType type) => PromptRepository().getPromptHistory(type);
-  Future<void> addPromptHistory(PromptHistoryType type, String content) => PromptRepository().addPromptHistory(type, content);
-  Future<void> clearPromptHistory(PromptHistoryType type) => PromptRepository().clearPromptHistory(type);
+  Future<List<PromptHistoryEntry>> getPromptHistory(PromptHistoryType type) => _prompts.getPromptHistory(type);
+  Future<void> addPromptHistory(PromptHistoryType type, String content) => _prompts.addPromptHistory(type, content);
+  Future<void> clearPromptHistory(PromptHistoryType type) => _prompts.clearPromptHistory(type);
 
   // LLM Models Methods
-  Future<int> addModel(Map<String, dynamic> model) => ModelRepository().addModel(LLMModel.fromMap(model));
-  Future<void> updateModel(int id, Map<String, dynamic> model) => ModelRepository().updateModel(id, LLMModel.fromMap(model));
-  Future<void> updateModelOrder(List<int> ids) => ModelRepository().updateModelOrder(ids);
-  Future<void> deleteModel(int id) => ModelRepository().deleteModel(id);        
-  Future<List<LLMModel>> getModels() => ModelRepository().getModels();
+  Future<int> addModel(Map<String, dynamic> model) => _models.addModel(LLMModel.fromMap(model));
+  Future<void> updateModel(int id, Map<String, dynamic> model) => _models.updateModel(id, LLMModel.fromMap(model));
+  Future<void> updateModelOrder(List<int> ids) => _models.updateModelOrder(ids);
+  Future<void> deleteModel(int id) => _models.deleteModel(id);        
+  Future<List<LLMModel>> getModels() => _models.getModels();
   Future<void> updateModelEstimation(int modelDbId, double mean, double sd, int tasksSinceUpdate)
-      => ModelRepository().updateModelEstimation(modelDbId, mean, sd, tasksSinceUpdate);
+      => _models.updateModelEstimation(modelDbId, mean, sd, tasksSinceUpdate);
 
   // Settings Methods
   Future<void> saveSetting(String key, String value) async {
@@ -300,8 +341,8 @@ class DatabaseService {
   }
 
   // Downloader Cookies History — see [CookieRepository] for retention.
-  Future<void> saveDownloaderCookie(String host, String cookies) => CookieRepository().save(host, cookies);
-  Future<List<Map<String, dynamic>>> getDownloaderCookies() => CookieRepository().list();
+  Future<void> saveDownloaderCookie(String host, String cookies) => _cookies.save(host, cookies);
+  Future<List<Map<String, dynamic>>> getDownloaderCookies() => _cookies.list();
 
   // Source Directories Methods
   Future<void> addSourceDirectory(String path) async {
@@ -332,35 +373,35 @@ class DatabaseService {
   }
 
   // Pricing Groups Methods
-  Future<int> addPricingGroup(Map<String, dynamic> group) => ModelRepository().addPricingGroup(PricingGroup.fromMap(group));
-  Future<void> updatePricingGroup(int id, Map<String, dynamic> group) => ModelRepository().updatePricingGroup(id, PricingGroup.fromMap(group));
-  Future<void> deletePricingGroup(int id) => ModelRepository().deletePricingGroup(id);
-  Future<List<PricingGroup>> getPricingGroups() => ModelRepository().getPricingGroups();
-  Future<void> updatePricingGroupOrder(List<int> orderedIds) => ModelRepository().updatePricingGroupOrder(orderedIds);
+  Future<int> addPricingGroup(Map<String, dynamic> group) => _models.addPricingGroup(PricingGroup.fromMap(group));
+  Future<void> updatePricingGroup(int id, Map<String, dynamic> group) => _models.updatePricingGroup(id, PricingGroup.fromMap(group));
+  Future<void> deletePricingGroup(int id) => _models.deletePricingGroup(id);
+  Future<List<PricingGroup>> getPricingGroups() => _models.getPricingGroups();
+  Future<void> updatePricingGroupOrder(List<int> orderedIds) => _models.updatePricingGroupOrder(orderedIds);
 
   // LLM Channels Methods
-  Future<int> addChannel(Map<String, dynamic> channel) => ModelRepository().addChannel(LLMChannel.fromMap(channel));
-  Future<void> updateChannel(int id, Map<String, dynamic> channel) => ModelRepository().updateChannel(id, LLMChannel.fromMap(channel));
-  Future<void> deleteChannel(int id) => ModelRepository().deleteChannel(id);    
-  Future<List<LLMChannel>> getChannels() => ModelRepository().getChannels();    
-  Future<LLMChannel?> getChannel(int id) => ModelRepository().getChannel(id);   
-  Future<void> updateChannelOrder(List<int> orderedIds) => ModelRepository().updateChannelOrder(orderedIds);
+  Future<int> addChannel(Map<String, dynamic> channel) => _models.addChannel(LLMChannel.fromMap(channel));
+  Future<void> updateChannel(int id, Map<String, dynamic> channel) => _models.updateChannel(id, LLMChannel.fromMap(channel));
+  Future<void> deleteChannel(int id) => _models.deleteChannel(id);    
+  Future<List<LLMChannel>> getChannels() => _models.getChannels();    
+  Future<LLMChannel?> getChannel(int id) => _models.getChannel(id);   
+  Future<void> updateChannelOrder(List<int> orderedIds) => _models.updateChannelOrder(orderedIds);
 
   // Prompt Tags Methods
-  Future<int> addPromptTag(Map<String, dynamic> tag) => PromptRepository().addPromptTag(PromptTag.fromMap(tag));
-  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) => PromptRepository().updatePromptTag(id, PromptTag.fromMap(tag));
-  Future<void> deletePromptTag(int id) => PromptRepository().deletePromptTag(id);
-  Future<List<PromptTag>> getPromptTags() => PromptRepository().getPromptTags();
-  Future<void> updateTagOrder(List<int> ids) => PromptRepository().updateTagOrder(ids);
+  Future<int> addPromptTag(Map<String, dynamic> tag) => _prompts.addPromptTag(PromptTag.fromMap(tag));
+  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) => _prompts.updatePromptTag(id, PromptTag.fromMap(tag));
+  Future<void> deletePromptTag(int id) => _prompts.deletePromptTag(id);
+  Future<List<PromptTag>> getPromptTags() => _prompts.getPromptTags();
+  Future<void> updateTagOrder(List<int> ids) => _prompts.updateTagOrder(ids);
 
   // System Prompts Methods
-  Future<int> addSystemPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().addSystemPrompt(SystemPrompt.fromMap(prompt), tagIds: tagIds);
-  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().updateSystemPrompt(id, SystemPrompt.fromMap(prompt), tagIds: tagIds);
-  Future<void> deleteSystemPrompt(int id) => PromptRepository().deleteSystemPrompt(id);
-  Future<void> deleteSystemPrompts(List<int> ids) => PromptRepository().deleteSystemPrompts(ids);
-  Future<void> updateSystemPromptsTags(List<int> promptIds, List<int> tagIds) => PromptRepository().updateSystemPromptsTags(promptIds, tagIds);
-  Future<List<SystemPrompt>> getSystemPrompts({String? type}) => PromptRepository().getSystemPrompts(type: type);
-  Future<void> updateSystemPromptOrder(List<int> ids) => PromptRepository().updateSystemPromptOrder(ids);
+  Future<int> addSystemPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => _prompts.addSystemPrompt(SystemPrompt.fromMap(prompt), tagIds: tagIds);
+  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => _prompts.updateSystemPrompt(id, SystemPrompt.fromMap(prompt), tagIds: tagIds);
+  Future<void> deleteSystemPrompt(int id) => _prompts.deleteSystemPrompt(id);
+  Future<void> deleteSystemPrompts(List<int> ids) => _prompts.deleteSystemPrompts(ids);
+  Future<void> updateSystemPromptsTags(List<int> promptIds, List<int> tagIds) => _prompts.updateSystemPromptsTags(promptIds, tagIds);
+  Future<List<SystemPrompt>> getSystemPrompts({String? type}) => _prompts.getSystemPrompts(type: type);
+  Future<void> updateSystemPromptOrder(List<int> ids) => _prompts.updateSystemPromptOrder(ids);
 
   // Standalone Prompt Data
   Future<Map<String, dynamic>> getPromptDataRaw() async => promptLibraryExport(
