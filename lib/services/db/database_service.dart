@@ -97,18 +97,12 @@ class DatabaseService {
   /// The default instance is process-wide *and* sits on one real file, so two
   /// test files running at once (`flutter test` gives each its own isolate,
   /// all sharing the filesystem) contend for the same write lock; that race is
-  /// why [test/support/private_data_dir.dart] exists. A test that builds its
-  /// own in-memory database and hands it here touches no file at all:
+  /// why `test/support/private_data_dir.dart` exists. A test that builds its
+  /// own database and hands it here touches no file at all:
   ///
   /// ```dart
-  /// final db = await databaseFactoryFfi.openDatabase(
-  ///   inMemoryDatabasePath,
-  ///   options: OpenDatabaseOptions(
-  ///     version: DatabaseService.dbVersion,
-  ///     onCreate: (db, _) => DatabaseMigration.onCreate(db),
-  ///   ),
-  /// );
-  /// final state = TaskListState(database: DatabaseService.forDatabase(db));
+  /// final db = await openTestDatabase();  // test/support/in_memory_database.dart
+  /// final state = TaskListState(database: db);
   /// ```
   ///
   /// [database] is returned as-is and never opened, migrated or closed by this
@@ -117,7 +111,7 @@ class DatabaseService {
   DatabaseService.forDatabase(Database database) : _database = database;
 
   // Each repository is built over *this* service, not over the default one.
-  // A facade that reached for `_models` per call would send every
+  // A facade that built a `ModelRepository()` per call would send every
   // delegated query to the app's real file however this service was built,
   // which is exactly the seam [DatabaseService.forDatabase] exists to open.
   // Lazy, so constructing a service opens nothing.

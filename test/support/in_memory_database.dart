@@ -8,7 +8,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 ///
 /// The alternative — the default [DatabaseService] — is a singleton over one
 /// real file that every concurrently running test file names, which is the
-/// whole reason [usePrivateDataDir] exists. A test that injects this instead
+/// whole reason `usePrivateDataDir` exists. A test that injects this instead
 /// touches no file at all, so it cannot contend for that write lock, cannot
 /// see a row a neighbouring file wrote, and needs no temp directory:
 ///

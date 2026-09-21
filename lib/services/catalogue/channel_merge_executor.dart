@@ -86,7 +86,7 @@ class DatabaseMergeStore implements MergeStore {
 
   /// Takes a provider rather than a service: [AssistantSessionRepository] is
   /// one of the two repositories built around a raw [Database].
-  AssistantSessionRepository get _sessions =>
+  late final AssistantSessionRepository _sessions =
       AssistantSessionRepository(dbProvider: () => _db.database);
 
   @override

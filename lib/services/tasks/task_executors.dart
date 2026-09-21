@@ -54,8 +54,7 @@ extension TaskExecutors on TaskQueueService {
     if (!task.useStream) return false;
     if (task.modelDbId == null) return true; // Fallback for legacy
 
-    final db = _db;
-    final models = await db.getModels();
+    final models = await _db.getModels();
     final model = models.cast<LLMModel?>().firstWhere(
       (m) => m?.id == task.modelDbId,
       orElse: () => null,
@@ -1018,14 +1017,13 @@ extension TaskExecutors on TaskQueueService {
 
   /// Checks if primary output is writable, returns it or falls back to Result Cache.
   Future<String> _getEffectiveOutputDir(TaskItem task) async {
-    final db = _db;
-    final String? primary = await db.getSetting('output_directory');
+    final String? primary = await _db.getSetting('output_directory');
 
     // Result Cache is always initialized in GalleryState for iOS/macOS
     String? fallback;
     try {
       if (Platform.isIOS || Platform.isMacOS) {
-        final appCache = (await db.getSetting('result_cache_directory')) ?? '';
+        final appCache = (await _db.getSetting('result_cache_directory')) ?? '';
         if (appCache.isNotEmpty) fallback = appCache;
       }
     } catch (_) {}

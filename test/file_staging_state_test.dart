@@ -45,7 +45,9 @@ void main() {
     if (await root.exists()) await root.delete(recursive: true);
   });
 
-  /// A restart: a second state over the database the first one wrote to.
+  /// A state over this test's database. Calling it twice is what the
+  /// persistence tests mean by a restart: the second one restores what the
+  /// first wrote.
   Future<FileStagingState> freshState() async {
     final state = FileStagingState(database: db);
     await state.ready;
