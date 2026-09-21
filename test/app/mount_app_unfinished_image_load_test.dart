@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 
-import 'screenshots/harness/fixture_env.dart';
-import 'screenshots/harness/fixture_seed.dart';
-import 'screenshots/harness/shoot.dart';
+import '../screenshots/harness/fixture_env.dart';
+import '../screenshots/harness/fixture_seed.dart';
+import '../screenshots/harness/shoot.dart';
 
 /// An image load one test leaves unfinished must not hang the next one.
 ///
