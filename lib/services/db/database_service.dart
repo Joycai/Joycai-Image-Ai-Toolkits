@@ -363,19 +363,11 @@ class DatabaseService {
   Future<void> updateSystemPromptOrder(List<int> ids) => PromptRepository().updateSystemPromptOrder(ids);
 
   // Standalone Prompt Data
-  Future<Map<String, dynamic>> getPromptDataRaw() async {
-    return {
-      'tags': (await getPromptTags()).map((t) => t.toMap()).toList(),
-      'user_prompts': (await getPrompts()).map((p) => {
-        ...p.toMap(),
-        'tags': p.tags.map((t) => t.toMap()).toList()
-      }).toList(),
-      // `toExportMap`, not `toMap` + tags by hand: a full backup is also
-      // importable through the Prompt Library, which has no `schema_version`
-      // gate, so it owes the same compatibility as the prompt-library export.
-      'system_prompts': (await getSystemPrompts()).map((p) => p.toExportMap()).toList(),
-    };
-  }
+  Future<Map<String, dynamic>> getPromptDataRaw() async => promptLibraryExport(
+        tags: await getPromptTags(),
+        userPrompts: await getPrompts(),
+        systemPrompts: await getSystemPrompts(),
+      );
 
   // Backup & Restore (Now with optional prompt inclusion)
   Future<Map<String, dynamic>> getAllDataRaw({

@@ -138,17 +138,41 @@ class SystemPrompt {
   /// [toMap] is left alone: it is also the database write path, where an update
   /// has to be able to set the kind back to the default.
   ///
-  /// **Every writer of an export file goes through here** — the prompt-library
-  /// file (`exportPrompts`) and the full backup (`getPromptDataRaw`) alike. The
-  /// backup's own `schema_version` gate only guards Settings → restore; the
-  /// Prompt Library's import accepts a full backup too, and has no gate. The
-  /// tags come along for the same reason: both writers used to spread [toMap]
-  /// and append them by hand, which is two places to keep a rule, and the rule
-  /// was in fact only kept in one.
+  /// Reached through [promptLibraryExport], which is the one shape both export
+  /// writers hand out; the tags come along for the same reason the key is
+  /// conditional — a rule kept in two places is a rule kept in one.
   Map<String, dynamic> toExportMap() {
     final data = toMap();
     if (outputKind == PresetOutputKind.prompt) data.remove('output_kind');
     data['tags'] = tags.map((t) => t.toMap()).toList();
     return data;
   }
+}
+
+/// The `tags` / `user_prompts` / `system_prompts` trio every export file
+/// carries, in the one shape both writers hand out.
+///
+/// There are two of them — the prompt-library file (`exportPrompts`) and the
+/// full backup (`getPromptDataRaw`) — and they are not interchangeable to the
+/// reader: the backup's `schema_version` gate guards only Settings → restore,
+/// while the Prompt Library's import accepts either file and gates neither. So
+/// both owe the same compatibility, and the way to keep that true is to give
+/// them nothing of their own to get wrong. They used to build these rows
+/// separately, and when [SystemPrompt.toExportMap] was introduced only one of
+/// them was taught about it.
+Map<String, dynamic> promptLibraryExport({
+  required List<PromptTag> tags,
+  required List<Prompt> userPrompts,
+  required List<SystemPrompt> systemPrompts,
+}) {
+  return {
+    'tags': tags.map((t) => t.toMap()).toList(),
+    'user_prompts': userPrompts
+        .map((p) => {
+              ...p.toMap(),
+              'tags': p.tags.map((t) => t.toMap()).toList(),
+            })
+        .toList(),
+    'system_prompts': systemPrompts.map((p) => p.toExportMap()).toList(),
+  };
 }

@@ -5,6 +5,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/channel_routes.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_routes.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
+import 'package:joycai_image_ai_toolkits/models/tag.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/platforms.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -392,11 +393,14 @@ void main() {
   /// readable by the build the user is importing into, which has already
   /// shipped and cannot be taught anything.
   group('prompt library export', () {
+    final portrait = PromptTag(id: 41, name: 'Portrait', color: 100);
+
     SystemPrompt preset(PresetOutputKind kind) => SystemPrompt(
           title: 'Preset',
           content: 'sys',
           type: SystemPrompt.typeRefiner,
           outputKind: kind,
+          tags: [portrait],
         );
 
     test('a prompt-kind preset leaves output_kind out', () {
@@ -404,8 +408,14 @@ void main() {
       expect(row.containsKey('output_kind'), isFalse,
           reason: 'a build older than v47 inserts this row column by column');
       expect(row['title'], 'Preset');
-      expect(row['tags'], isEmpty,
-          reason: 'the tags are part of the exported row, not appended by each writer');
+    });
+
+    test('the preset carries its tags', () {
+      // With an empty tag list this would pass whether the tags are serialized
+      // or thrown away, so the preset here has one and it has to come through.
+      final row = preset(PresetOutputKind.prompt).toExportMap();
+      expect((row['tags'] as List).single['name'], 'Portrait');
+      expect((row['tags'] as List).single['id'], 41);
     });
 
     test('an analysis preset still carries it', () {
@@ -432,6 +442,30 @@ void main() {
       expect(row['output_kind'], 'prompt',
           reason: "the column's default stands in for the key the file left out");
       await db.close();
+    });
+
+    test('both export writers hand out the same rows', () {
+      // `getPromptDataRaw` (the full backup) and `exportPrompts` (the
+      // prompt-library file) are this function plus, in one case, two extra
+      // keys. Testing it is testing both — which is the point of it existing:
+      // when `toExportMap` arrived, only one of the two writers was taught
+      // about it, and the bug this branch fixes survived in the other.
+      final data = promptLibraryExport(
+        tags: [portrait],
+        userPrompts: [Prompt(id: 7, title: 'Mine', content: 'hello', tags: [portrait])],
+        systemPrompts: [preset(PresetOutputKind.prompt), preset(PresetOutputKind.analysis)],
+      );
+
+      expect((data['tags'] as List).single['name'], 'Portrait');
+
+      final user = (data['user_prompts'] as List).single;
+      expect(user['content'], 'hello');
+      expect((user['tags'] as List).single['name'], 'Portrait');
+
+      final presets = (data['system_prompts'] as List).cast<Map<String, dynamic>>();
+      expect(presets.first.containsKey('output_kind'), isFalse);
+      expect(presets.last['output_kind'], 'analysis');
+      expect((presets.first['tags'] as List).single['name'], 'Portrait');
     });
 
     test('a full backup restores a row that left output_kind out', () async {

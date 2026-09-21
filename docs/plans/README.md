@@ -105,9 +105,12 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 - **导出**：`SystemPrompt.toExportMap()`，`output_kind` 为默认值时不写这个键。`PresetOutputKind.parse`
   本来就把缺失读成 `prompt`，所以是零信息损失；于是一个没有分析类预设的库，4.20.0 之前的构建照样导得进。
   有分析类预设的仍然写——去掉它会导进去但悄悄换掉预设的行为，比读不进更糟。`toMap` 不动：它同时是入库的
-  写路径，改类型时要写得回去。**标签也收进了这个方法**：两个写出方（`exportPrompts` 与 `getPromptDataRaw`）
-  原本各自 `...toMap()` 再手工补 `tags`，同一条规矩摊在两处，而第一版修的时候确实只修到了一处——
-  整库备份那一头漏了，而整库备份文件同样能从提示词库的「导入」进来（那条路没有 schema 闸）。
+  写路径，改类型时要写得回去。
+- **两个写出方合并成一个** `promptLibraryExport`（`models/prompt.dart`）。提示词库文件（`exportPrompts`）
+  与整库备份（`getPromptDataRaw`）原本各自拼这三张表的行，`toExportMap` 加进来时**只教会了其中一个**——
+  备份那一头漏了，而备份文件同样能从提示词库的「导入」进来（那条路不看 `export_type`，也没有 schema 闸，
+  `_validateBackup` 只守 设置 → 恢复）。现在两边都只是这个函数，后者再加两个键，没有各自的份可漏。
+  这一条是 review 第二轮找出来的：第一版只修到一半。
 - **导入**：`importPromptDataInto` 把每一行先滤成这个库真有的列再 `insert`（`_knownColumnsOnly`）。
   治的是以后：prompts-only 文件没有 `schema_version`（整库备份有，`_validateBackup` 直接拒），新版加一列，
   旧版的 `insert` 就在那一个键上失败，而失败发生在事务里——标签和用户提示词跟着一起回滚。现在只丢那一个键。
