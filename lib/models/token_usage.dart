@@ -56,7 +56,8 @@ class UsageSpecSnapshot {
       return UsageSpecSnapshot(
         size: size is String ? size : null,
         quality: quality is String ? quality : null,
-        seconds: seconds is num ? seconds.toInt() : null,
+        // toInt() throws on infinity, and one bad cell must not fail the page.
+        seconds: seconds is num && seconds.isFinite ? seconds.toInt() : null,
         matched: decoded['matched'] != false,
       );
     } on FormatException {
@@ -109,14 +110,16 @@ class UsageSpecBilling {
         'output_spec': snapshot?.encode(),
       };
 
-  /// Null when [map] carries none of the four columns — every row of the
-  /// other two billing modes.
+  /// Null when [map] says nothing in any of the four columns — every row of
+  /// the other two billing modes. "Nothing" is NULL *or zero* for the two
+  /// numbers: a row that predates v42 was given `DEFAULT 0.0` by the ALTER,
+  /// while one written since carries NULL, and both mean the same.
   static UsageSpecBilling? fromMap(Map<String, dynamic> map) {
     final units = map['output_units'] as num?;
     final unitPrice = map['output_unit_price'] as num?;
     final rawUnit = map['output_unit'] as String?;
     final snapshot = UsageSpecSnapshot.tryDecode(map['output_spec']);
-    if (units == null && unitPrice == null && rawUnit == null && snapshot == null) {
+    if ((units ?? 0) == 0 && (unitPrice ?? 0) == 0 && rawUnit == null && snapshot == null) {
       return null;
     }
     return UsageSpecBilling(
@@ -177,7 +180,9 @@ class TokenUsage {
   /// The fee group's `billing_mode` as stored. Read [billing].
   final String billingMode;
 
-  /// Set on a spec-billed row, null on the other two modes.
+  /// What a spec-billed request counted and at what price; null on the other
+  /// two modes. Whether the row *is* spec-billed is [billing]'s to say — a
+  /// spec row whose columns were lost reads null here too, and prices zero.
   final UsageSpecBilling? spec;
 
   const TokenUsage({

@@ -34,9 +34,18 @@ lib/services/db/database_service.dart:299  addPrompt(Map) => _prompts.addPrompt(
 lib/services/db/database_service.dart:300  updatePrompt(...)
 lib/services/db/database_service.dart:313  addModel(Map) => _models.addModel(LLMModel.fromMap(model))
 lib/services/db/database_service.dart:314  updateModel(...)
+lib/services/db/database_service.dart:373  addPricingGroup(Map) => _models.addPricingGroup(PricingGroup.fromMap(group))
+lib/services/db/database_service.dart:374  updatePricingGroup(...)
+lib/services/db/database_service.dart:380  addChannel(Map) => _models.addChannel(LLMChannel.fromMap(channel))
+lib/services/db/database_service.dart:381  updateChannel(...)
 lib/services/db/database_service.dart:388  addPromptTag(Map) => _prompts.addPromptTag(PromptTag.fromMap(tag))
 lib/services/db/database_service.dart:389  updatePromptTag(...)
+lib/services/db/database_service.dart:395  addSystemPrompt(Map) => _prompts.addSystemPrompt(SystemPrompt.fromMap(prompt), ...)
+lib/services/db/database_service.dart:396  updateSystemPrompt(...)
 ```
+
+共十二个方法（六对）。找齐的办法是 `grep -n "fromMap" lib/services/db/database_service.dart`，
+别照这张表数——它按行号写，行号会漂。
 
 调用方手里本来就是 `Prompt` / `LLMModel`，先 `toMap()` 摊平，门面再 `fromMap` 拼回来。
 

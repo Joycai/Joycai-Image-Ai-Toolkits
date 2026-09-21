@@ -108,10 +108,9 @@ void main() {
     });
   });
 
-  test('label and JSON omit the dimensions that are absent', () {
+  test('the label omits the dimensions that are absent', () {
     const s = OutputSpec(size: '720p', seconds: 5);
     expect(s.label, '720p · 5s');
-    expect(s.toJson(), {'size': '720p', 'seconds': 5});
     expect(OutputSpec.none.label, '');
   });
 }

@@ -6,8 +6,8 @@ import 'package:joycai_image_ai_toolkits/models/usage_checkpoint.dart';
 /// Pins down how one usage row turns into money. Input, cache hits and output
 /// are billed at three separate rates, and a fee group that leaves the cache
 /// rate unset must fall back to the input rate rather than billing the cache
-/// free. Also pins the row's trip through `token_usage` — the only place the
-/// column names are spelled.
+/// free. Also pins the row's trip to a `token_usage` row and back, legacy
+/// shapes included.
 void main() {
   final at = DateTime(2026, 9, 1, 12);
 
@@ -172,6 +172,31 @@ void main() {
         expect(row.unmatched, isFalse, reason: '$raw');
         expect(row.cost, closeTo(0.06, 1e-9), reason: '$raw');
       }
+    });
+
+    test('a snapshot is read the way older writers left it', () {
+      // `seconds` as a double, and no `matched` key at all.
+      final snapshot = UsageSpecSnapshot.tryDecode('{"size":"1080p","seconds":8.0}')!;
+
+      expect(snapshot.seconds, 8);
+      expect(snapshot.matched, isTrue);
+      expect(snapshot.label, '1080p · 8s');
+      expect(UsageSpecSnapshot.tryDecode('{"seconds":1e999}')!.seconds, isNull);
+    });
+
+    test('a row that predates spec billing has no spec, whatever the ALTER left', () {
+      // v42 added the two numbers with DEFAULT 0.0, so a migrated token row
+      // reads 0.0 where a row written since reads NULL.
+      final migrated = TokenUsage.fromMap({
+        'model_id': 'm',
+        'billing_mode': 'token',
+        'output_units': 0.0,
+        'output_unit_price': 0.0,
+        'output_unit': null,
+        'output_spec': null,
+      });
+
+      expect(migrated.spec, isNull);
     });
 
     test('an output_unit that names no unit is dropped, the money is kept', () {
