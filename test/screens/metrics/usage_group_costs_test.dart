@@ -155,6 +155,29 @@ void main() {
     expect(find.text('126 s · 18 req'), findsOneWidget);
   });
 
+  testWidgets('the input fee is a line of the bar\'s tooltip, and only when there is one', (tester) async {
+    const seedream = GroupUsage(
+      specCost: 3.0,
+      specInputCost: 0.34,
+      specUnits: {OutputUnit.image: 10},
+      requestCount: 10,
+    );
+    await pumpCosts(tester, stats({1: 3.34}, usage: {1: seedream}), const Size(1920, 1080));
+
+    final messages = tester.widgetList<Tooltip>(find.byType(Tooltip)).map((t) => t.message ?? '');
+    expect(messages.where((m) => m.contains('Input images: \$0.3400')), hasLength(1));
+    // The quantity line does not grow: the images sent are a detail of a row.
+    expect(find.text('10 images · 10 req'), findsOneWidget);
+
+    await pumpCosts(
+      tester,
+      stats({1: 3.0}, usage: {1: const GroupUsage(specCost: 3.0, specUnits: {OutputUnit.image: 10}, requestCount: 10)}),
+      const Size(1920, 1080),
+    );
+    final quiet = tester.widgetList<Tooltip>(find.byType(Tooltip)).map((t) => t.message ?? '');
+    expect(quiet.where((m) => m.contains('Input images')), isEmpty);
+  });
+
   testWidgets('unpriced requests are counted under the group, with a way to fix them', (tester) async {
     PricingGroup? asked;
     await pumpCosts(

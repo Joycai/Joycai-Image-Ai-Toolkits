@@ -65,6 +65,24 @@ void main() {
         ),
       );
 
+  /// A Seedream pro edit (`D2c`): one 2K picture at $0.30, [sent] reference
+  /// images of which [billed] were charged at $0.02.
+  TokenUsage seedreamRow({required DateTime timestamp, int sent = 3, double billed = 2, double inputPrice = 0.02}) =>
+      TokenUsage(
+        modelId: 'doubao-seedream-5-0-pro',
+        timestamp: timestamp,
+        billingMode: 'spec',
+        spec: UsageSpecBilling(
+          unit: OutputUnit.image,
+          units: 1,
+          unitPrice: 0.3,
+          snapshot: const UsageSpecSnapshot(size: '2K'),
+          inputImages: sent,
+          inputUnits: billed,
+          inputUnitPrice: inputPrice,
+        ),
+      );
+
   /// Today's date at [hour], so "Today" is a fact about the test run rather
   /// than a date baked into it.
   DateTime todayAt(int hour, {int minute = 0}) {
@@ -243,6 +261,63 @@ void main() {
     // The spec is exactly what the user needs to copy into the rate table.
     expect(find.text('1440p · 8s'), findsOneWidget);
     expect(find.text('\$0.0000'), findsWidgets);
+  });
+
+  group('a row whose group charges for reference images (D2c)', () {
+    testWidgets('says how many it sent beside its spec, and costs output plus input', (tester) async {
+      await pumpList(tester, [seedreamRow(timestamp: todayAt(14))], const Size(1920, 1080));
+
+      expect(find.text('2K · 3 in'), findsOneWidget);
+      expect(find.text('\$0.3400'), findsWidgets);
+    });
+
+    testWidgets('expanded, the amount splits in two and the input side is written out', (tester) async {
+      await pumpList(tester, [seedreamRow(timestamp: todayAt(14))], const Size(1920, 1080));
+      await tester.tap(find.text('2K · 3 in'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Output cost'), findsOneWidget);
+      expect(find.text('\$0.3000'), findsWidgets);
+      expect(find.text('3 images · 1 free'), findsOneWidget);
+      expect(find.text('2 × \$0.0200 = \$0.0400'), findsOneWidget);
+    });
+
+    testWidgets('a request whose only image was the free one says so, at zero', (tester) async {
+      await pumpList(tester, [seedreamRow(timestamp: todayAt(14), sent: 1, billed: 0)], const Size(1920, 1080));
+      expect(find.text('2K · 1 in'), findsOneWidget);
+
+      await tester.tap(find.text('2K · 1 in'));
+      await tester.pumpAndSettle();
+      expect(find.text('1 images · 1 free'), findsOneWidget);
+      expect(find.text('0 × \$0.0200 = \$0.0000'), findsOneWidget);
+    });
+
+    testWidgets('a group that never charged inputs shows none of it, though the count is kept', (tester) async {
+      await pumpList(tester, [seedreamRow(timestamp: todayAt(14), billed: 0, inputPrice: 0)], const Size(1920, 1080));
+
+      expect(find.text('2K'), findsOneWidget);
+      expect(find.textContaining(' in'), findsNothing);
+      await tester.tap(find.text('2K'));
+      await tester.pumpAndSettle();
+      expect(find.text('Output cost'), findsNothing);
+      expect(find.text('Input cost'), findsNothing);
+    });
+
+    for (final entry in {
+      'Mobile': const Size(390, 844),
+      'Tablet': const Size(820, 1180),
+    }.entries) {
+      testWidgets('the count rides the second line without overflow on ${entry.key}', (tester) async {
+        await pumpList(tester, [seedreamRow(timestamp: todayAt(14))], entry.value);
+        expect(tester.takeException(), isNull, reason: 'Overflow on ${entry.key}');
+        expect(find.text('2K · 3 in'), findsOneWidget);
+
+        await tester.tap(find.text('2K · 3 in'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: 'Expanded overflow on ${entry.key}');
+        expect(find.text('2 × \$0.0200 = \$0.0400'), findsOneWidget);
+      });
+    }
   });
 
   for (final entry in {

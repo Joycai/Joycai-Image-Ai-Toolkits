@@ -2591,6 +2591,30 @@ abstract class AppLocalizations {
   /// **'Spec'**
   String get usageSpecColumn;
 
+  /// No description provided for @usageSpecInputImages.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} in'**
+  String usageSpecInputImages(int n);
+
+  /// No description provided for @usageInputFreeCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} free'**
+  String usageInputFreeCount(int n);
+
+  /// No description provided for @usageOutputAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Output cost'**
+  String get usageOutputAmount;
+
+  /// No description provided for @usageInputAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Input cost'**
+  String get usageInputAmount;
+
   /// No description provided for @usageUnmatched.
   ///
   /// In en, this message translates to:
@@ -4756,6 +4780,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Any size · quality · duration not listed'**
   String get specOtherRatesSub;
+
+  /// No description provided for @specInputTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Input images'**
+  String get specInputTitle;
+
+  /// No description provided for @specInputSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference images sent with each request'**
+  String get specInputSub;
+
+  /// No description provided for @specInputFreeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get specInputFreeHint;
+
+  /// No description provided for @specInputFreeSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'free'**
+  String get specInputFreeSuffix;
+
+  /// No description provided for @specInputFreeOnlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only a free count is set. Without a price, input images are not charged and this has no effect.'**
+  String get specInputFreeOnlyHint;
+
+  /// No description provided for @specInputPriceInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The input image price is not a valid non-negative number. Fix it before saving.'**
+  String get specInputPriceInvalid;
+
+  /// No description provided for @feeGroupInputSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'input {price}/image'**
+  String feeGroupInputSummary(String price);
+
+  /// No description provided for @feeGroupInputFree.
+  ///
+  /// In en, this message translates to:
+  /// **'first {n} free'**
+  String feeGroupInputFree(int n);
 
   /// No description provided for @specAddRate.
   ///

@@ -34,6 +34,47 @@ void main() {
     expect(feeGroupOtherSpecsAtZero(g), isTrue);
   });
 
+  group('a group that charges for reference images (D2c)', () {
+    PricingGroup seedream({int free = 1, double price = 0.02, OutputUnit unit = OutputUnit.image}) => PricingGroup(
+          name: 'Seedream pro',
+          billingMode: 'spec',
+          outputUnit: unit,
+          outputRates: const [SpecRate(price: 0.30)],
+          inputUnitPrice: price,
+          inputFreeUnits: free,
+        );
+
+    test('says so at the summary\'s tail, the free ones after the price', () {
+      expect(feeGroupSummary(l10n, seedream()),
+          'Per image · 1 rates · \$0.30–0.30 · input \$0.02/image · first 1 free');
+      expect(feeGroupSummary(l10n, seedream(free: 0)), endsWith(' · input \$0.02/image'));
+    });
+
+    test('the row leaves it out of the summary and tags it instead', () {
+      expect(feeGroupSummary(l10n, seedream(), withInput: false), 'Per image · 1 rates · \$0.30–0.30');
+      expect(feeGroupInputRate(l10n, seedream()), '\$0.02/image · first 1 free');
+    });
+
+    test('the tooltip table gains one last line, four places like the rest', () {
+      expect(feeGroupRateTable(l10n, seedream()).split('\n').last,
+          'Input images  \$0.0200/image · first 1 free');
+    });
+
+    test('no price, another unit or another mode: the input fee appears nowhere', () {
+      final quiet = [
+        seedream(price: 0),
+        seedream(unit: OutputUnit.second),
+        PricingGroup(name: 'T', billingMode: 'token', inputUnitPrice: 0.02),
+      ];
+      for (final g in quiet) {
+        expect(feeGroupInputSummary(l10n, g), isNull, reason: g.name);
+        expect(feeGroupInputRate(l10n, g), isNull);
+        expect(feeGroupSummary(l10n, g), isNot(contains('input')));
+        expect(feeGroupRateTable(l10n, g), isNot(contains('Input images')));
+      }
+    });
+  });
+
   test('an empty table says zero rates rather than a range of nothing', () {
     final g = PricingGroup(name: 'New', billingMode: 'spec', outputUnit: OutputUnit.clip);
     expect(feeGroupSummary(l10n, g), 'Per clip · 0 rates');

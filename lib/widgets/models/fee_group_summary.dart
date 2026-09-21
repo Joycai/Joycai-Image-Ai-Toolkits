@@ -48,20 +48,26 @@ String trimPrice(double price) {
 /// $0.0400/次」, 「按秒 · 4 档 · $0.10–0.50」.
 ///
 /// For a spec-billed group [n] counts the rows with a price — the catch-all
-/// included when it has one — and the range spans every priced row.
-String feeGroupSummary(AppLocalizations l10n, PricingGroup group) {
+/// included when it has one — and the range spans every priced row. A group
+/// that charges for reference images says so at the tail (`D2c · 22e`),
+/// where a one-line field cuts first; [withInput] is off where the input
+/// fee has a tag of its own.
+String feeGroupSummary(AppLocalizations l10n, PricingGroup group, {bool withInput = true}) {
   switch (group.billingMode) {
     case 'spec':
       final unit = specUnitLabel(l10n, group.outputUnit);
       final rates = group.outputRates;
-      if (rates.isEmpty) return l10n.specSummaryEmpty(unit);
+      final input = withInput ? feeGroupInputSummary(l10n, group) : null;
+      final tail = input == null ? '' : ' · $input';
+      if (rates.isEmpty) return '${l10n.specSummaryEmpty(unit)}$tail';
       final prices = rates.map((r) => r.price).toList()..sort();
-      return l10n.specSummary(
+      final output = l10n.specSummary(
         unit,
         rates.length,
         '\$${trimPrice(prices.first)}',
         trimPrice(prices.last),
       );
+      return '$output$tail';
     case 'request':
       return '${l10n.perRequest} · \$${group.requestPrice.toStringAsFixed(4)}${l10n.specUnitSuffixRequest}';
     default:
@@ -69,6 +75,26 @@ String feeGroupSummary(AppLocalizations l10n, PricingGroup group) {
           '${trimPrice(group.effectiveCacheInputPrice)} / ${trimPrice(group.outputPrice)}';
   }
 }
+
+/// What a group charges for reference images — 「输入 $0.02/张 · 首 1 张免费」
+/// — or null when it charges nothing for them, which is most groups: the
+/// input fee then appears nowhere (`D2c`).
+String? feeGroupInputSummary(AppLocalizations l10n, PricingGroup group) {
+  if (!group.chargesInputImages) return null;
+  return _withFree(l10n, group, l10n.feeGroupInputSummary('\$${trimPrice(group.inputUnitPrice)}'));
+}
+
+/// The same without the word 「输入」, for where a label already says it:
+/// the row's tag (`$0.02/张 · 首 1 张免费`) and, with [fixed] places like
+/// every other line of it, the rate-table tooltip.
+String? feeGroupInputRate(AppLocalizations l10n, PricingGroup group, {bool fixed = false}) {
+  if (!group.chargesInputImages) return null;
+  final figure = fixed ? group.inputUnitPrice.toStringAsFixed(4) : trimPrice(group.inputUnitPrice);
+  return _withFree(l10n, group, '\$$figure${l10n.specUnitSuffixImage}');
+}
+
+String _withFree(AppLocalizations l10n, PricingGroup group, String rate) =>
+    group.inputFreeUnits > 0 ? '$rate · ${l10n.feeGroupInputFree(group.inputFreeUnits)}' : rate;
 
 /// True when a spec-billed group has no catch-all row, so unlisted specs bill
 /// at zero — the summary then carries 「其他规格按 0 计」 after it.
@@ -86,5 +112,7 @@ String feeGroupRateTable(AppLocalizations l10n, PricingGroup group) {
       '${l10n.specOtherRates}  \$${other.price.toStringAsFixed(4)}$suffix'
     else
       '${l10n.specOtherRates}  ${l10n.specOtherZero}',
+    if (feeGroupInputRate(l10n, group, fixed: true) case final input?)
+      '${l10n.specInputTitle}  $input',
   ].join('\n');
 }

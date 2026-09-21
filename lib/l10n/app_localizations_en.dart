@@ -1518,6 +1518,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usageSpecColumn => 'Spec';
 
   @override
+  String usageSpecInputImages(int n) {
+    return '$n in';
+  }
+
+  @override
+  String usageInputFreeCount(int n) {
+    return '$n free';
+  }
+
+  @override
+  String get usageOutputAmount => 'Output cost';
+
+  @override
+  String get usageInputAmount => 'Input cost';
+
+  @override
   String usageUnmatched(int n) {
     return '$n requests matched no rate and were billed at 0';
   }
@@ -2770,6 +2786,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get specOtherRatesSub => 'Any size · quality · duration not listed';
+
+  @override
+  String get specInputTitle => 'Input images';
+
+  @override
+  String get specInputSub => 'Reference images sent with each request';
+
+  @override
+  String get specInputFreeHint => 'Free';
+
+  @override
+  String get specInputFreeSuffix => 'free';
+
+  @override
+  String get specInputFreeOnlyHint =>
+      'Only a free count is set. Without a price, input images are not charged and this has no effect.';
+
+  @override
+  String get specInputPriceInvalid =>
+      'The input image price is not a valid non-negative number. Fix it before saving.';
+
+  @override
+  String feeGroupInputSummary(String price) {
+    return 'input $price/image';
+  }
+
+  @override
+  String feeGroupInputFree(int n) {
+    return 'first $n free';
+  }
 
   @override
   String get specAddRate => 'Add rate';

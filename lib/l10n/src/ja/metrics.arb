@@ -64,6 +64,10 @@
     }
   },
   "usageSpecColumn": "仕様",
+  "usageSpecInputImages": "入力 {n} 枚",
+  "usageInputFreeCount": "{n} 枚無料",
+  "usageOutputAmount": "出力料金",
+  "usageInputAmount": "入力料金",
   "usageUnmatched": "{n} 件のリクエストがどの料金にも一致せず、0 として計算",
   "@usageUnmatched": {
     "placeholders": {

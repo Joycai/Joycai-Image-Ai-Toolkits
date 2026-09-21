@@ -970,6 +970,10 @@
     }
   },
   "usageSpecColumn": "規格",
+  "usageSpecInputImages": "輸入 {n} 張",
+  "usageInputFreeCount": "{n} 張免費",
+  "usageOutputAmount": "輸出金額",
+  "usageInputAmount": "輸入金額",
   "usageUnmatched": "{n} 次請求未符合任何檔位，以 0 計",
   "@usageUnmatched": {
     "placeholders": {
@@ -1428,6 +1432,14 @@
   "specGroupVideoRes": "影片解析度",
   "specOtherRates": "其他規格",
   "specOtherRatesSub": "未列出的尺寸 · 品質 · 時長",
+  "specInputTitle": "輸入圖",
+  "specInputSub": "每次請求送出的參考圖",
+  "specInputFreeHint": "免費張數",
+  "specInputFreeSuffix": "張免費",
+  "specInputFreeOnlyHint": "只填了免費張數——沒有單價就不收輸入費，這一項不起作用。",
+  "specInputPriceInvalid": "輸入圖單價不是有效的非負數字，儲存前請修正。",
+  "feeGroupInputSummary": "輸入 {price}/張",
+  "feeGroupInputFree": "首 {n} 張免費",
   "specAddRate": "新增檔位",
   "specCustomValue": "自訂…",
   "specCustomHint": "大小寫會統一（2k → 2K）",

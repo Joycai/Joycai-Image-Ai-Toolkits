@@ -88,10 +88,10 @@
 |---|---|---|---|---|
 | 0 | 实测 `usage.input_images` 口径 | — | 见 §1.2 | ✅ 原始张数 |
 | 1 | 本文件 | `docs/plans/` | — | ✅ |
-| 2 | 模型 + v48 迁移：`PricingGroup`、`UsageSpecBilling`（含 `toMap` 拆分）、`UsageSpecSnapshot.inputImages`、`UsageCostParts.specInput`、`updateSpecBilling` 只写输出列 | `models/pricing_group.dart`、`models/token_usage.dart`、`db/database_migrations.dart`、`db/repositories/usage_repository.dart` | 迁移测试（v47→v48、幂等、旧行金额不变）；`token_usage_test`；结算后输入列不变 | ☐ |
-| 3 | 计价：`LLMModelConfig` 两字段、resolver、`SpecUsage.price`、`specUsageFor` 读 `input_image_count` | `billing/spec_billing.dart`、`llm/llm_model_config.dart`、`llm/llm_config_resolver.dart`、`llm/llm_service.dart` | 免费张数扣减、零出图不计、聊天面读作 0 | ☐ |
-| 4 | 共用截断函数；六协议写实际发出张数；方舟优先 `usage.input_images` | `llm/protocols/*_images*_protocol.dart` | 每协议一条「附件读不到 → 张数减少」；方舟回报优先 | ☐ |
-| 5 | UI：编辑器、摘要、用量页；四语 | `widgets/models/*`、`screens/metrics/widgets/*`、`l10n/src/*` | widget 测试；截图三档宽度无溢出 | ☐ |
+| 2 | 模型 + v48 迁移：`PricingGroup`、`UsageSpecBilling`（含 `toMap` 拆分）、`UsageSpecSnapshot.inputImages`、`UsageCostParts.specInput`、`updateSpecBilling` 只写输出列 | `models/pricing_group.dart`、`models/token_usage.dart`、`db/database_migrations.dart`、`db/repositories/usage_repository.dart` | 迁移测试（v47→v48、幂等、旧行金额不变）；`token_usage_test`；结算后输入列不变 | ✅ |
+| 3 | 计价：`LLMModelConfig` 两字段、resolver、`SpecUsage.price`、`specUsageFor` 读 `input_image_count` | `billing/spec_billing.dart`、`llm/llm_model_config.dart`、`llm/llm_config_resolver.dart`、`llm/llm_service.dart` | 免费张数扣减、零出图不计、聊天面读作 0 | ✅ |
+| 4 | 共用截断函数；六协议写实际发出张数；方舟优先 `usage.input_images` | `llm/protocols/*_images*_protocol.dart` | 每协议一条「附件读不到 → 张数减少」；方舟回报优先 | ✅ |
+| 5 | UI：编辑器、摘要、用量页；四语 | `widgets/models/*`、`screens/metrics/widgets/*`、`l10n/src/*` | widget 测试；截图三档宽度无溢出 | ✅ |
 | 6 | 文档：`docs/api/` 定价与 `input_images` 实测、核实清单、台账行、本文件退役、设计稿回写出入 | `docs/` | — | ☐ |
 | 7 | 独立 review（opus）→ 修 → 再 review，直到无新问题；bump version；PR | — | 两道门全绿 | ☐ |
 
@@ -119,4 +119,20 @@
 
 ## 5. 施工记录
 
-（每片落地时在这里记与方案的出入。）
+- **第 2 片** 原始张数不进 `output_spec` JSON，单独成列 `token_usage.input_images`：视频结算会整列改写
+  `output_spec`，放在里面会被顺手抹掉。所以 v48 给 `token_usage` 加的是三列，不是两列。
+- **第 3 片** 全免的请求（只发 1 张且首张免费）仍把计费组的单价记在行上、计费张数记 0——用量页靠行上的
+  单价分清「免费」与「这个组不收输入费」。
+- **第 4 片** 共用函数只管截断（`capReferenceImages`）；张数走另一个 `sentInputImages(sent, reported:)`，
+  方舟的上游回报优先级写在这一个函数里。百炼异步协议没有走线测试（轮询间隔 3 秒），由共用的
+  `dashscopeImageMetadata` 单测覆盖。
+- **第 5 片 · 设计稿 `D2c` 的裁决**（设计子代理拿不到 DesignSync，稿子由主会话对照真实 `D2b` 校验后推送）：
+  - 输入图一行放在档位表与优先级说明**之后**，不是 §1.5 写的「之上」——它和「其他规格」是同一种钉住的标量行，
+    D2b 的块一个像素不动。
+  - **只有单位为「张」的组收输入费**（`PricingGroup.chargesInputImages`，resolver 与所有摘要共用这一个判据）。
+    单位为秒 / 条时整行收起、值保留不清、不计价——与 §1.4 的出入：没有视频协议回报输入张数，
+    一个永远不计费的字段只会误导。
+  - 只填免费张数不填单价：提示、数字降为 outline 色、不拦保存；单价非法：红边 + 错误提示、拦保存
+    （只在该行可见时校验）。
+  - 明细展开处，「输入图」「输入金额」两格各占一整行：算式「2 × $0.0200 = $0.0400」在平板的半栏里放不下
+    （测试抓到 32px 溢出）。稿子是六格三行。

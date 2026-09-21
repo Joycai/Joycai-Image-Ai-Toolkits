@@ -79,6 +79,35 @@ void main() {
       expect(stats.totalRequestCount, 3);
     });
 
+    test('what reference images cost is its own part, and the group\'s total has it', () {
+      final stats = calculateStats([
+        TokenUsage(
+          modelId: 'seedream',
+          modelDbId: 1,
+          timestamp: at,
+          billingMode: 'spec',
+          spec: const UsageSpecBilling(
+            unit: OutputUnit.image,
+            units: 1,
+            unitPrice: 0.30,
+            inputImages: 3,
+            inputUnits: 2,
+            inputUnitPrice: 0.02,
+          ),
+        ),
+      ], [
+        model(1, 42)
+      ]);
+
+      final usage = stats.groupUsage[42]!;
+      expect(usage.specCost, closeTo(0.30, 1e-9), reason: 'output alone');
+      expect(usage.specInputCost, closeTo(0.04, 1e-9));
+      // The bar's segments must add up to the amount beside it.
+      expect(usage.totalCost, closeTo(stats.groupCosts[42]!, 1e-9));
+      expect(stats.totalCost, closeTo(0.34, 1e-9));
+      expect((usage + usage).specInputCost, closeTo(0.08, 1e-9));
+    });
+
     test('requests no rate row covered are counted, not hidden in a zero', () {
       final stats = calculateStats([
         specRow(unit: OutputUnit.image, units: 1, price: 0.0, matched: false, modelPk: 1),

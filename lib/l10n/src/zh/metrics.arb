@@ -78,6 +78,10 @@
     }
   },
   "usageSpecColumn": "规格",
+  "usageSpecInputImages": "输入 {n} 张",
+  "usageInputFreeCount": "{n} 张免费",
+  "usageOutputAmount": "输出金额",
+  "usageInputAmount": "输入金额",
   "usageUnmatched": "{n} 次请求未匹配任何档位，按 0 计",
   "@usageUnmatched": {
     "placeholders": {

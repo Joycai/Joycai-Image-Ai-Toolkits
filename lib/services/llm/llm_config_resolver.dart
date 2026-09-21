@@ -120,8 +120,10 @@ class LLMConfigResolver {
         requestFee = group.requestPrice;
         outputUnit = group.outputUnit;
         outputRates = group.outputRates;
-        inputUnitFee = group.inputUnitPrice;
-        inputFreeUnits = group.inputFreeUnits;
+        if (group.chargesInputImages) {
+          inputUnitFee = group.inputUnitPrice;
+          inputFreeUnits = group.inputFreeUnits;
+        }
       }
     }
 

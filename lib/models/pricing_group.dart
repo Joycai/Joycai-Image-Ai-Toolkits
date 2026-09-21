@@ -49,9 +49,13 @@ class PricingGroup {
 
   bool get isSpecBilled => billingMode == 'spec';
 
-  /// Whether this group charges for reference images at all. A free count
-  /// with no price charges nothing, so it does not count.
-  bool get chargesInputImages => isSpecBilled && inputUnitPrice > 0;
+  /// Whether this group charges for reference images at all — the one test
+  /// every summary and the resolver share (`D2c`). A free count with no price
+  /// charges nothing; and only a per-image group charges: no video surface
+  /// reports the images it was sent, so a per-second or per-clip group keeps
+  /// the two values it was given and bills none of them.
+  bool get chargesInputImages =>
+      isSpecBilled && outputUnit == OutputUnit.image && inputUnitPrice > 0;
 
   factory PricingGroup.fromMap(Map<String, dynamic> map) {
     return PricingGroup(
