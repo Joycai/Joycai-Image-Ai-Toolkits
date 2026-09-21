@@ -6,8 +6,8 @@
 **结论**：分层本身比手册要求得更严，而且是 `test/source_layout_test.dart` 用十条规则钉死的；
 真正的偏离只有两个方向——**依赖注入**（用单例当服务定位器，A1）与**数据边界上的领域模型**
 （两个仓储在传裸 map，A2）。**两条都已做**，A3（门面绕 map 一圈）、A4（模型带展示逻辑）、A5（队列交出内部列表）、
-A6（`test/` 分层镜像 `lib/`）也已做，结论见
-[`README.md`](README.md) 那行指针。剩下两条是局部的。
+A6（`test/` 分层镜像 `lib/`）、A8（UI 直连 `DatabaseService` 存面板宽度）也已做，结论见
+[`README.md`](README.md) 那行指针。只剩 A7。
 
 **怎么用这份文件**：一条一条做，每条自带验收。做完一条就把它从本文件删掉，并在
 [`README.md`](README.md) 的「已执行」表里登记结论住在哪；条目清空后删掉本文件。
@@ -18,7 +18,6 @@ A6（`test/` 分层镜像 `lib/`）也已做，结论见
 | 编号 | 一句话 | 触及 | 状态 |
 |---|---|---|---|
 | A7 | workbench 一个目录占 lib 的 21%，提示词助手实质是独立功能 | `screens/workbench/` | 未开工 |
-| A8 | 16 个 UI 文件直连 `DatabaseService`，绝大多数只为存侧栏宽度 | `screens/`、`widgets/` | 未开工 |
 
 ---
 
@@ -44,35 +43,6 @@ A6（`test/` 分层镜像 `lib/`）也已做，结论见
 
 **注意**：**这条排在最后**。跟已经做完的 A6 一样是大 diff，而且比 A6 更容易和别人的分支撞车。
 前提是 A1–A6 先落地——现在都已落地。
-
----
-
-## A8 · UI 直连 `DatabaseService`
-
-**现状**：16 个文件在 `screens/` / `widgets/` 里直接调 `DatabaseService()`。分两类：
-
-- **偏好设置**（8 处）：侧栏宽度一类，`file_browser_screen.dart:151/528`、
-  `models_screen.dart:84/198`、`prompts_screen.dart:101`、`workbench_layout.dart:278/452`。
-- **真数据操作**：`data_section.dart`（备份/还原/重置）、`wizard_import.dart`、
-  `usage_list.dart:335`（`clearTokenUsage`）。
-
-**为什么要改**：第一类是在 `initState` / 手势回调里做持久化，属于业务逻辑落在了 widget 里；
-第二类量少且本来就是「设置页对着数据库干活」，可以接受。
-
-**改法**：只处理第一类。加一个薄封装（`services/system/ui_prefs.dart` 或直接挂在
-`WorkbenchUIState` 一类已有状态上），把 `getSetting('xxx_width')` / `saveSetting` 收进去，
-UI 侧只见 `UiPrefs.sidebarWidth(...)`。**别为此发明新层**，这是一个文件的事。
-
-**验收**：`flutter analyze` 干净；`grep -rl "database_service.dart" lib/screens lib/widgets`
-从 16 降到 8 上下；`workbench_panel_toggle_test.dart`、`file_browser_staging_column_test.dart`
-全绿。
-
-**A1 留下的服务层尾巴**（A1 已做完删除，这几处记在这里免得随它一起丢）：状态层与
-任务队列已经全部改成构造函数注入，助手与 LLM 侧还有六处写死的 `DatabaseService()`——
-`assistant/knowledge_base_service.dart:174/190/352/357`、`assistant/prompt_optimizer_agent.dart:937`、
-`llm/context_budget.dart:167`，外加 `tasks/ai_rename_agent.dart:380` 的 `ImageLayerRepository()`。
-它们都不对外声称能注入，所以不是「半通的口子」，只是还没接上；做本条时顺手一起收掉，
-形状照 `DatabaseService.forDatabase` 那一套（仓储收 `db:`、服务收 `database:`）。
 
 ---
 

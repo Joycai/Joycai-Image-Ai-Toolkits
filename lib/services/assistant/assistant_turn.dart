@@ -62,7 +62,8 @@ void _warnIfSystemPromptCrowds(
 Future<bool> _prepareTurn(
   PromptOptimizerSession session,
   List<Map<String, String>> referenceImages,
-  AssistantSessionRepository repo, {
+  AssistantSessionRepository repo,
+  DatabaseService db, {
   required dynamic modelIdentifier,
   required String systemPromptText,
   required String? contextId,
@@ -89,7 +90,7 @@ Future<bool> _prepareTurn(
   // Persist the pending user turn, then compact if the history has grown
   // past the context budget. Persistence failures never block the turn.
   try {
-    await PromptOptimizerAgent._syncPersistence(session, referenceImages, repo);
+    await PromptOptimizerAgent._syncPersistence(session, referenceImages, repo, db);
     await _maybeCompact(
       session,
       modelIdentifier,
@@ -121,6 +122,7 @@ Future<Map<String, dynamic>?> _dispatchToolCall(
   LLMToolCall call,
   List<LLMToolCall> batch,
   PromptOptimizerSession session, {
+  required DatabaseService db,
   required Set<String> offered,
   required dynamic modelIdentifier,
   required dynamic kbSubAgentModelIdentifier,
@@ -190,6 +192,7 @@ Future<Map<String, dynamic>?> _dispatchToolCall(
         session,
         kbSubAgentModelIdentifier ?? modelIdentifier,
         knowledgeRoot,
+        db: db,
         availableKinds: delegateKinds,
         referenceImages: referenceImages,
         contextWindow: kbSubAgentModelIdentifier != null
@@ -226,6 +229,7 @@ Future<Map<String, dynamic>?> _dispatchToolCall(
       result = await _executeReadNote(
         call,
         session,
+        db: db,
         systemPrompt: systemPromptText,
         contextWindow: contextWindow,
         onLog: onLog,

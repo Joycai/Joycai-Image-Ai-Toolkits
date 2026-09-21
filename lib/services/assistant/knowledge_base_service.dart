@@ -153,9 +153,21 @@ class KbEditConflictException extends KbPathException {
 /// demand (progressive disclosure) and large files are paged so a single tool
 /// result never floods the context window.
 class KnowledgeBaseService {
-  static final KnowledgeBaseService _instance = KnowledgeBaseService._internal();
-  factory KnowledgeBaseService() => _instance;
-  KnowledgeBaseService._internal();
+  static final KnowledgeBaseService _instance =
+      KnowledgeBaseService._internal(DatabaseService());
+
+  /// `KnowledgeBaseService()` stays the app-wide instance — the class holds no
+  /// state of its own and most of it is plain file access. Pass [database] to
+  /// get one over that database instead: the root and the write policy are
+  /// `settings` rows, and a caller that already holds a [DatabaseService]
+  /// (the task queue, a test) should not have them read from the singleton's
+  /// file behind its back.
+  factory KnowledgeBaseService({DatabaseService? database}) =>
+      database == null ? _instance : KnowledgeBaseService._internal(database);
+
+  KnowledgeBaseService._internal(this._db);
+
+  final DatabaseService _db;
 
   static const String settingKey = 'knowledge_base_path';
   static const String entryFileName = 'README.md';
@@ -171,9 +183,8 @@ class KnowledgeBaseService {
   static const String backupSuffix = '.bak';
 
   Future<KbWritePolicy> getWritePolicy() async {
-    final db = DatabaseService();
     Future<bool> read(String key, bool fallback) async {
-      final raw = await db.getSetting(key);
+      final raw = await _db.getSetting(key);
       if (raw == null || raw.isEmpty) return fallback;
       return raw == '1' || raw.toLowerCase() == 'true';
     }
@@ -187,10 +198,9 @@ class KnowledgeBaseService {
   }
 
   Future<void> setWritePolicy(KbWritePolicy policy) async {
-    final db = DatabaseService();
-    await db.saveSetting(_allowWritesKey, policy.allowWrites ? '1' : '0');
-    await db.saveSetting(_confirmWritesKey, policy.confirmEachWrite ? '1' : '0');
-    await db.saveSetting(_backupWritesKey, policy.backupBeforeOverwrite ? '1' : '0');
+    await _db.saveSetting(_allowWritesKey, policy.allowWrites ? '1' : '0');
+    await _db.saveSetting(_confirmWritesKey, policy.confirmEachWrite ? '1' : '0');
+    await _db.saveSetting(_backupWritesKey, policy.backupBeforeOverwrite ? '1' : '0');
   }
 
   /// Max characters returned per read_knowledge_file page.
@@ -349,12 +359,11 @@ class KnowledgeBaseService {
   }
 
   Future<String?> getRoot() async {
-    final path = await DatabaseService().getSetting(settingKey);
+    final path = await _db.getSetting(settingKey);
     return (path == null || path.trim().isEmpty) ? null : path.trim();
   }
 
-  Future<void> setRoot(String path) =>
-      DatabaseService().saveSetting(settingKey, path);
+  Future<void> setRoot(String path) => _db.saveSetting(settingKey, path);
 
   Future<KbStatus> validate([String? root]) async {
     root ??= await getRoot();

@@ -472,8 +472,10 @@ class WorkbenchUIState extends ChangeNotifier {
   /// live session. The caller enqueues the agent turn on
   /// [KbDistillStageResult.staged] and surfaces the other outcomes.
   Future<KbDistillStageResult> requestKbDistill() async {
-    final result =
-        await AssistantKbDistill.stageKbDistillRequest(session: optimizerSession);
+    final result = await AssistantKbDistill.stageKbDistillRequest(
+      session: optimizerSession,
+      repo: _assistantRepo,
+    );
     if (result == KbDistillStageResult.staged) notifyListeners();
     return result;
   }

@@ -30,6 +30,7 @@ import '../services/db/database_service.dart';
 import '../services/system/font_service.dart';
 import '../services/llm/llm_service.dart';
 import '../services/system/notification_service.dart';
+import '../services/system/ui_prefs.dart';
 import '../services/assistant/prompt_provenance.dart';
 import '../services/tasks/task_queue_service.dart';
 import 'downloader_state.dart';
@@ -72,6 +73,11 @@ class AppState extends ChangeNotifier {
   final TaskListState taskListState;
   final ModelListState modelListState;
 
+  /// Panel widths the screens persist. Built over the same [_db] as every
+  /// sub-state, so a screen asks this instead of reaching for the singleton
+  /// database from `initState` (see [UiPrefs]).
+  final UiPrefs uiPrefs;
+
   /// Execution log. Pointedly absent from the listener wiring below: log lines
   /// arrive one per streamed chunk, and forwarding them here would rebuild
   /// every screen in the app for each one. See [LogState].
@@ -99,7 +105,8 @@ class AppState extends ChangeNotifier {
       fileStagingState = FileStagingState(database: database),
       workbenchUIState = WorkbenchUIState(database: database),
       taskListState = TaskListState(database: database),
-      modelListState = ModelListState(database: database) {
+      modelListState = ModelListState(database: database),
+      uiPrefs = UiPrefs(database: database) {
     // Wire up logs
     galleryState.onLog = (msg, {level = 'INFO'}) {
       addLog(msg, level: level);
