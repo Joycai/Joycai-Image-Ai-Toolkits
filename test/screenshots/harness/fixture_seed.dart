@@ -725,8 +725,8 @@ void markOneTaskRunning(AppState appState) {
       '[14:29:35] 构建请求负载 (inline_data ×3)',
       '[14:29:36] 已接收 8 个文本块…',
     ];
-  // notifyListeners() only — it does not call _attemptNextExecution
-  // (task_queue_service.dart:185-187), so nothing actually executes.
+  // A new list and notifyListeners(), nothing more — `refreshQueue` does not
+  // call `_attemptNextExecution`, so nothing actually executes.
   appState.taskQueue.refreshQueue();
 }
 

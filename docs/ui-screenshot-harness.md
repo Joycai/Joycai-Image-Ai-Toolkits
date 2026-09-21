@@ -144,8 +144,9 @@ pending tasks.
 **A `processing` task cannot be seeded through the database.**
 `TaskQueueService`'s constructor calls `cleanupStuckTasks()`, which rewrites
 every `processing` row to `failed`. `markOneTaskRunning()` mutates one in memory
-after load instead, then calls `refreshQueue()` — which is `notifyListeners()`
-only and does not execute anything.
+after load instead, then calls `refreshQueue()` — which re-issues the list and
+notifies, and does not execute anything. To change *which* tasks are in the queue
+use `setQueueForTest`: the list `queue` hands out is unmodifiable.
 
 **Async work needs `runAsync`.** The `compute()` isolates behind the gallery and
 browser scans make no progress inside the fake-async zone. The first scan

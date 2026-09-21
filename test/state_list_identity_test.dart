@@ -9,10 +9,13 @@ import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:joycai_image_ai_toolkits/state/downloader_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'support/in_memory_database.dart';
 
 void main() {
+  sqfliteFfiInit();
+
   // The task queue is a service, not a state class, but it is a notifier the
   // shell `select`s on — and its tasks are mutable, so a change of status
   // leaves nothing in the list to compare. Every notification has to carry a

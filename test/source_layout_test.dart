@@ -179,7 +179,12 @@ void main() {
   });
 
   test('models import no Flutter', () {
-    final flutterImport = RegExp(r"^\s*import\s+'package:flutter/[^']+'", multiLine: true);
+    // `dart:ui` too: it is where `Color` and `IconData`'s cousins live, and
+    // would let the same thing back in under another name.
+    final flutterImport = RegExp(
+      r'''^\s*(?:import|export)\s+['"](?:package:flutter/|dart:ui)[^'"]*['"]''',
+      multiLine: true,
+    );
     final leaked = <String>[];
     for (final file in dartFiles.where((f) => moduleOf(f) == 'models')) {
       final source = File(file).readAsStringSync();
