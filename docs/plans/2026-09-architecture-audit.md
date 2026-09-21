@@ -5,8 +5,8 @@
 
 **结论**：分层本身比手册要求得更严，而且是 `test/source_layout_test.dart` 用八条规则钉死的；
 真正的偏离只有两个方向——**依赖注入**（用单例当服务定位器，A1）与**数据边界上的领域模型**
-（两个仓储在传裸 map，A2）。**两条都已做**，A3（门面绕 map 一圈）、A4（模型带展示逻辑）也已做，结论见
-[`README.md`](README.md) 那行指针。剩下四条是局部的。
+（两个仓储在传裸 map，A2）。**两条都已做**，A3（门面绕 map 一圈）、A4（模型带展示逻辑）、A5（队列交出内部列表）也已做，结论见
+[`README.md`](README.md) 那行指针。剩下三条是局部的。
 
 **怎么用这份文件**：一条一条做，每条自带验收。做完一条就把它从本文件删掉，并在
 [`README.md`](README.md) 的「已执行」表里登记结论住在哪；条目清空后删掉本文件。
@@ -16,41 +16,9 @@
 
 | 编号 | 一句话 | 触及 | 状态 |
 |---|---|---|---|
-| A5 | `TaskItem` 可变，队列把内部列表原样交出去并原地改 | `services/tasks/task_queue_service.dart` | 未开工 |
 | A6 | `test/` 269 个文件平铺在根下，而 `lib/` 的分组目录根下一个散文件都不许有 | `test/` | 未开工 |
 | A7 | workbench 一个目录占 lib 的 21%，提示词助手实质是独立功能 | `screens/workbench/` | 未开工 |
 | A8 | 16 个 UI 文件直连 `DatabaseService`，绝大多数只为存侧栏宽度 | `screens/`、`widgets/` | 未开工 |
-
----
-
-## A5 · `TaskItem` 可变 + 队列交出内部列表
-
-**现状**：`TaskItem` 是 15 个模型里唯一可变的（`task_item.dart:46-79`：`status`、`startTime`、
-`endTime`、`progress`、`operationSurface`、`operationName`）。
-`TaskQueueService` 把内部列表原样交出去（`task_queue_service.dart:90`
-`List<TaskItem> get queue => _queue;`），并原地改它（`:125` clear、`:129` addAll、`:242` add、
-`:352` removeAt），同时原地改元素（`:263`、`:322-325`、`:392-393`、`:417-439`、`:516`）。
-行号按 A2 之后的现状写，会再漂——找齐用
-`grep -nE "_queue\.(clear|addAll|add|removeAt)\(|task\.(status|progress|startTime|endTime) =" lib/services/tasks/task_queue_service.dart`。
-
-**今天没有 bug**，这点要说清楚：所有消费方取的都是标量（`queue.where(...).length`）或
-`task.id`，标量比较照样灵——`nav_lens_group.dart:71`、`phone_dock.dart:30`、
-`assistant_tab.dart:29/95` 都是这样，后两处特意只取 id 而不取对象。
-
-**为什么还是要改**：这是全仓唯一一处「交出去的列表身份不随内容变」的地方，而这正是
-`CLAUDE.md` 里那条硬规矩、`test/state_list_identity_test.dart` 与
-`workbench_rebuild_scope_test.dart` 在别处专门盯的失效模式。将来只要有人写一个返回
-这个列表（或它的切片、或含它的 record）的 `Selector`，就会静默地永不重建——静默是重点。
-
-**改法**（按投入从小到大，做第一档就够止血）：
-1. `queue` 改成返回 `List.unmodifiable(_queue)`，或在每次结构性改动后整体重建 `_queue`，
-   让列表身份随内容变。先量一下代价：队列长度是用户级的（几十条），重建不心疼。
-2. 如果要做彻底的：`TaskItem` 转不可变 + `copyWith`，队列改成整表替换。**这一档先别做**，
-   它会牵动 `task_executors.dart` 里所有就地写进度的路径，收益与风险不成比例。
-
-**验收**：`state_list_identity_test.dart` 增一条钉住「队列结构性变化后 `queue` 的身份变了」；
-`task_queue_row_test.dart`、`task_capsule_bounds_test.dart`、`task_list_ordering_test.dart`、
-`render_performance_test.dart` 全绿（最后一条用来确认第 1 档没有把队列页拖慢）。
 
 ---
 
@@ -153,4 +121,4 @@ UI 侧只见 `UiPrefs.sidebarWidth(...)`。**别为此发明新层**，这是一
 - 全仓 `TODO/FIXME/HACK` **0**、`print(` **0**、`// ignore:` **7** + `ignore_for_file` **4**、
   硬编码用户可见文案 **0**。
 - 13 个模型中 11 个完全不可变；状态层交出的列表是整体重新赋值（`_transcript`
-  `prompt_optimizer_session.dart:330` 一类），A5 是唯一的例外。
+  `prompt_optimizer_session.dart:330` 一类），任务队列曾是唯一的例外（A5，已收）。

@@ -144,14 +144,16 @@ void main() {
       final wui = await pumpPanel(
         tester,
         ['a.png', 'b.png', 'c.png'],
-        seed: (appState, wui) => appState.taskQueue.queue.add(TaskItem(
-          id: 'queued-turn',
-          type: TaskType.promptRefine,
-          imagePaths: [for (final i in wui.optimizerReferenceImages) i.path],
-          modelId: 'm',
-          parameters: {'sessionId': wui.optimizerSession.id},
-          status: TaskStatus.processing,
-        )),
+        seed: (appState, wui) => appState.taskQueue.setQueueForTest([
+          TaskItem(
+            id: 'queued-turn',
+            type: TaskType.promptRefine,
+            imagePaths: [for (final i in wui.optimizerReferenceImages) i.path],
+            modelId: 'm',
+            parameters: {'sessionId': wui.optimizerSession.id},
+            status: TaskStatus.processing,
+          ),
+        ]),
       );
       final l10n = await en();
 

@@ -960,7 +960,8 @@ void seedOptimizerRunning(AppState appState) {
   // for this session — a running flag alone is the crashed-turn case, which
   // deliberately gets no button. Inserted rather than `addTask`ed: adding
   // would try to execute it.
-  appState.taskQueue.queue.add(
+  appState.taskQueue.setQueueForTest(<TaskItem>[
+    ...appState.taskQueue.queue,
     TaskItem(
       id: 'fixture-assistant-running-task',
       type: TaskType.promptRefine,
@@ -971,8 +972,7 @@ void seedOptimizerRunning(AppState appState) {
       status: TaskStatus.processing,
       startTime: kSeedNow.subtract(const Duration(seconds: 37)),
     ),
-  );
-  appState.taskQueue.refreshQueue();
+  ]);
 
   appState.workbenchUIState.adoptOptimizerSession(session, images);
 }
