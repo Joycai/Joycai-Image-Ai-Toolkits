@@ -154,9 +154,10 @@ use `setQueueForTest`: the list `queue` hands out is unmodifiable.
 **Async work needs `runAsync`.** The `compute()` isolates behind the gallery and
 browser scans make no progress inside the fake-async zone. The first scan
 happens in `setUpAll` (real async); inside a test everything async goes through
-`tester.runAsync` — by way of the helpers two paragraphs down, not bare. `FileImage` decoding is asynchronous too, which is why
-`shoot` precaches every fixture image before the final pump — skip that and
-every thumbnail captures blank.
+`tester.runAsync` — by way of the helpers in the next paragraph, not bare.
+`FileImage` decoding is asynchronous too, which is why `shoot` precaches every
+fixture image before the final pump — skip that and every thumbnail captures
+blank.
 
 **No database call under the fake clock — enforced.** Both
 `flutter_test_config.dart` files install

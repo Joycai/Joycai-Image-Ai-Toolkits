@@ -88,7 +88,7 @@ void main() {
   Future<List<SystemPrompt>> saveAndRead(WidgetTester tester) async {
     return runAsyncRethrowing(tester, () async {
       await tester.tap(find.text(l10n.save));
-      final giveUp = DateTime.now().add(const Duration(seconds: 30));
+      final giveUp = DateTime.now().add(realAsyncGiveUp);
       while (find.text(l10n.save).evaluate().isNotEmpty && DateTime.now().isBefore(giveUp)) {
         await Future<void>.delayed(const Duration(milliseconds: 5));
         await tester.pump(const Duration(milliseconds: 50));

@@ -210,7 +210,7 @@ void main() {
     // its own rather than `inRealAsyncUntil`, whose condition cannot await.
     final saved = await runAsyncRethrowing(tester, () async {
       await tester.tap(find.text('Save').last);
-      final giveUp = DateTime.now().add(const Duration(seconds: 30));
+      final giveUp = DateTime.now().add(realAsyncGiveUp);
       while (true) {
         final now = (await state.getPromptTags()).firstWhere(
           (t) => t.id == tag.id,

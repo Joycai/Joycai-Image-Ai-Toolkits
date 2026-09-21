@@ -10,6 +10,10 @@ import 'fake_async_database_rule.dart';
 // The ways a widget test keeps its database calls out of `testWidgets`' fake
 // clock — the rule `test/support/fake_async_database_rule.dart` enforces, and explains.
 
+/// How long a wait here goes on before it fails the test: far longer than any
+/// runner needs, so that it only ever means the thing is not going to happen.
+const Duration realAsyncGiveUp = Duration(seconds: 30);
+
 /// Builds the [AppState] singleton in `setUpAll`, which runs in real async.
 ///
 /// Every sub-state reads its settings from its constructor, fire-and-forget,
@@ -70,7 +74,7 @@ Future<T> runAsyncRethrowing<T>(WidgetTester tester, Future<T> Function() body) 
 /// statement: this can return in the middle of one. It is for letting loads
 /// land before a frame, not for the outcome of a write — assert that after
 /// [inRealAsyncUntil].
-Future<void> databaseIdle({Duration giveUpAfter = const Duration(seconds: 30)}) async {
+Future<void> databaseIdle({Duration giveUpAfter = realAsyncGiveUp}) async {
   final Future<Database> opening = _barrier ??= databaseFactoryFfi.openDatabase(
     'file:joycai_test_barrier?mode=memory&cache=shared',
   );
@@ -84,14 +88,18 @@ Future<void> databaseIdle({Duration giveUpAfter = const Duration(seconds: 30)}) 
   // Something that polls the database never lets a round come back quiet.
   final DateTime giveUp = DateTime.now().add(giveUpAfter);
   int seen;
+  int rounds = 0;
+  // A worker that has answered once is not stuck: time running out after that,
+  // even in the middle of a query, is the polling.
+  Never gaveUp() => fail(rounds == 0
+      ? 'the database worker never answered — a call ahead of this one is stuck'
+      : 'the database never went quiet — something is polling it');
   do {
     final Duration left = giveUp.difference(DateTime.now());
-    if (left <= Duration.zero) fail('the database never went quiet — something is polling it');
+    if (left <= Duration.zero) gaveUp();
     seen = databaseAccesses;
-    await barrier.rawQuery('SELECT 1').timeout(
-          left,
-          onTimeout: () => fail('the database worker never answered — a call ahead of this one is stuck'),
-        );
+    await barrier.rawQuery('SELECT 1').timeout(left, onTimeout: gaveUp);
+    rounds++;
     await Future<void>.delayed(Duration.zero);
   } while (databaseAccesses != seen);
 }
@@ -145,7 +153,7 @@ Future<void> inRealAsyncUntil(
   WidgetTester tester,
   FutureOr<void> Function() action, {
   required bool Function() until,
-  Duration giveUpAfter = const Duration(seconds: 30),
+  Duration giveUpAfter = realAsyncGiveUp,
 }) =>
     runAsyncRethrowing<void>(tester, () async {
       await action();

@@ -88,7 +88,7 @@ void main() {
           polling = false;
         }
       }),
-      throwsA(isA<TestFailure>()),
+      throwsA(isA<TestFailure>().having((TestFailure f) => f.message, 'message', contains('polling'))),
     );
     await tester.runAsync(() => closeTestDatabase(db));
   });
