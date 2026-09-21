@@ -8,7 +8,7 @@
 
 | 文件 | 内容 |
 |---|---|
-| `lib/core/design_tokens.dart` | `AppRadius` / `AppSpace` / `AppSize` / `AppAlpha` / `AppType` / `AppMotion` 阶梯，`AppOverlay` 固定墨色，`AppDock` 手机 dock 的尺寸与净空（放在这里，是为了让 `widgets/ui/` 的原语能避开 dock 而不必 import `widgets/shell/`），`extension AppAccent on ColorScheme`（主色三形态），`extension AppShadow` |
+| `lib/core/design_tokens.dart` | `AppRadius` / `AppSpace` / `AppSize` / `AppAlpha` / `AppType` / `AppMotion` 阶梯，`AppMarkdownMetrics`（渲染后的 Markdown 两档密度，`A1e`），`AppOverlay` 固定墨色，`AppDock` 手机 dock 的尺寸与净空（放在这里，是为了让 `widgets/ui/` 的原语能避开 dock 而不必 import `widgets/shell/`），`extension AppAccent on ColorScheme`（主色三形态），`extension AppShadow` |
 | `lib/core/app_theme.dart` | `_Neutrals` 暖石灰常量表、`_ErrorRoles`、`buildAppColorScheme` / `buildAppTheme`、各 Material 子主题、字号阶梯、`TextStyle.mono` / `metricsOnly` |
 | `lib/core/app_semantic_colors.dart` | `AppSemanticColors`——成功 / 警告 / 信息 |
 | `lib/core/theme_accent.dart` | `ThemeAccent`：主题色是一对（亮 / 暗） |
@@ -110,6 +110,8 @@ Color get onAccentTint =>
 **控件高**（`AppSize`）：28 紧凑 · 32 标准（按钮、输入、图标按钮同高）· 40 触摸 / 列表行 / 面板主按钮 · 44 手机命中区下限。图标 14 · 16 · 20。
 
 **字号只有七级**：28/600 · 20/600 · 16/600 · 14/500 · 13/400 · 12/400 · 11/500，另加 mono 12 / 11（`TextStyle.mono`，系统等宽栈 + 等宽数字，不打包字体）。槽位分配见 `_buildTextTheme` 的表。字距是**字号**的函数（`AppType.trackingFor`），分组小标题例外：`.06em`（`AppType.trackedLabelSpacing` = 0.66）。
+
+**渲染后的 Markdown 是七级之外的唯一例外**（`A1e`，`AppMarkdownMetrics`）：标题字号是「正文 + 差值」（prose +6 / +3 / +1 / −2，compact +3 / +1 / 0 / −1），因为五处调用的正文是 14、13、12 三种，标题得在每一处都还是标题。层级首先靠间距的不对称（标题离上文远、贴自己的正文），字号其次。跟随主题色的只有三处：H2 竖条（`primary`）、链接（`onAccentTint`）、已勾任务框（`primary`）；引用、代码块、表格一律中性。
 
 **动效**（`00 · 1e`）：M1 100ms `quick` 管 hover / 选中 / 玻璃按下；M2 180ms `enter` 管分段透镜、开关、菜单、降级；M3 280ms `emphasized`、退场 ×0.6 管 sheet、浮动条出入、胶囊形变、对话框。切导航目的地无过渡；运行中状态点 1.6s 呼吸是唯一循环（`AppBreathingDot`）。平台「减少动态」→ 一切归零（`AppMotion.durationOf`）；应用「减少视觉效果」→ M3 降为 M2、呼吸停（`AppMotion.sceneOf` / `breathes`）。一次出入场里所有属性共用一个时长：`AppMotion.sceneFor(context, entering:)` 进场给 `sceneOf`、退场给它的 ×0.6——选择栏的滑动和淡出曾各走各的钟。
 

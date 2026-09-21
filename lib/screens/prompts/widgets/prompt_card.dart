@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
@@ -10,6 +9,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../models/tag.dart';
 import '../../../widgets/glass/glass_controls.dart';
+import '../../../widgets/ui/app_markdown.dart';
 
 /// One action a [PromptCard] offers — drawn as a 28px glyph when the card has
 /// room, and as a row of its overflow menu when it does not.
@@ -330,14 +330,11 @@ class PromptCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.control),
       ),
       child: prompt.isMarkdown
-          ? SelectionArea(
-              child: MarkdownBody(
-                data: prompt.content,
-                styleSheet: MarkdownStyleSheet(
-                  p: textTheme.bodyMedium?.copyWith(height: AppType.looseHeight, color: scheme.onSurface),
-                  code: TextStyle(backgroundColor: scheme.surfaceContainerHighest).mono,
-                ),
-              ),
+          ? AppMarkdown(
+              data: prompt.content,
+              density: AppMarkdownDensity.compact,
+              selectable: true,
+              style: textTheme.bodyMedium?.copyWith(height: AppType.looseHeight, color: scheme.onSurface),
             )
           : SelectionArea(
               child: Text(
