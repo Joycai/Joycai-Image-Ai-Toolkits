@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
-
 /// Cross-platform image abstraction
 class AppImage {
   final String path;
@@ -17,10 +15,6 @@ class AppImage {
       path: file.path,
       name: file.path.split(Platform.pathSeparator).last,
     );
-  }
-
-  ImageProvider get imageProvider {
-    return FileImage(File(path));
   }
 
   @override

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
 enum FileCategory {
@@ -10,28 +9,6 @@ enum FileCategory {
   audio,
   text,
   other,
-}
-
-extension FileCategoryExtension on FileCategory {
-  IconData get icon {
-    switch (this) {
-      case FileCategory.image: return Icons.image;
-      case FileCategory.video: return Icons.movie;
-      case FileCategory.audio: return Icons.audiotrack;
-      case FileCategory.text: return Icons.description;
-      default: return Icons.insert_drive_file;
-    }
-  }
-
-  Color get color {
-    switch (this) {
-      case FileCategory.image: return Colors.blue;
-      case FileCategory.video: return Colors.red;
-      case FileCategory.audio: return Colors.green;
-      case FileCategory.text: return Colors.orange;
-      default: return Colors.grey;
-    }
-  }
 }
 
 class BrowserFile {
@@ -48,9 +25,6 @@ class BrowserFile {
     required this.size,
     required this.modified,
   });
-
-  IconData get icon => category.icon;
-  Color get color => category.color;
 
   /// The category an extension puts a file in, without touching the disk.
   ///
@@ -114,8 +88,6 @@ class BrowserFile {
       modified: DateTime.fromMillisecondsSinceEpoch(map['modified'] as int),
     );
   }
-
-  ImageProvider get imageProvider => FileImage(File(path));
 
   @override
   bool operator ==(Object other) =>

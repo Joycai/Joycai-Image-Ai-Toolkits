@@ -32,7 +32,10 @@ export '../../models/task_item.dart';
 part 'task_executors.dart';
 
 class TaskQueueService extends ChangeNotifier {
-  final List<TaskItem> _queue = [];
+  /// Never edited in place: every change goes through [_setQueue], so the
+  /// list [queue] hands out is a snapshot and its identity moves with its
+  /// content.
+  List<TaskItem> _queue = const [];
   int _concurrencyLimit = 2;
   int _runningCount = 0;
   final _uuid = const Uuid();
@@ -45,8 +48,20 @@ class TaskQueueService extends ChangeNotifier {
   late final Future<void> _loadFuture;
   bool _disposed = false;
 
+  void _setQueue(Iterable<TaskItem> tasks) => _queue = List.unmodifiable(tasks);
+
+  /// Every notification carries a new list, not only the ones that add or
+  /// remove a task. A [TaskItem] is mutable, so when one starts, finishes or
+  /// is cancelled the list's content has changed with nothing in the list to
+  /// show for it — and list identity is the only signal a `select` has. A
+  /// selector returning [queue], or a slice of it, would otherwise never
+  /// rebuild, silently. The copy is one reference per task — a queue is as
+  /// long as a user makes it, [reloadLimit] of them on launch — and the 500ms
+  /// progress estimate does not come through here (see [progressTick]).
   void _notify() {
-    if (!_disposed) notifyListeners();
+    if (_disposed) return;
+    _setQueue(_queue);
+    notifyListeners();
   }
 
   /// Ticks twice a second while anything is running, and carries nothing but
@@ -87,7 +102,17 @@ class TaskQueueService extends ChangeNotifier {
   Function(TaskItem)? onTaskFinished;
   Function(String, {String level, String? taskId})? onLogAdded;
 
+  /// The tasks, oldest first. Unmodifiable, and a new list on every
+  /// notification — see [_notify].
   List<TaskItem> get queue => _queue;
+
+  /// Puts [tasks] in the queue as they are: nothing is persisted, nothing is
+  /// started. [addTask] would try to run them.
+  @visibleForTesting
+  void setQueueForTest(Iterable<TaskItem> tasks) {
+    _setQueue(tasks);
+    _notify();
+  }
 
   /// Whether a Prompt Assistant turn of session [sessionId] is queued or
   /// running. Wider than the session's own `isRunning`, which only flips once
@@ -122,11 +147,10 @@ class TaskQueueService extends ChangeNotifier {
     await _db.cleanupStuckTasks();
     final tasks = await _relabelled(await _db.getRecentTasks(reloadLimit));
     if (_disposed) return;
-    _queue.clear();
     // Newest-first from the query, reversed so the queue itself runs oldest
     // to newest — the order `_attemptNextExecution` walks it in, which is
     // what makes a task submitted earlier run earlier.
-    _queue.addAll(tasks.reversed);
+    _setQueue(tasks.reversed);
     _notify();
   }
 
@@ -239,7 +263,7 @@ class TaskQueueService extends ChangeNotifier {
       task.addLog('Video generation task created using $modelIdStr.');
     }
 
-    _queue.add(task);
+    _setQueue([..._queue, task]);
 
     // Persist task immediately
     await _db.saveTask(task);
@@ -349,7 +373,7 @@ class TaskQueueService extends ChangeNotifier {
           status == TaskStatus.failed ||
           status == TaskStatus.cancelled;
       if (!finished) return;
-      _queue.removeAt(index);
+      _setQueue([..._queue]..removeAt(index));
     }
     await _db.deleteTask(taskId);
     _notify();

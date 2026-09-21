@@ -192,10 +192,9 @@ void main() {
   // filter back. The fixture has every status, so the failed rows are lifted
   // out of the live queue for the shot and put back after it.
   testWidgets('tasks · filteredEmpty @ desktop light', (WidgetTester tester) async {
-    final List<TaskItem> queue = AppState().taskQueue.queue;
-    final List<TaskItem> lifted = queue
-        .where((TaskItem t) => t.status == TaskStatus.failed || t.status == TaskStatus.cancelled)
-        .toList();
+    final TaskQueueService service = AppState().taskQueue;
+    final List<TaskItem> whole = service.queue;
+    bool lifted(TaskItem t) => t.status == TaskStatus.failed || t.status == TaskStatus.cancelled;
     try {
       await shoot(
         tester,
@@ -205,14 +204,13 @@ void main() {
         brightness: Brightness.light,
         suffix: 'filteredEmpty',
         before: (_) async {
-          queue.removeWhere(lifted.contains);
+          service.setQueueForTest(whole.where((TaskItem t) => !lifted(t)));
           AppState().taskListState.setFilter(TaskFilter.failed);
         },
       );
     } finally {
-      queue.addAll(lifted);
+      service.setQueueForTest(whole);
       AppState().taskListState.setFilter(TaskFilter.all);
-      AppState().taskQueue.refreshQueue();
     }
   });
 

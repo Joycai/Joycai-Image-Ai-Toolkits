@@ -9,6 +9,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/files/file_transfer_service.dart';
 import '../../../state/file_staging_state.dart';
+import '../../../widgets/files/file_visuals.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/dashed_border.dart';
 import '../../../widgets/glass/glass_controls.dart';

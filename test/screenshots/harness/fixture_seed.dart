@@ -725,8 +725,8 @@ void markOneTaskRunning(AppState appState) {
       '[14:29:35] 构建请求负载 (inline_data ×3)',
       '[14:29:36] 已接收 8 个文本块…',
     ];
-  // notifyListeners() only — it does not call _attemptNextExecution
-  // (task_queue_service.dart:185-187), so nothing actually executes.
+  // A new list and notifyListeners(), nothing more — `refreshQueue` does not
+  // call `_attemptNextExecution`, so nothing actually executes.
   appState.taskQueue.refreshQueue();
 }
 
@@ -960,7 +960,8 @@ void seedOptimizerRunning(AppState appState) {
   // for this session — a running flag alone is the crashed-turn case, which
   // deliberately gets no button. Inserted rather than `addTask`ed: adding
   // would try to execute it.
-  appState.taskQueue.queue.add(
+  appState.taskQueue.setQueueForTest(<TaskItem>[
+    ...appState.taskQueue.queue,
     TaskItem(
       id: 'fixture-assistant-running-task',
       type: TaskType.promptRefine,
@@ -971,8 +972,7 @@ void seedOptimizerRunning(AppState appState) {
       status: TaskStatus.processing,
       startTime: kSeedNow.subtract(const Duration(seconds: 37)),
     ),
-  );
-  appState.taskQueue.refreshQueue();
+  ]);
 
   appState.workbenchUIState.adoptOptimizerSession(session, images);
 }

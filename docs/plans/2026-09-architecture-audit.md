@@ -3,10 +3,10 @@
 对照 Flutter 架构手册（分层隔离、MVVM、仓储模式、不可变状态、构造函数注入）把 `lib/`
 整体过了一遍，在 `73aaa68`（v4.24.0，`flutter analyze` 干净）上逐条核实。
 
-**结论**：分层本身比手册要求得更严，而且是 `test/source_layout_test.dart` 用八条规则钉死的；
+**结论**：分层本身比手册要求得更严，而且是 `test/source_layout_test.dart` 用九条规则钉死的；
 真正的偏离只有两个方向——**依赖注入**（用单例当服务定位器，A1）与**数据边界上的领域模型**
-（两个仓储在传裸 map，A2）。**两条都已做**，A3（门面绕 map 一圈）也已做，结论见
-[`README.md`](README.md) 那行指针。剩下五条是局部的。
+（两个仓储在传裸 map，A2）。**两条都已做**，A3（门面绕 map 一圈）、A4（模型带展示逻辑）、A5（队列交出内部列表）也已做，结论见
+[`README.md`](README.md) 那行指针。剩下三条是局部的。
 
 **怎么用这份文件**：一条一条做，每条自带验收。做完一条就把它从本文件删掉，并在
 [`README.md`](README.md) 的「已执行」表里登记结论住在哪；条目清空后删掉本文件。
@@ -16,75 +16,9 @@
 
 | 编号 | 一句话 | 触及 | 状态 |
 |---|---|---|---|
-| A4 | `BrowserFile` 带展示逻辑，其中 `.color` 是死代码且用裸 Material 颜色 | `models/browser_file.dart` | 未开工 |
-| A5 | `TaskItem` 可变，队列把内部列表原样交出去并原地改 | `services/tasks/task_queue_service.dart` | 未开工 |
 | A6 | `test/` 269 个文件平铺在根下，而 `lib/` 的分组目录根下一个散文件都不许有 | `test/` | 未开工 |
 | A7 | workbench 一个目录占 lib 的 21%，提示词助手实质是独立功能 | `screens/workbench/` | 未开工 |
 | A8 | 16 个 UI 文件直连 `DatabaseService`，绝大多数只为存侧栏宽度 | `screens/`、`widgets/` | 未开工 |
-
----
-
-## A4 · `BrowserFile` 带展示逻辑，`.color` 是死代码
-
-**现状**：`lib/models/browser_file.dart`
-
-```
-:15  extension FileCategoryExtension on FileCategory
-:16    IconData get icon   → Icons.image / movie / audiotrack / description
-:26    Color   get color   → Colors.blue / red / green / orange / grey
-:52  BrowserFile.icon  => category.icon
-:53  BrowserFile.color => category.color
-```
-
-`.icon` 有人用（`browser_file_list_row.dart:135`、`file_card.dart:169`）。
-**`.color` 全仓零引用**——`file.color`、`category.color` 都搜不到调用方，两层 getter 都是死的。
-
-**为什么要改**：`models/`（第 1 层）不该知道 `Icons` 和 `Colors`；而且这几个裸 Material 颜色
-违反你自己的设计令牌规则（见 `docs/architecture/design-tokens.md`：状态色不跟种子走的名单里
-没有它们，该走 `AppSemanticColors`）。这是全仓仅有的两个导入 `package:flutter` 的模型之一
-（另一个是 `AppImage.imageProvider`，见下）。
-
-**改法**：
-1. 删掉 `FileCategoryExtension.color` 与 `BrowserFile.color`（死代码，零风险）。
-2. `icon` 挪到浏览器的 widget 层——两个调用点同一个文件夹，放
-   `screens/browser/widgets/` 下一个 `file_category_icon.dart` 的自由函数即可。
-3. 顺带判一下 `AppImage.imageProvider`（`models/app_image.dart:22`）：它让 `models/` 依赖
-   `material.dart` 只为一个 `FileImage(File(path))`。调用点不多，值得一并挪走；
-   **如果发现挪动要牵动画廊的缓存策略就停手**，单独记一条，不要在本条里扩大。
-
-**验收**：`browser_file_scanner_test.dart`、`file_browser_group_by_folder_test.dart` 全绿；
-`grep -rn "package:flutter" lib/models` 只剩下（或不剩）你有意保留的那一处。
-
----
-
-## A5 · `TaskItem` 可变 + 队列交出内部列表
-
-**现状**：`TaskItem` 是 15 个模型里唯一可变的（`task_item.dart:46-79`：`status`、`startTime`、
-`endTime`、`progress`、`operationSurface`、`operationName`）。
-`TaskQueueService` 把内部列表原样交出去（`task_queue_service.dart:90`
-`List<TaskItem> get queue => _queue;`），并原地改它（`:125` clear、`:129` addAll、`:242` add、
-`:352` removeAt），同时原地改元素（`:263`、`:322-325`、`:392-393`、`:417-439`、`:516`）。
-行号按 A2 之后的现状写，会再漂——找齐用
-`grep -nE "_queue\.(clear|addAll|add|removeAt)\(|task\.(status|progress|startTime|endTime) =" lib/services/tasks/task_queue_service.dart`。
-
-**今天没有 bug**，这点要说清楚：所有消费方取的都是标量（`queue.where(...).length`）或
-`task.id`，标量比较照样灵——`nav_lens_group.dart:71`、`phone_dock.dart:30`、
-`assistant_tab.dart:29/95` 都是这样，后两处特意只取 id 而不取对象。
-
-**为什么还是要改**：这是全仓唯一一处「交出去的列表身份不随内容变」的地方，而这正是
-`CLAUDE.md` 里那条硬规矩、`test/state_list_identity_test.dart` 与
-`workbench_rebuild_scope_test.dart` 在别处专门盯的失效模式。将来只要有人写一个返回
-这个列表（或它的切片、或含它的 record）的 `Selector`，就会静默地永不重建——静默是重点。
-
-**改法**（按投入从小到大，做第一档就够止血）：
-1. `queue` 改成返回 `List.unmodifiable(_queue)`，或在每次结构性改动后整体重建 `_queue`，
-   让列表身份随内容变。先量一下代价：队列长度是用户级的（几十条），重建不心疼。
-2. 如果要做彻底的：`TaskItem` 转不可变 + `copyWith`，队列改成整表替换。**这一档先别做**，
-   它会牵动 `task_executors.dart` 里所有就地写进度的路径，收益与风险不成比例。
-
-**验收**：`state_list_identity_test.dart` 增一条钉住「队列结构性变化后 `queue` 的身份变了」；
-`task_queue_row_test.dart`、`task_capsule_bounds_test.dart`、`task_list_ordering_test.dart`、
-`render_performance_test.dart` 全绿（最后一条用来确认第 1 档没有把队列页拖慢）。
 
 ---
 
@@ -135,7 +69,7 @@
 挪动而掉了。
 
 **注意**：**这条排在最后**。它和 A6 一样是大 diff，而且比 A6 更容易和别人的分支撞车。
-在 A1–A5 落地之前不要开。
+前提是 A1–A5 先落地——现在都已落地。
 
 ---
 
@@ -175,7 +109,7 @@ UI 侧只见 `UiPrefs.sidebarWidth(...)`。**别为此发明新层**，这是一
 | `freezed` / `built_value` 生成模型 | 13 个手写模型共 1290 行，已经不可变、`==`/`hashCode` 齐全。引入 `build_runner` 要给 CI 和每次改模型都加一道生成步骤，换来的是已经有的东西 |
 | 声明式路由（`go_router`） | 全仓 `Navigator.push` 只有 6 处，导航是外壳 + 索引式目的地（`widgets/shell/app_destinations.dart`）。桌面工具这样是对的，换路由器等于为深链接重写外壳，而没有深链接的需求 |
 | 拆 `llm_dispatcher.dart`（1720 行） | `docs/architecture/llm-three-layer.md` 写明了它是**故意**做成唯一一张路由表；拆开就退回「分支到处散」的老问题。大文件拆分那一轮（`git show 59e392c:docs/plans/2026-09-large-file-split.md`）已经把它排除过一次 |
-| 引入 `get_it` 之类的容器 | 见 A1 的「注意」。要的是构造函数注入，不是再加一套查找规则 |
+| 引入 `get_it` 之类的容器 | A1 做的是构造函数注入（结论见 [`README.md`](README.md) 那行指针）；要的就是它，不是再加一套查找规则 |
 | 每个功能一套 ViewModel | 状态层是 11 个 `ChangeNotifier`，各自按屏幕/领域切，并且 `app_state.dart:70` 那段注释记录了「子状态各自当 provider」这个决定的由来（合并广播导致全app重建的回归）。手册的 per-feature VM 在这里只会把同一件事再切一刀 |
 
 ## 审计基线（复核时对表）
@@ -187,4 +121,4 @@ UI 侧只见 `UiPrefs.sidebarWidth(...)`。**别为此发明新层**，这是一
 - 全仓 `TODO/FIXME/HACK` **0**、`print(` **0**、`// ignore:` **7** + `ignore_for_file` **4**、
   硬编码用户可见文案 **0**。
 - 13 个模型中 11 个完全不可变；状态层交出的列表是整体重新赋值（`_transcript`
-  `prompt_optimizer_session.dart:330` 一类），A5 是唯一的例外。
+  `prompt_optimizer_session.dart:330` 一类），任务队列曾是唯一的例外（A5，已收）。

@@ -120,6 +120,7 @@ strictly **lower** rank — never sideways, never up:
   every routing branch lives in `llm_dispatcher.dart`.
 
 `test/source_layout_test.dart` enforces the import rules (ranks, no cycles, empty roots,
+Flutter-free models — how a model looks is a widget-layer extension, `widgets/files/file_visuals.dart` —
 the design-system boundary, no relative import climbing out of `lib/`) and prints the
 offending file and line. A genuinely new layer or folder means changing that test on purpose.
 
@@ -128,6 +129,9 @@ offending file and line. A genuinely new layer or folder means changing that tes
 - Use the existing state classes; never a `StatefulWidget` for shared or persistent data.
 - **Hand out a new list/object before `notifyListeners()` — never mutate in place.**
   List identity is the only signal a `select` has; `rebuild_scope_test.dart` pins this.
+  `TaskQueueService.queue` goes further and is a new unmodifiable list on *every*
+  notification: a `TaskItem` is mutable, so a change of status leaves nothing in the
+  list to compare (`state_list_identity_test.dart`). Tests seed it with `setQueueForTest`.
 - **Take the database, don't fetch it.** Every state class, repository and
   DB-reading service has an optional `DatabaseService` on its constructor
   (`database:` on a state or service, `db:` on a repository) defaulting to the

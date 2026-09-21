@@ -34,7 +34,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:joycai_image_ai_toolkits/models/task_item.dart';
+import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_breathing_dot.dart';
 
@@ -260,12 +260,10 @@ void main() {
     }
 
     await line('${queue.queue.length} tasks');
-    _addSynthetic(queue.queue, 143, env);
-    queue.refreshQueue();
+    _addSynthetic(queue, 143, env);
     await tester.pump();
     await line('${queue.queue.length} tasks');
-    _addSynthetic(queue.queue, 350, env);
-    queue.refreshQueue();
+    _addSynthetic(queue, 350, env);
     await tester.pump();
     await line('${queue.queue.length} tasks');
     say('  (the tick must not grow with the queue; the structural notify must)');
@@ -432,8 +430,9 @@ void main() {
 }
 
 /// Synthetic queue rows, to see whether a cost grows with the queue.
-void _addSynthetic(List<TaskItem> queue, int count, FixtureEnv env) {
+void _addSynthetic(TaskQueueService service, int count, FixtureEnv env) {
   final List<String> images = env.fixtureImagePaths.take(3).toList();
+  final List<TaskItem> queue = <TaskItem>[...service.queue];
   final int from = queue.length;
   for (int i = 0; i < count; i++) {
     queue.add(TaskItem(
@@ -448,4 +447,5 @@ void _addSynthetic(List<TaskItem> queue, int count, FixtureEnv env) {
       startTime: DateTime.now().subtract(const Duration(seconds: 20)),
     ));
   }
+  service.setQueueForTest(queue);
 }

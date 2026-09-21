@@ -10,6 +10,7 @@ import '../../../models/browser_file.dart';
 import '../../../services/media/image_metadata_service.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/drag/app_drag_session.dart';
+import '../../../widgets/files/file_visuals.dart';
 import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
 import '../../../widgets/ui/focus_pane.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart' show previewHeroTag;
