@@ -25,6 +25,9 @@ import 'package:path/path.dart' as p;
 /// `widgets/` and `services/` stay grouped rather than drifting back to one
 /// flat root, and that the design system under `widgets/` stays free of the
 /// app's domain.
+///
+/// The last rule turns the same discipline on `test/` itself: a test sits in
+/// the folder that mirrors the `lib/` folder it is about.
 void main() {
   /// Lower rank may not import higher. Equal rank means the same module.
   const rank = <String, int>{
@@ -291,7 +294,7 @@ void main() {
       return rel == '.' ? '<root>' : p.split(rel).join('/');
     }
 
-    // Mirrors `grouped` above, but for `test/`: these three fan out into a
+    // `grouped` above, plus `screens`, for `test/`: these three fan out into a
     // domain folder per `lib/services`, `lib/widgets` and `lib/screens`
     // subdirectory, so a file loose in one of them names no domain either.
     const groupedTestDirs = {'services', 'widgets', 'screens'};
@@ -323,48 +326,30 @@ void main() {
     // `test/services/foo/` with no `lib/services/foo/` passes the check above
     // but mirrors nothing. `app` and `architecture` are the two extras that
     // have no `lib/` counterpart by design; `support` and `screenshots` are
-    // fixtures and the screenshot harness, neither mirrored nor recursed into
+    // fixtures and the screenshot harness, not mirrored and skipped
     // here.
     const extraTestDirs = {'app', 'architecture', 'support', 'screenshots'};
-    final libTopDirs = Directory('lib')
-        .listSync()
-        .whereType<Directory>()
-        .map((d) => p.basename(d.path))
-        .toSet();
 
+    // Every directory at every depth, so `test/core/foo/` and
+    // `test/services/llm/bogus/` are caught as well as `test/bogus/`.
     final unmirrored = Directory('test')
-        .listSync()
+        .listSync(recursive: true)
         .whereType<Directory>()
-        .map((d) => p.basename(d.path))
-        .where((d) => !extraTestDirs.contains(d) && !libTopDirs.contains(d))
-        .map((d) => 'test/$d')
-        .toList();
-
-    for (final dir in groupedTestDirs) {
-      final testGroupDir = Directory(p.join('test', dir));
-      if (!testGroupDir.existsSync()) continue;
-      final libGroupDirs = Directory(p.join('lib', dir))
-          .listSync()
-          .whereType<Directory>()
-          .map((d) => p.basename(d.path))
-          .toSet();
-      unmirrored.addAll(testGroupDir
-          .listSync()
-          .whereType<Directory>()
-          .map((d) => p.basename(d.path))
-          .where((d) => !libGroupDirs.contains(d))
-          .map((d) => 'test/$dir/$d'));
-    }
-    unmirrored.sort();
+        .map((d) => p.split(p.relative(d.path, from: 'test')))
+        .where((parts) => !extraTestDirs.contains(parts.first))
+        .where((parts) => !Directory(p.joinAll(['lib', ...parts])).existsSync())
+        .map((parts) => 'test/${parts.join('/')}')
+        .toList()
+      ..sort();
 
     expect(
       unmirrored,
       isEmpty,
       reason: 'these test/ directories name no lib/ counterpart:\n  ${unmirrored.join('\n  ')}\n\n'
-          'Every directory directly under test/ mirrors a lib/ layer, or is one of the '
-          'agreed extras ($extraTestDirs); every directory under test/services/, '
-          'test/widgets/ or test/screens/ mirrors the matching lib/ subdirectory. One with '
-          'nothing on the lib/ side is a typo or a leftover, not a home for a test.',
+          'Every directory under test/, at any depth, has a lib/ directory of the same path, '
+          'or sits under one of the agreed extras ($extraTestDirs). One with nothing on the '
+          'lib/ side is a typo or a leftover, not a home for a test. (A scratch folder such as '
+          'test/_scratch/ trips this too: delete it when done.)',
     );
   });
 }

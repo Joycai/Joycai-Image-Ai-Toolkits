@@ -68,7 +68,7 @@ a new vendor.
       needed, `model_family.dart` + the dispatcher routing.
 - [ ] 5. `flutter analyze` — must report **"No issues found!"**
 - [ ] 6. `flutter test` — the vendor auth tests live in
-      `test/google_auth_headers_test.dart`; add cases for a new auth scheme.
+      `test/services/llm/google_auth_headers_test.dart`; add cases for a new auth scheme.
 
 ## Checklist B — new protocol
 
