@@ -52,7 +52,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
         options: options,
       );
       await _logWholeBody(debugFile, response);
-      return await _fromWholeBody(response, client, options, logger);
+      return await _fromWholeBody(response, client, options, logger, req.refCount);
     } finally {
       client.close();
     }
@@ -87,7 +87,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
       if (response.statusCode != 200) {
         yield* _wholeBodyAsChunks(
             await http.Response.fromStream(response), client, options, logger,
-            debugFile);
+            debugFile, req.refCount);
         return;
       }
 
@@ -168,7 +168,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
         yield* _wholeBodyAsChunks(
             http.Response(jsonLines.join('\n'), 200,
                 headers: response.headers),
-            client, options, logger, debugFile);
+            client, options, logger, debugFile, req.refCount);
         return;
       }
 
@@ -184,7 +184,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
           '(downloaded inline; upstream URLs expire in 24h)',
           level: 'DEBUG');
       yield LLMResponseChunk(
-        metadata: _metadata(delivered, failures.length, usage),
+        metadata: _metadata(delivered, failures.length, usage, req.refCount),
         isDone: true,
       );
     } finally {
@@ -201,9 +201,10 @@ class ArkImagesProtocol implements ImageGenProtocol {
     Map<String, dynamic>? options,
     LLMLogger? logger,
     LLMDebugLog? debugFile,
+    int refCount,
   ) async* {
     await _logWholeBody(debugFile, whole);
-    final result = await _fromWholeBody(whole, client, options, logger);
+    final result = await _fromWholeBody(whole, client, options, logger, refCount);
     for (final (i, image) in result.generatedImages.indexed) {
       yield LLMResponseChunk(
           imagePart: image,
@@ -229,16 +230,11 @@ class ArkImagesProtocol implements ImageGenProtocol {
       orElse: () => history.last,
     );
 
-    var inputImages = userMsg.attachments;
-    final maxRef = target.model.capabilities.maxReferenceImages;
-    if (maxRef != null && maxRef >= 0 && inputImages.length > maxRef) {
-      logger?.call(
-        'Model accepts at most $maxRef reference image(s); using the first '
-        '$maxRef of ${inputImages.length}.',
-        level: 'WARN',
-      );
-      inputImages = inputImages.sublist(0, maxRef);
-    }
+    final inputImages = capReferenceImages(
+      userMsg.attachments,
+      target.model.capabilities.maxReferenceImages,
+      logger,
+    );
 
     // `data:image/<fmt>;base64,…` with the format read off the bytes — Ark
     // requires the format in lower case, which `resolveImageMime` yields.
@@ -303,6 +299,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
     http.Client client,
     Map<String, dynamic>? options,
     LLMLogger? logger,
+    int refCount,
   ) async {
     // Status → JSON → shape → envelope. Ark's errors are OpenAI-shaped
     // (`{error: {code, message, param, type}}`), both on a 4xx and — when
@@ -365,7 +362,8 @@ class ArkImagesProtocol implements ImageGenProtocol {
       text: '',
       generatedImages: images,
       imageLayers: layers.any((l) => l != null) ? layers : const [],
-      metadata: _metadata(images.length, result.failures.length, result.usage),
+      metadata: _metadata(
+          images.length, result.failures.length, result.usage, refCount),
     );
   }
 
@@ -374,12 +372,18 @@ class ArkImagesProtocol implements ImageGenProtocol {
   /// token-priced fee group invent a cost, so the raw block is kept under
   /// its own name. `image_count` keeps the metadata non-empty, which is
   /// what makes LLMService record the usage row at all.
+  ///
+  /// Seedream 5.0 pro charges per input image and says how many it counted
+  /// (`usage.input_images` — the raw number, the free first one included;
+  /// measured 2026-09-21). That outranks [refCount], what this client put in
+  /// the body; 5.0 lite and 4.x report no such field and fall back to it.
   static Map<String, dynamic> _metadata(
-          int images, int failed, Map<String, dynamic> usage) =>
+          int images, int failed, Map<String, dynamic> usage, int refCount) =>
       {
         'image_count': images,
         if (failed > 0) 'failed_images': failed,
         if (usage.isNotEmpty) 'ark_usage': usage,
+        ...sentInputImages(refCount, reported: usage['input_images']),
       };
 
   static String _excerpt(String body) =>

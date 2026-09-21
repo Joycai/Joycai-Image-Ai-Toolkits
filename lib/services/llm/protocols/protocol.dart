@@ -9,7 +9,7 @@ import 'package:http_parser/http_parser.dart';
 import '../../../core/image_magic.dart';
 import '../llm_types.dart';
 import '../model_descriptor.dart';
-import '../output_spec.dart' show parseWxH;
+import '../output_spec.dart' show inputImageCountKey, parseWxH;
 import '../vendors/vendor_profile.dart';
 
 // Every debug-log line that prints a request URL must redact it first —
@@ -735,6 +735,43 @@ http.MultipartFile imageMultipartFile(
 /// multipart path ([imageMultipartFile]) already follows.
 String imageDataUrl(Uint8List bytes, String declaredMime) =>
     'data:${resolveImageMime(bytes, declaredMime)};base64,${base64Encode(bytes)}';
+
+/// [attachments] cut to the [maxRef] reference images a model accepts —
+/// the first ones, since the prompt numbers them in order. Null is no cap.
+/// Said at WARN: the user picked more than were used.
+///
+/// Not the number that is *sent*: an attachment that cannot be read is
+/// dropped afterwards, while the request body is built. A protocol counts
+/// what it put in the body and publishes that — [sentInputImages].
+List<LLMAttachment> capReferenceImages(
+  List<LLMAttachment> attachments,
+  int? maxRef,
+  LLMLogger? logger,
+) {
+  if (maxRef == null || maxRef < 0 || attachments.length <= maxRef) {
+    return attachments;
+  }
+  logger?.call(
+    'Model accepts at most $maxRef reference image(s); using the first '
+    '$maxRef of ${attachments.length}.',
+    level: 'WARN',
+  );
+  return attachments.sublist(0, maxRef);
+}
+
+/// The metadata entry saying how many reference images a request carried
+/// ([inputImageCountKey]) — spread into an images protocol's response
+/// metadata, which is how a spec-billed fee group comes to charge for them.
+/// [reported] is the provider's own count where it gives one, and outranks
+/// [sent], the entries this client put in the body — the same precedence the
+/// echoed output size has over the requested one. Empty for a request that
+/// carried none, so text-to-image metadata stays as it was.
+Map<String, dynamic> sentInputImages(int sent, {Object? reported}) {
+  final count = reported is num && reported.isFinite && reported >= 0
+      ? reported.toInt()
+      : sent;
+  return {if (count > 0) inputImageCountKey: count};
+}
 
 Future<Uint8List?> readAttachmentBytes(LLMAttachment att) async {
   if (att.path != null) return File(att.path!).readAsBytes();

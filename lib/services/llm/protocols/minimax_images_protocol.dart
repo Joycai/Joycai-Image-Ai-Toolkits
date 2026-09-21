@@ -39,16 +39,11 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
       orElse: () => history.last,
     );
 
-    var inputImages = userMsg.attachments;
-    final maxRef = target.model.capabilities.maxReferenceImages;
-    if (maxRef != null && maxRef >= 0 && inputImages.length > maxRef) {
-      logger?.call(
-        'Model accepts at most $maxRef reference image(s); using the first '
-        '$maxRef of ${inputImages.length}.',
-        level: 'WARN',
-      );
-      inputImages = inputImages.sublist(0, maxRef);
-    }
+    final inputImages = capReferenceImages(
+      userMsg.attachments,
+      target.model.capabilities.maxReferenceImages,
+      logger,
+    );
 
     final subjectRefs = <String>[];
     for (final att in inputImages) {
@@ -149,6 +144,7 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
         metadata: {
           'image_count': images.length,
           if (rawMeta is Map) ...rawMeta.cast<String, dynamic>(),
+          ...sentInputImages(subjectRefs.length),
         },
       );
     } finally {

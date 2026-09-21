@@ -7,6 +7,7 @@ import 'package:joycai_image_ai_toolkits/models/image_layer.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
 /// Routing for Seedream (Layer 2 + dispatcher): Ark's own channel, relays,
@@ -385,6 +386,20 @@ void main() {
         'output_tokens': 32448,
       });
       expect(last.metadata?.containsKey('output_tokens'), isFalse);
+    });
+
+    test('the closing chunk says how many references the stream request carried',
+        () async {
+      final chunks = await dispatcher.generateStream(ark(), [
+        LLMMessage(role: LLMRole.user, content: 'two', attachments: [
+          LLMAttachment.fromBytes(_png, 'image/png'),
+          LLMAttachment.fromBytes(_png, 'image/png'),
+        ]),
+      ]).toList();
+      expect(chunks.last.metadata?[inputImageCountKey], 2);
+      // And a text-to-image stream says nothing.
+      expect((await run(ark())).last.metadata?.containsKey(inputImageCountKey),
+          isFalse);
     });
 
     test('SSE is recognised by its body, whatever the Content-Type says',

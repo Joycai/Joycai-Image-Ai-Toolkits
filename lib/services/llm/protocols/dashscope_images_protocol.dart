@@ -43,15 +43,11 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
     );
 
     // Cap the reference images to what the model accepts (qwen: 3, wan2.7: 9).
-    var inputImages = userMsg.attachments;
-    final maxRef = target.model.capabilities.maxReferenceImages;
-    if (maxRef != null && maxRef >= 0 && inputImages.length > maxRef) {
-      logger?.call(
-        'Model accepts at most $maxRef reference image(s); using the first $maxRef of ${inputImages.length}.',
-        level: 'WARN',
-      );
-      inputImages = inputImages.sublist(0, maxRef);
-    }
+    final inputImages = capReferenceImages(
+      userMsg.attachments,
+      target.model.capabilities.maxReferenceImages,
+      logger,
+    );
 
     final imageRefs = <String>[];
     ({int width, int height})? inputSize;
@@ -145,6 +141,7 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
           data: data,
           imageCount: images.length,
           sentSize: dashscopeSentSize(payload),
+          inputImages: imageRefs.length,
         ),
       );
     } finally {
@@ -191,6 +188,7 @@ Map<String, dynamic> dashscopeImageMetadata({
   required Map<String, dynamic> data,
   required int imageCount,
   String? sentSize,
+  int inputImages = 0,
 }) {
   final rawUsage = data['usage'];
   final usage = rawUsage is Map
@@ -212,5 +210,6 @@ Map<String, dynamic> dashscopeImageMetadata({
     'image_count': imageCount,
     if (usage.isNotEmpty) 'dashscope_usage': usage,
     'output_size': ?outputSize,
+    ...sentInputImages(inputImages),
   };
 }

@@ -34,15 +34,11 @@ class XaiImagesProtocol implements ImageGenProtocol {
     final prompt = userMsg.content;
 
     // Cap the reference images to what the model accepts (5).
-    var inputImages = userMsg.attachments;
-    final maxRef = target.model.capabilities.maxReferenceImages;
-    if (maxRef != null && maxRef >= 0 && inputImages.length > maxRef) {
-      logger?.call(
-        'Model accepts at most $maxRef reference image(s); using the first $maxRef of ${inputImages.length}.',
-        level: 'WARN',
-      );
-      inputImages = inputImages.sublist(0, maxRef);
-    }
+    final inputImages = capReferenceImages(
+      userMsg.attachments,
+      target.model.capabilities.maxReferenceImages,
+      logger,
+    );
 
     final isEdit = inputImages.isNotEmpty;
     final baseUrl = trimBaseUrl(config.endpoint);
@@ -150,6 +146,8 @@ class XaiImagesProtocol implements ImageGenProtocol {
           if (data['usage'] is Map)
             ...(data['usage'] as Map).cast<String, dynamic>(),
           if (revised.isNotEmpty) 'revised_prompt': revised,
+          // xAI charges per input image; its usage block does not count them.
+          ...sentInputImages(encodedCount),
         },
       );
     } finally {
