@@ -59,7 +59,7 @@ git show 46d5a72:plans/012-task-capsule-spring-settle.md
 ## 无障碍契约
 
 `AppMotion.prefersReduced` / `AppMotion.durationOf`（`lib/core/design_tokens.dart:352-362`）是全
-应用唯一入口，`test/reduced_motion_test.dart` 钉住契约——包括侧边面板那条**刻意的例外**
+应用唯一入口，`test/widgets/ui/reduced_motion_test.dart` 钉住契约——包括侧边面板那条**刻意的例外**
 （减弱动画时不归零，改为淡入，因为 450px 的面板在两帧之间出现读起来像换了屏）。新增任何
 `duration:` 都要走令牌，不要直接写毫秒数。
 

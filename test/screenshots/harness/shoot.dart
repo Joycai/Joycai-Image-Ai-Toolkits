@@ -133,18 +133,35 @@ Future<void> mountApp(
   appState.logState.clear();
   seedLogs(appState);
 
+  // Twice: on the way out, so a test that never mounts through here (one that
+  // calls `precacheImage` itself) does not inherit this one's loads, and on the
+  // way in, for a file whose earlier test left some without going through here.
+  addTearDown(dropUnfinishedImageLoads);
+  dropUnfinishedImageLoads();
+
   // Real async: the screens' initState sqflite queries and the compute()
   // isolates behind the gallery/browser scans only make progress out here.
   // [before] too — most of what it sets is a persisted setting
   // (`setWorkbenchTab`), and a write begun under the fake clock is never
   // finished by it.
+  //
+  // [stalled] carries a failed warm-up out by hand. What a `runAsync` body
+  // throws is parked where `takeException` finds it, and that slot holds one:
+  // an overflow from the first pump would already be in it, and the drain at
+  // the bottom of this function prints whatever it finds and moves on.
+  WarmUpStalled? stalled;
   await tester.runAsync(() async {
     appState.navigateToScreen(screen.index);
     await before?.call(tester);
     await tester.pumpWidget(_appTree(appState));
     await Future<void>.delayed(const Duration(milliseconds: 700));
     await tester.pump();
-    await _warmImageCache(tester, env);
+    try {
+      await _warmImageCache(tester, env);
+    } on WarmUpStalled catch (e) {
+      stalled = e;
+      return;
+    }
     await tester.pump();
     // A second settle, for the loads that only *start* once the first round's
     // results are on screen. The assistant's knowledge tree is the case that
@@ -158,6 +175,7 @@ Future<void> mountApp(
     await Future<void>.delayed(const Duration(milliseconds: 200));
     await tester.pump();
   });
+  if (stalled case final WarmUpStalled e) throw e;
 
   // 800ms covers every AppMotion duration used across the screens (the
   // ladder tops out at AppMotion.panel, 300ms).
@@ -182,6 +200,24 @@ Future<void> mountApp(
   await tester.pump();
 }
 
+/// Forgets every image load that has not finished.
+///
+/// The image cache outlives a test, and so does a load that was still pending
+/// when the test ended. One started by a pump outside `runAsync` lives in that
+/// test's fake-async zone, which is gone: it never completes, and the next
+/// `precacheImage` for the same path is handed the same completer and waits on
+/// it for good. `render_probe.dart`'s thumbnail-size drag leaves ~180 behind.
+///
+/// `putIfAbsent` hands a completer back from either of two maps. The pending
+/// one is only emptied by `clear()`, which takes the decoded entries with it —
+/// so only when there is something pending. The live one is pure bookkeeping
+/// and costs nothing to drop, and must go every time: a `clear()` from anywhere
+/// else empties the pending map and leaves the dead completer in this one.
+void dropUnfinishedImageLoads() {
+  if (imageCache.pendingImageCount > 0) imageCache.clear();
+  imageCache.clearLiveImages();
+}
+
 Widget _appTree(AppState appState) {
   return MultiProvider(
     providers: [
@@ -201,6 +237,37 @@ Widget _appTree(AppState appState) {
   );
 }
 
+/// [_warmImageCache] gave up on [path].
+class WarmUpStalled implements Exception {
+  WarmUpStalled(this.path)
+      : pending = imageCache.pendingImageCount,
+        live = imageCache.liveImageCount;
+
+  final String path;
+  final int pending;
+  final int live;
+
+  @override
+  String toString() => 'warm-up never finished for $path — an image load left '
+      'over from an earlier test? pending=$pending live=$live';
+}
+
+/// Real time: the warm-up runs inside `runAsync`, where timers are real.
+const Duration _kWarmLimit = Duration(seconds: 10);
+
+/// One image into the cache, or [WarmUpStalled].
+///
+/// A timeout here is not a slow decode — these are fixture PNGs. It is a load
+/// the cache handed back that can no longer finish (see
+/// [dropUnfinishedImageLoads]). Left unbounded it does not fail a test, it
+/// hangs the process: nothing after it runs, and CI sits until the job's own
+/// timeout with no name and no path to show for it.
+Future<void> _warm(ImageProvider image, BuildContext context, String path) =>
+    precacheImage(image, context).timeout(
+      _kWarmLimit,
+      onTimeout: () => throw WarmUpStalled(path),
+    );
+
 /// Decoding a [FileImage] is asynchronous, so without this every thumbnail
 /// captures as an empty box — the classic golden-test failure.
 ///
@@ -211,26 +278,20 @@ Future<void> _warmImageCache(WidgetTester tester, FixtureEnv env) async {
   if (app.evaluate().isEmpty) return;
   final BuildContext context = tester.element(app);
 
-  // Drop what an earlier test left loading. A decode a widget started under
-  // that test's fake clock — a card scrolled into view, a thumbnail resized —
-  // and that had not finished when the test ended never will: its completer
-  // belongs to a zone nothing pumps any more. It stays in the cache as
-  // *pending*, and a `precacheImage` for the same file joins it and waits
-  // forever (the render probe's second test, behind a first that drags the
-  // thumbnail size).
-  imageCache.clear();
-  imageCache.clearLiveImages();
-
   for (final String path in env.fixtureImagePaths) {
     try {
-      await precacheImage(FileImage(File(path)), context);
+      await _warm(FileImage(File(path)), context, path);
+    } on WarmUpStalled {
+      rethrow;
     } catch (_) {
       // A format the decoder does not handle (the .mp4/.mp3 stubs); the widget
       // shows its own error placeholder, which is what the real app does too.
     }
   }
   try {
-    await precacheImage(const AssetImage('assets/icon/icon.png'), context);
+    await _warm(const AssetImage('assets/icon/icon.png'), context, 'assets/icon/icon.png');
+  } on WarmUpStalled {
+    rethrow;
   } catch (_) {
     // Only the About block's logo; not worth failing a shot over.
   }

@@ -59,7 +59,7 @@ jobs:
         run: flutter gen-l10n
 
       # Sharded by file, not with --total-shards: that flag splits individual
-      # tests, so every shard still compiles all ~135 files, and a few files
+      # tests, so every shard still compiles all ~289 files, and a few files
       # rely on an earlier test in the same file having run first. The
       # screenshot harness is excluded by tag — it writes PNGs and asserts
       # nothing (see dart_test.yaml).

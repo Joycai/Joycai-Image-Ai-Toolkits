@@ -19,6 +19,7 @@ Future<Map<String, dynamic>> _executeDelegate(
   PromptOptimizerSession session,
   dynamic modelIdentifier,
   String? knowledgeRoot, {
+  required DatabaseService db,
   required Set<String> availableKinds,
   required List<Map<String, String>> referenceImages,
   int? contextWindow,
@@ -58,6 +59,7 @@ Future<Map<String, dynamic>> _executeDelegate(
       modelIdentifier,
       task,
       referenceImages,
+      db: db,
       contextId: contextId,
       onLog: onLog,
       isCancelled: isCancelled,
@@ -95,7 +97,7 @@ Future<Map<String, dynamic>> _executeDelegate(
     // included — so the sub-agent's read cap is not over-granted.
     measureOccupancy: (messages) => PromptOptimizerAgent.occupiedChars('', messages),
   );
-  return _finishDelegateRun(session, task, result, onLog);
+  return _finishDelegateRun(session, db, task, result, onLog);
 }
 
 String _clipPreview(String task) =>
@@ -110,6 +112,7 @@ Future<Map<String, dynamic>> _runDraftDelegate(
   dynamic modelIdentifier,
   String task,
   List<Map<String, String>> referenceImages, {
+  required DatabaseService db,
   String? contextId,
   void Function(String message)? onLog,
   bool Function()? isCancelled,
@@ -164,7 +167,7 @@ Future<Map<String, dynamic>> _runDraftDelegate(
     contextId: contextId,
     usageTag: 'subagent:draft',
   );
-  return _finishDelegateRun(session, task, result, onLog);
+  return _finishDelegateRun(session, db, task, result, onLog);
 }
 
 /// Shared tail of every delegate run: cancellation, the empty-output rule
@@ -172,6 +175,7 @@ Future<Map<String, dynamic>> _runDraftDelegate(
 /// then note storage + digest.
 Future<Map<String, dynamic>> _finishDelegateRun(
   PromptOptimizerSession session,
+  DatabaseService db,
   String task,
   SubAgentResult result,
   void Function(String message)? onLog,
@@ -199,7 +203,7 @@ Future<Map<String, dynamic>> _finishDelegateRun(
   // digest-only rather than failing a research run that already succeeded.
   AssistantNote? note;
   try {
-    note = await AssistantNoteRepository().insert(
+    note = await AssistantNoteRepository(db: db).insert(
       sessionId: session.id,
       title: task.length > 80 ? task.substring(0, 80) : task,
       content: output,
@@ -230,6 +234,7 @@ Future<Map<String, dynamic>> _finishDelegateRun(
 Future<Map<String, dynamic>> _executeReadNote(
   LLMToolCall call,
   PromptOptimizerSession session, {
+  required DatabaseService db,
   required String systemPrompt,
   required int? contextWindow,
   void Function(String message)? onLog,
@@ -258,7 +263,7 @@ Future<Map<String, dynamic>> _executeReadNote(
   }
 
   final note =
-      await AssistantNoteRepository().get(noteId, sessionId: session.id);
+      await AssistantNoteRepository(db: db).get(noteId, sessionId: session.id);
   if (note == null) {
     return {
       'status': 'error',

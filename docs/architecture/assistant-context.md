@@ -411,7 +411,7 @@ What keeps it safe:
   well as insert, and `setSessionMode` records a switch at once so that
   quitting before the next turn does not restore into the mode that was left.
 
-Pinned by `test/assistant_kb_use_switch_test.dart`.
+Pinned by `test/screens/workbench/assistant_kb_use_switch_test.dart`.
 
 ## Accepted limits
 
@@ -543,22 +543,22 @@ Pure functions are pinned directly; prefer adding to these over end-to-end runs.
 
 | File | Covers |
 |---|---|
-| `test/context_budget_test.dart` | tri-state, ratio math, reserve scaling, `budgetChars < window` for every preset |
-| `test/optimizer_context_budget_test.dart` | `shouldCompact`, `occupiedChars`, per-call cap, exhaustion |
-| `test/optimizer_compaction_boundary_test.dart` | fold to the retention target, the two-turn floor, the summary-plus-one skip, no re-compaction the next turn, the `compaction` usage tag |
-| `test/optimizer_compaction_test.dart` | a failed or empty summary leaves the history untouched; the next turn retries |
-| `test/optimizer_context_usage_test.dart` | the readout: role split, trimmed-not-raw history, window tri-state, unmeasured slices |
-| `test/optimizer_context_card_test.dart` | the card's four states (unmeasured / configured / assumed / unlimited) at both panel widths |
-| `test/optimizer_kb_liveness_test.dart` | the three deadlock scenarios (elided / compacted / in-flight) |
-| `test/optimizer_history_repair_test.dart` | invariant 10: stubs, orphan/duplicate drops, empty ids, the trailing ask_user exemption, idempotence, restore |
-| `test/knowledge_base_paging_test.dart` | boundary snapping, determinism, degenerate input |
-| `test/knowledge_base_read_cap_test.dart` | whole-file vs paged, undersized windows |
-| `test/optimizer_image_liveness_test.dart` | image re-view liveness: fresh / elided / compacted; the two windows' different sizes; `_elide` and `_liveViewedPaths` agreeing at every distance |
-| `test/optimizer_image_cap_test.dart` | the newest-three cap across turns; re-view after the cap drops an image; force-view-all keeping the current turn; cap and liveness agreeing at every count |
-| `test/llm_cancellation_test.dart` | `LLMCancelled` classification, and the sub-agent turning it into a cancelled result rather than a failure |
-| `test/openai_chat_payload_test.dart` | reasoning echo-back, inline `<think>` split (sync + cross-chunk), in-body error envelopes |
-| `test/optimizer_truncation_test.dart` | invariant 12: a cut call is not run, its result shape, two cuts end the turn, a whole reply resets the count, a cut text reply is marked; the sub-agent's two cases |
-| `test/knowledge_base_splice_test.dart` | section modes: span to the next same-or-higher heading, nested headings go with their parent, first of duplicate headings, fenced code ignored, CRLF kept, not-found lists headings, append into a section / the file / an empty file |
+| `test/services/llm/context_budget_test.dart` | tri-state, ratio math, reserve scaling, `budgetChars < window` for every preset |
+| `test/services/assistant/optimizer_context_budget_test.dart` | `shouldCompact`, `occupiedChars`, per-call cap, exhaustion |
+| `test/services/assistant/optimizer_compaction_boundary_test.dart` | fold to the retention target, the two-turn floor, the summary-plus-one skip, no re-compaction the next turn, the `compaction` usage tag |
+| `test/services/assistant/optimizer_compaction_test.dart` | a failed or empty summary leaves the history untouched; the next turn retries |
+| `test/services/assistant/optimizer_context_usage_test.dart` | the readout: role split, trimmed-not-raw history, window tri-state, unmeasured slices |
+| `test/screens/workbench/optimizer_context_card_test.dart` | the card's four states (unmeasured / configured / assumed / unlimited) at both panel widths |
+| `test/services/assistant/optimizer_kb_liveness_test.dart` | the three deadlock scenarios (elided / compacted / in-flight) |
+| `test/services/assistant/optimizer_history_repair_test.dart` | invariant 10: stubs, orphan/duplicate drops, empty ids, the trailing ask_user exemption, idempotence, restore |
+| `test/services/assistant/knowledge_base_paging_test.dart` | boundary snapping, determinism, degenerate input |
+| `test/services/assistant/knowledge_base_read_cap_test.dart` | whole-file vs paged, undersized windows |
+| `test/services/assistant/optimizer_image_liveness_test.dart` | image re-view liveness: fresh / elided / compacted; the two windows' different sizes; `_elide` and `_liveViewedPaths` agreeing at every distance |
+| `test/services/assistant/optimizer_image_cap_test.dart` | the newest-three cap across turns; re-view after the cap drops an image; force-view-all keeping the current turn; cap and liveness agreeing at every count |
+| `test/services/llm/llm_cancellation_test.dart` | `LLMCancelled` classification, and the sub-agent turning it into a cancelled result rather than a failure |
+| `test/services/llm/openai_chat_payload_test.dart` | reasoning echo-back, inline `<think>` split (sync + cross-chunk), in-body error envelopes |
+| `test/services/assistant/optimizer_truncation_test.dart` | invariant 12: a cut call is not run, its result shape, two cuts end the turn, a whole reply resets the count, a cut text reply is marked; the sub-agent's two cases |
+| `test/services/assistant/knowledge_base_splice_test.dart` | section modes: span to the next same-or-higher heading, nested headings go with their parent, first of duplicate headings, fenced code ignored, CRLF kept, not-found lists headings, append into a section / the file / an empty file |
 
 **Not covered end-to-end:** the model dialog's tri-state control and the
 Settings summary-ratio dropdown have never been driven through a real UI run.

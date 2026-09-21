@@ -7,7 +7,7 @@ import 'protocol.dart';
 ///
 /// IO-free on purpose, like `minimax_payload.dart`: the repo has no HTTP mock
 /// setup, so these rules are kept out of the protocol's request path so
-/// `test/minimax_h3_base_payload_test.dart` can pin them.
+/// `test/services/llm/minimax_h3_base_payload_test.dart` can pin them.
 ///
 /// The wire facts are recorded in `docs/api/minimax.md` §8. In brief
 /// (SGLang cookbook, MiniMax local-deploy-h3 guide):

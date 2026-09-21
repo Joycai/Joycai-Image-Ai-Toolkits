@@ -6,9 +6,9 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
-import '../../services/db/database_service.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_routes.dart';
+import '../../services/system/ui_prefs.dart';
 import '../../state/app_state.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
@@ -81,8 +81,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   Future<void> _loadSidebarWidth() async {
-    final saved = await DatabaseService().getSetting('models_sidebar_width');
-    final width = double.tryParse(saved ?? '');
+    // Read before the await: the context must not be touched after it.
+    final uiPrefs = context.read<AppState>().uiPrefs;
+    final width = await uiPrefs.panelWidth(UiPanel.modelsSidebar);
     if (width != null && mounted) {
       setState(() => _sidebarWidth = width.clamp(_minSidebarWidth, _maxSidebarWidth));
     }
@@ -195,7 +196,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
             _dragSidebarWidth = null;
             final saved = _sidebarWidth;
             if (saved != null) {
-              DatabaseService().saveSetting('models_sidebar_width', saved.round().toString());
+              appState.uiPrefs.savePanelWidth(UiPanel.modelsSidebar, saved);
             }
           },
         ),

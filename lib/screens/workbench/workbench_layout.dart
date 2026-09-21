@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/db/database_service.dart';
+import '../../services/system/ui_prefs.dart';
 import '../../state/app_state.dart';
 import '../../widgets/glass/app_glass.dart';
 import '../../widgets/glass/glass_controls.dart';
@@ -271,12 +271,11 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     super.initState();
     final appState = Provider.of<AppState>(context, listen: false);
     _leftWidth = appState.sidebarWidth.clamp(kLeftPanelMin, kLeftPanelMax);
-    _loadRightWidth();
+    _loadRightWidth(appState.uiPrefs);
   }
 
-  Future<void> _loadRightWidth() async {
-    final saved = await DatabaseService().getSetting('workbench_right_panel_width');
-    final width = double.tryParse(saved ?? '');
+  Future<void> _loadRightWidth(UiPrefs uiPrefs) async {
+    final width = await uiPrefs.panelWidth(UiPanel.workbenchRightPanel);
     if (width != null && mounted) {
       setState(() => _rightWidth = width);
     }
@@ -449,8 +448,9 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
               setState(() {
                 _rightWidth = _rightWidth.clamp(kRightPanelMin, panels.rightMax);
               });
-              DatabaseService().saveSetting(
-                  'workbench_right_panel_width', _rightWidth.round().toString());
+              Provider.of<AppState>(context, listen: false)
+                  .uiPrefs
+                  .savePanelWidth(UiPanel.workbenchRightPanel, _rightWidth);
             },
           ),
           PanelCard(

@@ -1,0 +1,358 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/channel_form_sections.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/channel_provider_presets.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/channel_wizard_dialog.dart';
+import '../../support/private_data_dir.dart';
+import '../../support/real_async.dart';
+
+/// Mount the wizard at a given window width.
+///
+/// `D1b`: a stepped dialog on desktop and tablet, a full-screen page on a
+/// phone — the same steps either way. Provider → (way in, for presets with
+/// more than one) → endpoint & key → tag & appearance → preview.
+Future<void> _pumpWizard(WidgetTester tester, {double width = 1400}) async {
+  tester.view.physicalSize = Size(width, 1200);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Builder(
+        builder: (context) {
+          final l10n = AppLocalizations.of(context)!;
+          return Scaffold(
+            body: ChannelWizardDialog(l10n: l10n, appState: AppState()),
+          );
+        },
+      ),
+    ),
+  );
+  await tester.pump();
+}
+
+/// The provider search box, by its role rather than its full wording.
+Finder _searchField() => find.byWidgetPredicate(
+      (w) => w is ChannelField && (w.hint ?? '').contains('Search providers'),
+    );
+
+/// On the connection step the only two fields are the endpoint and the key;
+/// the key is the one that can be masked.
+Finder _endpointField() => find.byWidgetPredicate((w) => w is ChannelField && !w.obscurable);
+Finder _keyField() => find.byWidgetPredicate((w) => w is ChannelField && w.obscurable);
+
+String _textOf(WidgetTester tester, Finder field) => tester.widget<ChannelField>(field).controller.text;
+
+Future<void> _typeInto(WidgetTester tester, Finder field, String text) async {
+  await tester.enterText(find.descendant(of: field, matching: find.byType(TextField)), text);
+  await tester.pump();
+}
+
+Future<void> _tapText(WidgetTester tester, String text) async {
+  await tester.tap(find.text(text).last);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _selectProvider(WidgetTester tester, String label) async {
+  final finder = find.text(label);
+  expect(finder, findsWidgets, reason: '$label is not on the provider step');
+  // Every row is built, but the lower groups sit below the dialog's fold.
+  await tester.ensureVisible(finder.first);
+  await tester.pumpAndSettle();
+  await tester.tap(finder.first);
+  await tester.pumpAndSettle();
+}
+
+/// Next until the connection step is on screen (one or two steps away).
+Future<void> _toConnection(WidgetTester tester) async {
+  for (var i = 0; i < 3 && _keyField().evaluate().isEmpty; i++) {
+    await _tapText(tester, 'Next');
+  }
+  expect(_keyField(), findsOneWidget, reason: 'never reached the endpoint & key step');
+}
+
+void main() {
+  usePrivateDataDir('joycai_channel_wizard_dialog_test');
+  useRealAsyncAppState();
+
+  // Two regressions, both of which shipped: provider rows that existed in the
+  // preset list but were never rendered, and an endpoint the user could not
+  // edit once a preset supplied one.
+
+  group('provider step', () {
+    testWidgets('every provider preset is rendered, without scrolling', (tester) async {
+      await _pumpWizard(tester);
+
+      // Driven off the catalogue: a preset added later has to appear here
+      // without anyone remembering to add it to a list.
+      final l10n = AppLocalizations.of(tester.element(find.byType(ChannelWizardDialog)))!;
+      for (final preset in kListedChannelProviderPresets) {
+        expect(
+          find.text(channelProviderTitle(l10n, preset.id)),
+          findsWidgets,
+          reason: '${preset.id} is defined as a preset but not rendered',
+        );
+      }
+      expect(kChannelProviderPresets.length, 17);
+      // DashScope's native face is a route of the one DashScope row
+      // (`D1f · 4b` ②); its preset stays so stored channels still name it.
+      expect(kListedChannelProviderPresets.length, 16);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('opens on the picker; the connection fields come later', (tester) async {
+      await _pumpWizard(tester);
+
+      expect(find.text('Next'), findsOneWidget);
+      expect(_keyField(), findsNothing);
+    });
+
+    testWidgets('search filters the providers, and clearing restores them', (tester) async {
+      await _pumpWizard(tester);
+
+      final search = _searchField();
+      expect(search, findsOneWidget);
+
+      await _typeInto(tester, search, 'deepseek');
+      expect(find.text('DeepSeek'), findsWidgets);
+      expect(find.text('Alibaba DashScope'), findsNothing);
+
+      await _typeInto(tester, search, '');
+      expect(find.text('Alibaba DashScope'), findsWidgets);
+    });
+
+    // The separate "Qianwen Platform" row was folded into DashScope, which is
+    // only safe because the names it used to be found under still reach it.
+    testWidgets('folded-in names still find DashScope', (tester) async {
+      await _pumpWizard(tester);
+      final search = _searchField();
+
+      for (final alias in const ['qianwen', 'Qwen', '千问', '通义']) {
+        await _typeInto(tester, search, alias);
+        for (final row in const ['Alibaba DashScope']) {
+          expect(find.text(row), findsWidgets, reason: '"$alias" no longer reaches "$row"');
+        }
+      }
+    });
+  });
+
+  group('endpoint & key step', () {
+    testWidgets('preset endpoint is prefilled and still editable', (tester) async {
+      await _pumpWizard(tester);
+      await _selectProvider(tester, 'Alibaba DashScope');
+      await _toConnection(tester);
+
+      expect(
+        _textOf(tester, _endpointField()),
+        'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        reason: 'the preset should prefill its host',
+      );
+
+      // The international host has no preset of its own, so it is only
+      // reachable by typing over the suggestion.
+      const intl = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1';
+      await _typeInto(tester, _endpointField(), intl);
+      expect(_textOf(tester, _endpointField()), intl);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('switching provider replaces the previous host', (tester) async {
+      await _pumpWizard(tester);
+
+      await _selectProvider(tester, 'Alibaba DashScope');
+      await _selectProvider(tester, 'DeepSeek');
+      await _toConnection(tester);
+
+      expect(
+        _textOf(tester, _endpointField()),
+        'https://api.deepseek.com',
+        reason: 'a stale host here would create a channel pointed at DashScope',
+      );
+    });
+
+    testWidgets('a step comes in from the side the wizard is heading', (tester) async {
+      await _pumpWizard(tester);
+      await _selectProvider(tester, 'DeepSeek');
+
+      // The step body's own slide: the one wrapping the switcher's keyed child.
+      double shiftOf(Finder inside) => tester
+          .widget<SlideTransition>(find.ancestor(
+            of: inside,
+            matching: find.byWidgetPredicate((w) => w is SlideTransition && w.child is KeyedSubtree),
+          ))
+          .position
+          .value
+          .dx;
+
+      await tester.tap(find.text('Next').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+      expect(shiftOf(_keyField()), greaterThan(0), reason: 'forward: in from the right');
+      await tester.pumpAndSettle();
+      expect(shiftOf(_keyField()), 0);
+
+      await tester.tap(find.text('Back').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+      expect(shiftOf(find.text('DeepSeek').first), lessThan(0), reason: 'back: in from the left');
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('back before the forward move finishes: each copy keeps its own way',
+        (tester) async {
+      await _pumpWizard(tester);
+      await _selectProvider(tester, 'DeepSeek');
+
+      await tester.tap(find.text('Next').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+      await tester.tap(find.text('Back').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+
+      final shifts = <int, double>{
+        for (final w in tester.widgetList<SlideTransition>(
+          find.byWidgetPredicate((w) => w is SlideTransition && w.child is KeyedSubtree),
+        ))
+          ((w.child! as KeyedSubtree).key! as ValueKey<int>).value: w.position.value.dx,
+      };
+      final serials = shifts.keys.toList()..sort();
+      expect(serials.length, 3, reason: 'first provider, connection, provider again');
+      expect(shifts[serials[0]], lessThan(0), reason: 'the first copy still leaves to the left');
+      expect(shifts[serials[1]], greaterThan(0), reason: 'the connection step leaves to the right');
+      expect(shifts[serials[2]], lessThan(0), reason: 'the new copy comes in from the left');
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a missing key blocks the next step and says why', (tester) async {
+      await _pumpWizard(tester);
+      await _selectProvider(tester, 'DeepSeek');
+      await _toConnection(tester);
+
+      await _tapText(tester, 'Next');
+
+      expect(
+        find.text('This provider needs an API key before the channel can be added'),
+        findsOneWidget,
+      );
+      // Still here: nothing moved on, nothing was created.
+      expect(_keyField(), findsOneWidget);
+    });
+  });
+
+  // `D1f · 4b`: a preset whose ways in are protocols gets every route of its
+  // platform, so it no longer asks which one — it previews them instead.
+  group('providers with several routes', () {
+    testWidgets('MiniMax goes straight to its host and lists both routes',
+        (tester) async {
+      await _pumpWizard(tester);
+      await _selectProvider(tester, 'MiniMax');
+      await _tapText(tester, 'Next');
+
+      expect(_keyField(), findsOneWidget, reason: 'no way-in step any more');
+      expect(find.text('OpenAI interface'), findsNothing);
+      expect(_textOf(tester, _endpointField()), 'https://api.minimaxi.com/v1');
+      expect(find.text('Routes to create'), findsOneWidget);
+      expect(find.text('POST https://api.minimaxi.com/v1/chat/completions'),
+          findsOneWidget);
+      expect(
+        find.text('POST https://api.minimaxi.com/anthropic/v1/messages'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('Google lists its native and OpenAI-compatible routes',
+        (tester) async {
+      await _pumpWizard(tester);
+      await _selectProvider(tester, 'Google GenAI');
+      await _toConnection(tester);
+
+      expect(_textOf(tester, _endpointField()),
+          'https://generativelanguage.googleapis.com/v1beta');
+      expect(find.text('Gemini · Primary'), findsOneWidget);
+      expect(
+        find.text('POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('NewAPI puts every route on the host the user typed',
+        (tester) async {
+      await _pumpWizard(tester);
+      await _selectProvider(tester, 'NewAPI');
+      await _toConnection(tester);
+
+      await _typeInto(tester, _endpointField(), 'https://relay.example.com');
+
+      for (final url in const [
+        'POST https://relay.example.com/v1/chat/completions',
+        'POST https://relay.example.com/v1/responses',
+        'POST https://relay.example.com/v1/messages',
+        'POST https://relay.example.com/v1beta/models/{id}:generateContent',
+      ]) {
+        expect(find.text(url), findsOneWidget, reason: url);
+      }
+    });
+  });
+
+  // Spec D2 16f: the local runtimes have no key to give, and the required
+  // check used to leave the user typing a junk character to get past it.
+  group('local runtimes', () {
+    testWidgets('Ollama prefills localhost and does not demand a key', (tester) async {
+      await _pumpWizard(tester);
+      await _selectProvider(tester, 'Ollama');
+      await _toConnection(tester);
+
+      expect(_textOf(tester, _endpointField()), 'http://localhost:11434/v1');
+
+      // The field stays — someone may have put reverse-proxy auth in front —
+      // but it says so, and it stops being required: moving on is a skip.
+      final key = tester.widget<ChannelField>(_keyField());
+      expect(key.hint, 'Local services usually need none');
+      expect(key.errorText, isNull);
+      expect(find.textContaining('Optional'), findsWidgets);
+      expect(find.text('Skip'), findsOneWidget);
+      expect(Vendors.byId(Vendors.ollama).keyOptional, isTrue);
+
+      await _tapText(tester, 'Skip');
+      expect(find.text('This provider needs an API key before the channel can be added'), findsNothing);
+      expect(_keyField(), findsNothing, reason: 'an optional key must not block the next step');
+    });
+
+    testWidgets('a hosted provider still requires one', (tester) async {
+      await _pumpWizard(tester);
+      await _selectProvider(tester, 'OpenAI');
+      await _toConnection(tester);
+
+      await _tapText(tester, 'Next');
+      expect(
+        find.text('This provider needs an API key before the channel can be added'),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('phone page', () {
+    testWidgets('the same steps fit a phone', (tester) async {
+      await _pumpWizard(tester, width: 390);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Next'), findsOneWidget);
+      await _selectProvider(tester, 'DeepSeek');
+      await _toConnection(tester);
+      expect(_textOf(tester, _endpointField()), 'https://api.deepseek.com');
+      expect(tester.takeException(), isNull);
+    });
+  });
+}

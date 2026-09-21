@@ -162,9 +162,16 @@ class ContextBudget {
   /// The configured window for [modelIdentifier], or null when it is unset,
   /// unknown, or unreadable. Accepts both a DB primary key and a legacy string
   /// model id, matching [LLMConfigResolver].
-  static Future<int?> resolveWindow(dynamic modelIdentifier) async {
+  ///
+  /// [database] defaults to the app's, like every other service here; a caller
+  /// that already holds one passes it so the window is read from the same
+  /// models table the rest of its work uses.
+  static Future<int?> resolveWindow(
+    dynamic modelIdentifier, {
+    DatabaseService? database,
+  }) async {
     try {
-      final models = await DatabaseService().getModels();
+      final models = await (database ?? DatabaseService()).getModels();
       for (final m in models) {
         if (modelIdentifier is int ? m.id == modelIdentifier : m.modelId == modelIdentifier) {
           return m.contextWindow;

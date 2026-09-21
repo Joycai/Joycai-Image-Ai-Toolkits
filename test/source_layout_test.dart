@@ -25,6 +25,9 @@ import 'package:path/path.dart' as p;
 /// `widgets/` and `services/` stay grouped rather than drifting back to one
 /// flat root, and that the design system under `widgets/` stays free of the
 /// app's domain.
+///
+/// The last rule turns the same discipline on `test/` itself: a test sits in
+/// the folder that mirrors the `lib/` folder it is about.
 void main() {
   /// Lower rank may not import higher. Equal rank means the same module.
   const rank = <String, int>{
@@ -281,5 +284,77 @@ void main() {
         .map((e) => "${e.from}:${e.line}  '${e.uri}' -> ${e.to}")
         .toList();
     expect(missing, isEmpty, reason: 'dangling directive:\n  ${missing.join('\n  ')}');
+  });
+
+  test('test/ mirrors lib/: nothing loose, nothing unmirrored', () {
+    /// The folder a test file sits in, relative to `test/`, as a `/`-joined
+    /// path — `<root>` for a file directly under `test/`.
+    String testFolderOf(String path) {
+      final rel = p.relative(p.dirname(path), from: 'test');
+      return rel == '.' ? '<root>' : p.split(rel).join('/');
+    }
+
+    // `grouped` above, plus `screens`, for `test/`: these three fan out into a
+    // domain folder per `lib/services`, `lib/widgets` and `lib/screens`
+    // subdirectory, so a file loose in one of them names no domain either.
+    const groupedTestDirs = {'services', 'widgets', 'screens'};
+
+    final testFiles = Directory('test')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .map((f) => p.normalize(f.path))
+        .where((f) => f.endsWith('.dart'))
+        .toList();
+
+    final loose = testFiles.where((f) {
+      final folder = testFolderOf(f);
+      // `flutter_test_config.dart` is found by name, walking up from a test
+      // file's own directory: the one that covers the whole suite can live
+      // nowhere but here.
+      if (folder == '<root>') {
+        return !const {'source_layout_test.dart', 'flutter_test_config.dart'}.contains(p.basename(f));
+      }
+      return groupedTestDirs.contains(folder);
+    }).toList()
+      ..sort();
+
+    expect(
+      loose,
+      isEmpty,
+      reason: 'these sit loose instead of in the folder mirroring lib/:\n  ${loose.join('\n  ')}\n\n'
+          'test/ holds nothing in its own root but source_layout_test.dart and '
+          'flutter_test_config.dart, and '
+          'test/services/, test/widgets/ and test/screens/ hold nothing in their own '
+          'root either — put the file under the domain folder for the lib/ file it is about.',
+    );
+
+    // A directory can sit outside a grouped root and still name nothing real:
+    // `test/services/foo/` with no `lib/services/foo/` passes the check above
+    // but mirrors nothing. `app` and `architecture` are the two extras that
+    // have no `lib/` counterpart by design; `support` and `screenshots` are
+    // fixtures and the screenshot harness, not mirrored and skipped here.
+    const extraTestDirs = {'app', 'architecture', 'support', 'screenshots'};
+
+    // Every directory at every depth, so `test/core/foo/` and
+    // `test/services/llm/bogus/` are caught as well as `test/bogus/`.
+    final unmirrored = Directory('test')
+        .listSync(recursive: true)
+        .whereType<Directory>()
+        .map((d) => p.split(p.relative(d.path, from: 'test')))
+        .where((parts) => !extraTestDirs.contains(parts.first))
+        .where((parts) => !Directory(p.joinAll(['lib', ...parts])).existsSync())
+        .map((parts) => 'test/${parts.join('/')}')
+        .toList()
+      ..sort();
+
+    expect(
+      unmirrored,
+      isEmpty,
+      reason: 'these test/ directories name no lib/ counterpart:\n  ${unmirrored.join('\n  ')}\n\n'
+          'Every directory under test/, at any depth, has a lib/ directory of the same path, '
+          'or sits under one of the agreed extras ($extraTestDirs). One with nothing on the '
+          'lib/ side is a typo or a leftover, not a home for a test. (A scratch folder such as '
+          'test/_scratch/ trips this too: delete it when done.)',
+    );
   });
 }
