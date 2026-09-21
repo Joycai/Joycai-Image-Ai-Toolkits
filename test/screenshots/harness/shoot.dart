@@ -132,16 +132,11 @@ Future<void> mountApp(
   appState.navigateToScreen(screen.index);
   await before?.call(tester);
 
-  // The image cache outlives a test, and so does a load that was still pending
-  // when the last one ended. One started by a pump outside `runAsync` lives in
-  // that test's fake-async zone, which is gone: it never completes, and
-  // `_warmImageCache` below would be handed the same completer for the same
-  // path and wait on it for good. `render_probe.dart`'s thumbnail-size drag
-  // leaves ~180 of them behind. Only then — decoded entries are worth keeping.
-  if (imageCache.pendingImageCount > 0) {
-    imageCache.clear();
-    imageCache.clearLiveImages();
-  }
+  // Twice: on the way out, so a test that never mounts through here (one that
+  // calls `precacheImage` itself) does not inherit this one's loads, and on the
+  // way in, for a file whose earlier test left some without going through here.
+  addTearDown(dropUnfinishedImageLoads);
+  dropUnfinishedImageLoads();
 
   // Real async: the screens' initState sqflite queries and the compute()
   // isolates behind the gallery/browser scans only make progress out here.
@@ -185,6 +180,24 @@ Future<void> mountApp(
   }
 
   await tester.pump();
+}
+
+/// Forgets every image load that has not finished.
+///
+/// The image cache outlives a test, and so does a load that was still pending
+/// when the test ended. One started by a pump outside `runAsync` lives in that
+/// test's fake-async zone, which is gone: it never completes, and the next
+/// `precacheImage` for the same path is handed the same completer and waits on
+/// it for good. `render_probe.dart`'s thumbnail-size drag leaves ~180 behind.
+///
+/// `putIfAbsent` hands a completer back from either of two maps. The pending
+/// one is only emptied by `clear()`, which takes the decoded entries with it —
+/// so only when there is something pending. The live one is pure bookkeeping
+/// and costs nothing to drop, and must go every time: a `clear()` from anywhere
+/// else empties the pending map and leaves the dead completer in this one.
+void dropUnfinishedImageLoads() {
+  if (imageCache.pendingImageCount > 0) imageCache.clear();
+  imageCache.clearLiveImages();
 }
 
 Widget _appTree(AppState appState) {
