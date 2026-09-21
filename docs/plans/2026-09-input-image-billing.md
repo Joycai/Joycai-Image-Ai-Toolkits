@@ -148,6 +148,10 @@
   改为摘要**按需要占位的非弹性子项**，上限取 `min(200, 行宽 × 40%)`（`LayoutBuilder` 取行宽），其余全归组名；测试改量
   盒子几何（行 / 标签盒 / 摘要盒），覆盖长摘要三档宽度、短摘要贴右不留白、宽行上限 200，并带上真实调用里那个没有
   trailing 的「不设计费组」项。
+- **Review 第五轮（opus）** 只查第四轮那一个 commit。`LayoutBuilder` 的安全性实测过：带 trailing 的下拉放进
+  `IntrinsicHeight` / `IntrinsicWidth` / `Table` / `Wrap` / `AlertDialog`，收起和展开七种情形都不抛——菜单行只在菜单路由里建，
+  按钮里画的是 `selectedItemBuilder` 的纯文字。四条低级别的都修了：被截的摘要恢复 `textAlign: end`（否则「…」比贴右的短一截）；
+  没有 trailing 的行不再包 `LayoutBuilder`；补一条「收起时不建菜单行」的测试钉住那条不变量；`richRow` 缩进。
 - **第 5 片 · 设计稿 `D2c` 的裁决**（设计子代理拿不到 DesignSync，稿子由主会话对照真实 `D2b` 校验后推送）：
   - 输入图一行放在档位表与优先级说明**之后**，不是 §1.5 写的「之上」——它和「其他规格」是同一种钉住的标量行，
     D2b 的块一个像素不动。

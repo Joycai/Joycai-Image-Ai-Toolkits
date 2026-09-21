@@ -98,6 +98,33 @@ void main() {
       expect(b.label.right, closeTo(b.trailing.left - 12, 0.5), reason: 'the label box has all that is left');
     });
 
+    testWidgets('a cut one ends on the row\'s right edge, not short of it', (tester) async {
+      await open(tester, 366, 'Seedream 5.0 pro', long);
+      expect(tester.widget<Text>(find.text(long).last).textAlign, TextAlign.end);
+    });
+
+    testWidgets('the closed field never builds the menu row, whichever item is selected', (tester) async {
+      // The LayoutBuilder is safe because it lives in the menu route alone:
+      // the button shows `selectedItemBuilder`'s plain label. In the button
+      // it would sit in an IndexedStack, and throw under any ancestor that
+      // measures intrinsics.
+      await tester.pumpWidget(host(IntrinsicWidth(
+        child: AppDropdown<int>(
+          value: 1,
+          items: const [
+            AppDropdownItem(value: 0, label: 'No fee group'),
+            AppDropdownItem(value: 1, label: 'Seedream 5.0 pro', trailing: long, description: 'spec'),
+          ],
+          onChanged: (_) {},
+        ),
+      )));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Seedream 5.0 pro'), findsOneWidget);
+      expect(find.text(long), findsNothing);
+      expect(find.descendant(of: find.byType(AppDropdown<int>), matching: find.byType(LayoutBuilder)), findsNothing);
+    });
+
     testWidgets('on a wide row the cap is 200, not the share', (tester) async {
       await open(tester, 720, 'Seedream 5.0 pro', '$long · $long');
 
