@@ -44,36 +44,67 @@ void main() {
   });
 
   // The shape of the one real caller — the model editor's fee-group field:
-  // large, with a prefix icon — at a 390pt phone page, a 320pt device, and
-  // narrower still.
-  for (final width in [366.0, 296.0, 240.0]) {
-    testWidgets('a long trailing yields to the label and never overflows @ $width', (tester) async {
-      // A fee group's one-line summary rides here, and an input-image rate
-      // about doubled it (`D2c`).
-      const summary = 'Per image · 1 rates · \$0.30–0.30 · input \$0.02/image · first 1 free';
+  // large, with a prefix icon, and a first item that has no trailing.
+  group('a rich item\'s trailing', () {
+    const long = 'Per image · 1 rates · \$0.30–0.30 · input \$0.02/image · first 1 free';
+    const short = '\$0.04/req';
+
+    Future<void> open(WidgetTester tester, double width, String label, String trailing) async {
       await tester.pumpWidget(host(SizedBox(
         width: width,
         child: AppDropdown<int>(
-          value: 1,
+          value: 0,
           size: AppFieldSize.large,
           prefixIcon: Icons.payments_outlined,
-          items: const [
-            AppDropdownItem(value: 1, label: 'Seedream 5.0 pro', trailing: summary),
-            AppDropdownItem(value: 2, label: 'Another group', trailing: summary),
+          items: [
+            const AppDropdownItem(value: 0, label: 'No fee group', muted: true),
+            AppDropdownItem(value: 1, label: label, trailing: trailing),
           ],
           onChanged: (_) {},
         ),
       )));
       await tester.tap(find.byType(AppDropdown<int>));
       await tester.pumpAndSettle();
+    }
+
+    /// The row the item lays out in, and the boxes of its two ends.
+    ({Rect row, Rect label, Rect trailing}) boxes(WidgetTester tester, String label, String trailing) {
+      final trailingText = find.text(trailing).last;
+      final row = find.ancestor(of: trailingText, matching: find.byType(Row)).first;
+      final labelBox = find.ancestor(of: find.text(label).last, matching: find.byType(Expanded)).first;
+      return (row: tester.getRect(row), label: tester.getRect(labelBox), trailing: tester.getRect(trailingText));
+    }
+
+    // A 390pt phone page, a 320pt device, and narrower still.
+    for (final width in [366.0, 296.0, 240.0]) {
+      testWidgets('a long one is cut at its share and the name keeps the rest @ $width', (tester) async {
+        await open(tester, width, 'Gemini 2.5 Pro Long Context Tier', long);
+
+        expect(tester.takeException(), isNull);
+        final b = boxes(tester, 'Gemini 2.5 Pro Long Context Tier', long);
+        expect(b.trailing.width, closeTo(b.row.width * 0.4, 0.5), reason: 'cut at 40% of the row');
+        expect(b.label.width, greaterThan(b.row.width * 0.5), reason: 'the name is what is being chosen');
+        expect(b.trailing.right, closeTo(b.row.right, 0.5));
+      });
+    }
+
+    testWidgets('a short one is shown whole, flush right, and takes nothing it does not need', (tester) async {
+      await open(tester, 422, 'Flux', short);
+
+      final b = boxes(tester, 'Flux', short);
+      final intrinsic = (tester.renderObject(find.text(short).last) as RenderBox).getMaxIntrinsicWidth(double.infinity);
+      expect(b.trailing.width, closeTo(intrinsic, 0.5), reason: 'not cut');
+      expect(b.trailing.right, closeTo(b.row.right, 0.5), reason: 'no dead space after it');
+      expect(b.label.right, closeTo(b.trailing.left - 12, 0.5), reason: 'the label box has all that is left');
+    });
+
+    testWidgets('on a wide row the cap is 200, not the share', (tester) async {
+      await open(tester, 720, 'Seedream 5.0 pro', '$long · $long');
 
       expect(tester.takeException(), isNull);
-      final label = tester.getSize(find.text('Another group').last).width;
-      final trailing = tester.getSize(find.text(summary).last).width;
-      expect(label, greaterThan(trailing), reason: 'the name is what is being chosen');
-      expect(trailing, lessThanOrEqualTo(200));
+      expect(boxes(tester, 'Seedream 5.0 pro', '$long · $long').trailing.width, closeTo(200, 0.5));
     });
-  }
+  });
 
   testWidgets('the open menu checks the current value, and the field does not', (tester) async {
     await tester.pumpWidget(host(SizedBox(
