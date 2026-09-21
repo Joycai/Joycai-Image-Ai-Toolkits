@@ -72,6 +72,7 @@ class DatabaseMigration {
     if (oldVersion < 45) await _createV45Columns(db);
     if (oldVersion < 46) await _createV46Tables(db);
     if (oldVersion < 47) await _createV47Columns(db);
+    if (oldVersion < 48) await _createV48Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -118,7 +119,35 @@ class DatabaseMigration {
     await _createV45Columns(db);
     await _createV46Tables(db);
     await _createV47Columns(db);
+    await _createV48Columns(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// Input-image billing — the input side of spec billing. xAI's Grok
+  /// Imagine and Seedream 5.0 pro charge per reference image sent, on top of
+  /// what the output costs; Seedream waives the first one of each request.
+  ///
+  /// On `fee_groups`: the price of one input image and how many of a
+  /// request's are free. Two scalars, not a second rate table — no provider
+  /// prices an input by its size. Read by spec mode only; existing groups
+  /// get zeros and price exactly as before.
+  ///
+  /// On `token_usage`: the snapshot, under the v42 discipline — the
+  /// *billable* count (free ones already taken off) and the unit price, so
+  /// the row prices itself whatever the group says later — plus the count
+  /// actually sent, which the usage page shows. Not derivable from the
+  /// billable count (one free image sent and none sent both bill zero), and
+  /// not a key of `output_spec`: a video settle rewrites that column whole.
+  static Future<void> _createV48Columns(Database db) async {
+    if (await _tableExists(db, 'fee_groups')) {
+      await _addColumnIfNotExists(db, 'fee_groups', 'input_unit_price', 'REAL DEFAULT 0.0');
+      await _addColumnIfNotExists(db, 'fee_groups', 'input_free_units', 'INTEGER DEFAULT 0');
+    }
+    if (await _tableExists(db, 'token_usage')) {
+      await _addColumnIfNotExists(db, 'token_usage', 'input_images', 'INTEGER DEFAULT 0');
+      await _addColumnIfNotExists(db, 'token_usage', 'input_units', 'REAL DEFAULT 0.0');
+      await _addColumnIfNotExists(db, 'token_usage', 'input_unit_price', 'REAL DEFAULT 0.0');
+    }
   }
 
   /// What a task preset hands back (`system_prompts.output_kind`, `A3e`):

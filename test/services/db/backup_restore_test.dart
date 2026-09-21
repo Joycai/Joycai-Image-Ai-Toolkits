@@ -730,8 +730,8 @@ void main() {
       await db.close();
     });
 
-    test('this build writes schema 47, which a v46 build rejects', () {
-      expect(DatabaseService.dbVersion, 47);
+    test('this build writes schema 48, which a v47 build rejects', () {
+      expect(DatabaseService.dbVersion, 48);
     });
   });
 }

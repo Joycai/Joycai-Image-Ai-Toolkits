@@ -22,6 +22,14 @@ class PricingGroup {
   final OutputUnit outputUnit;
   final List<SpecRate> outputRates;
 
+  /// Spec billing's input side: what one reference image sent with a request
+  /// costs, and how many of each request's are free (Seedream 5.0 pro waives
+  /// the first). Zero — the default — means inputs are not charged, which is
+  /// most groups. Like the rate table, kept through edits in the other modes
+  /// and read by spec mode alone.
+  final double inputUnitPrice;
+  final int inputFreeUnits;
+
   PricingGroup({
     this.id,
     required this.name,
@@ -32,12 +40,18 @@ class PricingGroup {
     this.requestPrice = 0.0,
     this.outputUnit = OutputUnit.image,
     this.outputRates = const [],
+    this.inputUnitPrice = 0.0,
+    this.inputFreeUnits = 0,
   });
 
   /// Price actually charged per cached input token.
   double get effectiveCacheInputPrice => cacheInputPrice ?? inputPrice;
 
   bool get isSpecBilled => billingMode == 'spec';
+
+  /// Whether this group charges for reference images at all. A free count
+  /// with no price charges nothing, so it does not count.
+  bool get chargesInputImages => isSpecBilled && inputUnitPrice > 0;
 
   factory PricingGroup.fromMap(Map<String, dynamic> map) {
     return PricingGroup(
@@ -50,6 +64,8 @@ class PricingGroup {
       requestPrice: (map['request_price'] as num? ?? 0.0).toDouble(),
       outputUnit: OutputUnit.parse(map['output_unit'] as String?),
       outputRates: SpecRate.decodeList(map['output_rates'] as String?),
+      inputUnitPrice: (map['input_unit_price'] as num? ?? 0.0).toDouble(),
+      inputFreeUnits: (map['input_free_units'] as num? ?? 0).toInt(),
     );
   }
 
@@ -63,6 +79,8 @@ class PricingGroup {
       'request_price': requestPrice,
       'output_unit': outputUnit.name,
       'output_rates': SpecRate.encodeList(outputRates),
+      'input_unit_price': inputUnitPrice,
+      'input_free_units': inputFreeUnits,
     };
     if (includeId) {
       data['id'] = id;

@@ -81,6 +81,9 @@ void main() {
         units: 8,
         unitPrice: 0.3,
         snapshot: UsageSpecSnapshot(size: '1080p', seconds: 8),
+        inputImages: 1,
+        inputUnits: 1,
+        inputUnitPrice: 0.05,
       ),
     ));
 
@@ -96,7 +99,11 @@ void main() {
 
     expect(matched, 1);
     final row = (await usage.getTokenUsage()).single;
-    expect(row.cost, closeTo(1.5, 1e-9));
+    // The settle knows the seconds rendered and nothing about what the
+    // submit sent: the input columns stay as the submit wrote them.
+    expect(row.costParts.spec, closeTo(1.5, 1e-9));
+    expect(row.spec!.inputImages, 1);
+    expect(row.costParts.specInput, closeTo(0.05, 1e-9));
     expect(row.specLabel, '1080p · 10s');
     expect(await usage.updateSpecBilling('video:nobody', const UsageSpecBilling(units: 1, unitPrice: 1)), 0);
   });
