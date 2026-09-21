@@ -786,11 +786,12 @@ class _UsageRowState extends State<_UsageRow> {
   /// 「3 张 · 1 张免费」: the images sent, and how many of them the group's
   /// free count covered — sent less billed, the row keeping no free count of
   /// its own. A row without the count sent (none reached the column) states
-  /// the billed ones alone.
+  /// the billed ones alone; so does one that delivered nothing — its images
+  /// went unbilled because the request failed, not because they were free.
   String _inputImagesText(AppLocalizations l10n, UsageSpecBilling spec) {
     final billed = spec.inputUnits.round();
     final sent = spec.inputImages > 0 ? spec.inputImages : billed;
-    final free = sent - billed;
+    final free = spec.units > 0 ? sent - billed : 0;
     final count = l10n.usageUnitsImage(_exact(sent));
     return free > 0 ? '$count · ${l10n.usageInputFreeCount(free)}' : count;
   }

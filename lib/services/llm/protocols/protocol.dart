@@ -765,12 +765,15 @@ List<LLMAttachment> capReferenceImages(
 /// [reported] is the provider's own count where it gives one, and outranks
 /// [sent], the entries this client put in the body — the same precedence the
 /// echoed output size has over the requested one. Empty for a request that
-/// carried none, so text-to-image metadata stays as it was.
+/// carried none, so text-to-image metadata stays as it was — but a
+/// *reported* zero is published as a zero: on a stream the pictures already
+/// went out carrying [sent], merged metadata keeps a key a later chunk
+/// merely omits, and only an explicit value can lower it.
 Map<String, dynamic> sentInputImages(int sent, {Object? reported}) {
-  final count = reported is num && reported.isFinite && reported >= 0
-      ? reported.toInt()
-      : sent;
-  return {if (count > 0) inputImageCountKey: count};
+  if (reported is num && reported.isFinite && reported >= 0) {
+    return {inputImageCountKey: reported.toInt()};
+  }
+  return {if (sent > 0) inputImageCountKey: sent};
 }
 
 Future<Uint8List?> readAttachmentBytes(LLMAttachment att) async {

@@ -292,6 +292,29 @@ void main() {
       expect(find.text('0 × \$0.0200 = \$0.0000'), findsOneWidget);
     });
 
+    testWidgets('a request that delivered nothing does not call its unbilled images free', (tester) async {
+      final failed = TokenUsage(
+        modelId: 'doubao-seedream-5-0-pro',
+        timestamp: todayAt(14),
+        billingMode: 'spec',
+        spec: const UsageSpecBilling(
+          unit: OutputUnit.image,
+          units: 0,
+          unitPrice: 0.3,
+          snapshot: UsageSpecSnapshot(size: '2K'),
+          inputImages: 3,
+          inputUnits: 0,
+          inputUnitPrice: 0.02,
+        ),
+      );
+      await pumpList(tester, [failed], const Size(1920, 1080));
+      await tester.tap(find.text('2K · input ×3'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('3 images'), findsOneWidget);
+      expect(find.textContaining('free'), findsNothing);
+    });
+
     testWidgets('a group that never charged inputs shows none of it, though the count is kept', (tester) async {
       await pumpList(tester, [seedreamRow(timestamp: todayAt(14), billed: 0, inputPrice: 0)], const Size(1920, 1080));
 

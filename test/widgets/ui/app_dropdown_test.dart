@@ -42,6 +42,28 @@ void main() {
     expect(tester.widget<DropdownButton<int>>(find.byType(DropdownButton<int>)).onChanged, isNull);
   });
 
+  testWidgets('a long trailing is cut instead of overflowing a narrow menu', (tester) async {
+    // A fee group's one-line summary rides here, and an input-image rate
+    // about doubled it (`D2c`).
+    const summary = 'Per image · 1 rates · \$0.30–0.30 · input \$0.02/image · first 1 free';
+    await tester.pumpWidget(host(SizedBox(
+      width: 280,
+      child: AppDropdown<int>(
+        value: 1,
+        items: const [
+          AppDropdownItem(value: 1, label: 'Seedream 5.0 pro', trailing: summary),
+          AppDropdownItem(value: 2, label: 'Other', trailing: summary),
+        ],
+        onChanged: (_) {},
+      ),
+    )));
+    await tester.tap(find.byType(AppDropdown<int>));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(find.text('Other').last).width, greaterThan(0));
+  });
+
   testWidgets('the open menu checks the current value, and the field does not', (tester) async {
     await tester.pumpWidget(host(SizedBox(
       width: 240,

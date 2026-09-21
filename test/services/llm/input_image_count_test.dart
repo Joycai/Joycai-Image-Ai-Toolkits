@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/dashscope_images_protocol.dart';
@@ -116,9 +117,14 @@ void main() {
         ? {'code': 1, 'result': 'task-1'}
         : {'status': 'SUCCESS', 'progress': '100%', 'imageUrl': '${base()}/img/1.png'};
     // The poll is a GET to `/mj/task/…/fetch`; pictures are GETs too.
-    final response = await generate(
-        config(Vendors.midjourneyProxy, 'midjourney'), [readable(), unreadable(), readable()]);
-    expect(response.metadata[inputImageCountKey], 2);
+    // Streamed, as the task executor takes it: the picture's own chunk says
+    // so too, because a consumer that leaves after it never sees the last.
+    final chunks = await LLMDispatcher().generateStream(
+      config(Vendors.midjourneyProxy, 'midjourney'),
+      [LLMMessage(role: LLMRole.user, content: 'blend', attachments: [readable(), unreadable(), readable()])],
+    ).toList();
+    expect(chunks.firstWhere((c) => c.imagePart != null).metadata, {inputImageCountKey: 2});
+    expect(chunks.last.metadata?[inputImageCountKey], 2);
   });
 
   test('DashScope (synchronous): the image parts sent', () async {
@@ -174,9 +180,11 @@ void main() {
   });
 
   group('sentInputImages', () {
-    test('a reported count wins, including an honest zero', () {
+    test('a reported count wins, and a reported zero is said out loud', () {
       expect(sentInputImages(3, reported: 2), {inputImageCountKey: 2});
-      expect(sentInputImages(3, reported: 0), isEmpty);
+      // Explicit, so it can lower the count a stream's pictures carried.
+      expect(sentInputImages(3, reported: 0), {inputImageCountKey: 0});
+      expect(sentInputImages(0), isEmpty);
     });
 
     test('anything that is not a count falls back to what was sent', () {
@@ -185,6 +193,13 @@ void main() {
       expect(sentInputImages(3, reported: -1), {inputImageCountKey: 3});
       expect(sentInputImages(3, reported: double.nan), {inputImageCountKey: 3});
     });
+  });
+
+  test('merged across a stream, the closing chunk\'s reported zero lowers the pictures\' count', () {
+    final picture = inputImageCountEntry(sentInputImages(3));
+    final closing = sentInputImages(3, reported: 0);
+    final merged = LLMService.mergeChunkMetadata(picture, closing);
+    expect(inputImageCountOf(merged), 0);
   });
 
   group('capReferenceImages', () {

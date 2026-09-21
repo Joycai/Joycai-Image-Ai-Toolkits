@@ -248,9 +248,17 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
               ),
               if (item.trailing != null) ...[
                 const SizedBox(width: 12),
-                Text(
-                  item.trailing!,
-                  style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+                // Capped and cut: a non-flex child is laid out first, so a long
+                // trailing (a fee group's one-line summary) would otherwise
+                // squeeze the label to nothing and then overflow the row.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 200),
+                  child: Text(
+                    item.trailing!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+                  ),
                 ),
               ],
             ],
