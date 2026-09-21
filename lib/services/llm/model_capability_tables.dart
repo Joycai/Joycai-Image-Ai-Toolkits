@@ -404,12 +404,12 @@ const _dashscopeWanVideo = ModelCapabilities(
 
 /// xAI Grok Imagine image (`grok-imagine-image*`). JSON
 /// `/images/generations` + `/images/edits`; accepts one source `image` or
-/// up to 3 `images[]` references (reference them as `<IMAGE_0>`… in the
+/// up to 5 `images[]` references (reference them as `<IMAGE_0>`… in the
 /// prompt). `auto` lets the model pick the best ratio; for single-image
 /// edits the output follows the input's ratio.
 const _xaiImage = ModelCapabilities(
   isImageGenerator: true,
-  maxReferenceImages: 3,
+  maxReferenceImages: 5,
   imageParams: [
     ParamSpec(
       key: 'aspectRatio',
