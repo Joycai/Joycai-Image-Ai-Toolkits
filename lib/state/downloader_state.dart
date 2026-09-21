@@ -6,12 +6,12 @@ import '../services/media/web_scraper_service.dart';
 
 class DownloaderState extends ChangeNotifier {
   DownloaderState({DatabaseService? database})
-    : _db = database,
+    : _db = database ?? DatabaseService(),
       _cookies = CookieRepository(db: database);
 
   /// Handed on to the scraper, which reads the model's context window from
-  /// it; null means the app's.
-  final DatabaseService? _db;
+  /// it.
+  final DatabaseService _db;
 
   /// The downloader's remembered cookies. Built here rather than per call
   /// so an injected database reaches every one of them.
