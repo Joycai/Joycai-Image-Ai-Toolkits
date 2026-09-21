@@ -495,7 +495,7 @@ LLMApiException? dashscopeEmptyReplyFailure({
 /// delta repeating everything — and is appended without latching, matching
 /// the delta assumption the append path always made.)
 ///
-/// Public only so `test/dashscope_chat_payload_test.dart` can reach it; the
+/// Public only so `test/services/llm/dashscope_chat_payload_test.dart` can reach it; the
 /// stream path is the sole caller.
 class DashScopeStreamChannel {
   final StringBuffer _emitted = StringBuffer();

@@ -42,7 +42,7 @@ class RouteEntry {
 /// face its vendor offered — the faces a model could already pin — each at
 /// the address the dispatcher derived for that face, split into host + path
 /// on the raw string. The one property this has to prove is that no request
-/// address changes by a byte (`test/channel_routes_test.dart`).
+/// address changes by a byte (`test/services/llm/channel_routes_test.dart`).
 class ChannelRoutes {
   /// Document version written into [encode]. A document with a higher
   /// version is still read field by field; unknown fields are ignored.

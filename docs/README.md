@@ -80,7 +80,7 @@ security findings that are still open.
   numbers — the widget counts are the signal, the milliseconds are not. The
   regressions it has already found are pinned by
   `test/screenshots/rebuild_scope_test.dart` and
-  `test/render_performance_test.dart`.
+  `test/core/render_performance_test.dart`.
 
 * **GPU render bench** (`lib/bench/render_bench.dart`) — the raster/GPU side,
   inert unless `RBENCH=1`. Build profile, then drive the exe with

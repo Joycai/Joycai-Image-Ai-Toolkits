@@ -713,7 +713,7 @@ class OpenAIChatProtocol implements ChatProtocol {
 
   /// Exposes the payload builder to tests — request-shape rules (reasoning
   /// echo-back, tool nesting, image parts) are pinned in
-  /// `test/openai_chat_payload_test.dart`.
+  /// `test/services/llm/openai_chat_payload_test.dart`.
   @visibleForTesting
   Map<String, dynamic> buildChatPayloadForTest(
     LLMTarget target,

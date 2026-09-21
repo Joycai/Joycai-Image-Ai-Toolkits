@@ -77,7 +77,7 @@
 - **`Delete` 与 `⌫` 永远成对**：macOS 键盘主区那颗是 `⌫`。
 - **同一个 scope 内不得有两条同 activator**，跨 scope 可以：`Esc` 在 L1 退出搜索、
   在 L2 清空选区，这是 `Esc` 阶梯（浮层 → 搜索 → 选区 → 不处理），不是冲突。
-  `test/app_shortcuts_test.dart` 两个平台各跑一遍钉住这条——**它曾经是恒真的**：
+  `test/core/app_shortcuts_test.dart` 两个平台各跑一遍钉住这条——**它曾经是恒真的**：
   用 `SingleActivator` 当 map 的键，而那个类没有值相等，于是查表永远 miss。
 - **活动区的认领要按身份放，不能按名字放**。两屏的中间区都叫 `ShortcutPane.grid`，
   切屏时新的那个先挂载认领、旧的后 dispose，按名字比较就会把新的认领误清掉。
@@ -91,7 +91,7 @@
   已经开着的抽屉是静默的空操作。于是只写 `open` 的版本在「按一次」的测试里永远
   是绿的，第二次按就死了。工作台的 `⌘\` / `⇧⌘\` 因此走
   `WorkbenchLayoutState.toggleLeftPanel` / `toggleRightPanel`，
-  `test/workbench_panel_toggle_test.dart` 两个方向各钉一次。
+  `test/screens/workbench/workbench_panel_toggle_test.dart` 两个方向各钉一次。
   （手机那张底部 sheet 是独立路由，会把键盘一起带走，键根本够不着它——那里只有
   「开」这一件事可做。）
 - **给「回去」的那个按钮，先问清楚有没有地方可回**。`⇧⌘\` 收起的是一条全局偏好，

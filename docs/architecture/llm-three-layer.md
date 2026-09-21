@@ -131,11 +131,11 @@ surface 开关"表达不了它。绑定关系升级为：
   被改指到别家 vendor，轮询也不会再送进陌生的状态词表。`video_` 前缀守卫
   仍在家族分支里，作为 v38 之前旧行与无佐证调用方的兜底；cancel 在佐证面
   没有取消能力时回答 null，**绝不**回落到渠道当前声明的面。
-- **`test/wire_protocol_routing_test.dart`** 钉住"重构前存在的每个
+- **`test/services/llm/wire_protocol_routing_test.dart`** 钉住"重构前存在的每个
   (vendor, model) 组合仍解析到同一条路"；
-  `test/dashscope_chat_payload_test.dart` 钉住私有 chat 面的线上规则
+  `test/services/llm/dashscope_chat_payload_test.dart` 钉住私有 chat 面的线上规则
   （三段式分区、`result_format`、增量、多模态 content 形状）；
-  `test/minimax_payload_test.dart` 钉住 MiniMax 两条私有面的 body 规则与
+  `test/services/llm/minimax_payload_test.dart` 钉住 MiniMax 两条私有面的 body 规则与
   base 推导 —— 其中媒体项的嵌套形状、`metadata` 计数的字符串类型两条，都是
   "写错了上游不报错、照常出片并计费"的那种，所以按上游样例逐字断言。
 
@@ -227,8 +227,8 @@ surface 开关"表达不了它。绑定关系升级为：
   相同。3.1 Pro 没有 `MINIMAL`、2.5 Pro 不接受预算 0：「关闭」在这两款上会 400，
   这是端点自己的声明，不做降级。④ 的 dialect 判定与请求共用
   `declaredAnthropicThinkingDialect`，编辑器看到的就是请求会用的。测试：
-  `test/reasoning_ladder_test.dart`。
-- **测试**：`test/model_kind_protocol_pin_test.dart` 钉住中转图像/视频、无通用面的
+  `test/services/llm/reasoning_ladder_test.dart`。
+- **测试**：`test/services/llm/model_kind_protocol_pin_test.dart` 钉住中转图像/视频、无通用面的
   渠道、一方厂商未收录的新 id、失效与缓存隔离，以及一条回归门 —— 对所有 vendor ×
   一组代表性 id，`tag = inferTag(id)` 时 descriptor 与 auto 必须和不带 tag 时
   是同一个对象 / 同一个值。
@@ -298,7 +298,7 @@ null = 平台默认，`''` = 主机本身，绝对 URL = 独立主机；「用�
 （或平台提供第二条）才出线路界面，否则与改前一样。
 
 **红线**：渠道的 `type` / `endpoint` 只许线路解析（`model_routes.dart`）、仓库规范化与
-渠道编辑表单三处直读（`test/channel_flat_columns_scan_test.dart`）。其余任何地方读它
+渠道编辑表单三处直读（`test/architecture/channel_flat_columns_scan_test.dart`）。其余任何地方读它
 们，回答的是主线路——模型换到别的线路后就静默错。
 
 ## 分层纪律（违反会静默腐化）
@@ -384,7 +384,7 @@ review 时用下面的模式全仓库 grep 一遍即可：
 ## 协议实现的共享机制（2026-08 M2 加固，新协议照抄）
 
 写一个新协议（或改既有协议的解码路径）时，以下机制**必须复用而不是手写**，
-它们各自对应一类踩过的静默失败（`test/llm_error_handling_test.dart` 钉住）：
+它们各自对应一类踩过的静默失败（`test/services/llm/llm_error_handling_test.dart` 钉住）：
 
 - **`decodeJsonBody(response, apiName: …)`**（`protocols/protocol.dart`）——
   唯一安全的解码顺序：状态码 → JSON → 形状 → 错误信封。手写这四步曾让
@@ -464,7 +464,7 @@ review 时用下面的模式全仓库 grep 一遍即可：
   `systemInstruction`）。Google 自家 proto3 JSON 两种拼法都收，但挂这条 wire
   的中转（New API 的 Gemini 面）只认 camelCase，且**未识别的键被忽略而不是
   拒绝**：snake_case 的后果不是 400，是图片压根没到模型、system 提示被丢，
-  响应 200 一切正常。`test/image_relay_compat_test.dart` 遍历整个 payload
+  响应 200 一切正常。`test/services/llm/image_relay_compat_test.dart` 遍历整个 payload
   断言没有带下划线的结构键，新字段写成 snake 会在那里先挂。
 - **`VendorProfile.downloadHeaders(apiKey)`** —— 下载生成产物（视频/图片 URI）
   时用什么认证头是 Layer 2 知识，executor 只消费；按协议族分支写在调用方
@@ -528,7 +528,7 @@ thinking / server tool 一起加。
    成 user 消息里的 `tool_result` block（④ 没有 tool 角色）、连续同角色消息合
    并（④ 要求角色交替）。第三条对 agent 循环是硬要求：一轮并行调用的 N 个结果
    必须装在**同一条** user 消息里。三条都由 `buildAnthropicHistory` 负责，
-   `test/anthropic_chat_test.dart` 逐条钉住。
+   `test/services/llm/anthropic_chat_test.dart` 逐条钉住。
 
 5. **thinking 有三套词表，且开了就欠一笔债。** Anthropic 新代（4.6+）是
    `{type:"adaptive", display:"summarized"}` + 顶层 `output_config:{effort}`
@@ -599,7 +599,7 @@ thinking / server tool 一起加。
    结果块里的 `encrypted_content` 是服务端解密用的，改了或缺了 400；
    `buildAnthropicHistory` 对带它的 assistant 轮整块回放而不重建。流式路径的
    `AnthropicStreamAssembler` 用 `content_block_start` 的副本 + delta 重组出同一
-   份数组（含 `citations_delta`），`test/anthropic_chat_test.dart` 钉住流式与同步
+   份数组（含 `citations_delta`），`test/services/llm/anthropic_chat_test.dart` 钉住流式与同步
    给出同一份。助手对 `write_knowledge_file` 大参数做上下文省略时丢掉这份副本
    （省略正是为了不重发那段内容），改回重建路径。
    `web_search_tool_result` 的 `content` 是对象而非数组时是**错误块**
@@ -783,7 +783,7 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
 没做的（记在这里免得被当成遗漏）：`text.format` / `text.verbosity`（结构化输出
 04 §5——本仓没有调用方）、Responses 内置工具（`web_search` 等，tools 05 §5；
 编辑器的联网开关在该面上返回 unsupported）、`previous_response_id`（有状态模式
-在第三方兼容层不存在）。测试：`test/openai_responses_test.dart`。
+在第三方兼容层不存在）。测试：`test/services/llm/openai_responses_test.dart`。
 
 ## 输出上限（2026-09-16）
 
@@ -824,9 +824,9 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
 - 编辑器区块与刻度：`widgets/models/model_edit/model_edit_output_cap.dart` +
   `services/catalogue/output_cap_scale.dart`（六档 4k–128k，输出侧的刻度，不复用输入侧的
   九档）。设计稿 <https://claude.ai/artifact/Y5noFcoMjvC1VXaoSGXXvH>。
-- 测试：`test/output_cap_payload_test.dart`（五条 wire 逐字节、① 按 vendor 选名、④ 兜底与
-  budget 折半、探针压过模型配置、deadline）、`test/model_discovery_limits_test.dart`、
-  `test/output_cap_scale_test.dart`。
+- 测试：`test/services/llm/output_cap_payload_test.dart`（五条 wire 逐字节、① 按 vendor 选名、④ 兜底与
+  budget 折半、探针压过模型配置、deadline）、`test/services/llm/model_discovery_limits_test.dart`、
+  `test/services/catalogue/output_cap_scale_test.dart`。
 
 ## 火山方舟 · Seedream（2026-09-18）
 

@@ -2,7 +2,7 @@
 
 设计源：Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`，2026-09 界面翻新那一批文件——`00 设计系统`、`01 全局壳层`、`A1 工作台-图像` …。每个文件末尾有一段 mono 规格汇总，**以汇总为准**；帧号（`1c`、`1f` …）指向文件内的帧。旧的《Joycai 设计规范》（蓝色冷灰那一版）已废弃，不要再拿它的数字。
 
-> 动本文件涉及的任何令牌前，先读这里。`test/design_tokens_test.dart`、`test/app_color_scheme_test.dart`、`test/app_theme_text_theme_test.dart` 把下面的规则钉住了；`test/screenshots/component_gallery_test.dart` 在 8 个预设 × 明暗下各出一张图，是唯一能看出一条颜色规则换了主题色是否还成立的办法。
+> 动本文件涉及的任何令牌前，先读这里。`test/core/design_tokens_test.dart`、`test/core/app_color_scheme_test.dart`、`test/core/app_theme_text_theme_test.dart` 把下面的规则钉住了；`test/screenshots/component_gallery_test.dart` 在 8 个预设 × 明暗下各出一张图，是唯一能看出一条颜色规则换了主题色是否还成立的办法。
 
 ## 令牌住在哪
 
@@ -141,7 +141,7 @@ Color get onAccentTint =>
 
 **窗口背景 aurora**（`AuroraBackdrop`）：安静的材质墙，本身不带纹理。玻璃要折射的是内容（缩略图、视频帧、文件网格）；背景上的规则图案会和内容抢透出感，模糊之后网格线还会变成一团脏灰。深浅只来自极大半径的光晕，自下而上四层：画布色（`surfaceContainer`）→ 左上角外侧一团 `primary` 6% 径向光晕（衰减到 0.6）→ 右下角外侧一团 `primary` 4%（到 0.62）→ 顶部 `surface` 55% 提亮（到 0.42）。光晕取主色，换主题色时墙的冷暖跟着走，灰阶不动。两团光晕的透明度写在 `AuroraBackdrop` 里，不进 `AppAccent`：它们只属于这面墙，而且必须远低于 12%——到那个量级就和选中底一样深，选中态会读不出来。减少视觉效果时只剩画布色。
 
-**这四层每帧只画一次贴图，不是四次满窗填充。** 配方是静态的（只随主题、强调色和窗口尺寸变），所以 `BakedAuroraBackdrop` 把它按 1/4 分辨率烘成一张 `ui.Image`，每帧交给 GPU 一个贴图四边形。这里以前是四层叠满窗的 `SizedBox.expand` 装饰套在 `RepaintBoundary` 里，注释写着"重绘边界里画一次"——那句是错的：重绘边界约束的是 Dart 侧哪段绘制代码重跑，不是 GPU 执行什么，而 raster cache 有尺寸上限，4K 满窗远在上限之外。开发机集显 4K 最大化实测 GPU 时间（`tool/bench/gpu_bench.ps1`，同一次会话内 A/B，`aurora-live` 对 `aurora`）：空窗 1.16ms，四层实画 9.02ms，烘成贴图 2.26ms——扣掉地板，这面墙从 7.86ms 降到 1.10ms，砍掉 86%；整个 app 11.45 → 6.89ms/帧。另测三层纯色填充（去掉渐变着色器）6.94ms，可见代价里「三次满窗混合」比着色器本身更重。绝对值在这台机器上跨会话会漂到两倍（空窗量到过 1.12 和 2.58），所以改前改后必须在同一次跑里取。1/4 分辨率之所以允许，是因为配方里没有硬边——`test/baked_backdrop_test.dart` 逐像素守着这一点，谁往里加了边或图案它就红。
+**这四层每帧只画一次贴图，不是四次满窗填充。** 配方是静态的（只随主题、强调色和窗口尺寸变），所以 `BakedAuroraBackdrop` 把它按 1/4 分辨率烘成一张 `ui.Image`，每帧交给 GPU 一个贴图四边形。这里以前是四层叠满窗的 `SizedBox.expand` 装饰套在 `RepaintBoundary` 里，注释写着"重绘边界里画一次"——那句是错的：重绘边界约束的是 Dart 侧哪段绘制代码重跑，不是 GPU 执行什么，而 raster cache 有尺寸上限，4K 满窗远在上限之外。开发机集显 4K 最大化实测 GPU 时间（`tool/bench/gpu_bench.ps1`，同一次会话内 A/B，`aurora-live` 对 `aurora`）：空窗 1.16ms，四层实画 9.02ms，烘成贴图 2.26ms——扣掉地板，这面墙从 7.86ms 降到 1.10ms，砍掉 86%；整个 app 11.45 → 6.89ms/帧。另测三层纯色填充（去掉渐变着色器）6.94ms，可见代价里「三次满窗混合」比着色器本身更重。绝对值在这台机器上跨会话会漂到两倍（空窗量到过 1.12 和 2.58），所以改前改后必须在同一次跑里取。1/4 分辨率之所以允许，是因为配方里没有硬边——`test/widgets/shell/baked_backdrop_test.dart` 逐像素守着这一点，谁往里加了边或图案它就红。
 
 **1/4 分辨率只用于 Skia。** Impeller（macOS / iOS / Android 的默认渲染器）给每条渐变加逐像素抖动；实时画看不出来，烘进 1/4 逻辑分辨率的贴图再拉伸回去，就成了一整片看得见的格子——Retina Mac 上一个纹素占 8 个物理像素，画廊中央是 16px 的棋盘纹。所以在 Impeller 上按物理分辨率烘（`BakedBackdrop.texelsPerLogicalPixel`，一个纹素对一个物理像素），换到不同缩放的显示器也会重烘。Windows 的 runner 钉死 Skia，上面的实测就在那里做的，保持 1/4。
 
@@ -149,7 +149,7 @@ Color get onAccentTint =>
 
 拖放只有三类落点，每类五态：静息 · 可放（已起拖、指针不在上方）· 悬停 · 拒绝（带原因）· 确认。组件都在 `lib/widgets/drag/`，界面代码不自己画落点。
 
-- **插入位置（重排）**：`AppReorderGap` 包住框架的 `ReorderableListView`。落点是「空位即落点」：框架拖起一项时，会在原位留一个等高的空盒，把中间的项平移一个项高，但不给钩子画进这个空位。所以每一项经 `gap.item(...)` 套一个探针，报告自己画在哪、被列表平移了多少；拖拽的每一帧里，项槽内没被任何项盖住的那段就是空位，画成 `--tint` 底 + 1px `--p` 虚线 + r10 +「放到第 N 位」。动画中合拢的空位和张开的空位按当下尺寸各画一块，就是设计的「空位开合」。探针必须跳过悬浮代理里那份拷贝：它和原位同一个 index，却不在列表里。放下且位置变了，新位置的项亮 600ms `--ring` 细边（减少动效 1.2s），并朗读「第 N 位，共 M 位」。`test/app_reorder_gap_test.dart` 钉住它依赖的框架行为。
+- **插入位置（重排）**：`AppReorderGap` 包住框架的 `ReorderableListView`。落点是「空位即落点」：框架拖起一项时，会在原位留一个等高的空盒，把中间的项平移一个项高，但不给钩子画进这个空位。所以每一项经 `gap.item(...)` 套一个探针，报告自己画在哪、被列表平移了多少；拖拽的每一帧里，项槽内没被任何项盖住的那段就是空位，画成 `--tint` 底 + 1px `--p` 虚线 + r10 +「放到第 N 位」。动画中合拢的空位和张开的空位按当下尺寸各画一块，就是设计的「空位开合」。探针必须跳过悬浮代理里那份拷贝：它和原位同一个 index，却不在列表里。放下且位置变了，新位置的项亮 600ms `--ring` 细边（减少动效 1.2s），并朗读「第 N 位，共 M 位」。`test/widgets/drag/app_reorder_gap_test.dart` 钉住它依赖的框架行为。
 - **投放进容器（槽 / 区 / 整面）**：`AppDropZoneFrame` 按 `AppDropZoneState` 画底与虚线：静息 `--col` + 1px 发丝虚线 → 可放 1px `--p` → 悬停 2px `--p` + `--tint` → 拒绝 2px `--err` + err 底 → 已满 2px warn + warn 底。已放图片的槽只画边（`ground: false`），`--tint` 永远不压图像。整面投放用 `AppDropSurfaceOverlay`：`--scrim` + 内缩 2px 虚线，不用玻璃。确认是 `AppDropConfirmRing`（600ms ok 环）加 `AppDropNote`，不弹 toast。
 - **投放到对象（目录树文件夹行）**：命中行 `--tint` 底 + 2px 实线 `--p` 环；复制时环换 ok；拒绝换 err 并在行尾挂原因。
 - **可放态从哪来**：指针还没到的落点收不到 `DragTarget` 回调，所以应用内的 `Draggable` 起拖时报给 `AppDragSession`，落点监听它。系统拖入的文件（`desktop_drop`）只在指针进入时才知道，没有可放态。
@@ -189,10 +189,10 @@ Color get onAccentTint =>
 ## 验证
 
 ```bash
-flutter test test/design_tokens_test.dart          # 8 预设 × 明暗的对比度与角色断言、源码扫描
-flutter test test/app_color_scheme_test.dart       # 灰阶不随主题色移动、面板浮于画布之上
-flutter test test/app_theme_text_theme_test.dart   # 七级字号、字距随字号
-flutter test test/workbench_glass_toolbar_test.dart # 工作台工具条的降级顺序
+flutter test test/core/design_tokens_test.dart          # 8 预设 × 明暗的对比度与角色断言、源码扫描
+flutter test test/core/app_color_scheme_test.dart       # 灰阶不随主题色移动、面板浮于画布之上
+flutter test test/core/app_theme_text_theme_test.dart   # 七级字号、字距随字号
+flutter test test/screens/workbench/workbench_glass_toolbar_test.dart # 工作台工具条的降级顺序
 flutter test test/screenshots/component_gallery_test.dart   # 16 张组件全景图
 flutter test test/screenshots                      # 全部屏幕 × 三宽度 × 明暗
 ```
