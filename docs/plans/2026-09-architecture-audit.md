@@ -224,6 +224,13 @@ UI 侧只见 `UiPrefs.sidebarWidth(...)`。**别为此发明新层**，这是一
 从 16 降到 8 上下；`workbench_panel_toggle_test.dart`、`file_browser_staging_column_test.dart`
 全绿。
 
+**A1 留下的服务层尾巴**（A1 已做完删除，这几处记在这里免得随它一起丢）：状态层与
+任务队列已经全部改成构造函数注入，助手与 LLM 侧还有六处写死的 `DatabaseService()`——
+`assistant/knowledge_base_service.dart:174/190/352/357`、`assistant/prompt_optimizer_agent.dart:937`、
+`llm/context_budget.dart:167`，外加 `tasks/ai_rename_agent.dart:380` 的 `ImageLayerRepository()`。
+它们都不对外声称能注入，所以不是「半通的口子」，只是还没接上；做本条时顺手一起收掉，
+形状照 `DatabaseService.forDatabase` 那一套（仓储收 `db:`、服务收 `database:`）。
+
 ---
 
 ## 不要重复立项（本轮明确判定不做）
