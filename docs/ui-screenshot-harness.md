@@ -165,7 +165,7 @@ and registers it as a teardown; a harness file that precaches without going
 through `mountApp` relies on the teardown of the test before it. The warm-up
 also bounds each image at 10 real seconds and throws `WarmUpStalled` with the
 path, because an unbounded wait does not fail a test, it hangs the process until
-CI's job timeout. `test/mount_app_unfinished_image_load_test.dart` pins all of it.
+CI's job timeout. `test/app/mount_app_unfinished_image_load_test.dart` pins all of it.
 
 **Mobile size is not mobile platform.** `main.dart:248` reads
 `Platform.isAndroid || Platform.isIOS` to decide which nav destinations exist,

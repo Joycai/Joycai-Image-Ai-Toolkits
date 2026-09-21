@@ -27,7 +27,7 @@
 //     pixel — the fixture's temp path is randomised and scan order can move.
 //
 // The guards that keep these numbers from regressing live in
-// `rebuild_scope_test.dart` and `test/render_performance_test.dart`. This
+// `rebuild_scope_test.dart` and `test/core/render_performance_test.dart`. This
 // file is where you go when you want a figure they do not assert.
 
 import 'package:flutter/foundation.dart';

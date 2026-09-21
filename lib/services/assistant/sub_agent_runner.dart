@@ -85,7 +85,7 @@ typedef SubAgentToolFn = Map<String, dynamic> Function(
 /// final plain-text reply.
 ///
 /// Invariants, shared with the main agent loop and pinned in
-/// `test/sub_agent_runner_test.dart`:
+/// `test/services/assistant/sub_agent_runner_test.dart`:
 ///
 ///  * **Pairing.** Once an assistant message with tool calls is echoed into
 ///    the history, every call gets a paired tool result before the loop moves

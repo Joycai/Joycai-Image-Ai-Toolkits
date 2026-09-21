@@ -3,10 +3,11 @@
 对照 Flutter 架构手册（分层隔离、MVVM、仓储模式、不可变状态、构造函数注入）把 `lib/`
 整体过了一遍，在 `73aaa68`（v4.24.0，`flutter analyze` 干净）上逐条核实。
 
-**结论**：分层本身比手册要求得更严，而且是 `test/source_layout_test.dart` 用九条规则钉死的；
+**结论**：分层本身比手册要求得更严，而且是 `test/source_layout_test.dart` 用十条规则钉死的；
 真正的偏离只有两个方向——**依赖注入**（用单例当服务定位器，A1）与**数据边界上的领域模型**
-（两个仓储在传裸 map，A2）。**两条都已做**，A3（门面绕 map 一圈）、A4（模型带展示逻辑）、A5（队列交出内部列表）也已做，结论见
-[`README.md`](README.md) 那行指针。剩下三条是局部的。
+（两个仓储在传裸 map，A2）。**两条都已做**，A3（门面绕 map 一圈）、A4（模型带展示逻辑）、A5（队列交出内部列表）、
+A6（`test/` 分层镜像 `lib/`）也已做，结论见
+[`README.md`](README.md) 那行指针。剩下两条是局部的。
 
 **怎么用这份文件**：一条一条做，每条自带验收。做完一条就把它从本文件删掉，并在
 [`README.md`](README.md) 的「已执行」表里登记结论住在哪；条目清空后删掉本文件。
@@ -16,35 +17,8 @@
 
 | 编号 | 一句话 | 触及 | 状态 |
 |---|---|---|---|
-| A6 | `test/` 269 个文件平铺在根下，而 `lib/` 的分组目录根下一个散文件都不许有 | `test/` | 未开工 |
 | A7 | workbench 一个目录占 lib 的 21%，提示词助手实质是独立功能 | `screens/workbench/` | 未开工 |
 | A8 | 16 个 UI 文件直连 `DatabaseService`，绝大多数只为存侧栏宽度 | `screens/`、`widgets/` | 未开工 |
-
----
-
-## A6 · `test/` 平铺
-
-**现状**：269 个测试文件全部平铺在 `test/` 根下（另有 `test/screenshots/` 与 `test/support/`）。
-而 `lib/services` 与 `lib/widgets` 的根下一个散文件都不许有——`source_layout_test.dart` 的
-「分组目录根下没有散文件」那条规则只管 `lib/`。
-
-**为什么要改**：找某个模块对应的测试只能靠 grep；反过来，加了新模块也没有地方提示
-「测试该放哪」。这是项目唯一一处自家结构规则没有自适用的地方。
-
-**改法**：按 `lib/` 的分层镜像分目录（`test/llm/`、`test/assistant/`、`test/db/`、`test/tasks/`、
-`test/ui/`、`test/screens/`…），纯 `git mv`。两件事必须一起做，否则会静默失效：
-
-- CI 的分片按文件切（`.github/workflows/flutter-ci.yml`，三个 runner），确认它的
-  文件发现方式在有子目录后仍然覆盖全部。
-- `dart_test.yaml` 的 `screenshots` tag 与 `test/screenshots/` 的相对路径、
-  `test/support/private_data_dir.dart` 的导入路径全部跟着改。
-
-**验收**：`flutter test -x screenshots` 的**用例总数**与迁移前一致（这是唯一能证明没有文件
-掉出发现范围的指标，先记下迁移前的数字）；CI 三个分片都绿。做完给
-`source_layout_test.dart` 加一条：`test/` 根下除了约定的几个入口外不留散文件。
-
-**注意**：这条纯搬文件、零逻辑改动，但会制造一个巨大的 diff。**单独一个 PR**，不要和别的条
-混在一起。
 
 ---
 
@@ -68,8 +42,8 @@
 `flutter test -x screenshots` 全绿；截图 harness 跑一遍确认没有哪个屏幕因为 part/import
 挪动而掉了。
 
-**注意**：**这条排在最后**。它和 A6 一样是大 diff，而且比 A6 更容易和别人的分支撞车。
-前提是 A1–A5 先落地——现在都已落地。
+**注意**：**这条排在最后**。跟已经做完的 A6 一样是大 diff，而且比 A6 更容易和别人的分支撞车。
+前提是 A1–A6 先落地——现在都已落地。
 
 ---
 

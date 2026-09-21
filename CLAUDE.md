@@ -121,8 +121,15 @@ strictly **lower** rank — never sideways, never up:
 
 `test/source_layout_test.dart` enforces the import rules (ranks, no cycles, empty roots,
 Flutter-free models — how a model looks is a widget-layer extension, `widgets/files/file_visuals.dart` —
-the design-system boundary, no relative import climbing out of `lib/`) and prints the
-offending file and line. A genuinely new layer or folder means changing that test on purpose.
+the design-system boundary, no relative import climbing out of `lib/`, and that `test/`
+mirrors this layout with nothing loose in its own root or in `test/services/`,
+`test/widgets/` or `test/screens/`) and prints the offending file and line. A genuinely
+new layer or folder means changing that test on purpose.
+
+A test file goes where its subject lives: `test/<layer>/` and `test/services|widgets|screens/<domain>/`
+mirror the matching `lib/` folder. Classify by what the test actually exercises, not its
+file name. `test/app/` takes whole-app/navigation tests with no single screen;
+`test/architecture/` takes repo-wide audits that read source rather than exercise one module.
 
 ### State and data
 
@@ -144,7 +151,7 @@ offending file and line. A genuinely new layer or folder means changing that tes
   stripped in the repository, so an editor saving the row it opened cannot undo a
   reorder or an estimate that landed since. A column with no such writer
   (`prompt_tags.is_system`) is the editor's to carry over from that row.
-  `test/edit_keeps_unedited_columns_test.dart` pins both halves.
+  `test/services/db/edit_keeps_unedited_columns_test.dart` pins both halves.
 - All user data goes through `DatabaseService` and the repositories. Never persist a column
   derivable from another table (the deleted `llm_models.type` — see the v32 migration).
   Every schema change needs an `onUpgrade` step **and** the matching `onCreate` call.
@@ -163,7 +170,7 @@ offending file and line. A genuinely new layer or folder means changing that tes
   rule survives a seed change; `shoot()` also takes an `accent` for a whole screen.
 - **Render performance — measure, don't reason, and know which thread you measure.**
   UI thread: `render_probe.dart`; its findings are pinned by `rebuild_scope_test.dart` and
-  `test/render_performance_test.dart`. GPU: `lib/bench/render_bench.dart` — read its traps in
+  `test/core/render_performance_test.dart`. GPU: `lib/bench/render_bench.dart` — read its traps in
   [docs/README.md](docs/README.md#tooling) first (on Windows `rasterDuration` misses GPU time;
   numbers drift 2x between sessions, so take before and after in one pass).
   Already stopped: the window ground is one baked image (`widgets/shell/baked_backdrop.dart`),

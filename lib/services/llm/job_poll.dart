@@ -15,7 +15,7 @@ import 'llm_types.dart';
 /// which made `LLMService.request` submit a second paid task.
 ///
 /// Pure and dependency-free (no HTTP, no clock of its own) so every rule is
-/// pinned by `test/job_poll_test.dart` without a socket.
+/// pinned by `test/services/llm/job_poll_test.dart` without a socket.
 
 /// Consecutive transient poll failures tolerated before a job is abandoned.
 /// The job is already billed and a poll is a cheap GET, so jitter and a 429

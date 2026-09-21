@@ -511,7 +511,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
 /// too, but the relays that host this wire do not — and an unknown key is
 /// ignored, not rejected, so the snake_case spelling fails by making the
 /// image or the system prompt vanish from the request while everything else
-/// works. `test/image_relay_compat_test.dart` walks the payload for any key
+/// works. `test/services/llm/image_relay_compat_test.dart` walks the payload for any key
 /// carrying an underscore.
 ///
 /// [emitsImages] declares `responseModalities: ["TEXT","IMAGE"]`. It comes
