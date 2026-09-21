@@ -35,18 +35,23 @@ void useRealAsyncAppState() {
 /// returns null: the test carries on past a failed tap or a wait that gave up,
 /// and fails — if nothing drains `takeException` first — somewhere else, about
 /// something else.
-Future<void> runAsyncRethrowing(WidgetTester tester, Future<void> Function() body) async {
+///
+/// Returns what [body] returns — `(await tester.runAsync(...))!` turns a throw
+/// into a null-check error that names nothing.
+Future<T> runAsyncRethrowing<T>(WidgetTester tester, Future<T> Function() body) async {
   Object? error;
   StackTrace? stack;
+  late T result;
   await tester.runAsync(() async {
     try {
-      await body();
+      result = await body();
     } catch (e, s) {
       error = e;
       stack = s;
     }
   });
   if (error case final Object e) Error.throwWithStackTrace(e, stack!);
+  return result;
 }
 
 /// Completes once the database work already started has finished, along with
@@ -58,20 +63,36 @@ Future<void> runAsyncRethrowing(WidgetTester tester, Future<void> Function() bod
 /// delivered, so a query *it* starts has been counted by the time this one's
 /// comes back. Round again until a round starts nothing.
 ///
-/// It sees the database only. A chain with some other wait in the middle — a
-/// file read, a `compute` — is over as far as this can tell once it gets there.
-Future<void> databaseIdle() async {
-  final Database barrier = await (_barrier ??= databaseFactoryFfi.openDatabase(
+/// What it counts is reads of `DatabaseService.database`, so two things get
+/// past it. A chain with some other wait in the middle — a file read, a
+/// `compute` — is over as far as this can tell once it gets there. And a
+/// transaction reads the database once and then sends statement after
+/// statement: this can return in the middle of one. It is for letting loads
+/// land before a frame, not for the outcome of a write — assert that after
+/// [inRealAsyncUntil].
+Future<void> databaseIdle({Duration giveUpAfter = const Duration(seconds: 30)}) async {
+  final Future<Database> opening = _barrier ??= databaseFactoryFfi.openDatabase(
     'file:joycai_test_barrier?mode=memory&cache=shared',
-  ));
+  );
+  final Database barrier;
+  try {
+    barrier = await opening;
+  } catch (_) {
+    _barrier = null;
+    rethrow;
+  }
+  // Something that polls the database never lets a round come back quiet.
+  final DateTime giveUp = DateTime.now().add(giveUpAfter);
   int seen;
   do {
+    if (DateTime.now().isAfter(giveUp)) fail('the database never went quiet — something is polling it');
     seen = databaseAccesses;
     await barrier.rawQuery('SELECT 1');
     await Future<void>.delayed(Duration.zero);
   } while (databaseAccesses != seen);
 }
 
+/// One for the isolate, left open: a test file is a process of its own.
 Future<Database>? _barrier;
 
 /// Runs [action] in real async *together with the frame it asks for*, then
@@ -92,7 +113,7 @@ Future<void> inRealAsync(
   FutureOr<void> Function() action, {
   Duration wait = Duration.zero,
 }) =>
-    runAsyncRethrowing(tester, () async {
+    runAsyncRethrowing<void>(tester, () async {
       await action();
       await tester.pump();
       await databaseIdle();
@@ -122,7 +143,7 @@ Future<void> inRealAsyncUntil(
   required bool Function() until,
   Duration giveUpAfter = const Duration(seconds: 30),
 }) =>
-    runAsyncRethrowing(tester, () async {
+    runAsyncRethrowing<void>(tester, () async {
       await action();
       final DateTime giveUp = DateTime.now().add(giveUpAfter);
       while (true) {

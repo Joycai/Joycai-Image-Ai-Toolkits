@@ -28,7 +28,7 @@ void main() {
   /// its Chat route with a 65536 cap and High effort. Seeded through
   /// runAsync: sqflite does real I/O the fake-async zone never completes.
   Future<(AppState, LLMModel)> seed(WidgetTester tester) async {
-    return (await tester.runAsync(() async {
+    return runAsyncRethrowing(tester, () async {
       final state = AppState();
       await state.refreshDataCache();
       for (final m in [...state.allModels]) {
@@ -53,7 +53,7 @@ void main() {
         enableThinking: true,
       ));
       return (state, state.allModels.firstWhere((m) => m.id == modelId));
-    }))!;
+    });
   }
 
   Future<void> pump(WidgetTester tester, AppState state, LLMModel model,
@@ -123,10 +123,10 @@ void main() {
       until: () => state.allModels.any((m) => m.id == model.id && m.activeRoute == 'responses'),
     );
     await tester.pumpAndSettle();
-    final saved = (await tester.runAsync(() async {
+    final saved = await runAsyncRethrowing(tester, () async {
       await state.refreshDataCache();
       return state.allModels.firstWhere((m) => m.id == model.id);
-    }))!;
+    });
     expect(saved.activeRoute, 'responses');
     expect(saved.maxOutputTokens, isNull);
     expect(saved.reasoningEffort, isNull);
@@ -162,7 +162,7 @@ void main() {
   // server tool but no live run has seen a relay act on it (help); its Chat
   // face has no web search to send (block).
   testWidgets('the web-search matrix marks a route never tested', (tester) async {
-    final (state, model) = (await tester.runAsync(() async {
+    final (state, model) = await runAsyncRethrowing(tester, () async {
       final state = AppState();
       await state.refreshDataCache();
       for (final m in [...state.allModels]) {
@@ -191,7 +191,7 @@ void main() {
         enableWebSearch: true,
       ));
       return (state, state.allModels.firstWhere((m) => m.id == modelId));
-    }))!;
+    });
     await pump(tester, state, model);
 
     AppRouteBadge cell(String label) => tester.widget<AppRouteBadge>(find.byWidgetPredicate(

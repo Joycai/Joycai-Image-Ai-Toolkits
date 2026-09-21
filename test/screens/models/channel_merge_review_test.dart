@@ -26,7 +26,7 @@ void main() {
   /// Two New API channels on one host and key — OpenAI and Claude format —
   /// each with a model, one of them a namesake.
   Future<AppState> seed(WidgetTester tester) async {
-    return (await tester.runAsync(() async {
+    return runAsyncRethrowing(tester, () async {
       final state = AppState();
       await state.refreshDataCache();
       for (final m in [...state.allModels]) {
@@ -66,7 +66,7 @@ void main() {
         channelId: claude,
       ));
       return state;
-    }))!;
+    });
   }
 
   Future<void> pump(WidgetTester tester, AppState state) async {
@@ -154,7 +154,10 @@ void main() {
     await pump(tester, state);
 
     await tapAndSettle(tester, find.text('Review'), until: reviewOpen);
-    await tapAndSettle(tester, find.text('Skip this group'), until: () => true);
+    // The only group there is, so skipping it ends the review without the
+    // reference count a next group would read: nothing here for real async.
+    await tester.tap(find.text('Skip this group'));
+    await tester.pumpAndSettle();
     expect(find.text('Merge channels'), findsNothing);
     expect(state.allChannels, hasLength(2));
 

@@ -103,7 +103,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final (state, model) = (await tester.runAsync(() async {
+      final (state, model) = await runAsyncRethrowing(tester, () async {
         final state = AppState();
         final channelId = await state.addChannel(
           LLMChannel(
@@ -125,7 +125,7 @@ void main() {
         await DatabaseService().updateModelEstimation(id, 4200.0, 650.0, 3);
         await state.refreshDataCache();
         return (state, state.allModels.firstWhere((m) => m.id == id));
-      }))!;
+      });
       expect(model.estMeanMs, 4200.0);
 
       await tester.pumpWidget(
@@ -155,10 +155,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final saved = (await tester.runAsync(() async {
+      final saved = await runAsyncRethrowing(tester, () async {
         await state.refreshDataCache();
         return state.allModels.firstWhere((m) => m.id == model.id);
-      }))!;
+      });
       expect(saved.modelName, 'Renamed');
       expect(saved.sortOrder, 7);
       expect(saved.estMeanMs, 4200.0);
@@ -168,14 +168,14 @@ void main() {
   );
 
   testWidgets('renaming a built-in tag leaves it built-in', (tester) async {
-    final (state, tag) = (await tester.runAsync(() async {
+    final (state, tag) = await runAsyncRethrowing(tester, () async {
       final state = AppState();
       final id = await state.addPromptTag(
         PromptTag(name: 'Built in', isSystem: true, sortOrder: 4),
       );
       final tags = await state.getPromptTags();
       return (state, tags.firstWhere((t) => t.id == id));
-    }))!;
+    });
     expect(tag.isSystem, isTrue);
 
     late BuildContext host;
@@ -195,7 +195,7 @@ void main() {
         ),
       ),
     );
-    final tags = (await tester.runAsync(state.getPromptTags))!;
+    final tags = await runAsyncRethrowing(tester, state.getPromptTags);
     showTagEditDialog(
       host,
       AppLocalizations.of(host)!,

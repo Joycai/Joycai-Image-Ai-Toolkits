@@ -64,4 +64,32 @@ void main() {
     expect(finished, 5);
     await tester.runAsync(() => closeTestDatabase(db));
   });
+
+  testWidgets('databaseIdle gives up on something that polls', (WidgetTester tester) async {
+    late DatabaseService db;
+    await tester.runAsync(() async => db = await openTestDatabase());
+
+    bool polling = true;
+    // Once per turn of the event loop, so no round of the wait misses it.
+    Future<void> poll() async {
+      while (polling) {
+        await db.database;
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    await expectLater(
+      runAsyncRethrowing(tester, () async {
+        // ignore: unawaited_futures
+        poll();
+        try {
+          await databaseIdle(giveUpAfter: const Duration(milliseconds: 100));
+        } finally {
+          polling = false;
+        }
+      }),
+      throwsA(isA<TestFailure>()),
+    );
+    await tester.runAsync(() => closeTestDatabase(db));
+  });
 }

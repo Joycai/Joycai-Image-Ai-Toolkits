@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../support/private_data_dir.dart';
+import '../../support/real_async.dart';
 
 void main() {
   usePrivateDataDir('joycai_template_output_kind_test');
@@ -84,7 +85,7 @@ void main() {
   /// handler's database calls can finish; a pump per wait lets the dialog
   /// close once they have.
   Future<List<SystemPrompt>> saveAndRead(WidgetTester tester) async {
-    return (await tester.runAsync(() async {
+    return runAsyncRethrowing(tester, () async {
       await tester.tap(find.text(l10n.save));
       for (var i = 0; i < 100 && find.text(l10n.save).evaluate().isNotEmpty; i++) {
         await Future<void>.delayed(const Duration(milliseconds: 20));
@@ -92,7 +93,7 @@ void main() {
       }
       expect(find.text(l10n.save), findsNothing, reason: 'the dialog closes once saved');
       return app.getSystemPrompts();
-    }))!;
+    });
   }
 
   testWidgets('a new assistant preset defaults to a prompt and says what that means', (tester) async {

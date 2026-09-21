@@ -153,8 +153,8 @@ file name. `test/app/` takes whole-app/navigation tests with no single screen;
   (a `Database` fetched earlier and *used* under it gets past — don't hold one).
   Build `AppState()` in `setUpAll`, and put an action that reaches the database *together
   with the frame it asks for* in real async; the helpers are in `test/support/real_async.dart`.
-  Wait on a state (`inRealAsyncUntil`) or on the database (`databaseIdle`), never on a
-  number of pumps or a sleep. A bare `tester.runAsync` swallows what its body throws —
+  Before asserting, wait on a state (`inRealAsyncUntil`) — never on a number of pumps or
+  a sleep; `databaseIdle` lets loads land before a frame, and can return mid-transaction. A bare `tester.runAsync` swallows what its body throws —
   use `runAsyncRethrowing`.
 - **A column with a writer of its own is never written by a whole-row `update…`.**
   `sort_order` (`update…Order`) and a model's ETA trio (`updateModelEstimation`) are
