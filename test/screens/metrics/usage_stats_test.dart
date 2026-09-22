@@ -118,6 +118,42 @@ void main() {
 
       expect(stats.groupUsage[42]!.unmatchedCount, 1);
     });
+
+    test('a provider-reported row is its own part, and fills no rate-table gap (D2d)', () {
+      final reported = TokenUsage(
+        modelId: 'grok-imagine-image-2.0',
+        modelDbId: 1,
+        timestamp: at,
+        billingMode: 'spec',
+        spec: const UsageSpecBilling(
+          unit: OutputUnit.image,
+          units: 1,
+          unitPrice: 0.0,
+          snapshot: UsageSpecSnapshot(size: '1K', quality: 'low', matched: false),
+          inputImages: 1,
+          inputUnits: 1,
+          inputUnitPrice: 0.01,
+        ),
+        reportedCost: 0.05,
+      );
+      final stats = calculateStats([
+        reported,
+        specRow(unit: OutputUnit.image, units: 1, price: 0.03, modelPk: 1),
+      ], [
+        model(1, 42)
+      ]);
+
+      final usage = stats.groupUsage[42]!;
+      expect(usage.reportedCost, closeTo(0.05, 1e-9));
+      // Nothing of the reported row leaks into the table-priced parts.
+      expect(usage.specCost, closeTo(0.03, 1e-9));
+      expect(usage.specInputCost, 0.0);
+      expect(usage.unmatchedCount, 0);
+      expect(usage.specUnits, {OutputUnit.image: 2.0});
+      expect(usage.totalCost, closeTo(0.08, 1e-9));
+      expect(usage.totalCost, closeTo(stats.groupCosts[42]!, 1e-9));
+      expect((usage + usage).reportedCost, closeTo(0.10, 1e-9));
+    });
   });
 
   group('calculateStats', () {
