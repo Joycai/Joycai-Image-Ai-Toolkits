@@ -113,4 +113,32 @@ void main() {
     expect(s.label, '720p · 5s');
     expect(OutputSpec.none.label, '');
   });
+
+  group('the reported cost (xAI cost_in_usd_ticks)', () {
+    test('ticks become dollars at 1e-10 each', () {
+      expect(reportedCostFromTicks(600000000), {reportedCostKey: closeTo(0.06, 1e-12)});
+      expect(reportedCostFromTicks('1100000000'), {reportedCostKey: closeTo(0.11, 1e-12)});
+      // A reported zero is a reported figure, not an absence.
+      expect(reportedCostFromTicks(0), {reportedCostKey: 0.0});
+    });
+
+    test('a block without a usable figure publishes nothing', () {
+      expect(reportedCostFromTicks(null), isEmpty);
+      expect(reportedCostFromTicks(-1), isEmpty);
+      expect(reportedCostFromTicks('n/a'), isEmpty);
+      expect(reportedCostFromTicks(double.nan), isEmpty);
+      expect(reportedCostFromTicks(<String, Object>{}), isEmpty);
+    });
+
+    test('reportedCostOf reads the key and nothing else, null when absent', () {
+      expect(reportedCostOf({reportedCostKey: 0.07}), 0.07);
+      expect(reportedCostOf({reportedCostKey: 0}), 0.0);
+      expect(reportedCostOf({reportedCostKey: '0.05'}), 0.05);
+      expect(reportedCostOf({'cost_in_usd_ticks': 700000000}), isNull);
+      expect(reportedCostOf({reportedCostKey: -0.01}), isNull);
+      expect(reportedCostOf({reportedCostKey: double.infinity}), isNull);
+      expect(reportedCostOf(const {}), isNull);
+      expect(reportedCostOf(null), isNull);
+    });
+  });
 }
