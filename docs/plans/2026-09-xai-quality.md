@@ -80,7 +80,7 @@ default quality a request serves at when it leaves `quality` unset」；`GET /v1
 | 3 | 协议：发 `quality`，`resolution` 收 `1.5k` | `llm/protocols/xai_images_protocol.dart` | 走线测试：默认发 `medium`；`low` / `1.5k` 落到请求体；`auto` 不发；规格 `1.5K · low` 命中档位 | ✅ |
 | 4 | 面板排版测试（300 栏 + 手机无溢出）；截图夹具加一个 xAI 2.0 模型 | `test/screens/workbench/`、`test/screenshots/harness/` | 截图三档宽度 | ✅ |
 | 5 | 文档：`api/usage.md` §5 实测表、台账「还欠的」行销掉、本文件退役、设计稿回写出入；bump 4.26.0 | `docs/`、`pubspec.yaml` 等六处 | — | ✅（退役在收尾片）|
-| 6 | 独立 review（opus）→ 修 → 再 review，直到无新问题；PR | — | 两道门全绿 | ⬜ |
+| 6 | 独立 review（opus）→ 修 → 再 review，直到无新问题；PR | — | 两道门全绿 | ✅ 四轮 |
 
 ## 4. 设计 brief（交给 Claude Design 项目的原文）
 
@@ -124,4 +124,5 @@ default quality a request serves at when it leaves `quality` unset」；`GET /v1
 - **Review 第三轮（opus）** 只查第二轮那一个 commit，一条 MINOR（只改注释）：第二轮的注释说「现在没有哪张视频表把两选一轨道
   和下拉配成一行」是错的——`_minimaxVideo` 的 `768P | 2K` 就配在 aspectRatio 下拉旁边，只是标签短、放得下。注释与本记录改正：
   `tightLabels` 在视频面板是给已有的半格留余量，不是「对等」。
+- **Review 第四轮（opus）** 只查第三轮那一个 commit：无新问题。四轮都没有 BLOCKER / MAJOR。
 
