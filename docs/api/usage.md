@@ -117,7 +117,14 @@ JSON 解析失败，看起来像"模型不听话"。
 
   由此：输入图 **$0.01/张、线性、没有免费张数**（计费组填 `0.01 / 0`）；5 张参考图被接受（HTTP 200）；
   不带质量参数时输出按 **1K · Medium（$0.06）** 计，不是标价表第一格的 Low $0.04。回包里**没有**输入张数，
-  所以张数只能由协议自己数。应用现在不读 `cost_in_usd_ticks`（见台账「还欠的」）。
+  所以张数只能由协议自己数。
+
+  **`n: 2`**（2026-09-22 补测，`/images/edits`，1 张参考图，`quality: low`）：200、两张图、
+  `900 000 000` = $0.09 = 2 × $0.04 + **1** × $0.01——输入图**按请求收一次，不乘输出张数**。
+
+  应用自 4.27.0 起读这个字段：xAI images 协议把它翻成美元发布为 `reported_cost_usd`，记账落到
+  `token_usage.reported_cost`，**压过**计费组的任何算式（它含输入图那一侧）；档位表的快照仍写在同一行上，
+  用量页把两者对照（`architecture/llm-three-layer.md`「上游报价」）。中转协议不翻这个键。
 - **xAI 的质量参数**（2026-09-22 实测，`/images/generations`，同样读 `cost_in_usd_ticks`）。请求字段叫
   `quality`，枚举 `low | medium | high | auto`（别的值 422 并列出枚举）；`grok-imagine-image-2.0` 只收
   `low / medium / auto`（`high` → 400 `This model only supports … low, medium, auto`）；不带 = medium。
