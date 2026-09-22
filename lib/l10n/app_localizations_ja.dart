@@ -1501,6 +1501,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get usageUnitPrice => '単価';
 
   @override
+  String get usageReportedCost => '上流の請求額';
+
+  @override
+  String get usageTableEstimate => '料金表の見積';
+
+  @override
   String get models => 'モデル';
 
   @override

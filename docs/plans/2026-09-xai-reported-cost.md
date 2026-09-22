@@ -72,12 +72,12 @@ xAI 的 Images API 在每个回包的 `usage` 里写明**这次请求实扣了�
 | 片 | 内容 | 主要文件 | 验收 | 状态 |
 |---|---|---|---|---|
 | 0 | 补测 `n:2` 的输入费 | — | §1 | ✅ |
-| 1 | 本文件 + 设计稿 `D2d` | `docs/plans/`、Claude Design | — | ⬜ |
-| 2 | 协议发布 `reported_cost_usd`；`reportedCostOf` | `output_spec.dart`、`xai_images_protocol.dart` | 走线测试：`600000000` → `0.06`；缺失 / 非数不发 | ⬜ |
-| 3 | v49 列 + `TokenUsage.reportedCost` + `costParts.reported` + `unmatched` | `database_migrations.dart`、`token_usage.dart` | 往返、报价压过三种模式、未匹配不再计 | ⬜ |
-| 4 | 记账读键（三条路径共用 `_writeUsageRow`） | `llm_usage_recording.dart` | `recordUsageForTest` 带键 → 行上有值；不带 → NULL；spec 七列照写 | ⬜ |
-| 5 | 用量页：分组条 / tooltip / 明细行 / 费用格；四语；截图夹具加一行报价 | `usage_stats.dart`、`usage_group_costs.dart`、`usage_list.dart`、`l10n/src/*/metrics.arb`、`fixture_seed.dart` | widget 测试 + 截图 | ⬜ |
-| 6 | 文档：`api/usage.md` §5、`llm-three-layer.md` metadata 键、台账两行；bump 4.27.0 | `docs/`、七处版本号 | — | ⬜ |
+| 1 | 本文件 + 设计稿 `D2d` | `docs/plans/`、Claude Design | — | ✅ 帧 23a–23f |
+| 2 | 协议发布 `reported_cost_usd`；`reportedCostOf` | `output_spec.dart`、`xai_images_protocol.dart` | 走线测试：`600000000` → `0.06`；缺失 / 非数不发 | ✅ |
+| 3 | v49 列 + `TokenUsage.reportedCost` + `costParts.reported` + `unmatched` | `database_migrations.dart`、`token_usage.dart` | 往返、报价压过三种模式、未匹配不再计 | ✅ |
+| 4 | 记账读键（三条路径共用 `_writeUsageRow`） | `llm_usage_recording.dart` | `recordUsageForTest` 带键 → 行上有值；不带 → NULL；spec 七列照写 | ✅ |
+| 5 | 用量页：分组条 / tooltip / 明细行 / 费用格；四语；截图夹具加一行报价 | `usage_stats.dart`、`usage_group_costs.dart`、`usage_list.dart`、`l10n/src/*/metrics.arb`、`fixture_seed.dart` | widget 测试 + 截图 | ✅ |
+| 6 | 文档：`api/usage.md` §5、`llm-three-layer.md` metadata 键、台账两行；bump 4.27.0 | `docs/`、七处版本号 | — | ✅（台账在收尾片） |
 | 7 | 独立 review（opus）→ 修 → 再 review，直到无新问题；PR | — | 两道门全绿 | ⬜ |
 
 ## 4. 设计 brief（交给 Claude Design 项目的原文）
@@ -103,3 +103,18 @@ xAI 的 Images API 在每个回包的 `usage` 里写明**这次请求实扣了�
 ## 5. 施工记录
 
 - **第 0 片** `n:2` 探针见 §1。
+- **第 1 片 · 设计稿 `D2d`**（设计子代理拿不到 DesignSync，稿子由主会话对照真实 `D2c` 的类词汇校验后推送，75 317 字节）：
+  四条裁决——① 收起态费用格**不带任何标记**（无字形、无副标、无颜色）：最可信的数字不能长得像可疑的那个，
+  只有部分行带字形会打断右对齐的扫读；桌面 / 平板的费用格加一个两行 `Tooltip`「上游报价 / 档位估算」，手机不加。
+  ② 展开网格**第一对**是「上游报价（onSurface）| 档位估算（outline）」，其后原顺序不动；凡是档位表**算出来**的值
+  （档位估算、单价、输出金额、输入金额）一律退为 outline，请求**事实**（请求数、规格、输入图张数）照旧；
+  不写「档位表过期」的句子、不用警示色——这一行上不一致是常态（`auto` 由模型定档），退色的一对就是全部信号；
+  相等时几何相同；档位估算永不隐藏（按 token 的默认组下就是 `$0.0000`）。③ 分组条：报价并入 request / spec 的
+  中性段，tooltip 末尾多一行「上游报价」（>0 才出现）；「档位表未覆盖」的提示靠 `unmatchedCount` 的定义自动排除报价行，
+  `UsageGroupCosts` 本身不改。④ 三种表单共用同一个 `pairs` 列表，手机展开为单列。
+  四语：`usageReportedCost` 上游报价 / Reported cost / 上游報價 / 上流の請求額；`usageTableEstimate` 档位估算 /
+  Table estimate / 檔位估算 / 料金表の見積。实现与稿一致，无出入。
+- **第 3 片** `TokenUsage.snapshotCost` 不在方案里：明细行要写「档位估算」，就得把报价拿掉再算一遍——
+  用同一行的其余字段重建一个没有报价的 `TokenUsage` 取 `cost`，算式只有一份。
+- **第 5 片** 用量页截图（`usage_desktop_light.png`）：两条 xAI 行按报价显示 $0.0400 / $0.0500，分组行 $0.0900 · 2 张 · 2 次，
+  没有溢出。

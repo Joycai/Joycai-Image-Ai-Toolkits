@@ -544,7 +544,7 @@ class _UsageRowState extends State<_UsageRow> {
           ),
         ),
         const SizedBox(width: 12),
-        _cost(context, textTheme.bodyMedium),
+        _cost(context, textTheme.bodyMedium, tooltip: false),
         const SizedBox(width: AppSpace.s4),
         _chevron(context),
       ],
@@ -740,11 +740,18 @@ class _UsageRowState extends State<_UsageRow> {
 
   /// Zero costs are stated but not shouted: a free row is still a row, and at
   /// full contrast a column of `$0.0000` drowns out the ones that cost money.
-  Widget _cost(BuildContext context, TextStyle? base) {
+  ///
+  /// A row the provider priced itself (`D2d · 23a`) is set exactly like the
+  /// others — no glyph, no sub-label: the most trustworthy figure on the page
+  /// must not look like the suspect one, and a marker on some rows breaks
+  /// the right-aligned scan. Where there is a pointer, the cell's [tooltip]
+  /// states the report against the table's estimate; the phone has none.
+  Widget _cost(BuildContext context, TextStyle? base, {bool tooltip = true}) {
     final colorScheme = Theme.of(context).colorScheme;
     final cost = _row.cost;
+    final reported = _row.reportedCost;
 
-    return Text(
+    final text = Text(
       '\$${cost.toStringAsFixed(4)}',
       textAlign: TextAlign.end,
       maxLines: 1,
@@ -752,6 +759,13 @@ class _UsageRowState extends State<_UsageRow> {
         fontWeight: FontWeight.w600,
         color: cost > 0 ? colorScheme.onSurface : colorScheme.outline,
       ),
+    );
+    if (reported == null || !tooltip) return text;
+    final l10n = AppLocalizations.of(context)!;
+    return Tooltip(
+      message: '${l10n.usageReportedCost}: \$${reported.toStringAsFixed(4)}\n'
+          '${l10n.usageTableEstimate}: \$${_row.snapshotCost.toStringAsFixed(4)}',
+      child: text,
     );
   }
 
@@ -811,9 +825,23 @@ class _UsageRowState extends State<_UsageRow> {
 
     final spec = _row.spec;
     final chargesInput = _isSpecRow && spec != null && spec.inputUnitPrice > 0;
+    final reported = _row.reportedCost;
+    // `D2d · 23b`: on a row the provider priced itself, every value the rate
+    // table *computed* (the estimate, the unit price, the two amounts) is
+    // demoted to the outline ink; the request's facts stay as they are. The
+    // demoted pair is the whole signal — disagreement is the norm on this
+    // line (an `auto` quality the model settled), not a warning.
+    final demoted = reported != null;
     String money(double v) => '\$${v.toStringAsFixed(4)}';
 
     final pairs = <(String, String, {bool muted, bool wide})>[
+      // The comparison leads: the report, the only full-ink amount in the
+      // grid, beside what the table would have charged. The estimate never
+      // hides — a $0.0000 under a default token-mode group is the point.
+      if (reported != null) ...[
+        (l10n.usageReportedCost, money(reported), muted: false, wide: false),
+        (l10n.usageTableEstimate, money(_row.snapshotCost), muted: true, wide: false),
+      ],
       (l10n.requests, _exact(_row.requestCount), muted: false, wide: false),
       if (_isTokenRow) ...[
         (l10n.inputTokens, _exact(_row.inputTokens), muted: false, wide: false),
@@ -822,19 +850,19 @@ class _UsageRowState extends State<_UsageRow> {
       ],
       if (_isSpecRow) ...[
         (l10n.usageSpecColumn, _specLabel?.isNotEmpty == true ? _specLabel! : '—', muted: false, wide: false),
-        (l10n.usageUnitPrice, money(spec?.unitPrice ?? 0), muted: false, wide: false),
+        (l10n.usageUnitPrice, money(spec?.unitPrice ?? 0), muted: demoted, wide: false),
       ],
       // `D2c · 22g`: a row whose group charges for reference images splits
       // its amount in two and writes the input side out — what was sent, how
       // many of those were free, and the sum. Other rows are as they were.
       if (chargesInput) ...[
-        (l10n.usageOutputAmount, money(spec.cost), muted: false, wide: false),
+        (l10n.usageOutputAmount, money(spec.cost), muted: demoted, wide: false),
         (l10n.specInputTitle, _inputImagesText(l10n, spec), muted: false, wide: true),
         (
           l10n.usageInputAmount,
           '${_exact(spec.inputUnits.round())} × ${money(spec.inputUnitPrice)} = ${money(spec.inputCost)}',
           // Fully free (one image sent, the first free): stated, not shouted.
-          muted: spec.inputCost == 0,
+          muted: demoted || spec.inputCost == 0,
           wide: true,
         ),
       ],

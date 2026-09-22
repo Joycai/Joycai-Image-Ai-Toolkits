@@ -1238,6 +1238,8 @@
   },
   "usageGoFixRates": "Add rates",
   "usageUnitPrice": "Unit price",
+  "usageReportedCost": "Reported cost",
+  "usageTableEstimate": "Table estimate",
   "models": "Models",
   "feeManagement": "Fee Management",
   "modelsTab": "Models",

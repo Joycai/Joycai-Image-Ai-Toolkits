@@ -140,5 +140,7 @@
     }
   },
   "usageGoFixRates": "Add rates",
-  "usageUnitPrice": "Unit price"
+  "usageUnitPrice": "Unit price",
+  "usageReportedCost": "Reported cost",
+  "usageTableEstimate": "Table estimate"
 }

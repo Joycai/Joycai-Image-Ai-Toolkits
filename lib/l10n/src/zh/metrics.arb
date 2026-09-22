@@ -92,5 +92,7 @@
     }
   },
   "usageGoFixRates": "去补档位",
-  "usageUnitPrice": "单价"
+  "usageUnitPrice": "单价",
+  "usageReportedCost": "上游报价",
+  "usageTableEstimate": "档位估算"
 }
