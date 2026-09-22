@@ -299,6 +299,8 @@ class DatabaseService {
   Future<void> recordTokenUsage(TokenUsage usage) => _usage.recordTokenUsage(usage);
   Future<int> updateSpecBilling(String taskId, UsageSpecBilling billing) =>
       _usage.updateSpecBilling(taskId, billing);
+  Future<int> updateReportedCost(String taskId, double cost) =>
+      _usage.updateReportedCost(taskId, cost);
   Future<void> clearTokenUsage({String? modelId}) => _usage.clearTokenUsage(modelId: modelId);
   Future<List<TokenUsage>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end, int? limit, int? offset})
       => _usage.getTokenUsage(modelIds: modelIds, start: start, end: end, limit: limit, offset: offset);

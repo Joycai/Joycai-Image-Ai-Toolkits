@@ -4,6 +4,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_veo_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_videos_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/xai_videos_protocol.dart';
 
 /// The video poll contract (standard 14 §1, §3): failure is thrown, never
@@ -126,6 +127,34 @@ void main() {
           throwsA(isA<LLMApiException>()),
         );
       }
+    });
+
+    test('the done body\'s duration and cost_in_usd_ticks are published', () {
+      // The terminal poll as xAI answered it on 2026-09-22 (1 s · 480p,
+      // two reference images): \$0.08 for the second plus \$0.01 a frame.
+      final env = xaiVideoPollEnvelope({
+        'status': 'done',
+        'video': {'url': 'https://cdn.x.ai/result.mp4', 'duration': 1, 'respect_moderation': true},
+        'model': 'grok-imagine-video-1.5',
+        'usage': {'cost_in_usd_ticks': 1000000000},
+        'progress': 100,
+      }, 'req_1', endpoint);
+      expect(env[videoRenderedSecondsKey], 1);
+      expect(reportedCostOf(env), closeTo(0.10, 1e-12));
+
+      // A done body without either says nothing.
+      final bare = xaiVideoPollEnvelope({
+        'status': 'done',
+        'video': {'url': 'https://cdn.x.ai/result.mp4'},
+      }, 'req_1', endpoint);
+      expect(bare.containsKey(videoRenderedSecondsKey), isFalse);
+      expect(reportedCostOf(bare), isNull);
+    });
+
+    test('a pending body (HTTP 202) relays its progress', () {
+      final env = xaiVideoPollEnvelope({'status': 'pending', 'progress': 40}, 'req_1', endpoint);
+      expect(env['done'], isFalse);
+      expect(env['progress'], 40);
     });
   });
 

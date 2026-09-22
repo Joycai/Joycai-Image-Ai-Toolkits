@@ -941,17 +941,26 @@ Map<String, dynamic>? optionsWithCheckedSize(
 /// ([VideoJobProtocol.poll]), with the download-auth decision attached.
 ///
 /// [renderedSeconds] is the length the provider reports it rendered, when it
-/// reports one ([videoRenderedSecondsKey]).
+/// reports one ([videoRenderedSecondsKey]). [reportedCost] is what the
+/// provider says the job cost, in dollars, when it says so on the terminal
+/// poll — xAI's `usage.cost_in_usd_ticks` arrives only there, never at
+/// submit — published under the same [reportedCostKey] an images protocol
+/// uses, so the executor settles it onto the submit's usage row. A protocol
+/// converts its own field (`reportedCostFromTicks`) and passes the dollars;
+/// negative or non-finite is left out like an absent one.
 Map<String, dynamic> videoDoneEnvelope(
   String operationName,
   String uri, {
   required bool requiresAuth,
   Object? renderedSeconds,
+  double? reportedCost,
 }) =>
     {
       'name': operationName,
       'done': true,
       videoRenderedSecondsKey: ?_positiveSeconds(renderedSeconds),
+      if (reportedCost != null && reportedCost.isFinite && reportedCost >= 0)
+        reportedCostKey: reportedCost,
       'response': {
         'generateVideoResponse': {
           'generatedSamples': [

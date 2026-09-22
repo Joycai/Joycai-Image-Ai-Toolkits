@@ -629,12 +629,16 @@ extension TaskExecutors on TaskQueueService {
       rethrow;
     }
 
+    // What the terminal poll knows that the submit could only estimate: the
+    // length rendered and, on xAI, the charge itself.
     final rendered = done[videoRenderedSecondsKey];
-    if (rendered is num) {
+    final reported = reportedCostOf(done);
+    if (rendered is num || reported != null) {
       await LLMService().settleVideoUsage(
         modelIdentifier: task.modelDbId ?? task.modelId,
         operationName: operationName,
-        renderedSeconds: rendered,
+        renderedSeconds: rendered is num ? rendered : null,
+        reportedCost: reported,
         options: task.parameters,
         contextId: task.id,
       );

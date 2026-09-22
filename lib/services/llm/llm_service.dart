@@ -1309,47 +1309,79 @@ class LLMService {
   static String videoUsageRowId(String operationName) =>
       'video:$operationName';
 
-  /// Test door in front of the usage-row update [settleVideoUsage] makes.
+  /// Test doors in front of the two usage-row updates [settleVideoUsage]
+  /// makes.
   @visibleForTesting
   static Future<int> Function(String taskId, UsageSpecBilling billing)?
       usageUpdateOverride;
+  @visibleForTesting
+  static Future<int> Function(String taskId, double cost)?
+      reportedCostUpdateOverride;
 
-  /// Re-prices a finished video job's submit row by the seconds the provider
-  /// reports it rendered ([videoRenderedSecondsKey]).
+  /// Settles a finished video job's submit row by what the terminal poll
+  /// reported: the seconds the provider rendered ([videoRenderedSecondsKey])
+  /// and, where it says so, what it charged ([reportedCostKey]).
   ///
   /// Only a spec-billed group prices seconds; every other mode is left as
   /// recorded. The request's other conditions (resolution, quality) come
   /// from the same [options] the submit was priced with, so the rate row is
   /// matched again with only the length corrected — a tier keyed on
-  /// duration may change. Best effort: a failure is logged, the video is
-  /// not affected.
+  /// duration may change. The output four columns alone are rewritten: the
+  /// frames the submit sent stay as recorded ([UsageSpecBilling.toOutputMap]).
+  ///
+  /// A reported cost is written under every mode, onto `reported_cost`
+  /// alone, and outranks the row's estimate from then on
+  /// ([TokenUsage.costParts]) — the submit could only estimate, the terminal
+  /// poll knows (xAI: the frames at \$0.01 each are inside the figure).
+  /// Both writes are best effort and independent: a failure is logged, the
+  /// video is not affected, and one failing does not stop the other.
   Future<void> settleVideoUsage({
     required dynamic modelIdentifier,
     required String operationName,
-    required num renderedSeconds,
+    num? renderedSeconds,
+    double? reportedCost,
     Map<String, dynamic>? options,
     String? contextId,
   }) async {
     void log(String msg, {String level = 'INFO'}) =>
         _emitLog(msg, level: level, contextId: contextId);
-    try {
-      final config = await _resolveConfig(modelIdentifier, logger: log);
-      if (config.billingMode != specBillingMode) return;
-      final spec = specUsageFor(
-        config,
-        options,
-        {'output_seconds': renderedSeconds},
-        imageCount: 0,
-      )!;
-      final update = usageUpdateOverride ?? DatabaseService().updateSpecBilling;
-      final rows = await update(videoUsageRowId(operationName), spec.toBilling());
-      if (rows > 0) {
-        log('Video $operationName: billed by the ${spec.spec.seconds}s the '
-            'provider reports it rendered.');
+    final rowId = videoUsageRowId(operationName);
+    if (renderedSeconds != null) {
+      try {
+        final config = await _resolveConfig(modelIdentifier, logger: log);
+        if (config.billingMode == specBillingMode) {
+          final spec = specUsageFor(
+            config,
+            options,
+            {'output_seconds': renderedSeconds},
+            imageCount: 0,
+          )!;
+          final update =
+              usageUpdateOverride ?? DatabaseService().updateSpecBilling;
+          final rows = await update(rowId, spec.toBilling());
+          if (rows > 0) {
+            log('Video $operationName: billed by the ${spec.spec.seconds}s '
+                'the provider reports it rendered.');
+          }
+        }
+      } catch (e) {
+        log('Could not settle the usage of video $operationName by its '
+            'rendered length (the video is unaffected): $e', level: 'WARN');
       }
-    } catch (e) {
-      log('Could not settle the usage of video $operationName by its '
-          'rendered length (the video is unaffected): $e', level: 'WARN');
+    }
+    if (reportedCost != null) {
+      try {
+        final update =
+            reportedCostUpdateOverride ?? DatabaseService().updateReportedCost;
+        final rows = await update(rowId, reportedCost);
+        if (rows > 0) {
+          log('Video $operationName: the provider reports it cost '
+              '\$${reportedCost.toStringAsFixed(4)}.');
+        }
+      } catch (e) {
+        log('Could not record the cost the provider reported for video '
+            '$operationName (the video is unaffected): $e', level: 'WARN');
+      }
     }
   }
 

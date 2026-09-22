@@ -23,6 +23,7 @@ import '../llm/job_poll.dart';
 import '../llm/llm_service.dart';
 import '../llm/llm_types.dart';
 import '../llm/model_descriptor.dart';
+import '../llm/output_spec.dart' show reportedCostOf;
 import '../assistant/prompt_optimizer_agent.dart';
 import '../media/web_scraper_service.dart';
 
