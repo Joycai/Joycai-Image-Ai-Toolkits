@@ -76,7 +76,7 @@ default quality a request serves at when it leaves `quality` unset」；`GET /v1
 |---|---|---|---|---|
 | 0 | 实测参数名、取值、六格与初代的差异 | — | §1 | ✅ |
 | 1 | 本文件 + 设计稿 `A1f` | `docs/plans/`、Claude Design | — | ✅ 帧 4a–4g |
-| 2 | 能力表：`_xaiImage` 加质量 + 1.5k，`_xaiImageLegacy` 按 id 分流 | `llm/model_capability_tables.dart`、`llm/model_capabilities.dart` | 2.0 三控件 / 初代两控件；`SpecKnownValues` 含 `1.5K`、`low`、`medium` | ⬜ |
+| 2 | 能力表：`_xaiImage` 加质量 + 1.5k，`_xaiImageLegacy` 按 id 分流 | `llm/model_capability_tables.dart`、`llm/model_capabilities.dart` | 2.0 三控件 / 初代两控件；`SpecKnownValues` 含 `1.5K`、`low`、`medium` | ✅ |
 | 3 | 协议：发 `quality`，`resolution` 收 `1.5k` | `llm/protocols/xai_images_protocol.dart` | 走线测试：默认发 `medium`；`low` / `1.5k` 落到请求体；`auto` 不发；规格 `1.5K · low` 命中档位 | ✅ |
 | 4 | 面板排版测试（300 栏 + 手机无溢出）；截图夹具加一个 xAI 2.0 模型 | `test/screens/workbench/`、`test/screenshots/harness/` | 截图三档宽度 | ✅ |
 | 5 | 文档：`api/usage.md` §5 实测表、台账「还欠的」行销掉、本文件退役、设计稿回写出入；bump 4.26.0 | `docs/`、`pubspec.yaml` 等六处 | — | ✅（退役在收尾片）|
