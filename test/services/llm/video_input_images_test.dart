@@ -9,6 +9,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_payload.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/minimax_h3_base_payload.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
@@ -116,6 +117,23 @@ void main() {
   test('MiniMax H3 local: the same exclusion, with byte attachments written out as files', () async {
     answer = (_) => {'id': 'h3_1'};
     final h3 = config(Vendors.minimaxH3Base, 'minimax-h3-base');
+    // The protocol writes each byte attachment to the system temp dir so it
+    // can travel as a file:// URI, and only the app's start-up sweep reclaims
+    // them (after hours). Take back what this test adds — and only that, so
+    // a running app's in-flight files are left alone.
+    Set<String> tempRefs() => Directory.systemTemp
+        .listSync()
+        .map((e) => e.path)
+        .where((p) => p.split(Platform.pathSeparator).last.startsWith(minimaxH3TempRefPrefix))
+        .toSet();
+    final before = tempRefs();
+    addTearDown(() {
+      for (final path in tempRefs().difference(before)) {
+        try {
+          File(path).deleteSync();
+        } catch (_) {}
+      }
+    });
 
     final frames = await submit(h3, [frame(LLMReferenceType.firstFrame), reference(), reference()]);
     expect(frames.name, 'h3_1');

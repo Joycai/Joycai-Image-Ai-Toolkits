@@ -177,4 +177,7 @@ D2c（v4.25.0）给按规格计费组加了「输入图」一侧，但只让**�
   → 抽成纯函数 `videoSettlementOf(done)`（`task_executors.dart`）并新 `test/services/tasks/video_settlement_test.dart`
   （两者 / 任一 / 都没有 / 原始上游拼法不算）；⑤ `fee_group_draft.dart` 的注释「behind another unit」改「behind token mode」。
   第 4 轮的「行为 → 测试」对照表：除上述四处外每条行为都有钉子。
+- **review 第 5 轮**（opus，只审第 4 轮修复）：2 条 MINOR——H3 走线测试每跑一次在系统临时目录留 5 个 `joycai_h3_ref_*` 文件
+  （生产靠启动时的 6 小时清扫）→ 测试快照前后集合、只删自己新增的；`video_settlement_test` 里一条永远不会红的重言式断言 → 删。
+  「执行器确实调了 `settleVideoUsage` 并原样传参」仍只有纯函数一侧的钉子，走通整个视频执行器的代价不值一条 MINOR，记在此。
 

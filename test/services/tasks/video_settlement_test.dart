@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/tasks/task_queue_service.dart';
 
@@ -31,6 +30,5 @@ void main() {
     // Only the executor's two keys count, not the raw upstream spellings.
     expect(videoSettlementOf({...done(), 'duration': 5, 'cost_in_usd_ticks': 800000000}), isNull);
     expect(videoSettlementOf({...done(), videoRenderedSecondsKey: 'soon'}), isNull);
-    expect(reportedCostKey, isNot(videoRenderedSecondsKey));
   });
 }
