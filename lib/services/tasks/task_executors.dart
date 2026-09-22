@@ -631,14 +631,12 @@ extension TaskExecutors on TaskQueueService {
 
     // What the terminal poll knows that the submit could only estimate: the
     // length rendered and, on xAI, the charge itself.
-    final rendered = done[videoRenderedSecondsKey];
-    final reported = reportedCostOf(done);
-    if (rendered is num || reported != null) {
+    if (videoSettlementOf(done) case final settle?) {
       await LLMService().settleVideoUsage(
         modelIdentifier: task.modelDbId ?? task.modelId,
         operationName: operationName,
-        renderedSeconds: rendered is num ? rendered : null,
-        reportedCost: reported,
+        renderedSeconds: settle.renderedSeconds,
+        reportedCost: settle.reportedCost,
         options: task.parameters,
         contextId: task.id,
       );
@@ -1058,3 +1056,21 @@ extension TaskExecutors on TaskQueueService {
     }
   }
 }
+
+/// What a finished video job's envelope lets the submit row be settled by:
+/// the seconds rendered ([videoRenderedSecondsKey]) and the cost the
+/// provider reported ([reportedCostKey]), either alone or both. Null when
+/// the envelope says neither — the row then stays as the submit priced it.
+/// Pure, so the seam between the poll and [LLMService.settleVideoUsage] is
+/// pinned on its own (`video_settlement_test.dart`).
+({num? renderedSeconds, double? reportedCost})? videoSettlementOf(
+    Map<String, dynamic> done) {
+  final rendered = done[videoRenderedSecondsKey];
+  final reported = reportedCostOf(done);
+  if (rendered is! num && reported == null) return null;
+  return (
+    renderedSeconds: rendered is num ? rendered : null,
+    reportedCost: reported,
+  );
+}
+

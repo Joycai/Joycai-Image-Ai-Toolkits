@@ -170,4 +170,11 @@ D2c（v4.25.0）给按规格计费组加了「输入图」一侧，但只让**�
 - **review 第 3 轮**（opus，「升级后的第一天」视角）：1 条 MINOR，在仓库外——可移植 skill `llm-billing-model` 的保留键规则仍只有
   「铺 usage」一种形状 → 03「保留键」节与「视频」节各加一句穿透式轮询的对称规则、自查加第四问，06 清单加一行。代码无新发现：
   旧按次 / 按秒 / Seedream 行逐像素如前；跨版本结算无崩溃路径、入账总额以报价为准；备份还原对只有输入三列的行原样往返。
+- **review 第 4 轮**（opus，收口轮：每条新行为找钉住它的测试）：5 条 MINOR，全是「删掉也不会红」的钉子缺失 + 一条过时注释。
+  ① MiniMax H3 本地的张数无走线测试 → `video_input_images_test` 加一条（首帧互斥、读不到的附件）；② `FeeGroupEditorFields` 从未被
+  pump 过，按次分支接线无测试 → 新 `fee_group_editor_fields_test`（request 有行、token 无、spec 有，且行在提示句下方）；
+  ③ 卡片按次的「输入图」标签无测试 → 同文件对 `feeGroupPriceTags` 断言两枚 / 一枚；④ 执行器「秒数或报价任一在就结算」的接缝无测试
+  → 抽成纯函数 `videoSettlementOf(done)`（`task_executors.dart`）并新 `test/services/tasks/video_settlement_test.dart`
+  （两者 / 任一 / 都没有 / 原始上游拼法不算）；⑤ `fee_group_draft.dart` 的注释「behind another unit」改「behind token mode」。
+  第 4 轮的「行为 → 测试」对照表：除上述四处外每条行为都有钉子。
 

@@ -195,7 +195,7 @@ class FeeGroupDraft extends ChangeNotifier {
       outputRates: specRates(),
       // Kept whatever the mode and unit, like the table: parked, not lost.
       // An unparseable price cannot get here while its row shows (it blocks
-      // the save); behind another unit it falls back to what was stored.
+      // the save); behind token mode it falls back to what was stored.
       inputUnitPrice: inputImagePriceCtrl.text.trim().isEmpty
           ? 0.0
           : _parsePrice(inputImagePriceCtrl.text) ?? group?.inputUnitPrice ?? 0.0,

@@ -113,6 +113,18 @@ void main() {
     expect(ticket.inputImages, 1);
   });
 
+  test('MiniMax H3 local: the same exclusion, with byte attachments written out as files', () async {
+    answer = (_) => {'id': 'h3_1'};
+    final h3 = config(Vendors.minimaxH3Base, 'minimax-h3-base');
+
+    final frames = await submit(h3, [frame(LLMReferenceType.firstFrame), reference(), reference()]);
+    expect(frames.name, 'h3_1');
+    expect(frames.inputImages, 1, reason: 'references are dropped in favour of the keyframe');
+
+    final references = await submit(h3, [reference(), unreadable(), reference()]);
+    expect(references.inputImages, 2);
+  });
+
   test('Veo: first frame, last frame and references are all counted', () {
     final payload = prepareVeoPayload(
       [
