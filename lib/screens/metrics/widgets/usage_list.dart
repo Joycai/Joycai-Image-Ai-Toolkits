@@ -381,10 +381,12 @@ class _UsageRowState extends State<_UsageRow> {
 
   /// Reference images this row sent, when its fee group charged for them
   /// (`D2c · 22f`) — by the price snapshotted on the row, so a group that
-  /// never charged inputs shows nothing even though the count is kept.
+  /// never charged inputs shows nothing even though the count is kept. A
+  /// request-billed row carries the input three alone (`D2e · 24e`), so the
+  /// snapshot, not the mode, decides.
   int? get _chargedInputImages {
     final spec = _row.spec;
-    if (!_isSpecRow || spec == null) return null;
+    if (spec == null) return null;
     return spec.inputUnitPrice > 0 && spec.inputImages > 0 ? spec.inputImages : null;
   }
 
@@ -805,7 +807,11 @@ class _UsageRowState extends State<_UsageRow> {
   String _inputImagesText(AppLocalizations l10n, UsageSpecBilling spec) {
     final billed = spec.inputUnits.round();
     final sent = spec.inputImages > 0 ? spec.inputImages : billed;
-    final free = spec.units > 0 ? sent - billed : 0;
+    // A request-billed row is always delivered (its request was charged);
+    // a spec row that delivered nothing was not charged, and its unbilled
+    // images are not "free".
+    final delivered = _isSpecRow ? spec.units > 0 : true;
+    final free = delivered ? sent - billed : 0;
     // Its own plural-aware string: one reference, the first free, is the
     // common Seedream row, and 「1 images」 would be its headline.
     final count = l10n.usageInputSentCount(sent);
@@ -824,7 +830,7 @@ class _UsageRowState extends State<_UsageRow> {
     final valueStyle = textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurface);
 
     final spec = _row.spec;
-    final chargesInput = _isSpecRow && spec != null && spec.inputUnitPrice > 0;
+    final chargesInput = spec != null && spec.inputUnitPrice > 0;
     final reported = _row.reportedCost;
     // `D2d · 23b`: on a row the provider priced itself, every value the rate
     // table *computed* (the estimate, the unit price, the two amounts) is
@@ -851,12 +857,21 @@ class _UsageRowState extends State<_UsageRow> {
       if (_isSpecRow) ...[
         (l10n.usageSpecColumn, _specLabel?.isNotEmpty == true ? _specLabel! : '—', muted: false, wide: false),
         (l10n.usageUnitPrice, money(spec?.unitPrice ?? 0), muted: demoted, wide: false),
-      ],
+      ]
+      // `D2e · 24e`: a request-billed row that charged inputs is the spec
+      // row less its 「规格」 cell — the request price is its unit price.
+      else if (chargesInput)
+        (l10n.usageUnitPrice, money(_row.requestPrice), muted: demoted, wide: false),
       // `D2c · 22g`: a row whose group charges for reference images splits
       // its amount in two and writes the input side out — what was sent, how
       // many of those were free, and the sum. Other rows are as they were.
       if (chargesInput) ...[
-        (l10n.usageOutputAmount, money(spec.cost), muted: demoted, wide: false),
+        (
+          l10n.usageOutputAmount,
+          money(_isSpecRow ? spec.cost : _row.requestCount * _row.requestPrice),
+          muted: demoted,
+          wide: false,
+        ),
         (l10n.specInputTitle, _inputImagesText(l10n, spec), muted: false, wide: true),
         (
           l10n.usageInputAmount,

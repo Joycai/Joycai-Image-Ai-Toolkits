@@ -4811,6 +4811,12 @@ abstract class AppLocalizations {
   /// **'Reference images sent with each request'**
   String get specInputSub;
 
+  /// No description provided for @specInputSubVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'First / last frame, references'**
+  String get specInputSubVideo;
+
   /// No description provided for @specInputFreeHint.
   ///
   /// In en, this message translates to:

@@ -343,6 +343,73 @@ void main() {
     }
   });
 
+  group('a request-billed row whose group charges for reference images (D2e)', () {
+    /// A relay's grok-imagine-video on a request group: one request at
+    /// \$0.08, two references at \$0.01 — the input three alone on the row.
+    TokenUsage videoRow({required DateTime timestamp, int sent = 2, double billed = 2}) => TokenUsage(
+          modelId: 'grok-imagine-video-1.5',
+          timestamp: timestamp,
+          billingMode: 'request',
+          requestCount: 1,
+          requestPrice: 0.08,
+          spec: UsageSpecBilling(
+            units: 0,
+            unitPrice: 0,
+            inputImages: sent,
+            inputUnits: billed,
+            inputUnitPrice: 0.01,
+          ),
+        );
+
+    testWidgets('the spec cell says only how many it sent, and the cost is request plus input', (tester) async {
+      await pumpList(tester, [videoRow(timestamp: todayAt(14))], const Size(1920, 1080));
+      expect(find.text('input ×2'), findsOneWidget);
+      expect(find.text('\$0.1000'), findsWidgets);
+    });
+
+    testWidgets('expanded, it is the spec row less its spec cell', (tester) async {
+      await pumpList(tester, [videoRow(timestamp: todayAt(14))], const Size(1920, 1080));
+      await tester.tap(find.text('input ×2'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Spec'), findsNothing);
+      expect(find.text('Unit price'), findsOneWidget);
+      expect(find.text('Output cost'), findsOneWidget);
+      expect(find.text('\$0.0800'), findsWidgets, reason: 'the request price, and 1 × it');
+      expect(find.text('2 images'), findsOneWidget);
+      expect(find.text('2 × \$0.0100 = \$0.0200'), findsOneWidget);
+    });
+
+    testWidgets('a free image on a request row is free, not undelivered', (tester) async {
+      await pumpList(tester, [videoRow(timestamp: todayAt(14), sent: 1, billed: 0)], const Size(1920, 1080));
+      await tester.tap(find.text('input ×1'));
+      await tester.pumpAndSettle();
+      expect(find.text('1 image · 1 free'), findsOneWidget);
+    });
+
+    testWidgets('a request row without the input side is as it always was', (tester) async {
+      await pumpList(tester, [requestRow(timestamp: todayAt(14))], const Size(1920, 1080));
+      expect(find.text('—'), findsOneWidget);
+      await tester.tap(find.text('—'));
+      await tester.pumpAndSettle();
+      expect(find.text('Output cost'), findsNothing);
+      expect(find.text('Unit price'), findsNothing);
+    });
+
+    for (final entry in {
+      'Mobile': const Size(390, 844),
+      'Tablet': const Size(820, 1180),
+    }.entries) {
+      testWidgets('no overflow collapsed or expanded on ${entry.key}', (tester) async {
+        await pumpList(tester, [videoRow(timestamp: todayAt(14))], entry.value);
+        expect(tester.takeException(), isNull, reason: 'Overflow on ${entry.key}');
+        await tester.tap(find.text('input ×2'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: 'Expanded overflow on ${entry.key}');
+      });
+    }
+  });
+
   group('a row the provider priced itself (D2d)', () {
     /// An xAI 2.0 edit: the table says 1K · medium $0.06 + one reference
     /// image at $0.01, upstream billed $0.05 (it served low).

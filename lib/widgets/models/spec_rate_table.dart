@@ -89,8 +89,8 @@ class SpecTableIssues {
 /// The spec branch of the fee-group editor (`D2b · 21a–21d`): the unit chips
 /// and the rate table — a header, the ordinary rows, 「添加档位」, and under a
 /// hairline the pinned 「其他规格」 row that only has a price. Last of all,
-/// for a per-image group, the 「输入图」 row (`D2c · 22a–22d`): what one
-/// reference image costs and how many of a request's are free.
+/// under every unit, the 「输入图」 row (`D2c · 22a–22d`, `D2e · 24a`): what
+/// one reference image costs and how many of a request's are free.
 ///
 /// The drafts are the caller's: this widget mutates them in place and calls
 /// [onChanged] so the caller can rebuild and revalidate.
@@ -219,126 +219,17 @@ class SpecRateTableEditor extends StatelessWidget {
         ],
         const SizedBox(height: _gap),
         Text(l10n.specPriorityRule, style: helpStyle),
-        // Per image only: no video surface reports the images it was sent,
-        // and a field that can never bill would mislead. Collapsed rather
-        // than cleared — the draft keeps what was typed.
-        AnimatedSize(
-          duration: AppMotion.state,
-          curve: AppMotion.enter,
-          alignment: Alignment.topCenter,
-          child: unit == OutputUnit.image
-              ? _buildInputBlock(context, l10n)
-              : const SizedBox(width: double.infinity),
-        ),
-      ],
-    );
-  }
-
-  // --- Input images ---------------------------------------------------------
-
-  Widget _buildInputBlock(BuildContext context, AppLocalizations l10n) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpace.s10),
-      child: Container(
-        padding: const EdgeInsets.only(top: _gap),
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: scheme.outlineVariant)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            narrow ? _buildNarrowInputRow(context, l10n) : _buildWideInputRow(context, l10n),
-            if (inputPriceInvalid) ...[
-              const SizedBox(height: _gap),
-              _Hint(icon: Icons.error_outline, text: l10n.specInputPriceInvalid, error: true),
-            ] else if (inputFreeWithoutPrice) ...[
-              const SizedBox(height: _gap),
-              _Hint(icon: Icons.info_outline, text: l10n.specInputFreeOnlyHint),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _inputTitle(BuildContext context, AppLocalizations l10n) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    return Row(
-      children: [
-        Text(l10n.specInputTitle, style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500)),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            l10n.specInputSub,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _inputFreeField(AppLocalizations l10n) => _PriceField(
-        key: const ValueKey('spec-input-free'),
-        controller: inputFreeCtrl,
-        placeholder: l10n.specInputFreeHint,
-        suffix: l10n.specInputFreeSuffix,
-        onChanged: onChanged,
-        integer: true,
-        muted: inputFreeWithoutPrice,
-      );
-
-  Widget _inputPriceField(AppLocalizations l10n, String suffix) => _PriceField(
-        key: const ValueKey('spec-input-price'),
-        controller: inputPriceCtrl,
-        placeholder: '0.0000',
-        suffix: suffix,
-        onChanged: onChanged,
-        error: inputPriceInvalid,
-      );
-
-  Widget _buildWideInputRow(BuildContext context, AppLocalizations l10n) {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: AppSize.control,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Align(alignment: AlignmentDirectional.centerStart, child: _inputTitle(context, l10n)),
-            ),
-          ),
-        ),
-        const SizedBox(width: _gap),
-        SizedBox(width: _priceWidth, child: _inputFreeField(l10n)),
-        const SizedBox(width: _gap),
-        // The same vertical as every rate's price and the catch-all's.
-        SizedBox(width: _priceWidth, child: _inputPriceField(l10n, l10n.specUnitSuffixImage)),
-        const SizedBox(width: _gap + _deleteWidth),
-      ],
-    );
-  }
-
-  Widget _buildNarrowInputRow(BuildContext context, AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(height: 24, child: _inputTitle(context, l10n)),
-        const SizedBox(height: _gap),
-        Padding(
-          padding: const EdgeInsets.only(right: AppSize.touch + _gap),
-          child: Row(
-            children: [
-              Expanded(child: _inputFreeField(l10n)),
-              const SizedBox(width: _gap),
-              Expanded(child: _inputPriceField(l10n, '\$${l10n.specUnitSuffixImage}')),
-            ],
-          ),
+        // Under every unit (`D2e · 24a`): the video surfaces report the
+        // frames they were sent, and xAI prices them beside its per-second
+        // rate. Only the subtitle changes with the unit — what is counted.
+        SpecInputImagesBlock(
+          inputPriceCtrl: inputPriceCtrl,
+          inputFreeCtrl: inputFreeCtrl,
+          inputPriceInvalid: inputPriceInvalid,
+          inputFreeWithoutPrice: inputFreeWithoutPrice,
+          onChanged: onChanged,
+          narrow: narrow,
+          subtitle: unit == OutputUnit.image ? l10n.specInputSub : l10n.specInputSubVideo,
         ),
       ],
     );
@@ -948,4 +839,153 @@ class _Hint extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The 「输入图」 row (`D2c · 22a–22d`, every mode that charges inputs since
+/// `D2e · 24a–24c`): under a hairline, what one reference image costs and
+/// how many of a request's are free. One widget for both hosts — the spec
+/// table shows it under every unit with [subtitle] naming what counts (a
+/// video's first / last frame and references), the request branch of the
+/// editor shows it under its hint with [trailingBlank] off, so the price
+/// field ends where the request field ends rather than under a delete
+/// column that is not there.
+class SpecInputImagesBlock extends StatelessWidget {
+  const SpecInputImagesBlock({
+    super.key,
+    required this.inputPriceCtrl,
+    required this.inputFreeCtrl,
+    required this.inputPriceInvalid,
+    required this.inputFreeWithoutPrice,
+    required this.onChanged,
+    required this.narrow,
+    required this.subtitle,
+    this.trailingBlank = true,
+  });
+
+  final TextEditingController inputPriceCtrl;
+  final TextEditingController inputFreeCtrl;
+  final bool inputPriceInvalid;
+  final bool inputFreeWithoutPrice;
+  final VoidCallback onChanged;
+  final bool narrow;
+
+  /// The words after 「输入图」: what is counted.
+  final String subtitle;
+
+  /// Whether the wide row ends with the table's delete-column blank.
+  final bool trailingBlank;
+
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpace.s10),
+      child: Container(
+        padding: const EdgeInsets.only(top: SpecRateTableEditor._gap),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: scheme.outlineVariant)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            narrow ? _buildNarrowInputRow(context, l10n) : _buildWideInputRow(context, l10n),
+            if (inputPriceInvalid) ...[
+              const SizedBox(height: SpecRateTableEditor._gap),
+              _Hint(icon: Icons.error_outline, text: l10n.specInputPriceInvalid, error: true),
+            ] else if (inputFreeWithoutPrice) ...[
+              const SizedBox(height: SpecRateTableEditor._gap),
+              _Hint(icon: Icons.info_outline, text: l10n.specInputFreeOnlyHint),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _inputTitle(BuildContext context, AppLocalizations l10n) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        Text(l10n.specInputTitle, style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500)),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _inputFreeField(AppLocalizations l10n) => _PriceField(
+        key: const ValueKey('spec-input-free'),
+        controller: inputFreeCtrl,
+        placeholder: l10n.specInputFreeHint,
+        suffix: l10n.specInputFreeSuffix,
+        onChanged: onChanged,
+        integer: true,
+        muted: inputFreeWithoutPrice,
+      );
+
+  Widget _inputPriceField(AppLocalizations l10n, String suffix) => _PriceField(
+        key: const ValueKey('spec-input-price'),
+        controller: inputPriceCtrl,
+        placeholder: '0.0000',
+        suffix: suffix,
+        onChanged: onChanged,
+        error: inputPriceInvalid,
+      );
+
+  Widget _buildWideInputRow(BuildContext context, AppLocalizations l10n) {
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: AppSize.control,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Align(alignment: AlignmentDirectional.centerStart, child: _inputTitle(context, l10n)),
+            ),
+          ),
+        ),
+        const SizedBox(width: SpecRateTableEditor._gap),
+        SizedBox(width: SpecRateTableEditor._priceWidth, child: _inputFreeField(l10n)),
+        const SizedBox(width: SpecRateTableEditor._gap),
+        // The same vertical as every rate's price and the catch-all's.
+        SizedBox(width: SpecRateTableEditor._priceWidth, child: _inputPriceField(l10n, l10n.specUnitSuffixImage)),
+        // The delete column's width, so the price sits under the table's
+        // prices; a host with no such column (request mode) drops it.
+        if (trailingBlank) const SizedBox(width: SpecRateTableEditor._gap + SpecRateTableEditor._deleteWidth),
+      ],
+    );
+  }
+
+  Widget _buildNarrowInputRow(BuildContext context, AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(height: 24, child: _inputTitle(context, l10n)),
+        const SizedBox(height: SpecRateTableEditor._gap),
+        Padding(
+          padding: EdgeInsets.only(right: trailingBlank ? AppSize.touch + SpecRateTableEditor._gap : 0),
+          child: Row(
+            children: [
+              Expanded(child: _inputFreeField(l10n)),
+              const SizedBox(width: SpecRateTableEditor._gap),
+              Expanded(child: _inputPriceField(l10n, '\$${l10n.specUnitSuffixImage}')),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
 }

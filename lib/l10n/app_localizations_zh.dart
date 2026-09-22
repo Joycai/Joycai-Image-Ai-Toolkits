@@ -2681,6 +2681,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get specInputSub => '每次请求发出的参考图';
 
   @override
+  String get specInputSubVideo => '首帧 / 尾帧 / 参考图';
+
+  @override
   String get specInputFreeHint => '免费张数';
 
   @override
@@ -8569,6 +8572,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get specInputSub => '每次請求送出的參考圖';
+
+  @override
+  String get specInputSubVideo => '首幀 / 尾幀 / 參考圖';
 
   @override
   String get specInputFreeHint => '免費張數';
