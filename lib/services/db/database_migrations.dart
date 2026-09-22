@@ -73,6 +73,7 @@ class DatabaseMigration {
     if (oldVersion < 46) await _createV46Tables(db);
     if (oldVersion < 47) await _createV47Columns(db);
     if (oldVersion < 48) await _createV48Columns(db);
+    if (oldVersion < 49) await _createV49Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -120,7 +121,26 @@ class DatabaseMigration {
     await _createV46Tables(db);
     await _createV47Columns(db);
     await _createV48Columns(db);
+    await _createV49Columns(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// The provider's own figure for what a request cost (`reported_cost`, in
+  /// dollars): xAI writes it into every image response (`cost_in_usd_ticks`,
+  /// docs/api/usage.md §5), reference images included. A row that has one
+  /// bills by it in place of everything the fee group's snapshot says — under
+  /// every mode, so an xAI model left on the default token-billed group stops
+  /// recording $0. The snapshot columns are still written beside it: the
+  /// usage page shows the table's estimate against the provider's figure,
+  /// and a gap between them is the sign the table is stale.
+  ///
+  /// NULL, no default: "not reported" must stay distinct from a reported
+  /// zero, which only the provider gets to say. Every row that was there
+  /// keeps pricing off its snapshot.
+  static Future<void> _createV49Columns(Database db) async {
+    if (await _tableExists(db, 'token_usage')) {
+      await _addColumnIfNotExists(db, 'token_usage', 'reported_cost', 'REAL');
+    }
   }
 
   /// Input-image billing — the input side of spec billing. xAI's Grok
