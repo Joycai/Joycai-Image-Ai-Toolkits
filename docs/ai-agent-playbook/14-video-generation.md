@@ -19,22 +19,17 @@
 视频任务天然跨请求（提交与轮询之间隔着分钟级时间，可能跨进程存活），所以
 不能学出图藏在一个同步函数里——task_id 必须暴露给调用方持久化：
 
-```ts
-submitVideoJob(conn, req): Promise<string>            // 返回不透明 task id
-pollVideoJob(conn, taskId): Promise<VideoJobStatus>   // 每次轮询调一次
+```text
+提交(连接, 请求)   -> task id（不透明字符串，调用方负责持久化）
+轮询(连接, task id) -> 状态；每次轮询调一次
+  状态 = { done: false, status? }   status 仅展示，永不作分支条件
+       | { done: true, videoUrl }
+  失败一律以错误抛出，不进返回值
 
-type VideoJobStatus =
-  | { done: false; status?: string }                  // status 仅展示，永不分支
-  | { done: true; videoUrl: string };                 // 失败一律抛错，不进返回值
-
-interface VideoJobRequest {
-  prompt: string;
-  media?: { role: "first_frame" | "last_frame" | "reference_image"
-                 | "reference_video" | "reference_audio";
-            url: string }[];        // data URL 或公网 URL，adapter 转各家拼写
-  resolution?: string; duration?: number; ratio?: string; audio?: boolean;
-  extraBody?: Record<string, unknown>;
-}
+请求 = { prompt,
+         media?: [{ role: first_frame|last_frame|reference_image|reference_video|reference_audio,
+                    url: data URL 或公网 URL }]      适配器转成各家拼写
+         resolution?, duration?, ratio?, audio?, extraBody? }
 ```
 
 - **首帧/尾帧/参考素材统一用 role 标注**，不做 `firstFrameImage` 这类独立
@@ -58,11 +53,22 @@ interface VideoJobRequest {
 `input.media[]{type, url}`；`parameters`：`resolution`（480P/720P/1080P，
 默认 1080P）、`ratio`（adaptive/16:9/…）、`duration`（2–30s，`-1` 智能）、
 **`audio` 默认 true**、`prompt_extend` 默认 true。usage 报秒数/fps/分辨率，
-无 token。
+无 token（字段 `video_count`(=1) / `duration` / `fps` / `SR` / `ratio`）。**创建 → 轮询 → 取结果**
+【实测 2026-08-29，Joycai 用户账号】跑通；失败态与取消分支未走到。
+
+火山方舟 Seedance：订阅套餐 base 上 `/contents/generations/tasks` 对 `doubao-seedance-1-0-pro-250528`、`-1.0-pro`、`-2.0`、
+`-1-0-lite-t2v-250428` 全回 `404 UnsupportedModel`【实测 2026-09-18】——要按量 key，协议形状本库未覆盖。
 
 MiniMax v2 提交 body：`content[]`（至少一个 text 项 ≤7000 字符，媒体项
 `image_url`/`video_url`/`audio_url` + `role`）；**`resolution`（768P/2K）与
-`duration`（4–15s）必填、无服务端默认**——客户端必须自带缺省值。可选
+`duration`（4–15s）必填、无服务端默认**——客户端必须自带缺省值。
+
+**MiniMax v2 实测**（2026-08-29，`api.minimaxi.com`，`MiniMax-H3`，首帧 + 尾帧，创建 → 轮询 → 取结果全链路，来源 Joycai）：
+- 媒体项是**嵌套**形状：`{"type":"image_url","image_url":{"url":…},"role":"first_frame"}`，`role` 与 `type` 平级，
+  拼写 `first_frame` / `last_frame`，两个媒体项放在同一个 `content[]` 里。**写成平铺的 `"url"` 是静默失败**：解析器照收、任务照样成功、
+  照样计费，只是当作没附图生成——「跑通」的判据是出片确实遵守首尾帧，不是 HTTP 200（坑 113）。
+- 媒体项旁边**必须有一个 text 项**，纯图生视频也要给。带媒体时 `ratio:"adaptive"` 原样被接受；`resolution:"2K"` 被接受并正常出片。
+- 结果直链可直接下载。未实测：纯文生视频的 `ratio` 替换、帧与参考素材的互斥、`reference_image` role、取消（DELETE）、`768P`。可选
 `callback_url` webhook（注册时 3 秒内回显 challenge）。创建响应极简
 `{"task_id": "…"}`。usage 报秒数 + token 双口径。
 

@@ -3,7 +3,7 @@
 > 本篇解决的问题：在兼容层世界里回答三个问题——「这次调用成功了吗」（默认答案 HTTP 200=成功在兼容层上是**错**的）、「这次花了多少钱」（两个口径陷阱会让你少报一个数量级）、「这个端点实际能接受什么」（文档/网关/作者说的都不算数）。
 > 不读会踩的坑：过期密钥被读成一次正常空回复；长 prompt + 缓存命中时 input 少报一个数量级；Gemini 思考 token 全部漏计；被限流的探测请求被记录成上下文上限的证据；API key 泄进日志与错误消息。
 
-参考实现：simple-ai-writer `src/lib/ai/usage.ts`、`modelHealth.ts`、`apiLog.ts`、`providerProbe.ts`、`endpointProbe.ts`、`probeAnalysis.ts`，以及三个适配器的错误通道处理。
+出处：simple-ai-writer `src/lib/ai/usage.ts`、`modelHealth.ts`、`apiLog.ts`、`providerProbe.ts`、`endpointProbe.ts`、`probeAnalysis.ts`，以及三个适配器的错误通道处理。
 
 ---
 
@@ -17,14 +17,17 @@
 
 计费公式：`(input − cached) × 全价 + cached × 缓存价`。
 
-两处**必须**归一化，否则数字直接错：
+三处**必须**归一化，否则数字直接错：
 
-1. **Anthropic 三桶不重叠**（参考实现：`anthropic.ts` 的 `readUsage`）：`input_tokens` 只是未命中缓存的余量，`cache_read_input_tokens`、`cache_creation_input_tokens` 单列。总输入 = 三者之和——直接读 `input_tokens` 会在长 prompt + 缓存命中时**少报一个数量级**。cache write 计价高于基础价而费率表通常没这档，归入全价桶——宁可高估（用户拿这个数决定跑不跑，高估是安全方向）。另外 `message_delta` 只报 output，不能让它缺失的 input 字段清零 `message_start` 已立的数（`input || prev.inputTokens`）。
+1. **Anthropic 三桶不重叠**（出处：`anthropic.ts` 的 `readUsage`）：`input_tokens` 只是未命中缓存的余量，`cache_read_input_tokens`、`cache_creation_input_tokens` 单列。总输入 = 三者之和——直接读 `input_tokens` 会在长 prompt + 缓存命中时**少报一个数量级**。cache write 计价高于基础价而费率表通常没这档，归入全价桶——宁可高估（用户拿这个数决定跑不跑，高估是安全方向）。另外 `message_delta` 只报 output，不能让它缺失的 input 字段清零 `message_start` 已立的数（`input || prev.inputTokens`）。
 2. **Gemini 思考不在 `candidatesTokenCount` 里**：`outputTokens = candidatesTokenCount + thoughtsTokenCount`——只读前者会把"思考 5k、回答 500"记成 500，少算的正是最贵的部分。（①④ 的输出已含思考，details 只是明细。）
+3. **DeepSeek 的缓存命中不在标准位置**：它报顶层 `prompt_cache_hit_tokens` / `prompt_cache_miss_tokens`，没有
+   `prompt_tokens_details.cached_tokens`；`prompt_tokens` 已含命中。只读标准拼写 = 每次命中都按全价记【文档；Joycai 2026-09-14 修复】。
+   对策：宿主没发标准字段时，把命中数以标准拼写补进去，原字段保留。
 
 ### 持久化与 rollup
 
-参考实现：`src/lib/ai/usage.ts`。
+出处：`src/lib/ai/usage.ts`。
 
 - `persistUsage` 每次调用一行（model_id / task / prompt / cached / completion / cost / created_at），**best-effort 永不抛**——记账不能炸调用方。
 - 读侧两个 GROUP BY rollup（byModel / byTask）；`total` **从 byModel 求和派生而非单独查**——标题数字与明细行永远不可能不一致。
@@ -34,16 +37,26 @@
 
 核心论点：失败通道的差异是**正确性**问题——它决定"这次调用成功了吗"这个判断本身，而默认答案（HTTP 200 = 成功）在兼容层上是错的。必须处理的**四种"看起来成功"的失败**：
 
-1. **SSE 体内 `data: {"error":...}`**（三族适配器都要处理）：审核拦截、上游故障、余额耗尽经常这样送达（OpenRouter routinely）。不处理 = 流在此结束、之前的部分文本被当成正常短回复。
+1. **SSE 体内 `data: {"error":...}`**（各族适配器都要处理）：审核拦截、上游故障、余额耗尽经常这样送达（OpenRouter routinely）。不处理 = 流在此结束、之前的部分文本被当成正常短回复。
 2. **`base_resp.status_code`**（OpenAI 系适配器单独处理）：同一件事的第二种拼法（MiniMax：1004 鉴权失败、1008 余额不足、1002 限流），0 为成功。只认 `error` 字段的客户端会**把过期密钥读成一次正常空回复**。
 3. **内容拦截在文本已开始后到达**：
    - Gemini：请求级 `promptFeedback.blockReason` 与响应级 `finishReason ∈ {SAFETY, PROHIBITED_CONTENT, BLOCKLIST, RECITATION, SPII, IMAGE_SAFETY}`（后者可能在半截文本后到）；
    - Anthropic：`stop_reason: "refusal"`；
-   - OpenAI：`finish_reason: "content_filter"`（Azure 及多家网关用它而非错误状态码，且几乎不带文本）。
+   - OpenAI：`finish_reason: "content_filter"`（Azure 及多家网关用它而非错误状态码，且几乎不带文本）；
+   - 智谱 BigModel：`finish_reason: "sensitive"`（同义，不用 `content_filter` 这个值）。
    三者都必须 **throw** 而不是当正常结束——已交付上层的文本需要作废。
+   同一家的另两个私有值【文档 2026-09，名字无歧义可对全体 ① 族生效】：`network_error`（推理中途异常——文档明写
+   「流式中途失败不回错误码，只在 `finish_reason` 里说」，必须 throw）、`model_context_window_exceeded`（按截断处理，同 `length`）。
 4. **请求缺陷伪装成正常短答**：Gemini 的 `GEMINI_REQUEST_FAULTS` 集合——`MISSING_THOUGHT_SIGNATURE`（我方丢了签名，不是用户的错，报错措辞刻意区分，否则用户会去自己的内容里找根本不存在的敏感词）、`UNEXPECTED_TOOL_CALL`、`TOO_MANY_TOOL_CALLS`、`MALFORMED_RESPONSE`。这组说明 finishReason 检查**不能只是 in blocked-set**：HTTP 200 + 不认识的 finishReason，不处理就读成正常短回复。
 
 推论规则：**健壮解析器要把"200 且没有任何内容"当可疑而非成功。**
+
+**错误信封里的业务码是字符串，而且可能不指向真因**（智谱，【实测 2026-09-19】）：`{"error":{"code":"1210","message":"…"}}`，
+HTTP 状态另给。多数文案具体（`temperature参数非法：限制数值范围[0,1]`、`max_tokens参数非法：限制数值范围[1,98304]`），
+但有两类不可信：同一句「该模型始终思考，不支持关闭思考」覆盖 5.3 代**所有**非法思考参数（连关思考时的图片请求也报它）；
+「API 调用参数有误，请检查文档」不说是哪个参数（被拒的强制 `tool_choice`、glm-5 的非法 effort 都是它）。
+按文案关键词做错误驱动降级前，先看这家的文案是否点名参数。错 key 是 401 `{"code":"401","message":"令牌已过期或验证不正确"}`；
+**未知顶层字段一律放过**。
 
 ### 错误消息的两条纪律
 
@@ -52,19 +65,19 @@
 
 ### safety-block 粘性标记
 
-参考实现：`src/lib/ai/modelHealth.ts` 的 `isSafetyBlockMessage`。安全拦截类错误由正则识别（匹配三族的措辞），把该模型标记为 blocked——**跨会话粘性，直到该模型完成一次成功运行才清除**。模型选择器用它提示"这个模型刚拒绝过这类内容，换一个"。
+出处：`src/lib/ai/modelHealth.ts` 的 `isSafetyBlockMessage`。安全拦截类错误由正则识别（匹配三族的措辞），把该模型标记为 blocked——**跨会话粘性，直到该模型完成一次成功运行才清除**。模型选择器用它提示"这个模型刚拒绝过这类内容，换一个"。
 
 ## 3. 重试 / abort / 超时
 
 - **主聊天路径不重试**：一次 streamCompletion 一次机会，错误直接上抛给任务层决定。（用户在看着流，静默重试 = 内容闪回重来。）
 - **探测路径重试**：`RETRY_ATTEMPTS = 3`、线性退避 1.2s×n、**只对 `isTransient`（429/5xx）重试**。关键理由：**被限流的请求绝不能被记录成上下文上限的证据。**
-- **abort**：`AbortSignal` 一路穿透到 fetch。探测用 `requestSignal` 合并外部 signal 与每请求超时 timer，并把 controller 交出——error probe 在 `res.ok` 时**读到响应头就主动 abort**，不为一次探测付整段生成的钱。
+- **取消**：调用方的取消信号一路穿透到 HTTP 请求。探测把外部取消信号与每请求超时合成一个信号，并保留主动取消的句柄——错误探测在响应 2xx 时**读到响应头就主动断开**，不为一次探测付整段生成的钱。
 - **超时**：探测每请求 180s（本地后端吃大上下文会 paging 数分钟，探测不能继承聊天级耐心）；**主聊天路径不设自有超时**（长生成合法），交给 signal。
 - **ContextSizeError**：发送前估算拦截（第 1 篇 §6），错误对象携带 estimated / contextSize 两个数字供 UI 展示。
 
 ## 4. API 日志：为兼容层调试而生
 
-参考实现：`src/lib/ai/apiLog.ts`。**强烈建议第一批实现**——后续所有兼容层坑都靠它定位。
+出处：`src/lib/ai/apiLog.ts`。**强烈建议第一批实现**——后续所有兼容层坑都靠它定位。
 
 设计规则：
 
@@ -82,11 +95,9 @@
 
 ### 4.1 回显比对：端点悄悄换了你的参数
 
-参考实现：`src/lib/ai/responses.ts` 的 `readTerminalUsage`，`types.ts` 的 `WireRewrite`，决策记录 `docs/api/gpt56-plan.md` P2。
+出处：`src/lib/ai/responses.ts` 的 `readTerminalUsage`，`types.ts` 的 `WireRewrite`，决策记录 `docs/api/gpt56-plan.md` P2。
 
-**失败形态**：请求 200、输出正常，但端点跑的不是你发的参数。实测（New API 中转站，GPT-5.6）：
-sol 发 effort `max` → 回显 `none`、`reasoning_tokens: 0`；terra 发 `none` → 两次都回显 `medium` 且照样推理；
-`temperature: 0.5` → 回显 `1.0`。作者以为开了（或关了）深思考，其实没有——典型的"不响"类失败。
+**失败形态**：请求 200、输出正常，但端点跑的不是你发的参数（New API 中转站改写 effort / temperature，实测样本见第 1 篇 §9.2）。作者以为开了（或关了）深思考，其实没有——典型的"不响"类失败。
 
 **可利用的事实**：② Responses 族的终止响应（`response.completed` / `incomplete` 的 `response`）**回显请求字段**。
 
@@ -103,12 +114,12 @@ sol 发 effort `max` → 回显 `none`、`reasoning_tokens: 0`；terra 发 `none
 **事故**：统一入口为了把请求体写进 API 日志，把 `_onRequestBody` 设成自己的函数——**覆盖了调用方传入的同名钩子**。
 live 实测文件通过这个钩子读自己发出的 body，所有 `bodies[0]` 断言从此读到 `undefined`：一轮 12 条实测里 6 条"失败"不是端点的错，是这个。
 
-规则：横切层给选项对象装任何回调（日志、计时、看门狗），一律 `(x) => { own(x); caller?.(x); }`；并加一条单测钉住"调用方钩子仍被调用"。
+规则：横切层给选项对象装任何回调（日志、计时、看门狗），一律「先调自己的，再调调用方原有的（若有）」；并加一条单测钉住"调用方钩子仍被调用"。
 `onChunk` 早就是这么包的，偏偏"调用方一般不传"的内部钩子最容易被写成替换。
 
 ## 5. providerProbe：连接测试与模型列表（配置时点）
 
-参考实现：`src/lib/ai/providerProbe.ts`。
+出处：`src/lib/ai/providerProbe.ts`。
 
 - **先打 `/models`**：存在时一次回答两个问题（可达 + 已鉴权）且零成本。三族响应形状：OpenAI `{data:[{id}]}`、Gemini `{models:[{name:"models/x", displayName}]}`、Anthropic `{data:[{id, display_name}]}`。
 - **compat 且 `/models` 404/405/501**（`ENDPOINT_ABSENT` 集合——"服务器不 serve 这个路径"，区别于 401/429/500 "served 了但拒绝"）→ 不报失败，降级到 **completion probe**：POST 一个最小 body，模型名用**不可能存在的** `__connection_probe__`——连接测试发生在用户选模型之前，真名会计费一次真实生成。
@@ -117,11 +128,14 @@ live 实测文件通过这个钩子读自己发出的 body，所有 `bodies[0]` 
   - 非 2xx 但 body 是**该协议自己的 JSON error 结构** → **判连通成功**（只有真在说这套协议的服务才这样回话）；
   - body 是 HTML/空/非 JSON → 报错——这正是要抓的"base URL 指向了不是 API 的东西"（nginx 404、登录页、CDN）；它与"没有 /models"同样是 404，唯一区别是回话的形状；
   - 2xx → 连通（端点无视了 model 字段，少见但可达且收了 key）。
+- **402 是「钱包空了」，不是「已连通」**：欠费的中转对**任何**真实请求都回 402，而且是完整的、协议形状的 JSON 错误，发生在解析模型名之前
+  【实测 2026-09-05，Joycai 连接测试】。按上面的规则它会被读成「在说这套协议 → 连通」，用户于是去排查模型列表。402 在任一步都报不可达，
+  并带上提供方自己的文案；它也不是鉴权失败（key 有效，余额为零）（坑 112）。
 - **没有 `/models` 的中继是正常配置不是坏的**（模型 id 可手填）。报错文案必须说清这一点而不是甩状态码——否则用户会读成"我的 key 错了"。
 
 ## 6. endpointProbe：模型真实上限的实测
 
-参考实现：`src/lib/ai/endpointProbe.ts`（HTTP 管线）+ `probeAnalysis.ts`（纯判断）。回答的问题是"这个端点**实际**接受什么"，而不是文档/网关/用户猜的。四步递进、花钱递增：
+出处：`src/lib/ai/endpointProbe.ts`（HTTP 管线）+ `probeAnalysis.ts`（纯判断）。回答的问题是"这个端点**实际**接受什么"，而不是文档/网关/用户猜的。四步递进、花钱递增：
 
 ```
 Step 0  discover()   免费元数据：/models 扩展字段（OpenRouter context_length、
@@ -165,15 +179,14 @@ Step 3  deep(opt-in) 从声明值开始的二分搜索找真实接受上限（�
 - **tools / JSON mode 能力**：不主动探测，靠**运行时降级**（structured 的错误正则回退、providerProbe 的错误形状判定）；
 - **上下文窗口 / 输出上限**：作者自己也不知道的**数值**，才花钱实测。
 
-这是刻意取舍，配合三条贯穿性原则收尾：
+这是刻意取舍，配合 SKILL.md「六条贯穿性设计原则」的 2–4 条收尾，本篇只补两点：
 
-1. **最小公倍数发送、最大宽容接收。** 官方端点可乐观假设可选部分存在，兼容端点不行；主动发出的每个字段都是某个中继可以 400 的字段（`max_uses` 是唯一有记录的刻意例外，见第 5 篇）。
-2. **凡跨轮回传的，原物整存**（thinking blocks、thoughtSignature、encrypted_content、reasoning 字段名）；"理解后重建"恰好丢掉的就是完整性校验依赖的那部分。
-3. **先问失败会不会响。** 会响的（400）靠错误驱动降级即可；不响的（静默降级/静默截断/静默忽略）必须主动验证（API 日志对照、探测、"结果之后模型说话了吗"式的间接判据），并且**只有这类才值得预先花设计预算**。
+- 「主动发出的每个字段都是某个中继可以 400 的字段」有一个有记录的刻意例外：`max_uses`（见第 5 篇）。
+- 不响的失败除 API 日志对照、探测外，还可用「结果之后模型说话了吗」式的间接判据主动验证。
 
 ## 8. 付费实测（live probe）纪律
 
-参考实现：simple-ai-writer `src/lib/__tests__/live.openai-responses.test.ts`、`live.qianwen.test.ts`；结果记录在 `docs/api/landscape.md` §7 的编号样本。
+出处：simple-ai-writer `src/lib/__tests__/live.openai-responses.test.ts`、`live.qianwen.test.ts`；结果记录在 `docs/api/landscape.md` §7 的编号样本。
 
 中转站与新型号的真实行为只能花钱测。每一次都要留下可复跑、可引用的产物：
 
@@ -192,7 +205,7 @@ Step 3  deep(opt-in) 从声明值开始的二分搜索找真实接受上限（�
 - [ ] Anthropic input = 三桶求和；`message_delta` 不清零已立的 input。
 - [ ] Gemini output = `candidatesTokenCount + thoughtsTokenCount`。
 - [ ] `persistUsage` best-effort 永不抛；total 从明细 rollup 派生；NULL→0 在边界处理。
-- [ ] 三族适配器都处理 SSE 体内 `data:{"error":...}`；OpenAI 系另处理 `base_resp.status_code`。
+- [ ] 各族适配器都处理 SSE 体内 `data:{"error":...}`；OpenAI 系另处理 `base_resp.status_code`。
 - [ ] content_filter / SAFETY / refusal 都 throw 作废已流出文本，不当正常结束。
 - [ ] Gemini 的 finishReason 检查覆盖 `GEMINI_REQUEST_FAULTS`，且我方缺陷（丢签名）与内容拦截的报错措辞区分。
 - [ ] 错误消息带实际请求 URL，永不带 key；apiLog 永不写 key。

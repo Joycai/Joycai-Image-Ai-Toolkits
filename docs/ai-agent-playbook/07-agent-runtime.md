@@ -1,8 +1,20 @@
 # 07 · Agent Runtime：preset 驱动的 tool loop 与事件系统
 
-> 本篇解决的问题：一个应用里往往有多种 AI 任务——续写、结构化提取、对话助手、子代理调查——如果每种任务各写一个循环，工具协议不变量（tool_call 配对、abort 配平、上下文裁剪）就会被复制 N 份并各自腐坏。本篇规定一种**唯一的 tool loop 实现**（runtime），由纯数据的 **TaskPreset** 驱动其行为差异，并通过结构化 **AgentEvent** 流向 UI 汇报进展。工具注册、权限分级与写入安全见第 08 篇；工具动态路由与子代理见第 09 篇；结构化输出双路径详见第 04 篇。
+> 本篇解决的问题：一个应用里往往有多种 AI 任务——续写、结构化提取、对话助手、子代理调查——如果每种任务各写一个循环，工具协议不变量（tool_call 配对、abort 配平、上下文裁剪）就会被复制 N 份并各自腐坏。本篇规定一种**唯一的 tool loop 实现**（runtime），由纯数据的 **TaskPreset** 驱动其行为差异，并通过结构化 **AgentEvent** 流向 UI 汇报进展。工具注册、权限分级与写入安全见第 08 篇；工具动态路由与子代理见第 09 篇；结构化输出双路径详见 ai-agent-architecture 04 篇。
 >
 > 参考实现：simple-ai-writer `src/lib/agent/runtime.ts` / `presets.ts` / `events.ts` / `logModel.ts`。
+
+目录：
+- §1 总体架构与五条核心设计决策
+- §2 runtime 契约（输入 / 输出）
+- §3 round 循环完整骨架
+  - 3.1 唯一终止条件 · 3.2 abort 配平不变量与 repairToolCallPairing · 3.3 thinking 回传字段随消息存放 · 3.4 serverTools 四态
+  - 3.5 临时提示：发出即撤 · 3.6 trimHistory · 3.7 checkpoint 机制（→ 10 篇 §2.4） · 3.8 round limit
+- §4 Preset 系统
+  - 4.6 工具按需加载（deferred loading / tool search）
+- §5 事件系统
+- §6 结构化输出在 agent 层的位置（→ ai-agent-architecture 04 §3）
+- §7 本篇检查清单
 
 ---
 
@@ -27,11 +39,11 @@ plan.ts / backup.ts     ← 领域数据写入的方案门控、写前备份（�
 
 迁移到任何新项目时，以下五条决策是**必须保留的骨架**，不是可选风格：
 
-1. **runtime 只做循环，不做策略。**哪些工具可用、跑几轮、怎么收尾，全部由 preset 数据决定；工具执行一律查注册表分发，runtime 内**绝不允许出现 `switch(toolName)` 硬编码**。加任务 = 加一个 preset 常量；加工具 = 在注册表登记一项。
+1. **runtime 只做循环，不做策略。**可用工具、轮数、收尾全由 preset 数据决定，工具执行查注册表分发，**绝不出现 `switch(toolName)`**。
 2. **权限不在 runtime 里执行，在工具执行器里执行。**runtime 无差别调用 `executeRegisteredTool`；L1 自动写的备份、L2 审批写的阻塞、方案门控，全部在各工具的 `execute` 内部完成。`access` 字段更多是声明/文档/UI 用途，不是 runtime 的分支依据。
 3. **审批 = Promise 挂起。**L2 工具在 execute 内 `await ctx.requestApproval(proposal)`，整个 tool loop 同步阻塞在这里，直到用户在 UI 卡片上批准/拒绝。批准后的落盘由**审批方**（store）完成，工具本身永不直接写用户核心内容。
 4. **错误全部回给模型。**执行器不 throw（注册表捕获后转成 `Error: ...` 文本结果）：坏调用变成模型下一轮可读、可纠正的信息，单次坏调用不杀死整个运行。
-5. **history 即会话。**runtime **原地 mutate** 调用者持有的 messages 数组；对话场景把同一数组跨轮复用，上一轮的 tool 调用与结果留在上下文里供下一轮指代。因此协议完整性（每个 tool_call 必须有配对回复）是**生死攸关的不变量**——历史一旦畸形，此后每一轮都会被 provider 拒绝，会话永久报废。
+5. **history 即会话。**runtime **原地 mutate** 调用者的 messages 数组并跨轮复用，所以 tool_call 配对是生死不变量（§3.2）。
 
 ---
 
@@ -123,7 +135,7 @@ for round in 1..maxRounds:                         // maxRounds 可被 onRoundLi
 
   // 追加 assistant tool_calls 消息（带 thinking 回传字段）
   history.push({ role:"assistant", content:null, tool_calls:[…],
-                 _geminiModelParts, _reasoning, _thinkingBlocks })
+                 _geminiModelParts, _reasoning, _thinkingBlocks, _responseItems })
 
   ── 逐个执行工具调用 ──
   for tc of roundToolCalls:
@@ -145,7 +157,9 @@ for round in 1..maxRounds:                         // maxRounds 可被 onRoundLi
 
 ### 3.2 abort 配平不变量与 repairToolCallPairing
 
-**不变量：中断也必须配平。**abort 信号到达在一轮多个 tool call 中间时，剩余的调用一律以桩回复（如 `"[not run — the user stopped the task]"`）填入 history，**配平完成后才抛 AbortError**。原因：assistant 的 `tool_calls` 消息已经进了 history，而 history 就是会话历史；k < N 的 tool 回复会让后续每一轮都被 provider 拒绝，会话永久报废、唯一出路是新建对话。
+**不变量：中断也必须配平。**abort 信号到达在一轮多个 tool call 中间时，剩余的调用一律以桩回复（如 `"[not run — the user stopped the task]"`）填入 history，**配平完成后才抛 AbortError**。原因：assistant 的 `tool_calls` 消息已经进了 history，而 history 就是会话历史；k < N 的 tool 回复会让后续每一轮都被 provider 拒绝（四族一致拒绝缺失，且报错落在之后的每一轮而不是出错的那一轮），会话永久报废、唯一出路是新建对话。
+
+一般形式：任何可中途退出的路径（中止 / 异常 / 超时 / 用户取消）必须二选一——tool_call 与结果**两条都不进历史**，或调用**一定配上结果**（哪怕内容是「未执行」）。runtime 取后者。
 
 配套要求：
 
@@ -154,22 +168,27 @@ for round in 1..maxRounds:                         // maxRounds 可被 onRoundLi
 
 ### 3.3 thinking 回传字段随消息存放
 
-**规范：thinking 模型的续轮字段必须挂在 assistant 消息本体上**，随历史存续，而非事后重建。典型字段：`_geminiModelParts`（Gemini thought signatures）、`_reasoning` / `_thinkingBlocks`（OpenAI 兼容 / Anthropic 思考回传）。丢了它们的后果不是「答案变差」，而是**下一轮请求直接失败**——所以它们的生命周期必须与消息一致，trimHistory 只换 content 不删消息的策略（见 §3.6）也顺带保住了它们。
+**规范：thinking 模型的续轮字段必须挂在 assistant 消息本体上**，随历史存续，而非事后重建。典型字段：`_geminiModelParts`（Gemini thought signatures）、`_reasoning` / `_thinkingBlocks`（OpenAI 兼容 / Anthropic 思考回传）、`_responseItems`（② Responses 整组 output 条目，ai-agent-architecture 02 §7.3）。丢了它们的后果不是「答案变差」，而是**下一轮请求直接失败**——所以它们的生命周期必须与消息一致，trimHistory 只换 content 不删消息的策略（见 §3.6）也顺带保住了它们。
 
-### 3.4 serverTools 三态
+### 3.4 serverTools 四态
 
 端点侧工具（provider 在**一次请求内部**自己运行的工具，如内建 web_search）与本地工具是两套独立控制：
 
 ```ts
-serverTools?: "final-round-off" | "off" | "always";
+type ServerToolPolicy = "final-round-off" | "off" | "always" | "no-web";
 // final-round-off（默认）：强制成文那一轮撤下，避免收尾轮又跑去搜索
 // off：本任务永不放行
 // always：每轮都放行（典型：search 子代理——没有本地工具，但每轮都需要端点搜索）
+// no-web：同 final-round-off，但只放行非 web 的 id（代码解释器）——类型允许，内置 preset 不用，
+//         由 routeTools 在搜索子代理接管联网时设（09 篇 §4.1）
 ```
 
-陷阱：流中出现 `serverTool` chunk 时**只记日志，绝不能当作 tool_call 去回复**——端点已经自己消化了这次调用，本地再补一条 tool 回复反而破坏配对。
+runtime 每轮算出本轮实际发送的 id：撤下 → `undefined`；`no-web` → 过滤掉 web 类 id，过滤后为空也发 `undefined`
+（「没有」只有一种表示）；否则原样。
 
-另：`extraBody` 用于透传顶层请求字段（如 JSON mode 的 `response_format`）。**JSON mode 与 tool 调用在多家 provider 互斥**——使用 extraBody 做结构化输出的 preset 应保持 `tools: []`。
+runtime 之外的辅助请求不继承模型行上的服务端工具，每个调用点显式覆盖为空（见 ai-agent-architecture 05 §5「代码解释器」、坑 77）。
+
+陷阱：流中出现 `serverTool` chunk 时**只记日志，绝不能当作 tool_call 去回复**——端点已经自己消化了这次调用，本地再补一条 tool 回复反而破坏配对。
 
 ### 3.5 临时提示：发出即撤
 
@@ -191,7 +210,7 @@ export function trimHistory(history: StreamMessage[], ceilingTokens?: number): n
 
 ### 3.7 checkpoint 机制（防裁剪失忆）
 
-对 `scratchpad: "required"` 的 preset：历史逼近上限的 85%（`CHECKPOINT_RATIO = 0.85`）时，插入一条一次性提示，催模型用 `write_note` 把已获结论写进磁盘笔记，**赶在** trimHistory 抹掉旧工具结果之前。三条配套规则：提示消息发完即撤（§3.5）；`checkpointArmed` 标志防止连轮重复提醒；真的发生裁剪后解除武装，下次再逼近时重新提醒一次。
+`scratchpad: "required"` 时逼近上限 85%（`CHECKPOINT_RATIO`）插一次性 `write_note` 催写提示，赶在裁剪之前；触发条件、发出即撤与 `checkpointArmed` 重新武装见第 10 篇 §2.4。
 
 ### 3.8 round limit：三出口与轮首暂停的干净性
 
@@ -224,13 +243,13 @@ export interface TaskPreset {
   maxRounds: number;               // 模型↔工具轮数上限
   finishPolicy: "force-text" | "allow-tool-end";
   scratchpad?: "off" | "offered" | "required";  // 磁盘工作区：无 / 可用 / 可用 + checkpoint 催写
-  serverTools?: "final-round-off" | "off" | "always";
+  serverTools?: ServerToolPolicy;  // 四态，见 §3.4；"no-web" 由 routeTools 设
 }
 ```
 
 ### 4.1 preset 应当刻意薄
 
-**设计准则：preset 只管「循环怎么跑」，不管「说什么」。**没有 systemPrompt、温度、seedContext 字段——prompt 组装依赖大量应用侧状态（领域配置、i18n、检索注入），留在调用方更干净。新项目可以按需把 prompt 收进 preset，但参考实现的经验是：计划书里原本设计了 `systemPrompt(ctx)` / `seedContext(ctx)` / `output` 字段，落地时全部回到了调用方。
+**设计准则：preset 只管「循环怎么跑」，不管「说什么」。**没有 systemPrompt、温度、seedContext 字段——prompt 组装依赖大量应用侧状态（领域配置、i18n、检索注入），留在调用方更干净。
 
 ### 4.2 preset 如何驱动 runtime
 
@@ -249,51 +268,42 @@ export interface TaskPreset {
 | `FACET_ASSIST_PRESET` | 同上 | 4 | 单特征扩写/重构 |
 | `LORE_GENERATE_PRESET` | **[]** | 1 | JSON 结构化提取；JSON mode 与 tool 互斥所以单发，serverTools:"off" |
 | `LORE_SPLIT_PRESET` | **[]** | 1 | 同上，逐字拆分 |
-| `AGENT_ASSIST_PRESET` | **全家桶 27 个**（读 + L1 领域写 + L2 propose_* + 图片 + scratchpad） | **20** | force-text，scratchpad:"required"；对话助手与面板 Agent 模式共用 |
+| `AGENT_ASSIST_PRESET` | **全家桶**（读 + L1 领域写 + L2 propose_* + 图片 + scratchpad） | **20** | force-text，scratchpad:"required"；对话助手与面板 Agent 模式共用 |
 | `SUB_PRESETS.search` | [] | 2 | serverTools:"always"（唯一每轮放行端点搜索的） |
 | `SUB_PRESETS.vision` | read_image、read_lore_image | 3 | 看图子代理 |
 | `SUB_PRESETS.longread` | read_file、search_text、list_files | 4 | 长文阅读子代理 |
+| `SUB_PRESETS.pdf` | [] （文件已在首条消息里） | 1 | PDF 原件精读子代理（载荷型，第 09 篇 §3.2） |
 
 `maxRounds` 的取值经验（值得抄录的注释）：全量整理领域数据是「一个 list + 每实体一个 read，然后一轮 plan，才开始写」——轮数中途用尽在用户看来等于「agent 拒绝干活」。参考实现曾因此把 12 提到 20，并再补 onRoundLimit 卡片把硬停变成用户选择。**给 agentic preset 定上限时，按最重的真实任务的调用序列算一遍。**
 
 ### 4.4 presetForTools：应用配置到 preset 的解耦映射
 
 ```ts
-presetForTools(tools: "none" | "read" | "full"): TaskPreset | null
+presetForTools(tools: "none" | "read" | "write" | "full"): TaskPreset | null   // TaskTools 四档
 ```
 
-应用配置层（如按项目类型声明的工具档位）不直接依赖 agent 层类型，只声明档位字符串；由这个映射函数落到 preset 对象。**`"none"` 必须返回 null 而非空工具 preset**——null 是调用方「走简单流式路径、根本别进循环」的信号，两者语义不同。
+应用配置层（如按项目类型声明的工具档位）不直接依赖 agent 层类型，只声明档位字符串；由这个映射函数落到 preset 对象。**能用 `"write"` 就别用 `"full"`**：全量工具 schema 每轮都发，32k 的本地模型光它就超输入上限；产出是文档（而非改项目状态）的任务声明 `"write"`。**`"none"` 必须返回 null 而非空工具 preset**——null 是调用方「走简单流式路径、根本别进循环」的信号，两者语义不同。
 
 ### 4.5 routeTools：每轮动态改写（概述）
 
-会话场景每轮以 `routeTools(basePreset, subAgents, workspace, models)` 生成**有效 preset 副本**：vision 子代理可用则从主模型剥掉读图工具；任一子代理可用且有工作区则追加 `delegate`；search 子代理可用则主模型自己的 serverTools 置 "off"。判定必须用「enabled + 绑定 + **能力核验**」（vision 必须 multimodal、search 必须带 web_search）——「已启用」≠「可用」；只看开关，绑错模型的 search 子代理会把主模型自己的搜索拿走，却什么都还不回来。详细路由规则与子代理体系见第 09 篇。
+会话场景每轮以 `routeTools(basePreset, subAgents, workspace, models)` 得出有效工具集与 serverTools 策略——search 子代理可用时置 `"no-web"`（只让出 web 类；preset 原本 `"off"` 的保持 `"off"`），不是 `"off"`；路由规则与「启用 ≠ 可用」见第 09 篇 §4。
 
 ### 4.6 工具按需加载（deferred loading / tool search）
 
 参考实现：simple-ai-writer `src/lib/agent/registry.ts`（`ToolGroup` / `partitionByGroup`）、`runtime.ts`；
 设计与实测 `docs/feature/agent/agent-tool-context-lld.md` §5–§7；各族协议事实 `docs/api/tool-search.md`（2026-09 读官方文档，形状未实测）。
 
-**问题**：工具 schema 是每轮固定头部里最大的一块（参考实现全预设 39 个工具 ≈ 9.6K token/轮）。把一部分工具推迟到"需要时"才发，
+**问题**：工具 schema 是每轮固定头部里最大的一块（参考实现全预设工具集 ≈ 9.6K token/轮）。把一部分工具推迟到"需要时"才发，
 有两条路：**由运行状态装载**（零模型配合）或**让模型自己搜/要**（原生 tool search 或自制 `load_tools` 元工具）。
 
-#### 原生支持矩阵（截至 2026-09）
+#### 各族原生支持（协议事实）
 
-| | 原生 | 延迟标记 / 搜索工具 | 应用自己插入定义 | 回传义务 |
-| --- | --- | --- | --- | --- |
-| ② OpenAI Responses | ✅ GPT-5.4+ | `defer_loading: true`；`{type:"tool_search", execution:"server"\|"client"}`；`{type:"namespace", …}` 分组 | ✅ `{type:"additional_tools", role:"developer", tools}` 条目，不经模型 | 下一轮 `input` **必须**带 `tool_search_output`（及 `additional_tools`），否则工具不可用 |
-| ④ Anthropic | ✅ 4.5+ | `defer_loading`；`tool_search_tool_regex_*` / `_bm25_*`；自带工具可在 `tool_result` 里返回 `tool_reference` | ❌（需经一次 tool_result） | 历史保留 `tool_search_tool_result` 块即可 |
-| ② xAI | ⚠️ 规格有，**实测 403**（仅 alpha 用户） | 同 OpenAI 形 | 未见 | 未写 |
-| ③ Gemini | ❌ | 请求带 `defer_loading` 字段**整个被拒**（第三方报告） | — | — |
-| ① Chat Completions（全部） | ❌ | — | — | — |
-
-语义差：OpenAI 的延迟函数模型仍看得到名字与描述（推迟的主要是参数 schema）；Anthropic 的延迟工具在搜到前完全不可见。
-
-**原生为什么重要：缓存。** 原生实现把取回的定义放在上下文末尾（OpenAI）或原地展开（Anthropic），**工具表前缀不动**；
-自己改 `tools` 参数则从工具表那一截起前缀缓存全部作废（OpenAI 另注明"换一批加载的工具会从那一点起破坏缓存"）。
+矩阵、语义差、缓存行为与回传义务见 **ai-agent-architecture** skill `references/05-tools-and-server-tools.md` §7。
+要点：② OpenAI Responses（GPT-5.4+）与 ④ Anthropic（4.5+）原生支持，xAI 实测 403，③ Gemini 与全部 ① Chat Completions 不支持。
 
 #### 规范立场：优先由运行状态装载，不让模型开口要
 
-1. **能从运行状态判定"此前必然用不上"的工具组，就推迟到状态成立那一刻装载。** 参考实现的 `lore_write` 组：没有已批准方案时这 9 个写工具**必然被门控拒绝**，所以批准前根本不发——模型路径完全不变（提方案 → 批准 → 动手），实测每轮省 2,542 token（26%）。
+1. **能从运行状态判定"此前必然用不上"的工具组，就推迟到状态成立那一刻装载。** 参考实现的 `lore_write` 组：没有已批准方案时这组写工具**必然被门控拒绝**，所以批准前根本不发——模型路径完全不变（提方案 → 批准 → 动手），实测每轮省 2,542 token（26%）。
 2. **装载追加在常驻工具之后，用有序数组不用 Set**：前 N 项与装载前逐字节相同，缓存前缀继续命中，只有尾巴是新的。
 3. **执行白名单必须是当前 active 集，不是 preset 全集。** `executeRegisteredTool(call, active, ctx)`——若仍用 `preset.tools`，未装载的工具照样可执行，工具门成了摆设。**这是安全边界，不是优化**，回归测试钉住"首轮直接调未装载工具 → `Unknown tool`"。
 4. **装载条件读已有的唯一真相源**（如 `lorePlan.steps.length`），不另开布尔——两个真相源会分叉。只装载一次；按已批准方案的**形状**分组装载（批准改正文不倒出整理工具）。
@@ -304,9 +314,7 @@ presetForTools(tools: "none" | "read" | "full"): TaskPreset | null
 原生 tool search 解决的是缓存，不是这条理由，所以不足以单独翻案。**重开条件**：一个能稳定完成该任务的模型，在同样的间接下仍然稳定（需实测）。
 工具集继续变大时的正确答案：把更多组挂到运行状态装载上。
 
-**若采用原生机制，先做两件事**：
-- ② 族上最契合"零模型配合"的原生写法是 `additional_tools` 条目（定义在上下文末尾、前缀不动）——即运行状态装载的缓存友好版；
-- **回传名单必须扩充**：只回传 reasoning / function_call / message 的实现，要把 `tool_search_call` / `tool_search_output` / `additional_tools` 加进去，否则**加载过的工具下一轮静默消失**（回传缺失无现象）。Anthropic 侧还要注意：至少一个非延迟工具否则 400，`defer_loading` 与 `cache_control` 同时出现 400。
+**若采用原生机制**：② 族最契合「零模型配合」的是 `additional_tools` 条目；回传名单必须扩充，否则加载过的工具下一轮静默消失——细节见 ai-agent-architecture 05 §7。
 
 ---
 
@@ -328,11 +336,12 @@ type AgentEvent = AgentEventScope & (
   | { kind:"reasoning"; round; text; done; elapsedMs?; at } // 同轮反复重发（流式增长）
   | { kind:"turn-resumed"; round; leg; final; at }          // 端点分腿续传（一轮=多请求）可见化
   | { kind:"output-truncated"; round; stopReason?; at }     // max_tokens 截断——最易误读的静默故障
+  | { kind:"tools-loaded"; group; names; round; at }        // 按需加载的工具组装载（§4.6）
   | { kind:"run-done"; inputTokens; outputTokens; at }      // 调用方发
   | { kind:"run-error"; message; at })                      // 调用方发
 ```
 
-**所有权划分（规范）**：runtime 只发它才看得见的事件（round / tool-step / trim / reasoning / truncated / round-limit / turn-resumed）；启动运行的**调用方**负责包上 bracket 事件 run-start / run-done / run-error——任务种类、模型展示名、最终成本只有它知道。**非 agentic 的单发任务也要发 bracket 事件**——所有任务都进执行日志，不只 tool-using 的。
+**所有权划分（规范）**：runtime 只发它才看得见的事件（round / tool-step / trim / reasoning / truncated / round-limit / turn-resumed / tools-loaded）；启动运行的**调用方**负责包上 bracket 事件 run-start / run-done / run-error——任务种类、模型展示名、最终成本只有它知道。**非 agentic 的单发任务也要发 bracket 事件**——所有任务都进执行日志，不只 tool-using 的。
 
 reasoning 事件的计时细节（三个都是踩过的坑）：
 
@@ -375,13 +384,8 @@ server-tool 日志行需要有状态工厂（query 随 call chunk 来、结果�
 
 ## 6. 结构化输出在 agent 层的位置（简述）
 
-`runStructuredTask`（参考实现：simple-ai-writer `src/lib/agent/structured.ts`）是与 tool loop 并列的**单发**路径：主路径用强制 `tool_choice` 的伪工具拿结构（参数 schema 即输出 schema），失败时按**收紧过的能力错误判据**回退到「原生 JSON mode + prose 指令 + extractJsonObject」。三条与 runtime 相关的边界规范：
-
-- **单发是设计而非局限**：JSON mode / 强制 tool_choice 与自由工具循环在多家 provider 互斥。需要「调查 → 结构化产出」时，先跑 agent loop 收集材料，再把发现喂给 structured 调用（两段式）。
-- `serverTools` 显式置 undefined——结构化任务不上网；它作为模型级配置藏在 ConnOptions 里会搭车进来，不删掉的话强制 tool_choice 的请求会中途跑去 web 搜索。
-- 返回**未 parse 的 JSON 字符串**，schema 校验归调用方。
-
-回退判据、双路径完整细节见第 04 篇。
+`runStructuredTask`（`src/lib/agent/structured.ts`）是与 tool loop 并列的**单发**路径，返回未 parse 的 JSON 字符串（schema 校验归调用方）；JSON mode / 强制 tool_choice 与自由工具循环在多家 provider 互斥，所以用 extraBody 做结构化输出的 preset 保持 `tools: []`。
+需要「调查 → 结构化产出」时两段式：先跑 agent loop 收集材料，再喂给 structured 调用。双路径、回退判据与 serverTools 置空见 ai-agent-architecture 04 §3。
 
 ---
 
@@ -392,7 +396,7 @@ server-tool 日志行需要有状态工厂（query 随 call chunk 来、结果�
 - [ ] 唯一正常终止条件是「本轮无工具调用」；跑满上限的返回不丢 usage。
 - [ ] abort 到达在工具序列中间时，剩余 tool_call 全部补桩回复后才抛 AbortError；每个 tool call 前重查 `signal.aborted`。
 - [ ] 导出 `repairToolCallPairing`，且会话层在每次追加新轮之前调用它。
-- [ ] thinking 回传字段（`_reasoning` / `_thinkingBlocks` / thought signatures 等）随 assistant 消息存放，trim 时不丢失。
+- [ ] thinking 回传字段（`_reasoning` / `_thinkingBlocks` / `_responseItems` / thought signatures 等）随 assistant 消息存放，trim 时不丢失。
 - [ ] 一次性引导消息（强制成文提示、checkpoint 提示）在请求发出后 finally 中 splice 撤回。
 - [ ] trimHistory：图片无条件保最新 N 张；超限只替换旧 tool 结果的 content，消息壳保留；system 与种子永不触碰。
 - [ ] round limit 询问发生在轮首（强制成文之前）；`onRoundLimit` 可选，渲染不了卡片的界面不传、保持硬停。

@@ -3,7 +3,7 @@
 > 本篇解决的问题：让"要求模型输出一个符合 schema 的 JSON"在四个协议族、官方与兼容端点、思考型与非思考型模型上都能拿到可解析的结果——靠一条明确的降级链，而不是祈祷。
 > 不读会踩的坑：把 `response_format` 发给 Anthropic 硬 400；OpenAI `json_object` 在 prompt 不含 "JSON" 字面量时报错或输出无限空白流；用裸子串 "does not support" 判定回退，把无关的上游错误也吞进回退——翻倍花钱 + 掩盖真实错误；回退路径退成零约束纯散文，恰好落在最不容易吐干净 JSON 的思考型模型上。
 
-参考实现：simple-ai-writer `src/lib/ai/jsonMode.ts`、`src/lib/ai/json.ts`、`src/lib/agent/structured.ts`。
+出处：simple-ai-writer `src/lib/ai/jsonMode.ts`、`src/lib/ai/json.ts`、`src/lib/agent/structured.ts`。
 
 ---
 
@@ -17,7 +17,7 @@ prompt 描述  <  JSON mode  <  json_schema 严格模式  <  强制工具调用
 
 规范采用**两级组合**：**首选强制 pseudo-tool（schema 即工具 parameters），失败退回 JSON mode + 提示词**。
 
-为什么不用 `json_schema` 严格模式：
+为什么**默认**不用 `json_schema` 严格模式（已知支持的模型按模型 id 表抬升到 json_schema 档，见 §5.1）：
 
 - schema 要求 `additionalProperties: false` + 全字段 required，对天然有可选字段的领域模型不友好；
 - DeepSeek 等兼容层不支持；支持的也常按模型代砍（千问 DashScope 只有最新两三代商业款支持，`json_object` 却全线可用）；
@@ -25,29 +25,28 @@ prompt 描述  <  JSON mode  <  json_schema 严格模式  <  强制工具调用
 
 ## 2. JSON mode 的每族形状：jsonModeShaping
 
-JSON mode 的开启方式三族三样，必须收口在一个函数里，返回 `{ extraBody?, cue? }`：
+JSON mode 的开启方式三族三样，应当收口在一处，产出「要并进 body 的字段」+「要追加到提示词的 cue」两样：
 
-```ts
-// 参考实现：simple-ai-writer src/lib/ai/jsonMode.ts
-case "gemini":    // responseMimeType + cue 双保险（有模型静默无视 mimeType）
-  return { extraBody: { generationConfig: { responseMimeType: "application/json" } },
-           cue: JSON_ONLY_CUE };
-case "anthropic": // 无此参数，发 response_format 是硬 400 —— cue 是全部机制
-  return { cue: JSON_ONLY_CUE };
-default:          // OpenAI 系
-  return { extraBody: { response_format: { type: "json_object" } },
-           ...(mentionsJson(promptText) ? {} : { cue: JSON_ONLY_CUE }) };
-```
+| 族 | 并进 body | 追加 cue（「只输出 JSON」一句） |
+| --- | --- | --- |
+| ③ Gemini | `{"generationConfig":{"responseMimeType":"application/json"}}` | 总是——有模型静默无视 mimeType |
+| ④ Anthropic | 无（发 `response_format` 是硬 400） | 总是——cue 是全部机制 |
+| ① OpenAI 系 | `{"response_format":{"type":"json_object"}}` | 仅当上下文里没有 "JSON" 字样（前置条件，见规则 3） |
 
 三条规则：
 
-1. **Anthropic 无 JSON mode 参数，cue（提示词追加）是全部机制。** 发 `response_format` 是硬 400。为此参考实现做了双保险：Anthropic 适配器干脆不 spread `extraBody`（见第 1 篇 `extraBody` 语义）。历史教训：这个决定曾是散落两处的 `standard === "gemini"` 二元三目——于是**除 Gemini 外的一切**（包括 Anthropic）都被发了 `response_format`。收口成按族 switch 的单一函数后，这类"第三家被二元判断误伤"的 bug 结构性消失。
+1. **Anthropic 无 JSON mode 参数，cue（提示词追加）是全部机制。** 发 `response_format` 是硬 400。为此参考实现做了双保险：Anthropic 适配器干脆不 spread `extraBody`（见第 1 篇 `extraBody` 语义）。历史教训：散落的 `standard === "gemini"` 二元三目让**除 Gemini 外的一切**（包括 Anthropic）都被发了 `response_format`；收口成按族 switch 后，"第三家被二元判断误伤"的 bug 结构性消失。
 2. **Gemini 双保险**：`responseMimeType` 照发，cue 也发——有模型静默无视 mimeType。
 3. **`mentionsJson` 不是风格检查，是文档明载的前置条件**：OpenAI `json_object` 在上下文找不到 "JSON" 字面量时报错（否则"模型可能生成无限空白流"），DeepSeek 同款要求，千问 DashScope 也原样继承（400：`'messages' must contain the word 'json'`）。这个条件平时"恰好总成立"（prompt 通常提到 JSON），直到某次作者改写 prompt 删掉那个词——**prompt 可编辑的系统不能把它当既成事实**，必须检测、缺则追加 cue。同时 cue 在 OpenAI 路径上是**条件追加**：原生 enforcement 已在，cue 只为补前置条件；无条件加 = 每请求白花 token 复述 prompt 已说的话。
 
+**不是所有 ① 族兼容端都执行规则 3 的前置条件，也不是都认 `json_schema`**（智谱 BigModel，【实测 2026-09-19】）：
+`json_object` 在提示词里没有 "json" 字样时照常出合法 JSON（Kimi / MiniMax 同样不查）；`response_format:{type:"json_schema",…}`
+**200 但静默无视**——回的是包在 ```json 代码块里、不合 schema 的文本。所以 `json_schema` 只能对**实测过**的端点放开，
+不能因为「它是 ① 族兼容端」就推定支持。
+
 ## 3. 强制工具 → JSON mode 的回退链：runStructuredTask
 
-参考实现：simple-ai-writer `src/lib/agent/structured.ts`。
+出处：simple-ai-writer `src/lib/agent/structured.ts`。
 
 ### 路径一：强制 pseudo-tool
 
@@ -65,7 +64,7 @@ default:          // OpenAI 系
 
 - 用 `jsonModeShaping` 的 extraBody + cue + prose 指令重发。
 - **关键：回退路径必须仍带 JSON mode 原生参数。** 触发回退的恰是思考型模型（拒绝 forced tool_choice 的那种），在最不容易吐干净 JSON 的模型上退成零约束纯散文是反的。
-- 产出用 `extractJsonObject` 抠（参考实现：`src/lib/ai/json.ts`）：优先 ```json 围栏，否则取最外层 `{...}` span——思考型模型爱在 JSON 周围包散文。
+- 产出用 `extractJsonObject` 抠（出处：`src/lib/ai/json.ts`）：优先 ```json 围栏，否则取最外层 `{...}` span——思考型模型爱在 JSON 周围包散文。
 
 ### 截断的鉴别
 
@@ -92,21 +91,36 @@ JSON 输出场景对 `max_tokens` 截断尤其敏感：截断的 JSON 解析失�
   `switch` 方言的模型思考**默认关**（这正是它们需要开关的原因）——两种情况
   forced 都合法，**不降**。
 
-条件放宽（如「方言声明即降级」）不是错误但要付代价：默认关思考的模型上白白放弃
-了强制档的可靠性。条件收紧（漏降）则是必败请求 + 回退，多付一趟。安全论证与上面
-共享，因为回退链兜住了两个方向的误差——这也是为什么这条降级敢做得这么细。
+条件放宽（如「方言声明即降级」）白白放弃默认关思考模型的强制档，收紧（漏降）多付一趟必败请求——回退链兜住两个方向的误差，安全论证与上面共享。
+
+### 砍档的第三种变体：文档砍档、实测无视或笼统 400（智谱）
+
+智谱文档写 `tool_choice`「默认且仅支持 `auto`」，【实测 2026-09-19】的真实行为按模型三样：
+
+| 模型 | `required` | 具名 `{type:"function",…}` | `none` |
+| --- | --- | --- | --- |
+| glm-5.x（含 5.3-flash） | 200，**不强制** | 200，**不强制** | 5.3-flash 照调工具（无视） |
+| glm-4.7 / 4.6 / 4.5 | 200，不强制 | 思考开时 **400 `1210 API 调用参数有误`**；关时 200 不强制 | 生效 |
+| glm-4.5-air | 200，**真强制** | 200，真强制 | 生效 |
+
+两个推论：
+
+- **「从 400 里学习降级」在这里失效**：那个 400 是笼统的「参数有误」，不提 `tool_choice`。按错误文案里的参数名识别「强制被拒」
+  的学习机制（DeepSeek V4 用得上）认不出它，请求直接失败。
+- 因此降级条件放在**平台**上、无条件：这个平台上 forced 一律发 `auto`。它与思考开关无关（4.7 关思考时也不强制），所以不能挂在
+  思考方言 / 类目上。代价是 4.5-air 失去它唯一真生效的强制档——回退链兜得住，符合上文「只省一次必败请求才静默降级」。
 
 ## 5. ② Responses 族：`text.format` 与 `text.verbosity`
 
-参考实现：simple-ai-writer `src/lib/ai/jsonMode.ts` 的 `case "responses"`、`src/lib/ai/responses.ts` 的 `text` 合并。
+出处：simple-ai-writer `src/lib/ai/jsonMode.ts` 的 `case "responses"`、`src/lib/ai/responses.ts` 的 `text` 合并。
 
 ### 5.1 `text.format`：json_schema **不发 `strict` 键**
 
-```ts
-// json_schema 档（按模型 id 表自动抬升，与 ① 族共用 OpenAI 行——同一批模型）
-{ text: { format: { type: "json_schema", name, schema: strictify(parameters) } } }
-// json_object 档
-{ text: { format: { type: "json_object" } } }  // + mentionsJson 缺则追加 cue（与 ① 同一前置条件）
+```jsonc
+// json_schema 档（按模型 id 表自动抬升，与 ① 族共用同一批模型）；schema 已按 strict 规则整理
+{ "text": { "format": { "type": "json_schema", "name": "…", "schema": { … } } } }
+// json_object 档；上下文缺 "json" 字样时追加 cue（与 ① 同一前置条件）
+{ "text": { "format": { "type": "json_object" } } }
 ```
 
 - 与 ① 族 `response_format.json_schema` 的区别：`name` / `schema` 与 `type` 同级，**没有 `json_schema` 包装层**。
@@ -120,14 +134,8 @@ JSON 输出场景对 `max_tokens` 截断尤其敏感：截断的 JSON 解析失�
 
 - GPT-5.x 的 `verbosity: low/medium/high` 实测生效（同题回答确实变短）。做成**模型级声明** `textVerbosity?`，只在 ② 族模型抽屉出现；未设不发（"未声明 = 字节不变"）。按分层它是 L3 字段，进 `ConnOptions` 一处。
 - `text` 对象有**两个写者**：模型的 verbosity 与结构化任务经 extraBody 带来的 `text.format`。拼 body 时必须合并：
-
-```ts
-const extraText = opts.extraBody?.text;
-const text = opts.textVerbosity || extraText
-  ? { ...extraText, ...(opts.textVerbosity ? { verbosity: opts.textVerbosity } : {}) }
-  : undefined;
-// body = { …, ...opts.extraBody, ...(text ? { text } : {}) }   ← text 在 extraBody 之后写回
-```
+  `text = extraBody.text 的全部键 + {verbosity}（若声明）`，然后**在并入 extraBody 之后**再写回 body。
+  最终 body 形如 `{"text":{"format":{…},"verbosity":"low"}}`。
 
 陷阱：extraBody 最后 spread 是惯例（第 1 篇 §6），但它的 `text` 会整个覆盖掉 verbosity；反过来先写 verbosity 再 spread extraBody 也一样丢。合并后的 `text` 要放在 extraBody **之后**。
 
@@ -136,7 +144,7 @@ const text = opts.textVerbosity || extraText
 ## 本篇检查清单
 
 - [ ] 结构化输出走"强制 pseudo-tool → JSON mode"两级链，不依赖单一机制。
-- [ ] 没有使用 `response_format: json_schema` 严格模式（或有明确的可移植性豁免记录）。
+- [ ] 默认不用 `json_schema` 严格模式，只对模型 id 表里已知支持的模型抬升（或有明确的可移植性豁免记录）。
 - [ ] JSON mode 形状收口在单一 `jsonModeShaping` 按族 switch 中，grep 不到散落的 `standard === "gemini"` 式二元判断。
 - [ ] Anthropic 路径只有 cue，没有任何 `response_format`；适配器不 spread extraBody 双保险在位。
 - [ ] Gemini 路径 mimeType + cue 双发。
