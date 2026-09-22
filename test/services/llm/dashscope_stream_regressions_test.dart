@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart'
+    show inputImageCountKey, reportedCostKey;
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/dashscope_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
@@ -99,5 +101,23 @@ void main() {
     final metadata =
         (await run()).map((c) => c.metadata).nonNulls.single;
     expect(metadata, {'finish_reason': 'stop'});
+  });
+
+  test('a usage frame naming the app\'s own keys is not taken at its word',
+      () async {
+    // The usage recorder reads these two keys for every vendor; the stream
+    // face spreads the frame's usage block, so it must go through
+    // `upstreamUsage` like the synchronous face does.
+    sseLines = [
+      'data: {"output":{"choices":[{"message":{"role":"assistant",'
+          '"content":"done"},"finish_reason":"stop"}]},'
+          '"usage":{"input_tokens":3,"output_tokens":1,'
+          '"$reportedCostKey":99,"$inputImageCountKey":7}}',
+    ];
+    final metadata =
+        (await run()).map((c) => c.metadata).nonNulls.single;
+    expect(metadata['input_tokens'], 3);
+    expect(metadata.containsKey(reportedCostKey), isFalse);
+    expect(metadata.containsKey(inputImageCountKey), isFalse);
   });
 }

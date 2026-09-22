@@ -12,8 +12,10 @@ import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_chat_pars
 /// vendor alike, and the reported cost zeroes every other part of a row's
 /// cost, so a relay naming a field the same would dictate the bill.
 ///
-/// The images protocols are pinned on the wire (`xai_images_protocol_test`);
-/// these are the chat faces, which are pure functions.
+/// The images protocols are pinned on the wire (`xai_images_protocol_test`,
+/// `input_image_count_test`); these are the chat faces, which are pure
+/// functions — the DashScope streaming face is pinned on the wire in
+/// `dashscope_stream_regressions_test`.
 void main() {
   const forged = {
     'prompt_tokens': 12,

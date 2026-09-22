@@ -139,3 +139,6 @@ xAI 的 Images API 在每个回包的 `usage` 里写明**这次请求实扣了�
   给这两家各加一条伪造 `usage` / `metadata` 的走线用例，文档改成点名三个文件。② 不变量 ② 只点名 `_asChunks`，同段的
   `input_image_count` 写的是「凡是自己造 `imagePart` 块的地方」——改成同一措辞，把方舟 SSE 与 Midjourney 的 controller 列为
   「哪天也报价就同样要带」。
+- **Review 第五轮（opus，只查第四轮那一个 commit）** 两条 NIT：① 「钉聊天面四处」还是多说了——`upstreamUsage` 在聊天面有五个调用点，
+  百炼流式面（第二轮修的三处之一）没有伪造用例。在 `dashscope_stream_regressions_test.dart` 的回环 SSE 上加一条；文档改成
+  「四个纯函数面 + 百炼流式面走线钉」。② `upstream_usage_sites_test.dart` 的文件头只点名 xAI 的走线测试——补上 `input_image_count_test`。
