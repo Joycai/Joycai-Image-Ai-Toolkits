@@ -179,6 +179,50 @@ void main() {
     });
   }
 
+  // A1f 4a–4c: grok-imagine-image-2.0's ratio · quality · three-tier size on
+  // the model card — ratio beside quality, the size track on its own row —
+  // and the first generation's two controls beside it. English is the shot
+  // that matters for fit: "Medium" is the widest label a half-cell holds.
+  for (final (String modelId, String suffix, Brightness brightness, Locale locale)
+      in const <(String, String, Brightness, Locale)>[
+    ('grok-imagine-image-2.0', 'xaiImage2', Brightness.light, Locale('zh')),
+    ('grok-imagine-image-2.0', 'xaiImage2', Brightness.dark, Locale('zh')),
+    ('grok-imagine-image-2.0', 'xaiImage2En', Brightness.light, Locale('en')),
+    ('grok-imagine-image', 'xaiImage1', Brightness.light, Locale('zh')),
+  ]) {
+    testWidgets('workbench · $suffix @ desktop ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.workbench,
+        size: const ShotSize('desktop', Size(1440, 1100)),
+        brightness: brightness,
+        locale: locale,
+        suffix: suffix,
+        before: (_) async {
+          AppState().setWorkbenchTab(0);
+          AppState().isConsoleExpanded = false;
+          AppState().lastSelectedModelId = modelId;
+        },
+        after: (WidgetTester tester) async {
+          AppState().clearImageSelection();
+          seedImageSelection(AppState());
+          for (int p = 0; p < 5; p++) {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
+          await tester.tap(find
+              .text(locale.languageCode == 'en' ? 'Model Selection' : '模型选择')
+              .last);
+          for (int p = 0; p < 5; p++) {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
+        },
+      );
+    });
+  }
+
   // A1c 30b: the size popover in the real right panel — anchored on the
   // field's right edge and spilling left over the gallery, on wan2.7-image.
   for (final (ShotSize size, Brightness brightness) in <(ShotSize, Brightness)>[

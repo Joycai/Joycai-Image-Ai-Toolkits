@@ -165,6 +165,17 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     tagColor: 0xFF2196F3,
   ));
 
+  // A1f 4a: xAI's own API — the channel grok-imagine-image-2.0's three
+  // controls (ratio · quality · three-tier size) are photographed on.
+  final int xaiId = await db.addChannel(LLMChannel(
+    displayName: 'xAI',
+    endpoint: 'https://api.x.ai/v1',
+    apiKey: 'fixture-key-xai',
+    type: Vendors.xaiApi,
+    tag: '官方',
+    tagColor: 0xFF212121,
+  ));
+
   // D1f 4a / 4f: one New API relay split the way it had to be before routes
   // — OpenAI format and Gemini format, one host, one key — so the rail offers
   // a merge, and its review has a namesake to join and a model to move.
@@ -228,6 +239,22 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     outputRates: const <SpecRate>[SpecRate(size: '2K', price: 0.3), SpecRate(price: 0.3)],
     inputUnitPrice: 0.02,
     inputFreeUnits: 1,
+  ));
+
+  // A1f 4e: xAI's six-cell matrix, copied off the pricing page — the table
+  // a `1K · low` row can only land on now that the app sends `quality`.
+  final int xaiFee = await db.addPricingGroup(PricingGroup(
+    name: 'xAI Imagine 2.0',
+    billingMode: 'spec',
+    outputRates: const <SpecRate>[
+      SpecRate(size: '1K', quality: 'low', price: 0.04),
+      SpecRate(size: '1.5K', quality: 'low', price: 0.05),
+      SpecRate(size: '2K', quality: 'low', price: 0.06),
+      SpecRate(size: '1K', quality: 'medium', price: 0.06),
+      SpecRate(size: '1.5K', quality: 'medium', price: 0.07),
+      SpecRate(size: '2K', quality: 'medium', price: 0.08),
+    ],
+    inputUnitPrice: 0.01,
   ));
 
   final List<LLMModel> models = <LLMModel>[
@@ -361,6 +388,24 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
       channelId: arkId,
       feeGroupId: perImageFee,
       sortOrder: 13,
+    ),
+    // A1f 4a / 4b: the 2.0 generation with the quality control and the
+    // 1.5k tier, beside a first-generation id that keeps the two it had.
+    LLMModel(
+      modelId: 'grok-imagine-image-2.0',
+      modelName: 'Grok Imagine 2.0',
+      tag: ModelTag.image.value,
+      channelId: xaiId,
+      feeGroupId: xaiFee,
+      sortOrder: 18,
+    ),
+    LLMModel(
+      modelId: 'grok-imagine-image',
+      modelName: 'Grok Imagine',
+      tag: ModelTag.image.value,
+      channelId: xaiId,
+      feeGroupId: perImageFee,
+      sortOrder: 19,
     ),
     // D1f 4d: a chat model on a relay with two routes — the editor's route
     // strip, its switch preview and the blank route after switching.

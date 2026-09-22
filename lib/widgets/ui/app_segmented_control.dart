@@ -289,8 +289,14 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
       onTap: selected || !segment.enabled ? null : () => widget.onChanged(segment.value),
       borderRadius: BorderRadius.circular(AppRadius.control),
       child: Container(
+        // On an `expand` track the slot is the row's to divide and the label
+        // is centred in it, so the horizontal inset is not a look — it is
+        // only the point at which a label starts to elide. The full inset
+        // cost "Medium" its last two letters in a half-width cell of the
+        // workbench panel (65px slot, 46px label, 20px of padding); a floor
+        // of 4 keeps the label off the chip's edge and nothing else.
         padding: EdgeInsets.symmetric(
-          horizontal: widget.compact ? 10 : 14,
+          horizontal: widget.expand ? 4 : (widget.compact ? 10 : 14),
           vertical: widget.compact ? 7 : 11,
         ),
         decoration: ownsSkin ? _indicatorDecoration(colorScheme) : _chipHitDecoration(),

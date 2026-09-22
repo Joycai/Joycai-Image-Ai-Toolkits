@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
@@ -102,6 +103,33 @@ void main() {
     await tester.pump();
 
     expect(indicatorRect(tester), chipRect(tester, 'Mid'));
+  });
+
+  testWidgets('an expand track spends its slot on the label, not on the inset', (tester) async {
+    // A two-way compact track in a half-width cell of the workbench panel:
+    // 137px → 3px track padding → 65.5px a slot → 1px chip edge. With the
+    // full 10px inset the label had 43.5px, and the test font draws every
+    // glyph fontSize wide, so a four-glyph label (48px) is the first that
+    // does not fit — "Medium" in a real font, at 45.8px, was the case.
+    await tester.pumpWidget(host(SizedBox(
+      width: 137,
+      child: AppSegmentedControl<int>(
+        segments: const [AppSegment(value: 0, label: 'Low'), AppSegment(value: 1, label: 'Medi')],
+        value: 1,
+        onChanged: (_) {},
+        expand: true,
+        compact: true,
+      ),
+    )));
+    await tester.pump();
+
+    final label = tester.renderObject<RenderParagraph>(
+        find.descendant(of: find.text('Medi'), matching: find.byType(RichText)));
+    final need = (TextPainter(text: label.text, textDirection: TextDirection.ltr)..layout()).width;
+    expect(label.size.width + 0.01, greaterThanOrEqualTo(need), reason: '"Medi" was elided');
+    // Still centred in its slot: the inset is a floor, not a shift.
+    final slot = find.ancestor(of: find.text('Medi'), matching: find.byType(InkWell)).first;
+    expect(tester.getCenter(find.text('Medi')).dx, closeTo(tester.getCenter(slot).dx, 0.5));
   });
 
   testWidgets('the first frame still shows a selection', (tester) async {
