@@ -139,8 +139,25 @@ abstract class ImageGenProtocol {
 /// status. Poll results use the Veo-shaped envelope
 /// (`{done, response: {generateVideoResponse: ...}}`) the task executor
 /// already speaks, regardless of the upstream's native format.
+/// What a video surface hands back from an accepted submit: the upstream
+/// job id, and how many reference images (first frame, last frame,
+/// references) this client actually put in the body — counted after an
+/// unreadable attachment was dropped and after a surface's own exclusions
+/// (xAI keeps the first frame over its references; MiniMax keeps frames
+/// over references), so the number is what upstream received, never what
+/// the user picked. Published on the submit's usage row as
+/// [inputImageCountKey] — the same key the images protocols publish — so a
+/// fee group charges a video's frames the way it charges an edit's
+/// references (`D2e`; xAI prices both at \$0.01).
+class VideoSubmission {
+  final String requestId;
+  final int inputImages;
+
+  const VideoSubmission(this.requestId, {this.inputImages = 0});
+}
+
 abstract class VideoJobProtocol {
-  Future<String> submit(
+  Future<VideoSubmission> submit(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,

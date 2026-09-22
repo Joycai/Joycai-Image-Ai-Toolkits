@@ -11,7 +11,7 @@ import 'protocol.dart';
 /// generic `GET /{operationName}` operations endpoint.
 class GeminiVeoProtocol implements VideoJobProtocol {
   @override
-  Future<String> submit(
+  Future<VideoSubmission> submit(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
@@ -68,7 +68,7 @@ class GeminiVeoProtocol implements VideoJobProtocol {
         throw LLMApiException('Failed to get operation name from response');
       }
 
-      return name;
+      return VideoSubmission(name, inputImages: veoInputImages(payload));
     } finally {
       client.close();
     }

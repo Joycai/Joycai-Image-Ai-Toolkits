@@ -65,12 +65,16 @@ class LLMOperationTicket {
   final String name;
   final WireProtocol? surface;
 
+  /// Reference images the submit put in its body
+  /// ([VideoSubmission.inputImages]); zero for the simulated path.
+  final int inputImages;
+
   /// The stable string form ([WireProtocol.id]) for persistence. Parsed back
   /// leniently ([WireProtocol.tryParse]) so a row written by a newer build
   /// degrades to the legacy routing instead of failing.
   String? get surfaceId => surface?.id;
 
-  const LLMOperationTicket(this.name, this.surface);
+  const LLMOperationTicket(this.name, this.surface, {this.inputImages = 0});
 }
 
 class LLMDispatcher {
@@ -1259,11 +1263,10 @@ class LLMDispatcher {
     final target = resolveTarget(config);
     final route = _videoSubmitRoute(target);
     if (route != null) {
-      return LLMOperationTicket(
-        await route.protocol
-            .submit(target, history, options: options, logger: logger),
-        route.surface,
-      );
+      final submission = await route.protocol
+          .submit(target, history, options: options, logger: logger);
+      return LLMOperationTicket(submission.requestId, route.surface,
+          inputImages: submission.inputImages);
     }
     // No surface: say why, per family.
     switch (target.vendor.family) {

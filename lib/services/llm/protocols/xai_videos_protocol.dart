@@ -24,7 +24,7 @@ import 'protocol.dart';
 /// with a warning when both are supplied. [submit] returns the `request_id`.
 class XaiVideosProtocol implements VideoJobProtocol {
   @override
-  Future<String> submit(
+  Future<VideoSubmission> submit(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
@@ -129,7 +129,13 @@ class XaiVideosProtocol implements VideoJobProtocol {
             'xAI video submit returned no request_id: ${response.body}');
       }
       logger?.call('xAI video request id: $requestId', level: 'DEBUG');
-      return requestId;
+      // What went out: the one first frame, or the references — never both
+      // (the exclusion above). xAI bills each at \$0.01 beside the
+      // per-second rate (docs/api/usage.md §5).
+      final sentImages = payload.containsKey('image')
+          ? 1
+          : (payload['reference_images'] as List?)?.length ?? 0;
+      return VideoSubmission(requestId, inputImages: sentImages);
     } finally {
       client.close();
     }

@@ -1283,13 +1283,19 @@ class LLMService {
     // submit time; the row records the request itself (tokens 0).
     //
     // A spec-billed group prices the submission by what was asked for —
-    // resolution and seconds are in the options, and no provider reports
-    // the length it actually rendered — so a job that later fails is still
-    // billed here, exactly as a request-billed one is.
+    // resolution and seconds are in the options — so a job that later fails
+    // is still billed here, exactly as a request-billed one is; a surface
+    // that reports the length it rendered corrects the row on completion
+    // ([settleVideoUsage]). The reference images the submit sent ride along
+    // under the images protocols' own key, so a group that charges inputs
+    // charges a video's frames too (`D2e`).
     await _recordUsage(
       config.modelId,
       config,
-      const {'operation': 'submit'},
+      {
+        'operation': 'submit',
+        if (ticket.inputImages > 0) inputImageCountKey: ticket.inputImages,
+      },
       modelDbId: modelIdentifier is int ? modelIdentifier : null,
       options: options,
       // Durable, so [settleVideoUsage] can find the row again — also from a
