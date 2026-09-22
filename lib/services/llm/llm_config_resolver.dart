@@ -120,6 +120,7 @@ class LLMConfigResolver {
         requestFee = group.requestPrice;
         outputUnit = group.outputUnit;
         outputRates = group.outputRates;
+        // Spec under every unit and request mode (`D2e`); never token.
         if (group.chargesInputImages) {
           inputUnitFee = group.inputUnitPrice;
           inputFreeUnits = group.inputFreeUnits;

@@ -1167,6 +1167,25 @@ class LLMService {
     );
   }
 
+  /// The input side of a request-billed group's usage row (`D2e`): the
+  /// reference images the request sent, priced at the group's input rate
+  /// with its free ones off — or null when [config] is not request-billed,
+  /// charges no inputs, or the request sent none, so the row reads exactly
+  /// as a request-billed row always has. A request-billed group charges its
+  /// request whatever came back, so its inputs count as delivered.
+  @visibleForTesting
+  static UsageSpecBilling? requestInputBilling(
+    LLMModelConfig config,
+    Map<String, dynamic> metadata,
+  ) {
+    if (config.billingMode != 'request') return null;
+    return SpecUsage.inputsOnly(
+      inputImageCount: inputImageCountOf(metadata),
+      inputUnitPrice: config.inputUnitFee,
+      inputFreeUnits: config.inputFreeUnits,
+    );
+  }
+
   /// Output tokens a response reported, in the comparable "everything the
   /// model emitted" sense.
   ///
