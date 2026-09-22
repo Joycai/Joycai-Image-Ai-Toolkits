@@ -178,7 +178,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | 条 | 为什么没做 / 要验什么 |
 |---|---|
 | Anthropic 4.7+ 拒收 `thinking.type: enabled` 的原文 | 方言翻转规则仍是「报文提到 effort 就不翻」。若官方拒收原文顺带建议 `output_config.effort`，翻转永远不会发生。手上没有 Anthropic key，未取到原文 |
-| 视频上游时长字段 | 百炼 `usage.duration`、MiniMax `usage.output_seconds` 均为【文档】口径；Veo、xAI 的轮询不报时长；Sora 本轮排除 |
+| 视频上游时长字段 | 百炼 `usage.duration`、MiniMax `usage.output_seconds` 均为【文档】口径；Veo 的轮询不报时长（xAI 自 4.28.0 起读 `video.duration`）；Sora 已下线 |
 | GLM `network_error` 结束原因 | 没有实测样本，未归类（仍按正常结束） |
 | 「继续原任务」入口 | 用现有菜单项与按钮样式直接落地，未出设计稿；对上游已终态失败的任务也会显示（重跑轮询会再报一次失败，不计费） |
 | l10n `videoResolution` / `videoAspectRatio` | Veo 固定控件删除后已无引用，四语未删 |
@@ -188,7 +188,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | 条 | 为什么没做 / 要验什么 |
 |---|---|
 | 聊天面的输入图张数 | 只有七个 images 协议（含 Midjourney）发布 `input_image_count`。中转站把按张收输入费的模型挂在聊天面（① 出图）上、又配了按规格计费组时，输入费静默记 0。没有真实用例，未做 |
-| ~~视频的输入图~~ | 已做（`git show a7e4c8a:docs/plans/2026-09-input-images-all-modes.md`，v4.28.0，设计稿 `D2e`）：xAI `grok-imagine-video-1.5` 实测首帧 / 参考图 $0.01/张后两处一起开——五个视频协议报张数、判据不看单位、按次也收；xAI 视频终态的秒数与报价一并结算。剩的：OpenAI Videos（Sora）终态的 `seconds` 回显没读（按秒的组仍按请求秒数计）；初代 `grok-imagine-video` 是否也收参考图、720p / 1080p 是否加价未测（下表「输入图 4」）；其它视频面不报钱 |
+| ~~视频的输入图~~ | 已做（`git show a7e4c8a:docs/plans/2026-09-input-images-all-modes.md`，v4.28.0，设计稿 `D2e`）：xAI `grok-imagine-video-1.5` 实测首帧 / 参考图 $0.01/张后两处一起开——五个视频协议报张数、判据不看单位、按次也收；xAI 视频终态的秒数与报价一并结算。剩的：720p / 1080p 是否加价未测（下表「输入图 4」）；其它视频面不报钱。Sora 与初代 `grok-imagine-video` 已下线（2026-09-22），它们的两条待办（Sora 终态 `seconds` 回显、初代是否收参考图）销掉 |
 | 按 token 模式的图像输入单价 | GPT-Image-2 图像输入 $8/M、文本 $5/M，计费组只有一个输入价；`input_tokens_details.image_tokens` 已在回包里。差额很小，未立项 |
 | 计费组币种 | 应用一律显示 `$`，Seedream 以人民币标价，用户只能自己换算后填。已有问题，这一轮没碰 |
 | ~~xAI 的 `cost_in_usd_ticks`~~ | 已做（`git show e3941d9:docs/plans/2026-09-xai-reported-cost.md`，v4.27.0）：xAI images 协议发布 `reported_cost_usd`，落 `token_usage.reported_cost`（v49），压过三种模式；用量页按 `D2d` 显示「上游报价 \| 档位估算」。剩的：中转协议不翻这个键（中转有自己的价）；把 xAI vendor 指到原样转发 `usage` 的中转时报的是 xAI 收中转的价，不加开关；别家（方舟、OpenAI）不报钱 |
@@ -241,7 +241,7 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | 输入图 1 | Seedream 5.0 pro「首张免费」是否按每次请求 | 对照账单：两次各带 1 张参考图的请求，输入费是否为 0 | **不响**：应用按每次请求扣一次，若上游按账期只免一张，每次改图少记 0.02 元 |
 | ~~输入图 2~~ | 一次请求出多张（xAI `n>1`）时输入图收一次还是乘张数 | **已测（2026-09-22）**：`n:2` + 1 张参考图 + low → 900 000 000 ticks = 2 × $0.04 + **1** × $0.01，按请求收一次（`api/usage.md` §5） | 应用的「每次请求收一次」是对的 |
 | 输入图 3 | xAI 请求失败 / 被审核拦下时是否仍收输入费 | 对照账单（失败的回包里有没有 `cost_in_usd_ticks` 也值得看一眼） | **不响**：应用在一张图都没交付时不记输入费 |
-| 输入图 4 | xAI 视频 720p / 1080p 是否在 $0.08/s 之外加价；初代 `grok-imagine-video`（$0.05/s）是否也收参考图 | 各发一次 1 s 看终态 `cost_in_usd_ticks`（约 $0.1 一次） | **不响**：档位表按用户填的算，报价在终态才压过；不测只是提交时的估算不准 |
+| 输入图 4 | xAI 视频 720p / 1080p 是否在 $0.08/s 之外加价 | 各发一次 1 s 看终态 `cost_in_usd_ticks`（约 $0.1 一次） | **不响**：档位表按用户填的算，报价在终态才压过；不测只是提交时的估算不准 |
 | 片 4 | 官方 ④ `adaptive` 是否真的开出思考 | 响应 `content` 有无非空 `thinking` block | **配置不合法时静默关闭** |
 | 片 5 | `pause_turn` 续跑；MiniMax `end_turn` 停在结果块 | 第二次请求是否 200、模型是否接着写 | MiniMax 变体无任何字段说明 |
 | 片 9 | DeepSeek 官方 `thinking:{type:disabled}` 是否关掉 | 响应 `reasoning_content` 是否为空 | 不报错 |

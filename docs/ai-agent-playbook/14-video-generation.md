@@ -79,7 +79,7 @@ MiniMax v2 提交 body：`content[]`（至少一个 text 项 ≤7000 字符，�
   `MediaUsage`（`cost_in_usd_ticks` 必有，token 字段视频一律省略）；`video.url` 为空且 `respect_moderation: false` = 被审核拦下。
 - **参考图另收钱，标价页没写**（页面只写 $0.080/s）：文生 800 000 000 = $0.08；首帧 `image` 900 000 000 = +$0.01；
   `reference_images` 两张 1 000 000 000 = +$0.02——**$0.01/张、线性**，与出图面同价。`duration: 1` 按 1 s 计，没有最低计费秒数。
-  720p / 1080p 是否加价、初代 `grok-imagine-video`（$0.050/s）是否同样收参考图：【未验】。
+  720p / 1080p 是否加价：【未验】。初代 `grok-imagine-video`（$0.050/s）已下线（2026-09-22），不再追。
 - `GET /v1/video-generation-models` 只列 id / 模态 / 别名，**没有 `pricing`**（出图面的同名端点有）；1.5 的 `input_modalities` 是
   text / image / audio（`reference_audios`），初代是 text / image / video（`/videos/edits`、`/videos/extensions`）。
 
