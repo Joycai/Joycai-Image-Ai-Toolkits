@@ -339,6 +339,9 @@ class ModelSelectionSection extends StatelessWidget {
           onChanged: (v) => onImageParamChanged(model, spec.key, v),
           compact: true,
           expand: true,
+          // A half-cell is 137px: two slots of 65, and an English "Medium"
+          // needs 46 of it (`A1f · 4g`).
+          tightLabels: true,
           style: AppSegmentStyle.raised,
         );
       case ParamControl.customSize:

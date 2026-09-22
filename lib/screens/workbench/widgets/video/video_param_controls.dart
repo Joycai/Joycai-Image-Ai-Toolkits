@@ -79,6 +79,14 @@ extension _ParamControls on _VideoConfigPanelState {
           onChanged: (v) => appState.setVideoParam(model, spec.key, v),
           compact: true,
           expand: true,
+          // The image panel's half-cell rule (`A1f · 4g`): a two-option
+          // track paired with another half-cell gets 137px, 65 a slot.
+          // MiniMax's `768P | 2K` already lands there beside its aspectRatio
+          // dropdown; Sora's quality follows the five-way seconds track and
+          // takes a row of its own. Short labels fit either way today — this
+          // keeps the headroom for one that does not (an English "Standard"
+          // needs 51).
+          tightLabels: true,
           style: AppSegmentStyle.raised,
         );
       case ParamControl.customSize:
