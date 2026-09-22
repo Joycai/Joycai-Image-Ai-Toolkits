@@ -75,11 +75,11 @@ default quality a request serves at when it leaves `quality` unset」；`GET /v1
 | 片 | 内容 | 主要文件 | 验收 | 状态 |
 |---|---|---|---|---|
 | 0 | 实测参数名、取值、六格与初代的差异 | — | §1 | ✅ |
-| 1 | 本文件 + 设计稿 `A1f` | `docs/plans/`、Claude Design | — | ⬜ |
+| 1 | 本文件 + 设计稿 `A1f` | `docs/plans/`、Claude Design | — | ✅ 帧 4a–4g |
 | 2 | 能力表：`_xaiImage` 加质量 + 1.5k，`_xaiImageLegacy` 按 id 分流 | `llm/model_capability_tables.dart`、`llm/model_capabilities.dart` | 2.0 三控件 / 初代两控件；`SpecKnownValues` 含 `1.5K`、`low`、`medium` | ⬜ |
-| 3 | 协议：发 `quality`，`resolution` 收 `1.5k` | `llm/protocols/xai_images_protocol.dart` | 走线测试：默认发 `medium`；`low` / `1.5k` 落到请求体；`auto` 不发；规格 `1.5K · low` 命中档位 | ⬜ |
-| 4 | 面板排版测试（300 栏 + 手机无溢出）；截图夹具加一个 xAI 2.0 模型 | `test/screens/workbench/`、`test/screenshots/harness/` | 截图三档宽度 | ⬜ |
-| 5 | 文档：`api/usage.md` §5 实测表、台账「还欠的」行销掉、本文件退役、设计稿回写出入；bump 4.26.0 | `docs/`、`pubspec.yaml` 等六处 | — | ⬜ |
+| 3 | 协议：发 `quality`，`resolution` 收 `1.5k` | `llm/protocols/xai_images_protocol.dart` | 走线测试：默认发 `medium`；`low` / `1.5k` 落到请求体；`auto` 不发；规格 `1.5K · low` 命中档位 | ✅ |
+| 4 | 面板排版测试（300 栏 + 手机无溢出）；截图夹具加一个 xAI 2.0 模型 | `test/screens/workbench/`、`test/screenshots/harness/` | 截图三档宽度 | ✅ |
+| 5 | 文档：`api/usage.md` §5 实测表、台账「还欠的」行销掉、本文件退役、设计稿回写出入；bump 4.26.0 | `docs/`、`pubspec.yaml` 等六处 | — | ✅（退役在收尾片）|
 | 6 | 独立 review（opus）→ 修 → 再 review，直到无新问题；PR | — | 两道门全绿 | ⬜ |
 
 ## 4. 设计 brief（交给 Claude Design 项目的原文）
@@ -104,4 +104,14 @@ default quality a request serves at when it leaves `quality` unset」；`GET /v1
 
 ## 5. 施工记录
 
-（随片填写。）
+- **第 1 片 · 设计稿 `A1f`**（设计子代理拿不到 DesignSync，稿子由主会话对照真实 `A1` 校验、用真实 `support.js`
+  预览后推送，90386 字节往返一致）：裁决 A——声明顺序 `aspectRatio → quality → imageSize`，比例 | 质量一行、尺寸整行在下；
+  理由：老用户第一眼落点不变、尺寸是贵的那一维放收尾、与 Gemini / OpenAI 的排法一致。帧 4a–4f + 4g「实施出入」。
+- **第 3 片** xAI 协议此前没接共用的 `optionsWithCheckedSize`：family 共用一份参数记忆，2.0 上选过的 `1.5k` 会原样发给初代
+  （上游 400）。现在尺寸过共用闸回落到初代默认 `1k`；质量只在模型自己的表声明时才发（初代表没有，永不发）。
+- **第 4 片 · 与稿的出入 ①** 稿按 1a 复述的几何（半格 126、轨道内边距 2）与真机不同：半格 137、轨道内边距 3、片水平内边距 10，
+  标签只剩 43.5，而截图夹具的真实字体量得英文 "Medium" 要 45.8——尾巴两个字母省略。expand 轨道的标签本来由 Row 居中，
+  水平内边距只决定何时省略，**在共用的 `AppSegmentedControl` 上把 expand 轨道的水平内边距降到 4**（测试确认不修会截）。
+  ② 250 最小栏宽下英文 Medium 仍省略（槽 43 < 45.8），gpt-image-2 的四档轨道同宽同样，只在拖到极限时出现，不做。
+  ③ 面板测试的省略断言在测试字体（每个字形一个字号宽）下对英文判不了，改为断言 Medium 的可用宽 ≥ 46；zh / ja 照常全断言。
+
