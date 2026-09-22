@@ -78,7 +78,7 @@ xAI 的 Images API 在每个回包的 `usage` 里写明**这次请求实扣了�
 | 4 | 记账读键（三条路径共用 `_writeUsageRow`） | `llm_usage_recording.dart` | `recordUsageForTest` 带键 → 行上有值；不带 → NULL；spec 七列照写 | ✅ |
 | 5 | 用量页：分组条 / tooltip / 明细行 / 费用格；四语；截图夹具加一行报价 | `usage_stats.dart`、`usage_group_costs.dart`、`usage_list.dart`、`l10n/src/*/metrics.arb`、`fixture_seed.dart` | widget 测试 + 截图 | ✅ |
 | 6 | 文档：`api/usage.md` §5、`llm-three-layer.md` metadata 键、台账两行；bump 4.27.0 | `docs/`、七处版本号 | — | ✅（台账在收尾片） |
-| 7 | 独立 review（opus）→ 修 → 再 review，直到无新问题；PR | — | 两道门全绿 | ⬜ |
+| 7 | 独立 review（opus）→ 修 → 再 review，直到无新问题；PR | — | 两道门全绿 | ✅ 六轮 |
 
 ## 4. 设计 brief（交给 Claude Design 项目的原文）
 
@@ -142,3 +142,5 @@ xAI 的 Images API 在每个回包的 `usage` 里写明**这次请求实扣了�
 - **Review 第五轮（opus，只查第四轮那一个 commit）** 两条 NIT：① 「钉聊天面四处」还是多说了——`upstreamUsage` 在聊天面有五个调用点，
   百炼流式面（第二轮修的三处之一）没有伪造用例。在 `dashscope_stream_regressions_test.dart` 的回环 SSE 上加一条；文档改成
   「四个纯函数面 + 百炼流式面走线钉」。② `upstream_usage_sites_test.dart` 的文件头只点名 xAI 的走线测试——补上 `input_image_count_test`。
+- **Review 第六轮（opus，只查第五轮那一个 commit）** 无新问题。六轮都没有 BLOCKER / MAJOR；前两轮各一条 MINOR 是真缺口
+  （图片块不带报价、原样铺 usage 可伪造），后四轮收的是注释与文档的措辞。
