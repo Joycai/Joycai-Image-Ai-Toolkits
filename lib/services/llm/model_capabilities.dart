@@ -128,6 +128,7 @@ class ModelCapabilities {
     _geminiImageV2,
     _geminiImagePro,
     _geminiImageLegacy,
+    _xaiImageLegacy,
     _grokImagineVideo,
     _dashscopeWanVideo,
     _minimaxVideo,
@@ -169,6 +170,17 @@ class ModelCapabilities {
       if (id.contains('gemini-3.1-pro-image')) return _geminiImagePro;
       // The 2.5 generation has no resolution parameter at all.
       if (id.contains('gemini-2.5-flash-image')) return _geminiImageLegacy;
+    }
+
+    // The first-generation Grok Imagine image models are flat-priced and
+    // refuse the 1.5k tier, so they keep the two-control table; 2.0 and
+    // whatever follows it get the family's quality + three-tier one. Matched
+    // by the id's tail: `grok-imagine-image` is a prefix of every later
+    // version's id.
+    if (family == ModelFamily.xaiImage &&
+        (id.endsWith('grok-imagine-image') ||
+            id.endsWith('grok-imagine-image-quality'))) {
+      return _xaiImageLegacy;
     }
 
     // grok-imagine-video-1.5 exposes a different parameter set (1:1 / 4:3 /

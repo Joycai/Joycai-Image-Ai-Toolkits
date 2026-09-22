@@ -15,7 +15,11 @@ import 'protocol.dart';
 /// Reads from `options`:
 ///   * `aspectRatio` — passed as `aspect_ratio` (supports `auto`); skipped
 ///     for `not_set`.
-///   * `imageSize` — passed as `resolution` when it is `1k` / `2k`.
+///   * `imageSize` — passed as `resolution` when it is `1k` / `1.5k` / `2k`.
+///   * `quality` — passed as `quality` when it is `low` / `medium`, the two
+///     tiers 2.0 prices (docs/api/usage.md §5). Anything else is left out
+///     and upstream serves medium — the same tier the table's default asks
+///     for explicitly, so a rate row can name it.
 /// Requests `b64_json` so results come back inline without a second
 /// download round-trip.
 class XaiImagesProtocol implements ImageGenProtocol {
@@ -55,9 +59,24 @@ class XaiImagesProtocol implements ImageGenProtocol {
     final aspect = readStringOption(options, 'aspectRatio');
     if (aspect != null && aspect != 'not_set') payload['aspect_ratio'] = aspect;
 
-    final resolution = readStringOption(options, 'imageSize');
-    if (resolution == '1k' || resolution == '2k') {
+    // Both tiers are checked against the model's own table: the family
+    // shares one parameter store, and a `1.5k` or a quality chosen on 2.0
+    // is a 400 (size) or a silently ignored field (quality) on the first
+    // generation. The size goes through the shared guard, which swaps in the
+    // legacy default; a quality the table does not declare is simply not
+    // sent, and upstream serves its medium.
+    final resolution = readStringOption(
+        optionsWithCheckedSize(target, options, logger: logger), 'imageSize');
+    if (const {'1k', '1.5k', '2k'}.contains(resolution)) {
       payload['resolution'] = resolution;
+    }
+
+    final quality = readStringOption(options, 'quality');
+    final qualitySpec = target.model.capabilities.imageParams
+        .where((p) => p.key == 'quality')
+        .firstOrNull;
+    if (qualitySpec != null && qualitySpec.isValid(quality)) {
+      payload['quality'] = quality;
     }
 
     int encodedCount = 0;
