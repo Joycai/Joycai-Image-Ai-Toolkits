@@ -4,6 +4,14 @@
 >
 > 参考实现：simple-ai-writer `src/lib/agent/registry.ts` / `tools.ts` / `writeTools.ts` / `backup.ts` / `plan.ts`，及 `src/stores/agentStore.ts`。
 
+目录：
+- §1 工具注册表
+- §2 工具清单（分组规范样例）
+- §3 写入安全体系
+- §4 Proposal 判别联合与 ApprovalDecision
+- §5 审批队列与会话 store
+- §6 本篇检查清单
+
 ---
 
 ## 1. 工具注册表
@@ -26,7 +34,7 @@ export interface RegisteredTool {
 const REGISTRY: Record<ToolId, RegisteredTool> = { … };
 ```
 
-**规范：`ToolId` 必须是字面量联合类型**（参考实现是 28 个字面量的联合）。`Record<ToolId, RegisteredTool>` 使「加了工具名却漏了注册」成为**编译错误**，而不是运行时的 `Unknown tool`。
+**规范：`ToolId` 必须是字面量联合类型**（参考实现是数十个字面量的联合）。`Record<ToolId, RegisteredTool>` 使「加了工具名却漏了注册」成为**编译错误**，而不是运行时的 `Unknown tool`。
 
 ### 1.2 ToolContext：执行器可用的全部钩子
 
@@ -79,7 +87,7 @@ export async function executeRegisteredTool(call, allowed, ctx): Promise<ToolRes
 
 ## 2. 工具清单（分组规范样例）
 
-以下为参考实现的完整清单，作为「一套成熟工具集长什么样」的样板。关键实现点列是规范的一部分——每条都对应一次事故或一个安全边界。
+以下为参考实现的清单（示例快照，以参考实现为准），作为「一套成熟工具集长什么样」的样板。关键实现点列是规范的一部分——每条都对应一次事故或一个安全边界。
 
 ### 2.1 只读（read）
 
@@ -249,8 +257,9 @@ pendingRoundLimits: PendingRoundLimit[]  // { id, roundsUsed, extension, canPaus
 - **`chatHistory: StreamMessage[]`（wire 层）**：与 runtime 原地 mutate 的是**同一个数组**。轮 N 的工具调用与结果留在上下文里供轮 N+1 指代（「把刚才那条也改了」）——这是真会话与重复单发的分水岭。
 - **`turns: ChatTurn[]`（展示层）**：`{ id, role, text, log: AgentEvent[], at, quote?, images? }`。每个 assistant 轮内嵌自己的执行日志；`text` 由 onOutputText 快照赋值（工具轮撤回叙述才成为可能）；`images` 由**审批方**以 turnId 填入——模型对「应用已把图放进转录」一无所知，靠模型自述会产出「抱歉我无法展示图片」。
 - **分层理由（规范）**：wire 数组要满足协议（tool_call 配对、顺序、压缩折叠），展示层要满足阅读（每轮日志、引用块、displayText 替身——resume 时发给模型的是整份任务文档，屏幕上只显示一行「继续任务 X」）。两者形状需求根本不同，硬用一个结构必然两头受伤。
-- **`chatMeta` 全部按消息对象身份记录，不用索引**：哪条是种子上下文、哪条是滚动摘要、每轮从哪条 user 消息开始、注入台账（条目 → {version, carrier 消息对象}）。原因：`repairToolCallPairing` 会 splice（索引位移），trimHistory 只换 content（对象身份存活）——索引在这套体系里没有稳定语义。
-- 配套细节：history 被原地 push 时数组引用不变，响应式 selector 看不见变化——凡历史构成变化的点都要 bump 一个版本号（`chatContextVersion`）。会话持久化每轮 finally 里 best-effort 执行（「丢会话的崩溃从不提前打招呼」），**序列化时剥离全部图片 base64**（路径留在转录里，可再读取）；持久化失败只降级为「不能跨重启」，绝不弄坏进行中的对话。
+- **`chatMeta`（种子上下文、滚动摘要、轮起点、注入台账的 carrier）全部按消息对象身份记录，不用索引**——理由见 10 §3.2，台账见 10 §3.6。
+- 配套细节：history 被原地 push 时数组引用不变，响应式 selector 看不见变化——凡历史构成变化的点都要 bump 一个版本号（`chatContextVersion`）。
+- 会话持久化每轮 finally 里 best-effort 执行、序列化剥离全部图片 base64（见 10 §4）；持久化失败只降级为「不能跨重启」，绝不弄坏进行中的对话。
 
 ### 5.3 sendChat 一轮的完整时序
 

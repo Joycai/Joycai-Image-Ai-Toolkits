@@ -4,6 +4,13 @@
 
 参考实现：simple-ai-writer `src/lib/agent/taskWorkspace.ts`、`scratchpadTools.ts`、`compact.ts`、`compactRun.ts`、`chatRefs.ts`、`transcriptFold.ts`、`chatSession.ts`。
 
+目录：
+- §1 任务工作区
+- §2 Scratchpad 工具
+- §3 上下文压缩
+- §4 会话持久化
+- 本篇检查清单
+
 ---
 
 ## 1. 任务工作区
@@ -93,18 +100,8 @@ export type TaskStatus = "in_progress" | "paused" | "completed" | "failed";
 
 ### 1.5 存盘暂停：round-limit 的第三个出口
 
-runtime 撞轮上限的回调契约不能是 `Promise<number>`——一个数表达不了「暂停」。应当用判别联合：
+runtime 撞轮上限的回调契约不能是 `Promise<number>`——一个数表达不了「暂停」。应当用判别联合 `RoundLimitDecision`（extend / finish / pause），`AgentRunResult` 增 `outcome: "completed" | "paused"`；定义、触发条件与轮首暂停的干净性见 07 §3.8。
 
-```ts
-export type RoundLimitDecision =
-  | { action: "extend"; rounds: number }
-  | { action: "finish" }     // 撤工具、强制成文
-  | { action: "pause" };     // 不再发请求，直接收工
-
-// AgentRunResult 增 outcome: "completed" | "paused"
-```
-
-- **暂停必须发生在轮首**（进入 force-text 最后一轮前、且 round > 1、preset 有工具、调用方给了 onRoundLimit 时阻塞询问；选 pause 就地 return `outcome: "paused"`）。轮首暂停是干净的：上一轮的 tool_calls 全部已配对，history 合法，不需要 repair。
 - UI 卡片三个按钮：就此收尾 / 存盘并暂停 / 继续（再 N 轮）。
 - **陷阱（按钮出现在错误的 surface）**：「存盘并暂停」的可见性由 `PendingRoundLimit.canPause` 决定，**由发起 run 的一方在撞上限那一刻求值 `!!tw.taskId`**——不是 run 开始时（模型三轮前建的工作区也算）；也不能让共享的卡片组件自己去读会话状态，否则按钮会出现在没处理 paused 的一侧，「点下去整轮工作无声消失」。**每一个**处理 run 结果的调用方都必须处理 `outcome === "paused"`：`markTaskPaused` + `recordSourceRef`（当前文档路径 + FNV-1a 哈希），不再强跑成文轮。
 
@@ -162,8 +159,7 @@ export type RoundLimitDecision =
 光有工具不够，模型不会主动用。preset 应当有三档 `scratchpad: "off" | "offered" | "required"`（默认 off ⇒ 整套机制可整体回退；主助手 preset 用 required）。required 时，轮循环顶部、裁剪逻辑**之前**：
 
 - 触发条件：`estimateMessagesTokens(history) > inputCeilingTokens * 0.85`（`CHECKPOINT_RATIO`，**必须早于**裁剪的 `> ceiling` 触发点——提醒发出时内容不能已经被删了）且 `!checkpointArmed`；
-- 注入一条 user 提示（「上下文接近上限即将裁剪，请用 write_note 把关键结论写进笔记」），**发出即撤**：finally 里按对象身份 splice 掉。
-  **陷阱**：一次性话术留在持久 history 里会变成「之后每一轮的常驻命令」——这正是「agent 不停告诉自己用户要求继续」那类故障的成因；
+- 注入一条 user 提示（「上下文接近上限即将裁剪，请用 write_note 把关键结论写进笔记」），**发出即撤**：finally 里按对象身份 splice 掉（不撤的后果见 07 §3.5）；
 - `checkpointArmed` 在裁剪**真正丢了内容**（dropped > 0）后重新置 false——只提醒一次的话，长任务后段照样丢。
 
 闭环由此成立：**接近上限 → 提醒落盘 → 裁剪（破坏的只是上下文里的拷贝）→ 需要时 read_note 取回。** 裁剪从破坏性变成非破坏性。

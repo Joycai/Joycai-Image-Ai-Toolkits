@@ -3,7 +3,7 @@
 > 本篇解决的问题：把 OpenAI Chat Completions（①）、Google GenAI generateContent（③）、Anthropic Messages（④）三族的 wire 差异一次性列全——消息容器、角色、工具、流式机制、鉴权、URL 约定——并给出适配器里必须做的结构性修补；② OpenAI Responses 族单列在 §7。
 > 不读会踩的坑：Anthropic 的交替律 400、连续 tool 消息拆开发送被拒、Gemini 把 SSE chunk 当 delta 拼接导致内容重复、baseURL 归一化"修复对称"后中继路由全断、Gemini key 走查询串泄进代理日志。
 
-参考实现：simple-ai-writer `src/lib/ai/openai.ts`、`gemini.ts`、`anthropic.ts`、`urls.ts`、`http.ts`；协议事实见其 `docs/api/landscape.md`。
+出处：simple-ai-writer `src/lib/ai/openai.ts`、`gemini.ts`、`anthropic.ts`、`urls.ts`、`http.ts`；协议事实见其 `docs/api/landscape.md`。
 
 ---
 
@@ -35,7 +35,7 @@
 
 ### 2.1 Anthropic（最严格）
 
-参考实现：simple-ai-writer `src/lib/ai/anthropic.ts` 的 `convertToAnthropicMessages` / `extractSystem`。
+出处：simple-ai-writer `src/lib/ai/anthropic.ts` 的 `convertToAnthropicMessages` / `extractSystem`。
 
 规则与修补，逐条：
 
@@ -45,20 +45,23 @@
    - **把连续 tool 消息合并成一条 user 消息**——Anthropic 要求一轮的所有 `tool_result` 一起到达，拆开发既违反协议又破坏交替律。
 2. **system hoist**：消息数组内没有 system 角色，全部 system 消息 hoist 到顶层 `system` 字段（多条用 `\n\n` join）。陷阱：内容若是 `ContentPart[]`，必须先用 `textOf` 拍平成字符串，否则序列化成 `[object Object]`。
 3. **工具轮 assistant 消息的 content 顺序**：`[...thinkingBlocks, ...tool_use blocks]`——thinking 在前且原样（顺序即 400 红线，详见第 3 篇回传义务）。
-4. **labelAuthorText**：tool_result 和作者（用户）的话都住在 `role:"user"` 里，合并可能产生 `[tool_result, "continue"]` 这种消息——作者的话被装进了模型当作工具输出读的信封。实测事故：作者一上午敲的三次重试（continue/retry/重试）混进 `read_file` 结果，被后续 39 轮反复重发，模型把它读成"用户要我一直继续"的常设指令。修法：合并进带 tool_result 的消息的第一条文本前加 【…】 标签，标明这是作者发言，使其可归因。
+4. **labelAuthorText**：tool_result 和作者（用户）的话都住在 `role:"user"` 里，合并可能产生 `[tool_result, "continue"]` 这种消息——作者的话被装进了模型当作工具输出读的信封。实测事故：作者的三次重试（continue/retry/重试）混进 `read_file` 结果、被后续 39 轮反复重发，模型读成常设指令（见第 11 篇坑 21）。修法：合并进带 tool_result 的消息的第一条文本前加 【…】 标签，标明这是作者发言，使其可归因。
 5. **tool_use 的 `name` 兜底链**：`tc.function.name || toolCallIdToName.get(tc.id) || "unknown_function"`——id→name 表预先扫全量 messages 建好。历史里的 tool_calls 可能来自持久化或另一族转换，name 缺失不能让整条请求炸掉。
 
 ### 2.2 Gemini
 
-参考实现：simple-ai-writer `src/lib/ai/gemini.ts` 的 `convertToGeminiContents`。
+出处：simple-ai-writer `src/lib/ai/gemini.ts` 的 `convertToGeminiContents`。
 
 1. `assistant` → `model` 角色。
 2. tool 消息 → `role:"user"` 的 `functionResponse` parts。**Gemini 协议层没有调用 id**，靠预建的 id→name 表查函数名回填。推论：同名函数的并行调用，其结果对应关系在协议上**不可表达**——只能接受这个信息损失，不要试图发明私有配对机制。
-3. 工具轮 assistant 若带 `_geminiModelParts`，**原样整组回传**而不重建——为保住 `thoughtSignature`（第 3 篇详述）。规则：能原样回传的历史，永远不要"理解后重建"。
+3. **请求键一律 camelCase**（`inlineData` / `mimeType` / `systemInstruction`）：Google 两种拼写都收，但转 ③ 形状的中转（New API 的 Gemini 面）
+   只认 camelCase、无视未知键——snake_case 的请求 **200 照回，图片和系统提示被静默丢弃**【实测 2026-09-05；坑 111】。用测试遍历整个
+   payload，断言没有带下划线的结构键。
+4. 工具轮 assistant 若带 `_geminiModelParts`，**原样整组回传**而不重建——为保住 `thoughtSignature`（第 3 篇详述）。规则：能原样回传的历史，永远不要"理解后重建"。
 
 ## 3. 流式解析：共同骨架 + 三家差异
 
-### 3.1 共同骨架（三族适配器共享同一 SSE 读法）
+### 3.1 共同骨架（各族适配器共享同一 SSE 读法）
 
 ```
 res.body.getReader() + TextDecoder({stream: true})
@@ -73,7 +76,12 @@ res.body.getReader() + TextDecoder({stream: true})
 
 **① OpenAI**：
 - tool_calls 用 `Map<index, {id,name,args}>` 累积。**分组键是 `index` 不是 `id`——id 本身也可能分片到达**（参考实现里 `entry.id += partial.id`）。用 id 分组，流式下同轮多个交错调用会拼错。
-- malformed SSE 行直接忽略，不抛错。
+- malformed SSE 行直接忽略，不抛错。**但「忽略」的 catch 不能罩住整个 chunk 的处理**：开了 `include_usage` 的末块是 `"choices": []`，
+  空安全的 `choices?[0]` 挡不住**空列表**，抛越界异常，被形状容错的 catch 当成坏行吞掉——每一次 ① 流式请求的 usage 都这样静默丢失
+  【实测 2026-08-14，Joycai 修复；坑 108】。取首个 choice 前先判空，usage 在 choices 之外单独读。
+- **`content` 不一定是字符串**：前端是 Responses 或 Anthropic 形后端的兼容层会把 part 数组（`[{"type":"text","text":"…"}]`）原样镜像到
+  `chat/completions`【实测 2026-08-14，中转流量】。按字符串强转会在解析器里抛类型错误，调用方只看到一个说不出原因的失败；两种形状都收，
+  数组里只取 `text`。
 
 **③ Gemini**：
 - **不是 delta！** 每个 chunk 是完整响应对象，`parts` 直接追加。按 delta 逻辑拼会重复内容。
@@ -89,7 +97,7 @@ res.body.getReader() + TextDecoder({stream: true})
 
 ## 4. baseURL 的不对称归一化
 
-参考实现：simple-ai-writer `src/lib/ai/urls.ts`（`trimBase` / `anthropicRoot` / `migrateLegacyStandard`）。
+出处：simple-ai-writer `src/lib/ai/urls.ts`（`trimBase` / `anthropicRoot` / `migrateLegacyStandard`）。
 
 三个生态对"base URL 是什么"的约定**不同**，归一化规则因此必须不对称——这是有依据的差异，不是随意：
 
@@ -103,18 +111,14 @@ res.body.getReader() + TextDecoder({stream: true})
 
 ## 5. 鉴权矩阵
 
-```ts
-// 参考实现：simple-ai-writer src/lib/ai/types.ts
-export type AuthMode = "default" | "bearer" | "both";
-export function authModesFor(standard: ApiStandard): AuthMode[] {
-  return standard === "anthropic_compat" || standard === "gemini_compat"
-    ? ["default", "bearer", "both"] : ["default"];
-}
+```text
+AuthMode = default | bearer | both
+可选鉴权模式：anthropic_compat、gemini_compat → [default, bearer, both]；其余 standard → 只有 [default]
 ```
 
 | 族 | 默认（官方唯一方式） | compat 可选 | 不做的及原因 |
 | --- | --- | --- | --- |
-| OpenAI | `Authorization: Bearer`；**无 key 时整个头省略**（Ollama/LM Studio 收到空 Bearer 会拒） | 无 | Azure `api-key` 头：URL 形状（`/openai/deployments/{d}/...?api-version=`）与模型标识都不同，一个头救不了，要做是第四族不是 compat 选项 |
+| OpenAI | `Authorization: Bearer`；**无 key 时整个头省略**（Ollama/LM Studio 收到空 Bearer 会拒） | 无 | Azure `api-key` 头：URL 形状（`/openai/deployments/{d}/...?api-version=`）与模型标识都不同，一个头救不了，要做是另一族不是 compat 选项 |
 | Gemini | `x-goog-api-key` | `bearer` / `both` | `?key=` 查询串**故意不实现**：key 进代理日志/报错信息 = 泄漏 |
 | Anthropic | `x-api-key` + `anthropic-version: 2023-06-01`（**pinned 不追 latest**——wire 形状按它版本化）+ `anthropic-dangerous-direct-browser-access: true` | `bearer` / `both` | — |
 
@@ -129,13 +133,13 @@ export function authModesFor(standard: ApiStandard): AuthMode[] {
 
 桌面（Tauri/Electron 原生 HTTP）与浏览器环境的差异要显式处理：
 
-- 打包版请求走原生 HTTP 栈（参考实现：Rust reqwest 经 Tauri IPC，`src/lib/http.ts` 的 fetch 包装），**没有 CORS preflight**，`anthropic-dangerous-direct-browser-access` 在打包版是 no-op。
+- 打包版请求走原生 HTTP 栈（出处：Rust reqwest 经 Tauri IPC，`src/lib/http.ts` 的 fetch 包装），**没有 CORS preflight**，`anthropic-dangerous-direct-browser-access` 在打包版是 no-op。
 - 带上它是为了 dev 模式纯浏览器环境（回落全局 fetch）也能连——不带则 Anthropic 直接拒绝浏览器 origin 的请求。
 - 本地 Ollama 的 Windows 打包版 403 问题：靠 http 层覆盖 `Origin` 头修复。注意这个修复位于比 provider 枚举更底层的位置，拿不到枚举值，只能按"URL 指向本机"判断——这也是"Ollama 不做成枚举值"的理由之一（L2 数据能表达的就不进代码）。
 
 ## 7. ② OpenAI Responses 族
 
-参考实现：simple-ai-writer `src/lib/ai/responses.ts`；协议事实 `docs/api/responses.md`（GPT-5.4/5.5/5.6 经中转站实测 + 官方文档，xAI 官方实测）。
+出处：simple-ai-writer `src/lib/ai/responses.ts`；协议事实 `docs/api/responses.md`（GPT-5.4/5.5/5.6 经中转站实测 + 官方文档，xAI 官方实测）。
 
 ### 7.1 请求骨架
 
@@ -190,6 +194,10 @@ response.created → response.in_progress
 - 函数调用按 **`output_index`** 分组（部分中继的 delta 事件缺 `item_id`）；参数**两次到达**：delta 片段（只用于进度上报）+ `function_call_arguments.done` / `output_item.done` 的整串（**以整串为准**）。只发其中一种的端点也要能拼出完整调用。
 - **回传物直接收集 `output_item.done` 的 `item`**（reasoning / function_call / message 三类），不从 delta 自己拼——它就是下一轮要原样放回 `input` 的条目，挂在 `toolCalls` chunk 的 `_responseItems: {modelId, items}` 上。服务端工具条目（`web_search_call` 等）不回传。
 - 终止：`completed` → 读 usage（`input_tokens` / `output_tokens` / `input_tokens_details.cached_tokens`，cached 是 input 子集）；`incomplete` 且 reason=`max_output_tokens` → `truncated`，reason=`content_filter` → **throw**；`failed` / `error` 事件 → throw；data 行里裸 `{error}`（无 `type`）也 throw。
+- **服务端标了 `status:"completed"` 的空 message 条目是正常结束**：工具结果交付之后，GPT-5.x（经中转的 gpt-5.6）以一个 `phase:"final_answer"`、
+  文本为空、`status:"completed"` 的 message 条目收尾【实测 2026-09-15；坑 109】。只把非空文本 / 推理 / 调用算作输出的「空回复守卫」会把这一轮
+  判为失败，而工具早已把结果交付了。判据：completed 的 message 条目算输出；真正坏掉的 200 一个条目都没有；没 completed 的照旧抛错。
+  ① 族没有这个判据（空 `content` + `finish_reason:stop` 与坏中转无法区分），不要照搬。
 - **流可能不带终止事件就结束**：flush 行缓冲尾巴后照样 `finish()`——代价是 usage 记 0、stopReason 缺失，但不能挂死或抛错。
 - 回显比对在终止事件处做（第 6 篇 §4.1）。
 

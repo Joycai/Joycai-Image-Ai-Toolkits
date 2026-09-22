@@ -1,166 +1,160 @@
-# 12 · 分阶段落地路线图（按依赖顺序的最小实现清单）
+# 12 · 新增支持：落地顺序与配方
 
-把整套体系搬进新项目的推荐顺序。模块名沿用参考实现（simple-ai-writer）的命名，接口
-签名可直接照抄。标 ★ 的是「没有它其他都白搭」的正确性核心。每个阶段可独立交付、
-独立回退。
+本篇讲两件事：
+- 从零搭协议层时的依赖顺序（阶段 0–3）；
+- 在已有项目里加一家厂商、加一个协议族、加一个出图面、视频面或语音识别面的逐步配方。
 
-## 阶段 0 · 协议层类型与词汇（无依赖）
+所有条目都按**职责**描述，与语言、框架、模块怎么划分无关。标 ★ 的是正确性核心：缺了它，别的都白搭，而且漏掉的后果基本都是静默的。
 
-- [ ] `types.ts`：`ApiStandard`（四族 × official/compat，含 `openai_responses*`）、`familyOf()` ★、`AuthMode` +
-      `authModesFor()`、`ContentPart`/`MessageContent`、`ToolDefinition`/
-      `AssistantToolCall`/`AccumulatedToolCall`、`StreamMessage`（OpenAI 形状 + `_` 前缀
-      载体字段）★、`StreamChunk`（key 判别变体联合）★、`StreamOptions`、
-      `ContextSizeError`、`applyPrefix()`。
-- [ ] `reasoning.ts`：六档强度自有词汇 ★、`ThinkingDialect`、三族翻译表 +
-      `reasoningBody()`/`thinkingBody()`、`NativeReasoning`（原名奉还载体）★、
-      `REASONING_CONTENT_FIELDS` 候选表、`createThinkTagSplitter()` ★。
-- [ ] `urls.ts`：三族默认 base 常量、不对称归一化（`trimBase`/`anthropicRoot`）★、
-      各族 URL 拼接、读取时幂等迁移。
+agent 体系（tool loop、审批、子代理、上下文压缩）的阶段 4–9 在 **agent-runtime-architecture** skill。
 
-## 阶段 1 · 协议适配器（依赖阶段 0 + 一个 fetch 包装）
+## 阶段 0 · 词汇与数据形状（无依赖）
 
-- [ ] `openai.ts`：SSE 行缓冲 ★、`_` 前缀剥除 + `_reasoning` 原名回写 ★、index 键
-      tool_calls 累积 ★、`json.error` + `base_resp` 双错误通道 ★、content_filter/length
-      处理、think-tag 切分接入、`stream_options.include_usage`。
-- [ ] `gemini.ts`：消息转换（id→name 表、`_geminiModelParts` 原样回传 ★）、
-      systemInstruction hoist、「chunk 是完整对象不是 delta」★、thought part 分流、
-      三层错误（promptFeedback / blocked finishReason / request-fault 集合）★、
-      `candidatesTokenCount + thoughtsTokenCount` ★、自造 functionCall id。
-- [ ] `anthropic.ts`（最重）：交替律修补 + tool 消息合并 + labelAuthorText ★、三模式
-      鉴权 + pinned 版本头、`max_tokens` 兜底 ★、thinking 方言与 toolChoice 降级、
-      类型化事件解析（块整存）★、usage 三桶求和 ★、refusal/pause_turn；续跑循环
-      （verbatim + transcript）可后补，先把 pause_turn 当已知未完成态报警。
-- [ ] `responses.ts`（要接 GPT-5.4+ 带思考的工具调用、xAI 时必做）：`instructions` +
-      `input` 条目、`store:false` 与 `instructions` 恒发 ★、扁平工具显式 `strict:false`、
-      类型化事件解析 + 收集 `output_item.done` 作 `_responseItems` 回传 ★、终止事件回显比对、
-      无终止事件也 finish。
-- [ ] `serverTools.ts`（可选）：版本化 wire type 表、`max_uses` 刹车、两阶段事件、
-      防御读取、纯文本渲染兜底；② 族按 standard 逐 id 过滤。
+- [ ] 协议族枚举 ★（01 §3）：① Chat Completions · ② Responses · ③ Gemini · ④ Anthropic，每族分 official / compat。另配一个把枚举值「折回族」的函数，遇到未知的旧值兜底，不抛错。
+- [ ] 内部统一的消息形状（推荐 ① 形状），加上 `_` 前缀的跨协议回传载体 ★（01 §4）。
+- [ ] 统一的流事件：按键判别的变体集合，正文与思维链分开 ★（01 §5）。
+- [ ] 自有的思考强度词汇（六档）、每族翻译表、思考方言声明（03 §2–3）。
+- [ ] 各族默认 base、不对称的地址归一化、读取时幂等迁移 ★（02 §4）。
 
-**只接 OpenAI 系兼容层时，第一天就要有的三样**：SSE 行缓冲、双错误通道、`<think>`
-切分——它们对应的失败全是静默的。
+## 阶段 1 · 协议适配器（依赖阶段 0 + 一个 HTTP 客户端）
+
+- [ ] **① 族**（02 §3、03 §6、06 §2）：
+  - SSE 行缓冲 ★。
+  - 剥掉 `_` 前缀字段，思维链按原字段名写回 ★。
+  - tool_calls 按 `index` 累积 ★。
+  - 两条错误通道都要接：体内 `error` 与 `base_resp` ★。
+  - 处理 `content_filter` / `length`。
+  - `<think>` 标签切分。
+  - `stream_options.include_usage`。
+- [ ] **③ 族**：
+  - 消息转换：tool id → name 映射，模型 parts 原样回传 ★。
+  - systemInstruction 上提。
+  - 每个 chunk 都是完整对象，不是 delta ★。
+  - thought part 单独分流。
+  - 三层错误都要认 ★：promptFeedback、拦截类 finishReason、请求缺陷集合。
+  - 输出用量 = `candidatesTokenCount + thoughtsTokenCount` ★。
+  - 自己生成 functionCall id。
+- [ ] **④ 族**（最重）：
+  - 交替律修补、tool 消息合并、作者话语标注 ★。
+  - 鉴权三模式，加固定版本头。
+  - `max_tokens` 兜底 ★。
+  - thinking 方言；tool_choice 降级。
+  - 类型化事件解析，块整存 ★。
+  - usage 三桶求和 ★。
+  - `refusal` / `pause_turn`。续跑循环可以后补，先把 `pause_turn` 当已知的未完成状态报警。
+- [ ] **② 族**（02 §7；要接 GPT-5.4+ 边思考边调工具、或接 xAI 时必做）：
+  - 请求体用 `instructions` + `input` 条目。
+  - `store:false` 与 `instructions` 恒发 ★。
+  - 扁平工具显式写 `strict:false`。
+  - 类型化事件解析；收集 `output_item.done` 整组回传 ★。
+  - 终止事件做回显比对。
+  - 没有终止事件时也要正常收尾。
+- [ ] 服务端工具（可选，05 §5）：按日期版本化的 wire type 表、`max_uses` 刹车、两阶段事件、防御性读取。
+
+**只接 OpenAI 系兼容层时，第一天就要有三样**：SSE 行缓冲、双错误通道、`<think>` 切分。它们对应的失败全是静默的。
 
 ## 阶段 2 · 统一入口与横切（依赖阶段 1）
 
-- [ ] `index.ts`：`streamCompletion` = familyOf 分发 ★ + prefix 合并 + ContextSizeError
-      预检 + 日志接线。
-- [ ] `jsonMode.ts`：`jsonModeShaping()` ★（Anthropic 无参数只有 cue）、`mentionsJson`
-      前置条件、`extractJsonObject`。
-- [ ] `structured.ts`：强制 pseudo-tool → 收紧正则判定 → JSON mode 回退（仍带原生参数）★。
-- [ ] `apiLog.ts`：JSONL 日志（request / request-body 带 leg / response / error），key
-      永不落盘、图片裁剪、写串行化。**强烈建议第一批做**——后续所有兼容层坑都靠它定位。
-- [ ] `conn.ts`：`ConnOptions`/`connOptions()`/`pickConnOptions()`/`resolveConn()` ★
-      （调用点 ≥3 个时就该收口，别等 16 个）。
+- [ ] 统一入口（01 §6）：按族分发 ★；合并前缀（不改传入的列表）；上下文超窗预检；接上日志。
+- [ ] JSON mode 收口（04 §2）：Anthropic 只有 cue ★；「上下文里要有 json 字样」这个前置条件。
+- [ ] 结构化输出 ★（04 §3）：先强制伪工具；再用收紧的能力错误判定；最后回退到 JSON mode，回退时仍带原生参数。
+- [ ] API 日志（06 §4）：记录请求、每条实际发出的 body（带 leg 序号）、响应、错误。密钥永不落盘，图片要裁剪。**强烈建议第一批做**，之后所有兼容层的坑都靠它定位。
+- [ ] 连接参数单点摊平 ★（01 §7）：配置到请求参数只在一处展开。调用点到 3 个就该收口。
 
 ## 阶段 3 · 配置与探测（产品层，可后补）
 
-- [ ] Provider/Model 两张表（L2/L3）+ authMode 列（default 存 NULL）+ 读取时幂等迁移。
-- [ ] `providerProbe.ts`：/models 优先 + compat 降级 completion probe（不可能模型名 +
-      错误形状判定）★。
-- [ ] `usage.ts`：persistUsage（best-effort 永不抛）+ rollup 读侧（total 从明细派生）。
-- [ ] `modelHealth.ts`：safety-block 粘性标记。
-- [ ] `endpointProbe.ts` + `probeAnalysis.ts`：四步递进探测；判断逻辑与 HTTP 管线分文件
-      （前者无网络可单测）；探测前告知预估成本。
+- [ ] 供应商表（L2）、模型表（L3）、鉴权模式列，读取时幂等迁移。
+- [ ] 连接测试 ★（06 §5）：优先 `/models`；compat 端点降级为用「不可能的模型名」做补全探测，按错误形状判定。
+- [ ] 用量持久化（06 §1）：尽力而为、永不抛错；汇总由明细派生。
+- [ ] 安全拦截的粘性标记（06 §2）。
+- [ ] 端点上限实测（06 §6–8）：四步递进探测；判断逻辑与 HTTP 管线分开，前者可以离线单测；探测前先告知预估成本。
 
-## 阶段 4 · Agent runtime（依赖阶段 0–2）
+---
 
-- [ ] `events.ts`：AgentEvent 联合 + `appendAgentEventTo`（tool-step/reasoning 原位替换）
-      + `AgentEventScope.parentStep`；`RoundLimitDecision` 放这里（避免 import 环）。
-- [ ] `registry.ts`：`ToolAccess`、`ToolId` 字面量联合、`RegisteredTool`、`ToolContext`
-      （审批/门控/工作区全部**可选通道**）、`Proposal` 判别联合、`getToolDefinitions`
-      （拷贝式动态注入）、`executeRegisteredTool`（白名单类型收窄 + 错误转文本）★。
-      工具多到固定头部吃紧时：`ToolGroup` + 运行状态装载，白名单用 active 集 ★（07 篇 §4.6）。
-      先实现 3–4 个只读工具即可跑通全链路；每个工具：路径包含校验、输出限幅+分页、
-      错误写成下一步指引。
-- [ ] `presets.ts`：`TaskPreset { id, tools, maxRounds, finishPolicy, scratchpad?,
-      serverTools? }` + `presetForTools`（"none" → null 走单发路径）。
-- [ ] `runtime.ts`：`runAgent` 循环 + `trimHistory` + `repairToolCallPairing`。必守
-      五不变量：① 每个 tool_call 必有回复（abort 补桩后才抛）★ ② 无工具调用即完成
-      ③ force-text 最后一轮撤工具 + 临时提示请求后撤回 ④ onOutputText 快照 + 工具轮
-      回滚 ⑤ thinking 回传字段随 assistant 消息保存 ★。
+## 配方 A · 加一家 OpenAI / Anthropic / Gemini 兼容的厂商或中转站
 
-## 阶段 5 · 写入安全（依赖阶段 4）
+目标形态是**一行数据 + 一段厂商注记**：不新增适配器，不按厂商名写分支（01 §1、§9）。
 
-- [ ] `backup.ts`：写前快照进单一扁平备份目录；**throw = 写入不发生** ★；二进制/整目录
-      删除用 rename-into-backups。
-- [ ] L1 工具模板：参数校验 → 结构校验 → （门控）→ backup → write → 修快照 →
-      onChanged 回调 → 带备份路径的成功回执。
-- [ ] L2 工具模板：可行性预检 → 构造 Proposal → `await ctx.requestApproval` → 决定转
-      结果文本（拒绝理由原样回 + 「勿原样重试」）。
-- [ ] `plan.ts`（若有「批量自动写」域）：PlanGate + checkPlan（实体经索引解析比对；
-      file-scoped 步骤不放行无 file 调用 ★）+ 追加式批准 + 按轮存活。
-- [ ] 审批 store：三队列 + `new Promise(resolve => 入队)` + runId(=AbortController)
-      作用域 + **finally 必 rejectAll** ★；approve = 备份 → apply（find 重定位 ★，
-      活动文档走编辑器 buffer）→ 失败 resolve 成拒绝；turnId/signal 请求时绑定。
-- [ ] 会话双层：chatHistory（wire，交给 runtime 原地长）+ turns（展示）；meta 按消息
-      对象身份记录；每轮 finally best-effort 持久化（序列化剥图片）。
+1. **先查本库有没有这家**：`15-vendor-index.md`。有就逐条核对那里的事实，只补差异。
+2. **判定协议族**：只改 URL 与鉴权头就能跑通的，就是那一族（01 §2）。一家可能有多张脸（百炼三张 chat 脸、MiniMax ①/④ 两张），按 01 §8.3 决定是分成多行，还是一行加模型点单。
+3. **填 L2 数据行**：
+   - base：注意各族 base 的归一化方向（02 §4）。
+   - 鉴权：见 02 §5 的矩阵。
+   - 模型发现：有没有 `/models`？没有就带静态目录；遇到 404 退回目录，不算连接失败（例：火山方舟套餐，01 §9.3）。
+4. **L3 每个模型要回答这些问题**：
+   - 上下文与输出上限：能声明就声明，只有数值才实测（06 §7）。
+   - 思考方言与可用的强度档（03 §2–3）。
+   - 结构化输出的档位（04）。
+   - 支持哪些服务端工具（05 §5）。
+   - 多模态输入的限制。
+5. **中转站额外核对**（01 §9.2、06 §4.1）：
+   - 会不会注入 system？
+   - 会不会改写 effort / temperature？
+   - 会不会无视输出上限？
+   - 一个档位背后是不是多个上游？
+   - 模型 id 是否带档位前缀？
 
-## 阶段 6 · 任务工作区（可独立交付，解掉大半长任务问题）
+   这些只能写进注记。代码侧只有两条通用对策：恒发 instructions、做回显比对。
+6. **实测**：按 06 §8 的纪律做最少量的付费实测；能用非法参数零成本探测的，先探测（例：13 §4.1）。结果带日期写回本库（见 SKILL.md「维护知识库」）。
 
-- [ ] `TaskWorkspaceHandle { taskId: string|null; ensure(title) }` 懒创建句柄；生命周期
-      归属由 surface 决定（单次任务 per-run，会话 per-session）。
-- [ ] `task.md`：JSON 注释头只放机器状态；步骤只在正文复选框（1 基序号）★；小节用
-      语言无关锚点注释。
-- [ ] 5 个工具：task_plan / task_progress / write_note / read_note（行分页）/ list_notes
-      （只给索引）。不变式：只有 plan 与 note 能建仓、Unicode slug 清洗、绝不覆盖、
-      超限报错不截断、写入串行化（链放 workspace 层）、不备份不过审批门。
-- [ ] checkpoint 注入：85% 阈值早于裁剪阈值、**发出即撤** ★、裁剪真发生后重新武装。
-- [ ] 排序 GC（已收尾先淘汰、未完成不豁免、保当前）。
+## 配方 B · 加一个新协议族
 
-## 阶段 7 · 存盘暂停与恢复（依赖阶段 6）
+只有 body 形状真的不同才加（判定标准见 01 §2；例：② Responses，01 §3.1）。
 
-- [ ] `onRoundLimit` 返回判别联合 `{extend|finish|pause}`；pause 在**轮首**退出
-      （history 天然配对完整）★；`AgentRunResult.outcome`。
-- [ ] `canPause` 由发起方在撞上限那一刻求值；每个调用方都处理 paused（置状态 +
-      记 sourceRefs 哈希）。
-- [ ] `buildResumeSeed`：task.md + notes 索引（只标题路径）+ sourceRefs 过期清单 ⇒
-      一条全新 user turn，**不重放旧 history** ★。
-- [ ] 持久化过事件/会话的：写旧格式迁移函数（认不出的丢弃）。
+1. 族枚举加 official / compat 两个值；「折回族」的表加一项。
+2. **逐个检查所有按族分发的调用点**。漏掉的会静默落进默认的 ① 族分支。参考实现加 ② 族时共有 12 处。
+3. 适配器逐项对照 02、03、04、05、06 的对应小节和本篇阶段 1 的 ★ 项：消息转换、流解析、错误通道、usage 口径、回传义务、思考、结构化输出、工具形状。
+4. 鉴权模式、地址归一化、探测策略，按 official / compat 两种契约各定一份（01 §3 的表）。
 
-## 阶段 8 · 子代理（依赖阶段 6）
+## 配方 C · 加一个出图面（route）
 
-- [ ] `delegate(kind, task, refs?)` 一个工具；kind 内置枚举（preset 是代码，配置只有
-      「哪个模型、开不开」）。
-- [ ] 每 kind 一个 SUB_PRESET（小轮数、force-text、最小工具集）；执行器 = 嵌套
-      runAgent：全新 2 条消息、独立连接、子 ctx 不传审批/门控/工作区（沙箱）★、
-      共享 signal、AbortError 重抛 ★。
-- [ ] 产出经 `onOutputText` 捕获 ★ → 落盘 note → tool result = 路径 + ≤800 字符摘要 +
-      「细节用 read_note」★；空产出报错不建 note。
-- [ ] 前置校验全在 delegate 里（ctx 齐全、能力条件），失败零副作用；密钥缺失是配置
-      错误不是空串。
-- [ ] 记账：每子跑一行独立 usage（task 打 `subagent:<kind>` 标签）+ 带 parentStep 的
-      嵌套 run-done 事件；事件去重键带 parentStep ★。
-- [ ] `routeTools`：可用性判断走单一函数（开关+绑定+存在+能力前置）★；vision 接管 ⇒
-      删主模型图片工具；search 接管 ⇒ 关主模型服务端搜索；有可用子代理且有工作区 ⇒
-      加 delegate。**改工具集，不写提示词偏好。**
-- [ ] 配置面：每 kind 开关+模型下拉+就地警告（警告不阻止，下游再验）；三处悬空绑定
-      清理；会话 chips 只减不增。
+1. 先确认已有 route 表达不了它：只有 body 形状不同才配一个新 route 值（13 §2）。例：Seedream 的路径与 Images API 相同，但 body 不同，所以是独立 route。
+2. 查 13 §4 / §4.1 / §4.2 有没有这家。没有就按这几个维度建档：
+   - 同步、异步还是流式。
+   - 参考图的张数上限与格式。
+   - 尺寸怎么写：档位还是像素，分隔符是什么。
+   - 组图。
+   - 水印默认开还是关。
+   - 响应形状，特别是 URL 多久过期。
+   - 单张失败怎么表达。
+   - 计费口径。
+   - 错误信封。
+3. 能力逐模型声明，不做探测：出图的探测就是一次真实计费（13 §3）。不支持的字段不发。
+4. 横切项逐条过（13 §5–7）：
+   - URL 当场下载。
+   - 校验 content-type。
+   - 用 magic bytes 判断 mime。
+   - 结果为空就当失败。
+   - 按字节去重。
+   - 用量元数据永远不为空。
+   - 编辑降级只认「路由缺失」这一种证据。
+5. 结果带结构（图层、分组）的，按 13 §8 落库。
 
-## 阶段 9 · 长会话压缩（与 6–8 正交，可先可后）
+## 配方 D · 加一个视频面
 
-- [ ] 轮边界按**消息对象身份**记录 ★；折叠单位是**整轮**（不拆 tool-call 配对）★。
-- [ ] planFold：0.7 触发 / 0.45 目标（宽间隙保 prompt cache）/ 最近 2 轮永不折 /
-      best effort。
-- [ ] 摘要失败返回 null 一字不动 ★；summary 消息紧贴 system。
-- [ ] 注入台账：`Map<key, {version 指纹, carrier 消息对象}>`——未变不重注、变了重注、
-      carrier 折掉即逐出；模型自读的不入账。
-- [ ] @引用内联三预算（单条上限 / 总预算顺序分配 / 图片条数），超预算退化成
-      「名字+路径+读取指令」，绝不静默截断。
-- [ ] 持久化：身份→索引序列化、图片剥离、偏执反序列化（坏了返回 null 开新会话）、
-      事件格式迁移。
+按 14 篇：
+- 提交与轮询是两个入口，task id 交给调用方持久化。
+- 失败抛错，不放进返回值。
+- 设一个总 deadline。
+- 定义好取消语义（14 §3）。
+- 结果 URL 当场下载。
 
-## 始终不做（边界即设计）
+先查 14 §2 的五家速查表里有没有这家。
 
-子代理间通信、并行编排、递归委托、子代理写用户内容、把「要花钱须审批」的动作（如
-生图）塞进静默委托、用工作区替代压缩或用压缩替代工作区、`DeepSeekProvider extends
-OpenAIProvider` 式的供应商子类。
+## 配方 E · 加一个语音识别面
 
-## 迁移时最容易忽略、代价最大的七件事
+按 16 篇：
+- 先判定是哪种线格式：ⓐ multipart 转写、ⓑ JSON 内 base64 同步识别、ⓒ 上传 / 提交 / 轮询 / 下载的异步转写（16 §1）。
+  同一厂商按模型名分发，不按厂商分发。
+- 确定时间码来源：服务端给句级 / 词级，还是只能靠切片位置（16 §4.1）。后者要先做静音切片，片外补静音而不是多截音频。
+- 发一小段真实音频，确认：响应里有没有时间码、单位是秒还是毫秒、说话人参数有没有被静默忽略（16 §7）。
+- 错误按步骤分类（16 §8），检查点按段或按步骤落盘（16 §9）。
+- 测说话人分离用一男一女两个英文嗓音；合成嗓音没装会生成空文件（16 §7）。
 
-1. tool_call 配对不变量（含 abort 路径的补桩）。
-2. 每次运行 finally 里的 `rejectAll(runId)`。
-3. 备份失败 = 写入失败。
-4. 审批 apply 时的 find 重定位与失败转拒绝。
-5. 模型可控路径参数的包含校验（含空前缀陷阱）。
-6. thinking/签名类载体的原物整存与按 modelId 剥离。
-7. 一次性提示的「发出即撤」。
+先查 16 §10.2 的渠道速查表里有没有这家。
+
+## 始终不做
+
+- 「某厂商继承某协议适配器」式的供应商子类（01 §1）。
+- 按厂商名或中转站名写的协议分支。事实放进数据与注记（01 §9）。
+- 为了「看起来通用」，把一族的逃生口字段透传给另一族（01 §6 的 `extraBody`）。

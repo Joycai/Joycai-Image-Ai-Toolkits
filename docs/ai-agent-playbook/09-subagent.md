@@ -4,6 +4,16 @@
 
 参考实现：simple-ai-writer `src/lib/agent/subagent.ts`、`routing.ts`、`registry.ts`、`presets.ts`。
 
+目录：
+- §1 动机与总体设计
+- §2 `delegate` 工具契约
+- §3 子代理的配置与种类
+- §4 能力路由
+- §5 执行细节
+- §6 测试应当锁定的契约（精选）
+- §7 「始终不做」边界清单
+- 本篇检查清单
+
 ---
 
 ## 1. 动机与总体设计
@@ -31,10 +41,6 @@
 这是整套设计的核心判断（参考实现 HLD §2 原话）：子代理的产出**不整块塞回主上下文**——那只是把堆叠换个地方堆——而是落盘成 note，回给主模型「一段摘要 + 一个路径」。没有工作区，子代理只会把今天的问题复制到主 agent 身上。
 
 由此推出一条硬规则：**没有工作区的 surface 根本拿不到 `delegate` 工具**（由路由层落实，见 §4）。
-
-整套体系一句话概括：
-
-> **「记忆落盘 + 单层单向委托 + 工具集级能力路由 + 轮间折叠压缩」，四件事各管一段，互不越界。**
 
 ---
 
@@ -95,7 +101,7 @@ const messages: StreamMessage[] = [
 
 ### 2.3 产出捕获：只能经 `onOutputText` 回调
 
-**陷阱：事后翻 `messages` 找最后一条 assistant 文本必然拿到空。** 可重入 runtime 的常见实现是成文轮直接 return，最终文本从不进 history（参考实现 `runtime.ts` 469-477 行）。所以子代理产出必须经 `onOutputText` 回调捕获（`output = text`，**累积快照赋值而非拼接**）。
+**陷阱：事后翻 `messages` 找最后一条 assistant 文本必然拿到空。** 可重入 runtime 的常见实现是成文轮直接 return，最终文本从不进 history（参考实现 `runtime.ts`）。所以子代理产出必须经 `onOutputText` 回调捕获（`output = text`，**累积快照赋值而非拼接**）。
 
 ### 2.4 返回契约：落盘 note + 摘要 + read_note 指针
 
@@ -126,7 +132,7 @@ ${clip(output, 800)}    // DELEGATE_SUMMARY_CHARS = 800
 ### 2.6 记账：独立 usage 行 + 带 `parentStep` 的嵌套事件
 
 - 每次子跑写**一行独立的 token_usage**：`persistUsage(projectPath, conn.model.id, in, out, cost, \`subagent:${kind}\`, cached)`——`model_id` 是**子代理的**模型；task 字段打 `subagent:search` 这类标签，用量面板可按 `task LIKE 'subagent:%'` 聚合。
-- 除 DB 行外，执行器还应当**手动发一条带 `parentStep` 的嵌套 `run-done` 事件**：`ctx.onNestedEvent({ kind: "run-done", inputTokens, outputTokens, parentStep: call.id, at })`。理由：DB 是永久账本但要打开设置页才看得见，而委托恰恰是作者**当下**要拍板花不花钱的那一步；`parentStep` 同时把这条事件排除在主 run 自身的 token 汇总之外（主 run 汇总只算主模型）。
+- 除 DB 行外，执行器还应当**手动发一条带 `parentStep` 的嵌套 `run-done` 事件**：`ctx.onNestedEvent({ kind: "run-done", inputTokens, outputTokens, parentStep: call.id, at })`。理由：DB 是永久账本但要打开设置页才看得见，而委托恰恰是作者**当下**要拍板花不花钱的那一步。按 `parentStep` 分桶、不混进主 run 汇总，见 07 §5.2。
 - 记账工具函数应当放在 lib 层（如 `lib/ai/usage.ts`），**lib 层不反向 import store**。
 - 解析连接就失败的 delegate **不发 run-done**——没花钱就不报花钱。
 
@@ -173,7 +179,7 @@ base64 用线性 join，不是图片管线的二次方累加（见 11 篇坑 36�
 作者买了什么由作者声明，探测无从问起，**绝不 sniff 模型名**——厂商扩大支持面时
 作者勾一下即可，目前的真实样本是 qwen3.8-max）。
 
-**陷阱：`serverTools` 必须是独立于「收尾轮撤工具」的概念。** 若 runtime 用 `preset.tools.length === 0 || 收尾轮` 一并撤掉服务端工具，则本地工具恒为空的 search 子代理**永远不联网**。应当把「没有本地工具」和「该收尾了」拆成两个概念：`TaskPreset.serverTools: "final-round-off"(默认) | "off" | "always"`，search 用 `always`。默认值使既有 preset 行为逐字不变，可整体回退。
+**陷阱：`serverTools` 必须是独立于「收尾轮撤工具」的概念**——否则本地工具恒为空的 search 子代理**永远不联网**（11 篇坑 33）。search 用 `"always"`；四态定义（含 `"no-web"`）见 07 §3.4。默认值 `final-round-off` 使既有 preset 行为逐字不变，可整体回退。
 
 **边界：花钱且须逐次审批的动作（例：生图）有意不做成子代理。** 它必须走审批链路（提案 + 审批卡），与「子代理默默干活再交报告」的形态相反；塞进 delegate 只会绕过审批卡。
 
@@ -217,7 +223,7 @@ base64 用线性 join，不是图片管线的二次方累加（见 11 篇坑 36�
 ```ts
 export interface RoutedTools {
   tools: ToolId[];
-  serverTools: "final-round-off" | "off" | "always";
+  serverTools: "final-round-off" | "off" | "always" | "no-web";
 }
 
 export function routeTools(
@@ -235,8 +241,10 @@ export function routeTools(
   // 任一子代理可用 + 有工作区 ⇒ 追加 delegate
   if (SUBAGENT_KINDS.some(live) && workspace && !tools.includes("delegate")) tools.push("delegate");
 
-  // search 接管联网：主模型不再持有端点搜索
-  const serverToolsPolicy = live("search") ? "off" : (preset.serverTools ?? "final-round-off");
+  // search 接管联网：主模型只让出 web 类服务端工具（代码解释器等非 web 的留下）；
+  // preset 本来就是 "off" 的保持 "off"
+  const presetPolicy = preset.serverTools ?? "final-round-off";
+  const serverToolsPolicy = live("search") && presetPolicy !== "off" ? "no-web" : presetPolicy;
   return { tools, serverTools: serverToolsPolicy };
 }
 ```
@@ -244,7 +252,8 @@ export function routeTools(
 四条要点：
 
 1. **longread 不接管 `read_file`**——主模型读一小段正文是日常工作，全部委托反而多一次往返；longread 是「通读一大摞」的加法，不是替代。接管应当只针对「主模型做会造成上下文灾难」的能力。
-2. **search 启用 ⇒ 主模型 `serverTools: "off"`**。这不只是优先级——更是把服务端搜索那套 `pause_turn`/续跑/`tool id not found` 的续跑复杂度**关进子跑里**：主 history 从此见不到 `web_search_tool_result` 这类块。
+2. **search 启用 ⇒ 主模型让出 web 类服务端工具（`serverTools: "no-web"`）**。这不只是优先级——更是把服务端搜索那套 `pause_turn`/续跑/`tool id not found` 的续跑复杂度**关进子跑里**：主 history 从此见不到 `web_search_tool_result` 这类块。
+   只让出 web 类、而不是一刀切 `"off"`：代码解释器这类非 web 服务端工具不是搜索子代理能替主模型做的，一刀切等于白白拿走一项能力、什么也没换回（与下文「启用 ≠ 可用」同一类错）。
 3. **delegate 需要工作区**（子代理产出必须落盘），无工作区的 surface 不会莫名多出一个用不了的工具。
    **陷阱（假守卫）**：参数不要收 `hasWorkspace: boolean`——若调用方总是无条件构造 handle，`Boolean(handle)` 恒真，「看起来像守卫的守卫从没守过任何东西」。应当传**句柄本身**（`TaskWorkspaceHandle | undefined`），`undefined` 才是真的「没有」。守卫参数要传能真正为空的东西。
 4. 模型幻觉调用被拿掉的工具（比如仍调 `read_image`）→ 注册表白名单返回 `Unknown tool: read_image`，模型可自纠。**不加特例映射**——「路由一旦按名字打补丁，就得为每一对『被谁接管』维护映射表」。
@@ -338,10 +347,8 @@ toolContext: {
 ### 5.5 事件冒泡与去重
 
 - runtime 执行每个工具前把 `signal` 和 `onNestedEvent: opts.onEvent` 浅合并进 `ToolContext`，所以 delegate 拿到的 `onNestedEvent` 就是主 run 的 `onEvent`。
-- delegate 转发子跑事件时打作用域标记：`onEvent: (e) => ctx.onNestedEvent!({ ...e, parentStep: call.id })`——**`parentStep` = 这次 delegate 工具调用的 toolCallId**。
 - 事件类型用交叉类型加作用域字段：`AgentEvent = AgentEventScope & (成员联合)`——交叉类型分配到每个成员，不破坏 `kind` 判别收窄（事件联合没有公共基接口时给全体加字段的最小改法）。
-- **陷阱：去重键必须带 `parentStep`。** tool-step 按 `parentStep + toolCallId + name`，reasoning 按 `parentStep + round`。否则子跑的 round-1 reasoning 会顶掉主 run 第 1 轮的 reasoning 行（子跑轮次也从 1 开始）。
-- 日志 UI 从截断的参数摘要里抠字段（如 kind/task）应当用**正则不用 JSON.parse**：参数常被截断（参考实现截 400 字符），delegate 的 task 按设计是一整段话，JSON 常态性断在字符串中间 parse 不出来。
+- 其余——转发时打 `parentStep: call.id`、去重键带 `parentStep`（子跑轮次也从 1 开始，11 篇坑 41）、日志 UI 用正则而非 `JSON.parse` 抠截断参数——见 07 §5.2–5.4。
 
 ### 5.6 串行执行，无并发编排
 
@@ -395,6 +402,6 @@ toolContext: {
 - [ ] 沙箱四道闸齐全：白名单防递归、不传审批/计划门/工作区、两条现场消息、共享 signal。
 - [ ] 前置校验（ctx 四件套、kind/task、连接、kind 前置条件）全部在 delegate 里做，失败时零副作用（无请求、无工作区目录）。
 - [ ] 可用性判断只有一个函数 `subAgentModel`（开关 + 绑定 + 模型存在 + kind 前置条件），routeTools/chips/UI 动作/连接解析全走它；设置面板警告但不阻止，下游必须再验。
-- [ ] `routeTools` 改的是工具集不是提示词：vision 接管删图片工具、search 接管关服务端搜索、delegate 依赖**真正可为 undefined** 的工作区句柄。
+- [ ] `routeTools` 改的是工具集不是提示词：vision 接管删图片工具、search 接管 ⇒ `no-web`（非 web 服务端工具保留）、delegate 依赖**真正可为 undefined** 的工作区句柄。
 - [ ] 记账：每子跑一行独立 usage（model_id 是子代理的，task 打 `subagent:<kind>`）+ 一条带 `parentStep` 的嵌套 run-done；事件去重键带 `parentStep`。
 - [ ] 「始终不做」清单（§7）逐条确认没有被「顺手实现」。

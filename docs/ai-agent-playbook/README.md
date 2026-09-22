@@ -5,15 +5,28 @@ OpenAI Chat Completions、OpenAI Responses、Google Gemini generateContent、Ant
 四个协议族与大量第三方兼容中继（New API、MiniMax、DeepSeek、千问、xAI、OpenRouter、Ollama、
 LM Studio…），并在统一 tool loop 之上实现了权限分级、审批通道、子代理委派与长会话上下文管理。
 2026-08 起并入本仓库（Joycai Image AI Toolkits）的 vendor–protocol–model 路由重构与
-千问 / MiniMax 图像、视频面的核对；2026-09 并入 ② Responses 族、中转站回显改写与工具按需加载。
+千问 / MiniMax 图像、视频面的核对；2026-09 并入 ② Responses 族、中转站回显改写、工具按需加载、
+火山方舟 Seedream（含流式与拆图层）、语音识别（来自 pyVideoTrans / subtitle_studio）。
 
-> 本目录是 `ai-agent-architecture` skill 的 `references/` 快照（2026-09-14 同步）。
+> 本目录是**两个** skill 的 `references/` 快照（**2026-09-22 同步**）：
+> `ai-agent-architecture`（协议事实知识库：00–06、11、12、13–16）与
+> `agent-runtime-architecture`（agent 层设计标准：07–10、11b、12b）。2026-09 中旬起两者从一个 skill 拆成两个，
+> 坑与路线图因此各有一份（11 / 11b，12 / 12b），编号全局唯一、互相引用。
 > 它描述**机制**，不描述本仓库的现状——本仓库怎么做的见 `../architecture/`。
+> [`writeback-2026-09-22.md`](writeback-2026-09-22.md) 是本仓库 #337–#339 三轮实测**尚未回写进 skill** 的事实
+> （xAI 质量 / 分辨率 / 定价端点、`cost_in_usd_ticks`、输入图按张计费、保留键纪律）；回写后删除。
 
 文档以**通用规范**口吻撰写，可直接放进新项目的 `docs/` 作为搭建标准；关键处均标注
-simple-ai-writer 的参考实现文件，迁移时可对照抄写接口与骨架。
+参考实现文件（simple-ai-writer、本仓库、subtitle_studio），迁移时可对照抄写接口与骨架。
 
 ## 目录
+
+### 0. 审查
+
+| 篇 | 主题 | 一句话 |
+| --- | --- | --- |
+| [00](00-audit-playbook.md) | 审查一个项目的模型接入 | 盘点 → 覆盖矩阵 → 先查静默失败 → 证据等级 → 报告模板 |
+| [15](15-vendor-index.md) | 厂商索引 | 每家的事实散在哪几篇、哪几个坑、最后核实日期 |
 
 ### A. 协议层（多家 AI API 的统一封装）
 
@@ -23,15 +36,16 @@ simple-ai-writer 的参考实现文件，迁移时可对照抄写接口与骨架
 | [02](02-protocol-differences.md) | 四族协议差异对照 | 消息/工具/流式/鉴权/URL 的逐字段对照表与适配器转换规则；② Responses 单列 §7 |
 | [03](03-reasoning.md) | 思考/推理统一处理 | 强度、取回、回传义务三分；跨轮回传的东西原物整存 |
 | [04](04-structured-output.md) | 结构化输出与降级链 | 强制 pseudo-tool → 收紧判据 → JSON mode 回退 |
-| [05](05-tools-and-server-tools.md) | 工具协议与 server tools | tool_call 配对不变量；pause_turn 续跑循环 |
+| [05](05-tools-and-server-tools.md) | 工具协议与 server tools | tool_call 配对不变量；pause_turn 续跑循环；工具按需加载 |
 | [06](06-errors-probing-observability.md) | 错误、usage、探测与可观测性 | HTTP 200 ≠ 成功；API 日志是兼容层第一调试工具；回显比对（`wireRewrites`） |
 
-### A′. 媒体生成
+### A′. 媒体生成与语音
 
 | 篇 | 主题 | 一句话 |
 | --- | --- | --- |
-| [13](13-image-generation.md) | 图像生成与编辑 | 签名 URL 当场下载；已计费的只重试下载不重试生成；异步任务一个总 deadline |
+| [13](13-image-generation.md) | 图像生成与编辑 | 签名 URL 当场下载；已计费的只重试下载不重试生成；异步任务一个总 deadline；方舟流式与拆图层 |
 | [14](14-video-generation.md) | 视频生成 | 任务 id 归调用方持久化；轮询可重试、提交不可重试；取消与过期 |
+| [16](16-speech-recognition.md) | 语音识别（ASR） | 三种线格式、时间码从哪来、静音切片、说话人分离、按步骤分类的错误、断点续跑 |
 
 ### B. Agent 体系（tool loop、工具系统、写入安全）
 
@@ -51,8 +65,13 @@ simple-ai-writer 的参考实现文件，迁移时可对照抄写接口与骨架
 
 | 篇 | 主题 |
 | --- | --- |
-| [11](11-pitfalls.md) | 坑大全（现象 → 原因 → 对策，按危险程度与主题分组） |
-| [12](12-migration-roadmap.md) | 分阶段落地路线图（按依赖顺序的最小实现清单） |
+| [11](11-pitfalls.md) | 坑大全 · 协议层（坑 1–18、54–122；现象 → 原因 → 对策） |
+| [11b](11b-agent-pitfalls.md) | 坑大全 · Agent 部分（坑 19–53） |
+| [12](12-migration-roadmap.md) | 新增支持的落地顺序与配方（协议层，阶段 0–3） |
+| [12b](12b-agent-roadmap.md) | Agent 体系分阶段路线图（阶段 4–9，依赖阶段 0–2） |
+
+设计层的计费（计费组 / 用量行快照 / 档位匹配 / 用量页）不在这套文档里，在 `llm-billing-model` skill；
+本套只记协议事实（06 §1、13 §7、14 §3）。
 
 ## 体系鸟瞰
 
@@ -95,11 +114,10 @@ ai/conn             ConnOptions 配置收口（加字段 = 改一处）
 
 ## 如何使用这套文档
 
-- **新项目起步**：直接读 [12 落地路线图](12-migration-roadmap.md)，按阶段勾检查项；
-  每个阶段的细节回到对应主题篇。
+- **审查一个项目**：按 [00](00-audit-playbook.md) 走，先查 [15](15-vendor-index.md) 有没有这家的事实。
+- **新项目起步**：读 [12](12-migration-roadmap.md)（协议层）再 [12b](12b-agent-roadmap.md)（agent 层），按阶段勾检查项。
 - **只接一个协议族**：读 01/06 + 对应族在 02/03 中的列即可。
-- **排查线上怪问题**：先查 [11 坑大全](11-pitfalls.md)——大部分「看起来成功其实失败」
+- **排查线上怪问题**：先查 [11](11-pitfalls.md) / [11b](11b-agent-pitfalls.md)——大部分「看起来成功其实失败」
   的现象都有先例。
 - **对照源码**：参考实现均位于 simple-ai-writer 仓库的 `src/lib/ai/`、`src/lib/agent/`、
-  `src/stores/`；设计文档见其 `docs/`（provider-standards、subagent-lld、
-  unified-agent-plan 等）。
+  `src/stores/`；本仓库的实现见 `../architecture/llm-three-layer.md`。

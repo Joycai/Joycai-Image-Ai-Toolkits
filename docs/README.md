@@ -50,13 +50,18 @@ own ([Qianwen/DashScope](api/qianwen-bailian.md), [MiniMax](api/minimax.md),
 
 ## AI agent playbook
 
-[`ai-agent-playbook/README.md`](ai-agent-playbook/README.md) — fourteen chapters
-across the protocol layer (all four families, Responses included), the agent
-runtime, sub-agents and long sessions, and image / video generation, with a
-[pitfall catalogue](ai-agent-playbook/11-pitfalls.md) and a
-[staged migration roadmap](ai-agent-playbook/12-migration-roadmap.md). It is a
-snapshot of the `ai-agent-architecture` skill's references; re-sync it from
-there rather than editing it here.
+[`ai-agent-playbook/README.md`](ai-agent-playbook/README.md) — an audit
+playbook and vendor index, the protocol layer (all four families, Responses
+included), the agent runtime, sub-agents and long sessions, image / video
+generation and speech recognition, with two
+[pitfall catalogues](ai-agent-playbook/11-pitfalls.md) (protocol /
+[agent](ai-agent-playbook/11b-agent-pitfalls.md)) and two staged roadmaps
+([protocol](ai-agent-playbook/12-migration-roadmap.md) /
+[agent](ai-agent-playbook/12b-agent-roadmap.md)). It is a snapshot of two
+skills' references — `ai-agent-architecture` and `agent-runtime-architecture`
+(synced 2026-09-22); re-sync it from there rather than editing it here.
+[`writeback-2026-09-22.md`](ai-agent-playbook/writeback-2026-09-22.md) holds
+facts this repo measured that are not yet in the skill; it goes when they are.
 
 ## Plans and the ledger
 
