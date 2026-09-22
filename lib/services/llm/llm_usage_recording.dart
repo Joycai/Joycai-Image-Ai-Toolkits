@@ -89,6 +89,10 @@ extension _UsageRecording on LLMService {
       // Null on the other two modes: the row then prices exactly as it did
       // before spec billing existed.
       spec: spec?.toBilling(),
+      // What the provider itself said the request cost, where its protocol
+      // published one ([reportedCostKey]); it outranks every price above,
+      // whatever the group's mode — see [TokenUsage.reportedCost].
+      reportedCost: reportedCostOf(metadata),
     ));
   }
 

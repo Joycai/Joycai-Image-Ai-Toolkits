@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart' show reportedCostKey;
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
 /// What the xAI Images wire puts in the body for the workbench's quality and
@@ -16,7 +17,11 @@ void main() {
   late HttpServer server;
   late Map<String, dynamic> lastBody;
 
+  /// What the loopback upstream puts under `usage`; null leaves it out.
+  Map<String, dynamic>? usage = const {'cost_in_usd_ticks': 600000000};
+
   setUp(() async {
+    usage = const {'cost_in_usd_ticks': 600000000};
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
       lastBody = jsonDecode(await utf8.decodeStream(request)) as Map<String, dynamic>;
@@ -25,7 +30,7 @@ void main() {
         'data': [
           {'b64_json': base64Encode(_png)},
         ],
-        'usage': {'cost_in_usd_ticks': 600000000},
+        'usage': ?usage,
       }));
       await request.response.close();
     });
@@ -79,6 +84,52 @@ void main() {
       final body = await send('grok-imagine-image-2.0', {'quality': q});
       expect(body.containsKey('quality'), isFalse, reason: q);
     }
+  });
+
+  group('the reported cost', () {
+    Future<Map<String, dynamic>> metadataOf() async {
+      final response = await LLMDispatcher().generate(
+        config('grok-imagine-image-2.0'),
+        [LLMMessage(role: LLMRole.user, content: 'a red apple')],
+        options: defaultsOf('grok-imagine-image-2.0'),
+      );
+      return response.metadata;
+    }
+
+    test('cost_in_usd_ticks is republished in dollars, the raw field kept', () async {
+      final metadata = await metadataOf();
+      expect(metadata[reportedCostKey], closeTo(0.06, 1e-12));
+      expect(metadata['cost_in_usd_ticks'], 600000000);
+    });
+
+    test('a figure upstream names like the app\'s own key is not taken at its word', () async {
+      usage = const {'cost_in_usd_ticks': 600000000, reportedCostKey: 99};
+      expect((await metadataOf())[reportedCostKey], closeTo(0.06, 1e-12));
+      usage = const {reportedCostKey: 99};
+      expect((await metadataOf()).containsKey(reportedCostKey), isFalse);
+    });
+
+    test('streamed, the picture\'s own chunk carries the figure ahead of the closing one', () async {
+      // The task executor takes images through the stream; a consumer that
+      // stops after the picture still bills it — by the provider's figure.
+      final chunks = await LLMDispatcher()
+          .generateStream(
+            config('grok-imagine-image-2.0'),
+            [LLMMessage(role: LLMRole.user, content: 'a red apple')],
+            options: defaultsOf('grok-imagine-image-2.0'),
+          )
+          .toList();
+      final picture = chunks.firstWhere((c) => c.imagePart != null);
+      expect(picture.metadata?[reportedCostKey], closeTo(0.06, 1e-12));
+      expect(chunks.last.metadata?[reportedCostKey], closeTo(0.06, 1e-12));
+    });
+
+    test('a usage block without ticks, or none at all, reports no cost', () async {
+      usage = const {'total_tokens': 12};
+      expect((await metadataOf()).containsKey(reportedCostKey), isFalse);
+      usage = null;
+      expect((await metadataOf()).containsKey(reportedCostKey), isFalse);
+    });
   });
 
   test('the legacy model sends no quality and is re-sized off 1.5k', () async {

@@ -78,5 +78,7 @@
     }
   },
   "usageGoFixRates": "去補檔位",
-  "usageUnitPrice": "單價"
+  "usageUnitPrice": "單價",
+  "usageReportedCost": "上游報價",
+  "usageTableEstimate": "檔位估算"
 }

@@ -159,6 +159,106 @@ void main() {
     });
   });
 
+  group('a provider-reported cost', () {
+    // The provider's figure is the whole charge, inputs included, so it
+    // replaces the snapshot instead of adding to it — under every mode.
+    test('replaces a spec row\'s output and input parts', () {
+      final row = TokenUsage(
+        modelId: 'grok',
+        timestamp: at,
+        billingMode: 'spec',
+        spec: const UsageSpecBilling(
+          unit: OutputUnit.image,
+          units: 1,
+          unitPrice: 0.06,
+          inputImages: 1,
+          inputUnits: 1,
+          inputUnitPrice: 0.01,
+        ),
+        reportedCost: 0.09,
+      );
+
+      expect(row.cost, closeTo(0.09, 1e-9));
+      expect(row.costParts.reported, closeTo(0.09, 1e-9));
+      expect(row.costParts.spec, 0.0);
+      expect(row.costParts.specInput, 0.0);
+      // What the table would have said, kept for the comparison.
+      expect(row.snapshotCost, closeTo(0.07, 1e-9));
+    });
+
+    test('replaces a token row\'s and a request row\'s arithmetic too', () {
+      final token = TokenUsage(
+        modelId: 'grok',
+        timestamp: at,
+        inputTokens: 1000000,
+        inputPrice: 2.0,
+        reportedCost: 0.05,
+      );
+      final request = TokenUsage(
+        modelId: 'grok',
+        timestamp: at,
+        billingMode: 'request',
+        requestPrice: 0.02,
+        reportedCost: 0.05,
+      );
+
+      expect(token.cost, closeTo(0.05, 1e-9));
+      expect(token.costParts.input, 0.0);
+      expect(token.snapshotCost, closeTo(2.0, 1e-9));
+      expect(request.cost, closeTo(0.05, 1e-9));
+      expect(request.costParts.request, 0.0);
+    });
+
+    test('a reported zero is zero; no report leaves the row as it was', () {
+      final free = TokenUsage(
+        modelId: 'grok',
+        timestamp: at,
+        billingMode: 'request',
+        requestPrice: 0.02,
+        reportedCost: 0.0,
+      );
+      final unreported = TokenUsage(
+        modelId: 'grok',
+        timestamp: at,
+        billingMode: 'request',
+        requestPrice: 0.02,
+      );
+
+      expect(free.cost, 0.0);
+      expect(unreported.cost, closeTo(0.02, 1e-9));
+      expect(unreported.costParts.reported, 0.0);
+      expect(unreported.snapshotCost, unreported.cost);
+    });
+
+    test('survives the map; a bad cell reads as no report', () {
+      final row = TokenUsage(modelId: 'm', timestamp: at, reportedCost: 0.07);
+      expect(row.toMap()['reported_cost'], 0.07);
+      expect(TokenUsage.fromMap(row.toMap()).reportedCost, 0.07);
+
+      final none = TokenUsage(modelId: 'm', timestamp: at);
+      expect(none.toMap(), containsPair('reported_cost', isNull));
+      expect(TokenUsage.fromMap(none.toMap()).reportedCost, isNull);
+
+      for (final cell in ['0.07', -1.0, double.nan, double.infinity]) {
+        expect(TokenUsage.fromMap({'model_id': 'm', 'reported_cost': cell}).reportedCost, isNull,
+            reason: '$cell');
+      }
+    });
+
+    test('a reported row is never unmatched — nothing is missing from the table', () {
+      final row = TokenUsage(
+        modelId: 'grok',
+        timestamp: at,
+        billingMode: 'spec',
+        spec: const UsageSpecBilling(units: 1, unitPrice: 0, snapshot: UsageSpecSnapshot(matched: false)),
+        reportedCost: 0.04,
+      );
+
+      expect(row.unmatched, isFalse);
+      expect(row.specLabel, isNotNull);
+    });
+  });
+
   group('unmatched and specLabel', () {
     TokenUsage row(String mode, UsageSpecSnapshot? snapshot) => TokenUsage(
           modelId: 'm',

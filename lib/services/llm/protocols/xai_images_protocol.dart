@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
+import '../output_spec.dart' show reportedCostFromTicks;
 import 'protocol.dart';
 
 /// xAI Grok Imagine image generation / editing via xAI's native JSON
@@ -162,8 +163,12 @@ class XaiImagesProtocol implements ImageGenProtocol {
         text: revised,
         generatedImages: images,
         metadata: {
+          ...upstreamUsage(data['usage']),
+          // What xAI says this request cost, in dollars: its usage block is
+          // one field, `cost_in_usd_ticks` (1 tick = $10⁻¹⁰), and it covers
+          // the reference images too — the usage row bills by it.
           if (data['usage'] is Map)
-            ...(data['usage'] as Map).cast<String, dynamic>(),
+            ...reportedCostFromTicks((data['usage'] as Map)['cost_in_usd_ticks']),
           if (revised.isNotEmpty) 'revised_prompt': revised,
           // xAI charges per input image; its usage block does not count them.
           ...sentInputImages(encodedCount),

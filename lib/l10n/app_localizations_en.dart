@@ -1556,6 +1556,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usageUnitPrice => 'Unit price';
 
   @override
+  String get usageReportedCost => 'Reported cost';
+
+  @override
+  String get usageTableEstimate => 'Table estimate';
+
+  @override
   String get models => 'Models';
 
   @override

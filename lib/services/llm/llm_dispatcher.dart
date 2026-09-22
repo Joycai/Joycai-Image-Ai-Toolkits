@@ -3,7 +3,7 @@ import 'llm_types.dart';
 import 'model_capabilities.dart';
 import 'model_descriptor.dart';
 import 'model_family.dart';
-import 'output_spec.dart' show inputImageCountEntry;
+import 'output_spec.dart' show inputImageCountEntry, reportedCostEntry;
 import 'protocols/anthropic_chat_protocol.dart';
 import 'protocols/ark_images_protocol.dart';
 import 'protocols/anthropic_thinking.dart';
@@ -1228,13 +1228,17 @@ class LLMDispatcher {
     if (response.text.isNotEmpty) {
       yield LLMResponseChunk(textPart: response.text);
     }
-    // Each picture says how many references it was made from, so a consumer
-    // that stops before the closing chunk still bills them.
+    // Each picture says how many references it was made from — and what the
+    // provider charged, where it said — so a consumer that stops before the
+    // closing chunk still bills them, and by the provider's figure rather
+    // than the table's.
     final inputs = inputImageCountEntry(response.metadata);
+    final reported = reportedCostEntry(response.metadata);
+    final perImage = inputs == null && reported == null ? null : {...?inputs, ...?reported};
     for (final (i, img) in response.generatedImages.indexed) {
       yield LLMResponseChunk(
           imagePart: img,
-          metadata: inputs,
+          metadata: perImage,
           imageLayer: i < response.imageLayers.length
               ? response.imageLayers[i]
               : null);

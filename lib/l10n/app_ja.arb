@@ -985,6 +985,8 @@
   },
   "usageGoFixRates": "料金を追加",
   "usageUnitPrice": "単価",
+  "usageReportedCost": "上流の請求額",
+  "usageTableEstimate": "料金表の見積",
   "models": "モデル",
   "feeManagement": "料金管理",
   "modelsTab": "モデル",

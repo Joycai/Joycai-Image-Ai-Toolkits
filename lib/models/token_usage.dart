@@ -197,6 +197,11 @@ typedef UsageCostParts = ({
   /// Reference images a spec-billed request was charged for — beside
   /// [spec], which is its output alone.
   double specInput,
+
+  /// What the provider itself said the request cost ([TokenUsage.reportedCost]).
+  /// When it is set every other part is zero: the figure is the whole charge,
+  /// and it replaces the snapshot rather than adding to it.
+  double reported,
 });
 
 /// One row of `token_usage`: what a single billed request used, with the
@@ -247,6 +252,15 @@ class TokenUsage {
   /// may carry one that nothing bills.
   final UsageSpecBilling? spec;
 
+  /// The money the provider itself reported for this request, in dollars —
+  /// xAI's `cost_in_usd_ticks`, reference images included — or null where
+  /// the provider reported none (every row before v49, every other vendor).
+  /// It outranks the row's own prices under every mode ([costParts]): the
+  /// snapshot beside it is what the fee group *would* have charged, kept so
+  /// the usage page can show the two against each other. A reported zero is
+  /// a reported figure; only null means "not reported".
+  final double? reportedCost;
+
   const TokenUsage({
     this.id,
     this.taskId,
@@ -263,40 +277,58 @@ class TokenUsage {
     this.requestPrice = 0.0,
     this.billingMode = 'token',
     this.spec,
+    this.reportedCost,
   });
 
   UsageBilling get billing => UsageBilling.parse(billingMode);
 
   double get effectiveCachePrice => cachePrice ?? inputPrice;
 
-  /// The cost split by what was billed, from the prices on the row itself.
-  UsageCostParts get costParts => switch (billing) {
-        UsageBilling.spec =>
-          (
-            input: 0.0,
-            cache: 0.0,
-            output: 0.0,
-            request: 0.0,
-            spec: spec?.cost ?? 0.0,
-            specInput: spec?.inputCost ?? 0.0,
-          ),
-        UsageBilling.request => (
-            input: 0.0,
-            cache: 0.0,
-            output: 0.0,
-            request: requestCount * requestPrice,
-            spec: 0.0,
-            specInput: 0.0,
-          ),
-        UsageBilling.token => (
-            input: inputTokens * inputPrice / 1000000,
-            cache: cacheTokens * effectiveCachePrice / 1000000,
-            output: outputTokens * outputPrice / 1000000,
-            request: 0.0,
-            spec: 0.0,
-            specInput: 0.0,
-          ),
-      };
+  /// The cost split by what was billed, from the prices on the row itself —
+  /// or, where the provider reported the charge, that figure alone.
+  UsageCostParts get costParts {
+    final reported = reportedCost;
+    if (reported != null) {
+      return (
+        input: 0.0,
+        cache: 0.0,
+        output: 0.0,
+        request: 0.0,
+        spec: 0.0,
+        specInput: 0.0,
+        reported: reported,
+      );
+    }
+    return switch (billing) {
+      UsageBilling.spec => (
+          input: 0.0,
+          cache: 0.0,
+          output: 0.0,
+          request: 0.0,
+          spec: spec?.cost ?? 0.0,
+          specInput: spec?.inputCost ?? 0.0,
+          reported: 0.0,
+        ),
+      UsageBilling.request => (
+          input: 0.0,
+          cache: 0.0,
+          output: 0.0,
+          request: requestCount * requestPrice,
+          spec: 0.0,
+          specInput: 0.0,
+          reported: 0.0,
+        ),
+      UsageBilling.token => (
+          input: inputTokens * inputPrice / 1000000,
+          cache: cacheTokens * effectiveCachePrice / 1000000,
+          output: outputTokens * outputPrice / 1000000,
+          request: 0.0,
+          spec: 0.0,
+          specInput: 0.0,
+          reported: 0.0,
+        ),
+    };
+  }
 
   double get cost {
     final parts = costParts;
@@ -305,13 +337,40 @@ class TokenUsage {
         parts.output +
         parts.request +
         parts.spec +
-        parts.specInput;
+        parts.specInput +
+        parts.reported;
   }
 
+  /// What the fee group's snapshot on this row would charge, whatever the
+  /// provider reported: [cost] without the override. Equal to [cost] on a
+  /// row without a reported figure. The usage page sets it against
+  /// [reportedCost] — a gap is the rate table disagreeing with the invoice.
+  double get snapshotCost => reportedCost == null
+      ? cost
+      : TokenUsage(
+          modelId: modelId,
+          timestamp: timestamp,
+          inputTokens: inputTokens,
+          cacheTokens: cacheTokens,
+          outputTokens: outputTokens,
+          inputPrice: inputPrice,
+          outputPrice: outputPrice,
+          cachePrice: cachePrice,
+          requestCount: requestCount,
+          requestPrice: requestPrice,
+          billingMode: billingMode,
+          spec: spec,
+        ).cost;
+
   /// Whether this spec-billed request found no rate row for its spec. Rows of
-  /// the other modes are never unmatched.
+  /// the other modes are never unmatched — nor is a row the provider priced
+  /// itself: the gap a missing rate row leaves is filled by the report, and
+  /// the nudge to go and add the row would be sending the user to fix
+  /// nothing.
   bool get unmatched =>
-      billing == UsageBilling.spec && spec?.snapshot?.matched == false;
+      billing == UsageBilling.spec &&
+      spec?.snapshot?.matched == false &&
+      reportedCost == null;
 
   /// The spec this row was billed at; null for a row of another mode or one
   /// without the snapshot, empty for a request that carried no spec at all.
@@ -335,10 +394,16 @@ class TokenUsage {
         requestPrice: _double(map['request_price']) ?? 0.0,
         billingMode: _text(map['billing_mode']) ?? 'token',
         spec: UsageSpecBilling.fromMap(map),
+        // A negative or non-finite cell is nobody's report.
+        reportedCost: switch (_double(map['reported_cost'])) {
+          final v? when v.isFinite && v >= 0 => v,
+          _ => null,
+        },
       );
 
   /// The row as inserted. A row without [spec] writes its seven columns as
-  /// NULL, so it prices exactly as it did before spec billing existed.
+  /// NULL, so it prices exactly as it did before spec billing existed; one
+  /// without a reported cost writes NULL there too.
   Map<String, dynamic> toMap() => {
         if (id != null) 'id': id,
         'task_id': taskId,
@@ -364,5 +429,6 @@ class TokenUsage {
               'input_units': null,
               'input_unit_price': null,
             },
+        'reported_cost': reportedCost,
       };
 }

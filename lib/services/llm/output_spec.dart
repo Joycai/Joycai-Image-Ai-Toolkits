@@ -56,6 +56,47 @@ Map<String, dynamic>? inputImageCountEntry(Map<String, dynamic>? metadata) {
   return count > 0 ? {inputImageCountKey: count} : null;
 }
 
+/// The metadata key a protocol publishes the money the provider says this
+/// request cost under, in US dollars — where the provider reports one (xAI's
+/// `usage.cost_in_usd_ticks`, 1 tick = $10⁻¹⁰, docs/api/usage.md §5). The
+/// figure is the provider's whole charge, reference images included, so the
+/// usage row bills by it instead of the fee group's table
+/// ([TokenUsage.reportedCost]). The unit conversion is the protocol's: the
+/// recorder reads dollars and never a vendor's own field.
+///
+/// Published only by a vendor's own wire. A relay forwarding the same block
+/// charges its own price, which the user's rate table states — so the relay
+/// protocols leave this key alone.
+const String reportedCostKey = 'reported_cost_usd';
+
+/// [reportedCostKey] off a response's metadata; absent, negative or not a
+/// finite number reads as "not reported" (null), never as zero — a zero is
+/// something only the provider gets to say.
+double? reportedCostOf(Map<String, dynamic>? metadata) {
+  final raw = metadata?[reportedCostKey];
+  final cost = raw is num ? raw.toDouble() : (raw is String ? double.tryParse(raw) : null);
+  return cost == null || !cost.isFinite || cost < 0 ? null : cost;
+}
+
+/// The [reportedCostKey] entry of [metadata] alone, or null without one —
+/// what an image chunk carries ahead of the closing chunk, for the same
+/// reason as [inputImageCountEntry]: a stream abandoned after a picture
+/// arrived is billed for it from the chunks it did get, and the provider's
+/// figure must be among them or the row falls back to the table.
+Map<String, dynamic>? reportedCostEntry(Map<String, dynamic>? metadata) {
+  final cost = reportedCostOf(metadata);
+  return cost == null ? null : {reportedCostKey: cost};
+}
+
+/// The [reportedCostKey] entry for a provider's `cost_in_usd_ticks`, or
+/// nothing when the usage block does not carry a usable one. The tick unit
+/// is spelled out here and nowhere else.
+Map<String, dynamic> reportedCostFromTicks(Object? ticks) {
+  final value = ticks is num ? ticks.toDouble() : (ticks is String ? double.tryParse(ticks) : null);
+  if (value == null || !value.isFinite || value < 0) return const {};
+  return {reportedCostKey: value / 1e10};
+}
+
 class OutputSpec {
   final String? size;
   final String? quality;

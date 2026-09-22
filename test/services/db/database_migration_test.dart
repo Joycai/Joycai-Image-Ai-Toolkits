@@ -646,6 +646,63 @@ void main() {
     });
   });
 
+  group('v49 adds the provider-reported cost', () {
+    test('rows recorded before the upgrade report nothing and price as they did', () async {
+      final db = await openV29Db();
+      addTearDown(db.close);
+      await DatabaseMigration.migrate(db, 29, 48);
+      await db.insert('token_usage', {
+        'model_id': 'grok-imagine-image-2.0',
+        'timestamp': '2026-09-01T00:00:00',
+        'billing_mode': 'spec',
+        'output_units': 1.0,
+        'output_unit_price': 0.06,
+        'output_unit': 'image',
+      });
+
+      await DatabaseMigration.migrate(db, 48, 49);
+      await DatabaseMigration.migrate(db, 48, 49);
+
+      expect(await columnsOf(db, 'token_usage'), contains('reported_cost'));
+      final row = TokenUsage.fromMap((await db.query('token_usage')).single);
+      expect(row.reportedCost, isNull);
+      expect(row.cost, closeTo(0.06, 1e-9));
+    });
+
+    test('a reported cost round-trips beside the snapshot, and NULL stays NULL', () async {
+      final db = await factory.openDatabase(inMemoryDatabasePath);
+      addTearDown(db.close);
+      await DatabaseMigration.onCreate(db);
+      expect(await columnsOf(db, 'token_usage'), contains('reported_cost'));
+
+      await db.insert(
+        'token_usage',
+        TokenUsage(
+          modelId: 'grok-imagine-image-2.0',
+          timestamp: DateTime(2026, 9, 22),
+          billingMode: 'spec',
+          spec: const UsageSpecBilling(unit: OutputUnit.image, units: 1, unitPrice: 0.06),
+          reportedCost: 0.07,
+        ).toMap(),
+      );
+      await db.insert(
+        'token_usage',
+        TokenUsage(
+          modelId: 'seedream',
+          timestamp: DateTime(2026, 9, 22),
+          billingMode: 'spec',
+          spec: const UsageSpecBilling(unit: OutputUnit.image, units: 1, unitPrice: 0.3),
+        ).toMap(),
+      );
+      final rows = (await db.query('token_usage', orderBy: 'id')).map(TokenUsage.fromMap).toList();
+      expect(rows[0].reportedCost, 0.07);
+      expect(rows[0].cost, closeTo(0.07, 1e-9));
+      expect(rows[0].snapshotCost, closeTo(0.06, 1e-9));
+      expect(rows[1].reportedCost, isNull);
+      expect(rows[1].cost, closeTo(0.3, 1e-9));
+    });
+  });
+
   group('v43 adds the fee-group order', () {
     test('existing groups keep their creation order', () async {
       final db = await openV29Db();

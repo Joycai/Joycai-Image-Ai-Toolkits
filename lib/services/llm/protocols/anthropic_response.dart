@@ -258,7 +258,7 @@ Map<String, dynamic> anthropicUsageMetadata(
   final cacheWrite = count(usage?['cache_creation_input_tokens']);
 
   return {
-    ...?usage,
+    ...upstreamUsage(usage),
     if (usage != null) 'prompt_tokens': input + cacheRead + cacheWrite,
     // Where the answer came from, when it did not come from the model alone.
     if (serverToolRuns.isNotEmpty)

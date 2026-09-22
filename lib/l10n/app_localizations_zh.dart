@@ -1496,6 +1496,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get usageUnitPrice => '单价';
 
   @override
+  String get usageReportedCost => '上游报价';
+
+  @override
+  String get usageTableEstimate => '档位估算';
+
+  @override
   String get models => '模型';
 
   @override
@@ -7378,6 +7384,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get usageUnitPrice => '單價';
+
+  @override
+  String get usageReportedCost => '上游報價';
+
+  @override
+  String get usageTableEstimate => '檔位估算';
 
   @override
   String get models => '模型';

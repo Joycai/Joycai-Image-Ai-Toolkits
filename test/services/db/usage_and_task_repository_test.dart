@@ -108,6 +108,31 @@ void main() {
     expect(await usage.updateSpecBilling('video:nobody', const UsageSpecBilling(units: 1, unitPrice: 1)), 0);
   });
 
+  test('settling leaves what the provider reported the row cost', () async {
+    // No video surface reports a price today, but the settle is a partial
+    // update of the output four and must stay one: a report on the row is
+    // the provider's word, and re-pricing the seconds is not a reason to
+    // lose it.
+    await usage.recordTokenUsage(TokenUsage(
+      taskId: 'video:op-2',
+      modelId: 'v',
+      timestamp: at,
+      billingMode: 'spec',
+      spec: const UsageSpecBilling(unit: OutputUnit.second, units: 8, unitPrice: 0.3),
+      reportedCost: 1.25,
+    ));
+
+    await usage.updateSpecBilling(
+      'video:op-2',
+      const UsageSpecBilling(unit: OutputUnit.second, units: 10, unitPrice: 0.3),
+    );
+
+    final row = (await usage.getTokenUsage()).single;
+    expect(row.reportedCost, 1.25);
+    expect(row.cost, closeTo(1.25, 1e-9));
+    expect(row.snapshotCost, closeTo(3.0, 1e-9));
+  });
+
   test('the latest checkpoint comes back whole', () async {
     expect(await usage.getLatestUsageCheckpoint(), isNull);
     await usage.saveUsageCheckpoint(UsageCheckpoint(timestamp: DateTime(2026, 8, 1), totalCost: 1));

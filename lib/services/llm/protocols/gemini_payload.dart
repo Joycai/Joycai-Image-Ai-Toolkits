@@ -5,6 +5,7 @@ import '../../../core/safety_settings.dart';
 import '../image_compression.dart';
 import '../llm_types.dart';
 import '../model_descriptor.dart' show GeminiThinkingGeneration;
+import 'protocol.dart' show upstreamUsage;
 
 /// ③'s `thinkingBudget` for each rung on a [GeminiThinkingGeneration.budget]
 /// model (Gemini 2.5). Off is `0`; High is 24576, the Flash / Flash-Lite
@@ -353,10 +354,10 @@ class GeminiModelPartsCollector {
 /// Parses one `generateContent`/stream chunk into [LLMResponseChunk]s, handling
 /// prompt blocking, finish reasons and safety ratings via [logger].
 ///
-/// `metadata` carries `usageMetadata` verbatim plus, on the chunk that ends
-/// the candidate, `finish_reason` (①'s vocabulary) and `finish_reason_raw`
-/// (③'s). Text parts flagged `thought: true` go out as reasoning, never as
-/// text.
+/// `metadata` carries `usageMetadata` through [upstreamUsage] (the app's two
+/// reserved keys removed, the rest as sent) plus, on the chunk that ends the
+/// candidate, `finish_reason` (①'s vocabulary) and `finish_reason_raw` (③'s).
+/// Text parts flagged `thought: true` go out as reasoning, never as text.
 ///
 /// [callIds] synthesizes the ids of any `functionCall` parts. A stream passes
 /// one instance for all of its chunks; left null, the chunk gets a fresh one,
@@ -367,7 +368,8 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
   GeminiToolCallIds? callIds,
 }) sync* {
   final ids = callIds ?? GeminiToolCallIds();
-  Map<String, dynamic>? metadata = chunkData['usageMetadata'];
+  final rawUsage = chunkData['usageMetadata'];
+  Map<String, dynamic>? metadata = rawUsage is Map ? upstreamUsage(rawUsage) : null;
 
   // Prompt-level block (e.g. prohibited content). Published, not thrown:
   // the one content-filter check lives in LLMService

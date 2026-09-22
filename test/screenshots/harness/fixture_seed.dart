@@ -1289,6 +1289,35 @@ Future<void> _seedUsage(DatabaseService db, _Catalog catalog) async {
       ));
     }
   }
+
+  // D2d: xAI 2.0 rows the provider priced itself — the table's snapshot
+  // beside the report, once agreeing ($0.04 low) and once not (the table
+  // still says medium while upstream billed low + one reference image).
+  final int xai = catalog.modelIds.indexOf('grok-imagine-image-2.0');
+  if (xai >= 0) {
+    for (final (int i, (String quality, double unitPrice, int sent, double reported)) in const [
+      ('low', 0.04, 0, 0.04),
+      ('medium', 0.06, 1, 0.05),
+    ].indexed) {
+      await db.recordTokenUsage(TokenUsage(
+        taskId: 'fixture-usage-xai-$i',
+        modelId: catalog.modelIds[xai],
+        modelDbId: catalog.modelPks[xai],
+        timestamp: kSeedNow.subtract(Duration(hours: 2 + i, minutes: 11 * i)),
+        billingMode: 'spec',
+        spec: UsageSpecBilling(
+          unit: OutputUnit.image,
+          units: 1,
+          unitPrice: unitPrice,
+          snapshot: UsageSpecSnapshot(size: '1K', quality: quality),
+          inputImages: sent,
+          inputUnits: sent.toDouble(),
+          inputUnitPrice: 0.01,
+        ),
+        reportedCost: reported,
+      ));
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

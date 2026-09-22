@@ -178,6 +178,23 @@ void main() {
     expect(quiet.where((m) => m.contains('Input images')), isEmpty);
   });
 
+  testWidgets('what the provider priced itself is a line of the tooltip, in the neutral share (D2d)', (tester) async {
+    const xai = GroupUsage(
+      specCost: 0.06,
+      reportedCost: 0.09,
+      specUnits: {OutputUnit.image: 2},
+      requestCount: 2,
+    );
+    await pumpCosts(tester, stats({1: 0.15}, usage: {1: xai}), const Size(1920, 1080));
+
+    final messages = tester.widgetList<Tooltip>(find.byType(Tooltip)).map((t) => t.message ?? '');
+    expect(messages.where((m) => m.contains('Reported cost: \$0.0900')), hasLength(1));
+    // Both are money that bought output: the bar has one neutral segment,
+    // sized by their sum — nothing of the reported part is left unpainted.
+    expect(xai.totalCost, closeTo(0.15, 1e-9));
+    expect(find.text('2 images · 2 req'), findsOneWidget);
+  });
+
   testWidgets('unpriced requests are counted under the group, with a way to fix them', (tester) async {
     PricingGroup? asked;
     await pumpCosts(

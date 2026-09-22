@@ -870,6 +870,19 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
   （`{input_image_count: 0}`）：合并后的 metadata 不会丢掉后一块只是没写的键，只有显式的值能把图片块
   带的本地张数压下去。文生图不发布这个键（除非上游自己回报了 0）；聊天面（①③④）也不发布，读作 0——按 token 计费的出图模型本该如此。
   **新增一个带参考图的 images 协议时必须发布它**，否则该协议上的输入费静默记 0。
+- **上游报价（`reported_cost_usd`，2026-09-22）**：上游自己说这次请求扣了多少钱时，协议把它翻成美元发布在这个键下
+  （`reportedCostKey`，`output_spec.dart`）；今天只有 xAI images 协议发（`usage.cost_in_usd_ticks`，1 tick = $10⁻¹⁰，
+  换算 `reportedCostFromTicks` 一处）。记账（`_writeUsageRow`）只读这个键、不认任何 vendor 字段，落到
+  `token_usage.reported_cost`（v49，NULL = 没报）；有值时**压过三种计费模式的全部算式**（`TokenUsage.costParts.reported`），
+  因为它含输入图那一侧——计费组的快照照旧写在同一行上（`snapshotCost`），用量页拿两者对照。**中转协议不翻这个键**：
+  中转有自己的价，用户填的档位表才是他付的钱；xAI images 协议只在 xAI 自家 vendor 的 image 菜单上（`llm_dispatcher.dart`）。
+  **两条不变量**：① 凡是把上游 `usage`（或任何上游 map）原样铺进 metadata 的地方都走 `upstreamUsage()`（`protocol.dart`），
+  它剔掉 `reported_cost_usd` 与 `input_image_count` 两个保留键——记账对所有 vendor 都读这两个键，原样铺就等于让中转 / 上游
+  随便起个同名字段来定账（`upstream_usage_sites_test.dart` 钉聊天面四个纯函数面，百炼流式面在
+  `dashscope_stream_regressions_test.dart` 走线钉；xAI、OpenAI Images、MiniMax 三个 images 协议在
+  `xai_images_protocol_test.dart` / `input_image_count_test.dart` 的走线测试里各钉一条伪造用例）；
+  ② 凡是自己造 `imagePart` 块的地方（今天是 `_asChunks`；方舟 SSE 与 Midjourney 的 controller 若哪天也报价，同样要带），
+  图片块也要带这个键，与 `input_image_count` 同理——流在出图后被放弃时兜底记账只看到图片块。
 - **流式出图（2026-09-18 补）**：只在方舟自家渠道、且表上 `streamsImages` 为真（5.0 lite ·
   4.5 · 4.0）时，`generateStream` 走 `ArkImagesProtocol.generateImageStream`——发
   `stream: true`，每个 `partial_succeeded` 下载后作为一个 `imagePart` 推出，`partial_failed`

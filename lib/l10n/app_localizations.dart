@@ -2639,6 +2639,18 @@ abstract class AppLocalizations {
   /// **'Unit price'**
   String get usageUnitPrice;
 
+  /// No description provided for @usageReportedCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported cost'**
+  String get usageReportedCost;
+
+  /// No description provided for @usageTableEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Table estimate'**
+  String get usageTableEstimate;
+
   /// No description provided for @models.
   ///
   /// In en, this message translates to:

@@ -343,6 +343,91 @@ void main() {
     }
   });
 
+  group('a row the provider priced itself (D2d)', () {
+    /// An xAI 2.0 edit: the table says 1K · medium $0.06 + one reference
+    /// image at $0.01, upstream billed $0.05 (it served low).
+    TokenUsage reportedRow({required DateTime timestamp, double reported = 0.05, bool matched = true}) =>
+        TokenUsage(
+          modelId: 'grok-imagine-image-2.0',
+          timestamp: timestamp,
+          billingMode: 'spec',
+          spec: UsageSpecBilling(
+            unit: OutputUnit.image,
+            units: 1,
+            unitPrice: 0.06,
+            snapshot: UsageSpecSnapshot(size: '1K', quality: 'medium', matched: matched),
+            inputImages: 1,
+            inputUnits: 1,
+            inputUnitPrice: 0.01,
+          ),
+          reportedCost: reported,
+        );
+
+    testWidgets('collapsed, the cost is the report, set like any other, with the estimate a tooltip away',
+        (tester) async {
+      await pumpList(tester, [reportedRow(timestamp: todayAt(14))], const Size(1920, 1080));
+
+      expect(find.text('\$0.0500'), findsWidgets);
+      expect(find.text('\$0.0700'), findsNothing);
+      expect(find.text('1K · medium · input ×1'), findsOneWidget);
+      // No glyph or sub-label on the cell — only the tooltip says more.
+      final tooltip = find.byWidgetPredicate(
+          (w) => w is Tooltip && (w.message?.startsWith('Reported cost') ?? false));
+      expect(tooltip, findsOneWidget);
+      expect(tester.widget<Tooltip>(tooltip).message, 'Reported cost: \$0.0500\nTable estimate: \$0.0700');
+      expect(find.descendant(of: tooltip, matching: find.text('\$0.0500')), findsOneWidget);
+    });
+
+    testWidgets('expanded, the comparison leads and the table\'s figures are demoted', (tester) async {
+      await pumpList(tester, [reportedRow(timestamp: todayAt(14))], const Size(1920, 1080));
+      await tester.tap(find.text('1K · medium · input ×1'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Reported cost'), findsOneWidget);
+      expect(find.text('Table estimate'), findsOneWidget);
+      expect(find.text('\$0.0700'), findsOneWidget);
+      // The table's side is still written out, in the outline ink.
+      expect(find.text('Output cost'), findsOneWidget);
+      expect(find.text('1 × \$0.0100 = \$0.0100'), findsOneWidget);
+      final outline = Theme.of(tester.element(find.text('Table estimate'))).colorScheme.outline;
+      for (final value in ['\$0.0700', '\$0.0600', '1 × \$0.0100 = \$0.0100']) {
+        expect(tester.widget<Text>(find.text(value).last).style?.color, outline, reason: value);
+      }
+      expect(tester.widget<Text>(find.text('\$0.0500').last).style?.color, isNot(outline));
+    });
+
+    testWidgets('the estimate is stated even when the table would have charged nothing', (tester) async {
+      final unpriced = TokenUsage(
+        modelId: 'grok-imagine-image-2.0',
+        timestamp: todayAt(14),
+        billingMode: 'token',
+        reportedCost: 0.04,
+      );
+      await pumpList(tester, [unpriced], const Size(1920, 1080));
+      await tester.tap(find.text('grok-imagine-image-2.0'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Table estimate'), findsOneWidget);
+      expect(find.text('\$0.0000'), findsOneWidget);
+    });
+
+    for (final entry in {
+      'Mobile': const Size(390, 844),
+      'Tablet': const Size(820, 1180),
+    }.entries) {
+      testWidgets('the comparison pair fits without overflow on ${entry.key}', (tester) async {
+        await pumpList(tester, [reportedRow(timestamp: todayAt(14))], entry.value);
+        expect(tester.takeException(), isNull, reason: 'Overflow on ${entry.key}');
+
+        await tester.tap(find.text('1K · medium · input ×1'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: 'Expanded overflow on ${entry.key}');
+        expect(find.text('Reported cost'), findsOneWidget);
+        expect(find.text('\$0.0700'), findsOneWidget);
+      });
+    }
+  });
+
   for (final entry in {
     'Mobile': const Size(390, 844),
     'Tablet': const Size(820, 1180),
