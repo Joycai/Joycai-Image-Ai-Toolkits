@@ -878,8 +878,10 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
   中转有自己的价，用户填的档位表才是他付的钱；xAI images 协议只在 xAI 自家 vendor 的 image 菜单上（`llm_dispatcher.dart`）。
   **两条不变量**：① 凡是把上游 `usage`（或任何上游 map）原样铺进 metadata 的地方都走 `upstreamUsage()`（`protocol.dart`），
   它剔掉 `reported_cost_usd` 与 `input_image_count` 两个保留键——记账对所有 vendor 都读这两个键，原样铺就等于让中转 / 上游
-  随便起个同名字段来定账（`upstream_usage_sites_test.dart` 钉聊天面四处，images 协议在各自的走线测试里钉）；
-  ② 图片块也要带这个键（`_asChunks`），与 `input_image_count` 同理——流在出图后被放弃时兜底记账只看到图片块。
+  随便起个同名字段来定账（`upstream_usage_sites_test.dart` 钉聊天面四处；xAI、OpenAI Images、MiniMax 三个 images 协议在
+  `xai_images_protocol_test.dart` / `input_image_count_test.dart` 的走线测试里各钉一条伪造用例）；
+  ② 凡是自己造 `imagePart` 块的地方（今天是 `_asChunks`；方舟 SSE 与 Midjourney 的 controller 若哪天也报价，同样要带），
+  图片块也要带这个键，与 `input_image_count` 同理——流在出图后被放弃时兜底记账只看到图片块。
 - **流式出图（2026-09-18 补）**：只在方舟自家渠道、且表上 `streamsImages` 为真（5.0 lite ·
   4.5 · 4.0）时，`generateStream` 走 `ArkImagesProtocol.generateImageStream`——发
   `stream: true`，每个 `partial_succeeded` 下载后作为一个 `imagePart` 推出，`partial_failed`

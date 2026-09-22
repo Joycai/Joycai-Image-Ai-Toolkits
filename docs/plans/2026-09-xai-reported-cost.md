@@ -134,3 +134,8 @@ xAI 的 Images API 在每个回包的 `usage` 里写明**这次请求实扣了�
   现在剔了两个保留键。六项核对（方舟的 `input_images` 走 vendor 字段不受剔键影响；三家 images 协议的 `sentInputImages` 都在铺之后、
   last-wins 仍发布张数；③ 非 Map 的 `usageMetadata` 由运行时 TypeError 变成 null；④ `usage == null` 结果同前；无 import 环；
   `lib/services/llm/` 下再无原样铺；百炼流式逐帧覆盖仍对）全部通过。
+- **Review 第四轮（opus，只查第三轮那一个 commit）** 一条 MINOR + 一条 NIT，都在三层文档的新段落：① 「images 协议在各自的走线测试里钉」
+  夸大了——只有 xAI 钉了伪造用例，OpenAI Images（正是中转会走的那条）与 MiniMax 没有。不改文档改测试：`input_image_count_test.dart`
+  给这两家各加一条伪造 `usage` / `metadata` 的走线用例，文档改成点名三个文件。② 不变量 ② 只点名 `_asChunks`，同段的
+  `input_image_count` 写的是「凡是自己造 `imagePart` 块的地方」——改成同一措辞，把方舟 SSE 与 Midjourney 的 controller 列为
+  「哪天也报价就同样要带」。

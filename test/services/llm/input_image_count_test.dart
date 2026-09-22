@@ -109,6 +109,37 @@ void main() {
     expect(lost.metadata.containsKey(inputImageCountKey), isFalse);
   });
 
+  group('an upstream block naming the app\'s own keys is not taken at its word', () {
+    // The recorder reads both keys for every vendor; a relay could name a
+    // field the same. Only a protocol's own conversion may set them
+    // (`upstreamUsage`) — the count stays what this client sent.
+    const forged = {reportedCostKey: 99.0, inputImageCountKey: 7};
+
+    test('OpenAI Images', () async {
+      answer = (_) => {...inline, 'usage': forged};
+      final sent = await generate(config(Vendors.openAIRest, 'gpt-image-1'), [readable()]);
+      expect(sent.metadata.containsKey(reportedCostKey), isFalse);
+      expect(sent.metadata[inputImageCountKey], 1);
+
+      final none = await generate(config(Vendors.openAIRest, 'gpt-image-1'), const []);
+      expect(none.metadata.containsKey(reportedCostKey), isFalse);
+      expect(none.metadata.containsKey(inputImageCountKey), isFalse);
+    });
+
+    test('MiniMax', () async {
+      answer = (_) => {
+            'data': {
+              'image_urls': ['${base()}/img/1.png'],
+            },
+            'metadata': forged,
+            'base_resp': {'status_code': 0, 'status_msg': 'success'},
+          };
+      final none = await generate(config(Vendors.minimax, 'image-01'), const []);
+      expect(none.metadata.containsKey(reportedCostKey), isFalse);
+      expect(none.metadata.containsKey(inputImageCountKey), isFalse);
+    });
+  });
+
   test('Midjourney: the sources a blend put in base64Array', () async {
     // The seventh: not an Images API, but it sends the user's pictures all
     // the same. One real poll interval (3 s) — the loop sleeps before its
