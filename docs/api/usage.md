@@ -118,6 +118,25 @@ JSON 解析失败，看起来像"模型不听话"。
   由此：输入图 **$0.01/张、线性、没有免费张数**（计费组填 `0.01 / 0`）；5 张参考图被接受（HTTP 200）；
   不带质量参数时输出按 **1K · Medium（$0.06）** 计，不是标价表第一格的 Low $0.04。回包里**没有**输入张数，
   所以张数只能由协议自己数。应用现在不读 `cost_in_usd_ticks`（见台账「还欠的」）。
+- **xAI 的质量参数**（2026-09-22 实测，`/images/generations`，同样读 `cost_in_usd_ticks`）。请求字段叫
+  `quality`，枚举 `low | medium | high | auto`（别的值 422 并列出枚举）；`grok-imagine-image-2.0` 只收
+  `low / medium / auto`（`high` → 400 `This model only supports … low, medium, auto`）；不带 = medium。
+  分辨率字段 `resolution` 枚举 `1k | 1.5k | 2k`。OpenAPI（`docs.x.ai/openapi.json`）的请求体**没列** `quality`，
+  只有 `ImagePricingTier` 一句「Medium is the default quality a request serves at when it leaves `quality` unset」；
+  `GET /v1/image-generation-models/{id}` 回 `pricing[]`（`price_per_image` 单位 1e-8 美分 = tick），六格与文档页一致。
+
+  | 请求 | `cost_in_usd_ticks` | 折合 |
+  |---|---|---|
+  | `quality: low` | 400 000 000 | $0.04 = 1K · Low |
+  | `quality: low, resolution: 2k` | 600 000 000 | $0.06 = 2K · Low |
+  | `quality: auto` | 400 000 000 | $0.04——这一次模型选了 Low；**由模型决定，档位表没法写** |
+  | `/images/edits` + 1 张参考图 + `quality: low` | 500 000 000 | $0.05 = 0.04 + 0.01 |
+  | 初代 `grok-imagine-image` + `quality: low` | 200 000 000 | $0.02——平价，参数被默默接受 |
+  | 初代 `grok-imagine-image` + `resolution: 1.5k` | — | **400** `1.5K resolution is not supported for this model.` |
+
+  `/v1/image-generation-models` 列表里 `grok-imagine-image`（$0.02）与 `grok-imagine-image-quality`（$0.05）
+  都是 `pricing: []`（各质量同价），只有 2.0 有矩阵。应用自 4.26.0 起给 2.0 发 `quality`（默认 `medium`，
+  明发，让用量行带 `1K · medium`）和 `1.5k`；初代不发质量、不给 1.5k（`_xaiImageLegacy`）。
 - **③ 的多模态**在 `prompt_tokens_details` 下还有 `image_tokens` / `audio_tokens`
   等明细（部分兼容层也提供），且图片 token 用量随分辨率档位变化很大——同一张图
   在 low / default / high 三档下可能相差一个数量级。
