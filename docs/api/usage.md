@@ -158,7 +158,7 @@ JSON 解析失败，看起来像"模型不听话"。
   `{status:'done', video:{url, duration, respect_moderation}, model, usage:{cost_in_usd_ticks}, progress:100}`——
   **报价与实际秒数（`video.duration`）都只在终态轮询里**，提交时什么都没有。OpenAPI 里 `VideoResponse.usage`
   是 `MediaUsage`（只有 `cost_in_usd_ticks` 必填，token 字段视频不带）；`GET /v1/video-generation-models` 没有 `pricing`；
-  初代 `grok-imagine-video` 标价 $0.050/s（是否也收参考图未测）；720p / 1080p 是否加价未测。
+  初代 `grok-imagine-video`（$0.050/s）已下线（2026-09-22）；720p / 1080p 是否加价未测。
 
   应用自 4.28.0 起：计费组的按秒 / 按条 / 按次都有「输入图」一侧（`D2e`）；五个视频协议在提交时发布实际放进
   请求体的张数（`VideoSubmission.inputImages` → 提交行的 `input_image_count`）；xAI 视频面的终态轮询读
