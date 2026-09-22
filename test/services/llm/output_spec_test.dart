@@ -134,6 +134,9 @@ void main() {
       // The billed figure is the app's conclusion, never the wire's: a relay
       // (or a vendor) naming a field the same must not set it.
       expect(upstreamUsage({'total_tokens': 3, reportedCostKey: 99}), {'total_tokens': 3});
+      // Nor the reference count a spec group charges by — a text-to-image
+      // request publishes none of its own, so a forged one would survive.
+      expect(upstreamUsage({'total_tokens': 3, inputImageCountKey: 4}), {'total_tokens': 3});
       expect(upstreamUsage({'cost_in_usd_ticks': 5}), {'cost_in_usd_ticks': 5});
       expect(upstreamUsage(null), isEmpty);
       expect(upstreamUsage('usage'), isEmpty);

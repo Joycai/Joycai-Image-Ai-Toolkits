@@ -316,7 +316,7 @@ class DashScopeChatProtocol implements ChatProtocol {
         throwIfDashScopeError(frame);
 
         final usage = frame['usage'];
-        if (usage is Map) usageMetadata = usage.cast<String, dynamic>();
+        if (usage is Map) usageMetadata = upstreamUsage(usage);
         final reason = dashscopeFinishReason(frame);
         if (reason != null) finishReason = reason;
 

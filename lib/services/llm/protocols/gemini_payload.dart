@@ -5,6 +5,7 @@ import '../../../core/safety_settings.dart';
 import '../image_compression.dart';
 import '../llm_types.dart';
 import '../model_descriptor.dart' show GeminiThinkingGeneration;
+import 'protocol.dart' show upstreamUsage;
 
 /// ③'s `thinkingBudget` for each rung on a [GeminiThinkingGeneration.budget]
 /// model (Gemini 2.5). Off is `0`; High is 24576, the Flash / Flash-Lite
@@ -367,7 +368,8 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
   GeminiToolCallIds? callIds,
 }) sync* {
   final ids = callIds ?? GeminiToolCallIds();
-  Map<String, dynamic>? metadata = chunkData['usageMetadata'];
+  final rawUsage = chunkData['usageMetadata'];
+  Map<String, dynamic>? metadata = rawUsage is Map ? upstreamUsage(rawUsage) : null;
 
   // Prompt-level block (e.g. prohibited content). Published, not thrown:
   // the one content-filter check lives in LLMService

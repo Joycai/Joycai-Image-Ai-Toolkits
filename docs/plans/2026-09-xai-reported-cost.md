@@ -125,3 +125,8 @@ xAI 的 Images API 在每个回包的 `usage` 里写明**这次请求实扣了�
   五处都改走它；只有协议自己的换算能写这个键（xAI 走线测试：上游伪造 99 → 仍记 0.06；只伪造不带 ticks → 不记）。
   ③ `reportedCostFromTicks` 注释里的复数是假的（只有一个调用者）——改。④ `updateSpecBilling` 不碰 `reported_cost` 没有测试钉——
   `usage_and_task_repository_test` 加一条。⑤ 台账两行的 `git show <sha>` 占位——收尾片填。
+- **Review 第二轮（opus，只查第一轮那一个 commit）** 一条 MINOR + 一条 NIT：① 第一轮只堵了五处，聊天面还有三处原样铺 `usage`
+  （百炼 chat 流式面、④ `anthropicUsageMetadata`、③ `parseGoogleChunks`）——记账对所有 vendor 都读这个键，聊天路由上的中转同样能
+  伪造。三处都改走 `upstreamUsage`，纯函数各钉一条（`upstream_usage_sites_test.dart`）。② `upstreamUsage` 的注释写「保留键」是复数、
+  只剔一个：`input_image_count` 同样是应用自己的结论、同样可伪造（文生图不发布这个键，伪造的会活下来、按规格组收根本没发的参考图）——
+  一起剔。方舟走 `sentInputImages(reported: usage['input_images'])` 读的是 vendor 字段，不受影响。
