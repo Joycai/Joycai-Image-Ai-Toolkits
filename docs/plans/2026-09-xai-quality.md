@@ -118,4 +118,8 @@ default quality a request serves at when it leaves `quality` unset」；`GET /v1
   它用 `IntrinsicWidth` 从片的固有宽算自己的宽（`markdown_editor_large.dart`），每格会窄 20px、触控区缩水。改为 opt-in
   `AppSegmentedControl.tightLabels`，只有参数栏的格子传 true；补一条「不传时 expand 轨道保持 10 内边距」的测试。
   ② 台账行里的 `git show <sha>` 占位——收尾片删本文件时填真实 sha。
+- **Review 第二轮（opus）** 只查第一轮那一个 commit，一条 MINOR：视频面板的两选一轨道（Sora 的 Standard | High）
+  是同一种半格、英文 Standard 要 51px，却没传 `tightLabels`。查证后是假阳性：Sora 的质量轨道排在五选一的
+  秒数轨道之后，落单占整行，得到 98px；现在没有哪张视频表把两选一轨道和下拉配成一行。仍传 `tightLabels`（同一种格子、
+  为将来配对时兜底），注释写明是对等而非修复；不加测试——它钉不住任何东西。
 
