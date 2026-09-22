@@ -325,10 +325,21 @@ data: [DONE]
   按规格计价的费用组优先用回显。
 - **`imagen`（Gemini `:predict`）**：纯文生图。用户附了参考图要**显式警告**而不是静默丢掉；
   响应没有 token 用量——元数据至少放张数，否则按次计费的调用在统计里整条消失（§7）。
-- **`xai-images`（Grok Imagine）**：编辑是 JSON（`image:{url:<data URI>}` 或 `images:[…]` 最多 3 张，
-  二者互斥）；`aspect_ratio` 收 `auto`；清晰度走 `resolution: 1k|2k`（不是 `size`）；要
-  `response_format:"b64_json"` 省一次下载。`respect_moderation:false` 之类会让 `url`/`b64` 都空——
+- **`xai-images`（Grok Imagine）**：编辑是 JSON（`image:{url:<data URI>}` 或 `images:[…]`，二者互斥）；
+  参考图上限**文档写 3 张【文档 2026-09】，实测 5 张 HTTP 200 并按 5 张收费【实测 2026-09-21】**——旧结论
+  「最多 3 张」被推翻，按 5 截断。`aspect_ratio` 收 `auto`；清晰度走 `resolution: 1k|1.5k|2k`（不是 `size`；`1.5k`
+  只有 2.0 收）；要 `response_format:"b64_json"` 省一次下载。`respect_moderation:false` 之类会让 `url`/`b64` 都空——
   空即失败。
+  **质量（`grok-imagine-image-2.0`，【实测 2026-09-22】）**：请求字段 `quality`，枚举 `low | medium | high | auto`
+  （别的值 → 422，错误信息列出枚举）；2.0 只收 `low / medium / auto`（`high` → 400 `This model only supports the following
+  quality value(s): low, medium, auto.`）；**不带 = medium**。OpenAPI（`docs.x.ai/openapi.json`）的请求体**没列** `quality`，
+  只有 `ImagePricingTier` 一句「Medium is the default quality a request serves at when it leaves `quality` unset」——文档与
+  OpenAPI 不一致，以实测为准。`GET /v1/image-generation-models/{id}` 回 `image_price` + `pricing[{quality, resolution,
+  price_per_image}]`（`price_per_image` 单位 1e-8 美分 = 1 tick，见 §7）；2.0 六格：1K·Low $0.04 / 1.5K·Low $0.05 /
+  2K·Low $0.06 / 1K·Medium $0.06 / 1.5K·Medium $0.07 / 2K·Medium $0.08。**初代 `grok-imagine-image`（$0.02）与
+  `grok-imagine-image-quality`（$0.05）是 `pricing: []`（各质量同价）**：它们**默默收下** `quality`（一个骗人的旋钮，别在
+  UI 上给），而 `resolution: 1.5k` → 400 `1.5K resolution is not supported for this model.`（坑 125）。`quality: auto` 由模型
+  定档（一次实测选了 Low，$0.04）——按规格计价的表写不出它（坑 124）。
 - **`minimax`（`image-01` / `image-01-live`）**：**不是** Images API，也到不了 Images API。
   `aspect_ratio`（8 种）与 `width/height`（512–2048、8 的倍数、仅 `image-01`）是同一件事的两种拼法；
   `n` 1–9；`style` 仅 `-live`；`aigc_watermark` 默认关。`subject_reference[{type:"character", image_file}]`
@@ -413,6 +424,26 @@ data: [DONE]
   这类不回 token 的端点返回 `{}` 就会在统计里整条消失——上游照扣。至少放张数。
 - **按张计费的端点，别把像素折算的 token 塞进通用 token 键**（Seedream 的 `output_tokens`
   = 像素/256），放私有键只展示（坑 83）。
+- **有的端点直接报钱。** xAI images 的 `usage` 只有一个字段 `cost_in_usd_ticks`，**1 tick = $10⁻¹⁰**（OpenAPI 把
+  `price_per_image` 定义为 "1/100,000,000ths of a USD cent"；实测 400 000 000 = 1K·Low $0.04）【实测 2026-09-21/22】。
+  它**含输入图**（$0.06 + 5 × $0.01 = 1 100 000 000），是**整单实扣**——压过任何本地算式，不与 token / 按张**相加**
+  （上一条的「相加」规则对它不适用）；回包里**没有**输入张数，张数只能自己数。「没报」（字段缺）与「报了 0」要分开存
+  （NULL vs 0）。经中转（走 Images API 形状）时这个字段可能原样透传，但**那是 xAI 收中转的价，不是用户付中转的价**——
+  只在自家协议上读它。
+- **输入图按张计费，与输出分开标价**【2026-09-21 查证】：xAI 2.0 **$0.01/张、线性、无免费张数**，`n:2` 时**按请求收一次、
+  不乘输出张数**（1 张参考图 + `n:2` + low = 900 000 000 = 2 × 0.04 + 1 × 0.01【实测 2026-09-22】）；Seedream 5.0 pro
+  0.02 元/张、**每次请求首张免费**，回报 `usage.input_images`（原始张数）。gpt-image / Gemini image 的输入图在 `input_tokens` 里
+  （图像输入单价与文本不同：$8/M vs $5/M，`input_tokens_details.image_tokens` 有明细）。**张数要在组完请求体之后数**：
+  按上限截断、再丢掉读不出的附件——截断后的长度会为没发出去的图收钱。**一张没交付就不该收输入费**（方舟明说失败免费）。
+  失败 / 被审核拦下的请求上游是否仍收输入费：【未验】——失败的回包走不到记账，只能对账单。
+- **计费相关的请求默认值要明发**（与 14 §3.6 同一条）：xAI 不带 `quality` 按 Medium 计（$0.06），不是标价表第一格的
+  Low（$0.04）；只发分辨率、本地按「表第一行」估价，会把每张图**低估三分之一**而不报错（坑 123）。默认值写死并发出去，
+  用量记录才带得上规格。
+- **记账读的中性键是保留键。** 记账层对所有厂商一视同仁地读 `input_image_count` / `reported_cost_usd` 这类**应用自己**的键；
+  凡把上游 `usage`（或任何上游 map）**原样铺进** metadata 的地方，都要先剔掉这些键——否则中转或厂商起个同名字段就能定账
+  （坑 126）。只有协议自己的换算（tick → 美元、数出来的张数）能写它们，且写在铺之后。聊天四族与 images 各家都有这种原样铺的
+  代码（06 §1 给 DeepSeek 补 `cached_tokens` 的那种地方就是）。**流式出图的每个图片块也要带**这两个键：流在出图后、收尾块前
+  被放弃时，记账只看到图片块（坑 127）。设计层（计费组 / 用量行快照 / 档位匹配 / 用量页）见 `llm-billing-model` skill。
 
 ## 8. 结构化出图结果：拆图层的落库与画布还原（Joycai 2026-09 实现）
 

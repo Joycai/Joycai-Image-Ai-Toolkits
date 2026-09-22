@@ -60,8 +60,6 @@ generation and speech recognition, with two
 [agent](ai-agent-playbook/12b-agent-roadmap.md)). It is a snapshot of two
 skills' references — `ai-agent-architecture` and `agent-runtime-architecture`
 (synced 2026-09-22); re-sync it from there rather than editing it here.
-[`writeback-2026-09-22.md`](ai-agent-playbook/writeback-2026-09-22.md) holds
-facts this repo measured that are not yet in the skill; it goes when they are.
 
 ## Plans and the ledger
 
