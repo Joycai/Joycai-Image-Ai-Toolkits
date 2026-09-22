@@ -106,7 +106,7 @@ D2c（v4.25.0）给按规格计费组加了「输入图」一侧，但只让**�
 | 4 | xAI 轮询读 `video.duration` 与 `usage.cost_in_usd_ticks`；信封；执行器；`settleVideoUsage` 写报价 | `xai_videos_protocol.dart`、`protocol.dart`、`task_executors.dart`、`llm_service.dart`、`usage_repository.dart`、`database_service.dart` | 信封测试；settle 测试：规格写四列 + 报价列；按次只写报价列 | ✅ |
 | 5 | UI：编辑器 / 摘要 / 卡片 / 用量页；四语；截图 | `widgets/models/*`、`screens/metrics/widgets/usage_list.dart`、`l10n/src/*/models.arb` | widget 测试 + 截图无溢出 | ✅ |
 | 6 | 文档：`api/usage.md` §5 加 xAI 视频表、`llm-three-layer.md` 不变量、台账、playbook 快照、`llm-billing-model` skill 01/02/03/05/06；bump 4.28.0 | `docs/`、八处版本号 | — | ✅（台账在收尾片） |
-| 7 | 独立 review（opus）→ 修 → 再 review，直到无新问题；PR | — | 两道门全绿 | ⬜ |
+| 7 | 独立 review（opus）→ 修 → 再 review，直到无新问题；PR | — | 两道门全绿 | ✅ 六轮 |
 
 ## 4. 设计 brief（交给 Claude Design 项目的原文）
 
@@ -180,4 +180,6 @@ D2c（v4.25.0）给按规格计费组加了「输入图」一侧，但只让**�
 - **review 第 5 轮**（opus，只审第 4 轮修复）：2 条 MINOR——H3 走线测试每跑一次在系统临时目录留 5 个 `joycai_h3_ref_*` 文件
   （生产靠启动时的 6 小时清扫）→ 测试快照前后集合、只删自己新增的；`video_settlement_test` 里一条永远不会红的重言式断言 → 删。
   「执行器确实调了 `settleVideoUsage` 并原样传参」仍只有纯函数一侧的钉子，走通整个视频执行器的代价不值一条 MINOR，记在此。
+- **review 第 6 轮**（opus，只审第 5 轮修复）：No new findings worth fixing。实跑确认 H3 用例跑前跑后临时文件数不变（15 → 15），
+  `video_settlement_test` 剩下三条各自能红。六轮收口。
 
