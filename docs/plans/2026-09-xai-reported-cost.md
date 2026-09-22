@@ -130,3 +130,7 @@ xAI 的 Images API 在每个回包的 `usage` 里写明**这次请求实扣了�
   伪造。三处都改走 `upstreamUsage`，纯函数各钉一条（`upstream_usage_sites_test.dart`）。② `upstreamUsage` 的注释写「保留键」是复数、
   只剔一个：`input_image_count` 同样是应用自己的结论、同样可伪造（文生图不发布这个键，伪造的会活下来、按规格组收根本没发的参考图）——
   一起剔。方舟走 `sentInputImages(reported: usage['input_images'])` 读的是 vendor 字段，不受影响。
+- **Review 第三轮（opus，只查第二轮那一个 commit）** 一条 NIT（只改注释）：`parseGoogleChunks` 的文档还说 `usageMetadata`「原样」带过去——
+  现在剔了两个保留键。六项核对（方舟的 `input_images` 走 vendor 字段不受剔键影响；三家 images 协议的 `sentInputImages` 都在铺之后、
+  last-wins 仍发布张数；③ 非 Map 的 `usageMetadata` 由运行时 TypeError 变成 null；④ `usage == null` 结果同前；无 import 环；
+  `lib/services/llm/` 下再无原样铺；百炼流式逐帧覆盖仍对）全部通过。

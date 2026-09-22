@@ -354,10 +354,10 @@ class GeminiModelPartsCollector {
 /// Parses one `generateContent`/stream chunk into [LLMResponseChunk]s, handling
 /// prompt blocking, finish reasons and safety ratings via [logger].
 ///
-/// `metadata` carries `usageMetadata` verbatim plus, on the chunk that ends
-/// the candidate, `finish_reason` (①'s vocabulary) and `finish_reason_raw`
-/// (③'s). Text parts flagged `thought: true` go out as reasoning, never as
-/// text.
+/// `metadata` carries `usageMetadata` through [upstreamUsage] (the app's two
+/// reserved keys removed, the rest as sent) plus, on the chunk that ends the
+/// candidate, `finish_reason` (①'s vocabulary) and `finish_reason_raw` (③'s).
+/// Text parts flagged `thought: true` go out as reasoning, never as text.
 ///
 /// [callIds] synthesizes the ids of any `functionCall` parts. A stream passes
 /// one instance for all of its chunks; left null, the chunk gets a fresh one,
