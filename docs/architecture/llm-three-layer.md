@@ -897,6 +897,10 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
   规格模式按秒重写输出四列（`updateSpecBilling`，输入三列不碰），报价在任何模式下经
   `UsageRepository.updateReportedCost` **只写 `reported_cost` 一列**——提交行的档位估算从此被压过（D2d 口径），
   快照仍在行上。**新增一个视频协议时必须在 `VideoSubmission` 里报张数**，否则该协议上的视频输入费静默记 0。
+  轮询侧的对称不变量：`done` 信封上的 `reported_cost_usd` 与 `renderedSeconds` 只能由协议自己的换算写入（`videoDoneEnvelope` /
+  `reportedCostFromTicks`）；一个把上游 body **原样当信封返回**的轮询（今天只有 `veoPollResult`）必须在返回前 `remove` 掉这两个键，
+  否则挂在中转上的该面塞一个同名字段就能压掉整张档位表（坑 126 的第九处，review 1）——`video_poll_contract_test` 里钉了伪造用例，
+  新加的穿透式轮询也要各钉一条。
 - **流式出图（2026-09-18 补）**：只在方舟自家渠道、且表上 `streamsImages` 为真（5.0 lite ·
   4.5 · 4.0）时，`generateStream` 走 `ArkImagesProtocol.generateImageStream`——发
   `stream: true`，每个 `partial_succeeded` 下载后作为一个 `imagePart` 推出，`partial_failed`
