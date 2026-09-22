@@ -80,10 +80,12 @@ extension _ParamControls on _VideoConfigPanelState {
           compact: true,
           expand: true,
           // The image panel's half-cell rule (`A1f · 4g`): a two-option
-          // track beside a dropdown gets 137px, 65 a slot, and an English
-          // "Standard" needs 51 of it. No video table pairs one that way
-          // today (Sora's quality follows the five-way seconds track and so
-          // takes a row of its own), so this is parity, not a fix.
+          // track paired with another half-cell gets 137px, 65 a slot.
+          // MiniMax's `768P | 2K` already lands there beside its aspectRatio
+          // dropdown; Sora's quality follows the five-way seconds track and
+          // takes a row of its own. Short labels fit either way today — this
+          // keeps the headroom for one that does not (an English "Standard"
+          // needs 51).
           tightLabels: true,
           style: AppSegmentStyle.raised,
         );

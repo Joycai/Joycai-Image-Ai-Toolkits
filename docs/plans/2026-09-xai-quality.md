@@ -120,6 +120,8 @@ default quality a request serves at when it leaves `quality` unset」；`GET /v1
   ② 台账行里的 `git show <sha>` 占位——收尾片删本文件时填真实 sha。
 - **Review 第二轮（opus）** 只查第一轮那一个 commit，一条 MINOR：视频面板的两选一轨道（Sora 的 Standard | High）
   是同一种半格、英文 Standard 要 51px，却没传 `tightLabels`。查证后是假阳性：Sora 的质量轨道排在五选一的
-  秒数轨道之后，落单占整行，得到 98px；现在没有哪张视频表把两选一轨道和下拉配成一行。仍传 `tightLabels`（同一种格子、
-  为将来配对时兜底），注释写明是对等而非修复；不加测试——它钉不住任何东西。
+  秒数轨道之后，落单占整行，得到 98px。仍传 `tightLabels`，不加测试——它钉不住任何东西。
+- **Review 第三轮（opus）** 只查第二轮那一个 commit，一条 MINOR（只改注释）：第二轮的注释说「现在没有哪张视频表把两选一轨道
+  和下拉配成一行」是错的——`_minimaxVideo` 的 `768P | 2K` 就配在 aspectRatio 下拉旁边，只是标签短、放得下。注释与本记录改正：
+  `tightLabels` 在视频面板是给已有的半格留余量，不是「对等」。
 
