@@ -144,6 +144,26 @@ JSON 解析失败，看起来像"模型不听话"。
   `/v1/image-generation-models` 列表里 `grok-imagine-image`（$0.02）与 `grok-imagine-image-quality`（$0.05）
   都是 `pricing: []`（各质量同价），只有 2.0 有矩阵。应用自 4.26.0 起给 2.0 发 `quality`（默认 `medium`，
   明发，让用量行带 `1K · medium`）和 `1.5k`；初代不发质量、不给 1.5k（`_xaiImageLegacy`）。
+- **xAI 视频也按张收输入图，且只在终态回包里报价**（2026-09-22 付费实测，`grok-imagine-video-1.5`，
+  `POST /v1/videos/generations` → `GET /v1/videos/{request_id}`，1 s · 480p；标价页只写 $0.080/s，一个字没提输入图）：
+
+  | 请求 | 终态 `usage.cost_in_usd_ticks` | 折合 |
+  |---|---|---|
+  | 文生视频 | 800 000 000 | $0.08 = 1 s × $0.08 |
+  | `image`（首帧）× 1 | 900 000 000 | $0.09 = $0.08 + 1 × $0.01 |
+  | `reference_images` × 2 | 1 000 000 000 | $0.10 = $0.08 + 2 × $0.01 |
+
+  由此：视频的首帧 / 参考图 **$0.01/张、线性、无免费张数**——与它的出图面同价。报文形状：提交只回
+  `{request_id}`；pending 是 **HTTP 202** `{status, progress}`；done 是 200
+  `{status:'done', video:{url, duration, respect_moderation}, model, usage:{cost_in_usd_ticks}, progress:100}`——
+  **报价与实际秒数（`video.duration`）都只在终态轮询里**，提交时什么都没有。OpenAPI 里 `VideoResponse.usage`
+  是 `MediaUsage`（只有 `cost_in_usd_ticks` 必填，token 字段视频不带）；`GET /v1/video-generation-models` 没有 `pricing`；
+  初代 `grok-imagine-video` 标价 $0.050/s（是否也收参考图未测）；720p / 1080p 是否加价未测。
+
+  应用自 4.28.0 起：计费组的按秒 / 按条 / 按次都有「输入图」一侧（`D2e`）；五个视频协议在提交时发布实际放进
+  请求体的张数（`VideoSubmission.inputImages` → 提交行的 `input_image_count`）；xAI 视频面的终态轮询读
+  `video.duration` 结算秒数、读 `usage.cost_in_usd_ticks` 写 `token_usage.reported_cost`（`settleVideoUsage`
+  的两段），用量页因此把视频行也显示成「上游报价 | 档位估算」。
 - **③ 的多模态**在 `prompt_tokens_details` 下还有 `image_tokens` / `audio_tokens`
   等明细（部分兼容层也提供），且图片 token 用量随分辨率档位变化很大——同一张图
   在 low / default / high 三档下可能相差一个数量级。

@@ -883,6 +883,20 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
   `xai_images_protocol_test.dart` / `input_image_count_test.dart` 的走线测试里各钉一条伪造用例）；
   ② 凡是自己造 `imagePart` 块的地方（今天是 `_asChunks`；方舟 SSE 与 Midjourney 的 controller 若哪天也报价，同样要带），
   图片块也要带这个键，与 `input_image_count` 同理——流在出图后被放弃时兜底记账只看到图片块。
+- **视频的输入图与终态报价（`D2e`，2026-09-22）**：五个视频协议（Veo / OpenAI Videos / 百炼 / MiniMax 云与 H3 本地 /
+  xAI）的 `submit` 返回 `VideoSubmission{requestId, inputImages}`，不再是裸 id；张数按上面的不变量①在**组完请求体之后**数
+  （读不到的附件、互斥被丢的参考图、xAI 不支持的尾帧都不算：xAI 首帧计 1 或 `reference_images` 长度，OpenAI Videos 数
+  multipart 文件，百炼数 `input.media[]`，MiniMax 两面数 partition 之后的 `kept`，Veo 用 `veoInputImages(payload)`）。
+  `LLMOperationTicket.inputImages` 带到 `LLMService.startLongRunning`，提交行的 metadata 因此有 `input_image_count`，
+  计费组的输入一侧对视频生效——判据 `PricingGroup.chargesInputImages` 自此不看单位：规格模式三种单位与按次都收，
+  按 token 不收（`SpecUsage.price` 保留「零交付不收」；按次行只写输入三列，`SpecUsage.inputsOnly` /
+  `LLMService.requestInputBilling`，输出四列留空，`costParts.request` 分支带 `spec.inputCost`）。
+  **xAI 视频面的报价只在终态轮询里**（`api/usage.md` §5）：`xaiVideoPollEnvelope` 的 done 分支把 `video.duration`
+  作 `renderedSeconds`、`usage.cost_in_usd_ticks` 经同一个 `reportedCostFromTicks` 作 `videoDoneEnvelope(reportedCost:)`
+  发布在信封顶层的 `reported_cost_usd` 下；执行器只要两者任一在就调 `settleVideoUsage`，它是**两段独立的尽力而为**：
+  规格模式按秒重写输出四列（`updateSpecBilling`，输入三列不碰），报价在任何模式下经
+  `UsageRepository.updateReportedCost` **只写 `reported_cost` 一列**——提交行的档位估算从此被压过（D2d 口径），
+  快照仍在行上。**新增一个视频协议时必须在 `VideoSubmission` 里报张数**，否则该协议上的视频输入费静默记 0。
 - **流式出图（2026-09-18 补）**：只在方舟自家渠道、且表上 `streamsImages` 为真（5.0 lite ·
   4.5 · 4.0）时，`generateStream` 走 `ArkImagesProtocol.generateImageStream`——发
   `stream: true`，每个 `partial_succeeded` 下载后作为一个 `imagePart` 推出，`partial_failed`

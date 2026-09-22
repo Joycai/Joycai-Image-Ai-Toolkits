@@ -99,12 +99,12 @@ D2c（v4.25.0）给按规格计费组加了「输入图」一侧，但只让**�
 
 | 片 | 内容 | 主要文件 | 验收 | 状态 |
 |---|---|---|---|---|
-| 0 | 本文件 + 设计稿 `D2e` | `docs/plans/`、Claude Design | — | ⬜ |
-| 1 | 判据三处：`chargesInputImages`、`SpecUsage.price` / `inputsOnly`、`costParts.request` | `pricing_group.dart`、`spec_billing.dart`、`token_usage.dart` | 单测：按秒 / 按条组收；按次行 `spec.inputCost` 进 `cost`；按 token 仍不收 | ⬜ |
-| 2 | 解析器 + 记账：按次模式写输入三列 | `llm_config_resolver.dart`、`llm_usage_recording.dart`、`llm_service.dart` | `recordUsageForTest`：按次 + 张数 → 三列有值；无张数 → NULL | ⬜ |
-| 3 | `VideoSubmission` + ticket 张数 + 五个协议数张数 + 提交行 metadata | `protocol.dart`、`llm_dispatcher.dart`、五个 `*_video*_protocol.dart`、`gemini_payload.dart`、`llm_service.dart` | 每个协议一条走线测试：请求体里的张数 = ticket 张数；提交行 `input_images` | ⬜ |
-| 4 | xAI 轮询读 `video.duration` 与 `usage.cost_in_usd_ticks`；信封；执行器；`settleVideoUsage` 写报价 | `xai_videos_protocol.dart`、`protocol.dart`、`task_executors.dart`、`llm_service.dart`、`usage_repository.dart`、`database_service.dart` | 信封测试；settle 测试：规格写四列 + 报价列；按次只写报价列 | ⬜ |
-| 5 | UI：编辑器 / 摘要 / 卡片 / 用量页；四语；截图 | `widgets/models/*`、`screens/metrics/widgets/usage_list.dart`、`l10n/src/*/models.arb` | widget 测试 + 截图无溢出 | ⬜ |
+| 0 | 本文件 + 设计稿 `D2e` | `docs/plans/`、Claude Design | — | ✅ 帧 24a–24h |
+| 1 | 判据三处：`chargesInputImages`、`SpecUsage.price` / `inputsOnly`、`costParts.request` | `pricing_group.dart`、`spec_billing.dart`、`token_usage.dart` | 单测：按秒 / 按条组收；按次行 `spec.inputCost` 进 `cost`；按 token 仍不收 | ✅ |
+| 2 | 解析器 + 记账：按次模式写输入三列 | `llm_config_resolver.dart`、`llm_usage_recording.dart`、`llm_service.dart` | `recordUsageForTest`：按次 + 张数 → 三列有值；无张数 → NULL | ✅ |
+| 3 | `VideoSubmission` + ticket 张数 + 五个协议数张数 + 提交行 metadata | `protocol.dart`、`llm_dispatcher.dart`、五个 `*_video*_protocol.dart`、`gemini_payload.dart`、`llm_service.dart` | 每个协议一条走线测试：请求体里的张数 = ticket 张数；提交行 `input_images` | ✅ |
+| 4 | xAI 轮询读 `video.duration` 与 `usage.cost_in_usd_ticks`；信封；执行器；`settleVideoUsage` 写报价 | `xai_videos_protocol.dart`、`protocol.dart`、`task_executors.dart`、`llm_service.dart`、`usage_repository.dart`、`database_service.dart` | 信封测试；settle 测试：规格写四列 + 报价列；按次只写报价列 | ✅ |
+| 5 | UI：编辑器 / 摘要 / 卡片 / 用量页；四语；截图 | `widgets/models/*`、`screens/metrics/widgets/usage_list.dart`、`l10n/src/*/models.arb` | widget 测试 + 截图无溢出 | ✅ |
 | 6 | 文档：`api/usage.md` §5 加 xAI 视频表、`llm-three-layer.md` 不变量、台账、playbook 快照、`llm-billing-model` skill 02/03；bump 4.28.0 | `docs/`、七处版本号 | — | ⬜ |
 | 7 | 独立 review（opus）→ 修 → 再 review，直到无新问题；PR | — | 两道门全绿 | ⬜ |
 
@@ -136,4 +136,23 @@ D2c（v4.25.0）给按规格计费组加了「输入图」一侧，但只让**�
 
 ## 5. 施工记录
 
-（逐片追加）
+- **第 0 片 · 设计稿 `D2e`**（子代理拿不到 DesignSync，稿子由主会话校验 `dv-*` 词汇与帧 id 后推送，128 782 字节，
+  section `t24`，帧 24a–24h + mono 规格汇总）。裁决：① 规格模式下「输入图」块对三种单位**常在**，D2c 22b 的
+  AnimatedSize 收起作废；副题按单位换词——按张仍 `specInputSub`，按秒 / 按条用新键 `specInputSubVideo`「首帧 / 尾帧 / 参考图」；
+  单价后缀始终 `/张`。② 按次模式：同一个部件放在 `requestPriceHint` **之下**（请求字段 → 6 → 提示 → 10 → 发丝线 → 6 → 行），
+  不与请求字段分栏；去掉档位表删除列的 28 留白（`trailingBlank: false`），单价框右缘与请求字段右缘对齐；提示句不提输入图。
+  ③ 摘要：按次分支拼同一条 `feeGroupInputSummary` 尾巴；卡片标签「请求」之后加「输入图」标签，不加悬浮表。
+  ④ 用量页：按次行规格格只写「输入 2 张」；展开处 = 规格行减去「规格」格——请求数 | 单价（= 请求单价）| 输出金额 | 输入图 | 输入金额；
+  与报价并存时顺序照 D2d 23b 一格不改。分组行不改。四语只新增一条 `specInputSubVideo`。
+- **第 1 片** 按次行的输入侧不复用 `SpecUsage.price`（它会写单位 / 快照进输出四列），另开 `SpecUsage.inputsOnly` 与共享的
+  `chargedInputImages`：输出四列留空，`UsageSpecBilling.fromMap` 对「只有输入三列非零」的行本来就返回非 null，读回即有 `inputCost`。
+- **第 3 片** `VideoJobProtocol.submit` 的返回类型改成 `VideoSubmission`，五个协议一起改（编译器把漏网的都点出来）；
+  Veo 的张数从 `prepareVeoPayload` 的产物里数（`veoInputImages`），不改那个函数的签名。
+  新走线测试 `video_input_images_test.dart`：xAI / OpenAI Videos / 百炼 / MiniMax 各一条（含读不到的附件与首帧互斥），
+  Veo 一条纯函数，加一条 `LLMService.startLongRunning` 端到端——提交行 `spec.inputImages == 2`、`cost == 0.10`（正是实测账单）。
+- **第 4 片** `settleVideoUsage` 拆成两段独立的尽力而为（秒数 → `updateSpecBilling`，报价 → 新的 `updateReportedCost`），
+  各自 try：一段失败不阻塞另一段（测试钉了两个方向）。`videoDoneEnvelope(reportedCost:)` 用 images 面同一个 `reportedCostKey`，
+  执行器用 `reportedCostOf(done)` 读，不另起键。
+- **第 5 片** 输入图行抽成 `SpecInputImagesBlock`（`spec_rate_table.dart` 内，与 `_PriceField` / `_Hint` 同文件），
+  表与按次分支共用；`_inputImagesText` 的「免费」判据在按次行一律视为已交付。截图（`usage_desktop_light_addRequest.png`）：
+  按次编辑器的行落在提示句下、单价框与请求字段右缘对齐，无溢出；卡片「按次计费 · 图片」带「输入图 $0.01/张」标签。
