@@ -75,6 +75,16 @@ class AppSegmentedControl<T> extends StatefulWidget {
   /// Tighter type and padding, for controls tucked into a toolbar.
   final bool compact;
 
+  /// Spend the slot on the label: the chip's horizontal inset drops to a
+  /// floor of 4. For an [expand] track in a cell narrower than its labels
+  /// plus their insets — the workbench panel's half-cell, where the full
+  /// inset cost "Medium" its last two letters (65px slot, 46px label, 20px
+  /// of padding). The label is centred by the row either way, so on a
+  /// width-bounded track the inset only decides when a label elides; it is
+  /// still an opt-in because a track that sizes itself from its chips
+  /// (`IntrinsicWidth`) would shrink by the difference.
+  final bool tightLabels;
+
   /// Draw each option as its [AppSegment.icon] alone, with the label as its
   /// tooltip. For a toolbar on a phone, where the labelled track would take
   /// the whole row — the option is never left unexplained, only unlabelled.
@@ -96,6 +106,7 @@ class AppSegmentedControl<T> extends StatefulWidget {
     required this.onChanged,
     this.expand = false,
     this.compact = false,
+    this.tightLabels = false,
     this.iconOnly = false,
     this.style = AppSegmentStyle.tinted,
     this.track = AppSegmentTrack.fill,
@@ -289,14 +300,10 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
       onTap: selected || !segment.enabled ? null : () => widget.onChanged(segment.value),
       borderRadius: BorderRadius.circular(AppRadius.control),
       child: Container(
-        // On an `expand` track the slot is the row's to divide and the label
-        // is centred in it, so the horizontal inset is not a look — it is
-        // only the point at which a label starts to elide. The full inset
-        // cost "Medium" its last two letters in a half-width cell of the
-        // workbench panel (65px slot, 46px label, 20px of padding); a floor
-        // of 4 keeps the label off the chip's edge and nothing else.
+        // See [tightLabels]: 4 keeps the label off the chip's edge and
+        // nothing else.
         padding: EdgeInsets.symmetric(
-          horizontal: widget.expand ? 4 : (widget.compact ? 10 : 14),
+          horizontal: widget.tightLabels ? 4 : (widget.compact ? 10 : 14),
           vertical: widget.compact ? 7 : 11,
         ),
         decoration: ownsSkin ? _indicatorDecoration(colorScheme) : _chipHitDecoration(),

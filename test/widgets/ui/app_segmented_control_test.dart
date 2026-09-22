@@ -105,7 +105,7 @@ void main() {
     expect(indicatorRect(tester), chipRect(tester, 'Mid'));
   });
 
-  testWidgets('an expand track spends its slot on the label, not on the inset', (tester) async {
+  testWidgets('tightLabels spends the slot on the label, not on the inset', (tester) async {
     // A two-way compact track in a half-width cell of the workbench panel:
     // 137px → 3px track padding → 65.5px a slot → 1px chip edge. With the
     // full 10px inset the label had 43.5px, and the test font draws every
@@ -119,6 +119,7 @@ void main() {
         onChanged: (_) {},
         expand: true,
         compact: true,
+        tightLabels: true,
       ),
     )));
     await tester.pump();
@@ -130,6 +131,25 @@ void main() {
     // Still centred in its slot: the inset is a floor, not a shift.
     final slot = find.ancestor(of: find.text('Medi'), matching: find.byType(InkWell)).first;
     expect(tester.getCenter(find.text('Medi')).dx, closeTo(tester.getCenter(slot).dx, 0.5));
+  });
+
+  testWidgets('without tightLabels an expand track keeps the inset it is sized by', (tester) async {
+    // The pop-out editor's view toggle sizes itself from its chips
+    // (`IntrinsicWidth`), so there the inset is width: 10 a side, compact.
+    await tester.pumpWidget(host(IntrinsicWidth(
+      child: AppSegmentedControl<int>(
+        segments: const [AppSegment(value: 0, label: 'AB'), AppSegment(value: 1, label: 'CD')],
+        value: 0,
+        onChanged: (_) {},
+        expand: true,
+        compact: true,
+      ),
+    )));
+    await tester.pump();
+    final chip = find.ancestor(of: find.text('CD'), matching: find.byType(InkWell)).first;
+    final label = tester.getSize(find.text('CD')).width;
+    // label + 2 × 10 inset + 2 × 1 chip edge.
+    expect(tester.getSize(chip).width, closeTo(label + 22, 0.5));
   });
 
   testWidgets('the first frame still shows a selection', (tester) async {

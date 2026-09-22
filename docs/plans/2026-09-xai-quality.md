@@ -114,4 +114,8 @@ default quality a request serves at when it leaves `quality` unset」；`GET /v1
   水平内边距只决定何时省略，**在共用的 `AppSegmentedControl` 上把 expand 轨道的水平内边距降到 4**（测试确认不修会截）。
   ② 250 最小栏宽下英文 Medium 仍省略（槽 43 < 45.8），gpt-image-2 的四档轨道同宽同样，只在拖到极限时出现，不做。
   ③ 面板测试的省略断言在测试字体（每个字形一个字号宽）下对英文判不了，改为断言 Medium 的可用宽 ≥ 46；zh / ja 照常全断言。
+- **Review 第一轮（opus）** 无 BLOCKER / MAJOR，两条 MINOR：① 把 expand 轨道的内边距一律降到 4 会波及放大编辑器的视图切换——
+  它用 `IntrinsicWidth` 从片的固有宽算自己的宽（`markdown_editor_large.dart`），每格会窄 20px、触控区缩水。改为 opt-in
+  `AppSegmentedControl.tightLabels`，只有参数栏的格子传 true；补一条「不传时 expand 轨道保持 10 内边距」的测试。
+  ② 台账行里的 `git show <sha>` 占位——收尾片删本文件时填真实 sha。
 
