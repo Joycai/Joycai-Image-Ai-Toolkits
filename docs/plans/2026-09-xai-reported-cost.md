@@ -118,3 +118,10 @@ xAI 的 Images API 在每个回包的 `usage` 里写明**这次请求实扣了�
   用同一行的其余字段重建一个没有报价的 `TokenUsage` 取 `cost`，算式只有一份。
 - **第 5 片** 用量页截图（`usage_desktop_light.png`）：两条 xAI 行按报价显示 $0.0400 / $0.0500，分组行 $0.0900 · 2 张 · 2 次，
   没有溢出。
+- **Review 第一轮（opus）** 无 BLOCKER / MAJOR，两条 MINOR + 三条 NIT：① xAI 出图走 `requestStream`（单发流），报价只在收尾块上——
+  流在出图后被放弃时，兜底记账拿不到它、退回档位表。与 `input_image_count` 同一处理：`_asChunks` 把 `reportedCostEntry`
+  也挂到每个图片块上（走线测试钉住图片块带 0.06）。② 「中转协议不翻这个键」只是说说：五处把上游 `usage` 原样铺进 metadata，
+  上游若恰好有个字段叫 `reported_cost_usd` 就直接成了记账数。加 `upstreamUsage()`（`protocol.dart`）统一做 cast 并剔掉这个保留键，
+  五处都改走它；只有协议自己的换算能写这个键（xAI 走线测试：上游伪造 99 → 仍记 0.06；只伪造不带 ticks → 不记）。
+  ③ `reportedCostFromTicks` 注释里的复数是假的（只有一个调用者）——改。④ `updateSpecBilling` 不碰 `reported_cost` 没有测试钉——
+  `usage_and_task_repository_test` 加一条。⑤ 台账两行的 `git show <sha>` 占位——收尾片填。

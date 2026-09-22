@@ -793,9 +793,8 @@ String? dashscopeFinishReason(Map<String, dynamic> data) {
 /// change to that fallback chain would break both surfaces together instead
 /// of leaving this one silently recording zeros.
 Map<String, dynamic> dashscopeChatMetadata(Map<String, dynamic> data) {
-  final usage = data['usage'];
   return {
-    if (usage is Map) ...usage.cast<String, dynamic>(),
+    ...upstreamUsage(data['usage']),
     'finish_reason': ?dashscopeFinishReason(data),
     'request_id': ?_stringOrNull(data['request_id']),
   };

@@ -78,9 +78,19 @@ double? reportedCostOf(Map<String, dynamic>? metadata) {
   return cost == null || !cost.isFinite || cost < 0 ? null : cost;
 }
 
+/// The [reportedCostKey] entry of [metadata] alone, or null without one —
+/// what an image chunk carries ahead of the closing chunk, for the same
+/// reason as [inputImageCountEntry]: a stream abandoned after a picture
+/// arrived is billed for it from the chunks it did get, and the provider's
+/// figure must be among them or the row falls back to the table.
+Map<String, dynamic>? reportedCostEntry(Map<String, dynamic>? metadata) {
+  final cost = reportedCostOf(metadata);
+  return cost == null ? null : {reportedCostKey: cost};
+}
+
 /// The [reportedCostKey] entry for a provider's `cost_in_usd_ticks`, or
-/// nothing when the usage block does not carry a usable one. Shared by the
-/// protocols that read xAI's block so the tick unit is spelled out once.
+/// nothing when the usage block does not carry a usable one. The tick unit
+/// is spelled out here and nowhere else.
 Map<String, dynamic> reportedCostFromTicks(Object? ticks) {
   final value = ticks is num ? ticks.toDouble() : (ticks is String ? double.tryParse(ticks) : null);
   if (value == null || !value.isFinite || value < 0) return const {};

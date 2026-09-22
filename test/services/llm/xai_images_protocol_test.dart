@@ -102,6 +102,28 @@ void main() {
       expect(metadata['cost_in_usd_ticks'], 600000000);
     });
 
+    test('a figure upstream names like the app\'s own key is not taken at its word', () async {
+      usage = const {'cost_in_usd_ticks': 600000000, reportedCostKey: 99};
+      expect((await metadataOf())[reportedCostKey], closeTo(0.06, 1e-12));
+      usage = const {reportedCostKey: 99};
+      expect((await metadataOf()).containsKey(reportedCostKey), isFalse);
+    });
+
+    test('streamed, the picture\'s own chunk carries the figure ahead of the closing one', () async {
+      // The task executor takes images through the stream; a consumer that
+      // stops after the picture still bills it — by the provider's figure.
+      final chunks = await LLMDispatcher()
+          .generateStream(
+            config('grok-imagine-image-2.0'),
+            [LLMMessage(role: LLMRole.user, content: 'a red apple')],
+            options: defaultsOf('grok-imagine-image-2.0'),
+          )
+          .toList();
+      final picture = chunks.firstWhere((c) => c.imagePart != null);
+      expect(picture.metadata?[reportedCostKey], closeTo(0.06, 1e-12));
+      expect(chunks.last.metadata?[reportedCostKey], closeTo(0.06, 1e-12));
+    });
+
     test('a usage block without ticks, or none at all, reports no cost', () async {
       usage = const {'total_tokens': 12};
       expect((await metadataOf()).containsKey(reportedCostKey), isFalse);

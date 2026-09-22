@@ -130,6 +130,21 @@ void main() {
       expect(reportedCostFromTicks(<String, Object>{}), isEmpty);
     });
 
+    test('a usage block spread verbatim cannot carry the key in', () {
+      // The billed figure is the app's conclusion, never the wire's: a relay
+      // (or a vendor) naming a field the same must not set it.
+      expect(upstreamUsage({'total_tokens': 3, reportedCostKey: 99}), {'total_tokens': 3});
+      expect(upstreamUsage({'cost_in_usd_ticks': 5}), {'cost_in_usd_ticks': 5});
+      expect(upstreamUsage(null), isEmpty);
+      expect(upstreamUsage('usage'), isEmpty);
+    });
+
+    test('reportedCostEntry carries the figure alone, null without one', () {
+      expect(reportedCostEntry({reportedCostKey: 0.06, 'x': 1}), {reportedCostKey: 0.06});
+      expect(reportedCostEntry({'x': 1}), isNull);
+      expect(reportedCostEntry(null), isNull);
+    });
+
     test('reportedCostOf reads the key and nothing else, null when absent', () {
       expect(reportedCostOf({reportedCostKey: 0.07}), 0.07);
       expect(reportedCostOf({reportedCostKey: 0}), 0.0);

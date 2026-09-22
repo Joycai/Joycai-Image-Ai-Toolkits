@@ -182,8 +182,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         // chat spelling — see LLMService._recordUsage, which reads both.
         metadata: {
           if (revised.isNotEmpty) 'revised_prompt': revised,
-          if (data['usage'] is Map)
-            ...(data['usage'] as Map).cast<String, dynamic>(),
+          ...upstreamUsage(data['usage']),
           // The size and quality the endpoint settled on. A request that
           // said `auto` has no spec of its own, and a spec-billed fee group
           // prices by exactly this — see `OutputSpec.from`, which prefers

@@ -200,7 +200,7 @@ Map<String, dynamic>? firstChoice(Map<String, dynamic> chunk) {
 /// ride along untouched.
 Map<String, dynamic>? normalizeOpenAIUsage(Object? raw) {
   if (raw is! Map) return null;
-  final usage = raw.cast<String, dynamic>();
+  final usage = upstreamUsage(raw);
   final hits = usage['prompt_cache_hit_tokens'];
   final details = usage['prompt_tokens_details'];
   final hasCached = details is Map && details['cached_tokens'] != null;

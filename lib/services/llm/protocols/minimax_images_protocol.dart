@@ -143,7 +143,7 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
         generatedImages: images,
         metadata: {
           'image_count': images.length,
-          if (rawMeta is Map) ...rawMeta.cast<String, dynamic>(),
+          ...upstreamUsage(rawMeta),
           ...sentInputImages(subjectRefs.length),
         },
       );

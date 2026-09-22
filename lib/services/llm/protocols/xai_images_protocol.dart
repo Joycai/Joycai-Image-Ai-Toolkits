@@ -163,8 +163,7 @@ class XaiImagesProtocol implements ImageGenProtocol {
         text: revised,
         generatedImages: images,
         metadata: {
-          if (data['usage'] is Map)
-            ...(data['usage'] as Map).cast<String, dynamic>(),
+          ...upstreamUsage(data['usage']),
           // What xAI says this request cost, in dollars: its usage block is
           // one field, `cost_in_usd_ticks` (1 tick = $10⁻¹⁰), and it covers
           // the reference images too — the usage row bills by it.
