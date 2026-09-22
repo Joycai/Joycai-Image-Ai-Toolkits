@@ -150,10 +150,11 @@ void main() {
       ),
     ));
 
-    expect(await usage.updateReportedCost('video:op-3', 0.10), 1);
+    // A figure the table would not produce, so the estimate is told apart.
+    expect(await usage.updateReportedCost('video:op-3', 0.12), 1);
     final row = (await usage.getTokenUsage()).single;
-    expect(row.reportedCost, 0.10);
-    expect(row.cost, closeTo(0.10, 1e-9));
+    expect(row.reportedCost, 0.12);
+    expect(row.cost, closeTo(0.12, 1e-9));
     expect(row.snapshotCost, closeTo(0.10, 1e-9), reason: '1 × 0.08 + 2 × 0.01, still on the row');
     expect(row.spec!.inputImages, 2);
     expect(await usage.updateReportedCost('video:nobody', 0.1), 0);

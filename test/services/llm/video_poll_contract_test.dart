@@ -161,6 +161,29 @@ void main() {
   group('veoPollResult (B6)', () {
     const endpoint = 'https://generativelanguage.googleapis.com/v1beta';
 
+    test('the reserved cost and length keys never come from the operation body', () {
+      // Veo reports neither; the body goes back verbatim, so a relay could
+      // otherwise plant the key the executor settles onto the usage row.
+      final done = veoPollResult({
+        'name': 'operations/op1',
+        'done': true,
+        reportedCostKey: 0.0001,
+        videoRenderedSecondsKey: 99,
+        'response': {
+          'generateVideoResponse': {
+            'generatedSamples': [
+              <String, dynamic>{
+                'video': <String, dynamic>{'uri': 'https://generativelanguage.googleapis.com/v1beta/files/x:download'},
+              },
+            ],
+          },
+        },
+      }, 'operations/op1', endpoint);
+      expect(reportedCostOf(done), isNull);
+      expect(done.containsKey(videoRenderedSecondsKey), isFalse);
+      expect(videoOf(done)['uri'], isNotNull);
+    });
+
     test('a failed operation throws its code and message', () {
       // Used to be returned verbatim; the executor read only `response` and
       // reported "no video URI found. Response: null".

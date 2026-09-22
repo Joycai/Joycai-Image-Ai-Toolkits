@@ -105,7 +105,7 @@ D2c（v4.25.0）给按规格计费组加了「输入图」一侧，但只让**�
 | 3 | `VideoSubmission` + ticket 张数 + 五个协议数张数 + 提交行 metadata | `protocol.dart`、`llm_dispatcher.dart`、五个 `*_video*_protocol.dart`、`gemini_payload.dart`、`llm_service.dart` | 每个协议一条走线测试：请求体里的张数 = ticket 张数；提交行 `input_images` | ✅ |
 | 4 | xAI 轮询读 `video.duration` 与 `usage.cost_in_usd_ticks`；信封；执行器；`settleVideoUsage` 写报价 | `xai_videos_protocol.dart`、`protocol.dart`、`task_executors.dart`、`llm_service.dart`、`usage_repository.dart`、`database_service.dart` | 信封测试；settle 测试：规格写四列 + 报价列；按次只写报价列 | ✅ |
 | 5 | UI：编辑器 / 摘要 / 卡片 / 用量页；四语；截图 | `widgets/models/*`、`screens/metrics/widgets/usage_list.dart`、`l10n/src/*/models.arb` | widget 测试 + 截图无溢出 | ✅ |
-| 6 | 文档：`api/usage.md` §5 加 xAI 视频表、`llm-three-layer.md` 不变量、台账、playbook 快照、`llm-billing-model` skill 02/03；bump 4.28.0 | `docs/`、七处版本号 | — | ⬜ |
+| 6 | 文档：`api/usage.md` §5 加 xAI 视频表、`llm-three-layer.md` 不变量、台账、playbook 快照、`llm-billing-model` skill 01/02/03/05/06；bump 4.28.0 | `docs/`、八处版本号 | — | ✅（台账在收尾片） |
 | 7 | 独立 review（opus）→ 修 → 再 review，直到无新问题；PR | — | 两道门全绿 | ⬜ |
 
 ## 4. 设计 brief（交给 Claude Design 项目的原文）
@@ -156,3 +156,12 @@ D2c（v4.25.0）给按规格计费组加了「输入图」一侧，但只让**�
 - **第 5 片** 输入图行抽成 `SpecInputImagesBlock`（`spec_rate_table.dart` 内，与 `_PriceField` / `_Hint` 同文件），
   表与按次分支共用；`_inputImagesText` 的「免费」判据在按次行一律视为已交付。截图（`usage_desktop_light_addRequest.png`）：
   按次编辑器的行落在提示句下、单价框与请求字段右缘对齐，无溢出；卡片「按次计费 · 图片」带「输入图 $0.01/张」标签。
+- **第 7 片 · review 第 1 轮**（opus，全范围）：4 条。① MAJOR：Veo 的 `veoPollResult` 把上游 operation JSON **原样**交给执行器
+  （只有 Veo 是穿透，其余四面都走 `videoDoneEnvelope`），本轮新加的 `reportedCostOf(done)` 于是从上游 map 上读保留键——挂在中转上的
+  Gemini 面塞一个 `reported_cost_usd` 就能压掉整张档位表（坑 126 的第九处）。修：`veoPollResult` 在返回前 `remove` 掉
+  `reportedCostKey` 与 `videoRenderedSecondsKey`（Veo 两个都不报），`video_poll_contract_test` 加伪造用例。
+  ② MINOR：`build_script/inno_setup.iss` 的版本号漏改（历次 bump 都改它）→ 4.28.0，八处。③ MINOR：台账「视频的输入图」未销、
+  三条【未验】没有对应行 → 收尾片处理。④ MINOR：升级后「停放」的旧输入图单价会无声开始收费（用户曾在按张下填过、再切到按秒 /
+  按次，4.27 之前判据关着）——不做迁移，在 PR 说明与台账里点名，请用户检查旧计费组。
+  另：`usage_and_task_repository_test` 里 `snapshotCost` 的断言与报价同值断不出东西 → 报价改 0.12。
+

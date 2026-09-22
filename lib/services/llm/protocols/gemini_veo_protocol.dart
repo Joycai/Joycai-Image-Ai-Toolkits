@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../../core/safety_settings.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
+import '../output_spec.dart' show reportedCostKey;
 import 'gemini_payload.dart';
 import 'protocol.dart';
 
@@ -126,6 +127,16 @@ Map<String, dynamic> veoPollResult(
   String endpoint,
 ) {
   if (data['done'] != true) return data;
+
+  // The operation body goes back to the executor as it came, not as an
+  // envelope of this app's making — so the two keys the executor reads as
+  // *this app's* conclusions (the rendered length and the reported cost,
+  // `videoDoneEnvelope`) are taken off it first. Veo reports neither; left
+  // on, a relay serving the Gemini shape could name a field `reported_cost_usd`
+  // and have it outrank the fee group (the reserved-key rule `upstreamUsage`
+  // keeps on every other surface).
+  data.remove(reportedCostKey);
+  data.remove(videoRenderedSecondsKey);
 
   final error = data['error'];
   if (error != null) {
