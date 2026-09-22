@@ -8,13 +8,11 @@ LM Studio…），并在统一 tool loop 之上实现了权限分级、审批通
 千问 / MiniMax 图像、视频面的核对；2026-09 并入 ② Responses 族、中转站回显改写、工具按需加载、
 火山方舟 Seedream（含流式与拆图层）、语音识别（来自 pyVideoTrans / subtitle_studio）。
 
-> 本目录是**两个** skill 的 `references/` 快照（**2026-09-22 同步**）：
+> 本目录是**两个** skill 的 `references/` 快照（**2026-09-22 第三次同步**：xAI 视频计费实测——14 §2 / §3.8、13 §7、06 §1、坑 129、00 §3.3、15）：
 > `ai-agent-architecture`（协议事实知识库：00–06、11、12、13–16）与
 > `agent-runtime-architecture`（agent 层设计标准：07–10、11b、12b）。2026-09 中旬起两者从一个 skill 拆成两个，
 > 坑与路线图因此各有一份（11 / 11b，12 / 12b），编号全局唯一、互相引用。
 > 它描述**机制**，不描述本仓库的现状——本仓库怎么做的见 `../architecture/`。
-> [`writeback-2026-09-22.md`](writeback-2026-09-22.md) 是本仓库 #337–#339 三轮实测**尚未回写进 skill** 的事实
-> （xAI 质量 / 分辨率 / 定价端点、`cost_in_usd_ticks`、输入图按张计费、保留键纪律）；回写后删除。
 
 文档以**通用规范**口吻撰写，可直接放进新项目的 `docs/` 作为搭建标准；关键处均标注
 参考实现文件（simple-ai-writer、本仓库、subtitle_studio），迁移时可对照抄写接口与骨架。

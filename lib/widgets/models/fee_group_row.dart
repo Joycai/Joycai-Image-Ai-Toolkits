@@ -331,7 +331,12 @@ List<Widget> feeGroupPriceTags(BuildContext context, AppLocalizations l10n, Pric
           FeePriceTag(label: l10n.specInputTitle, value: input),
       ];
     default:
-      return [FeePriceTag(label: l10n.priceLabelRequest, value: rate(group.requestPrice, 'Req'))];
+      return [
+        FeePriceTag(label: l10n.priceLabelRequest, value: rate(group.requestPrice, 'Req')),
+        // `D2e · 24d`: the same tag as a spec group's, after the request price.
+        if (feeGroupInputRate(l10n, group) case final input?)
+          FeePriceTag(label: l10n.specInputTitle, value: input),
+      ];
   }
 }
 

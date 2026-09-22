@@ -109,10 +109,9 @@ void main() {
   });
 
   test('settling leaves what the provider reported the row cost', () async {
-    // No video surface reports a price today, but the settle is a partial
-    // update of the output four and must stay one: a report on the row is
-    // the provider's word, and re-pricing the seconds is not a reason to
-    // lose it.
+    // The settle is a partial update of the output four and must stay one:
+    // a report on the row is the provider's word, and re-pricing the
+    // seconds is not a reason to lose it.
     await usage.recordTokenUsage(TokenUsage(
       taskId: 'video:op-2',
       modelId: 'v',
@@ -131,6 +130,34 @@ void main() {
     expect(row.reportedCost, 1.25);
     expect(row.cost, closeTo(1.25, 1e-9));
     expect(row.snapshotCost, closeTo(3.0, 1e-9));
+  });
+
+  test('a reported cost lands on the submit row and touches nothing else', () async {
+    // xAI's terminal poll: the charge, on a row the submit recorded with
+    // the frames it sent and the fee group's estimate.
+    await usage.recordTokenUsage(TokenUsage(
+      taskId: 'video:op-3',
+      modelId: 'v',
+      timestamp: at,
+      billingMode: 'spec',
+      spec: const UsageSpecBilling(
+        unit: OutputUnit.second,
+        units: 1,
+        unitPrice: 0.08,
+        inputImages: 2,
+        inputUnits: 2,
+        inputUnitPrice: 0.01,
+      ),
+    ));
+
+    // A figure the table would not produce, so the estimate is told apart.
+    expect(await usage.updateReportedCost('video:op-3', 0.12), 1);
+    final row = (await usage.getTokenUsage()).single;
+    expect(row.reportedCost, 0.12);
+    expect(row.cost, closeTo(0.12, 1e-9));
+    expect(row.snapshotCost, closeTo(0.10, 1e-9), reason: '1 × 0.08 + 2 × 0.01, still on the row');
+    expect(row.spec!.inputImages, 2);
+    expect(await usage.updateReportedCost('video:nobody', 0.1), 0);
   });
 
   test('the latest checkpoint comes back whole', () async {

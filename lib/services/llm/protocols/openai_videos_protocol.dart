@@ -23,7 +23,7 @@ import 'protocol.dart';
 /// becomes `input_reference`; any other attachments become `images[]`.
 class OpenAIVideosProtocol implements VideoJobProtocol {
   @override
-  Future<String> submit(
+  Future<VideoSubmission> submit(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
@@ -130,7 +130,8 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
             'OpenAI video submit returned no id: ${response.body}');
       }
       logger?.call('OpenAI video task id: $id', level: 'DEBUG');
-      return id;
+      // Every multipart file is an image: `input_reference` and `images[]`.
+      return VideoSubmission(id, inputImages: request.files.length);
     } finally {
       client.close();
     }

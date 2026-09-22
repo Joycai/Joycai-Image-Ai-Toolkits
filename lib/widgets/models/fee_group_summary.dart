@@ -69,7 +69,10 @@ String feeGroupSummary(AppLocalizations l10n, PricingGroup group, {bool withInpu
       );
       return '$output$tail';
     case 'request':
-      return '${l10n.perRequest} · \$${group.requestPrice.toStringAsFixed(4)}${l10n.specUnitSuffixRequest}';
+      // `D2e · 24d`: the same tail as a spec group's, from the same function.
+      final input = withInput ? feeGroupInputSummary(l10n, group) : null;
+      final tail = input == null ? '' : ' · $input';
+      return '${l10n.perRequest} · \$${group.requestPrice.toStringAsFixed(4)}${l10n.specUnitSuffixRequest}$tail';
     default:
       return '${l10n.perToken} · ${trimPrice(group.inputPrice)} / '
           '${trimPrice(group.effectiveCacheInputPrice)} / ${trimPrice(group.outputPrice)}';
@@ -78,7 +81,8 @@ String feeGroupSummary(AppLocalizations l10n, PricingGroup group, {bool withInpu
 
 /// What a group charges for reference images — 「输入 $0.02/张 · 首 1 张免费」
 /// — or null when it charges nothing for them, which is most groups: the
-/// input fee then appears nowhere (`D2c`).
+/// input fee then appears nowhere (`D2c`). Mode-blind: a request-billed
+/// group's tail reads the same (`D2e`).
 String? feeGroupInputSummary(AppLocalizations l10n, PricingGroup group) {
   if (!group.chargesInputImages) return null;
   return _withFree(l10n, group, l10n.feeGroupInputSummary('\$${trimPrice(group.inputUnitPrice)}'));

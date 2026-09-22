@@ -20,7 +20,7 @@ import 'protocol.dart';
 /// every other family.
 class DashScopeVideoProtocol implements VideoJobProtocol {
   @override
-  Future<String> submit(
+  Future<VideoSubmission> submit(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
@@ -140,7 +140,7 @@ class DashScopeVideoProtocol implements VideoJobProtocol {
       // Into the log the moment it exists — the only handle left if polling
       // ever dies.
       logger?.call('DashScope video task id: $taskId', level: 'INFO');
-      return taskId;
+      return VideoSubmission(taskId, inputImages: media.length);
     } finally {
       client.close();
     }

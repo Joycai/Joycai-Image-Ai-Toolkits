@@ -4,9 +4,11 @@ import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/widgets/models/spec_rate_table.dart';
 
-/// The 「输入图」 row under the rate table (`D2c · 22a–22d`): there for a
-/// per-image group on every width, gone for the video units, and saying
-/// what is wrong with what was typed without moving anything else.
+/// The 「输入图」 row under the rate table (`D2c · 22a–22d`, `D2e · 24a–24c`):
+/// there under every unit on every width — with the video units naming the
+/// frames it counts — and, as its own block, under a request-billed group's
+/// hint; saying what is wrong with what was typed without moving anything
+/// else.
 void main() {
   const price = ValueKey('spec-input-price');
   const free = ValueKey('spec-input-free');
@@ -81,12 +83,67 @@ void main() {
     expect(tester.getSize(find.byKey(price)).width, tester.getSize(other).width);
   });
 
-  testWidgets('per second and per clip have no input row at all', (tester) async {
+  testWidgets('per second and per clip keep the row, and say it counts frames (D2e)', (tester) async {
     for (final unit in [OutputUnit.second, OutputUnit.clip]) {
       await pump(tester, unit: unit);
-      expect(find.text('Input images'), findsNothing, reason: unit.name);
-      expect(find.byKey(price), findsNothing, reason: unit.name);
+      expect(tester.takeException(), isNull, reason: unit.name);
+      expect(find.text('Input images'), findsOneWidget, reason: unit.name);
+      expect(find.byKey(price), findsOneWidget, reason: unit.name);
+      expect(find.text('First / last frame, references'), findsOneWidget, reason: unit.name);
+      expect(find.text('Reference images sent with each request'), findsNothing, reason: unit.name);
     }
+    await pump(tester, unit: OutputUnit.image);
+    expect(find.text('Reference images sent with each request'), findsOneWidget);
+  });
+
+  testWidgets('as a request group\'s own block it drops the delete-column blank', (tester) async {
+    final ctrls = [TextEditingController(), TextEditingController()];
+    addTearDown(() {
+      for (final c in ctrls) {
+        c.dispose();
+      }
+    });
+    Future<void> pumpBlock(bool trailingBlank, {bool narrow = false, double width = 460}) async {
+      tester.view.physicalSize = Size(width, 600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SpecInputImagesBlock(
+              key: const ValueKey('block'),
+              inputPriceCtrl: ctrls[0],
+              inputFreeCtrl: ctrls[1],
+              inputPriceInvalid: false,
+              inputFreeWithoutPrice: false,
+              onChanged: () {},
+              narrow: narrow,
+              subtitle: 'Reference images sent with each request',
+              trailingBlank: trailingBlank,
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    await pumpBlock(false);
+    expect(tester.takeException(), isNull);
+    final block = find.byKey(const ValueKey('block'));
+    expect(tester.getTopRight(find.byKey(price)).dx, tester.getTopRight(block).dx,
+        reason: 'the price ends where the request field above it ends');
+
+    await pumpBlock(true);
+    expect(tester.getTopRight(find.byKey(price)).dx, lessThan(tester.getTopRight(block).dx),
+        reason: 'under the table it leaves the delete column');
+
+    await pumpBlock(false, narrow: true, width: 390);
+    expect(tester.takeException(), isNull);
+    expect(tester.getTopRight(find.byKey(price)).dx, tester.getTopRight(block).dx);
   });
 
   testWidgets('the free count takes digits only, three of them', (tester) async {

@@ -24,6 +24,16 @@ class UsageRepository {
         where: 'task_id = ?', whereArgs: [taskId]);
   }
 
+  /// Writes what the provider itself said the job recorded under [taskId]
+  /// cost — `reported_cost` alone, the one column a terminal video poll
+  /// learns; the fee group's snapshot stays on the row beside it
+  /// (`TokenUsage.snapshotCost`). Returns how many rows matched.
+  Future<int> updateReportedCost(String taskId, double cost) async {
+    final db = await _db;
+    return db.update('token_usage', {'reported_cost': cost},
+        where: 'task_id = ?', whereArgs: [taskId]);
+  }
+
   /// Points every usage row and task row recorded against a key of [idMap]
   /// at its value — a channel merge folding one model into another, so the
   /// history follows the model rather than reading "deleted model".

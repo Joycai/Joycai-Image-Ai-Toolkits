@@ -114,6 +114,20 @@ Map<String, dynamic> prepareImagenPayload(List<LLMMessage> history, Map<String, 
 
 /// Veo `:predictLongRunning` request body, including first/last frame and asset
 /// reference images.
+/// How many images a Veo payload from [prepareVeoPayload] carries: the
+/// first frame (`image`), the last frame (`lastFrame`) and every entry of
+/// `referenceImages` — what the submit publishes as its input count.
+int veoInputImages(Map<String, dynamic> payload) {
+  final instances = payload['instances'];
+  if (instances is! List || instances.isEmpty) return 0;
+  final instance = instances.first;
+  if (instance is! Map) return 0;
+  final references = instance['referenceImages'];
+  return (instance['image'] is Map ? 1 : 0) +
+      (instance['lastFrame'] is Map ? 1 : 0) +
+      (references is List ? references.length : 0);
+}
+
 Map<String, dynamic> prepareVeoPayload(List<LLMMessage> history, Map<String, dynamic>? options) {
   final userMsg = history.lastWhere((m) => m.role == LLMRole.user);
 

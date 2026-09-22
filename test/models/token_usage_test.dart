@@ -112,11 +112,26 @@ void main() {
       expect(row.cost, closeTo(0.34, 1e-9));
     });
 
-    test('input columns on a row of another mode bill nothing', () {
+    test('input columns on a request-billed row bill beside the request price (D2e)', () {
       final row = TokenUsage.fromMap({
         'billing_mode': 'request',
         'model_id': 'm',
         'request_price': 0.02,
+        'input_units': 4.0,
+        'input_unit_price': 0.5,
+      });
+
+      expect(row.costParts.request, closeTo(0.02, 1e-9));
+      expect(row.costParts.specInput, closeTo(2.0, 1e-9));
+      expect(row.cost, closeTo(2.02, 1e-9));
+    });
+
+    test('input columns on a token-billed row bill nothing', () {
+      final row = TokenUsage.fromMap({
+        'billing_mode': 'token',
+        'model_id': 'm',
+        'input_tokens': 1000000,
+        'input_price': 0.02,
         'input_units': 4.0,
         'input_unit_price': 0.5,
       });

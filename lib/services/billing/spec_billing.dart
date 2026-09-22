@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
+
 import '../../models/spec_rate.dart';
 import '../../models/token_usage.dart';
 import '../llm/output_spec.dart';
@@ -144,15 +146,15 @@ class SpecUsage {
   /// 「首张免费」), the rest cost [inputUnitPrice] each. A request that
   /// delivered nothing — zero units — is not charged for what it sent
   /// either: Ark says outright that a failed generation is free, and a
-  /// picture-less reply on any other route is the same non-event. Only a
-  /// per-image group charges them at all (`D2c`, the rule
-  /// `PricingGroup.chargesInputImages` states for the UI): no video surface
-  /// reports what it was sent, and a rate that could only ever bill by
-  /// accident is worse than none. A group
-  /// that does not charge inputs bills zero of them at a price of zero, so
-  /// its rows stay as quiet as they were. The count sent and the group's
-  /// price are kept regardless — a request whose only image was the free
-  /// one still says so on the usage page.
+  /// picture-less reply on any other route is the same non-event. Every
+  /// unit charges them (`D2e`): a per-second or per-clip group prices a
+  /// video's first frame and reference images exactly as a per-image group
+  /// prices an edit's — xAI bills \$0.01 a frame beside its per-second rate,
+  /// and the video surfaces publish what they sent ([VideoSubmission]).
+  /// A group that does not charge inputs bills zero of them at a price of
+  /// zero, so its rows stay as quiet as they were. The count sent and the
+  /// group's price are kept regardless — a request whose only image was the
+  /// free one still says so on the usage page.
   static SpecUsage price({
     required OutputUnit unit,
     required List<SpecRate> rates,
@@ -168,20 +170,65 @@ class SpecUsage {
       OutputUnit.second => (spec.seconds ?? 0).toDouble(),
       OutputUnit.clip => 1.0,
     };
-    final sent = math.max(0, inputImageCount);
-    final charges = unit == OutputUnit.image && inputUnitPrice > 0;
-    final charged = charges && units > 0
-        ? math.max(0, sent - math.max(0, inputFreeUnits))
-        : 0;
+    final inputs = chargedInputImages(
+      sent: inputImageCount,
+      unitPrice: inputUnitPrice,
+      freeUnits: inputFreeUnits,
+      delivered: units > 0,
+    );
     return SpecUsage(
       unit: unit,
       units: units,
       unitPrice: match.price,
       spec: spec,
       matched: match.matched,
-      inputImages: sent,
+      inputImages: inputs.inputImages,
+      inputUnits: inputs.inputUnits,
+      inputUnitPrice: inputs.inputUnitPrice,
+    );
+  }
+
+  /// The input side alone, for a request-billed group: the three input
+  /// columns of the usage row, with the output four left empty. A
+  /// request-billed group charges its request price whatever came back, so
+  /// its inputs count as delivered too. Null when the group charges no
+  /// inputs or the request sent none — the row then reads exactly as a
+  /// request-billed row always has.
+  static UsageSpecBilling? inputsOnly({
+    required int inputImageCount,
+    required double inputUnitPrice,
+    required int inputFreeUnits,
+  }) {
+    if (inputUnitPrice <= 0 || inputImageCount <= 0) return null;
+    return chargedInputImages(
+      sent: inputImageCount,
+      unitPrice: inputUnitPrice,
+      freeUnits: inputFreeUnits,
+      delivered: true,
+    );
+  }
+
+  /// The input three of a usage row: [sent] images, the first [freeUnits]
+  /// free, the rest at [unitPrice] — and none at all when nothing was
+  /// [delivered] or the group's price is zero. Output four empty; callers
+  /// that price outputs copy the three across.
+  @visibleForTesting
+  static UsageSpecBilling chargedInputImages({
+    required int sent,
+    required double unitPrice,
+    required int freeUnits,
+    required bool delivered,
+  }) {
+    final images = math.max(0, sent);
+    final charges = unitPrice > 0;
+    final charged =
+        charges && delivered ? math.max(0, images - math.max(0, freeUnits)) : 0;
+    return UsageSpecBilling(
+      units: 0.0,
+      unitPrice: 0.0,
+      inputImages: images,
       inputUnits: charged.toDouble(),
-      inputUnitPrice: charges ? inputUnitPrice : 0.0,
+      inputUnitPrice: charges ? unitPrice : 0.0,
     );
   }
 }

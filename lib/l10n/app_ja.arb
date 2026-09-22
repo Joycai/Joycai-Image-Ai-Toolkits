@@ -1437,6 +1437,7 @@
   "specOtherRatesSub": "未掲載のサイズ · 品質 · 長さ",
   "specInputTitle": "入力画像",
   "specInputSub": "リクエストごとに送信する参照画像",
+  "specInputSubVideo": "先頭 / 末尾フレーム / 参照画像",
   "specInputFreeHint": "無料枚数",
   "specInputFreeSuffix": "枚無料",
   "specInputFreeOnlyHint": "無料枚数だけが入力されています。単価がなければ入力画像は課金されず、この設定は無効です。",

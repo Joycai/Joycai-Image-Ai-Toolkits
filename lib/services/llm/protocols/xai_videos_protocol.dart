@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
+import '../output_spec.dart' show reportedCostFromTicks, reportedCostOf;
 import 'protocol.dart';
 
 /// xAI native async video (`POST /videos/generations` →
@@ -24,7 +25,7 @@ import 'protocol.dart';
 /// with a warning when both are supplied. [submit] returns the `request_id`.
 class XaiVideosProtocol implements VideoJobProtocol {
   @override
-  Future<String> submit(
+  Future<VideoSubmission> submit(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
@@ -129,7 +130,13 @@ class XaiVideosProtocol implements VideoJobProtocol {
             'xAI video submit returned no request_id: ${response.body}');
       }
       logger?.call('xAI video request id: $requestId', level: 'DEBUG');
-      return requestId;
+      // What went out: the one first frame, or the references — never both
+      // (the exclusion above). xAI bills each at \$0.01 beside the
+      // per-second rate (docs/api/usage.md §5).
+      final sentImages = payload.containsKey('image')
+          ? 1
+          : (payload['reference_images'] as List?)?.length ?? 0;
+      return VideoSubmission(requestId, inputImages: sentImages);
     } finally {
       client.close();
     }
@@ -170,6 +177,15 @@ class XaiVideosProtocol implements VideoJobProtocol {
 }
 
 /// One xAI status response translated into the common video-job envelope.
+///
+/// The done body (【实测 2026-09-22】, `grok-imagine-video-1.5`) is
+/// `{status: 'done', video: {url, duration, respect_moderation}, model,
+/// usage: {cost_in_usd_ticks}, progress: 100}` — the seconds actually
+/// rendered and the charge, both only here: a pending poll is HTTP 202
+/// `{status, progress}` and the submit reply is `{request_id}` alone. The
+/// charge counts the frames the submit sent (\$0.01 each beside the
+/// per-second rate), so it outranks the submit row's own estimate the way an
+/// images reply's does (`D2d`).
 Map<String, dynamic> xaiVideoPollEnvelope(
   Map<String, dynamic> data,
   String operationName,
@@ -188,8 +204,15 @@ Map<String, dynamic> xaiVideoPollEnvelope(
             'xAI video request $operationName is done but returned no URL: $data',
             isJobEnded: true);
       }
-      return videoDoneEnvelope(operationName, videoUrl,
-          requiresAuth: videoUriNeedsAuth(videoUrl, endpoint));
+      final usage = data['usage'];
+      return videoDoneEnvelope(
+        operationName,
+        videoUrl,
+        requiresAuth: videoUriNeedsAuth(videoUrl, endpoint),
+        renderedSeconds: video?['duration'],
+        reportedCost: reportedCostOf(reportedCostFromTicks(
+            usage is Map ? usage['cost_in_usd_ticks'] : null)),
+      );
     case 'failed':
       final err = data['error'];
       final msg = err is Map

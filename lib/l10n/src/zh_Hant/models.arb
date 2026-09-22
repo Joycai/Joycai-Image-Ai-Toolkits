@@ -449,6 +449,7 @@
   "specOtherRatesSub": "未列出的尺寸 · 品質 · 時長",
   "specInputTitle": "輸入圖",
   "specInputSub": "每次請求送出的參考圖",
+  "specInputSubVideo": "首幀 / 尾幀 / 參考圖",
   "specInputFreeHint": "免費張數",
   "specInputFreeSuffix": "張免費",
   "specInputFreeOnlyHint": "只填了免費張數——沒有單價就不收輸入費，這一項不起作用。",

@@ -60,10 +60,9 @@ void main() {
           'Input images  \$0.0200/image · first 1 free');
     });
 
-    test('no price, another unit or another mode: the input fee appears nowhere', () {
+    test('no price or token mode: the input fee appears nowhere', () {
       final quiet = [
         seedream(price: 0),
-        seedream(unit: OutputUnit.second),
         PricingGroup(name: 'T', billingMode: 'token', inputUnitPrice: 0.02),
       ];
       for (final g in quiet) {
@@ -78,6 +77,22 @@ void main() {
   test('an empty table says zero rates rather than a range of nothing', () {
     final g = PricingGroup(name: 'New', billingMode: 'spec', outputUnit: OutputUnit.clip);
     expect(feeGroupSummary(l10n, g), 'Per clip · 0 rates');
+  });
+
+  test('a request group that charges inputs carries the same tail (D2e)', () {
+    final g = PricingGroup(name: 'xAI video', billingMode: 'request', requestPrice: 0.08, inputUnitPrice: 0.01);
+    expect(feeGroupSummary(l10n, g), 'Per request · \$0.0800/req · input \$0.01/image');
+    expect(feeGroupSummary(l10n, g, withInput: false), 'Per request · \$0.0800/req');
+    expect(feeGroupInputRate(l10n, g), '\$0.01/image');
+    final perSecond = PricingGroup(
+      name: 'xAI video',
+      billingMode: 'spec',
+      outputUnit: OutputUnit.second,
+      outputRates: const [SpecRate(price: 0.08)],
+      inputUnitPrice: 0.01,
+    );
+    expect(feeGroupSummary(l10n, perSecond), 'Per second · 1 rates · \$0.08–0.08 · input \$0.01/image');
+    expect(feeGroupRateTable(l10n, perSecond), contains('Input images  \$0.0100/image'));
   });
 
   test('token and request groups summarise in the same shape', () {

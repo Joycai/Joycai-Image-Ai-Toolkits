@@ -657,6 +657,7 @@
   "specOtherRatesSub": "Any size · quality · duration not listed",
   "specInputTitle": "Input images",
   "specInputSub": "Reference images sent with each request",
+  "specInputSubVideo": "First / last frame, references",
   "specInputFreeHint": "Free",
   "specInputFreeSuffix": "free",
   "specInputFreeOnlyHint": "Only a free count is set. Without a price, input images are not charged and this has no effect.",

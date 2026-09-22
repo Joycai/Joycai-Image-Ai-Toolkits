@@ -2,9 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
+import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/services/db/database_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_config_resolver.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -124,6 +126,51 @@ void main() {
 
       expect(config.inputUnitFee, 0.02);
       expect(config.inputFreeUnits, 1);
+    });
+
+    test('a per-second and a request group\'s input-image rate reach the config; a token group\'s does not', () async {
+      final channelId = await db.addChannel(LLMChannel(
+        displayName: 'xAI',
+        type: 'xai-api',
+        endpoint: 'https://api.x.ai/v1',
+        apiKey: 'key-xai',
+      ));
+      Future<LLMModelConfig> configOf(PricingGroup group) async {
+        final groupId = await db.addPricingGroup(group);
+        final modelPk = await db.addModel(LLMModel(
+          modelId: 'grok-imagine-video-1.5-${group.name}',
+          modelName: group.name,
+          tag: 'video',
+          channelId: channelId,
+          feeGroupId: groupId,
+        ));
+        return LLMConfigResolver(database: db).resolveConfig(modelPk);
+      }
+
+      final perSecond = await configOf(PricingGroup(
+        name: 'sec',
+        billingMode: 'spec',
+        outputUnit: OutputUnit.second,
+        inputUnitPrice: 0.01,
+      ));
+      final perRequest = await configOf(PricingGroup(
+        name: 'req',
+        billingMode: 'request',
+        requestPrice: 0.08,
+        inputUnitPrice: 0.01,
+        inputFreeUnits: 1,
+      ));
+      final token = await configOf(PricingGroup(
+        name: 'tok',
+        billingMode: 'token',
+        inputUnitPrice: 0.01,
+      ));
+
+      expect(perSecond.inputUnitFee, 0.01);
+      expect(perRequest.inputUnitFee, 0.01);
+      expect(perRequest.inputFreeUnits, 1);
+      expect(token.inputUnitFee, 0.0, reason: 'a token group never charges inputs');
+      expect(token.inputFreeUnits, 0);
     });
 
     test('deleting a channel deletes its models without leaving orphans', () async {

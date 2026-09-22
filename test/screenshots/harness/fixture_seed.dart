@@ -215,6 +215,9 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     name: '[中转] 按次计费 · 图片',
     billingMode: 'request',
     requestPrice: 0.04,
+    // D2e: a request group charging references too — the editor's row and
+    // the card's tag under 按次.
+    inputUnitPrice: 0.01,
   ));
 
   // D2b: a spec-billed video group — per second, three tiers and a catch-all.
@@ -1261,6 +1264,10 @@ Future<void> _seedUsage(DatabaseService db, _Catalog catalog) async {
         outputPrice: 0.30,
         requestPrice: 0.04,
         billingMode: m == 0 || m == 3 ? 'request' : 'token',
+        // D2e: the relay's request-billed edits sent two references each.
+        spec: m == 3
+            ? const UsageSpecBilling(units: 0, unitPrice: 0, inputImages: 2, inputUnits: 2, inputUnitPrice: 0.01)
+            : null,
       ));
     }
   }

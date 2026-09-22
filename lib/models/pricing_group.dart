@@ -22,11 +22,12 @@ class PricingGroup {
   final OutputUnit outputUnit;
   final List<SpecRate> outputRates;
 
-  /// Spec billing's input side: what one reference image sent with a request
-  /// costs, and how many of each request's are free (Seedream 5.0 pro waives
-  /// the first). Zero — the default — means inputs are not charged, which is
-  /// most groups. Like the rate table, kept through edits in the other modes
-  /// and read by spec mode alone.
+  /// The input side: what one reference image sent with a request costs,
+  /// and how many of each request's are free (Seedream 5.0 pro waives the
+  /// first). Zero — the default — means inputs are not charged, which is
+  /// most groups. Read by spec and request billing alike
+  /// ([chargesInputImages]); kept through edits in token mode like the rate
+  /// table.
   final double inputUnitPrice;
   final int inputFreeUnits;
 
@@ -49,13 +50,17 @@ class PricingGroup {
 
   bool get isSpecBilled => billingMode == 'spec';
 
+  bool get isRequestBilled => billingMode == 'request';
+
   /// Whether this group charges for reference images at all — the one test
-  /// every summary and the resolver share (`D2c`). A free count with no price
-  /// charges nothing; and only a per-image group charges: no video surface
-  /// reports the images it was sent, so a per-second or per-clip group keeps
-  /// the two values it was given and bills none of them.
+  /// every summary and the resolver share (`D2c`, widened by `D2e`). A free
+  /// count with no price charges nothing. Spec billing charges under every
+  /// unit — a video surface reports the frames it was sent just as an image
+  /// surface does, and xAI prices each at \$0.01 beside its per-second rate —
+  /// and so does a request-billed group. A token-billed group never does:
+  /// its inputs are the image tokens inside its prompt total.
   bool get chargesInputImages =>
-      isSpecBilled && outputUnit == OutputUnit.image && inputUnitPrice > 0;
+      (isSpecBilled || isRequestBilled) && inputUnitPrice > 0;
 
   factory PricingGroup.fromMap(Map<String, dynamic> map) {
     return PricingGroup(

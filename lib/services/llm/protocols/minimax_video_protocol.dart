@@ -22,7 +22,7 @@ import 'protocol.dart';
 /// speaks — same contract as every other family.
 class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
   @override
-  Future<String> submit(
+  Future<VideoSubmission> submit(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
@@ -111,7 +111,8 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
       // ever dies. Records live 7 days upstream, so a lost id is recoverable
       // by hand for that long and not after.
       logger?.call('MiniMax video task id: $taskId', level: 'INFO');
-      return taskId;
+      // The media that survived the frames-vs-references exclusion.
+      return VideoSubmission(taskId, inputImages: kept.length);
     } finally {
       client.close();
     }

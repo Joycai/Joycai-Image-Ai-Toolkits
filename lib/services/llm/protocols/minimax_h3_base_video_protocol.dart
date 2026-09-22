@@ -27,7 +27,7 @@ import 'protocol.dart';
 /// an undocumented base64 spelling would fail silently instead.
 class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
   @override
-  Future<String> submit(
+  Future<VideoSubmission> submit(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
@@ -118,7 +118,7 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
             'MiniMax H3 local video submit returned no id: ${response.body}');
       }
       logger?.call('MiniMax H3 local video job id: $id', level: 'INFO');
-      return id;
+      return VideoSubmission(id, inputImages: kept.length);
     } finally {
       client.close();
     }

@@ -2811,6 +2811,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get specInputSub => 'Reference images sent with each request';
 
   @override
+  String get specInputSubVideo => 'First / last frame, references';
+
+  @override
   String get specInputFreeHint => 'Free';
 
   @override

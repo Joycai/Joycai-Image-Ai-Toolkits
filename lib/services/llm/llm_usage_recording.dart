@@ -86,9 +86,10 @@ extension _UsageRecording on LLMService {
       outputPrice: config.outputFee,
       requestPrice: config.requestFee,
       billingMode: config.billingMode,
-      // Null on the other two modes: the row then prices exactly as it did
-      // before spec billing existed.
-      spec: spec?.toBilling(),
+      // Null on token mode: the row then prices exactly as it did before
+      // spec billing existed. A request-billed group writes the input three
+      // alone when it charges for the images the request sent (`D2e`).
+      spec: spec?.toBilling() ?? LLMService.requestInputBilling(config, metadata),
       // What the provider itself said the request cost, where its protocol
       // published one ([reportedCostKey]); it outranks every price above,
       // whatever the group's mode — see [TokenUsage.reportedCost].

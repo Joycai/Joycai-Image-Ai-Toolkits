@@ -45,7 +45,7 @@
 | 提交 | `POST /api/v1/services/aigc/video-generation/video-synthesis` + `X-DashScope-Async: enable` | `POST /v2/video_generation` | `POST /v1/videos/generations`（JSON） | `POST /v1/videos`（**multipart**） | `:predictLongRunning` |
 | 轮询 | `GET /api/v1/tasks/{id}`（图片任务共用） | `GET /v2/query/video_generation/{id}` | `GET /v1/videos/{request_id}` | `GET /v1/videos/{id}` + `/content` 下载 | operations `GET` |
 | 状态词表 | `PENDING/RUNNING/SUCCEEDED/FAILED/CANCELED/UNKNOWN` | `queued/running/succeeded/failed/cancelled` | `pending/done/expired/failed` | `queued/in_progress/completed/failed` | `{done: bool}` |
-| 结果位置 | `output.video_url`（顶层扁平） | `task.content.url`（直链，v1 的 file_id→retrieve 二段式已废除） | 响应内 URL | `/content` 端点流式下载 | operation response 内 URI |
+| 结果位置 | `output.video_url`（顶层扁平） | `task.content.url`（直链，v1 的 file_id→retrieve 二段式已废除） | `video.url`；`video.duration` 报实际秒数；done 回包带 `usage.cost_in_usd_ticks` | `/content` 端点流式下载 | operation response 内 URI |
 | 保留期 | task_id 24h | **任务记录 7 天** | — | — | — |
 | 取消 | — | `DELETE /v2/video_generation/{id}`，**仅 `queued` 可取消**（免扣费），succeeded/failed 变删除记录，running 不可操作 | — | — | — |
 
@@ -72,6 +72,17 @@ MiniMax v2 提交 body：`content[]`（至少一个 text 项 ≤7000 字符，�
 `callback_url` webhook（注册时 3 秒内回显 challenge）。创建响应极简
 `{"task_id": "…"}`。usage 报秒数 + token 双口径。
 
+**xAI `grok-imagine-video-1.5` 实测**（2026-09-22，`POST /v1/videos/generations` → `GET /v1/videos/{request_id}`，三条 1 s · 480p，来源 Joycai）：
+- 提交回包只有 `{"request_id"}`；轮询 pending 是 **HTTP 202** + `{status: pending, progress}`，done 是 200 +
+  `{status: done, video: {url, duration, respect_moderation}, model, usage: {cost_in_usd_ticks}, progress: 100}`——
+  **报价只在终态回包里**，提交时没有；`video.duration` 报实际渲染秒数（可用于结算）。OpenAPI：`VideoResponse.usage` 是
+  `MediaUsage`（`cost_in_usd_ticks` 必有，token 字段视频一律省略）；`video.url` 为空且 `respect_moderation: false` = 被审核拦下。
+- **参考图另收钱，标价页没写**（页面只写 $0.080/s）：文生 800 000 000 = $0.08；首帧 `image` 900 000 000 = +$0.01；
+  `reference_images` 两张 1 000 000 000 = +$0.02——**$0.01/张、线性**，与出图面同价。`duration: 1` 按 1 s 计，没有最低计费秒数。
+  720p / 1080p 是否加价、初代 `grok-imagine-video`（$0.050/s）是否同样收参考图：【未验】。
+- `GET /v1/video-generation-models` 只列 id / 模态 / 别名，**没有 `pricing`**（出图面的同名端点有）；1.5 的 `input_modalities` 是
+  text / image / audio（`reference_audios`），初代是 text / image / video（`/videos/edits`、`/videos/extensions`）。
+
 ## 3. 横切不变量（每家都适用，漏一条就是一类静默失败）
 
 1. **失败装在 HTTP 200 里。** `task_status: FAILED` + 错误码嵌在 body
@@ -97,7 +108,9 @@ MiniMax v2 提交 body：`content[]`（至少一个 text 项 ≤7000 字符，�
 7. **必填且无默认的参数是 L3 参数表的责任。** MiniMax 的 resolution/duration
    不发就 400；缺省值由模型能力表声明，adapter 只读不编。
 8. **usage 两套口径并存**（按秒/按张 vs token），与第 13 篇同规则：相加
-   记账，不二选一。
+   记账，不二选一。例外是**上游直接报钱**的面（13 §7 的 `cost_in_usd_ticks`）：报价含全部（含参考图），替换不叠加。
+   xAI 视频面也报它，但**只在 done 的轮询回包里**【实测 2026-09-22】——提交时按请求的秒数先记一行，终态再用报价改写；
+   只改写秒数的结算会把参考图那 $0.01/张 漏掉（坑 129）。
 
 ## 4. 与中继的关系
 

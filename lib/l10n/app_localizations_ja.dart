@@ -2710,6 +2710,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get specInputSub => 'リクエストごとに送信する参照画像';
 
   @override
+  String get specInputSubVideo => '先頭 / 末尾フレーム / 参照画像';
+
+  @override
   String get specInputFreeHint => '無料枚数';
 
   @override

@@ -139,8 +139,25 @@ abstract class ImageGenProtocol {
 /// status. Poll results use the Veo-shaped envelope
 /// (`{done, response: {generateVideoResponse: ...}}`) the task executor
 /// already speaks, regardless of the upstream's native format.
+/// What a video surface hands back from an accepted submit: the upstream
+/// job id, and how many reference images (first frame, last frame,
+/// references) this client actually put in the body — counted after an
+/// unreadable attachment was dropped and after a surface's own exclusions
+/// (xAI keeps the first frame over its references; MiniMax keeps frames
+/// over references), so the number is what upstream received, never what
+/// the user picked. Published on the submit's usage row as
+/// [inputImageCountKey] — the same key the images protocols publish — so a
+/// fee group charges a video's frames the way it charges an edit's
+/// references (`D2e`; xAI prices both at \$0.01).
+class VideoSubmission {
+  final String requestId;
+  final int inputImages;
+
+  const VideoSubmission(this.requestId, {this.inputImages = 0});
+}
+
 abstract class VideoJobProtocol {
-  Future<String> submit(
+  Future<VideoSubmission> submit(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
@@ -924,17 +941,26 @@ Map<String, dynamic>? optionsWithCheckedSize(
 /// ([VideoJobProtocol.poll]), with the download-auth decision attached.
 ///
 /// [renderedSeconds] is the length the provider reports it rendered, when it
-/// reports one ([videoRenderedSecondsKey]).
+/// reports one ([videoRenderedSecondsKey]). [reportedCost] is what the
+/// provider says the job cost, in dollars, when it says so on the terminal
+/// poll — xAI's `usage.cost_in_usd_ticks` arrives only there, never at
+/// submit — published under the same [reportedCostKey] an images protocol
+/// uses, so the executor settles it onto the submit's usage row. A protocol
+/// converts its own field (`reportedCostFromTicks`) and passes the dollars;
+/// negative or non-finite is left out like an absent one.
 Map<String, dynamic> videoDoneEnvelope(
   String operationName,
   String uri, {
   required bool requiresAuth,
   Object? renderedSeconds,
+  double? reportedCost,
 }) =>
     {
       'name': operationName,
       'done': true,
       videoRenderedSecondsKey: ?_positiveSeconds(renderedSeconds),
+      if (reportedCost != null && reportedCost.isFinite && reportedCost >= 0)
+        reportedCostKey: reportedCost,
       'response': {
         'generateVideoResponse': {
           'generatedSamples': [

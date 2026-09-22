@@ -10,7 +10,8 @@ import 'fee_group_draft.dart';
 
 /// The fee-group editor's fields (`D2 · 1e / 1f`, `D1a · 1d`): the name,
 /// the billing mode, and that mode's rates — the three token prices, the one
-/// request price, or the spec table (`D2b`).
+/// request price (with the 「输入图」 row under it, `D2e`), or the spec table
+/// (`D2b`).
 ///
 /// Only the fields: the card around them, the title and the footer buttons
 /// belong to whichever host shows the draft — the desktop's right column, the
@@ -153,6 +154,20 @@ class FeeGroupEditorFields extends StatelessWidget {
           draft.isToken ? l10n.tokenPriceHint : l10n.requestPriceHint,
           style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, height: AppType.proseHeight),
         ),
+        // `D2e · 24b`: a request-billed group charges reference images too —
+        // the spec table's own row, under the hint that stays about the
+        // request price, and without the table's delete-column blank.
+        if (draft.isRequest)
+          SpecInputImagesBlock(
+            inputPriceCtrl: draft.inputImagePriceCtrl,
+            inputFreeCtrl: draft.inputFreeCtrl,
+            inputPriceInvalid: draft.inputImagePriceInvalid,
+            inputFreeWithoutPrice: draft.inputFreeWithoutPrice,
+            onChanged: draft.touch,
+            narrow: narrow,
+            subtitle: l10n.specInputSub,
+            trailingBlank: false,
+          ),
       ],
     );
   }
