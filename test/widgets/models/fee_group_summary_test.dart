@@ -60,10 +60,9 @@ void main() {
           'Input images  \$0.0200/image · first 1 free');
     });
 
-    test('no price, another unit or another mode: the input fee appears nowhere', () {
+    test('no price or token mode: the input fee appears nowhere', () {
       final quiet = [
         seedream(price: 0),
-        seedream(unit: OutputUnit.second),
         PricingGroup(name: 'T', billingMode: 'token', inputUnitPrice: 0.02),
       ];
       for (final g in quiet) {

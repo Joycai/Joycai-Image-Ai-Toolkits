@@ -194,8 +194,8 @@ typedef UsageCostParts = ({
   double request,
   double spec,
 
-  /// Reference images a spec-billed request was charged for — beside
-  /// [spec], which is its output alone.
+  /// Reference images a spec- or request-billed request was charged for —
+  /// beside [spec] / [request], which are its output alone.
   double specInput,
 
   /// What the provider itself said the request cost ([TokenUsage.reportedCost]).
@@ -309,13 +309,15 @@ class TokenUsage {
           specInput: spec?.inputCost ?? 0.0,
           reported: 0.0,
         ),
+      // A request-billed group can charge reference images too (`D2e`):
+      // the row's input three are then set, its output four empty.
       UsageBilling.request => (
           input: 0.0,
           cache: 0.0,
           output: 0.0,
           request: requestCount * requestPrice,
           spec: 0.0,
-          specInput: 0.0,
+          specInput: spec?.inputCost ?? 0.0,
           reported: 0.0,
         ),
       UsageBilling.token => (

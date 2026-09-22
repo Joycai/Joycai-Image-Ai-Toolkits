@@ -67,16 +67,30 @@ void main() {
     expect(draft.toGroup().inputFreeUnits, 1, reason: 'saved as typed');
   });
 
-  test('behind another unit the row is hidden: kept, and never the reason a save fails', () {
+  test('the row stays under every unit and in request mode (D2e)', () {
+    final draft = draftOf(seedream());
+    draft.setUnit(OutputUnit.second);
+    expect(draft.showsInputImages, isTrue);
+    expect(draft.toGroup().chargesInputImages, isTrue, reason: 'a per-second group bills its frames');
+
+    draft.setMode('request');
+    expect(draft.showsInputImages, isTrue);
+    expect(draft.toGroup().chargesInputImages, isTrue);
+
+    draft.inputImagePriceCtrl.text = 'garbage';
+    expect(draft.canSave, isFalse, reason: 'the row shows, so its price must parse');
+  });
+
+  test('behind token mode the row is hidden: kept, and never the reason a save fails', () {
     final draft = draftOf(seedream());
     draft.inputImagePriceCtrl.text = 'garbage';
-    draft.setUnit(OutputUnit.second);
+    draft.setMode('token');
 
     expect(draft.showsInputImages, isFalse);
     expect(draft.canSave, isTrue);
     final saved = draft.toGroup();
     expect(saved.inputUnitPrice, 0.02, reason: 'falls back to what was stored');
-    expect(saved.chargesInputImages, isFalse, reason: 'a per-second group bills no inputs');
+    expect(saved.chargesInputImages, isFalse, reason: 'a token group bills no inputs');
   });
 
   test('the values survive a switch to another billing mode', () {

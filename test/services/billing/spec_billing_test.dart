@@ -232,14 +232,23 @@ void main() {
       expect(u.cost, 0);
     });
 
-    test('only a per-image group charges inputs, whatever rate the config carries', () {
+    test('a per-second or per-clip group charges inputs like a per-image one (D2e)', () {
+      // xAI grok-imagine-video-1.5: \$0.08 for the second plus \$0.01 a frame.
       for (final unit in [OutputUnit.clip, OutputUnit.second]) {
-        final u = price(sent: 2, unit: unit, spec: const OutputSpec(seconds: 8));
+        final u = price(sent: 2, unit: unit, free: 1, spec: const OutputSpec(seconds: 8));
         expect(u.units, greaterThan(0), reason: unit.name);
-        expect(u.inputUnits, 0, reason: unit.name);
-        expect(u.inputUnitPrice, 0, reason: 'a quiet row: the usage page reads this price');
-        expect(u.inputImages, 2, reason: 'the count sent is a fact either way');
+        expect(u.inputImages, 2, reason: unit.name);
+        expect(u.inputUnits, 1, reason: unit.name);
+        expect(u.inputUnitPrice, 0.02, reason: unit.name);
+        expect(u.toBilling().inputCost, closeTo(0.02, 1e-9), reason: unit.name);
       }
+    });
+
+    test('a video that rendered nothing is not charged for its frames either', () {
+      final u = price(sent: 2, unit: OutputUnit.second, spec: OutputSpec.none);
+      expect(u.units, 0);
+      expect(u.inputUnits, 0);
+      expect(u.inputImages, 2);
     });
 
     test('nonsense from a hand-edited group never bills a negative amount', () {
@@ -247,6 +256,52 @@ void main() {
       expect(u.inputImages, 0);
       expect(u.inputUnits, 0);
       expect(u.inputUnitPrice, 0);
+    });
+  });
+
+  group('SpecUsage.inputsOnly, a request-billed group', () {
+    test('writes the input three and leaves the output four empty', () {
+      final b = SpecUsage.inputsOnly(inputImageCount: 3, inputUnitPrice: 0.01, inputFreeUnits: 1)!;
+      expect(b.inputImages, 3);
+      expect(b.inputUnits, 2);
+      expect(b.inputUnitPrice, 0.01);
+      expect(b.inputCost, closeTo(0.02, 1e-9));
+      expect(b.units, 0);
+      expect(b.unitPrice, 0);
+      expect(b.unit, isNull);
+      expect(b.snapshot, isNull);
+      expect(b.cost, 0, reason: 'the request price is the output side, on the row itself');
+    });
+
+    test('is null when the group charges no inputs or the request sent none', () {
+      expect(SpecUsage.inputsOnly(inputImageCount: 3, inputUnitPrice: 0, inputFreeUnits: 0), isNull);
+      expect(SpecUsage.inputsOnly(inputImageCount: 0, inputUnitPrice: 0.01, inputFreeUnits: 0), isNull);
+    });
+
+    test('a row written this way reads back as its input side', () {
+      final b = SpecUsage.inputsOnly(inputImageCount: 1, inputUnitPrice: 0.01, inputFreeUnits: 1)!;
+      final back = UsageSpecBilling.fromMap(b.toMap())!;
+      expect(back.inputImages, 1);
+      expect(back.inputUnits, 0);
+      expect(back.inputUnitPrice, 0.01, reason: 'free, not uncharged');
+      expect(back.unit, isNull);
+    });
+
+    test('counts against the request price on a request-billed row', () {
+      final row = TokenUsage(
+        modelId: 'm',
+        timestamp: DateTime(2026),
+        requestCount: 1,
+        requestPrice: 0.05,
+        billingMode: 'request',
+        spec: SpecUsage.inputsOnly(inputImageCount: 2, inputUnitPrice: 0.01, inputFreeUnits: 0),
+      );
+      expect(row.costParts.request, closeTo(0.05, 1e-9));
+      expect(row.costParts.specInput, closeTo(0.02, 1e-9));
+      expect(row.costParts.spec, 0);
+      expect(row.cost, closeTo(0.07, 1e-9));
+      expect(row.unmatched, isFalse);
+      expect(row.specLabel, isNull, reason: 'no rate table on a request-billed row');
     });
   });
 

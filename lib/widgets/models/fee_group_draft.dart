@@ -86,6 +86,7 @@ class FeeGroupDraft extends ChangeNotifier {
   bool get isNew => group == null;
   bool get isToken => billingMode == 'token';
   bool get isSpec => billingMode == specBillingMode;
+  bool get isRequest => billingMode == 'request';
 
   String get name => nameCtrl.text.trim();
 
@@ -107,15 +108,17 @@ class FeeGroupDraft extends ChangeNotifier {
   bool get otherPriceInvalid => otherPriceCtrl.text.trim().isNotEmpty && _parsePrice(otherPriceCtrl.text) == null;
 
   /// Blank is "inputs are free"; anything typed must parse. Checked only
-  /// while the row is on screen — a per-image spec group — so a value parked
-  /// behind another unit can never block a save the user cannot see why.
+  /// while the row is on screen — spec or request mode — so a value parked
+  /// behind token mode can never block a save the user cannot see why.
   bool get inputImagePriceInvalid =>
       showsInputImages &&
       inputImagePriceCtrl.text.trim().isNotEmpty &&
       _parsePrice(inputImagePriceCtrl.text) == null;
 
-  /// Whether the editor shows the input-image row: spec mode, per image.
-  bool get showsInputImages => isSpec && outputUnit == OutputUnit.image;
+  /// Whether the editor shows the input-image row: spec mode under every
+  /// unit, and request mode (`D2e`) — the two modes whose groups charge
+  /// inputs ([PricingGroup.chargesInputImages]).
+  bool get showsInputImages => isSpec || isRequest;
 
   int get inputFreeUnits => int.tryParse(inputFreeCtrl.text.trim()) ?? 0;
 
@@ -125,7 +128,7 @@ class FeeGroupDraft extends ChangeNotifier {
 
   bool get ratesValid => isSpec
       ? !SpecTableIssues.of(specRows).blocksSave && !otherPriceInvalid && !inputImagePriceInvalid
-      : !_activeFields.any(invalid);
+      : !_activeFields.any(invalid) && !inputImagePriceInvalid;
 
   /// `1f`: Save lights up once the group has a name and its rates parse.
   bool get canSave => name.isNotEmpty && ratesValid;
