@@ -426,8 +426,10 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
 
     double lineHeight(TextStyle? style) => (TextPainter(
           // Ascender and descender both, so the measurement is the font's full
-          // line box rather than the tallest glyph in some particular name.
-          text: TextSpan(text: 'Ag', style: style),
+          // line box rather than the tallest glyph in some particular name. The
+          // CJK glyph is there for the mono line: a Chinese model name falls
+          // back from the mono face to the UI font, whose line box is taller.
+          text: TextSpan(text: 'Ag国', style: style),
           textDirection: TextDirection.ltr,
           textScaler: scaler,
           maxLines: 1,

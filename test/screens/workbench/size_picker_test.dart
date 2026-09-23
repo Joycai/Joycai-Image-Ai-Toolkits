@@ -7,6 +7,7 @@ import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/spec_rate.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/size_field.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/size_picker_panel.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/size_picker/size_picker_parts.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
@@ -36,6 +37,26 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
   }
+
+  testWidgets('the rule line is mono; its status is in the UI face', (tester) async {
+    // The status once left mono with `copyWith(fontFamilyFallback: null)`,
+    // which keeps the fallback — harmless only while mono never took effect.
+    await tester.pumpWidget(MaterialApp(
+      theme: buildAppTheme(
+        accent: ThemeAccent.fromSeed(Colors.indigo),
+        brightness: Brightness.light,
+        fontFamily: 'Microsoft YaHei',
+      ),
+      home: const Scaffold(
+        body: SizeRuleLine(parts: [SizeRulePart('×16')], status: 'All pass', failLabel: 'fails'),
+      ),
+    ));
+    final status = tester.widget<Text>(find.text('All pass')).style!;
+    expect(status.fontFamily, 'Microsoft YaHei');
+    expect(status.fontFamilyFallback, isNull);
+    final rule = tester.widget<Text>(find.byType(Text).first).textSpan! as TextSpan;
+    expect(rule.children!.single.style!.fontFamily, kMonoFontFamilyFallback.first);
+  });
 
   group('the panel', () {
     Future<(List<String>, List<int>)> open(

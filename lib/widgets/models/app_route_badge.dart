@@ -82,6 +82,8 @@ class AppRouteBadge extends StatelessWidget {
       maxLines: 1,
       softWrap: false,
       style: TextStyle(
+        // The ambient UI font, so `.mono` falls back to it for CJK labels.
+        fontFamily: DefaultTextStyle.of(context).style.fontFamily,
         fontSize: size.fontSize,
         fontWeight: state == RouteBadgeState.current
             ? FontWeight.w600
