@@ -34,7 +34,8 @@ class UsageGroupCosts extends StatelessWidget {
   /// Column widths of the desktop row, as drawn.
   static const double _nameWidth = 150;
   static const double _costWidth = 90;
-  static const double _requestsWidth = 130;
+  // Sized for the mono face: 「120 images · 120 req」 is 20 cells at 11px.
+  static const double _requestsWidth = 160;
   static const double _gap = 12;
   static const double _rowGap = AppSpace.s10;
 

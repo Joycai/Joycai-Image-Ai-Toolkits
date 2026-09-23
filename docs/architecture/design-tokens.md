@@ -109,7 +109,7 @@ Color get onAccentTint =>
 
 **控件高**（`AppSize`）：28 紧凑 · 32 标准（按钮、输入、图标按钮同高）· 40 触摸 / 列表行 / 面板主按钮 · 44 手机命中区下限。图标 14 · 16 · 20。
 
-**字号只有七级**：28/600 · 20/600 · 16/600 · 14/500 · 13/400 · 12/400 · 11/500，另加 mono 12 / 11（`TextStyle.mono`，系统等宽栈 + 等宽数字，不打包字体）。槽位分配见 `_buildTextTheme` 的表。字距是**字号**的函数（`AppType.trackingFor`），分组小标题例外：`.06em`（`AppType.trackedLabelSpacing` = 0.66）。
+**字号只有七级**：28/600 · 20/600 · 16/600 · 14/500 · 13/400 · 12/400 · 11/500，另加 mono 12 / 11（`TextStyle.mono`，系统等宽栈 + 等宽数字，不打包字体）。mono 必须**点名**等宽字体族（栈首位），不能靠把字体族置空：`copyWith(fontFamily: null)` 是保留原值，置空的族在 `Text` 合并时又会从 `DefaultTextStyle` 继承回界面字体——mono 曾因此在桌面端从未生效。界面字体排在回退链末尾，中文才落到界面字体而不是引擎更细的回退；要退出 mono，从不带 mono 的样式重新取，别对 mono 样式置空。等宽比雅黑宽，定宽列里的 mono 文字要按等宽量宽。槽位分配见 `_buildTextTheme` 的表。字距是**字号**的函数（`AppType.trackingFor`），分组小标题例外：`.06em`（`AppType.trackedLabelSpacing` = 0.66）。
 
 **渲染后的 Markdown 是七级之外的唯一例外**（`A1e`，`AppMarkdownMetrics`）：标题字号是「正文 + 差值」（prose +6 / +3 / +1 / −2，compact +3 / +1 / 0 / −1），因为五处调用的正文是 14、13、12 三种，标题得在每一处都还是标题。层级首先靠间距的不对称（标题离上文远、贴自己的正文），字号其次。跟随主题色的只有三处：H2 竖条（`primary`）、链接（`onAccentTint`）、已勾任务框（`primary`）；引用、代码块、表格一律中性。
 
