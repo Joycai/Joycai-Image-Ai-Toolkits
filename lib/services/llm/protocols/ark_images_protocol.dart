@@ -53,7 +53,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
         options: options,
       );
       await _logWholeBody(debugFile, response);
-      return await _fromWholeBody(response, client, options, logger, req.refCount);
+      return await _fromWholeBody(response, client, options, logger, req);
     } finally {
       client.close();
     }
@@ -88,12 +88,13 @@ class ArkImagesProtocol implements ImageGenProtocol {
       if (response.statusCode != 200) {
         yield* _wholeBodyAsChunks(
             await http.Response.fromStream(response), client, options, logger,
-            debugFile, req.refCount);
+            debugFile, req);
         return;
       }
 
       var delivered = 0;
       var undownloadable = 0;
+      final sizes = <String?>[];
       final failures = <ArkImageFailure>[];
       var usage = const <String, dynamic>{};
       // SSE or one JSON body, told apart by the body rather than by
@@ -151,6 +152,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
               continue;
             }
             delivered++;
+            sizes.add(item.size);
             logger?.call('Ark stream: image $delivered received.',
                 level: 'DEBUG');
             // With what the body carried: the closing chunk — and Ark's own
@@ -174,7 +176,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
         yield* _wholeBodyAsChunks(
             http.Response(jsonLines.join('\n'), 200,
                 headers: response.headers),
-            client, options, logger, debugFile, req.refCount);
+            client, options, logger, debugFile, req);
         return;
       }
 
@@ -194,7 +196,9 @@ class ArkImagesProtocol implements ImageGenProtocol {
             delivered: delivered,
             failed: failures.length,
             usage: usage,
-            refCount: req.refCount),
+            refCount: req.refCount,
+            renderedSizes: sizes,
+            tierLeftToUpstream: req.tierLeftToUpstream),
         isDone: true,
       );
     } finally {
@@ -211,10 +215,10 @@ class ArkImagesProtocol implements ImageGenProtocol {
     Map<String, dynamic>? options,
     LLMLogger? logger,
     LLMDebugLog? debugFile,
-    int refCount,
+    _ArkRequest req,
   ) async* {
     await _logWholeBody(debugFile, whole);
-    final result = await _fromWholeBody(whole, client, options, logger, refCount);
+    final result = await _fromWholeBody(whole, client, options, logger, req);
     final inputs = inputImageCountEntry(result.metadata);
     for (final (i, image) in result.generatedImages.indexed) {
       yield LLMResponseChunk(
@@ -257,12 +261,13 @@ class ArkImagesProtocol implements ImageGenProtocol {
       refs.add(imageDataUrl(bytes, att.mimeType));
     }
 
+    final checked = optionsWithCheckedSize(target, options, logger: logger);
     final payload = buildArkImagePayload(
       modelId: config.modelId,
       prompt: userMsg.content,
       imageRefs: refs,
       tierPixelSizes: target.model.capabilities.tierPixelSizes,
-      options: optionsWithCheckedSize(target, options, logger: logger),
+      options: checked,
       warn: (m) => logger?.call(m, level: 'WARN'),
       stream: stream,
     );
@@ -279,7 +284,8 @@ class ArkImagesProtocol implements ImageGenProtocol {
         'Preparing Ark image request ($mode${stream ? ', streamed' : ''}) '
         'to: ${url.host}',
         level: 'DEBUG');
-    return _ArkRequest(url, payload, refs.length, mode);
+    return _ArkRequest(url, payload, refs.length, mode,
+        tierLeftToUpstream: arkTierLeftToUpstream(checked));
   }
 
   Future<LLMDebugLog?> _startDebugLog(LLMTarget target, _ArkRequest req) async {
@@ -311,7 +317,7 @@ class ArkImagesProtocol implements ImageGenProtocol {
     http.Client client,
     Map<String, dynamic>? options,
     LLMLogger? logger,
-    int refCount,
+    _ArkRequest req,
   ) async {
     // Status → JSON → shape → envelope. Ark's errors are OpenAI-shaped
     // (`{error: {code, message, param, type}}`), both on a 4xx and — when
@@ -335,12 +341,14 @@ class ArkImagesProtocol implements ImageGenProtocol {
     // layer record: the pairing below is by position.
     final images = <Uint8List>[];
     final layers = <GeneratedImageLayer?>[];
+    final sizes = <String?>[];
     for (final item in result.images) {
       final bytes = await resolveImageRef(item.ref, client, logger,
           abortTrigger: abortTriggerOf(options));
       if (bytes == null) continue;
       images.add(bytes);
       layers.add(item.layer);
+      sizes.add(item.size);
     }
     if (images.isNotEmpty && images.length < result.images.length) {
       logger?.call(
@@ -378,7 +386,9 @@ class ArkImagesProtocol implements ImageGenProtocol {
           delivered: images.length,
           failed: result.failures.length,
           usage: result.usage,
-          refCount: refCount),
+          refCount: req.refCount,
+          renderedSizes: sizes,
+          tierLeftToUpstream: req.tierLeftToUpstream),
     );
   }
 
@@ -393,5 +403,10 @@ class _ArkRequest {
   final Map<String, dynamic> payload;
   final int refCount;
   final String mode;
-  const _ArkRequest(this.url, this.payload, this.refCount, this.mode);
+
+  /// No tier was chosen, so Ark's echoed pixels are the only record of the
+  /// one drawn at ([arkResultMetadata]).
+  final bool tierLeftToUpstream;
+  const _ArkRequest(this.url, this.payload, this.refCount, this.mode,
+      {required this.tierLeftToUpstream});
 }

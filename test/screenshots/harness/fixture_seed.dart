@@ -235,11 +235,12 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
 
   // D2c: a per-image group that also charges for reference images — the
   // editor's 「输入图」 row, the row's input tag and the usage page's input
-  // count all hang off it.
+  // count all hang off it. The pricing page's own two rows: 2K 0.6 元, and
+  // 1K / 1.5K at the same 0.3 元 (docs/api/volcengine-ark.md §4).
   final int seedreamFee = await db.addPricingGroup(PricingGroup(
     name: 'Seedream 5.0 pro',
     billingMode: 'spec',
-    outputRates: const <SpecRate>[SpecRate(size: '2K', price: 0.3), SpecRate(price: 0.3)],
+    outputRates: const <SpecRate>[SpecRate(size: '2K', price: 0.6), SpecRate(price: 0.3)],
     inputUnitPrice: 0.02,
     inputFreeUnits: 1,
   ));

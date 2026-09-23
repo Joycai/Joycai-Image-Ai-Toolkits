@@ -335,6 +335,61 @@ void main() {
       }
     });
 
+    test('the echoed pixels are published only when no tier was chosen', () {
+      // 「自动」 on 5.0 pro draws upstream's 2K — 0.6 元, where 1K / 1.5K are
+      // 0.3 — and the request names no tier to match it by.
+      Map<String, dynamic> meta(List<String?> sizes, {required bool left}) =>
+          arkResultMetadata(
+            delivered: sizes.length,
+            failed: 0,
+            usage: const {},
+            refCount: 0,
+            renderedSizes: sizes,
+            tierLeftToUpstream: left,
+          );
+      expect(meta(['2816x1584', '2816x1584'], left: true)['output_size'],
+          '2816x1584');
+      // A chosen tier is what Ark prices; pixels matched to the nearest
+      // tier a two-row table lists would put 1.5K on its 2K row.
+      expect(meta(['2048x1152'], left: false).containsKey('output_size'),
+          isFalse);
+      // A decomposition's base and layers differ; the row has one size.
+      for (final sizes in [
+        ['912x1168', '861x1137'],
+        ['912x1168', null],
+        <String?>[null],
+        ['big'],
+        <String?>[],
+      ]) {
+        expect(meta(sizes, left: true).containsKey('output_size'), isFalse,
+            reason: '$sizes');
+      }
+    });
+
+    test('a tier is left to upstream by its absence or a sentinel', () {
+      expect(arkTierLeftToUpstream(null), isTrue);
+      expect(arkTierLeftToUpstream(const {}), isTrue);
+      expect(arkTierLeftToUpstream(const {'imageSize': 'not_set'}), isTrue);
+      expect(arkTierLeftToUpstream(const {'imageSize': 'auto'}), isTrue);
+      expect(arkTierLeftToUpstream(const {'imageSize': '1.5K'}), isFalse);
+    });
+
+    test('the item carries Ark\'s echoed size', () {
+      final r = parseArkImageResponse({
+        'data': [
+          {'url': 'https://x/a.jpeg', 'size': '2048x2048'},
+          {'url': 'https://x/b.jpeg'},
+        ],
+      });
+      expect(r.images.map((i) => i.size), ['2048x2048', null]);
+      final streamed = parseArkStreamEvent({
+        'type': 'image_generation.partial_succeeded',
+        'url': 'https://x/c.jpeg',
+        'size': '2848x1600',
+      }) as ArkStreamImage;
+      expect(streamed.item.size, '2848x1600');
+    });
+
     test('failures and 5.0 pro\'s reported inputs ride along', () {
       final meta = arkResultMetadata(
         delivered: 1,

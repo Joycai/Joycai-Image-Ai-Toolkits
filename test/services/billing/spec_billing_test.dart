@@ -376,6 +376,32 @@ void main() {
       expect(plain.units, 1);
     });
 
+    test('Seedream 5.0 pro\'s own table: 2K 0.6 元, 1K and 1.5K both 0.3', () {
+      // The pricing page's two rows (docs/api/volcengine-ark.md §4): the
+      // 2.61 MP line falls between 1.5K (≤2.41 MP) and 2K (≥4.21 MP).
+      final pro = LLMModelConfig(
+        modelId: 'doubao-seedream-5-0-pro-260628',
+        channelType: 'volcengine-ark',
+        endpoint: 'https://x',
+        apiKey: 'k',
+        billingMode: 'spec',
+        outputRates: const [SpecRate(size: '2K', price: 0.6), SpecRate(price: 0.3)],
+      );
+      double cost(Map<String, dynamic> options,
+              [Map<String, dynamic> metadata = const {}]) =>
+          LLMService.specUsageFor(pro, options, metadata, imageCount: 1)!.cost;
+
+      expect(cost({'imageSize': '1K'}), closeTo(0.3, 1e-9));
+      expect(cost({'imageSize': '1.5K'}), closeTo(0.3, 1e-9));
+      expect(cost({'imageSize': '2K'}), closeTo(0.6, 1e-9));
+      // 「自动」 draws upstream's 2K: priced by the echo the protocol
+      // publishes for exactly this case…
+      expect(cost({'imageSize': 'not_set'}, {'output_size': '2816x1584'}),
+          closeTo(0.6, 1e-9));
+      // …and without it, the request would read as the 0.3 row.
+      expect(cost({'imageSize': 'not_set'}), closeTo(0.3, 1e-9));
+    });
+
     test('the charged count is read leniently and never as zero', () {
       expect(billedImageCountOf(const {billedImageCountKey: 3}), 3);
       expect(billedImageCountOf(const {billedImageCountKey: 3.0}), 3);

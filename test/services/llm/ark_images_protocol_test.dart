@@ -119,13 +119,58 @@ void main() {
       expect(usage.cost, closeTo(0.44, 1e-9));
     });
 
+    group('5.0 pro 「自动」 is priced by what was drawn', () {
+      // The pricing page's rows: 2K 0.6 元, 1K and 1.5K both 0.3.
+      final proGroup = LLMModelConfig(
+        modelId: 'doubao-seedream-5-0-pro-260628',
+        channelType: Vendors.volcengineArk,
+        endpoint: 'https://x',
+        apiKey: 'k',
+        billingMode: 'spec',
+        outputRates: const [SpecRate(size: '2K', price: 0.6), SpecRate(price: 0.3)],
+      );
+
+      Future<(Map<String, dynamic>, double)> run(
+          Map<String, dynamic> options, String echoed) async {
+        answer = (req, _) => json(req, {
+              'data': [
+                {'url': '$base/img/ok.png', 'size': echoed},
+              ],
+              'usage': {'generated_images': 1},
+            });
+        final r = await ArkImagesProtocol().generateImage(
+            target('doubao-seedream-5-0-pro-260628'), prompt,
+            options: options);
+        final cost = LLMService.specUsageFor(proGroup, options, r.metadata,
+                imageCount: r.generatedImages.length)!
+            .cost;
+        return (r.metadata, cost);
+      }
+
+      test('auto + a ratio: upstream\'s 2K pixels, billed 0.6', () async {
+        final (meta, cost) =
+            await run({'imageSize': 'not_set', 'aspectRatio': '16:9'}, '2816x1584');
+        expect(posted.single['size'], '2816x1584');
+        expect(meta['output_size'], '2816x1584');
+        expect(cost, closeTo(0.6, 1e-9));
+      });
+
+      test('a chosen 1.5K keeps its tier, billed 0.3', () async {
+        final (meta, cost) =
+            await run({'imageSize': '1.5K', 'aspectRatio': '16:9'}, '2048x1152');
+        expect(meta.containsKey('output_size'), isFalse);
+        expect(cost, closeTo(0.3, 1e-9));
+      });
+    });
+
     test('layers with the tier unset go out without a size', () async {
       answer = (req, _) => json(req, {
             'data': [
-              {'url': '$base/img/ok.png', 'z_index': 0},
+              {'url': '$base/img/ok.png', 'z_index': 0, 'size': '912x1168'},
               {
                 'url': '$base/img/ok.png',
                 'z_index': 1,
+                'size': '861x1137',
                 'name': 'figure',
                 'bounding_box': {
                   'absolute': [27, 0, 888, 1137],
@@ -153,6 +198,8 @@ void main() {
       expect(r.imageLayers.map((l) => l?.zIndex), [0, 1]);
       expect(r.metadata[billedImageCountKey], 2);
       expect(r.metadata[inputImageCountKey], 1);
+      expect(r.metadata.containsKey('output_size'), isFalse,
+          reason: 'base and layer differ; the row has one size');
     });
 
     test('a request with no image at all fails', () async {
@@ -208,6 +255,8 @@ void main() {
       expect(closing.isDone, isTrue);
       expect(closing.metadata?['image_count'], 1);
       expect(closing.metadata?[billedImageCountKey], 2);
+      // No tier chosen: the echo of the picture that arrived is published.
+      expect(closing.metadata?['output_size'], '2848x1600');
     });
 
     test('a stream request answered with one JSON body reads like the '

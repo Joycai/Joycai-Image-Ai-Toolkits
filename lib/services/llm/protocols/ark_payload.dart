@@ -1,6 +1,6 @@
 import '../../../models/image_layer.dart';
 import '../llm_types.dart';
-import '../output_spec.dart' show billedImageCountKey;
+import '../output_spec.dart' show billedImageCountKey, parseWxH;
 import 'protocol.dart' show sentInputImages;
 
 /// Pure request/response helpers for Volcengine Ark's image surface
@@ -29,6 +29,12 @@ const String arkTaskTransparent = 'transparent';
 
 /// Values meaning "leave it to the model".
 bool _unset(String? v) => v == null || v.isEmpty || v == 'not_set' || v == 'auto';
+
+/// Whether [options] leave the resolution tier to upstream — so the only
+/// place the tier drawn at can be read is Ark's echo of the pixels
+/// ([arkResultMetadata]'s `renderedSizes`).
+bool arkTierLeftToUpstream(Map<String, dynamic>? options) =>
+    _unset(_opt(options, 'imageSize'));
 
 String? _opt(Map<String, dynamic>? options, String key) {
   final v = options?[key];
@@ -199,8 +205,12 @@ class ArkImageItem {
   /// image's pixels. Null for the base and outside that mode.
   final LayerBox? box;
 
+  /// The pixels this image was drawn at, as Ark echoes them (`2048x2048`),
+  /// or null when the item carries none.
+  final String? size;
+
   const ArkImageItem(this.ref,
-      {this.zIndex, this.name, this.description, this.box});
+      {this.zIndex, this.name, this.description, this.box, this.size});
 
   /// This image's place in a decomposition, or null outside that mode.
   GeneratedImageLayer? get layer => zIndex == null
@@ -224,7 +234,8 @@ ArkImageItem? _imageItemFrom(Map item) {
       zIndex: z is num ? z.toInt() : null,
       name: _nonEmpty(item['name']),
       description: _nonEmpty(item['description']),
-      box: bbox is Map ? LayerBox.fromList(bbox['absolute']) : null);
+      box: bbox is Map ? LayerBox.fromList(bbox['absolute']) : null,
+      size: _nonEmpty(item['size']));
 }
 
 String? _nonEmpty(Object? v) => v is String && v.isNotEmpty ? v : null;
@@ -309,21 +320,45 @@ ArkImageResult parseArkImageResponse(Map<String, dynamic> body) {
 ///    one included (measured 2026-09-21), over [refCount], what this client
 ///    put in the body; 5.0 lite and 4.x report no such field and fall back
 ///    to it.
+///
+/// `output_size` — the pixels Ark echoes ([renderedSizes], one per delivered
+/// picture) — is published only when [tierLeftToUpstream]: then the request
+/// names no tier a fee group could match, and the echo is the one place the
+/// tier drawn at shows. 5.0 pro's 「自动」 draws upstream's 2K, billed 0.6 元
+/// against 1K / 1.5K's 0.3 (docs/api/volcengine-ark.md §4); without the echo
+/// a table of 「2K 0.6 · the rest 0.3」 recorded it at 0.3. A chosen tier
+/// keeps the published size unset on purpose: the tier is what Ark prices,
+/// and pixels matched to the nearest tier *the table lists* would put a
+/// 1.5K image on that two-row table's 2K row. Pictures of differing sizes
+/// (a decomposition's base and layers) publish none — the row has one size.
 Map<String, dynamic> arkResultMetadata({
   required int delivered,
   required int failed,
   required Map<String, dynamic> usage,
   required int refCount,
+  List<String?> renderedSizes = const [],
+  bool tierLeftToUpstream = false,
 }) {
   final billed = usage['generated_images'];
+  final rendered = tierLeftToUpstream ? _oneSize(renderedSizes) : null;
   return {
     'image_count': delivered,
     if (failed > 0) 'failed_images': failed,
     if (usage.isNotEmpty) 'ark_usage': usage,
     if (billed is num && billed.isFinite && billed > 0)
       billedImageCountKey: billed.toInt(),
+    'output_size': ?rendered,
     ...sentInputImages(refCount, reported: usage['input_images']),
   };
+}
+
+/// The one `WxH` every entry of [sizes] names, or null when they are
+/// empty, differ, or any is missing or unreadable.
+String? _oneSize(List<String?> sizes) {
+  if (sizes.isEmpty) return null;
+  final first = sizes.first;
+  if (first == null || parseWxH(first) == null) return null;
+  return sizes.every((s) => s == first) ? first : null;
 }
 
 /// One decoded event of a streamed Ark image response
