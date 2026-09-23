@@ -12,10 +12,15 @@ import 'package:joycai_image_ai_toolkits/widgets/models/route_labels.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/dashed_border.dart';
 
 void main() {
-  Future<ColorScheme> pump(WidgetTester tester, Widget child) async {
+  Future<ColorScheme> pump(
+    WidgetTester tester,
+    Widget child, {
+    String? fontFamily,
+  }) async {
     final theme = buildAppTheme(
       accent: AppConstants.presetThemes.values.first,
       brightness: Brightness.light,
+      fontFamily: fontFamily,
     );
     await tester.pumpWidget(MaterialApp(
       theme: theme,
@@ -50,6 +55,20 @@ void main() {
     expect((d.border! as Border).top.color, scheme.primary);
     expect(tester.widget<Text>(find.text('Resp')).style!.color,
         scheme.onAccentTint);
+  });
+
+  testWidgets('the label is mono, falling back to the UI font for CJK', (tester) async {
+    // The badge builds its style from scratch, so without the ambient family
+    // its fallback would end at the mono stack and a Chinese route name would
+    // drop to the engine's own (thinner) fallback face.
+    await pump(
+      tester,
+      const AppRouteBadge(label: '对话', state: RouteBadgeState.quiet),
+      fontFamily: 'Microsoft YaHei',
+    );
+    final style = tester.widget<Text>(find.text('对话')).style!;
+    expect(style.fontFamily, kMonoFontFamilyFallback.first);
+    expect(style.fontFamilyFallback!.last, 'Microsoft YaHei');
   });
 
   testWidgets('off is dashed', (tester) async {

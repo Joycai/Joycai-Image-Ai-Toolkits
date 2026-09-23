@@ -596,7 +596,8 @@ ColorScheme errorFillScheme() {
 
 /// The monospaced faces to ask for, best first. The design sets numbers,
 /// logs, filenames and model ids in the system mono stack; nothing is
-/// bundled.
+/// bundled. [AppMonoText.mono] names the first as the family and falls back
+/// through the rest, skipping any the OS lacks.
 const List<String> kMonoFontFamilyFallback = <String>[
   'Cascadia Mono', // Windows 11
   'Consolas', // Windows
@@ -610,13 +611,24 @@ const List<String> kMonoFontFamilyFallback = <String>[
 extension AppMonoText on TextStyle {
   /// This style in a monospaced face with tabular figures.
   ///
-  /// `fontFamily` is nulled on purpose: an explicit family would beat the
-  /// fallback list, and the app stamps one on every slot.
-  TextStyle get mono => copyWith(
-        fontFamily: null,
-        fontFamilyFallback: kMonoFontFamilyFallback,
-        fontFeatures: const [FontFeature.tabularFigures()],
-      );
+  /// The mono face is *named* as the family, never reached by clearing it:
+  /// `copyWith(fontFamily: null)` keeps the old family, and a null family is
+  /// filled back in from the ambient [DefaultTextStyle] when a [Text] merges —
+  /// either way the UI font won and the role never rendered mono. The UI font
+  /// this style carried goes last in the fallback, so the CJK in a filename or
+  /// a log line lands on it rather than on the engine's thinner fallback.
+  TextStyle get mono {
+    // Already mono: its fallback still ends with the UI font it was built from.
+    final alreadyMono = fontFamily == kMonoFontFamilyFallback.first;
+    final uiFamily = alreadyMono ? null : fontFamily;
+    return copyWith(
+      fontFamily: kMonoFontFamilyFallback.first,
+      fontFamilyFallback: alreadyMono
+          ? fontFamilyFallback
+          : [...kMonoFontFamilyFallback.skip(1), ?uiFamily],
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+  }
 }
 
 /// Taking a type-scale slot's size without its colour.

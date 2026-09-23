@@ -178,4 +178,46 @@ void main() {
       expect(AppType.proseHeight, lessThan(AppType.looseHeight));
     });
   });
+
+  group('mono names its face and falls back to the UI font', () {
+    const ui = TextStyle(fontFamily: 'Microsoft YaHei', fontSize: 12);
+
+    test('the mono face is the family, not a fallback behind the UI font', () {
+      // `copyWith(fontFamily: null)` keeps the old family, which is how the
+      // role once rendered in the UI font on every desktop.
+      expect(ui.mono.fontFamily, kMonoFontFamilyFallback.first);
+    });
+
+    test('the UI font closes the fallback, after every mono face', () {
+      expect(ui.mono.fontFamilyFallback, [
+        ...kMonoFontFamilyFallback.skip(1),
+        'Microsoft YaHei',
+      ]);
+    });
+
+    test('no UI font adds nothing to the fallback', () {
+      expect(const TextStyle(fontSize: 12).mono.fontFamilyFallback,
+          kMonoFontFamilyFallback.skip(1).toList());
+    });
+
+    test('mono twice keeps the UI font it was built from', () {
+      expect(ui.mono.mono.fontFamilyFallback, ui.mono.fontFamilyFallback);
+    });
+
+    test('the mono face survives the merge with the ambient text style', () {
+      // What a Text does with its style: an inheriting style takes any family
+      // it leaves null from the DefaultTextStyle — the UI font.
+      final merged = ui.merge(const TextStyle(fontSize: 11).mono);
+      expect(merged.fontFamily, kMonoFontFamilyFallback.first);
+    });
+
+    test('the theme slots carry the chosen font into mono', () {
+      final slot = buildAppTheme(
+        accent: ThemeAccent.fromSeed(seed),
+        brightness: Brightness.light,
+        fontFamily: 'MiSans',
+      ).textTheme.bodySmall!;
+      expect(slot.mono.fontFamilyFallback!.last, 'MiSans');
+    });
+  });
 }
