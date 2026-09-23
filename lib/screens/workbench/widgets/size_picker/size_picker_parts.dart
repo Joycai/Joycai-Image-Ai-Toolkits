@@ -350,7 +350,8 @@ class SizeRuleLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final base = Theme.of(context).textTheme.labelSmall!.mono.copyWith(color: scheme.outline, fontSize: 10.5);
+    final ui = Theme.of(context).textTheme.labelSmall!.copyWith(color: scheme.outline, fontSize: 10.5);
+    final base = ui.mono;
     final spans = <InlineSpan>[];
     for (final (i, p) in parts.indexed) {
       if (i > 0) spans.add(TextSpan(text: ' · ', style: base));
@@ -368,7 +369,7 @@ class SizeRuleLine extends StatelessWidget {
         ),
         if (status != null) ...[
           const SizedBox(width: AppSpace.s6),
-          Text(status!, style: base.copyWith(fontFamilyFallback: null)),
+          Text(status!, style: ui),
         ],
       ],
     );
