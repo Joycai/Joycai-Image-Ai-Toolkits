@@ -76,7 +76,8 @@ void main() {
   });
 
   group('tables per generation', () {
-    test('5.0 pro: task modes, 1K/1.5K/2K, format, fast mode, no groups', () {
+    test('5.0 pro: task modes, auto/1K/1.5K/2K, format, fast mode, no groups',
+        () {
       for (final id in [
         'doubao-seedream-5-0-pro-260628',
         'doubao-seedream-5.0-pro',
@@ -92,7 +93,11 @@ void main() {
         ], reason: id);
         expect(optionsOf(caps, 'imageTask'),
             ['generate', 'layers', 'transparent']);
-        expect(optionsOf(caps, 'imageSize'), ['1K', '1.5K', '2K']);
+        // `not_set` is the only way to layer decomposition's `auto` — the
+        // source's own size — and it keeps the price under 2.61 MP where a
+        // forced 2K would double it (docs/api/volcengine-ark.md §6).
+        expect(optionsOf(caps, 'imageSize'), ['not_set', '1K', '1.5K', '2K']);
+        // 2K stays the default: a tier-priced fee group can match it.
         expect(spec(caps, 'imageSize').defaultValue, '2K');
         expect(caps.maxReferenceImages, 10);
       }
@@ -184,6 +189,25 @@ void main() {
           expect(table!.keys.toSet(), ratios.toSet(), reason: '$id $tier');
         }
       }
+    });
+
+    test('the first tier listed is upstream\'s default', () {
+      // A ratio chosen with the tier left unset is looked up under the first
+      // tier, so it must be the one upstream draws when `size` names none:
+      // 2K for every generation that has tiers (§1), 3.0's only tier.
+      const defaults = {
+        'doubao-seedream-5-0-pro-260628': '2K',
+        'doubao-seedream-5-0-lite-260128': '2K',
+        'doubao-seedream-4-5-251128': '2K',
+        'doubao-seedream-4-0-250828': '2K',
+        'doubao-seedream-3-0-t2i-250415': '1K',
+        'relay-seedream-latest': '2K',
+      };
+      expect(defaults.keys.toSet(), _allTableIds.toSet());
+      defaults.forEach((id, tier) {
+        expect(ModelCapabilities.forModel(id).tierPixelSizes.keys.first, tier,
+            reason: id);
+      });
     });
 
     test('mapped pixels sit inside the documented window and ratio', () {

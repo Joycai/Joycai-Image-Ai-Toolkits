@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/image_layer.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/ark_payload.dart';
 
 /// The Ark image body and response rules (docs/api/volcengine-ark.md). Every
@@ -139,6 +140,42 @@ void main() {
       expect(body.containsKey('sequential_image_generation'), isFalse);
     });
 
+    test('layers with the tier unset send no size: upstream keeps the source',
+        () {
+      // `auto` is layer decomposition's default (§6) — the source's own size
+      // inside [1280x720, 2K×1.1025]. Any tier sent forces a resample, and a
+      // forced 2K (4.19 MP) is billed 0.6 元 where the source might have
+      // stayed at 0.3.
+      for (final unset in ['not_set', 'auto']) {
+        final body = build(
+            caps: pro,
+            refs: [ref],
+            options: {
+              'imageTask': 'layers',
+              'imageSize': unset,
+              'aspectRatio': '16:9',
+            });
+        expect(body['layer_decomposition'], isTrue);
+        expect(body.containsKey('size'), isFalse, reason: unset);
+      }
+    });
+
+    test('generation with the tier unset is upstream\'s 2K, ratio included',
+        () {
+      expect(
+          build(caps: pro, options: {'imageSize': 'not_set'})
+              .containsKey('size'),
+          isFalse);
+      // A ratio with no tier takes upstream's default tier's pixels — 2K —
+      // not the smallest tier the table lists.
+      expect(
+          build(caps: pro, options: {
+            'imageSize': 'not_set',
+            'aspectRatio': '16:9',
+          })['size'],
+          '2816x1584');
+    });
+
     test('transparent: background set, PNG forced over a JPEG choice', () {
       final warnings = <String>[];
       final body = build(
@@ -263,6 +300,55 @@ void main() {
       });
       expect(r.images, hasLength(1));
       expect(r.failures, isEmpty);
+    });
+  });
+
+  group('result metadata', () {
+    test('Ark\'s charged count is published beside what was delivered', () {
+      // Two drawn and billed, one link undownloadable: the row must still
+      // charge two (docs/api/volcengine-ark.md §4 — billed by
+      // `generated_images`).
+      final meta = arkResultMetadata(
+        delivered: 1,
+        failed: 0,
+        usage: const {'generated_images': 2, 'output_tokens': 32448},
+        refCount: 0,
+      );
+      expect(meta['image_count'], 1);
+      expect(meta[billedImageCountKey], 2);
+      expect(meta['ark_usage'], {'generated_images': 2, 'output_tokens': 32448});
+      expect(meta.containsKey(inputImageCountKey), isFalse);
+    });
+
+    test('no usable charged count publishes none', () {
+      for (final usage in [
+        const <String, dynamic>{},
+        const {'generated_images': 0},
+        const {'generated_images': 'two'},
+        const {'generated_images': double.nan},
+      ]) {
+        final meta = arkResultMetadata(
+            delivered: 2, failed: 0, usage: usage, refCount: 0);
+        expect(meta.containsKey(billedImageCountKey), isFalse,
+            reason: '$usage');
+        expect(meta['image_count'], 2);
+      }
+    });
+
+    test('failures and 5.0 pro\'s reported inputs ride along', () {
+      final meta = arkResultMetadata(
+        delivered: 1,
+        failed: 1,
+        usage: const {'input_images': 2, 'generated_images': 1},
+        refCount: 3,
+      );
+      expect(meta['failed_images'], 1);
+      expect(meta[billedImageCountKey], 1);
+      expect(meta[inputImageCountKey], 2, reason: 'Ark\'s count outranks ours');
+      expect(
+          arkResultMetadata(delivered: 1, failed: 0, usage: const {}, refCount: 3)[
+              inputImageCountKey],
+          3);
     });
   });
 

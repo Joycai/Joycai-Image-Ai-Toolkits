@@ -8,6 +8,8 @@ import 'package:joycai_image_ai_toolkits/services/billing/spec_billing.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart'
+    show upstreamUsage;
 
 /// Pins how a spec-billed fee group turns one generation into money: which
 /// rate row a request lands on, what it counts, and what the usage row
@@ -350,6 +352,51 @@ void main() {
       final chat = LLMService.specUsageFor(seedream, const {}, const {'prompt_tokens': 9}, imageCount: 1)!;
       expect(chat.inputImages, 0);
       expect(chat.cost, closeTo(0.30, 1e-9));
+    });
+
+    test('the provider\'s charged count outranks the pictures delivered', () {
+      final seedream = LLMModelConfig(
+        modelId: 'doubao-seedream-5-0-lite-260128',
+        channelType: 'volcengine-ark',
+        endpoint: 'https://x',
+        apiKey: 'k',
+        billingMode: 'spec',
+        outputRates: const [SpecRate(price: 0.22)],
+      );
+
+      // Ark drew and billed two; one link failed to download.
+      final lost = LLMService.specUsageFor(
+          seedream, const {}, const {billedImageCountKey: 2}, imageCount: 1)!;
+      expect(lost.units, 2);
+      expect(lost.cost, closeTo(0.44, 1e-9));
+
+      // Without the provider's count, what arrived is what is charged.
+      final plain = LLMService.specUsageFor(
+          seedream, const {}, const {'image_count': 1}, imageCount: 1)!;
+      expect(plain.units, 1);
+    });
+
+    test('the charged count is read leniently and never as zero', () {
+      expect(billedImageCountOf(const {billedImageCountKey: 3}), 3);
+      expect(billedImageCountOf(const {billedImageCountKey: 3.0}), 3);
+      expect(billedImageCountOf(const {billedImageCountKey: '3'}), 3);
+      expect(billedImageCountOf(const {billedImageCountKey: 0}), isNull);
+      expect(billedImageCountOf(const {billedImageCountKey: -1}), isNull);
+      expect(billedImageCountOf(const {billedImageCountKey: 'many'}), isNull);
+      expect(billedImageCountOf(const {}), isNull);
+      expect(billedImageCountOf(null), isNull);
+    });
+
+    test('an upstream usage block cannot set the charged count', () {
+      // Reserved like the input count and the reported cost: only a
+      // protocol's own conversion of a field it recognises may publish it.
+      final spread = upstreamUsage(const {
+        billedImageCountKey: 99,
+        inputImageCountKey: 7,
+        reportedCostKey: 1.5,
+        'total_tokens': 10,
+      });
+      expect(spread, {'total_tokens': 10});
     });
 
     test('the count is read whatever type the transport left it in', () {

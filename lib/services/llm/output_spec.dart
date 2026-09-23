@@ -56,6 +56,26 @@ Map<String, dynamic>? inputImageCountEntry(Map<String, dynamic>? metadata) {
   return count > 0 ? {inputImageCountKey: count} : null;
 }
 
+/// The metadata key an images protocol publishes the number of pictures the
+/// provider says it *charged* for under — where it reports one (Ark's
+/// `usage.generated_images`, docs/api/volcengine-ark.md §4). It outranks the
+/// pictures the response delivered, which spec billing counts otherwise: a
+/// link that fails to download was drawn and billed all the same, and
+/// counting only what arrived recorded it as free.
+const String billedImageCountKey = 'billed_image_count';
+
+/// [billedImageCountKey] off a response's metadata, or null when the
+/// provider reported none — absent, not a whole positive number, or zero. A
+/// zero is not trusted over the pictures that did arrive: a response that
+/// carried images was not free, whatever its usage block says.
+int? billedImageCountOf(Map<String, dynamic>? metadata) {
+  final raw = metadata?[billedImageCountKey];
+  final count = raw is num && raw.isFinite
+      ? raw.toInt()
+      : (raw is String ? int.tryParse(raw) : null);
+  return count == null || count <= 0 ? null : count;
+}
+
 /// The metadata key a protocol publishes the money the provider says this
 /// request cost under, in US dollars — where the provider reports one (xAI's
 /// `usage.cost_in_usd_ticks`, 1 tick = $10⁻¹⁰, docs/api/usage.md §5). The

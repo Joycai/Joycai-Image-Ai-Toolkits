@@ -856,9 +856,18 @@ Grok 4.5/4.6 在该面上「关闭」必 400（见第 8 条），编辑器提示
   厂商原生协议」防的是从 endpoint 推导出的私有路径，这里没有推导。先例是 grok-imagine 在
   中转上走 Images API。
 - **路由答案**：单发、提交即计费、不声明工具；超时 5 分钟起，按一次请求可能画的张数
-  （`maxImages`，拆图层按 17）每多一张 +40 s，封顶 15 分钟。计费按张：`image_count`；方舟的
+  （`maxImages`，拆图层按 17）每多一张 +40 s，封顶 15 分钟。计费按张：`image_count` 是交付张数，
+  **`usage.generated_images` 另发布为 `billed_image_count`（2026-09-23）并压过它**——链接下载失败的
+  图没存下来，但上游照扣，只数到手的会把它记成免费；`billed_image_count` 与 `input_image_count`、
+  `reported_cost_usd` 同为保留键，`upstreamUsage` 剥掉线上的同名字段。方舟的
   `output_tokens`（像素/256）不进 token 键，放在 `ark_usage` 下，免得按 token 的费用组算出假钱；
   不发布 `output_size`，按规格的档位行写的是 `2K`。
+- **5.0 pro 的分辨率有「自动」（`not_set`，不发 `size`，2026-09-23）。** 这是拆图层够到上游默认
+  `auto`（原图尺寸）的唯一写法：发档位就重采样，而 pro 输出 >261 万像素是 0.6 元、以内 0.3 元，
+  强制 2K（419 万）把本可留在线下的源图价格翻倍。生成模式下它等于上游默认 2K。默认值仍是 `2K`，
+  按档位写的费用组能匹配；「自动」的请求没有尺寸可匹配，只落到不写尺寸的行。
+  `tierPixelSizes` 的**第一档是上游默认档**：比例选了、档位没选时按它查像素（pro 与 4.0 因此把
+  `2K` 排在最前），`seedream_capabilities_test` 钉住。
 - **输入图张数（`input_image_count`，2026-09-21）**：七个 images 协议（OpenAI / xAI / 方舟 / 百炼同步 ·
   异步 / MiniMax / Midjourney）都在响应 metadata 里发布这次请求**实际放进请求体**的参考图张数，按规格计费组据此收
   输入费（`SpecUsage.price` 的输入一侧）。两条不变量：① 张数在组完请求体之后数——

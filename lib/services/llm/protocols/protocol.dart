@@ -9,7 +9,8 @@ import 'package:http_parser/http_parser.dart';
 import '../../../core/image_magic.dart';
 import '../llm_types.dart';
 import '../model_descriptor.dart';
-import '../output_spec.dart' show inputImageCountKey, parseWxH, reportedCostKey;
+import '../output_spec.dart'
+    show billedImageCountKey, inputImageCountKey, parseWxH, reportedCostKey;
 import '../vendors/vendor_profile.dart';
 
 // Every debug-log line that prints a request URL must redact it first —
@@ -794,27 +795,32 @@ Map<String, dynamic> sentInputImages(int sent, {Object? reported}) {
 }
 
 /// A provider's `usage` block (or any upstream map) as it may be spread
-/// into response metadata: cast, and with the two keys this app reserves
+/// into response metadata: cast, and with the three keys this app reserves
 /// for its own conclusions taken out. [reportedCostKey] is the app's billed
 /// figure and outranks every price the user set; [inputImageCountKey] is
-/// what a spec group charges references by. Both must only ever come from
-/// a protocol's own conversion of a vendor field it recognises
-/// (`reportedCostFromTicks`, `sentInputImages(reported:)`) — never verbatim
-/// from the wire, where a relay or a vendor could name a field the same.
-/// Every spread of an upstream map into metadata goes through here; the
-/// usage recorder reads the keys for every vendor alike. Empty for anything
-/// not a map.
+/// what a spec group charges references by; [billedImageCountKey] outranks
+/// the pictures delivered. All must only ever come from a protocol's own
+/// conversion of a vendor field it recognises (`reportedCostFromTicks`,
+/// `sentInputImages(reported:)`, `arkResultMetadata`) — never verbatim from
+/// the wire, where a relay or a vendor could name a field the same. Every
+/// spread of an upstream map into metadata goes through here; the usage
+/// recorder reads the keys for every vendor alike. Empty for anything not a
+/// map.
 Map<String, dynamic> upstreamUsage(Object? raw) {
   if (raw is! Map) return const {};
   final usage = raw.cast<String, dynamic>();
-  if (!usage.containsKey(reportedCostKey) && !usage.containsKey(inputImageCountKey)) {
-    return usage;
-  }
+  if (!_reservedMetadataKeys.any(usage.containsKey)) return usage;
   return {
     for (final e in usage.entries)
-      if (e.key != reportedCostKey && e.key != inputImageCountKey) e.key: e.value,
+      if (!_reservedMetadataKeys.contains(e.key)) e.key: e.value,
   };
 }
+
+const _reservedMetadataKeys = {
+  reportedCostKey,
+  inputImageCountKey,
+  billedImageCountKey,
+};
 
 Future<Uint8List?> readAttachmentBytes(LLMAttachment att) async {
   if (att.path != null) return File(att.path!).readAsBytes();

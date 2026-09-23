@@ -1074,11 +1074,14 @@ const _minimaxH3Base = ModelCapabilities(
 // each carries its own table and the workbench shows only what that version
 // accepts. Shared rulings:
 //
-//  * **Size is two controls.** `imageSize` is the resolution tier and is
-//    always sent — every version has a tier it accepts, so there is no
-//    "unset" to offer. `aspectRatio` defaults to `not_set`, which sends the
-//    tier alone and lets the model read the ratio off the prompt; a chosen
-//    ratio sends that version's own pixels for the pair ([tierPixelSizes]).
+//  * **Size is two controls.** `imageSize` is the resolution tier and
+//    defaults to one — every version has a tier it accepts. Only where
+//    leaving it off reaches something a tier cannot (5.0 pro's layer
+//    decomposition, whose default keeps the source's size) is `not_set`
+//    offered too. `aspectRatio` defaults to `not_set`, which sends the tier
+//    alone and lets the model read the ratio off the prompt; a chosen ratio
+//    sends that version's own pixels for the pair ([tierPixelSizes], whose
+//    first tier is upstream's default).
 //  * **Watermark is sent, off by default.** Upstream defaults it *on* and
 //    bills the image all the same; every documented example turns it off.
 //    Explicit rather than inherited, like wan3's billed audio switch.
@@ -1202,6 +1205,16 @@ const _seedream1K = {
 /// exclusive, so they are one three-way control rather than two switches
 /// whose "both on" is a guaranteed 400. Interactive editing has no field —
 /// it is the prompt's `<bbox>` tags or marks drawn on the reference.
+///
+/// The resolution control carries `not_set`, which sends no `size`: the one
+/// way to reach layer decomposition's upstream default, `auto` — the source's
+/// own size where it lies in [1280x720, 2K×1.1025] (docs/api/volcengine-ark.md
+/// §6). A tier forces a resample, and the price follows the output: 0.3 元
+/// an image up to 2.61 MP, 0.6 元 above it, so a forced 2K (4.19 MP) doubles
+/// the price of a source that would have stayed under the line. Generation
+/// reads the same `not_set` as upstream's generation default, 2K. The
+/// default stays `2K`, which a tier-priced fee group can match; `not_set`
+/// has no size to match until the output is known.
 const _seedream50Pro = ModelCapabilities(
   isImageGenerator: true,
   maxReferenceImages: 10,
@@ -1223,7 +1236,12 @@ const _seedream50Pro = ModelCapabilities(
       labelKey: 'resolution',
       control: ParamControl.segmented,
       defaultValue: '2K',
-      options: [ParamOption('1K'), ParamOption('1.5K'), ParamOption('2K')],
+      options: [
+        ParamOption('not_set'),
+        ParamOption('1K'),
+        ParamOption('1.5K'),
+        ParamOption('2K'),
+      ],
     ),
     _seedreamAspectRatio,
     _seedreamOutputFormat,
@@ -1231,6 +1249,18 @@ const _seedream50Pro = ModelCapabilities(
     _seedreamWatermark,
   ],
   tierPixelSizes: {
+    // Upstream's default first: the tier a ratio chosen with `not_set` is
+    // looked up under ([ModelCapabilities.tierPixelSizes]).
+    '2K': {
+      '1:1': '2048x2048',
+      '4:3': '2368x1776',
+      '3:4': '1776x2368',
+      '16:9': '2816x1584',
+      '9:16': '1584x2816',
+      '3:2': '2496x1664',
+      '2:3': '1664x2496',
+      '21:9': '3136x1344',
+    },
     '1K': {
       '1:1': '1024x1024',
       '4:3': '1152x864',
@@ -1250,16 +1280,6 @@ const _seedream50Pro = ModelCapabilities(
       '3:2': '1872x1248',
       '2:3': '1248x1872',
       '21:9': '2352x1008',
-    },
-    '2K': {
-      '1:1': '2048x2048',
-      '4:3': '2368x1776',
-      '3:4': '1776x2368',
-      '16:9': '2816x1584',
-      '9:16': '1584x2816',
-      '3:2': '2496x1664',
-      '2:3': '1664x2496',
-      '21:9': '3136x1344',
     },
   },
 );
@@ -1350,7 +1370,7 @@ const _seedream40 = ModelCapabilities(
     _seedreamOptimizeMode,
     _seedreamWatermark,
   ],
-  tierPixelSizes: {'1K': _seedream1K, '2K': _seedream2K, '4K': _seedream4K},
+  tierPixelSizes: {'2K': _seedream2K, '1K': _seedream1K, '4K': _seedream4K},
 );
 
 /// Seedream 3.0 text-to-image (`doubao-seedream-3-0-t2i-250415`): pixels only
