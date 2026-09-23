@@ -1160,7 +1160,9 @@ class LLMService {
       unit: config.outputUnit,
       rates: config.outputRates,
       spec: OutputSpec.from(options, metadata: metadata),
-      imageCount: imageCount,
+      // The provider's own count of what it charged, where it gives one,
+      // over the pictures that reached us ([billedImageCountKey]).
+      imageCount: billedImageCountOf(metadata) ?? imageCount,
       inputImageCount: inputImageCountOf(metadata),
       inputUnitPrice: config.inputUnitFee,
       inputFreeUnits: config.inputFreeUnits,

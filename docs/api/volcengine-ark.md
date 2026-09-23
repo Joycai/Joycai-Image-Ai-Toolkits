@@ -110,11 +110,13 @@ body 是它的超集：`model` / `prompt` / `size` / `response_format` 同名同
 - **组图里单张失败不影响其余**：失败的那一项只有 `error{code, message}`。审核
   不通过会继续画下一张；内部错误（500）则停止后续。
 - 顶层 `error{code, message}`：整个请求一张都没画出来时返回。
-- `usage.generated_images` 是**成功**张数，**计费按它**（按张，不按 token）；
+- `usage.generated_images` 是**成功**张数，**计费按它**（按张，不按 token；应用发布为
+  `billed_image_count`，压过下载到手的张数）；
   `output_tokens` = Σ(宽×高)/256，仅供参考；`input_images`（5.0 pro，见下）；
   `tool_usage.web_search` = 实际搜索次数（0 = 没搜）。
 - **输入图也计费（5.0 pro）**：控制台定价页（2026-09-21）写「输入图（首张免费）0.02 元/张 · 输出图
-  0.3 元/张（输出图 ≤261 万像素）」；5.0 lite 是 0.22 元/张、不收输入费。`usage.input_images` 是
+  0.3 元/张（输出图 ≤261 万像素）」，超过 261 万像素是 **0.6 元/张**（2026-09-23 用户查证）——
+  1K / 1.5K 各比例都在线内，2K 全在线外；5.0 lite 是 0.22 元/张、不收输入费。`usage.input_images` 是
   **原始张数，免费的首张也算在内**——2026-09-21 实测：pro 带两张参考图 →
   `{"input_images": 2, "generated_images": 1, "output_tokens": 4096}`；lite 同样的请求不回报这个字段。
   应用把它发布为 `metadata['input_image_count']`（优先于本地数出的张数），免费张数由计费组扣
@@ -176,7 +178,8 @@ data: [DONE]
 
   **本应用的用法**（2026-09-18 起）：底图与各层按叠放次序落盘，每个文件的 `z_index` / `name` /
   `description` / `bounding_box.absolute` 存进 `image_layers`；图层画布按框把各层放回底图坐标，
-  可导出合成图。细节见 `../architecture/llm-three-layer.md`「火山方舟 · Seedream」。
+  可导出合成图。分辨率选「自动」（`not_set`）时不发 `size`，即上游默认的 `auto`；选了档位就按档位
+  重采样（并按输出像素计价，见 §4）。细节见 `../architecture/llm-three-layer.md`「火山方舟 · Seedream」。
 
 **透明背景**（`background: "transparent"`）：只用于图生图，且**只能 1 张带
 透明通道的参考图**；输出默认 png，同时写 `output_format: jpeg` 报错；传入 jpeg

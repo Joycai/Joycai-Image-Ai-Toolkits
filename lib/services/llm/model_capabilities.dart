@@ -93,6 +93,11 @@ class ModelCapabilities {
   /// The values are each model's own documented mapping, so the pixels sent
   /// are the ones the model would have picked for that ratio anyway. Empty
   /// for every family that sizes some other way.
+  ///
+  /// **The first tier is upstream's default** — the one it applies when
+  /// `size` names none. A ratio chosen with the tier left unset is looked up
+  /// there, so "no tier" at a ratio means the pixels upstream would have
+  /// drawn at its own default tier, not the smallest one listed.
   final Map<String, Map<String, String>> tierPixelSizes;
 
   /// True when the model's image surface can stream — push each image the

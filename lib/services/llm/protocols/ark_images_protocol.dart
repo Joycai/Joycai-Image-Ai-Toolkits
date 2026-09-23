@@ -190,7 +190,11 @@ class ArkImagesProtocol implements ImageGenProtocol {
           '(downloaded inline; upstream URLs expire in 24h)',
           level: 'DEBUG');
       yield LLMResponseChunk(
-        metadata: _metadata(delivered, failures.length, usage, req.refCount),
+        metadata: arkResultMetadata(
+            delivered: delivered,
+            failed: failures.length,
+            usage: usage,
+            refCount: req.refCount),
         isDone: true,
       );
     } finally {
@@ -370,29 +374,13 @@ class ArkImagesProtocol implements ImageGenProtocol {
       text: '',
       generatedImages: images,
       imageLayers: layers.any((l) => l != null) ? layers : const [],
-      metadata: _metadata(
-          images.length, result.failures.length, result.usage, refCount),
+      metadata: arkResultMetadata(
+          delivered: images.length,
+          failed: result.failures.length,
+          usage: result.usage,
+          refCount: refCount),
     );
   }
-
-  /// Ark bills Seedream per image. Its `output_tokens` (pixels / 256) is
-  /// informational, and publishing it under a token key would let a
-  /// token-priced fee group invent a cost, so the raw block is kept under
-  /// its own name. `image_count` keeps the metadata non-empty, which is
-  /// what makes LLMService record the usage row at all.
-  ///
-  /// Seedream 5.0 pro charges per input image and says how many it counted
-  /// (`usage.input_images` — the raw number, the free first one included;
-  /// measured 2026-09-21). That outranks [refCount], what this client put in
-  /// the body; 5.0 lite and 4.x report no such field and fall back to it.
-  static Map<String, dynamic> _metadata(
-          int images, int failed, Map<String, dynamic> usage, int refCount) =>
-      {
-        'image_count': images,
-        if (failed > 0) 'failed_images': failed,
-        if (usage.isNotEmpty) 'ark_usage': usage,
-        ...sentInputImages(refCount, reported: usage['input_images']),
-      };
 
   static String _excerpt(String body) =>
       body.length > 500 ? '${body.substring(0, 500)}…' : body;

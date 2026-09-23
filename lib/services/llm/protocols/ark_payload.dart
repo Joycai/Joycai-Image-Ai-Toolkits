@@ -1,12 +1,15 @@
 import '../../../models/image_layer.dart';
 import '../llm_types.dart';
+import '../output_spec.dart' show billedImageCountKey;
+import 'protocol.dart' show sentInputImages;
 
 /// Pure request/response helpers for Volcengine Ark's image surface
 /// (`POST {base}/images/generations`, Seedream).
 ///
 /// IO-free on purpose, like `minimax_payload.dart` and `dashscope_payload.dart`:
-/// the repo has no HTTP mock setup, so the only way these rules get pinned by
-/// tests is to keep them out of the protocol's request path. The wire facts
+/// every rule here is pinned case by case without a server
+/// (`ark_images_payload_test.dart`); the transport around them is driven
+/// against a loopback one (`ark_images_protocol_test.dart`). The wire facts
 /// they encode are recorded in `docs/api/volcengine-ark.md`.
 ///
 /// The inputs are the workbench's option keys (`imageSize`, `aspectRatio`,
@@ -142,7 +145,9 @@ void _requireSingleReference(List<String> refs, String mode) {
 /// The `size` field: the tier alone when no ratio is chosen (the model reads
 /// the ratio off the prompt), the documented pixels for (tier, ratio)
 /// otherwise. A ratio with no tier looks the pixels up under the model's
-/// first tier — the only one for a version that has no tier control.
+/// first tier, which the tables list as upstream's default
+/// (`ModelCapabilities.tierPixelSizes`) — and which is the only one for a
+/// version that has no tier control.
 String? _arkSize(String? tier, String? ratio,
     Map<String, Map<String, String>> tierPixelSizes,
     void Function(String message)? warn) {
@@ -284,6 +289,41 @@ ArkImageResult parseArkImageResponse(Map<String, dynamic> body) {
   final usage = body['usage'];
   return ArkImageResult(images, failures,
       usage is Map ? usage.cast<String, dynamic>() : const {});
+}
+
+/// The response metadata for one Ark request that delivered [delivered]
+/// pictures, [failed] items of a group having come back as errors.
+///
+/// Ark bills Seedream per image. Its `output_tokens` (pixels / 256) is
+/// informational, and publishing it under a token key would let a
+/// token-priced fee group invent a cost, so the raw block is kept under its
+/// own name. `image_count` keeps the metadata non-empty, which is what makes
+/// LLMService record the usage row at all.
+///
+/// Two of Ark's own counts outrank what this client saw:
+///  * `usage.generated_images` — the pictures Ark *charged* for
+///    (docs/api/volcengine-ark.md §4), published as [billedImageCountKey].
+///    A link that fails to download was drawn and billed all the same; the
+///    delivered count alone recorded it as free.
+///  * `usage.input_images` — 5.0 pro's count of references, the free first
+///    one included (measured 2026-09-21), over [refCount], what this client
+///    put in the body; 5.0 lite and 4.x report no such field and fall back
+///    to it.
+Map<String, dynamic> arkResultMetadata({
+  required int delivered,
+  required int failed,
+  required Map<String, dynamic> usage,
+  required int refCount,
+}) {
+  final billed = usage['generated_images'];
+  return {
+    'image_count': delivered,
+    if (failed > 0) 'failed_images': failed,
+    if (usage.isNotEmpty) 'ark_usage': usage,
+    if (billed is num && billed.isFinite && billed > 0)
+      billedImageCountKey: billed.toInt(),
+    ...sentInputImages(refCount, reported: usage['input_images']),
+  };
 }
 
 /// One decoded event of a streamed Ark image response
