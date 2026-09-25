@@ -107,7 +107,7 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
                 UsagePanel(
                   child: UsageList(
                     usageData: c.rows,
-                    onRefresh: () => c.load(reset: true),
+                    onClearModelUsage: c.clearModelUsage,
                     hasMore: c.hasMore,
                     isLoadingMore: c.isLoadingMore,
                     onLoadMore: c.load,

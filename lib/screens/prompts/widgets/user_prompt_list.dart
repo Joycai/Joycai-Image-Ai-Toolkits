@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
-import '../../../services/db/database_service.dart';
+import '../../../state/app_state.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';
 import '../../../widgets/ui/app_snackbar.dart';
@@ -55,7 +56,6 @@ class UserPromptList extends StatefulWidget {
 }
 
 class _UserPromptListState extends State<UserPromptList> {
-  final DatabaseService _db = DatabaseService();
   final Set<int> _expandedPromptIds = {};
   final PromptReorderFocus _reorderFocus = PromptReorderFocus();
 
@@ -97,8 +97,9 @@ class _UserPromptListState extends State<UserPromptList> {
       return;
     }
     final next = reorderedCopy(prompts, oldIndex, newIndex);
+    final appState = context.read<AppState>();
     setState(() => _optimistic = next);
-    await _db.updatePromptOrder(next.map((p) => p.id!).toList());
+    await appState.updatePromptOrder(next.map((p) => p.id!).toList());
     widget.onRefresh();
   }
 
@@ -114,13 +115,14 @@ class _UserPromptListState extends State<UserPromptList> {
   /// Writes [nextIds], the whole stored order, showing [shown] in it at once.
   Future<void> _writeOrder(List<Prompt> shown, List<int> nextIds) async {
     final byId = {for (final p in shown) p.id!: p};
+    final appState = context.read<AppState>();
     setState(
       () => _optimistic = [
         for (final i in nextIds)
           if (byId.containsKey(i)) byId[i]!,
       ],
     );
-    await _db.updatePromptOrder(nextIds);
+    await appState.updatePromptOrder(nextIds);
     widget.onRefresh();
   }
 

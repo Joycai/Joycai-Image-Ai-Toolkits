@@ -14,7 +14,6 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_model.dart';
 import '../../../services/assistant/knowledge_base_service.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
-import '../../../services/db/database_service.dart';
 import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/system/gpu_info_service.dart';
 import '../../../state/app_state.dart';
@@ -38,7 +37,6 @@ class ApplicationSection extends StatefulWidget {
 }
 
 class _ApplicationSectionState extends State<ApplicationSection> {
-  final DatabaseService _db = DatabaseService();
   final TextEditingController _outputDirController = TextEditingController();
   bool _isPortable = false;
   String? _kbPath;
@@ -73,25 +71,37 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   }
 
   Future<void> _loadSettings() async {
-    _outputDirController.text = await _db.getSetting('output_directory') ?? '';
+    final appState = Provider.of<AppState>(context, listen: false);
+    // The gallery reads the output directory as it is built; this section can
+    // mount before that lands, so wait for it rather than read a blank. A
+    // failed gallery load is the gallery's problem, not a reason to leave
+    // every other field here at its default.
+    try {
+      await appState.galleryState.settingsLoaded;
+    } catch (_) {
+      // Fall through to whatever the gallery holds.
+    }
+    _outputDirController.text = appState.outputDirectory ?? '';
     _isPortable = await AppPaths.isPortableMode();
     _kbPath = await KnowledgeBaseService().getRoot();
     _kbStatus = await KnowledgeBaseService().validate(_kbPath);
     _assistantRetention =
-        int.tryParse(await _db.getSetting(PromptOptimizerAgent.retentionSettingKey) ?? '') ??
+        int.tryParse(await appState.getSetting(PromptOptimizerAgent.retentionSettingKey) ?? '') ??
         PromptOptimizerAgent.defaultRetention;
     _assistantContextRatio =
-        double.tryParse(await _db.getSetting(PromptOptimizerAgent.contextRatioSettingKey) ?? '') ??
+        double.tryParse(
+          await appState.getSetting(PromptOptimizerAgent.contextRatioSettingKey) ?? '',
+        ) ??
         PromptOptimizerAgent.defaultContextRatio;
     _kbSubAgentEnabled =
-        (await _db.getSetting(PromptOptimizerAgent.kbSubAgentSettingKey) ?? 'false') == 'true';
+        (await appState.getSetting(PromptOptimizerAgent.kbSubAgentSettingKey) ?? 'false') == 'true';
     _kbSubAgentModelId = int.tryParse(
-      await _db.getSetting(PromptOptimizerAgent.kbSubAgentModelSettingKey) ?? '',
+      await appState.getSetting(PromptOptimizerAgent.kbSubAgentModelSettingKey) ?? '',
     );
     // Chat-capable models only: image/video generators cannot run the
     // research tool loop.
     _kbSubAgentModels = [
-      for (final m in await _db.getModels())
+      for (final m in appState.allModels)
         if (m.tag != 'image' && m.tag != 'video') m,
     ];
     _gpuName = await _gpuInfo.activeGpuName();
@@ -202,7 +212,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                     trailing: AppSwitch(
                       value: _kbSubAgentEnabled,
                       onChanged: (v) async {
-                        await _db.saveSetting(
+                        await appState.saveSetting(
                           PromptOptimizerAgent.kbSubAgentSettingKey,
                           v.toString(),
                         );
@@ -230,7 +240,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                     ],
                     onChanged: (v) async {
                       if (v == null) return;
-                      await _db.saveSetting(PromptOptimizerAgent.retentionSettingKey, '$v');
+                      await appState.saveSetting(PromptOptimizerAgent.retentionSettingKey, '$v');
                       setState(() => _assistantRetention = v);
                     },
                   ),
@@ -278,8 +288,10 @@ class _ApplicationSectionState extends State<ApplicationSection> {
             divisions: _contextRatios.length - 1,
             label: '${(value * 100).round()}%',
             onChanged: (v) => setState(() => _assistantContextRatio = _nearestRatio(v)),
-            onChangeEnd: (v) =>
-                _db.saveSetting(PromptOptimizerAgent.contextRatioSettingKey, '${_nearestRatio(v)}'),
+            onChangeEnd: (v) => context.read<AppState>().saveSetting(
+              PromptOptimizerAgent.contextRatioSettingKey,
+              '${_nearestRatio(v)}',
+            ),
           ),
           Text(
             l10n.assistantContextRatioDesc,
@@ -367,7 +379,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                   ),
               ],
               onChanged: (v) async {
-                await _db.saveSetting(
+                await context.read<AppState>().saveSetting(
                   PromptOptimizerAgent.kbSubAgentModelSettingKey,
                   v?.toString() ?? '',
                 );

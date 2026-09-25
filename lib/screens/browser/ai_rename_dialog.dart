@@ -12,7 +12,6 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/browser_file.dart';
 import '../../models/prompt.dart';
-import '../../services/db/database_service.dart';
 import '../../services/tasks/ai_rename_agent.dart';
 import '../../services/tasks/ai_rename_review.dart';
 import '../../services/tasks/task_queue_service.dart';
@@ -74,7 +73,6 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   final TextEditingController _instructionController = TextEditingController();
   final TextEditingController _editController = TextEditingController();
   final ScrollController _resultScroll = ScrollController();
-  final DatabaseService _db = DatabaseService();
 
   List<SystemPrompt> _templates = [];
   int? _selectedModelDbId;
@@ -139,7 +137,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     final lastTemplateId = await appState.getSetting('last_ai_rename_system_prompt_id');
     final lastInstructions = await appState.getSetting('last_ai_rename_instructions');
 
-    final templates = await _db.getSystemPrompts(type: 'rename');
+    final templates = await appState.getSystemPrompts(type: 'rename');
     SystemPrompt? initial;
     if (lastTemplateId != null) {
       final id = int.tryParse(lastTemplateId);
@@ -170,11 +168,15 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     final targets = onlyPaths == null ? all : all.where((f) => onlyPaths.contains(f.path)).toList();
     if (targets.isEmpty) return;
 
-    unawaited(_db.saveSetting('last_ai_rename_model_id', _selectedModelDbId.toString()));
+    final appState = Provider.of<AppState>(context, listen: false);
+    unawaited(appState.saveSetting('last_ai_rename_model_id', _selectedModelDbId.toString()));
     unawaited(
-      _db.saveSetting('last_ai_rename_system_prompt_id', _selectedTemplate?.id?.toString() ?? ''),
+      appState.saveSetting(
+        'last_ai_rename_system_prompt_id',
+        _selectedTemplate?.id?.toString() ?? '',
+      ),
     );
-    unawaited(_db.saveSetting('last_ai_rename_instructions', _instructionController.text));
+    unawaited(appState.saveSetting('last_ai_rename_instructions', _instructionController.text));
 
     _update(() {
       _isGenerating = true;

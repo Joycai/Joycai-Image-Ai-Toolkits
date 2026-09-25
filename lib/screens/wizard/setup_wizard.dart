@@ -11,7 +11,6 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
-import '../../services/db/database_service.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../services/llm/model_family.dart';
@@ -38,7 +37,6 @@ class SetupWizard extends StatefulWidget {
 
 class _SetupWizardState extends State<SetupWizard> {
   final PageController _pageController = PageController();
-  final DatabaseService _db = DatabaseService();
   int _currentStep = 0;
   final int _totalSteps = 5;
 
@@ -196,11 +194,15 @@ class _SetupWizardState extends State<SetupWizard> {
     // consult once it has yielded, and the page turn is always the last thing
     // it does.
     final pageTurn = AppMotion.durationOf(context, AppMotion.panel);
+    final appState = Provider.of<AppState>(context, listen: false);
     final apiKey = _apiKeyController.text.trim();
     // A local runtime has no key to give; skipping the channel because the
     // key box is empty would silently drop the one the user just configured.
     if (apiKey.isNotEmpty || Vendors.byId(_channelType).keyOptional) {
-      final id = await _db.addChannel(
+      // Through AppState, which refreshes its model cache: written straight to
+      // the database, the channel stayed invisible to the models page and the
+      // workbench until the next restart.
+      final id = await appState.addChannel(
         LLMChannel(
           displayName: _channelNameController.text.trim(),
           endpoint: _endpointController.text.trim(),
@@ -226,8 +228,9 @@ class _SetupWizardState extends State<SetupWizard> {
 
   Future<void> _saveModelAndContinue() async {
     final pageTurn = AppMotion.durationOf(context, AppMotion.panel);
+    final appState = Provider.of<AppState>(context, listen: false);
     if (_modelIdController.text.isNotEmpty && _createdChannelId != null) {
-      await _db.addModel(
+      await appState.addModel(
         LLMModel(
           modelId: _modelIdController.text,
           modelName: _modelNameController.text.isEmpty

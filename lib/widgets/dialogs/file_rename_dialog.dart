@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
@@ -7,7 +5,7 @@ import 'package:path/path.dart' as p;
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/db/repositories/image_layer_repository.dart';
+import '../../services/files/file_rename_service.dart';
 import '../../services/files/folder_operations_service.dart';
 import '../glass/app_glass.dart';
 import '../ui/app_button.dart';
@@ -50,11 +48,8 @@ Future<void> showFileRenameDialog({
   );
   if (newName == null) return;
 
-  final file = File(filePath);
-  final newPath = p.join(p.dirname(filePath), newName);
   try {
-    await file.rename(newPath);
-    await ImageLayerRepository().move(filePath, newPath);
+    await FileRenameService.rename(filePath, newName);
     onSuccess();
     if (context.mounted) AppSnackBar.success(context, l10n.renameSuccess);
   } catch (e) {

@@ -3,7 +3,7 @@
 Cross-platform Flutter desktop/mobile app for AI image and video generation, built
 around a multi-vendor LLM layer, for artists and designers working with AI media.
 
-**Version:** 4.28.1 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
+**Version:** 4.28.2 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.47.2 (CI tracks `stable`)
 
 ## Key Commands
 
@@ -150,7 +150,13 @@ file name. `test/app/` takes whole-app/navigation tests with no single screen;
   singleton; `AppState` hands its own down to every sub-state and to the task
   queue. Keep new ones that way, and in tests inject `openTestDatabase()`
   (`test/support/in_memory_database.dart`) instead of reaching for the real
-  file through `usePrivateDataDir`.
+  file through `usePrivateDataDir`. **The UI layer never constructs one:** a
+  screen or widget reads a state's cached field, calls a state method (which
+  refreshes what it cached), owns a screen controller that takes `database:`
+  (`UsageController`), or calls a service (`FileRenameService`). No
+  `DatabaseService()` / `XxxRepository()` in `screens/` or `widgets/` except as
+  a constructor's `_db = database ?? DatabaseService()` initializer default —
+  `test/architecture/ui_database_access_scan_test.dart` scans for it.
 - **No database call under `testWidgets`' fake clock** — `test/support/fake_async_database_rule.dart`
   fails any test that reads `DatabaseService.database` under it, with the call's stack
   (a `Database` fetched earlier and *used* under it gets past — don't hold one).

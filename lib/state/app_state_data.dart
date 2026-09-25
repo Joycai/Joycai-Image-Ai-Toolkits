@@ -110,10 +110,58 @@ extension AppStateData on AppState {
     notify();
   }
 
-  Future<void> restoreBackup(Map<String, dynamic> data) async {
-    await _db.restoreBackup(data);
+  // Backup & Restore
+
+  /// The whole database as a backup file's contents, secrets redacted.
+  Future<Map<String, dynamic>> exportBackup({
+    bool includePrompts = true,
+    bool includeUsage = true,
+    bool includeDirectories = true,
+  }) => _db.getAllDataRaw(
+    includePrompts: includePrompts,
+    includeUsage: includeUsage,
+    includeDirectories: includeDirectories,
+  );
+
+  /// Restores [data] and reloads every state that caches something a backup
+  /// carries: the settings and model data here, the output and source
+  /// directories in the gallery, the browser's view prefs. The one path the
+  /// settings page and the setup wizard both take, so the two cannot disagree
+  /// about what needs reloading — the wizard's own copy once left the gallery
+  /// on the pre-import directories until a restart.
+  Future<void> restoreBackup(
+    Map<String, dynamic> data, {
+    bool includePrompts = true,
+    bool includeUsage = true,
+    bool includeDirectories = true,
+  }) async {
+    await _db.restoreBackup(
+      data,
+      includePrompts: includePrompts,
+      includeUsage: includeUsage,
+      includeDirectories: includeDirectories,
+    );
+    await _reloadAfterBulkWrite();
+  }
+
+  /// Empties the tables [DatabaseService.clearAllData] covers — settings,
+  /// channels, models, fee groups, usage, source directories, prompts and
+  /// tags. Everything else (tasks, cookies, layer rows, assistant sessions,
+  /// prompt history) stays. Then reloads the same states a restore does.
+  Future<void> resetAllSettings() async {
+    await _db.resetAllSettings();
+    await _reloadAfterBulkWrite();
+  }
+
+  /// Where the database file lives, for the settings page to show.
+  Future<String> databasePath() => _db.getDatabasePath();
+
+  /// After a write that replaced whole tables. [loadSettings] notifies at its
+  /// end and refreshes the model cache; the two sub-states notify themselves.
+  Future<void> _reloadAfterBulkWrite() async {
     await loadSettings();
-    notify();
+    await galleryState.reloadSettings();
+    await fileBrowserState.reloadSettings();
   }
 
   // Model, Channel & Pricing Group Management

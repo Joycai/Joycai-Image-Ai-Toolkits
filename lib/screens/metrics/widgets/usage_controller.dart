@@ -126,6 +126,13 @@ class UsageController extends ChangeNotifier {
   /// Deletes every usage record. The caller reloads.
   Future<void> clearTokenUsage() => _db.clearTokenUsage();
 
+  /// Deletes [modelId]'s usage records and reloads — on this controller's
+  /// own database, so the delete and the reload cannot land on two.
+  Future<void> clearModelUsage(String modelId) async {
+    await _db.clearTokenUsage(modelId: modelId);
+    await load(reset: true);
+  }
+
   bool _isStale(int generation) => _disposed || generation != _generation;
 
   Future<void> _maybeCreateCheckpoint(UsageStats currentStats) async {

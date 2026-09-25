@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/tag.dart';
-import '../../../services/db/database_service.dart';
+import '../../../state/app_state.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';
 import '../prompt_reorder.dart';
@@ -40,7 +41,6 @@ class TagManagementList extends StatefulWidget {
 }
 
 class _TagManagementListState extends State<TagManagementList> {
-  final DatabaseService _db = DatabaseService();
   final PromptReorderFocus _reorderFocus = PromptReorderFocus();
   List<PromptTag>? _optimistic;
 
@@ -61,8 +61,9 @@ class _TagManagementListState extends State<TagManagementList> {
 
   Future<void> _reorder(List<PromptTag> tags, int oldIndex, int newIndex) async {
     final next = reorderedCopy(tags, oldIndex, newIndex);
+    final appState = context.read<AppState>();
     setState(() => _optimistic = next);
-    await _db.updateTagOrder(next.map((t) => t.id!).toList());
+    await appState.updateTagOrder(next.map((t) => t.id!).toList());
     widget.onRefresh();
   }
 

@@ -10,7 +10,9 @@ import '../core/constants.dart';
 import '../core/file_utils.dart';
 import '../core/thumbnail_decode.dart';
 import '../models/app_image.dart';
+import '../models/image_layer.dart';
 import '../services/db/database_service.dart';
+import '../services/db/repositories/image_layer_repository.dart';
 import '../services/files/file_permission_service.dart';
 import 'file_browser_state.dart' show FolderFlash;
 
@@ -235,6 +237,14 @@ class GalleryState extends ChangeNotifier {
   GalleryState({DatabaseService? database}) : _db = database ?? DatabaseService() {
     settingsLoaded = reloadSettings();
   }
+
+  /// Saved layer decompositions, on this state's own database. Layers are a
+  /// gallery concern — the badge is on the card, the entry in its menu — so
+  /// the gallery answers for them rather than the card opening a repository.
+  late final ImageLayerRepository _layers = ImageLayerRepository(db: _db);
+
+  /// The decomposition [path] belongs to, or null — [ImageLayerRepository.setFor].
+  Future<ImageLayerSet?> layerSetFor(String path) => _layers.setFor(path);
 
   /// The settings read the constructor started — thumbnail size, prefix,
   /// output directory, source directories — resolved once it has landed.

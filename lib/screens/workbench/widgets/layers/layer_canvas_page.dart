@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
 
 import '../../../../core/app_theme.dart';
 import '../../../../core/design_tokens.dart';
@@ -11,9 +12,9 @@ import '../../../../core/responsive.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/app_image.dart';
 import '../../../../models/image_layer.dart';
-import '../../../../services/db/repositories/image_layer_repository.dart';
 import '../../../../services/media/image_metadata_service.dart';
 import '../../../../services/media/layer_composite_service.dart';
+import '../../../../state/gallery_state.dart';
 import '../../../../widgets/shell/shell_cover.dart';
 import '../../../../widgets/ui/app_button.dart';
 import '../../../../widgets/ui/app_icon_button.dart';
@@ -25,7 +26,7 @@ import 'layer_stack_view.dart';
 /// Opens the layer canvas for the decomposition [path] belongs to, or says
 /// why it cannot (its layers are gone from disk).
 Future<void> openLayerCanvas(BuildContext context, String path) async {
-  final set = await ImageLayerRepository().setFor(path);
+  final set = await context.read<GalleryState>().layerSetFor(path);
   if (!context.mounted) return;
   if (set == null) {
     AppSnackBar.info(context, AppLocalizations.of(context)!.layerSetUnavailable);
