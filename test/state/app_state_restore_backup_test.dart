@@ -59,9 +59,7 @@ void main() {
       includeDirectories: false,
     );
 
-    // Only the source directories: `DatabaseService.restoreBackup` wipes the
-    // settings table either way and, without directories, does not put
-    // `output_directory` back — that is its behaviour, not this state's.
+    expect(appState.galleryState.outputDirectory, '/first/out');
     expect(appState.galleryState.sourceDirectories, ['/first/src']);
     expect(appState.galleryState.activeSourceDirectories, ['/first/src']);
   });

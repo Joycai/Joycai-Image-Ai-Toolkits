@@ -89,7 +89,6 @@ git show 59e392c:docs/plans/2026-09-large-file-split.md          # 大文件拆�
 | 界面直接调用的其他有副作用的 service：`ChannelProbeService`、`ModelDiscoveryService`、`WebScraperService`、`KnowledgeBaseService`、`ImageMetadataService`、`ImageProcessingService`、`FilePermissionService`、`GpuInfoService` | 它们不碰数据库，扫描规则管不到；数量多，是另一种形状的问题（网络 / 文件 / 平台调用从 View 发起），要先定「屏幕控制器还是 state」再一起收 |
 | `ImageLayerRepository.layeredPaths` 是进程级静态 `ValueNotifier` | 界面只读它、不构造 repository，不违反规则。挪进 `GalleryState` 要同时改 `services/files` 下 5 处 `ImageLayerRepository()` 和 `DatabaseService` 开库时的 `loadPaths()`，单开一轮 |
 | `AppState` 在测试里跑内存库（`AppState.forDatabase`） | `AppState._internal` 往 `LLMService` 单例注册全局日志监听且不注销，多建实例就泄漏；先得把那个监听改成可注销的。经过 `AppState` 的界面测试继续用 `usePrivateDataDir` + `useRealAsyncAppState` |
-| `DatabaseService.restoreBackupInto` 在 `includeDirectories: false` 时仍清空整张 `settings` 表，不导回 `output_directory` 等目录键 | 本轮只改调用路径不改语义；已另立任务 |
 
 
 ### 键盘快捷键（`00f`，2026-09-20，第二 / 三期登记）
