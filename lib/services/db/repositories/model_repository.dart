@@ -55,7 +55,7 @@ class ModelRepository {
   Future<List<LLMModel>> getModels() async {
     final db = await _db;
     final maps = await db.query('llm_models', orderBy: 'sort_order ASC');
-    return maps.map((m) => LLMModel.fromMap(m)).toList();
+    return maps.map(LLMModel.fromMap).toList();
   }
 
   Future<void> updateModelEstimation(int modelDbId, double mean, double sd, int tasksSinceUpdate) async {
@@ -251,6 +251,6 @@ class ModelRepository {
     // `sort_order` is the user's arrangement; `id` breaks ties so a backup
     // written before the column existed still lists in creation order.
     final maps = await db.query('fee_groups', orderBy: 'sort_order ASC, id ASC');
-    return maps.map((m) => PricingGroup.fromMap(m)).toList();
+    return maps.map(PricingGroup.fromMap).toList();
   }
 }

@@ -24,7 +24,7 @@ class PromptRepository {
       // Use includeId: false because it's AUTOINCREMENT
       final id = await txn.insert('prompts', prompt.toMap(includeId: false));
       if (tagIds != null && tagIds.isNotEmpty) {
-        for (var tagId in tagIds) {
+        for (final tagId in tagIds) {
           await txn.insert('prompt_tag_refs', {
             'prompt_id': id,
             'tag_id': tagId,
@@ -51,7 +51,7 @@ class PromptRepository {
 
       if (tagIds != null) {
         await txn.delete('prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
-        for (var tagId in tagIds) {
+        for (final tagId in tagIds) {
           await txn.insert('prompt_tag_refs', {
             'prompt_id': id,
             'tag_id': tagId,
@@ -80,10 +80,10 @@ class PromptRepository {
     if (promptIds.isEmpty) return;
     final db = await _db;
     await db.transaction((txn) async {
-      for (var id in promptIds) {
+      for (final id in promptIds) {
         await txn.delete('prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
         if (tagIds.isNotEmpty) {
-          for (var tagId in tagIds) {
+          for (final tagId in tagIds) {
             await txn.insert('prompt_tag_refs', {
               'prompt_id': id,
               'tag_id': tagId,
@@ -160,7 +160,7 @@ class PromptRepository {
       orderBy: 'used_at DESC, id DESC',
       limit: promptHistoryLimit,
     );
-    return maps.map((m) => PromptHistoryEntry.fromMap(m)).toList();
+    return maps.map(PromptHistoryEntry.fromMap).toList();
   }
 
   /// Record [content] as the newest entry for [type].
@@ -230,7 +230,7 @@ class PromptRepository {
   Future<List<PromptTag>> getPromptTags() async {
     final db = await _db;
     final maps = await db.query('prompt_tags', orderBy: 'sort_order ASC');      
-    return maps.map((m) => PromptTag.fromMap(m)).toList();
+    return maps.map(PromptTag.fromMap).toList();
   }
 
   Future<void> updateTagOrder(List<int> ids) async {
@@ -248,7 +248,7 @@ class PromptRepository {
     return db.transaction((txn) async {
       final id = await txn.insert('system_prompts', prompt.toMap(includeId: false));
       if (tagIds != null && tagIds.isNotEmpty) {
-        for (var tagId in tagIds) {
+        for (final tagId in tagIds) {
           await txn.insert('system_prompt_tag_refs', {
             'prompt_id': id,
             'tag_id': tagId,
@@ -265,7 +265,7 @@ class PromptRepository {
       await txn.update('system_prompts', _editedRow(prompt.toMap(includeId: false)), where: 'id = ?', whereArgs: [id]);
       if (tagIds != null) {
         await txn.delete('system_prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
-        for (var tagId in tagIds) {
+        for (final tagId in tagIds) {
           await txn.insert('system_prompt_tag_refs', {
             'prompt_id': id,
             'tag_id': tagId,
@@ -294,10 +294,10 @@ class PromptRepository {
     if (promptIds.isEmpty) return;
     final db = await _db;
     await db.transaction((txn) async {
-      for (var id in promptIds) {
+      for (final id in promptIds) {
         await txn.delete('system_prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
         if (tagIds.isNotEmpty) {
-          for (var tagId in tagIds) {
+          for (final tagId in tagIds) {
             await txn.insert('system_prompt_tag_refs', {
               'prompt_id': id,
               'tag_id': tagId,

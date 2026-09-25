@@ -12,12 +12,12 @@ import '../../../models/browser_file.dart';
 import '../../../state/app_state.dart';
 import '../../../state/file_staging_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/dialogs/file_rename_dialog.dart';
+import '../../../widgets/files/file_delete_dialog.dart';
+import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/ui/app_key_label.dart';
 import '../../../widgets/ui/app_snackbar.dart';
-import '../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart';
-import '../../../widgets/glass/app_glass_menu.dart';
-import '../../../widgets/files/file_delete_dialog.dart';
 
 /// The file context menu — `B1a · 1b`, `B1c · 1a`: G2 glass, 230 wide, five
 /// groups.

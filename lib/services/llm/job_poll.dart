@@ -84,7 +84,7 @@ Future<T> pollJobUntilDone<T>({
   Future<void> Function(Duration, bool Function()?)? sleep,
   DateTime Function() now = DateTime.now,
 }) async {
-  final doSleep = sleep ?? (d, c) => cancellableSleep(d, c);
+  final doSleep = sleep ?? cancellableSleep;
   final start = now();
   var polls = 0;
   var failures = 0;

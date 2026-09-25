@@ -7,12 +7,12 @@ import '../../../services/llm/channel_probe_service.dart';
 import '../../../services/llm/channel_routes.dart';
 import '../../../services/llm/llm_dispatcher.dart';
 import '../../../services/llm/vendors/platforms.dart';
-import '../../../widgets/ui/app_button.dart';
-import '../../../widgets/ui/app_icon_button.dart';
 import '../../../widgets/models/app_route_badge.dart';
 import '../../../widgets/models/channel_form_sections.dart';
-import 'channel_probe_result_card.dart';
 import '../../../widgets/models/route_labels.dart';
+import '../../../widgets/ui/app_button.dart';
+import '../../../widgets/ui/app_icon_button.dart';
+import 'channel_probe_result_card.dart';
 
 /// The channel editor's route table (`D1f · 4c`, `4g`): one row per route the
 /// channel has — its path in one of four states, the address a request is

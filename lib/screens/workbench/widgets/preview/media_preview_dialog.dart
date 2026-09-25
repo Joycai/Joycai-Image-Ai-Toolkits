@@ -14,8 +14,8 @@ import '../../../../core/responsive.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/app_image.dart';
 import '../../../../state/workbench_ui_state.dart';
-import '../../../../widgets/ui/app_snackbar.dart';
 import '../../../../widgets/shell/shell_cover.dart';
+import '../../../../widgets/ui/app_snackbar.dart';
 import 'preview_handler.dart';
 
 /// Hero scope for thumbnails in the workbench gallery.
@@ -182,7 +182,7 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                   child: PageView.builder(
                     controller: _pageController,
                     itemCount: images.length,
-                    onPageChanged: (index) => workbenchUIState.setActivePreview(index),
+                    onPageChanged: workbenchUIState.setActivePreview,
                     itemBuilder: (context, index) {
                       final path = images[index].path;
                       final handler = PreviewRegistry.resolve(path);

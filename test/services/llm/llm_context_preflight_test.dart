@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/context_budget.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
 /// No request used to be checked against the model's context window before
 /// sending (01 §6, 11 §A5): local stacks drop the prompt head and answer 200.

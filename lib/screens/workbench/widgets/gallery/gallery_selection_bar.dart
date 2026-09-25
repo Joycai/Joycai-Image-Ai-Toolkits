@@ -8,10 +8,10 @@ import '../../../../models/app_image.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/gallery_state.dart';
 import '../../../../state/workbench_ui_state.dart';
-import '../../../../widgets/ui/app_button.dart';
-import '../../../../widgets/ui/app_dialog.dart';
 import '../../../../widgets/glass/app_glass.dart';
 import '../../../../widgets/glass/glass_controls.dart';
+import '../../../../widgets/ui/app_button.dart';
+import '../../../../widgets/ui/app_dialog.dart';
 import 'gallery_file_actions.dart';
 
 /// Empties the temporary workspace, behind a confirmation.

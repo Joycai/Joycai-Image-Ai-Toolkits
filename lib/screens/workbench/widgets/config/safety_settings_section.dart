@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/design_tokens.dart';
 import '../../../../core/safety_settings.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../state/app_state.dart';
-import '../../../../core/design_tokens.dart';
 
 /// Per-category Gemini safety-threshold sliders (strict → permissive), shared
 /// by the image and video workbench queue-settings dialogs. Reads and writes

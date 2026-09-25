@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_card.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_card.dart';
 
 void main() {
   const seed = Colors.indigo;
@@ -37,11 +37,11 @@ void main() {
     // something inside it happened to be full-width already.
     await tester.pumpWidget(MaterialApp(
       theme: buildAppTheme(accent: ThemeAccent.fromSeed(seed), brightness: Brightness.light),
-      home: Scaffold(
+      home: const Scaffold(
         body: SizedBox(
           width: 400,
           child: Column(
-            children: const [
+            children: [
               AppCard(child: Text('short')),
               AppCard(child: SizedBox(width: 300, height: 20)),
             ],

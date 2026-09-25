@@ -61,10 +61,10 @@ import '../core/app_effects.dart';
 import '../core/app_theme.dart';
 import '../core/constants.dart';
 import '../services/system/gpu_info_service.dart';
-import '../widgets/shell/app_window_frame.dart';
 import '../widgets/glass/app_glass.dart';
-import '../widgets/shell/shell_cover.dart';
+import '../widgets/shell/app_window_frame.dart';
 import '../widgets/shell/baked_backdrop.dart';
+import '../widgets/shell/shell_cover.dart';
 
 bool get benchEnabled => Platform.environment['RBENCH'] == '1';
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_semantic_colors.dart';
-import '../../core/constants.dart';
 import '../../core/app_theme.dart';
+import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -12,12 +12,12 @@ import '../../services/llm/context_budget.dart';
 import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/model_routes.dart';
 import '../../services/llm/vendors/platforms.dart';
-import 'app_route_badge.dart';
-import 'route_labels.dart';
-import 'fee_group_summary.dart';
 import '../ui/model_tag_chip.dart';
-import 'wire_protocol_labels.dart';
+import 'app_route_badge.dart';
+import 'fee_group_summary.dart';
 import 'models_controls.dart';
+import 'route_labels.dart';
+import 'wire_protocol_labels.dart';
 
 /// The three densities a [ModelCard] is drawn at.
 enum ModelCardSize {

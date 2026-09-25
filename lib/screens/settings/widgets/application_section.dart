@@ -12,11 +12,11 @@ import '../../../core/file_utils.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_model.dart';
-import '../../../services/db/database_service.dart';
-import '../../../services/system/gpu_info_service.dart';
 import '../../../services/assistant/knowledge_base_service.dart';
-import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/assistant/prompt_optimizer_agent.dart';
+import '../../../services/db/database_service.dart';
+import '../../../services/llm/llm_debug_logger.dart';
+import '../../../services/system/gpu_info_service.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
@@ -115,7 +115,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
       variant: AppButtonVariant.secondary,
       size: AppButtonSize.compact,
       accentLabel: true,
-      onPressed: appState.enableApiDebug ? () => LLMDebugLogger.openLogFolder() : null,
+      onPressed: appState.enableApiDebug ? LLMDebugLogger.openLogFolder : null,
     );
 
     return SettingsSections(
@@ -130,7 +130,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                 description: l10n.notificationsDesc,
                 trailing: AppSwitch(
                   value: appState.notificationsEnabled,
-                  onChanged: (v) => appState.setNotificationsEnabled(v),
+                  onChanged: appState.setNotificationsEnabled,
                 ),
               ),
               AppSettingRow(
@@ -142,7 +142,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                 trailing: phone
                     ? AppSwitch(
                         value: appState.enableApiDebug,
-                        onChanged: (v) => appState.setEnableApiDebug(v),
+                        onChanged: appState.setEnableApiDebug,
                       )
                     : Row(
                         mainAxisSize: MainAxisSize.min,
@@ -151,7 +151,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                           const SizedBox(width: 12),
                           AppSwitch(
                             value: appState.enableApiDebug,
-                            onChanged: (v) => appState.setEnableApiDebug(v),
+                            onChanged: appState.setEnableApiDebug,
                           ),
                         ],
                       ),

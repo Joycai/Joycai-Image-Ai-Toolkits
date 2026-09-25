@@ -240,10 +240,10 @@ void main() {
     const everything = '# h\n\n## h\n\ntext\n\n- a\n  - b\n\n1. one\n\n- [x] t\n\n> q\n\n'
         '| a | b |\n|---|---|\n| c | d |\n\n```json\n{}\n```\n\n---\n\n![alt](https://example.com/x.png)';
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const Scaffold(
+        home: Scaffold(
           body: SingleChildScrollView(
             // Width first: intrinsic height is asked *at* a width, and has to be the
             // one the text is then laid out at.
@@ -284,7 +284,10 @@ void main() {
     double h(String text) => tester.getSize(find.text(text, findRichText: true)).height;
 
     await at(1);
-    final heading = h('heading'), paragraph = h('paragraph'), item = h('item'), bullet = h('•');
+    final heading = h('heading');
+    final paragraph = h('paragraph');
+    final item = h('item');
+    final bullet = h('•');
     final bar = tester.getSize(find.byKey(h2Bar)).height;
 
     await at(2);

@@ -2,12 +2,11 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import 'package:provider/provider.dart';
-
 import '../../../state/file_browser_state.dart';
 import '../../../widgets/glass/glass_controls.dart' show measureGlassText;
 

@@ -8,14 +8,14 @@ import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
-import 'task_type_glyph.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
-import '../ui/app_breathing_dot.dart';
 import '../glass/app_glass.dart';
 import '../shell/app_destinations.dart';
+import '../ui/app_breathing_dot.dart';
 import 'smooth_progress.dart';
+import 'task_type_glyph.dart';
 
 /// The floating summary of the queue (`01 · 1d` collapsed, `1e` expanded,
 /// `1g` phone): G2 glass, 196 wide at r16 collapsed, 300 at r22 expanded, the

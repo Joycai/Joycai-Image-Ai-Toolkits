@@ -106,7 +106,8 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
   }
 
   Size _extentOfBoxes() {
-    var w = 1, h = 1;
+    var w = 1;
+    var h = 1;
     for (final l in _set.overlays) {
       final b = l.box;
       if (b == null) continue;
@@ -223,7 +224,8 @@ class _LayerCanvasPageState extends State<LayerCanvasPage> {
     final size = _baseSize;
     final anchor = _set.base ?? _set.layers.first;
     final count = _set.overlays.length;
-    final w = size?.width.round() ?? 0, h = size?.height.round() ?? 0;
+    final w = size?.width.round() ?? 0;
+    final h = size?.height.round() ?? 0;
     final buttonSize = isMobile ? AppSize.large : AppSize.iconButton;
     return Container(
       height: 52,

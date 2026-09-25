@@ -8,8 +8,8 @@ import 'package:path/path.dart' as p;
 import '../core/file_utils.dart';
 import '../core/thumbnail_decode.dart';
 import '../models/browser_file.dart';
-import '../services/files/browser_file_scanner.dart';
 import '../services/db/database_service.dart';
+import '../services/files/browser_file_scanner.dart';
 import '../services/files/file_permission_service.dart';
 
 enum BrowserViewMode { grid, list }
@@ -167,7 +167,7 @@ class FileBrowserState extends ChangeNotifier {
         'browser_active_directories',
         activeDirectories.join('|'),
       );
-      refresh();
+      unawaited(refresh());
       notifyListeners();
     }
   }
@@ -187,7 +187,7 @@ class FileBrowserState extends ChangeNotifier {
         'browser_active_directories',
         activeDirectories.join('|'),
       );
-      refresh();
+      unawaited(refresh());
       notifyListeners();
     }
   }
@@ -200,14 +200,14 @@ class FileBrowserState extends ChangeNotifier {
       'browser_active_directories',
       activeDirectories.join('|'),
     );
-    refresh();
+    unawaited(refresh());
   }
 
   Future<void> clearActiveDirectories() async {
     if (activeDirectories.isEmpty) return;
     activeDirectories = [];
     await _db.saveSetting('browser_active_directories', '');
-    refresh();
+    unawaited(refresh());
   }
 
   Future<void> setExclusiveDirectory(String path) async {
@@ -216,7 +216,7 @@ class FileBrowserState extends ChangeNotifier {
       'browser_active_directories',
       activeDirectories.join('|'),
     );
-    refresh();
+    unawaited(refresh());
   }
 
   /// Points every registered and active directory under [from] at [to]
@@ -372,7 +372,7 @@ class FileBrowserState extends ChangeNotifier {
     if (_disposed || scan != refreshCounter) return;
     isScanning = false;
 
-    final newAllFiles = rawFiles.map((m) => BrowserFile.fromMap(m)).toList();
+    final newAllFiles = rawFiles.map(BrowserFile.fromMap).toList();
 
     // Evict from image cache only if the file was modified or removed.
     //
@@ -380,7 +380,7 @@ class FileBrowserState extends ChangeNotifier {
     // previous listing per file, so a directory of a thousand pictures cost
     // half a million comparisons on the UI thread every time the watcher fired.
     final previousModified = {for (final f in allFiles) f.path: f.modified};
-    for (var file in newAllFiles) {
+    for (final file in newAllFiles) {
       if (file.category == FileCategory.image) {
         final existing = previousModified[file.path];
         if (existing != null && existing != file.modified) {

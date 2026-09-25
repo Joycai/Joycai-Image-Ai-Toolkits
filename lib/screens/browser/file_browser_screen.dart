@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -23,14 +24,15 @@ import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/file_staging_state.dart';
 import '../../state/workbench_ui_state.dart';
-import '../../widgets/tasks/app_run_console.dart';
-import '../../widgets/shell/app_window_frame.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
+import '../../widgets/files/file_delete_dialog.dart';
 import '../../widgets/files/folder_group_header.dart';
 import '../../widgets/files/folder_outline_bar.dart';
+import '../../widgets/shell/app_destinations.dart';
+import '../../widgets/shell/app_window_frame.dart';
+import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/focus_pane.dart';
 import '../../widgets/ui/panel_resizer.dart';
-import '../../widgets/shell/app_destinations.dart';
 import '../batch/task_queue_screen.dart';
 import '../workbench/unified_sidebar.dart';
 import '../workbench/widgets/preview/media_preview_dialog.dart';
@@ -44,7 +46,6 @@ import 'widgets/browser_selection_bar.dart';
 import 'widgets/browser_staging_panel.dart';
 import 'widgets/file_card.dart';
 import 'widgets/file_context_menu.dart';
-import '../../widgets/files/file_delete_dialog.dart';
 
 /// The file browser — `B1a` (layout and selection) with `B1b`'s staging
 /// column on the right.
@@ -144,7 +145,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       path,
       title: 'Authorize Access to: $path',
     );
-    if (newPath != null) browser.refresh();
+    if (newPath != null) unawaited(browser.refresh());
   }
 
   Future<void> _loadSidebarWidth() async {
@@ -317,7 +318,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       showFileRenameDialog(
         context: context,
         filePath: state.selectedFiles.first.path,
-        onSuccess: () => state.refresh(),
+        onSuccess: state.refresh,
       );
       return KeyEventResult.handled;
     }
@@ -703,7 +704,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       file: file,
       position: position,
       workbenchUIState: Provider.of<WorkbenchUIState>(context, listen: false),
-      onRefresh: () => state.refresh(),
+      onRefresh: state.refresh,
     );
   }
 }

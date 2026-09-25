@@ -87,7 +87,7 @@ Map<String, dynamic> prepareOpenAIChatPayload(
       if (msg.content.isNotEmpty) {
         parts.add({'type': 'text', 'text': msg.content});
       }
-      for (var attachment in msg.attachments) {
+      for (final attachment in msg.attachments) {
         if (attachment.path == null && attachment.bytes == null) continue;
         final resolved = ImageCompressor.readForApi(attachment);
         parts.add({

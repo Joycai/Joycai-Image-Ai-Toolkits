@@ -13,18 +13,18 @@ import '../../../services/llm/model_routes.dart';
 import '../../../services/llm/vendors/platforms.dart';
 import '../../../services/llm/vendors/vendors.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/models/channel_form_sections.dart';
+import '../../../widgets/models/channel_preset_picker.dart';
+import '../../../widgets/models/channel_provider_presets.dart';
+import '../../../widgets/models/channel_provider_row.dart';
+import '../../../widgets/models/route_labels.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/ui/app_dropdown.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_snackbar.dart';
-import '../../../widgets/models/channel_form_sections.dart';
-import '../../../widgets/models/channel_preset_picker.dart';
 import 'channel_probe_result_card.dart';
-import '../../../widgets/models/channel_provider_presets.dart';
-import '../../../widgets/models/channel_provider_row.dart';
 import 'channel_route_table.dart';
-import '../../../widgets/models/route_labels.dart';
 
 /// Edit-channel dialog (design `D1b 1e`): the wizard's fields laid flat in
 /// four sections — provider preset, basic info, configuration, tag and

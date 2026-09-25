@@ -9,9 +9,9 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../state/downloader_state.dart';
+import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/dashed_border.dart';
-import '../../../widgets/glass/glass_controls.dart';
 import 'downloader_image_card.dart';
 import 'downloader_inputs.dart';
 

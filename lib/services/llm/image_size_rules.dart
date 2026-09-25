@@ -234,7 +234,8 @@ AspectRatioSpec? parseAspectRatio(String raw) {
 /// too big to be worth reading (`1000×1234` → `0.81`).
 String formatAspectRatio(int w, int h) {
   if (w <= 0 || h <= 0) return '';
-  int a = w, b = h;
+  int a = w;
+  int b = h;
   while (b != 0) {
     final t = a % b;
     a = b;

@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
-import '../../ui/app_switch.dart';
 import '../../ui/app_field_size.dart';
+import '../../ui/app_switch.dart';
 import 'model_edit_metrics.dart';
 
 /// A single-line input at the form's height, with an optional leading glyph.

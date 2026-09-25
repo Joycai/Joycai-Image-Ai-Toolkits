@@ -5,11 +5,11 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../services/db/database_service.dart';
-import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';
-import 'prompt_card.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 import '../prompt_reorder.dart';
+import 'prompt_card.dart';
 import 'prompt_library_parts.dart';
 import 'prompt_selection_capsule.dart';
 

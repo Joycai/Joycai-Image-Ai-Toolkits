@@ -168,7 +168,7 @@ void main() {
     test('a message that already names itself is not labelled again', () {
       // The assistant's own `[view_image result]` message is self-describing.
       expect(PromptOptimizerAgent.viewResultMarker, startsWith('['));
-      final note =
+      const note =
           '${PromptOptimizerAgent.viewResultMarker} Reference image #1 is attached.';
       final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'look'),

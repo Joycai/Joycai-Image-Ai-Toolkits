@@ -6,16 +6,16 @@ import 'package:path/path.dart' as p;
 
 import '../../models/prompt.dart';
 import '../../models/result_feedback.dart';
-import 'assistant_context_usage.dart';
 import '../db/database_service.dart';
-import 'knowledge_base_service.dart';
+import '../db/repositories/assistant_note_repository.dart';
+import '../db/repositories/assistant_session_repository.dart';
 import '../llm/context_budget.dart';
 import '../llm/image_compression.dart';
 import '../llm/llm_dispatcher.dart';
 import '../llm/llm_service.dart';
 import '../llm/llm_types.dart';
-import '../db/repositories/assistant_note_repository.dart';
-import '../db/repositories/assistant_session_repository.dart';
+import 'assistant_context_usage.dart';
+import 'knowledge_base_service.dart';
 import 'sub_agent_runner.dart';
 
 part 'assistant_chat_entries.dart';

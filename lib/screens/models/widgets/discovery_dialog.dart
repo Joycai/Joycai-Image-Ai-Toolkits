@@ -6,15 +6,15 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
+import '../../../services/catalogue/model_id_uniqueness.dart';
 import '../../../services/llm/llm_types.dart';
 import '../../../services/llm/model_discovery_service.dart';
 import '../../../services/llm/model_family.dart';
-import '../../../services/catalogue/model_id_uniqueness.dart';
 import '../../../state/app_state.dart';
-import '../../../widgets/ui/model_tag_chip.dart';
 import '../../../widgets/ui/app_button.dart';
-import '../../../widgets/ui/app_search_field.dart';
 import '../../../widgets/ui/app_dialog.dart';
+import '../../../widgets/ui/app_search_field.dart';
+import '../../../widgets/ui/model_tag_chip.dart';
 
 /// Fetches a channel's model list and adds the ones picked (`D1a · 1c`).
 ///
@@ -442,7 +442,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
     setState(() => _adding = true);
     // Every model picked here starts in the channel's default fee group.
     final feeGroupId = widget.appState.defaultFeeGroupFor(widget.channel.id);
-    for (var id in _selectedIds) {
+    for (final id in _selectedIds) {
       final m = _discovered.firstWhere((dm) => dm.modelId == id);
       // What the listing said about the model's window seeds the new row;
       // absent stays unset (the editor's "not set"), never a guess. The

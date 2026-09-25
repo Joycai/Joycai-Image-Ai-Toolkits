@@ -236,7 +236,8 @@ void main() {
     });
 
     test('the pixel row never contradicts its verdict', () {
-      const floor = 768 * 768, ceiling = 2048 * 2048;
+      const floor = 768 * 768;
+      const ceiling = 2048 * 2048;
       // Just under the floor, just over the ceiling, and both bounds exactly.
       expect(formatPixelRange(589568, floor, ceiling),
           (value: '0.58', min: '0.59', max: '4.19'));

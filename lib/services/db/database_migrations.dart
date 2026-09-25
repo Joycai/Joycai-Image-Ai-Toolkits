@@ -641,7 +641,7 @@ class DatabaseMigration {
 
     // 2. Migrate existing single tag data
     final prompts = await db.query('prompts', columns: ['id', 'tag_id']);
-    for (var p in prompts) {
+    for (final p in prompts) {
       final promptId = p['id'] as int?;
       final tagId = p['tag_id'] as int?;
       if (promptId != null && tagId != null) {
@@ -740,7 +740,7 @@ class DatabaseMigration {
     await db.execute('ALTER TABLE llm_models ADD COLUMN fee_group_id INTEGER REFERENCES fee_groups(id)');
     
     final allLlmModels = await db.query('llm_models');
-    for (var llmModel in allLlmModels) {
+    for (final llmModel in allLlmModels) {
       final name = '${llmModel['model_name']} Fee';
       final mode = llmModel['billing_mode'] as String? ?? 'token';
       final feeGroupId = await db.insert('fee_groups', {
@@ -759,7 +759,7 @@ class DatabaseMigration {
     await db.execute('ALTER TABLE token_usage ADD COLUMN model_pk INTEGER');
     final allUsageEntries = await db.query('token_usage');
     final allModels = await db.query('llm_models');
-    for (var usageEntry in allUsageEntries) {
+    for (final usageEntry in allUsageEntries) {
       final modelId = usageEntry['model_id'] as String;
       final matchingModel = allModels.cast<Map<String, dynamic>?>().firstWhere(
         (model) => model?['model_id'] == modelId,
@@ -788,7 +788,7 @@ class DatabaseMigration {
     
     final settings = await db.query('settings');
     final Map<String, String> settingsMap = {
-      for (var s in settings) s['key'] as String: s['value'] as String
+      for (final s in settings) s['key'] as String: s['value'] as String
     };
 
     Future<int?> createChannel(String prefix, String defaultName, String type) async {
@@ -811,7 +811,7 @@ class DatabaseMigration {
     final openaiId = await createChannel('openai', 'OpenAI API', 'openai-api-rest');
 
     final models = await db.query('llm_models');
-    for (var model in models) {
+    for (final model in models) {
       int? channelId;
       final type = model['type'] as String;
       final isPaid = model['is_paid'] == 1;
@@ -846,7 +846,7 @@ class DatabaseMigration {
       // Get all prompts with this tag
       final refinerPrompts = await db.query('prompts', where: 'tag_id = ?', whereArgs: [refinerTagId]);
       
-      for (var p in refinerPrompts) {
+      for (final p in refinerPrompts) {
         await db.insert('system_prompts', {
           'title': p['title'],
           'content': p['content'],
@@ -885,7 +885,7 @@ class DatabaseMigration {
     uniqueTags.add('Refiner');
 
     final Map<String, int> tagMap = {};
-    for (var tagName in uniqueTags) {
+    for (final tagName in uniqueTags) {
       final isRefiner = tagName == 'Refiner';
       final id = await db.insert('prompt_tags', {
         'name': tagName,
@@ -896,7 +896,7 @@ class DatabaseMigration {
     }
 
     // 4. Update prompts with tag_id
-    for (var p in allPrompts) {
+    for (final p in allPrompts) {
       final tagName = p['tag'] as String;
       final tagId = tagMap[tagName];
       if (tagId != null) {

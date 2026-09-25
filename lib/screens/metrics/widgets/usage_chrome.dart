@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
@@ -238,7 +240,7 @@ Future<void> showClearAllUsageDialog(BuildContext context, UsageController contr
           await controller.clearTokenUsage();
           if (context.mounted) {
             Navigator.pop(context);
-            controller.load(reset: true);
+            unawaited(controller.load(reset: true));
           }
         },
       ),

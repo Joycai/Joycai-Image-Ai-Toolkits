@@ -115,7 +115,7 @@ extension _ConfigColumn on _AiRenameDialogState {
                 icon: Icons.auto_awesome,
                 size: AppButtonSize.large,
                 fullWidth: true,
-                onPressed: hasModels ? () => _generate() : null,
+                onPressed: hasModels ? _generate : null,
               ),
         if (_isGenerating) ...[
           const SizedBox(height: AppSpace.s6),

@@ -13,16 +13,16 @@ import '../../../models/pricing_group.dart';
 import '../../../services/catalogue/model_list_ordering.dart';
 import '../../../services/llm/model_routes.dart';
 import '../../../state/model_list_state.dart';
-import '../../../widgets/ui/app_search_field.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
 import '../../../widgets/glass/glass_controls.dart';
 import '../../../widgets/models/app_route_badge.dart';
-import 'channel_avatar.dart';
-import '../../../widgets/models/route_labels.dart';
-import '../../../widgets/ui/scroll_edge_fade.dart';
 import '../../../widgets/models/model_card.dart';
-import 'models_actions.dart';
 import '../../../widgets/models/models_controls.dart';
+import '../../../widgets/models/route_labels.dart';
+import '../../../widgets/ui/app_search_field.dart';
+import '../../../widgets/ui/scroll_edge_fade.dart';
+import 'channel_avatar.dart';
+import 'models_actions.dart';
 
 /// The selected channel's column (`D1a · 1a` 右栏): the channel header, the
 /// kind filter row and the model cards.

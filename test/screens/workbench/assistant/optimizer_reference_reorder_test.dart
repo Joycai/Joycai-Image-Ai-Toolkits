@@ -87,10 +87,10 @@ void main() {
           ChangeNotifierProvider<AppState>.value(value: appState),
           ChangeNotifierProvider<WorkbenchUIState>.value(value: wui),
         ],
-        child: MaterialApp(
+        child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const Scaffold(
+          home: Scaffold(
             body: SizedBox(width: 240, height: 900, child: OptimizerReferencePanel()),
           ),
         ),

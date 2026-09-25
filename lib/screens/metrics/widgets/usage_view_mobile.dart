@@ -110,7 +110,7 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
                     onRefresh: () => c.load(reset: true),
                     hasMore: c.hasMore,
                     isLoadingMore: c.isLoadingMore,
-                    onLoadMore: () => c.load(),
+                    onLoadMore: c.load,
                     modelTags: modelTags,
                     totalCount: c.totalRecords,
                     pageSize: c.pageSize,

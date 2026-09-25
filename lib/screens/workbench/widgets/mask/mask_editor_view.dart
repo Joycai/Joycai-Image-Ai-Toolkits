@@ -13,8 +13,8 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/ui/app_button.dart';
-import 'drawing_canvas.dart';
 import '../canvas_overlays.dart';
+import 'drawing_canvas.dart';
 
 /// Space the picture keeps from the canvas' edges, and its corner radius
 /// (`A4A6` spec: 画布 r10，居中，四周留 10).

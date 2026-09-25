@@ -69,7 +69,7 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
         ],
       );
     }
-    return Container(
+    return ColoredBox(
       color: Colors.white10,
       child: Center(
         child: widget.showPlayIcon

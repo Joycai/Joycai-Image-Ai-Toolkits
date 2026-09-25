@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/app_theme.dart';
 import '../../core/app_paths.dart';
+import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -16,16 +17,16 @@ import '../../services/llm/model_discovery_service.dart';
 import '../../services/llm/model_family.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
-import '../../widgets/ui/api_key_field.dart';
-import '../../widgets/ui/app_button.dart';
-import '../../widgets/ui/app_dropdown.dart';
-import '../../widgets/ui/app_setting_row.dart';
-import '../../widgets/ui/app_switch.dart';
-import '../../widgets/ui/app_dialog.dart';
-import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/models/channel_preset_picker.dart';
 import '../../widgets/models/channel_provider_presets.dart';
 import '../../widgets/settings/settings_widgets.dart';
+import '../../widgets/ui/api_key_field.dart';
+import '../../widgets/ui/app_button.dart';
+import '../../widgets/ui/app_dialog.dart';
+import '../../widgets/ui/app_dropdown.dart';
+import '../../widgets/ui/app_setting_row.dart';
+import '../../widgets/ui/app_snackbar.dart';
+import '../../widgets/ui/app_switch.dart';
 import 'wizard_import.dart';
 
 class SetupWizard extends StatefulWidget {
@@ -444,7 +445,7 @@ class _SetupWizardState extends State<SetupWizard> {
               final String? path = await FilePicker.getDirectoryPath();
               if (path != null) {
                 setState(() => _outputDirController.text = path);
-                appState.updateOutputDirectory(path);
+                unawaited(appState.updateOutputDirectory(path));
               }
             },
           ),
@@ -455,7 +456,7 @@ class _SetupWizardState extends State<SetupWizard> {
               labelText: l10n.filenamePrefix,
               helperText: "e.g. 'result' -> result_001.png",
             ),
-            onChanged: (v) => appState.setImagePrefix(v),
+            onChanged: appState.setImagePrefix,
           ),
         ],
       ),

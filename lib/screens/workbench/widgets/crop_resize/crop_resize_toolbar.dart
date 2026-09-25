@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:extended_image/extended_image.dart';
@@ -13,14 +14,14 @@ import '../../../../services/media/image_metadata_service.dart';
 import '../../../../services/media/image_processing_service.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/workbench_ui_state.dart';
+import '../../../../widgets/glass/app_glass.dart';
+import '../../../../widgets/glass/glass_controls.dart';
 import '../../../../widgets/ui/app_button.dart';
 import '../../../../widgets/ui/app_dialog.dart';
 import '../../../../widgets/ui/app_dropdown.dart';
 import '../../../../widgets/ui/app_field_size.dart';
 import '../../../../widgets/ui/app_setting_row.dart';
 import '../../../../widgets/ui/app_snackbar.dart';
-import '../../../../widgets/glass/app_glass.dart';
-import '../../../../widgets/glass/glass_controls.dart';
 
 part 'crop_resize_controls.dart';
 part 'crop_resize_metrics.dart';
@@ -392,7 +393,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
         appState.galleryState.addDroppedFiles([newFile]);
       }
 
-      appState.galleryState.refreshImages();
+      unawaited(appState.galleryState.refreshImages());
       appState.setWorkbenchTab(0);
     } on UnsupportedImageFormatException {
       // Named separately from the generic catch: this one is not a failure the

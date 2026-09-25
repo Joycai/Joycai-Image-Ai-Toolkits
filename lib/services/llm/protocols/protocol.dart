@@ -13,16 +13,16 @@ import '../output_spec.dart'
     show billedImageCountKey, inputImageCountKey, parseWxH, reportedCostKey;
 import '../vendors/vendor_profile.dart';
 
+// The shared async-job poll loop (cancel probe, sliced sleep, consecutive
+// failure tolerance, non-retryable abandon) — see job_poll.dart.
+export '../job_poll.dart';
+export '../output_spec.dart' show parseWxH;
 // Every debug-log line that prints a request URL must redact it first —
 // Google-keyed vendors carry `?key=<API_KEY>` in the URL (VendorProfile
 // .decorateUrl), and relying on the log sink's regex to catch it made one
 // mechanism's bug a credential leak. Re-exported here so protocols need no
 // extra import.
 export '../vendors/vendor_profile.dart' show redactUrl;
-export '../output_spec.dart' show parseWxH;
-// The shared async-job poll loop (cancel probe, sliced sleep, consecutive
-// failure tolerance, non-retryable abandon) — see job_poll.dart.
-export '../job_poll.dart';
 
 /// **Layer 1 — the protocol.**
 ///

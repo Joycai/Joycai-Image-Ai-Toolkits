@@ -15,8 +15,8 @@ import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_labelled_field.dart';
 import '../../../widgets/ui/app_segmented_control.dart';
-import 'color_picker_widget.dart';
 import '../../../widgets/ui/markdown_editor.dart';
+import 'color_picker_widget.dart';
 import 'prompt_library_parts.dart';
 
 /// Dialogs for the Prompt Library screen (`C1 · 1d`).
@@ -72,7 +72,7 @@ Future<bool> showPromptEditDialog(
 
   final Set<int> selectedTagIds = {};
   if (prompt != null) {
-    for (var t in prompt.tags) {
+    for (final t in prompt.tags) {
       if (t.id != null) selectedTagIds.add(t.id!);
     }
   } else {
@@ -181,7 +181,7 @@ Future<bool> showSystemPromptEditDialog(
 
   final Set<int> selectedTagIds = {};
   if (prompt != null) {
-    for (var t in prompt.tags) {
+    for (final t in prompt.tags) {
       if (t.id != null) selectedTagIds.add(t.id!);
     }
   }

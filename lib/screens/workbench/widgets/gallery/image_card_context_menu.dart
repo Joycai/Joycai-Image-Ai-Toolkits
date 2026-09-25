@@ -4,22 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/app_shortcuts.dart';
 import '../../../../core/constants.dart';
 import '../../../../core/file_utils.dart';
-import '../../../../core/app_shortcuts.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/app_image.dart';
 import '../../../../services/db/repositories/image_layer_repository.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/gallery_state.dart';
 import '../../../../state/workbench_ui_state.dart';
-import '../../../../widgets/ui/app_key_label.dart';
-import '../../../../widgets/ui/app_snackbar.dart';
 import '../../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../../../widgets/glass/app_glass_menu.dart';
-import 'gallery_file_actions.dart';
+import '../../../../widgets/ui/app_key_label.dart';
+import '../../../../widgets/ui/app_snackbar.dart';
 import '../layers/layer_canvas_page.dart';
 import '../preview/media_preview_dialog.dart';
+import 'gallery_file_actions.dart';
 
 /// The width of the gallery card's menu (`A1 · 2a`: 「240 宽」).
 const double kImageCardMenuWidth = 240;
@@ -207,7 +207,7 @@ Future<void> showImageCardContextMenu(
             showFileRenameDialog(
               context: context,
               filePath: imageFile.path,
-              onSuccess: () => appState.galleryState.refreshImages(),
+              onSuccess: appState.galleryState.refreshImages,
             );
           },
         ),

@@ -21,7 +21,7 @@ class MaskPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    for (var drawingPath in paths) {
+    for (final drawingPath in paths) {
       final paint = Paint()
         ..color = drawingPath.color
         ..strokeWidth = drawingPath.strokeWidth

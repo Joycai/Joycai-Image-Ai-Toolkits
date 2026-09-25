@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/sub_agent_runner.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/assistant/sub_agent_runner.dart';
 
 /// Pins what "stop" means once it reaches the LLM layer.
 ///
@@ -47,7 +47,7 @@ void main() {
       // was too slow, a cancel means nobody wants the work. Keeping them
       // separate types is what lets a caller show an error for one and
       // nothing at all for the other.
-      expect(LLMService.isRetryable(LLMDeadlineExceeded(Duration.zero)),
+      expect(LLMService.isRetryable(const LLMDeadlineExceeded(Duration.zero)),
           isFalse);
       expect(const LLMCancelled(), isNot(isA<LLMDeadlineExceeded>()));
     });

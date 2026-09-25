@@ -9,9 +9,9 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../models/result_feedback.dart';
 import '../../../widgets/files/file_visuals.dart';
+import '../../../widgets/glass/app_glass.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
-import '../../../widgets/glass/app_glass.dart';
 import 'result_feedback_labels.dart';
 
 /// The longest note the dialog accepts, in characters (`3b`: 「0 / 500」).

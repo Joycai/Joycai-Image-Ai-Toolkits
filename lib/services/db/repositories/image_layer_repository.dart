@@ -138,8 +138,10 @@ class ImageLayerRepository {
   }
 
   static ImageLayer _fromRow(Map<String, Object?> r) {
-    final l = r['box_left'], t = r['box_top'];
-    final rt = r['box_right'], b = r['box_bottom'];
+    final l = r['box_left'];
+    final t = r['box_top'];
+    final rt = r['box_right'];
+    final b = r['box_bottom'];
     return ImageLayer(
       path: r['path'] as String,
       setId: r['set_id'] as String,

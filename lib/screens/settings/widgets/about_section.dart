@@ -7,11 +7,11 @@ import '../../../core/file_utils.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/system/runtime_info.dart';
+import '../../../widgets/shell/app_window_frame.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_section_label.dart';
 import '../../../widgets/ui/app_setting_row.dart';
 import '../../../widgets/ui/app_snackbar.dart';
-import '../../../widgets/shell/app_window_frame.dart';
 import 'settings_layout.dart';
 
 const String _githubUrl = 'https://github.com/Joycai/Joycai-Image-Ai-Toolkits';

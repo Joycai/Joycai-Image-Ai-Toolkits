@@ -22,21 +22,21 @@ import '../../../../models/tag.dart';
 import '../../../../services/llm/model_capabilities.dart';
 import '../../../../state/app_state.dart';
 import '../../../../state/workbench_ui_state.dart';
+import '../../../../widgets/drag/app_drag_session.dart';
+import '../../../../widgets/drag/app_drop_zone.dart';
 import '../../../../widgets/files/file_visuals.dart';
+import '../../../../widgets/models/model_picker_options.dart';
 import '../../../../widgets/ui/app_dropdown.dart';
 import '../../../../widgets/ui/app_field_size.dart';
 import '../../../../widgets/ui/app_segmented_control.dart';
 import '../../../../widgets/ui/app_snackbar.dart';
 import '../../../../widgets/ui/app_switch.dart';
-import '../config/library_dialog.dart';
-import '../../../../widgets/drag/app_drag_session.dart';
-import '../../../../widgets/drag/app_drop_zone.dart';
-import '../config/prompt_history_dialog.dart';
 import '../../../../widgets/ui/markdown_editor.dart';
-import '../../../../widgets/models/model_picker_options.dart';
 import '../../../../widgets/ui/scroll_edge_fade.dart';
 import '../../../../widgets/ui/searchable_picker.dart';
 import '../config/config_action_bar.dart';
+import '../config/library_dialog.dart';
+import '../config/prompt_history_dialog.dart';
 import '../config/queue_settings_dialog.dart';
 
 part 'video_drop_parts.dart';
@@ -279,7 +279,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                     child: _FrameDropTarget(
                       label: l10n.firstFrame,
                       image: uiState.videoFirstFrame,
-                      onDrop: (img) => uiState.setVideoFirstFrame(img),
+                      onDrop: uiState.setVideoFirstFrame,
                       onClear: () => uiState.setVideoFirstFrame(null),
                       emptyIcon: Icons.first_page,
                       emptyTitle: l10n.dropFirstFrame,
@@ -291,7 +291,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                     child: _FrameDropTarget(
                       label: l10n.lastFrame,
                       image: uiState.videoLastFrame,
-                      onDrop: (img) => uiState.setVideoLastFrame(img),
+                      onDrop: uiState.setVideoLastFrame,
                       onClear: () => uiState.setVideoLastFrame(null),
                       emptyIcon: Icons.last_page,
                       emptyTitle: l10n.dropLastFrame,
@@ -307,8 +307,8 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         _PanelCard(
           child: _ReferenceImagesSection(
             images: uiState.videoReferenceImages,
-            onDrop: (img) => uiState.addVideoReferenceImage(img),
-            onRemove: (img) => uiState.removeVideoReferenceImage(img),
+            onDrop: uiState.addVideoReferenceImage,
+            onRemove: uiState.removeVideoReferenceImage,
             maxImages: caps.maxReferenceImages,
             captionStyle: captionStyle,
           ),
@@ -385,12 +385,12 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                       controller: _promptController,
                       label: l10n.prompt,
                       isMarkdown: appState.isMarkdownWorkbench,
-                      onMarkdownChanged: (v) => appState.setIsMarkdownWorkbench(v),
+                      onMarkdownChanged: appState.setIsMarkdownWorkbench,
                       maxLines: 8,
                       hint: l10n.promptHint,
                       // Silent draft path — typing here must not notify the whole app.
                       // See AppStateWorkbench.setVideoPromptDraft.
-                      onChanged: (v) => appState.setVideoPromptDraft(v),
+                      onChanged: appState.setVideoPromptDraft,
                       expand: fill,
                       probeAvailableHeight: !fill,
                       // The well is the frame; the editor draws its markdown

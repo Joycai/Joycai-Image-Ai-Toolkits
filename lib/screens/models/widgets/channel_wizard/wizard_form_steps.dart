@@ -86,7 +86,7 @@ extension _FormSteps on _ChannelWizardDialogState {
           style: theme.textTheme.labelSmall?.copyWith(color: scheme.outline),
         ),
         const SizedBox(height: AppSpace.s6),
-        Container(
+        DecoratedBox(
           decoration: BoxDecoration(
             color: scheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(AppRadius.control),

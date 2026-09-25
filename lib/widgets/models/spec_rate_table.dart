@@ -7,8 +7,8 @@ import '../../l10n/app_localizations.dart';
 import '../../models/spec_rate.dart';
 import '../../services/billing/spec_known_values.dart';
 import '../../services/llm/output_spec.dart';
-import '../ui/app_button.dart';
 import '../glass/app_glass_menu.dart';
+import '../ui/app_button.dart';
 import 'fee_group_summary.dart';
 
 /// Parses a price the way users type them, not just the way Dart does:

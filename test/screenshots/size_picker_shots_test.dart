@@ -77,7 +77,10 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      final wanPro = GlobalKey(), qwen = GlobalKey(), gpt = GlobalKey(), bad = GlobalKey();
+      final wanPro = GlobalKey();
+      final qwen = GlobalKey();
+      final gpt = GlobalKey();
+      final bad = GlobalKey();
       await tester.pumpWidget(MaterialApp(
         debugShowCheckedModeBanner: false,
         locale: const Locale('zh'),

@@ -380,7 +380,8 @@ class _SizePickerPanelState extends State<SizePickerPanel> {
           setState(_syncControllers);
           return;
         }
-        final sw = _snapFree(w), sh = _snapFree(h);
+        final sw = _snapFree(w);
+        final sh = _snapFree(h);
         final changed = <_Field>{if (sw != w) _Field.width, if (sh != h) _Field.height};
         if (!_linked) {
           setState(() => _adoptRatioOf(sw, sh));

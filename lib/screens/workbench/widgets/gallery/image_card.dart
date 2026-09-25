@@ -20,12 +20,12 @@ import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/drag/app_drag_follower.dart';
 import '../../../../widgets/drag/app_drag_session.dart';
 import '../../../../widgets/files/file_visuals.dart';
-import '../../../../widgets/ui/focus_pane.dart';
 import '../../../../widgets/glass/app_glass.dart';
-import 'gallery_file_actions.dart';
-import 'image_card_context_menu.dart';
+import '../../../../widgets/ui/focus_pane.dart';
 import '../layers/layer_canvas_page.dart';
 import '../preview/media_preview_dialog.dart' show previewHeroTag;
+import 'gallery_file_actions.dart';
+import 'image_card_context_menu.dart';
 
 /// The play glyph laid straight on a video frame (`A1 · 1a`:
 /// `rgba(255,255,255,.85)`).
@@ -184,7 +184,7 @@ class _ImageCardState extends State<ImageCard> {
         width: thumbnailDecodeWidth(context, width ?? widget.thumbnailSize),
       ),
       fit: thumbFit.boxFit,
-      errorBuilder: (context, error, stackTrace) => Container(
+      errorBuilder: (context, error, stackTrace) => ColoredBox(
         color: colorScheme.surfaceContainerHighest,
         child: Icon(Icons.broken_image, color: colorScheme.onSurfaceVariant),
       ),

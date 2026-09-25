@@ -137,7 +137,7 @@ Map<String, dynamic> prepareVeoPayload(List<LLMMessage> history, Map<String, dyn
 
   final referenceImages = <Map<String, dynamic>>[];
 
-  for (var attachment in userMsg.attachments) {
+  for (final attachment in userMsg.attachments) {
     String? b64Data;
     if (attachment.path != null) {
       b64Data = base64Encode(File(attachment.path!).readAsBytesSync());
@@ -411,7 +411,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
     return;
   }
 
-  for (var candidate in candidates) {
+  for (final candidate in candidates) {
     final finishReason = candidate['finishReason'] as String?;
     final parts = candidate['content']?['parts'] as List?;
 
@@ -447,7 +447,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
         logger?.call('Content was flagged by safety filters.', level: 'WARN');
         if (candidate['safetyRatings'] != null) {
           final ratings = candidate['safetyRatings'] as List;
-          for (var r in ratings) {
+          for (final r in ratings) {
             if (r['probability'] != 'NEGLIGIBLE') {
               logger?.call('Safety: ${r['category']} is ${r['probability']}', level: 'DEBUG');
             }
@@ -476,7 +476,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(
     }
 
     {
-      for (var part in parts) {
+      for (final part in parts) {
         final rawText = part['text'] as String?;
         // A `thought: true` part is the model's reasoning summary
         // (`includeThoughts`), not its answer. Its own channel, like ①'s
@@ -658,7 +658,7 @@ Map<String, dynamic> prepareGooglePayload(
       }
     }
 
-    for (var attachment in msg.attachments) {
+    for (final attachment in msg.attachments) {
       if (attachment.path == null && attachment.bytes == null) continue;
       final resolved = ImageCompressor.readForApi(attachment);
       // camelCase, never snake_case. Google's own host accepts both (proto3

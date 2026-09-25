@@ -25,19 +25,19 @@ import 'screens/prompts/prompts_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/wizard/setup_wizard.dart';
 import 'screens/workbench/workbench_screen.dart';
-import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
-import 'services/system/notification_service.dart';
-import 'services/tasks/task_queue_service.dart';
 import 'services/files/temp_storage_service.dart';
+import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
 import 'services/media/video_thumbnail_service.dart';
+import 'services/system/notification_service.dart';
 import 'services/system/window_chrome_service.dart';
+import 'services/tasks/task_queue_service.dart';
 import 'state/app_state.dart';
-import 'widgets/shell/app_window_frame.dart';
-import 'widgets/shell/shortcut_panel.dart';
 import 'widgets/shell/app_destinations.dart';
 import 'widgets/shell/app_top_bar.dart';
+import 'widgets/shell/app_window_frame.dart';
 import 'widgets/shell/phone_dock.dart';
 import 'widgets/shell/shell_cover.dart';
+import 'widgets/shell/shortcut_panel.dart';
 import 'widgets/tasks/task_capsule_monitor.dart';
 
 void main() async {

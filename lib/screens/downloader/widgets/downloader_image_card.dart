@@ -9,8 +9,8 @@ import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/media/image_metadata_service.dart';
 import '../../../services/media/web_scraper_service.dart';
-import '../../../widgets/ui/app_snackbar.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
+import '../../../widgets/ui/app_snackbar.dart';
 
 /// Inset of the tick and the meta plate from the card's edge (`left/top 8`).
 const double _inset = 8;

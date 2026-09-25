@@ -742,7 +742,7 @@ extension TaskExecutors on TaskQueueService {
     final referenceImagePaths =
         task.parameters['referenceImagePaths'] as List<dynamic>?;
     if (referenceImagePaths != null) {
-      for (var path in referenceImagePaths) {
+      for (final path in referenceImagePaths) {
         final pathStr = path as String;
         attachments.add(
           await _buildReferenceAttachment(

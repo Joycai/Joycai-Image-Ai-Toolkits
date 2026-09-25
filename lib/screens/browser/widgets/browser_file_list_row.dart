@@ -4,12 +4,12 @@ import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
-import '../../../widgets/files/file_visuals.dart';
-import '../../../widgets/ui/focus_pane.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/media/image_metadata_service.dart';
 import '../../../widgets/drag/app_drag_session.dart';
+import '../../../widgets/files/file_visuals.dart';
+import '../../../widgets/ui/focus_pane.dart';
 import 'browser_drag_chip.dart';
 
 /// The ground and glyph colour of a file type's icon plate (`B1a · 1b`):

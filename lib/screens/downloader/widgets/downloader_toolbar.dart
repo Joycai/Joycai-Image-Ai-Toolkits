@@ -7,10 +7,10 @@ import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/downloader_state.dart';
+import '../../../widgets/glass/glass_controls.dart';
+import '../../../widgets/models/chat_model_selector.dart';
 import '../../../widgets/ui/app_field_size.dart';
 import '../../../widgets/ui/app_switch.dart';
-import '../../../widgets/models/chat_model_selector.dart';
-import '../../../widgets/glass/glass_controls.dart';
 import 'downloader_inputs.dart';
 
 export 'downloader_advanced_dialog.dart' show showDownloaderAdvancedDialog;

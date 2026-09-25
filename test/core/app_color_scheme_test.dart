@@ -14,7 +14,9 @@ import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 void main() {
   /// How far a colour is from grey. Zero means R, G and B are equal.
   double chromaOf(Color color) {
-    final r = color.r, g = color.g, b = color.b;
+    final r = color.r;
+    final g = color.g;
+    final b = color.b;
     return [r, g, b].reduce((a, b) => a > b ? a : b) - [r, g, b].reduce((a, b) => a < b ? a : b);
   }
 

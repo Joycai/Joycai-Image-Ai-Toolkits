@@ -9,10 +9,10 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/db/repositories/image_layer_repository.dart';
 import '../../services/files/folder_operations_service.dart';
+import '../glass/app_glass.dart';
 import '../ui/app_button.dart';
 import '../ui/app_dialog.dart';
 import '../ui/app_snackbar.dart';
-import '../glass/app_glass.dart';
 
 /// The longest file name the disks this app writes to accept, in characters.
 const int kFileRenameMaxLength = 255;

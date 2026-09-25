@@ -512,7 +512,7 @@ class OpenAIChatProtocol implements ChatProtocol {
         final rest = textGate.finish(result.text);
         if (rest.isNotEmpty) yield LLMResponseChunk(textPart: rest);
 
-        for (var img in dedupe.filter(result.images)) {
+        for (final img in dedupe.filter(result.images)) {
           yield LLMResponseChunk(imagePart: img);
         }
       }
@@ -693,7 +693,7 @@ class OpenAIChatProtocol implements ChatProtocol {
     // 1. Extract and remove Inline Base64
     final base64Regex = RegExp(r'data:image/[^;]+;base64,([a-zA-Z0-9+/=]+)');
     final b64Matches = base64Regex.allMatches(text);
-    for (var match in b64Matches) {
+    for (final match in b64Matches) {
       try {
         images.add(base64Decode(match.group(1)!));
         cleanText = cleanText.replaceFirst(match.group(0)!, '[Image Data]');

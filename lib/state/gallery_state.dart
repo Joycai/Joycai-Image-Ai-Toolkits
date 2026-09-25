@@ -30,12 +30,12 @@ import 'file_browser_state.dart' show FolderFlash;
 /// dedupe for free.
 Map<String, List<int>> _scanImagesIsolate(List<String> paths) {
   final Map<String, List<int>> results = {};
-  for (var path in paths) {
+  for (final path in paths) {
     try {
       final dir = Directory(path);
       if (dir.existsSync()) {
         final entities = dir.listSync(recursive: false);
-        for (var entity in entities) {
+        for (final entity in entities) {
           try {
             if (entity is File && AppConstants.isSupportedFile(entity.path)) {
               final stat = entity.statSync();
@@ -249,7 +249,7 @@ class GalleryState extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    for (var sub in _watchers.values) {
+    for (final sub in _watchers.values) {
       sub.cancel();
     }
     _outputWatcher?.cancel();
@@ -296,8 +296,8 @@ class GalleryState extends ChangeNotifier {
 
     _setupOutputWatcher();
     _setupSourceWatchers();
-    _scanImages();
-    _scanProcessedImages();
+    unawaited(_scanImages());
+    unawaited(_scanProcessedImages());
     notifyListeners();
   }
 
@@ -306,7 +306,7 @@ class GalleryState extends ChangeNotifier {
   }
 
   void _setupSourceWatchers() {
-    for (var sub in _watchers.values) {
+    for (final sub in _watchers.values) {
       sub.cancel();
     }
     _watchers.clear();
@@ -314,7 +314,7 @@ class GalleryState extends ChangeNotifier {
     // iOS does not support directory watching
     if (Platform.isIOS) return;
 
-    for (var path in activeSourceDirectories) {
+    for (final path in activeSourceDirectories) {
       try {
         final dir = Directory(path);
         if (dir.existsSync()) {
@@ -349,16 +349,12 @@ class GalleryState extends ChangeNotifier {
 
   void _debouncedSourceScan() {
     _sourceScanTimer?.cancel();
-    _sourceScanTimer = Timer(const Duration(milliseconds: 500), () {
-      _scanImages();
-    });
+    _sourceScanTimer = Timer(const Duration(milliseconds: 500), _scanImages);
   }
 
   void _debouncedOutputScan() {
     _outputScanTimer?.cancel();
-    _outputScanTimer = Timer(const Duration(milliseconds: 500), () {
-      _scanProcessedImages();
-    });
+    _outputScanTimer = Timer(const Duration(milliseconds: 500), _scanProcessedImages);
   }
 
   Future<void> addBaseDirectory(String path) async {
@@ -373,7 +369,7 @@ class GalleryState extends ChangeNotifier {
       activeSourceDirectories = <String>[...activeSourceDirectories, path];
       await _db.addSourceDirectory(path);
       _log('Added base directory: $path');
-      _scanImages();
+      unawaited(_scanImages());
       _setupSourceWatchers();
       notifyListeners();
     }
@@ -388,7 +384,7 @@ class GalleryState extends ChangeNotifier {
         );
       await _db.removeSourceDirectory(path);
       _log('Removed base directory: $path');
-      _scanImages();
+      unawaited(_scanImages());
       _setupSourceWatchers();
       notifyListeners();
     }
@@ -428,8 +424,8 @@ class GalleryState extends ChangeNotifier {
     sourceDirectories = sources;
     activeSourceDirectories = active;
     _log('Followed folder change: $from -> $to');
-    _scanImages();
-    _scanProcessedImages();
+    unawaited(_scanImages());
+    unawaited(_scanProcessedImages());
     _setupSourceWatchers();
     notifyListeners();
   }
@@ -447,7 +443,7 @@ class GalleryState extends ChangeNotifier {
       _log('Selected directory: $path');
     }
     await _db.updateDirectorySelection(path, isSelected);
-    _scanImages();
+    unawaited(_scanImages());
     _setupSourceWatchers();
     notifyListeners();
   }
@@ -462,7 +458,7 @@ class GalleryState extends ChangeNotifier {
 
     // Verify droppedImages (Temporary Workspace)
     final List<AppImage> existingDropped = [];
-    for (var img in droppedImages) {
+    for (final img in droppedImages) {
       if (await File(img.path).exists()) {
         existingDropped.add(img);
       }
@@ -757,7 +753,7 @@ class GalleryState extends ChangeNotifier {
     outputDirectory = path;
     await _db.saveSetting('output_directory', path);
     _setupOutputWatcher();
-    _scanProcessedImages();
+    unawaited(_scanProcessedImages());
     notifyListeners();
   }
 

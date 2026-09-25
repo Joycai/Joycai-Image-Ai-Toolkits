@@ -118,11 +118,11 @@ final List<_WorkbenchTab> _workbenchTabs = <_WorkbenchTab>[
   // Tab 0 again, but with pictures selected: the config panel's reference
   // strip is empty otherwise, and the strip is where the selection order the
   // model receives is shown and edited.
-  _WorkbenchTab('selection', 0, (AppState s) => seedImageSelection(s), seedOnSettled: true),
+  const _WorkbenchTab('selection', 0, seedImageSelection, seedOnSettled: true),
   // One entry per arrangement: the three are separate rendering paths, not
   // three settings of one, and only the default would ever be photographed
   // otherwise.
-  _WorkbenchTab('comparator', 1, seedComparatorPair),
+  const _WorkbenchTab('comparator', 1, seedComparatorPair),
   _WorkbenchTab('comparator_stacked', 1, (AppState s) {
     seedComparatorPair(s);
     s.workbenchUIState.setComparatorLayout(ComparatorLayout.stacked);
@@ -140,27 +140,27 @@ final List<_WorkbenchTab> _workbenchTabs = <_WorkbenchTab>[
   // the three comparator shots before it had left in place: this "empty" state
   // has been a picture of two loaded images for as long as it has existed.
   _WorkbenchTab('comparator_empty', 1, (AppState s) => s.workbenchUIState.clearComparator()),
-  _WorkbenchTab('mask', 2, seedMaskSource),
-  _WorkbenchTab('crop', 3, seedCropSource),
-  _WorkbenchTab('assistant', 4, seedOptimizerSession),
+  const _WorkbenchTab('mask', 2, seedMaskSource),
+  const _WorkbenchTab('crop', 3, seedCropSource),
+  const _WorkbenchTab('assistant', 4, seedOptimizerSession),
   // The two frames `A2` added beside the finished one. Neither is
   // reachable from the settled fixture: the running state exists only
   // while a model is being called, and system-prompt mode replaces the
   // whole right column with a card the knowledge modes never draw.
-  _WorkbenchTab('assistant_running', 4, seedOptimizerRunning),
-  _WorkbenchTab('assistant_sysprompt', 4, seedOptimizerSystemPrompt),
-  _WorkbenchTab('assistant_kbedit', 4, seedOptimizerKbEdit),
+  const _WorkbenchTab('assistant_running', 4, seedOptimizerRunning),
+  const _WorkbenchTab('assistant_sysprompt', 4, seedOptimizerSystemPrompt),
+  const _WorkbenchTab('assistant_kbedit', 4, seedOptimizerKbEdit),
   // `A3e 5e`: an analysis preset's answer — a reply with a copy row, not a
   // card — and the prompt card the same session can still produce.
-  _WorkbenchTab('assistant_analysis', 4, seedOptimizerAnalysis),
+  const _WorkbenchTab('assistant_analysis', 4, seedOptimizerAnalysis),
   // The other half of the workbench. It has its own right panel — model,
   // resolution, aspect, duration, the first/last-frame drop targets — and
   // shares nothing with tab 0's below the shell, so leaving it out meant half
   // the workbench was never photographed at all. Seeded with a selection, as
   // the frame slots are the point and they are empty without one.
-  _WorkbenchTab('video', 5, (AppState s) => seedImageSelection(s), seedOnSettled: true),
+  const _WorkbenchTab('video', 5, seedImageSelection, seedOnSettled: true),
   // The same panel once it is used: both frames and two references filled.
   // Last in the list because `WorkbenchUIState` outlives the shots, and every
   // shot after this one would otherwise inherit the filled slots.
-  _WorkbenchTab('video_filled', 5, seedVideoInputs, seedOnSettled: true),
+  const _WorkbenchTab('video_filled', 5, seedVideoInputs, seedOnSettled: true),
 ];

@@ -9,29 +9,29 @@ import '../core/safety_settings.dart';
 import '../core/theme_accent.dart';
 import '../core/thumbnail_fit.dart';
 import '../l10n/app_localizations.dart';
+import '../models/app_image.dart';
+import '../models/llm_channel.dart';
+import '../models/llm_model.dart';
+import '../models/pricing_group.dart';
+import '../models/prompt.dart';
+import '../models/prompt_history_entry.dart';
+import '../models/spec_rate.dart';
+import '../models/tag.dart';
+import '../services/assistant/prompt_provenance.dart';
+import '../services/catalogue/channel_merge.dart';
+import '../services/catalogue/channel_merge_executor.dart';
+import '../services/db/database_service.dart';
 import '../services/llm/llm_debug_logger.dart';
 import '../services/llm/llm_dispatcher.dart';
+import '../services/llm/llm_service.dart';
 import '../services/llm/llm_types.dart';
 import '../services/llm/model_capabilities.dart';
 import '../services/llm/model_descriptor.dart';
 import '../services/llm/model_family.dart';
 import '../services/llm/model_routes.dart';
-import '../models/app_image.dart';
-import '../models/llm_channel.dart';
-import '../models/llm_model.dart';
-import '../models/pricing_group.dart';
-import '../models/spec_rate.dart';
-import '../models/prompt.dart';
-import '../models/prompt_history_entry.dart';
-import '../models/tag.dart';
-import '../services/catalogue/channel_merge.dart';
-import '../services/catalogue/channel_merge_executor.dart';
-import '../services/db/database_service.dart';
 import '../services/system/font_service.dart';
-import '../services/llm/llm_service.dart';
 import '../services/system/notification_service.dart';
 import '../services/system/ui_prefs.dart';
-import '../services/assistant/prompt_provenance.dart';
 import '../services/tasks/task_queue_service.dart';
 import 'downloader_state.dart';
 import 'file_browser_state.dart';
@@ -39,8 +39,8 @@ import 'file_staging_state.dart';
 import 'gallery_state.dart';
 import 'log_state.dart';
 import 'model_list_state.dart';
-import 'workbench_ui_state.dart';
 import 'task_list_state.dart';
+import 'workbench_ui_state.dart';
 
 part 'app_state_data.dart';
 part 'app_state_workbench.dart';
@@ -108,9 +108,7 @@ class AppState extends ChangeNotifier {
       modelListState = ModelListState(database: database),
       uiPrefs = UiPrefs(database: database) {
     // Wire up logs
-    galleryState.onLog = (msg, {level = 'INFO'}) {
-      addLog(msg, level: level);
-    };
+    galleryState.onLog = addLog;
 
     taskQueue.onTaskCompleted = (file) {
       galleryState.refreshImages();
@@ -139,9 +137,7 @@ class AppState extends ChangeNotifier {
       }
     };
 
-    taskQueue.onLogAdded = (msg, {level = 'INFO', taskId}) {
-      addLog(msg, level: level, taskId: taskId);
-    };
+    taskQueue.onLogAdded = addLog;
 
     // Added, not assigned: the service keeps a listener list so another
     // subscriber cannot silently replace the console sink.

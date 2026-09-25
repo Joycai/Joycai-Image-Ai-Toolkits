@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -11,16 +12,16 @@ import '../../services/tasks/task_list_ordering.dart';
 import '../../services/tasks/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/task_list_state.dart';
+import '../../widgets/glass/app_glass.dart';
+import '../../widgets/glass/glass_controls.dart';
+import '../../widgets/shell/app_destinations.dart';
+import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_dialog.dart';
 import '../../widgets/ui/app_icon_button.dart';
-import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_segmented_control.dart';
 import '../../widgets/ui/app_switch.dart';
-import '../../widgets/glass/app_glass.dart';
-import '../../widgets/glass/glass_controls.dart';
 import '../../widgets/ui/scroll_edge_fade.dart';
-import '../../widgets/shell/app_destinations.dart';
 import 'task_queue_card.dart';
 
 part 'task_queue/task_queue_bands.dart';
@@ -305,13 +306,13 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
           .map((t) => t.id)
           .toList();
       for (final id in toRemove) {
-        queue.removeTask(id);
+        unawaited(queue.removeTask(id));
       }
     } else if (action == 'cancel_pending') {
       final toCancel =
           queue.queue.where((t) => t.status == TaskStatus.pending).map((t) => t.id).toList();
       for (final id in toCancel) {
-        queue.cancelTask(id);
+        unawaited(queue.cancelTask(id));
       }
     } else if (action == 'clear_all') {
       // Waiting tasks are cancelled first and cleared with the finished ones.
@@ -374,7 +375,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
       ],
     );
     if (!mounted || confirmed != true) return;
-    _handleBulkAction('clear_all', queue);
+    unawaited(_handleBulkAction('clear_all', queue));
   }
 }
 

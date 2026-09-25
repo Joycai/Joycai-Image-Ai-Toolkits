@@ -76,7 +76,7 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
                             p.content.toLowerCase().contains(_searchQuery);
       if (_selectedFilterTagIds.isEmpty) return matchesSearch;
       final promptTagIds = p.tags.map((t) => t.id!).toSet();
-      return matchesSearch && _selectedFilterTagIds.any((id) => promptTagIds.contains(id));
+      return matchesSearch && _selectedFilterTagIds.any(promptTagIds.contains);
     }).toList();
 
     // Surface, width and shadow belong to AppSidePanel, which is what

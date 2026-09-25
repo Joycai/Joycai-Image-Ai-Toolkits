@@ -87,7 +87,7 @@ class _SizePopoverRoute extends PopupRoute<void> {
             borderRadius: BorderRadius.circular(AppRadius.lg),
             padding: const EdgeInsets.all(AppSpace.s6),
             reducedColor: scheme.surfaceContainerLow,
-            child: Container(
+            child: DecoratedBox(
               decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(AppRadius.control)),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(11),

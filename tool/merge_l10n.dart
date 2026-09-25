@@ -24,7 +24,7 @@ void main() async {
     }
 
     final outputFile = File(p.join(l10nDir, 'app_$lang.arb'));
-    final encoder = const JsonEncoder.withIndent('  ');
+    const encoder = JsonEncoder.withIndent('  ');
     await outputFile.writeAsString(encoder.convert(merged));
     // ignore: avoid_print
     print('Generated ${outputFile.path}');

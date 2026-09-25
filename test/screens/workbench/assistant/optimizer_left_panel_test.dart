@@ -25,10 +25,10 @@ void main() {
         ChangeNotifierProvider<AppState>.value(value: AppState()),
         ChangeNotifierProvider<WorkbenchUIState>.value(value: ui),
       ],
-      child: MaterialApp(
+      child: const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const Scaffold(
+        home: Scaffold(
           body: SizedBox(width: 250, child: OptimizerLeftPanel(kbPath: null)),
         ),
       ),

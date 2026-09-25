@@ -45,23 +45,23 @@ import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/widgets/settings/dual_tone_swatch.dart';
+import 'package:joycai_image_ai_toolkits/widgets/settings/theme_accent_picker.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_card.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dropdown.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_empty_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_field_size.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_labelled_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_icon_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_key_label.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_labelled_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_markdown.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_neutral_marker.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_search_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_section_label.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_text_field.dart';
-import 'package:joycai_image_ai_toolkits/widgets/settings/dual_tone_swatch.dart';
-import 'package:joycai_image_ai_toolkits/widgets/settings/theme_accent_picker.dart';
 
 void main() {
   for (final MapEntry<String, ThemeAccent> seed in AppConstants.presetThemes.entries) {
@@ -292,8 +292,8 @@ class _Gallery extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: AppTextField(key: const ValueKey('focused-field'), hint: '聚焦态'),
+                const Expanded(
+                  child: AppTextField(key: ValueKey('focused-field'), hint: '聚焦态'),
                 ),
               ]),
               const SizedBox(height: 12),
@@ -560,20 +560,20 @@ class _Progress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      const Expanded(child: LinearProgressIndicator(value: 0.34)),
-      const SizedBox(width: 16),
+    return const Row(children: [
+      Expanded(child: LinearProgressIndicator(value: 0.34)),
+      SizedBox(width: 16),
       // Indeterminate. Pumped to a fixed point by the harness, so the sweep
       // lands in the same place in every shot.
-      const Expanded(child: LinearProgressIndicator()),
-      const SizedBox(width: 16),
-      const SizedBox(
+      Expanded(child: LinearProgressIndicator()),
+      SizedBox(width: 16),
+      SizedBox(
         width: 20,
         height: 20,
         child: CircularProgressIndicator(value: 0.68, strokeWidth: 2.5),
       ),
-      const SizedBox(width: 12),
-      const SizedBox(
+      SizedBox(width: 12),
+      SizedBox(
         width: 16,
         height: 16,
         child: CircularProgressIndicator(strokeWidth: 2),

@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dialogs/file_rename_dialog.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 import 'package:path/path.dart' as p;
 
 /// The 「文件 ▸ 重命名」 dialog (`A1 · 2b`), which the gallery card's menu and
@@ -58,11 +59,11 @@ void main() {
 
   Future<void> open(WidgetTester tester, {VoidCallback? onSuccess}) async {
     // Not awaited: the future resolves only when the dialog pops.
-    showFileRenameDialog(
+    unawaited(showFileRenameDialog(
       context: host,
       filePath: target,
       onSuccess: onSuccess ?? () {},
-    );
+    ));
     await tester.pumpAndSettle();
   }
 

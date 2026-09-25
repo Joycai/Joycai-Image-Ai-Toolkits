@@ -28,7 +28,7 @@ void main() {
     service
       ..cacheDirOverride = null
       ..extractorOverride = null
-      ..wait = (d) => Future<void>.delayed(d);
+      ..wait = Future<void>.delayed;
     await tmp.delete(recursive: true);
   });
 

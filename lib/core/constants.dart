@@ -191,7 +191,7 @@ class AppConstants {
     String? bestMatch;
     double minDiff = 0.02; // Threshold for "closeness"
 
-    for (var entry in standardRatios.entries) {
+    for (final entry in standardRatios.entries) {
       final diff = (ratio - entry.value).abs();
       if (diff < minDiff) {
         minDiff = diff;

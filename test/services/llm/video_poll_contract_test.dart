@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_veo_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_videos_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/output_spec.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/xai_videos_protocol.dart';
 
 /// The video poll contract (standard 14 §1, §3): failure is thrown, never
@@ -76,7 +76,7 @@ void main() {
         throwsA(isA<LLMApiException>()
             .having((e) => e.message, 'message', contains('moderation_blocked'))
             .having((e) => e.message, 'message', contains('video_1'))
-            .having((e) => LLMService.isRetryable(e), 'retryable', isFalse)),
+            .having(LLMService.isRetryable, 'retryable', isFalse)),
       );
     });
 

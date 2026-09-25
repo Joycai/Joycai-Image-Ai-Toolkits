@@ -7,10 +7,10 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/spec_rate.dart';
 import '../../services/llm/model_capabilities.dart';
+import '../../widgets/models/model_picker_options.dart';
 import '../../widgets/ui/app_dropdown.dart';
 import '../../widgets/ui/app_field_size.dart';
 import '../../widgets/ui/app_segmented_control.dart';
-import '../../widgets/models/model_picker_options.dart';
 import '../../widgets/ui/searchable_picker.dart';
 import 'widgets/size_picker/size_field.dart';
 

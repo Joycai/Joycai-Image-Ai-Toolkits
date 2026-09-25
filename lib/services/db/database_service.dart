@@ -254,7 +254,7 @@ class DatabaseService {
       final String systemJsonString = await rootBundle.loadString('assets/presets/prompts/system_prompts.json');
       final List<dynamic> systemPresets = jsonDecode(systemJsonString);
 
-      for (var preset in systemPresets) {
+      for (final preset in systemPresets) {
         final existing = await db.query(
           'system_prompts',
           where: 'title = ? AND type = ?',
@@ -273,7 +273,7 @@ class DatabaseService {
       final String userJsonString = await rootBundle.loadString('assets/presets/prompts/user_prompts.json');
       final List<dynamic> userPresets = jsonDecode(userJsonString);
 
-      for (var preset in userPresets) {
+      for (final preset in userPresets) {
         final existing = await db.query(
           'prompts',
           where: 'title = ?',
@@ -679,7 +679,7 @@ class DatabaseService {
     // Import Tags first to get new IDs
     final Map<int, int> tagIdMap = {};
     if (data['tags'] != null) {
-      for (var t in data['tags']) {
+      for (final t in data['tags']) {
         final oldId = t['id'] as int;
         final Map<String, dynamic> row = Map.from(t)..remove('id');
         // Check if tag exists by name
@@ -695,7 +695,7 @@ class DatabaseService {
 
     // Import User Prompts
     if (data['user_prompts'] != null) {
-      for (var p in data['user_prompts']) {
+      for (final p in data['user_prompts']) {
         final Map<String, dynamic> row = Map.from(p)..remove('id');
         final List<dynamic>? tags = row['tags'];
         final originalTagId = row['tag_id'] as int?;
@@ -709,7 +709,7 @@ class DatabaseService {
 
         final newPromptId = await txn.insert('prompts', _knownColumnsOnly(row, promptColumns));
         if (tags != null) {
-          for (var t in tags) {
+          for (final t in tags) {
             final oldTagId = t['id'] as int;
             final newTagId = tagIdMap[oldTagId];
             if (newTagId != null) {
@@ -722,7 +722,7 @@ class DatabaseService {
 
     // Import System Prompts
     if (data['system_prompts'] != null) {
-      for (var p in data['system_prompts']) {
+      for (final p in data['system_prompts']) {
         final Map<String, dynamic> row = _systemPromptRow(p);
         final List<dynamic>? tags = row['tags'];
         row.remove('tags');
@@ -739,7 +739,7 @@ class DatabaseService {
         final newPromptId =
             await txn.insert('system_prompts', _knownColumnsOnly(row, systemPromptColumns));
         if (tags != null) {
-          for (var t in tags) {
+          for (final t in tags) {
             final oldTagId = t['id'] as int;
             final newTagId = tagIdMap[oldTagId];
             if (newTagId != null) {
@@ -754,7 +754,7 @@ class DatabaseService {
   Future<void> _importTokenUsage(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> modelIdMap) async {
     if (rows == null || rows.isEmpty) return;
     final batch = txn.batch();
-    for (var row in rows) {
+    for (final row in rows) {
       final Map<String, dynamic> map = Map.from(row)..remove('id');
       if (map['model_pk'] != null) {
         map['model_pk'] = modelIdMap[map['model_pk']];
@@ -767,7 +767,7 @@ class DatabaseService {
   Future<Map<int, int>> _importModels(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> channelIdMap, Map<int, int> pricingGroupIdMap) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
-    for (var m in rows) {
+    for (final m in rows) {
       final oldId = m['id'] as int;
       final Map<String, dynamic> row = Map.from(m)..remove('id');
       // Pre-v32 backups carry the dropped llm_models.type column.
@@ -783,7 +783,7 @@ class DatabaseService {
   Future<Map<int, int>> _importPromptTags(DatabaseExecutor txn, List<dynamic>? rows) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
-    for (var t in rows) {
+    for (final t in rows) {
       final oldId = t['id'] as int;
       final Map<String, dynamic> row = Map.from(t)..remove('id');
       try {
@@ -801,7 +801,7 @@ class DatabaseService {
 
   Future<void> _importPrompts(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> tagIdMap) async {
     if (rows == null) return;
-    for (var p in rows) {
+    for (final p in rows) {
       final Map<String, dynamic> row = Map.from(p)..remove('id');
       final originalTagId = row['tag_id'] as int?;
 
@@ -821,7 +821,7 @@ class DatabaseService {
       final newPromptId = await txn.insert('prompts', row);
 
       if (tagsFromData != null) {
-        for (var t in tagsFromData) {
+        for (final t in tagsFromData) {
           final oldTagId = t['id'] as int;
           final newTagId = tagIdMap[oldTagId];
           if (newTagId != null) {
@@ -863,7 +863,7 @@ class DatabaseService {
 
   Future<void> _importSystemPrompts(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> tagIdMap) async {
     if (rows == null) return;
-    for (var p in rows) {
+    for (final p in rows) {
       final Map<String, dynamic> row = _systemPromptRow(p);
       final List<dynamic>? tagsFromData = row['tags'];
       row.remove('tags');
@@ -871,7 +871,7 @@ class DatabaseService {
       final newPromptId = await txn.insert('system_prompts', row);
 
       if (tagsFromData != null) {
-        for (var t in tagsFromData) {
+        for (final t in tagsFromData) {
           final oldTagId = t['id'] as int;
           final newTagId = tagIdMap[oldTagId];
           if (newTagId != null) {
@@ -885,7 +885,7 @@ class DatabaseService {
   Future<void> _importSimpleTable(DatabaseExecutor txn, String table, List<dynamic>? rows) async {
     if (rows == null || rows.isEmpty) return;
     final batch = txn.batch();
-    for (var row in rows) {
+    for (final row in rows) {
       batch.insert(table, row as Map<String, dynamic>);
     }
     await batch.commit(noResult: true);
@@ -931,7 +931,7 @@ class DatabaseService {
   ) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
-    for (var c in rows) {
+    for (final c in rows) {
       final oldId = c['id'] as int;
       final Map<String, dynamic> row = Map.from(c)..remove('id');
       // Redacted export: fall back to the key this machine already had.
@@ -953,7 +953,7 @@ class DatabaseService {
   Future<void> _importCookies(DatabaseExecutor txn, List<dynamic>? rows) async {
     if (rows == null || rows.isEmpty) return;
     final batch = txn.batch();
-    for (var r in rows) {
+    for (final r in rows) {
       final Map<String, dynamic> row = Map<String, dynamic>.from(r as Map);
       if ((row['cookies'] as String? ?? '').isEmpty) continue;
       batch.insert('downloader_cookies', row,
@@ -965,7 +965,7 @@ class DatabaseService {
   Future<Map<int, int>> _importPricingGroups(DatabaseExecutor txn, List<dynamic>? rows) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
-    for (var g in rows) {
+    for (final g in rows) {
       final oldId = g['id'] as int;
       final Map<String, dynamic> row = Map.from(g)..remove('id');
       final newId = await txn.insert('fee_groups', row);

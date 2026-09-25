@@ -4,8 +4,8 @@ import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/pricing_group.dart';
-import 'fee_group_summary.dart';
 import '../ui/model_tag_chip.dart';
+import 'fee_group_summary.dart';
 
 /// A group name split into the name proper and the labels the user wrote
 /// into it in brackets: 「[K]gemini-3.1」 → base `gemini-3.1`, tags `[K]`.

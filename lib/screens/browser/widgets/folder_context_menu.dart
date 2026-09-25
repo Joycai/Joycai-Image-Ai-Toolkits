@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/file_utils.dart';
 import '../../../core/app_shortcuts.dart';
+import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../widgets/ui/app_key_label.dart';
 import '../../../services/files/file_transfer_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/file_staging_state.dart';
-import '../staging_paste_flow.dart';
 import '../../../widgets/glass/app_glass_menu.dart';
+import '../../../widgets/ui/app_key_label.dart';
+import '../staging_paste_flow.dart';
 
 /// The folder context menu in the browser's directory tree — `B1b 1d`: a
 /// 250-wide float-grade glass menu in groups of look · paste · show · manage ·
@@ -59,7 +59,7 @@ void showFolderContextMenu({
       AppGlassMenuItem(
         icon: Icons.deselect,
         label: l10n.deselectAllDirectories,
-        onSelected: () => appState.fileBrowserState.clearActiveDirectories(),
+        onSelected: appState.fileBrowserState.clearActiveDirectories,
       ),
       if (staged > 0) ...[
         const AppGlassMenuDivider(),

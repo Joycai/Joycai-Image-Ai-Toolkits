@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
+import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/model_tag_chip.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/searchable_picker.dart';
-import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
 
 /// Covers [SearchablePickerField]'s load-bearing behaviours, each of which
 /// went wrong in a way that only shows up under a state a single mount does not

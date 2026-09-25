@@ -76,7 +76,7 @@ Future<void> showQueueSettingsDialog(BuildContext context) {
                     ),
                   ),
                 ),
-                onChanged: (v) => appState.setImagePrefix(v),
+                onChanged: appState.setImagePrefix,
               ),
               const SizedBox(height: 8),
               const Divider(),

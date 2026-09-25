@@ -15,21 +15,20 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:path/path.dart' as p;
-
 import 'package:joycai_image_ai_toolkits/core/app_shortcuts.dart';
 import 'package:joycai_image_ai_toolkits/core/text_editing_focus.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_key_label.dart';
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
-import 'package:joycai_image_ai_toolkits/screens/browser/widgets/file_card.dart';
 import 'package:joycai_image_ai_toolkits/screens/browser/widgets/browser_staging_panel.dart';
+import 'package:joycai_image_ai_toolkits/screens/browser/widgets/file_card.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/directory_tree_item.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/unified_sidebar.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dialogs/file_rename_dialog.dart';
+import 'package:joycai_image_ai_toolkits/widgets/glass/app_glass_menu.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_key_label.dart';
+import 'package:path/path.dart' as p;
 
 import 'harness/fixture_env.dart';
 import 'harness/fixture_seed.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/llm_model.dart';
-import '../services/db/database_service.dart';
 import '../services/catalogue/model_list_ordering.dart';
+import '../services/db/database_service.dart';
 
 /// How the Models screen's right-hand list is ordered (`D1d`).
 ///

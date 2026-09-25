@@ -197,7 +197,9 @@ class GlassInk extends InheritedWidget {
 /// A saturation matrix in the shape [ui.ColorFilter.matrix] wants — CSS
 /// `saturate(s)`, a blend between a colour and its Rec. 709 luminance.
 List<double> glassSaturationMatrix(double s) {
-  const lr = 0.2126, lg = 0.7152, lb = 0.0722;
+  const lr = 0.2126;
+  const lg = 0.7152;
+  const lb = 0.0722;
   final d = 1 - s;
   return [
     lr * d + s, lg * d, lb * d, 0, 0, //

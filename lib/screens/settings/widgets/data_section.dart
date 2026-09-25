@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../widgets/settings/backup_error_text.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
@@ -12,10 +11,11 @@ import '../../../l10n/app_localizations.dart';
 import '../../../services/db/database_service.dart';
 import '../../../services/files/temp_storage_service.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/dialogs/import_options_dialog.dart';
+import '../../../widgets/settings/backup_error_text.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
 import '../../../widgets/ui/app_snackbar.dart';
-import '../../../widgets/dialogs/import_options_dialog.dart';
 import '../../wizard/setup_wizard.dart';
 import 'settings_layout.dart';
 

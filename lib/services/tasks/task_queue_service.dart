@@ -2,30 +2,31 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import '../../core/image_magic.dart';
 import '../../core/file_utils.dart';
+import '../../core/image_magic.dart';
 import '../../core/video_magic.dart';
 import '../../models/image_layer.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/task_item.dart';
-import 'ai_rename_agent.dart';
+import '../assistant/knowledge_base_service.dart';
+import '../assistant/prompt_optimizer_agent.dart';
 import '../db/database_service.dart';
 import '../db/repositories/cookie_repository.dart';
 import '../db/repositories/image_layer_repository.dart';
-import '../assistant/knowledge_base_service.dart';
 import '../llm/image_compression.dart';
 import '../llm/job_poll.dart';
 import '../llm/llm_service.dart';
 import '../llm/llm_types.dart';
 import '../llm/model_descriptor.dart';
 import '../llm/output_spec.dart' show reportedCostOf;
-import '../assistant/prompt_optimizer_agent.dart';
 import '../media/web_scraper_service.dart';
+import 'ai_rename_agent.dart';
 
 // Re-export the task data model so existing importers of this file keep working.
 export '../../models/task_item.dart';
@@ -422,7 +423,7 @@ class TaskQueueService extends ChangeNotifier {
       level: 'RUNNING',
       taskId: task.id,
     );
-    _db.saveTask(task);
+    unawaited(_db.saveTask(task));
     _notify();
 
     try {
@@ -465,11 +466,11 @@ class TaskQueueService extends ChangeNotifier {
 
       // Update Estimation Checkpoint
       if (task.status == TaskStatus.completed && task.modelDbId != null) {
-        _handleEstimationCheckpoint(task.modelDbId!);
+        unawaited(_handleEstimationCheckpoint(task.modelDbId!));
       }
 
       _runningCount--;
-      _db.saveTask(task);
+      unawaited(_db.saveTask(task));
       onTaskFinished?.call(task);
       _notify();
       _attemptNextExecution();
@@ -520,7 +521,7 @@ class TaskQueueService extends ChangeNotifier {
     _cachedModelsForProgress ??= await _db.getModels();
     final models = _cachedModelsForProgress!;
 
-    for (var task in _queue) {
+    for (final task in _queue) {
       if (task.status == TaskStatus.processing && task.startTime != null) {
         hasActive = true;
         // Find checkpoint for this model

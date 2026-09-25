@@ -336,10 +336,10 @@ void main() {
 
     test('a key up never matches', () {
       final meta = keyboardWith({LogicalKeyboardKey.metaLeft});
-      final up = KeyUpEvent(
+      const up = KeyUpEvent(
         physicalKey: PhysicalKeyboardKey.keyA,
         logicalKey: LogicalKeyboardKey.keyA,
-        timeStamp: const Duration(milliseconds: 2),
+        timeStamp: Duration(milliseconds: 2),
       );
       expect(
           AppShortcuts.byId(AppShortcutIds.selectAll)

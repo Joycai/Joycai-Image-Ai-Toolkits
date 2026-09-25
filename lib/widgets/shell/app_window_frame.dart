@@ -10,9 +10,9 @@ import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
-import 'baked_backdrop.dart';
 import '../glass/app_glass.dart';
 import 'app_destinations.dart';
+import 'baked_backdrop.dart';
 import 'nav_lens_group.dart';
 import 'shell_cover.dart';
 

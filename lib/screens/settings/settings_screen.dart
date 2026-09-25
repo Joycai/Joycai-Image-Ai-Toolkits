@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../core/app_shortcuts.dart';
 import '../../core/app_theme.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
-import '../../core/app_shortcuts.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/glass/app_glass.dart';
 import '../../widgets/glass/glass_controls.dart';
 import 'settings_identity.dart';
 import 'widgets/about_section.dart';
 import 'widgets/appearance_section.dart';
-import 'widgets/keyboard_section.dart';
 import 'widgets/application_section.dart';
 import 'widgets/connectivity_section.dart';
 import 'widgets/data_section.dart';
+import 'widgets/keyboard_section.dart';
 
 enum SettingsCategory { appearance, keyboard, connectivity, application, data, about }
 

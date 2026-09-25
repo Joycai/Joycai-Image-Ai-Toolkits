@@ -5,8 +5,8 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/billing/spec_billing.dart';
 import '../ui/app_segmented_control.dart';
-import 'spec_rate_table.dart';
 import 'fee_group_draft.dart';
+import 'spec_rate_table.dart';
 
 /// The fee-group editor's fields (`D2 · 1e / 1f`, `D1a · 1d`): the name,
 /// the billing mode, and that mode's rates — the three token prices, the one

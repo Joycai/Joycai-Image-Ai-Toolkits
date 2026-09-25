@@ -468,7 +468,7 @@ void main() {
     expect(appState.allPricingGroups.first.name, 'Veo 3 Video');
     expect(tester.getRect(find.text('Veo 3 Video')).top, lessThan(tester.getRect(find.text('Midjourney Relax')).top));
 
-    await tester.runAsync(() => appState.refreshDataCache());
+    await tester.runAsync(appState.refreshDataCache);
     final names = appState.allPricingGroups.map((g) => g.name).toList();
     expect(names.first, 'Veo 3 Video');
     expect(names.last, 'Midjourney Relax [MJ]');

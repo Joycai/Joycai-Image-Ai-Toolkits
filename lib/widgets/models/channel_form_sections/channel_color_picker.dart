@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../ui/color_hue_picker.dart';
 import '../../ui/app_button.dart';
 import '../../ui/app_dialog.dart';
+import '../../ui/color_hue_picker.dart';
 import 'channel_field.dart';
 
 /// The tag-colour row: round swatches from [AppConstants.tagColors], then a

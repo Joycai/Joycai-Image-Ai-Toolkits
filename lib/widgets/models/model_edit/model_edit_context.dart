@@ -141,7 +141,7 @@ extension _ContextSection on _ModelEditDialogState {
   /// Where the figure sits on the scale, for the caption's row.
   String _contextStatus(int tokens) {
     final l10n = widget.l10n;
-    final stops = ContextWindowScale.stops;
+    const stops = ContextWindowScale.stops;
     final exact = ContextWindowScale.stopIndexOf(tokens);
     if (exact != null) return l10n.contextStatusPreset(ContextWindowScale.label(stops[exact]));
     if (tokens < stops.first) return l10n.contextStatusBelow(ContextWindowScale.label(stops.first));

@@ -11,13 +11,13 @@
 // These are the browser's cases, run against the gallery — plus the one
 // deliberate exception, `Delete` in the temporary workspace (plan D2).
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/gallery/image_card.dart';
@@ -25,9 +25,9 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/workbench_gla
 import 'package:joycai_image_ai_toolkits/services/files/trash_service.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/glass/glass_controls.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dialogs/file_rename_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/files/transfer_dialog_parts.dart';
+import 'package:joycai_image_ai_toolkits/widgets/glass/glass_controls.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
 
 import 'harness/fixture_env.dart';
@@ -318,7 +318,7 @@ void main() {
         .whereType<File>()
         .where((f) => f.path.endsWith('.png'))
         .take(3)
-        .map((f) => AppImage.fromFile(f))
+        .map(AppImage.fromFile)
         .toList();
     expect(sources, hasLength(3));
     gallery.addDroppedFiles(sources);
@@ -365,7 +365,7 @@ void main() {
         .whereType<File>()
         .where((f) => f.path.endsWith('.png'))
         .take(2)
-        .map((f) => AppImage.fromFile(f))
+        .map(AppImage.fromFile)
         .toList();
     expect(sources, hasLength(2), reason: 'the fixture must have two pictures');
     gallery.addDroppedFiles(sources);
@@ -448,7 +448,7 @@ void main() {
       appState.setWorkbenchTab(0);
     });
     await tester.runAsync(() async {
-      appState.setConfigPanelExpanded(false);
+      unawaited(appState.setConfigPanelExpanded(false));
       await Future<void>.delayed(const Duration(milliseconds: 300));
     });
 
@@ -511,7 +511,7 @@ void main() {
         .whereType<File>()
         .where((f) => f.path.endsWith('.png'))
         .take(3)
-        .map((f) => AppImage.fromFile(f))
+        .map(AppImage.fromFile)
         .toList();
     expect(sources, hasLength(3), reason: 'the fixture must have three pictures');
     gallery.addDroppedFiles(sources);

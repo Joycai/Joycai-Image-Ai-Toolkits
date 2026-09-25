@@ -79,7 +79,7 @@ class MidjourneyProtocol implements ChatProtocol {
   }) async* {
     final controller = StreamController<LLMResponseChunk>();
 
-    () async {
+    unawaited(() async {
       try {
         final result = await _runImagine(
           target,
@@ -110,7 +110,7 @@ class MidjourneyProtocol implements ChatProtocol {
       } finally {
         await controller.close();
       }
-    }();
+    }());
 
     yield* controller.stream;
   }

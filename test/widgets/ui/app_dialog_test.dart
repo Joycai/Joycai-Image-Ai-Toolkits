@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
 import 'package:joycai_image_ai_toolkits/core/theme_accent.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
 
 /// Covers [AppDialog]'s shared chrome — the shell every hand-built dialog in
 /// `lib/widgets/dialogs/` and `lib/widgets/models/` should eventually sit on.

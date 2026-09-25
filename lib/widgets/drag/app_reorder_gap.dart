@@ -540,7 +540,7 @@ class _GapPainter extends CustomPainter {
     canvas.save();
     canvas.clipRect(Offset.zero & size);
 
-    final radius = const Radius.circular(AppRadius.control);
+    const radius = Radius.circular(AppRadius.control);
     final fill = Paint()..color = tint;
     final dash = Paint()
       ..color = edge

@@ -132,7 +132,7 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
   Rect? _indicator;
 
   GlobalKey _keyFor(int index) =>
-      _segmentKeys.putIfAbsent(index, () => GlobalKey());
+      _segmentKeys.putIfAbsent(index, GlobalKey.new);
 
   /// Re-measures after every layout.
   ///

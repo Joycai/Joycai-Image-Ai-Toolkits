@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/app_semantic_colors.dart';
@@ -300,7 +302,7 @@ class _FontSelectorState extends State<FontSelector> {
     );
     if (ok == true && context.mounted) {
       await appState.setFontFamily(key);
-      _checkDownloads();
+      unawaited(_checkDownloads());
     }
   }
 }

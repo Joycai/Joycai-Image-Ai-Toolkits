@@ -156,7 +156,7 @@ class WebScraperService {
     final results = <DiscoveredImage>[];
     final cacheDir = await _cacheDir;
 
-    for (var metadata in imagesMetadata) {
+    for (final metadata in imagesMetadata) {
       final imageUrl = metadata['url']!;
       if (matchedUrlStrings.contains(imageUrl)) {
         // Pre-cache thumbnail if possible

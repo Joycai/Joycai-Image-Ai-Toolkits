@@ -484,7 +484,7 @@ class LLMDebugLogger {
         return MapEntry(k, _sanitize(v));
       });
     } else if (obj is List) {
-      return obj.map((e) => _sanitize(e)).toList();
+      return obj.map(_sanitize).toList();
     } else if (obj is String) {
       final masked = obj
           .replaceAllMapped(_keyQueryParam, (m) => '${m[1]}***MASKED***')

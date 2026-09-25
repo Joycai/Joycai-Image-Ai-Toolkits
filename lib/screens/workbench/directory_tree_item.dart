@@ -20,16 +20,16 @@ import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/file_staging_state.dart';
 import '../../state/gallery_state.dart';
-import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/drag/app_drag_follower.dart';
 import '../../widgets/drag/app_drag_session.dart';
 import '../../widgets/drag/app_drop_zone.dart';
+import '../../widgets/files/folder_drop_feedback.dart';
+import '../../widgets/ui/app_snackbar.dart';
 import '../browser/folder_move_flow.dart';
 import '../browser/staging_paste_flow.dart';
 import '../browser/widgets/folder_context_menu.dart';
 import '../browser/widgets/folder_delete_dialog.dart';
 import '../browser/widgets/folder_name_editor.dart';
-import '../../widgets/files/folder_drop_feedback.dart';
 import 'folder_tree_row.dart';
 
 part 'folder_drop_target.dart';
@@ -200,9 +200,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       } else {
         // Just refresh the whole state
         if (widget.useFileBrowserState) {
-          appState.fileBrowserState.refresh();
+          unawaited(appState.fileBrowserState.refresh());
         } else {
-          appState.galleryState.refreshImages();
+          unawaited(appState.galleryState.refreshImages());
         }
       }
     }

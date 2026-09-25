@@ -7,8 +7,8 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/workbench_gla
 import 'package:joycai_image_ai_toolkits/screens/workbench/workbench_layout.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
-import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/glass/glass_controls.dart';
+import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 

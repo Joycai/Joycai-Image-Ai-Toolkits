@@ -142,9 +142,9 @@ UsageStats calculateStats(List<TokenUsage> usageData, List<LLMModel> allModels, 
   int totalRequestCount = base?.totalRequestCount ?? 0;
   double totalCost = base?.totalCost ?? 0.0;
 
-  final modelToGroup = {for (var m in allModels) m.id: m.feeGroupId};
+  final modelToGroup = {for (final m in allModels) m.id: m.feeGroupId};
 
-  for (var row in usageData) {
+  for (final row in usageData) {
     final cost = row.cost;
     final requests = row.requestCount;
 

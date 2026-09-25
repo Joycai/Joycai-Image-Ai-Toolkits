@@ -46,3 +46,26 @@ linter:
     - unnecessary_parenthesis
     - unnecessary_await_in_return
     - no_literal_bool_comparisons
+
+    # --- Effective Dart ----------------------------------------------------
+    # Added by the 2026-09 structure audit, each with its whole backlog fixed
+    # in the same change (`dart fix --apply`, and by hand where it has no fix).
+    # Not `omit_local_variable_types`: its fix drops the context a declared
+    # type gives an initialiser (`final double w = 10` becomes an int, a
+    # `tester.widget<T>` loses its T) — 24 compile errors, and silent changes
+    # wherever the narrower type still compiles.
+    - directives_ordering
+    - prefer_relative_imports
+    - unnecessary_lambdas
+    - prefer_final_in_for_each
+    - avoid_multiple_declarations_per_line
+    # Const widgets are skipped on rebuild; flutter_lints dropped these as
+    # noisy, but here they already held nearly everywhere.
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_const_literals_to_create_immutables
+    - use_colored_box
+    - use_decorated_box
+    # A future dropped on the floor is either a missing `await` or a
+    # deliberate fire-and-forget; `unawaited(...)` says which.
+    - unawaited_futures

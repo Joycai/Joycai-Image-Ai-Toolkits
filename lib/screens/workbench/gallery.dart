@@ -8,27 +8,27 @@ import 'package:provider/provider.dart';
 
 import '../../core/app_shortcuts.dart';
 import '../../core/constants.dart';
-import '../../core/file_utils.dart';
-import '../../core/text_editing_focus.dart';
 import '../../core/design_tokens.dart';
+import '../../core/file_utils.dart';
+import '../../core/folder_outline_geometry.dart';
+import '../../core/folder_outline_labels.dart';
+import '../../core/folder_outline_spy.dart';
+import '../../core/text_editing_focus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../services/files/file_permission_service.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/drag/app_drop_zone.dart';
-import 'widgets/gallery/permission_placeholder.dart';
+import '../../widgets/files/folder_group_header.dart';
+import '../../widgets/files/folder_outline_bar.dart';
 import '../../widgets/ui/focus_pane.dart';
 import 'widgets/gallery/gallery_file_actions.dart';
 import 'widgets/gallery/image_card.dart';
+import 'widgets/gallery/permission_placeholder.dart';
 import 'widgets/preview/media_preview_dialog.dart';
 import 'widgets/workbench_glass_toolbar.dart';
 import 'workbench_layout.dart';
-import '../../core/folder_outline_geometry.dart';
-import '../../core/folder_outline_labels.dart';
-import '../../core/folder_outline_spy.dart';
-import '../../widgets/files/folder_group_header.dart';
-import '../../widgets/files/folder_outline_bar.dart';
 
 /// Everything the grid reads out of [GalleryState], gathered so the selector
 /// in `build` can compare it in one go.
@@ -191,7 +191,7 @@ class _GalleryState extends State<Gallery> {
       showFileRenameDialog(
         context: context,
         filePath: selected.first.path,
-        onSuccess: () => state.refreshImages(),
+        onSuccess: state.refreshImages,
       );
       return KeyEventResult.handled;
     }
@@ -256,7 +256,7 @@ class _GalleryState extends State<Gallery> {
   void _handleDrop(DropDoneDetails details, GalleryState galleryState) {
     setState(() => _isDragging = false);
     final List<AppImage> newFiles = [];
-    for (var file in details.files) {
+    for (final file in details.files) {
       if (AppConstants.isSupportedFile(file.path)) {
         newFiles.add(AppImage(path: file.path, name: file.name));
       }
@@ -403,7 +403,7 @@ class _GalleryState extends State<Gallery> {
         await state.updateOutputDirectory(newPath);
       } else {
         state.setViewFolder(newPath);
-        state.refreshImages();
+        unawaited(state.refreshImages());
       }
     }
   }

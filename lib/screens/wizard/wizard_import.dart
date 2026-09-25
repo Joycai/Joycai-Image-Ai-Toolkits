@@ -4,12 +4,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../widgets/settings/backup_error_text.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/db/database_service.dart';
 import '../../state/app_state.dart';
-import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/dialogs/import_options_dialog.dart';
+import '../../widgets/settings/backup_error_text.dart';
+import '../../widgets/ui/app_snackbar.dart';
 
 /// Backup-import flow for the setup wizard.
 ///

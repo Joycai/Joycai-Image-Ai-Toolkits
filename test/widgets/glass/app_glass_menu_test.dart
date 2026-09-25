@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,7 +29,7 @@ void main() {
   }
 
   Future<void> open(WidgetTester tester, List<AppGlassMenuEntry> entries, {Offset at = const Offset(100, 100)}) async {
-    showAppGlassMenu(host, position: at, entries: entries);
+    unawaited(showAppGlassMenu(host, position: at, entries: entries));
     await tester.pumpAndSettle();
   }
 
@@ -170,10 +172,10 @@ void main() {
 
     // The helper lays the menu's *right* edge on the button's right edge, so
     // the corner on the button is the top-right one.
-    showAppGlassMenuBelow(
+    unawaited(showAppGlassMenuBelow(
       tester.element(find.byKey(anchorKey)),
       entries: [AppGlassMenuItem(label: 'One', onSelected: () {})],
-    );
+    ));
     await tester.pumpAndSettle();
     expect(originOf(tester), Alignment.topRight);
   });

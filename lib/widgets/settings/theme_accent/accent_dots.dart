@@ -14,7 +14,7 @@ class _DotGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final double spacing = _gap - 2 * DualToneSwatch.hitInset;
+    const double spacing = _gap - 2 * DualToneSwatch.hitInset;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

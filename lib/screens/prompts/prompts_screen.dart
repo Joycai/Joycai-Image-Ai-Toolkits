@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -8,9 +10,9 @@ import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../services/system/ui_prefs.dart';
 import '../../state/app_state.dart';
+import '../../widgets/glass/app_glass.dart';
 import '../../widgets/tasks/app_run_console.dart';
 import '../../widgets/ui/app_search_field.dart';
-import '../../widgets/glass/app_glass.dart';
 import '../../widgets/ui/panel_resizer.dart';
 import '../batch/task_queue_screen.dart';
 import 'prompts_io.dart';
@@ -172,8 +174,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         if (_selectedFilterTagIds.isEmpty) return matchesSearch;
         final promptTagIds = p.tags.map((t) => t.id!).toSet();
         final matchesTags = _filterMatchAll
-            ? _selectedFilterTagIds.every((id) => promptTagIds.contains(id))
-            : _selectedFilterTagIds.any((id) => promptTagIds.contains(id));
+            ? _selectedFilterTagIds.every(promptTagIds.contains)
+            : _selectedFilterTagIds.any(promptTagIds.contains);
         return matchesSearch && matchesTags;
       }).toList();
 
@@ -240,7 +242,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         await appState.deleteSystemPrompts(_selectedIds.toList());
       }
       _clearSelection();
-      _loadData();
+      unawaited(_loadData());
     }
   }
 
@@ -255,7 +257,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         await appState.updateSystemPromptsTags(_selectedIds.toList(), targetTagIds);
       }
       _clearSelection();
-      _loadData();
+      unawaited(_loadData());
     }
   }
 
@@ -285,7 +287,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       searchQuery: _searchQuery,
       selectedFilterTagIds: _selectedFilterTagIds,
       onRefresh: _loadData,
-      onShowEditDialog: (l, {prompt}) => _showPromptDialog(l, prompt: prompt),
+      onShowEditDialog: _showPromptDialog,
       onConfirmDelete: _confirmDelete,
       selectedIds: _selectedIds,
       isSelectionMode: _isSelectionMode,
@@ -300,7 +302,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       allPrompts: _systemPrompts,
       searchQuery: _searchQuery,
       onRefresh: _loadData,
-      onShowEditDialog: (l, {prompt}) => _showSystemPromptDialog(l, prompt: prompt),
+      onShowEditDialog: _showSystemPromptDialog,
       onConfirmDelete: _confirmDelete,
       header: header,
       selectedIds: _selectedIds,
@@ -315,7 +317,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       tags: _tags,
       promptCounts: _computeTagCounts(),
       onRefresh: _loadData,
-      onShowEditDialog: (l, {tag}) => _showTagDialog(l, tag: tag),
+      onShowEditDialog: _showTagDialog,
       onConfirmDelete: _confirmDeleteTag,
     );
   }
@@ -573,12 +575,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   void _confirmDelete(AppLocalizations l10n, dynamic prompt, {required bool isSystem}) async {
     final deleted = await showDeletePromptConfirm(context, l10n, prompt, isSystem: isSystem);
-    if (deleted) _loadData();
+    if (deleted) unawaited(_loadData());
   }
 
   void _confirmDeleteTag(AppLocalizations l10n, PromptTag tag) async {
     final deleted = await showDeleteTagConfirm(context, l10n, tag);
-    if (deleted) _loadData();
+    if (deleted) unawaited(_loadData());
   }
 
   void _showTagDialog(AppLocalizations l10n, {PromptTag? tag}) async {
@@ -589,7 +591,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       tags: _tags,
       promptCount: tag == null ? 0 : _computeTagCounts()[tag.id] ?? 0,
     );
-    if (saved) _loadData();
+    if (saved) unawaited(_loadData());
   }
 
   void _showSystemPromptDialog(AppLocalizations l10n, {SystemPrompt? prompt}) async {
@@ -601,7 +603,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       tags: _tags,
       defaultType: _selectedSystemType == 'all' ? 'refiner' : _selectedSystemType,
     );
-    if (saved) _loadData();
+    if (saved) unawaited(_loadData());
   }
 
   void _showPromptDialog(AppLocalizations l10n, {Prompt? prompt}) async {
@@ -612,7 +614,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       userPrompts: _userPrompts,
       tags: _tags,
     );
-    if (saved) _loadData();
+    if (saved) unawaited(_loadData());
   }
 
   Future<void> _exportPrompts(AppLocalizations l10n) async {
@@ -627,6 +629,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   Future<void> _importPrompts(AppLocalizations l10n) async {
     final imported = await importPrompts(context, l10n);
-    if (imported && mounted) _loadData();
+    if (imported && mounted) unawaited(_loadData());
   }
 }

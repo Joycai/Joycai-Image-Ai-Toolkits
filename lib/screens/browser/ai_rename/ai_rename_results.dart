@@ -189,7 +189,7 @@ extension _ResultsArea on _AiRenameDialogState {
             AppButton(
               label: l10n.generateSuggestions,
               icon: Icons.auto_awesome,
-              onPressed: hasModels ? () => _generate() : null,
+              onPressed: hasModels ? _generate : null,
             ),
           ],
         ),

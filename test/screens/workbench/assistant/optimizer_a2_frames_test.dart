@@ -10,15 +10,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
-import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/optimizer_config_panel.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/assistant/prompt_optimizer_view.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/knowledge_base_service.dart';
+import 'package:joycai_image_ai_toolkits/services/assistant/prompt_optimizer_agent.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_button.dart';
 import 'package:provider/provider.dart';
+
 import '../../../support/private_data_dir.dart';
 import '../../../support/real_async.dart';
 

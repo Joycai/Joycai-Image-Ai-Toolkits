@@ -167,7 +167,8 @@ int? tierEdge(String tier) {
   final ceiling = rules.longEdgeCeiling;
   var k = unit * (math.sqrt(area / (a * b)) / unit).floor();
   for (; k >= unit; k -= unit) {
-    final long = a * k, short = b * k;
+    final long = a * k;
+    final short = b * k;
     if (long > ceiling || long * short > area) continue;
     if (!rules.passes(long, short)) return null;
     return ratio.portrait ? (short, long) : (long, short);
@@ -278,7 +279,8 @@ class SizeFix {
 /// the longer pressed back to the limit on the grid; any other violation
 /// keeps the proportion and walks the long edge to the nearest legal size.
 SizeFix fixFor(int w, int h, ImageSizeRules rules) {
-  final long = math.max(w, h), short = math.max(1, math.min(w, h));
+  final long = math.max(w, h);
+  final short = math.max(1, math.min(w, h));
   final portrait = h > w;
   if (long / short > rules.maxRatio) {
     final step = rules.edgeStep;

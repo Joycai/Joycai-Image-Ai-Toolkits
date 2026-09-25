@@ -15,19 +15,19 @@ import '../../models/tag.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
+import '../../widgets/drag/app_drag_lift.dart';
+import '../../widgets/drag/app_reorder_gap.dart';
 import '../../widgets/files/file_visuals.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_snackbar.dart';
 import '../../widgets/ui/app_switch.dart';
 import '../../widgets/ui/dashed_border.dart';
-import 'widgets/config/library_dialog.dart';
-import 'widgets/config/prompt_history_dialog.dart';
-import '../../widgets/drag/app_drag_lift.dart';
-import '../../widgets/drag/app_reorder_gap.dart';
 import '../../widgets/ui/markdown_editor.dart';
 import '../../widgets/ui/scroll_edge_fade.dart';
 import 'model_selection_section.dart';
 import 'widgets/config/config_action_bar.dart';
+import 'widgets/config/library_dialog.dart';
+import 'widgets/config/prompt_history_dialog.dart';
 import 'widgets/config/queue_settings_dialog.dart';
 
 part 'config_panel/config_panel_chrome.dart';
@@ -416,7 +416,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                           // Not _updateConfig: keystrokes take the silent draft
                           // path so typing does not notify the whole app. See
                           // AppStateWorkbench.setPromptDraft.
-                          onChanged: (v) => appState.setPromptDraft(v),
+                          onChanged: appState.setPromptDraft,
                           expand: fill,
                           // Filling, the height is handed down and there is
                           // nothing to measure; only the bottom sheet, where

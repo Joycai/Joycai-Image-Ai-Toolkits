@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -12,9 +13,9 @@ import '../../models/browser_file.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/gallery_state.dart';
+import '../../widgets/drag/app_drag_session.dart';
 import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/dashed_border.dart';
-import '../../widgets/drag/app_drag_session.dart';
 import 'directory_tree_item.dart';
 import 'folder_tree_row.dart';
 import 'widgets/gallery/result_tree_item.dart';
@@ -92,9 +93,9 @@ class _FolderListState extends State<FolderList> {
 
       if (selectedDirectory != null) {
         if (useFileBrowserState) {
-          appState.fileBrowserState.addBaseDirectory(selectedDirectory);
+          unawaited(appState.fileBrowserState.addBaseDirectory(selectedDirectory));
         } else {
-          appState.addBaseDirectory(selectedDirectory);
+          unawaited(appState.addBaseDirectory(selectedDirectory));
         }
       }
     } catch (e) {
@@ -184,7 +185,7 @@ class _FolderListState extends State<FolderList> {
                   icon: Icons.deselect,
                   tooltip: l10n.deselectAllDirectories,
                   onPressed: browser!.hasActive
-                      ? () => appState.fileBrowserState.clearActiveDirectories()
+                      ? appState.fileBrowserState.clearActiveDirectories
                       : null,
                 ),
                 const SizedBox(width: 2),

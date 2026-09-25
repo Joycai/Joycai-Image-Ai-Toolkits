@@ -59,7 +59,7 @@ class VideoThumbnailService {
   /// Test seam: how a retry waits. Defaults to a real delay.
   @visibleForTesting
   Future<void> Function(Duration delay) wait =
-      (delay) => Future<void>.delayed(delay);
+      Future<void>.delayed;
 
   Future<Directory> _getCacheDir() async {
     final cached = cacheDirOverride ?? _cacheDir;
