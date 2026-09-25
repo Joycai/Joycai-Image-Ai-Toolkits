@@ -1,6 +1,6 @@
 # 代码结构与风格审计（执行清单）
 
-**基线** `6231534` 2026-09-25 v4.28.0 · **分支** `chore/code-structure-audit` · **状态** 进行中
+**基线** `6231534` 2026-09-25 v4.28.0 · **分支** `chore/code-structure-audit` · **状态** 全部已做
 
 目标：对照 Flutter / Effective Dart 规范审一遍分包、组织与代码风格，能断言的钉进
 `analysis_options.yaml` 或 `test/source_layout_test.dart`，不留只靠 review 守的规矩。
@@ -40,7 +40,7 @@
 | 3 | lint（review 后加 `avoid_void_async`）：`directives_ordering` `prefer_relative_imports` ~~`omit_local_variable_types`~~ `unnecessary_lambdas` `prefer_final_in_for_each` `prefer_const_constructors` `prefer_const_declarations` `prefer_const_literals_to_create_immutables` `use_colored_box` `use_decorated_box` `avoid_multiple_declarations_per_line` `unawaited_futures`；`dart fix --apply` + 手工逐处（`unawaited_futures` 每处判断是漏了 `await` 还是有意不等） | `flutter analyze` 零问题；测试数不变 | 已做 |
 | 4 | `dart format`：`analysis_options.yaml` 加 `formatter: page_width: 100`，全仓格式化一次（单独一个提交，只有格式），`.git-blame-ignore-revs` 记下它；CI 加格式闸门；CLAUDE.md 的闸门一节同步 | `dart format --set-exit-if-changed lib test tool` 通过 | 已做 |
 | 5 | 去掉 `cupertino_icons` | `flutter pub get` + 双闸门绿 | 已做 |
-| 6 | 收尾：review 循环、台账一行、删除本文件、bump version、开 PR | — | 待做 |
+| 6 | 收尾：review 循环、台账一行、删除本文件、bump version、开 PR | — | 已做 |
 
 ## 2. 施工记录
 
@@ -91,3 +91,4 @@
   断过一次历史，改名为 `prompt_library_sheet.dart` / `prompt_history_sheet.dart`。另：`pubspec.yaml` 里给
   `sqflite`、`video_player_win` 注明为何无 import 仍保留，免得下一轮审计再删。其余量过无问题：`lib/` 无 `print(`，
   剩下 5 处 `// ignore:` 都仍在起作用，测试文件命名、`part` 位置、pubspec 分组与资源路径都合规。
+- **Review 第 4 轮**：No new findings。三道闸门在 HEAD 上全绿（format 0 改动 · analyze 零问题 · 3102 过 / 9 跳过）。
