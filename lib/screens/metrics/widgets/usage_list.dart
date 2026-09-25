@@ -7,7 +7,6 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/spec_rate.dart';
 import '../../../models/token_usage.dart';
-import '../../../services/db/database_service.dart';
 import '../../../widgets/ui/app_button.dart';
 import '../../../widgets/ui/app_dialog.dart';
 import 'usage_chrome.dart';
@@ -26,7 +25,10 @@ enum _TableForm { phone, tablet, desktop }
 /// place to its exact counts and the action that clears its model's data.
 class UsageList extends StatelessWidget {
   final List<TokenUsage> usageData;
-  final VoidCallback onRefresh;
+
+  /// Clears one model's records and reloads: the controller's, so the delete
+  /// and the reload land on the same database.
+  final Future<void> Function(String modelId) onClearModelUsage;
   final bool hasMore;
   final bool isLoadingMore;
   final VoidCallback onLoadMore;
@@ -45,7 +47,7 @@ class UsageList extends StatelessWidget {
   const UsageList({
     super.key,
     required this.usageData,
-    required this.onRefresh,
+    required this.onClearModelUsage,
     required this.hasMore,
     required this.isLoadingMore,
     required this.onLoadMore,
@@ -337,11 +339,8 @@ class UsageList extends StatelessWidget {
           label: l10n.clearModelData,
           variant: AppButtonVariant.destructive,
           onPressed: () async {
-            await DatabaseService().clearTokenUsage(modelId: modelId);
-            if (context.mounted) {
-              Navigator.pop(context);
-              onRefresh();
-            }
+            await onClearModelUsage(modelId);
+            if (context.mounted) Navigator.pop(context);
           },
         ),
       ],

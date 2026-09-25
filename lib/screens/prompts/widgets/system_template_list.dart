@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
-import '../../../services/db/database_service.dart';
+import '../../../state/app_state.dart';
 import '../../../widgets/drag/app_drag_lift.dart';
 import '../../../widgets/drag/app_reorder_gap.dart';
 import '../../../widgets/ui/app_snackbar.dart';
@@ -53,7 +54,6 @@ class SystemTemplateList extends StatefulWidget {
 }
 
 class _SystemTemplateListState extends State<SystemTemplateList> {
-  final DatabaseService _db = DatabaseService();
   final Set<int> _expandedSysPromptIds = {};
   final PromptReorderFocus _reorderFocus = PromptReorderFocus();
   List<SystemPrompt>? _optimistic;
@@ -89,10 +89,11 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
       return;
     }
     final next = reorderedCopy(prompts, oldIndex, newIndex);
+    final appState = context.read<AppState>();
     setState(() => _optimistic = next);
     final nextIds = next.map((p) => p.id!).toList();
     final all = widget.allPrompts;
-    await _db.updateSystemPromptOrder(
+    await appState.updateSystemPromptOrder(
       all == null ? nextIds : mergeSubsetOrder(all.map((p) => p.id!).toList(), nextIds),
     );
     widget.onRefresh();
@@ -110,13 +111,14 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
   /// Writes [nextIds], the whole stored order, showing [shown] in it at once.
   Future<void> _writeOrder(List<SystemPrompt> shown, List<int> nextIds) async {
     final byId = {for (final p in shown) p.id!: p};
+    final appState = context.read<AppState>();
     setState(
       () => _optimistic = [
         for (final i in nextIds)
           if (byId.containsKey(i)) byId[i]!,
       ],
     );
-    await _db.updateSystemPromptOrder(nextIds);
+    await appState.updateSystemPromptOrder(nextIds);
     widget.onRefresh();
   }
 

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../services/db/database_service.dart';
+import '../../../state/app_state.dart';
 import '../../../widgets/ui/api_key_field.dart';
 import '../../../widgets/ui/app_setting_row.dart';
 import '../../../widgets/ui/app_text_field.dart';
@@ -20,8 +21,6 @@ class ConnectivitySection extends StatefulWidget {
 }
 
 class _ConnectivitySectionState extends State<ConnectivitySection> {
-  final DatabaseService _db = DatabaseService();
-
   bool _proxyEnabled = false;
   final TextEditingController _proxyUrlController = TextEditingController();
   final TextEditingController _proxyUsernameController = TextEditingController();
@@ -44,10 +43,11 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
   }
 
   Future<void> _loadSettings() async {
-    _proxyEnabled = (await _db.getSetting('proxy_enabled')) == 'true';
-    _proxyUrlController.text = await _db.getSetting('proxy_url') ?? '';
-    _proxyUsernameController.text = await _db.getSetting('proxy_username') ?? '';
-    _proxyPasswordController.text = await _db.getSetting('proxy_password') ?? '';
+    final appState = Provider.of<AppState>(context, listen: false);
+    _proxyEnabled = (await appState.getSetting('proxy_enabled')) == 'true';
+    _proxyUrlController.text = await appState.getSetting('proxy_url') ?? '';
+    _proxyUsernameController.text = await appState.getSetting('proxy_username') ?? '';
+    _proxyPasswordController.text = await appState.getSetting('proxy_password') ?? '';
 
     if (mounted) setState(() {});
   }
@@ -55,6 +55,7 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final appState = context.read<AppState>();
 
     final Widget username = SettingsField(
       label: l10n.proxyUsername,
@@ -62,7 +63,7 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
       child: AppTextField(
         controller: _proxyUsernameController,
         enabled: _proxyEnabled,
-        onChanged: (v) => _db.saveSetting('proxy_username', v),
+        onChanged: (v) => appState.saveSetting('proxy_username', v),
       ),
     );
     final Widget password = SettingsField(
@@ -70,7 +71,7 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
       enabled: _proxyEnabled,
       child: ApiKeyField(
         controller: _proxyPasswordController,
-        onChanged: (v) => _db.saveSetting('proxy_password', v),
+        onChanged: (v) => appState.saveSetting('proxy_password', v),
       ),
     );
 
@@ -87,7 +88,7 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
                 value: _proxyEnabled,
                 onChanged: (v) {
                   setState(() => _proxyEnabled = v);
-                  _db.saveSetting('proxy_enabled', v.toString());
+                  appState.saveSetting('proxy_enabled', v.toString());
                 },
               ),
               SettingsField(
@@ -97,7 +98,7 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
                   controller: _proxyUrlController,
                   enabled: _proxyEnabled,
                   hint: '127.0.0.1:7890',
-                  onChanged: (v) => _db.saveSetting('proxy_url', v),
+                  onChanged: (v) => appState.saveSetting('proxy_url', v),
                 ),
               ),
               if (widget.isMobile) ...[

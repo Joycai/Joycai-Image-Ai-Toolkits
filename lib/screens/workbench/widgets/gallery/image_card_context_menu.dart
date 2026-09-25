@@ -79,7 +79,7 @@ Future<void> showImageCardContextMenu(
   // menu opens without touching the database; null when nothing is left to
   // stack, and then the row is not offered (`A7 · 7b`).
   final layerSet = !multi && ImageLayerRepository.layeredPaths.value.containsKey(imageFile.path)
-      ? await ImageLayerRepository().setFor(imageFile.path)
+      ? await appState.galleryState.layerSetFor(imageFile.path)
       : null;
   if (!context.mounted) return;
 

@@ -109,7 +109,7 @@ void main() {
           body: SingleChildScrollView(
             child: UsageList(
               usageData: rows,
-              onRefresh: () {},
+              onClearModelUsage: (_) async {},
               hasMore: hasMore,
               isLoadingMore: false,
               onLoadMore: () {},
