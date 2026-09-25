@@ -35,8 +35,8 @@ import '../../../../widgets/ui/markdown_editor.dart';
 import '../../../../widgets/ui/scroll_edge_fade.dart';
 import '../../../../widgets/ui/searchable_picker.dart';
 import '../config/config_action_bar.dart';
-import '../config/library_dialog.dart';
-import '../config/prompt_history_dialog.dart';
+import '../config/prompt_history_sheet.dart';
+import '../config/prompt_library_sheet.dart';
 import '../config/queue_settings_dialog.dart';
 
 part 'video_drop_parts.dart';

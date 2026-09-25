@@ -17,7 +17,7 @@
 | **`widgets/` 只被一个 screen 用到的文件** | CLAUDE.md 与布局测试的提示语都写了「只有一个 screen 用的共享 widget 应当放在那个 screen 下」，但没有断言；按传递可达性算，14 个非设计系统文件（含 `channel_wizard/` 四个 part）违规 | 片 1 迁移 + 断言 |
 | 重复声明 | `modelKindIcon` 在 `widgets/ui/model_tag_chip.dart` 与 `widgets/models/model_edit_controls.dart` 各一份（台账「还欠的」旧条目），默认值不同 | 片 2 |
 | Effective Dart 规则抽样 | `directives_ordering` 217 · `omit_local_variable_types` 1373 · `unnecessary_lambdas` 53 · `prefer_final_in_for_each` 61 · `unawaited_futures` 46 · `prefer_const_*` 28 · `avoid_multiple_declarations_per_line` 16 · `use_colored_box` / `use_decorated_box` 4 | 片 3 |
-| 未用依赖 | `cupertino_icons`（全仓无 `CupertinoIcons`，模板遗留）；`sqflite` 虽无直接 import 但 macOS/iOS/Android 的 `openDatabase` 靠它的插件实现，**保留** | 片 5 |
+| 未用依赖 | `cupertino_icons`（全仓无 `CupertinoIcons`，模板遗留）；`sqflite` 与 `video_player_win` 虽无直接 import，但分别是 macOS/iOS/Android 的数据库插件与 `video_player` 的 Windows 实现，**保留**，理由写在 `pubspec.yaml` 各自旁边 | 片 5 |
 
 判定不做的：
 
@@ -82,5 +82,12 @@
   ③ `source_layout_test` 的提示语里 `channel_avatar` 的旧路径。
   ④ `prompts_screen.dart` 还有五个 `void … async`（全仓仅此五处），加 `avoid_void_async` 并改成 `Future<void>`。
 - **Review 第 2 轮（1 条）**：`use_decorated_box` 对带边框的 `Container` 照样报，照做就是第 1 轮那个 1px 问题，
-  而 `dart fix` 不修它、只能手改——在规则旁注明「带边框时不等价，用 Padding 保住内缩」。其余（合并无丢失、
+  而且 `dart fix` 照样会做这个替换（第 3 轮实测：带边框也换）——在规则旁注明「带边框时不等价、`dart fix` 也会换，用 Padding 保住内缩」。其余（合并无丢失、
   `88767ce` 纯格式、位置用例去掉 Padding 会失败、升级日不会引入格式抖动）核过无问题。
+- **Review 第 3 轮（4 条，目标覆盖度视角）**：① 上一条关于 `dart fix` 的说法是错的，改正 yaml 注释与本记录；
+  ② CLAUDE.md 闸门一段并没理齐，重排；③ 四处早于本分支的 `// ignore: unawaited_futures`（两个截图测试、
+  `real_async_test` 两处）在规则打开后与 `unawaited(...)` 的约定并存，改成后者；④ 片 1 搬的两个文件名与类名
+  不符（里面是 `PromptLibrarySheet` / `PromptHistorySheet`，测试早已叫 `prompt_history_sheet_test`），趁这次已经
+  断过一次历史，改名为 `prompt_library_sheet.dart` / `prompt_history_sheet.dart`。另：`pubspec.yaml` 里给
+  `sqflite`、`video_player_win` 注明为何无 import 仍保留，免得下一轮审计再删。其余量过无问题：`lib/` 无 `print(`，
+  剩下 5 处 `// ignore:` 都仍在起作用，测试文件命名、`part` 位置、pubspec 分组与资源路径都合规。

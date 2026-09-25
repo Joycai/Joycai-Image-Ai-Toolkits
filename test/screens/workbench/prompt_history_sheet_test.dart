@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt_history_entry.dart';
-import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/config/prompt_history_dialog.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/config/prompt_history_sheet.dart';
 import 'package:joycai_image_ai_toolkits/widgets/ui/app_dialog.dart';
 
 /// Drives the recent-prompt picker the way a user does: open, tap an entry,

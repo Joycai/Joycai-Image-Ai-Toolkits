@@ -26,8 +26,8 @@ import '../../widgets/ui/markdown_editor.dart';
 import '../../widgets/ui/scroll_edge_fade.dart';
 import 'model_selection_section.dart';
 import 'widgets/config/config_action_bar.dart';
-import 'widgets/config/library_dialog.dart';
-import 'widgets/config/prompt_history_dialog.dart';
+import 'widgets/config/prompt_history_sheet.dart';
+import 'widgets/config/prompt_library_sheet.dart';
 import 'widgets/config/queue_settings_dialog.dart';
 
 part 'config_panel/config_panel_chrome.dart';

@@ -7,6 +7,7 @@
 @Tags(<String>['screenshots'])
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -113,8 +114,7 @@ void main() {
 
   Future<void> openCanvas(WidgetTester tester) async {
     final BuildContext context = tester.element(find.byType(Scaffold).first);
-    // ignore: unawaited_futures
-    showLayerCanvas(context, set, set.layers[2].path);
+    unawaited(showLayerCanvas(context, set, set.layers[2].path));
     // The base's size and every layer decode are real IO.
     for (var i = 0; i < 10; i++) {
       await tester.runAsync(() async {

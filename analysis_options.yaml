@@ -66,8 +66,9 @@ linter:
     - prefer_const_literals_to_create_immutables
     - use_colored_box
     # Not a drop-in swap when the decoration has a border: a Container insets
-    # its child by the border width, a DecoratedBox does not. Keep the inset
-    # with a Padding, as the route list in wizard_form_steps.dart does.
+    # its child by the border width, a DecoratedBox does not — and `dart fix`
+    # makes the swap anyway, border or not. On a bordered decoration keep the
+    # inset with a Padding, as the route list in wizard_form_steps.dart does.
     - use_decorated_box
     # A future dropped on the floor is either a missing `await` or a
     # deliberate fire-and-forget; `unawaited(...)` says which.

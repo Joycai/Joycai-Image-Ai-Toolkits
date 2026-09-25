@@ -8,6 +8,7 @@
 @Tags(<String>['screenshots'])
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -28,13 +29,14 @@ void main() {
     final BuildContext context = tester.element(find.byType(Scaffold).first);
     final AppImage image = AppImage.fromFile(File(env.fixtureImagePaths.first));
     // Not awaited: the dialog stays up for the shot.
-    // ignore: unawaited_futures
-    showResultFeedbackDialog(
-      context,
-      image: image,
-      promptVersion: 3,
-      runMeta: 'gpt-image-1 · 今天 14:02',
-      promptText: '深红丝绒背景，香水瓶居中，顶光，浅景深，商业静物摄影，8k',
+    unawaited(
+      showResultFeedbackDialog(
+        context,
+        image: image,
+        promptVersion: 3,
+        runMeta: 'gpt-image-1 · 今天 14:02',
+        promptText: '深红丝绒背景，香水瓶居中，顶光，浅景深，商业静物摄影，8k',
+      ),
     );
     await settle(tester);
     await tester.tap(find.byIcon(satisfied ? Icons.thumb_up_outlined : Icons.thumb_down_outlined));
